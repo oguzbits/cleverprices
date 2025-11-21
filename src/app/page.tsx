@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, TrendingUp, ShoppingCart, Smartphone, Coffee, Home, Dog } from "lucide-react"
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Rectangle } from "recharts"
 
 const categories = [
   { name: "Tech", icon: Smartphone, count: "12k+", slug: "tech" },
@@ -34,7 +34,7 @@ export default function HomePage() {
           <Badge variant="secondary" className="mb-4">
             New: Historical Price Tracking
           </Badge>
-          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-linear-to-r from-foreground to-foreground/70">
             Compare products by price per unit.
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
@@ -137,16 +137,59 @@ export default function HomePage() {
                 </li>
               </ul>
             </div>
-            <div className="flex-1 w-full h-[300px] bg-muted/20 rounded-lg p-4">
+            <div className="flex-1 w-full h-[300px] bg-linear-to-b from-muted/10 to-muted/30 rounded-lg p-4 border border-border/50">
                <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={data}>
-                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
-                    itemStyle={{ color: 'hsl(var(--foreground))' }}
+                  <defs>
+                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.3}/>
+                    </linearGradient>
+                    <linearGradient id="colorValueHover" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--primary)" stopOpacity={1}/>
+                      <stop offset="95%" stopColor="var(--primary)" stopOpacity={0.6}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="var(--muted-foreground)" 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    dy={10}
                   />
-                  <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <YAxis 
+                    stroke="var(--muted-foreground)" 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickFormatter={(value) => `$${value}`} 
+                    dx={-10}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'var(--muted)', opacity: 0.2 }}
+                    content={({ active, payload, label }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div className="rounded-lg border bg-background/95 backdrop-blur-sm p-3 shadow-xl ring-1 ring-black/5 dark:ring-white/10">
+                            <p className="mb-1 text-xs font-medium text-muted-foreground">{label}</p>
+                            <p className="text-lg font-bold text-foreground">
+                              ${payload[0].value}
+                              <span className="ml-1 text-xs font-normal text-muted-foreground">/ unit</span>
+                            </p>
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
+                  />
+                  <Bar 
+                    dataKey="value" 
+                    fill="url(#colorValue)" 
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={50}
+                    activeBar={<Rectangle fill="url(#colorValueHover)" stroke="none" />}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </div>
