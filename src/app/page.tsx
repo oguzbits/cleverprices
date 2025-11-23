@@ -4,15 +4,15 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, TrendingUp, ShoppingCart, Smartphone, Coffee, Home, Dog } from "lucide-react"
+import { ArrowRight, TrendingUp, ShoppingCart, Smartphone, HardDrive, Cpu, Usb, Server } from "lucide-react"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Rectangle } from "recharts"
 
 const categories = [
-  { name: "Tech", icon: Smartphone, count: "12k+", slug: "tech" },
-  { name: "Food", icon: Coffee, count: "8k+", slug: "food" },
-  { name: "Household", icon: Home, count: "5k+", slug: "household" },
-  { name: "Beauty", icon: ShoppingCart, count: "3k+", slug: "beauty" },
-  { name: "Pets", icon: Dog, count: "2k+", slug: "pets" },
+  { name: "External HDD", icon: HardDrive, count: "500+", slug: "external-hdd" },
+  { name: "Internal SSD", icon: Cpu, count: "800+", slug: "internal-ssd" },
+  { name: "MicroSD", icon: Smartphone, count: "300+", slug: "microsd" },
+  { name: "USB Drives", icon: Usb, count: "400+", slug: "usb-drive" },
+  { name: "NAS", icon: Server, count: "100+", slug: "nas" },
 ]
 
 const data = [
@@ -26,8 +26,24 @@ const data = [
 ]
 
 export default function HomePage() {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'bestprices.today',
+    url: 'https://bestprices.today',
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: 'https://bestprices.today/search?q={search_term_string}',
+      'query-input': 'required name=search_term_string',
+    },
+  }
+
   return (
     <div className="flex flex-col gap-12 pb-12">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Hero Section */}
       <section className="py-20 md:py-32 bg-muted/30 border-b">
         <div className="container px-4 mx-auto text-center">
