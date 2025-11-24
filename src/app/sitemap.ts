@@ -16,11 +16,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Dynamic categories (Mocked for now)
   const categories = [
-    'external-hdd',
-    'internal-ssd',
-    'microsd',
-    'usb-drive',
-    'nas',
+    'storage',
+    'protein-powder',
+    'laundry-detergent',
+    'diapers',
+    'batteries',
   ].map((slug) => ({
     url: `${baseUrl}/categories/${slug}`,
     lastModified: new Date(),

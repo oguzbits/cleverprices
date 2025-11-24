@@ -4,10 +4,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowRight, TrendingUp, ShoppingCart, Smartphone, HardDrive, Dumbbell, Droplets, Baby, Battery } from "lucide-react"
+import { ArrowRight, TrendingUp, ShoppingCart, Smartphone, HardDrive, Dumbbell, Droplets, Baby, Battery, Globe, CheckCircle2 } from "lucide-react"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Rectangle } from "recharts"
-import { Globe } from "@/components/ui/globe"
+import { Globe as InteractiveGlobe } from "@/components/ui/globe"
 import { FeaturedDeals } from "@/components/ui/featured-deals"
+import { HeroTableDemo } from "@/components/hero-table-demo"
 import { SavingsCalculator } from "@/components/ui/savings-calculator"
 import { PriceComparison } from "@/components/ui/price-comparison"
 import { AnimatedCounter } from "@/components/ui/animated-counter"
@@ -50,43 +51,57 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* Hero Section */}
-      <section className="relative py-24 md:py-32 overflow-hidden">
+      {/* Hero Section */}
+      <section className="relative py-20 md:py-32 overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-primary/5 to-background z-0" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-primary/20 rounded-full blur-[120px] -z-10 opacity-50" />
+        <div className="absolute top-0 left-0 w-[1000px] h-[500px] bg-primary/20 rounded-full blur-[120px] -z-10 opacity-30" />
         
-        <div className="container relative z-10 px-4 mx-auto text-center">
-          <Badge variant="outline" className="mb-6 px-5 py-2 text-sm border-border bg-muted/30 text-foreground hover:bg-muted/50 transition-colors shadow-sm">
-            <span className="font-mono text-xs mr-2">⚡️</span>
-            Real-time price tracking across 11 Amazon marketplaces
-          </Badge>
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 bg-clip-text text-transparent bg-linear-to-r from-foreground via-foreground to-foreground/70 drop-shadow-sm">
-            Never overpay again.<br className="hidden md:block" />
-            <span className="bg-clip-text text-transparent bg-linear-to-r from-primary to-purple-600">Shop by price per unit.</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-4 leading-relaxed">
-            The cheaper product isn't always the better value. Compare unit prices across millions of products to find the real deals.
-          </p>
-          <div className="flex items-center justify-center gap-6 mb-10">
-            <div className="text-center">
-              <p className="text-3xl font-bold text-foreground">11 Countries</p>
-              <p className="text-sm text-muted-foreground">Supported Marketplaces</p>
+        <div className="container relative z-10 px-4 mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            {/* Left Column: Content */}
+            <div className="text-left">
+              <Badge variant="outline" className="mb-6 px-4 py-1.5 text-sm border-border bg-muted/30 text-foreground hover:bg-muted/50 transition-colors shadow-sm w-fit">
+                <span className="font-mono text-xs mr-2">⚡️</span>
+                Advanced Unit Price Analysis Engine
+              </Badge>
+              
+              <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-linear-to-r from-foreground via-foreground to-foreground/70 drop-shadow-sm leading-[1.1]">
+                <span className="bg-clip-text text-transparent bg-linear-to-r from-primary to-purple-600">Shop by Unit Price.</span>
+              </h1>
+              
+              <p className="text-xl text-muted-foreground max-w-xl mb-8 leading-relaxed">
+                We reveal the true cost per liter, kilogram, or item. Spot the hidden deals Amazon doesn&apos;t show you.
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-4 mb-10">
+                <Button size="lg" className="text-lg px-8 h-14 rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 transition-all group" asChild>
+                  <Link href="/categories">
+                    Start Saving Now 
+                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" className="text-lg px-8 h-14 rounded-full border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all">
+                  See How It Works
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-8 border-t border-border/50 pt-8">
+                <div>
+                  <p className="text-3xl font-bold text-foreground">2M+</p>
+                  <p className="text-sm text-muted-foreground">Products Tracked</p>
+                </div>
+                <div className="h-10 w-px bg-border/50" />
+                <div>
+                  <p className="text-3xl font-bold text-foreground">24/7</p>
+                  <p className="text-sm text-muted-foreground">Price Monitoring</p>
+                </div>
+              </div>
             </div>
-            <div className="h-12 w-px bg-border" />
-            <div className="text-center">
-              <p className="text-3xl font-bold text-foreground">24/7</p>
-              <p className="text-sm text-muted-foreground">Real-time Price Updates</p>
+
+            {/* Right Column: Interactive Demo */}
+            <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
+              <HeroTableDemo />
             </div>
-          </div>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Button size="lg" className="text-lg px-8 h-14 rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 transition-all group" asChild>
-              <Link href="/categories">
-                Start Saving Now 
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8 h-14 rounded-full border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all">
-              See How It Works
-            </Button>
           </div>
         </div>
       </section>
@@ -117,7 +132,7 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground">
-                Unit Pricing
+                True Value
               </div>
               <p className="text-xs text-muted-foreground mt-1">Automatic price-per-unit calculation</p>
             </CardContent>
@@ -131,7 +146,7 @@ export default function HomePage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-foreground">
-                11 Regions
+                Worldwide
               </div>
               <p className="text-xs text-muted-foreground mt-1">Unified search across borders</p>
             </CardContent>
@@ -187,13 +202,13 @@ export default function HomePage() {
 
       {/* Supported Countries */}
       <section className="container px-4 mx-auto py-24">
-        <h2 className="text-4xl font-bold mb-12 tracking-tight text-center">Supported in 11 Countries</h2>
+        <h2 className="text-4xl font-bold mb-12 tracking-tight text-center">Global Availability</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           
           {/* Globe Container */}
           <div className="relative flex w-full items-center justify-center overflow-hidden rounded-[2.5rem] border border-primary/20 dark:border-primary/10 bg-background/40 backdrop-blur-2xl px-4 py-20 shadow-2xl min-h-[500px] lg:h-[700px] group order-2 lg:order-2">
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
-            <Globe className="w-full max-w-[500px] aspect-square mx-auto z-10" />
+            <InteractiveGlobe className="w-full max-w-[500px] aspect-square mx-auto z-10" />
             <div className="pointer-events-none absolute inset-0 h-full bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary),0.1),rgba(255,255,255,0))]" />
           </div>
 
@@ -239,7 +254,7 @@ export default function HomePage() {
             <div className="p-6 rounded-2xl bg-linear-to-r from-primary/10 to-purple-500/10 border border-primary/20 dark:border-primary/10 mt-6">
               <h3 className="text-lg font-bold mb-2">Real-time Global Tracking</h3>
               <p className="text-muted-foreground text-sm">
-                We monitor prices across 11 Amazon marketplaces to ensure you catch the latest price drops and currency fluctuations.
+                We monitor prices worldwide to ensure you catch the latest price drops and currency fluctuations.
               </p>
             </div>
           </div>

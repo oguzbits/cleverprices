@@ -61,12 +61,12 @@ export function Globe({ className }: { className?: string }) {
         // India
         { location: [20.5937, 78.9629], size: 0.05 },
       ],
-      onRender: (state) => {
+        onRender: (state) => {
         // This prevents rotation while dragging
         if (!pointerInteracting.current) {
           // Called on every animation frame.
           // `state` will be an empty object, return updated params.
-          phi += 0.005;
+          phi += 0.003;
         }
         state.phi = phi + r.get();
         state.width = width * 2;
@@ -91,6 +91,8 @@ export function Globe({ className }: { className?: string }) {
     >
       <canvas
         ref={canvasRef}
+        aria-label="Interactive 3D Globe showing supported countries"
+        role="img"
         onPointerDown={(e) => {
           pointerInteracting.current =
             e.clientX - pointerInteractionMovement.current;
