@@ -1,0 +1,79 @@
+# BestPrices.today - AI Assistant Rules
+
+You are working on BestPrices.today, a price comparison platform focused on "Price per Unit" analysis.
+
+## Core Principles
+
+1. **Price per Unit First**: All product categories must support meaningful unit price comparison (e.g., $/TB, $/kg, $/count)
+2. **Premium UI**: Dark mode, glassmorphism, smooth animations, vibrant accents
+3. **TypeScript Strict**: Always use proper TypeScript types and interfaces
+4. **Component Reuse**: Prefer shadcn/ui components over custom implementations
+
+## Technology Stack
+
+- Next.js 14+ (App Router)
+- TypeScript
+- Tailwind CSS
+- shadcn/ui (Radix UI primitives)
+- Lucide React (icons)
+
+## Coding Standards
+
+### Components
+- Use functional components with TypeScript
+- Default exports for pages, named exports for components
+- Define explicit prop interfaces
+- Arrow functions for event handlers
+
+### Styling
+- Tailwind-first approach, avoid custom CSS
+- Mobile-first responsive design
+- Dark mode by default
+
+### File Structure
+- Pages: `src/app/[route]/page.tsx`
+- UI Components: `src/components/ui/`
+- Utilities: `src/lib/`
+
+## Category Rules
+
+### ✅ Valid Categories (Consumables/Capacity-based)
+- Storage (Hard Drives, SSDs, MicroSD, USB) - Price per GB/TB
+- Food (Protein Powder, Coffee, Rice, Snacks) - Price per kg/lb/oz
+- Household (Detergent, Paper Products, Trash Bags) - Price per load/count
+- Batteries - Price per count
+
+### ❌ Invalid Categories
+- Single-unit electronics (Monitors, CPUs, GPUs, Laptops, Phones)
+- Furniture, Appliances
+- Anything without a meaningful unit metric
+
+## Common Tasks
+
+### Adding a Category
+1. Update `src/app/page.tsx` with new category + icon
+2. Ensure valid "price per unit" metric exists
+3. Add to `src/app/categories/page.tsx`
+4. Update mock data in `src/lib/amazon-api.ts` if needed
+
+### Adding a Filter
+1. Add `useState` in page component
+2. Update `FilterList` component UI
+3. Apply filter in product list logic
+4. Test on both desktop + mobile
+
+## UI Patterns
+
+- **Filters**: Use Accordion for collapsible sections
+- **Mobile**: Use Sheet component for slide-out panels
+- **Tables**: Hide non-critical columns on mobile
+- **Icons**: Lucide React only
+- **Forms**: shadcn/ui Input, Checkbox, Label components
+
+## Performance
+
+- Use `next/image` for all images
+- `useMemo` for expensive filtering/sorting
+- Dynamic imports for heavy components
+
+## Read PROJECT_CONTEXT.md for comprehensive documentation
