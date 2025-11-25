@@ -95,22 +95,22 @@ export function HeroTableDemo() {
 
       <Card className="border-border/50 bg-card shadow-2xl overflow-hidden ring-1 ring-border">
         {/* Top Bar (Browser/App Header) */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
-          <div className="flex items-center gap-4">
-            <div className="flex gap-1.5">
+        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/40">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+            <div className="flex gap-1.5 shrink-0">
               <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
               <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
               <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
             </div>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Search className="w-3 h-3" />
-              <span>bestprices.today/categories/storage</span>
+            <div className="h-4 w-px bg-border shrink-0" />
+            <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0 flex-1">
+              <Search className="w-3 h-3 shrink-0" />
+              <span className="truncate">bestprices.today/categories/storage</span>
             </div>
           </div>
           
           {/* Value Proposition Badge */}
-          <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px] animate-pulse">
+          <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px] animate-pulse shrink-0">
             <Sparkles className="w-3 h-3 mr-1" />
             Sorted by Unit Price
           </Badge>
@@ -118,7 +118,7 @@ export function HeroTableDemo() {
 
         <div className="flex h-[400px]">
           {/* Sidebar */}
-          <div className="w-48 border-r border-border bg-muted/20 p-4 hidden sm:block">
+          <div className="w-32 sm:w-48 border-r border-border bg-muted/20 p-2 sm:p-4 hidden sm:block">
             <div className="space-y-6">
               <div>
                 <h3 className="text-xs font-semibold text-foreground mb-3">Filters</h3>

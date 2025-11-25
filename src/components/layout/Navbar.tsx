@@ -9,9 +9,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Moon, Sun, Menu, Search } from "lucide-react"
+import { Moon, Sun, Search } from "lucide-react"
 import { useTheme } from "next-themes"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { SearchModal } from "@/components/SearchModal"
 import {
   Tooltip,
@@ -46,7 +45,7 @@ export function Navbar() {
           <Link href="/" className="flex items-center space-x-2">
             <span className="font-bold text-xl tracking-tight">bestprices.today</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+          <nav className="flex items-center gap-4 md:gap-6 text-sm font-medium">
             <Link href="/categories" className="transition-colors hover:text-foreground/80 text-foreground/60">
               Categories
             </Link>
@@ -136,20 +135,7 @@ export function Navbar() {
               </TooltipContent>
             </Tooltip>
           
-            {/* Mobile Menu */}
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden cursor-pointer">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-            <SheetContent side="right">
-              <nav className="flex flex-col gap-4 mt-8">
-                <Link href="/" className="text-lg font-medium">Home</Link>
-                <Link href="/categories" className="text-lg font-medium">Categories</Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
+
           </div>
         </TooltipProvider>
       </div>

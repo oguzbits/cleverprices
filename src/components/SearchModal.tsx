@@ -1,30 +1,34 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Search, X } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useState, useEffect } from "react"
+import { Search, HardDrive, Dumbbell, Battery, Droplets, Baby, Coffee } from "lucide-react"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-// Mock categories data
-const CATEGORIES = [
-  { name: "Hard Drives & SSDs", slug: "storage", icon: "💾" },
-  { name: "Protein Powder", slug: "protein-powder", icon: "💪" },
-  { name: "Laundry Detergent", slug: "laundry-detergent", icon: "🧴" },
-  { name: "Diapers", slug: "diapers", icon: "👶" },
-  { name: "Batteries", slug: "batteries", icon: "🔋" },
-]
+// Quick links data - shown immediately when search opens
+const QUICK_LINKS = {
+  "POPULAR CATEGORIES": [
+    { name: "Hard Drives & SSDs", slug: "storage", icon: HardDrive },
+    { name: "Protein Powder", slug: "protein-powder", icon: Dumbbell },
+    { name: "Batteries", slug: "batteries", icon: Battery },
+  ],
+  "TRENDING NOW": [
+    { name: "Laundry Detergent", slug: "laundry-detergent", icon: Droplets },
+    { name: "Diapers", slug: "diapers", icon: Baby },
+    { name: "Coffee", slug: "coffee", icon: Coffee },
+  ],
+}
 
-// Mock products data (in real app, this would come from API)
-const MOCK_PRODUCTS = [
-  { name: "Seagate 2TB External HDD", category: "storage", asin: "B07VTWX8MN" },
-  { name: "Samsung 1TB Internal SSD", category: "storage", asin: "B08QBJ2YMG" },
-  { name: "Optimum Nutrition Whey Protein", category: "protein-powder", asin: "B000QSNYGI" },
-  { name: "Tide Liquid Laundry Detergent", category: "laundry-detergent", asin: "B01NBCU98B" },
-  { name: "Duracell AA Batteries 24 Pack", category: "batteries", asin: "B00MNV8E0C" },
+// All categories for search
+const ALL_CATEGORIES = [
+  { name: "Hard Drives & SSDs", slug: "storage", icon: HardDrive },
+  { name: "Protein Powder", slug: "protein-powder", icon: Dumbbell },
+  { name: "Laundry Detergent", slug: "laundry-detergent", icon: Droplets },
+  { name: "Diapers", slug: "diapers", icon: Baby },
+  { name: "Batteries", slug: "batteries", icon: Battery },
 ]
 
 interface SearchModalProps {
@@ -34,18 +38,20 @@ interface SearchModalProps {
 
 export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const [query, setQuery] = useState("")
+  const [selectedIndex, setSelectedIndex] = useState(0)
   const router = useRouter()
 
-  // Filter categories and products based on query
-  const filteredCategories = CATEGORIES.filter(cat =>
+  // Filter categories based on query
+  const filteredCategories = ALL_CATEGORIES.filter(cat =>
     cat.name.toLowerCase().includes(query.toLowerCase())
   )
 
-  const filteredProducts = MOCK_PRODUCTS.filter(product =>
-    product.name.toLowerCase().includes(query.toLowerCase())
-  ).slice(0, 5) // Limit to 5 results
+  // Get all available items (quick links or search results)
+  const availableItems = query === "" 
+    ? Object.values(QUICK_LINKS).flat()
+    : filteredCategories
 
-  // Handle keyboard shortcuts
+  // Handle keyboard shortcuts and navigation
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
@@ -55,137 +61,159 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
       if (e.key === "Escape") {
         onOpenChange(false)
       }
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setSelectedIndex((prev) => (prev + 1) % availableItems.length)
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setSelectedIndex((prev) => (prev - 1 + availableItems.length) % availableItems.length)
+      }
+      if (e.key === "Enter" && availableItems.length > 0) {
+        e.preventDefault()
+        handleLinkClick(availableItems[selectedIndex].slug)
+      }
     }
 
     document.addEventListener("keydown", down)
     return () => document.removeEventListener("keydown", down)
-  }, [open, onOpenChange])
+  }, [open, onOpenChange, selectedIndex, availableItems])
 
-  // Reset query when modal closes
+  // Reset query and selection when modal closes or query changes
   useEffect(() => {
     if (!open) {
       setQuery("")
+      setSelectedIndex(0)
     }
   }, [open])
 
-  const handleCategoryClick = (slug: string) => {
-    router.push(`/categories/${slug}`)
-    onOpenChange(false)
-  }
+  useEffect(() => {
+    setSelectedIndex(0)
+  }, [query])
 
-  const handleProductClick = (category: string) => {
-    router.push(`/categories/${category}`)
+  const handleLinkClick = (slug: string) => {
+    router.push(`/categories/${slug}`)
     onOpenChange(false)
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl p-0 gap-0 bg-card" showCloseButton={false}>
-        <DialogHeader className="px-6 pt-6 pb-4 border-b">
-          <div className="flex items-center gap-3">
+      <DialogContent className="max-w-3xl p-0 gap-0 bg-card" showCloseButton={false}>
+        <VisuallyHidden>
+          <DialogTitle>Search categories and products</DialogTitle>
+        </VisuallyHidden>
+        
+        {/* Search Input Header */}
+        <div className="px-6 pt-6 pb-4 border-b border-border/50">
+          <div className="flex items-center gap-3 relative">
             <Search className="h-5 w-5 text-muted-foreground shrink-0" />
             <Input
               placeholder="What are you looking for?"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="border-0 focus-visible:ring-0 text-base px-2 py-1.5 h-auto flex-1 bg-transparent"
+              className="border-0 focus-visible:ring-0 text-base px-2 py-1 h-auto flex-1 placeholder:text-muted-foreground/60"
               autoFocus
             />
-            {query && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                onClick={() => setQuery("")}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-            <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs border rounded bg-muted text-muted-foreground">
-              ESC
+            <kbd className="px-2 py-1 text-xs border border-border rounded bg-muted/50 text-muted-foreground font-mono shrink-0">
+              esc
             </kbd>
           </div>
-        </DialogHeader>
+        </div>
 
-        <div className="max-h-[400px] overflow-y-auto p-6 space-y-6">
+        {/* Content Area */}
+        <div className="max-h-[500px] overflow-y-auto px-6 py-6">
           {query === "" ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Search className="h-12 w-12 mx-auto mb-3 opacity-40" />
-              <p>Start typing to search...</p>
+            // Show quick links when no search query
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {Object.entries(QUICK_LINKS).map(([section, links]) => (
+                <div key={section}>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                    {section}
+                  </h3>
+                  <div className="space-y-1">
+                    {links.map((link, idx) => {
+                      const IconComponent = link.icon
+                      const globalIndex = Object.values(QUICK_LINKS).flat().findIndex(l => l.slug === link.slug)
+                      const isSelected = globalIndex === selectedIndex
+                      return (
+                        <button
+                          key={link.slug}
+                          onClick={() => handleLinkClick(link.slug)}
+                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left group ${
+                            isSelected ? 'bg-muted/70' : 'hover:bg-muted/70'
+                          }`}
+                        >
+                          <IconComponent className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="text-sm font-medium text-primary group-hover:text-primary/80 transition-colors">
+                            {link.name}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
+            // Show search results
             <>
-              {/* Categories */}
-              {filteredCategories.length > 0 && (
+              {filteredCategories.length > 0 ? (
                 <div>
-                  <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                     Categories
                   </h3>
-                  <div className="space-y-2">
-                    {filteredCategories.map((category) => (
-                      <button
-                        key={category.slug}
-                        onClick={() => handleCategoryClick(category.slug)}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors text-left group"
-                      >
-                        <span className="text-2xl">{category.icon}</span>
-                        <div className="flex-1">
-                          <p className="font-medium group-hover:text-primary transition-colors">
-                            {category.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">Category</p>
-                        </div>
-                        <Badge variant="outline" className="ml-auto">
-                          View
-                        </Badge>
-                      </button>
-                    ))}
+                  <div className="space-y-1">
+                    {filteredCategories.map((category, idx) => {
+                      const IconComponent = category.icon
+                      const isSelected = idx === selectedIndex
+                      return (
+                        <button
+                          key={category.slug}
+                          onClick={() => handleLinkClick(category.slug)}
+                          className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors text-left group ${
+                            isSelected ? 'bg-muted/70' : 'hover:bg-muted/70'
+                          }`}
+                        >
+                          <IconComponent className="h-5 w-5 text-muted-foreground shrink-0" />
+                          <div className="flex-1">
+                            <p className="font-medium text-foreground group-hover:text-primary transition-colors">
+                              {category.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Category</p>
+                          </div>
+                          <Badge variant="outline" className="ml-auto shrink-0">
+                            View
+                          </Badge>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-              )}
-
-              {/* Products */}
-              {filteredProducts.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold mb-3 text-muted-foreground uppercase tracking-wider">
-                    Products
-                  </h3>
-                  <div className="space-y-2">
-                    {filteredProducts.map((product) => (
-                      <button
-                        key={product.asin}
-                        onClick={() => handleProductClick(product.category)}
-                        className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors text-left group"
-                      >
-                        <div className="h-10 w-10 rounded bg-muted flex items-center justify-center text-xl">
-                          {CATEGORIES.find(c => c.slug === product.category)?.icon}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium group-hover:text-primary transition-colors truncate">
-                            {product.name}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            in {CATEGORIES.find(c => c.slug === product.category)?.name}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="ml-auto shrink-0">
-                          View
-                        </Badge>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* No results */}
-              {filteredCategories.length === 0 && filteredProducts.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <p>No results found for &quot;{query}&quot;</p>
-                  <p className="text-sm mt-2">Try searching for categories like &quot;batteries&quot; or products</p>
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No results found for "{query}"</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Try searching for categories like "batteries" or "protein"
+                  </p>
                 </div>
               )}
             </>
           )}
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-3 border-t border-border/50 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <kbd className="px-1.5 py-0.5 border rounded bg-muted/50 font-mono">↑↓</kbd>
+            <span>Navigate</span>
+            <kbd className="px-1.5 py-0.5 border rounded bg-muted/50 font-mono">↵</kbd>
+            <span>Select</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span>Press</span>
+            <kbd className="px-1.5 py-0.5 border rounded bg-muted/50 font-mono">⌘K</kbd>
+            <span>to toggle</span>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

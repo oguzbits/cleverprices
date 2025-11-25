@@ -80,9 +80,6 @@ export default function HomePage() {
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="text-lg px-8 h-14 rounded-full border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-all">
-                  See How It Works
-                </Button>
               </div>
 
               <div className="flex items-center gap-8 border-t border-border/50 pt-8">
