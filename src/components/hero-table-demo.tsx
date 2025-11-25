@@ -155,16 +155,10 @@ export function HeroTableDemo() {
           {/* Main Content */}
           <div className="flex-1 flex flex-col min-w-0 bg-muted/40">
             {/* Page Header */}
-            <div className="p-4 border-b border-border">
-              <h2 className="text-lg font-bold text-foreground mb-1">Disk Price Comparison</h2>
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">Showing 100 disks. Updated hourly.</p>
-                <div className="relative w-48 hidden md:block">
-                  <Search className="absolute left-2 top-1.5 w-3 h-3 text-muted-foreground" />
-                  <div className="w-full h-7 bg-muted/50 border border-border rounded-md pl-7 text-xs flex items-center text-muted-foreground">
-                    Search disks...
-                  </div>
-                </div>
+            <div className="px-3 py-2 border-b border-border">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-foreground">Disk Price Comparison</h2>
+                <span className="text-[10px] text-muted-foreground">· 100 disks</span>
               </div>
             </div>
 
