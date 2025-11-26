@@ -56,7 +56,7 @@ export function CookieConsent() {
                   These are necessary to track purchases made through our links.
                 </p>
                 <p className="text-xs">
-                  Mehr Informationen: {" "}
+                  Mehr Informationen / More Information: {" "}
                   <Link href="/datenschutz" className="text-primary hover:underline">
                     Datenschutz / Privacy
                   </Link>
