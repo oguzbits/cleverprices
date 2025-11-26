@@ -96,7 +96,7 @@ export default function HomePage() {
         <div className="absolute inset-0 bg-background z-0" />
 
         {/* Right side background - MUI-inspired gradient */}
-        <div className="absolute top-0 right-0 bottom-0 w-1/2 bg-blue-50 dark:bg-[#050810] border-l border-slate-200 dark:border-[hsl(210,14%,13%)] z-0 rounded-bl-xl" />
+        <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-1/2 bg-blue-50 dark:bg-[#050810] border-l border-slate-200 dark:border-[hsl(210,14%,13%)] z-0 rounded-bl-xl" />
 
         {/* Subtle gradient overlays */}
         <div className="absolute top-0 left-0 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 opacity-30" />
