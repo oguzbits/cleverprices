@@ -94,10 +94,10 @@ export default function HomePage() {
       <section className="relative overflow-hidden">
         {/* Left side background */}
         <div className="absolute inset-0 bg-background z-0" />
-        
+
         {/* Right side background - MUI-inspired gradient */}
         <div className="absolute top-0 right-0 bottom-0 w-1/2 bg-blue-50 dark:bg-[#050810] border-l border-slate-200 dark:border-[hsl(210,14%,13%)] z-0 rounded-bl-xl" />
-        
+
         {/* Subtle gradient overlays */}
         <div className="absolute top-0 left-0 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 opacity-30" />
 
@@ -114,9 +114,7 @@ export default function HomePage() {
               </Badge>
 
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 drop-shadow-sm leading-[1.1]">
-                <span className="text-primary">
-                  Shop by Unit Price.
-                </span>
+                <span className="text-primary">Shop by Unit Price.</span>
               </h1>
 
               <p className="text-xl text-muted-foreground max-w-xl mb-8 leading-relaxed">
@@ -165,7 +163,7 @@ export default function HomePage() {
       {/* Trending Stats */}
       <section className="container px-4 mx-auto mt-12 relative z-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-background/60 dark:bg-background/60 backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
+          <Card className="bg-card dark:bg-card backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Most Viewed Today
@@ -183,7 +181,7 @@ export default function HomePage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-background/60 dark:bg-background/60 backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
+          <Card className="bg-card dark:bg-card backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Smart Analysis
@@ -203,7 +201,7 @@ export default function HomePage() {
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-background/60 dark:bg-background/60 backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
+          <Card className="bg-card dark:bg-card backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
                 Global Coverage
@@ -226,8 +224,6 @@ export default function HomePage() {
 
       {/* Featured Deals Carousel */}
       <FeaturedDeals />
-
-
 
       {/* Categories */}
       <section className="container px-4 mx-auto py-12">
@@ -257,7 +253,7 @@ export default function HomePage() {
               href={`/categories/${category.slug}`}
               className="w-full sm:w-64"
             >
-              <Card className="relative h-full bg-card/50 hover:bg-card/80 backdrop-blur-sm transition-all duration-300 cursor-pointer border-primary/10 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 hover:-translate-y-2 hover:scale-105 group">
+              <Card className="relative h-full bg-card/50 hover:bg-card/80 backdrop-blur-sm transition-all duration-300 cursor-pointer border-primary/10 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 group">
                 {idx === 0 && (
                   <div className="absolute -top-2 -right-2 z-10">
                     <Badge className="bg-primary border-0 shadow-lg">
@@ -266,7 +262,7 @@ export default function HomePage() {
                   </div>
                 )}
                 <CardHeader className="text-center">
-                  <div className="mx-auto bg-primary/5 p-4 rounded-2xl mb-4 group-hover:bg-primary/10 group-hover:scale-110 transition-all duration-300">
+                  <div className="mx-auto bg-primary/5 p-4 rounded-2xl mb-4 group-hover:bg-primary/10 transition-all duration-300">
                     <category.icon className="h-8 w-8 text-primary" />
                   </div>
                   <CardTitle className="mb-1 group-hover:text-primary transition-colors">
