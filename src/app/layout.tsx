@@ -72,6 +72,7 @@ export const metadata: Metadata = {
   other: {
     "msapplication-TileColor": "#3B82F6",
     "msapplication-config": "/browserconfig.xml",
+    "color-scheme": "light dark",
   },
   robots: {
     index: true,
