@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     default: "bestprices.today - Compare Price Per Unit",
     template: "%s | bestprices.today",
   },
-  description: "Find the best value by comparing price per unit across thousands of products. We track millions of products to find you the absolute best deals on HDDs, SSDs, and more.",
+  description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
   keywords: ["price comparison", "price per unit", "best deals", "HDD prices", "SSD prices", "storage deals"],
   authors: [{ name: "BestPrices Team" }],
   creator: "BestPrices Team",
@@ -42,8 +42,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://bestprices.today",
-    title: "bestprices.today - Compare Price Per Unit",
-    description: "Stop overpaying. Compare price per unit for HDDs, SSDs, and more.",
+    title: "bestprices.today - See the Real Value",
+    description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
     siteName: "bestprices.today",
     images: [
       {
@@ -56,8 +56,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "bestprices.today - Compare Price Per Unit",
-    description: "Stop overpaying. Compare price per unit for HDDs, SSDs, and more.",
+    title: "bestprices.today - See the Real Value",
+    description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
     images: ["/og-image.png"],
     creator: "@bestprices",
   },
