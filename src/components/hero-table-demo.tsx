@@ -1,11 +1,13 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Check, Search, TrendingUp, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-type Product = {
+// Product Type Definitions
+type HardDriveProduct = {
   id: string
   name: string
   price: number
@@ -19,7 +21,36 @@ type Product = {
   brand: string
 }
 
-const products: Product[] = [
+type BatteryProduct = {
+  id: string
+  name: string
+  price: number
+  packSize: number
+  pricePerUnit: number
+  batteryType: "AA" | "AAA" | "C" | "D"
+  condition: "New" | "Used" | "Renewed"
+  brand: string
+  warranty: string
+}
+
+type DogFoodProduct = {
+  id: string
+  name: string
+  price: number
+  weight: number
+  weightUnit: string
+  pricePerLb: number
+  size: "Small Breed" | "Medium Breed" | "Large Breed"
+  type: "Dry" | "Wet"
+  ageGroup: "Puppy" | "Adult" | "Senior"
+  condition: "New" | "Used" | "Renewed"
+  brand: string
+}
+
+type ProductCategory = "harddrives" | "batteries" | "dogfood"
+
+// Hard Drive Products
+const hardDriveProducts: HardDriveProduct[] = [
   {
     id: "1",
     name: "Seagate Exos X18 18TB",
@@ -85,9 +116,211 @@ const products: Product[] = [
     condition: "New" as const,
     brand: "Crucial"
   }
-].sort((a, b) => a.pricePerTB - b.pricePerTB) // Pre-sorted by unit price
+].sort((a, b) => a.pricePerTB - b.pricePerTB)
+
+// Battery Products
+const batteryProducts: BatteryProduct[] = [
+  {
+    id: "1",
+    name: "AmazonBasics AA 48-Pack",
+    price: 11.99,
+    packSize: 48,
+    pricePerUnit: 0.250,
+    batteryType: "AA",
+    condition: "New" as const,
+    brand: "AmazonBasics",
+    warranty: "1 year"
+  },
+  {
+    id: "2",
+    name: "Energizer AAA 24-Pack",
+    price: 8.99,
+    packSize: 24,
+    pricePerUnit: 0.375,
+    batteryType: "AAA",
+    condition: "New" as const,
+    brand: "Energizer",
+    warranty: "2 years"
+  },
+  {
+    id: "3",
+    name: "Duracell AA 20-Pack",
+    price: 12.99,
+    packSize: 20,
+    pricePerUnit: 0.650,
+    batteryType: "AA",
+    condition: "New" as const,
+    brand: "Duracell",
+    warranty: "5 years"
+  },
+  {
+    id: "4",
+    name: "Rayovac C 12-Pack",
+    price: 9.99,
+    packSize: 12,
+    pricePerUnit: 0.833,
+    batteryType: "C",
+    condition: "New" as const,
+    brand: "Rayovac",
+    warranty: "3 years"
+  },
+  {
+    id: "5",
+    name: "Duracell D 8-Pack",
+    price: 11.99,
+    packSize: 8,
+    pricePerUnit: 1.499,
+    batteryType: "D",
+    condition: "New" as const,
+    brand: "Duracell",
+    warranty: "5 years"
+  }
+].sort((a, b) => a.pricePerUnit - b.pricePerUnit)
+
+// Dog Food Products
+const dogFoodProducts: DogFoodProduct[] = [
+  {
+    id: "1",
+    name: "Purina Pro Plan Adult",
+    price: 47.99,
+    weight: 35,
+    weightUnit: "lbs",
+    pricePerLb: 1.371,
+    size: "Large Breed",
+    type: "Dry",
+    ageGroup: "Adult",
+    condition: "New" as const,
+    brand: "Purina"
+  },
+  {
+    id: "2",
+    name: "Blue Buffalo Senior",
+    price: 54.99,
+    weight: 30,
+    weightUnit: "lbs",
+    pricePerLb: 1.833,
+    size: "Medium Breed",
+    type: "Dry",
+    ageGroup: "Senior",
+    condition: "New" as const,
+    brand: "Blue Buffalo"
+  },
+  {
+    id: "3",
+    name: "Royal Canin Puppy",
+    price: 59.99,
+    weight: 30,
+    weightUnit: "lbs",
+    pricePerLb: 2.000,
+    size: "Small Breed",
+    type: "Dry",
+    ageGroup: "Puppy",
+    condition: "New" as const,
+    brand: "Royal Canin"
+  },
+  {
+    id: "4",
+    name: "Hill's Science Diet Adult",
+    price: 64.99,
+    weight: 30,
+    weightUnit: "lbs",
+    pricePerLb: 2.166,
+    size: "Medium Breed",
+    type: "Dry",
+    ageGroup: "Adult",
+    condition: "New" as const,
+    brand: "Hill's"
+  },
+  {
+    id: "5",
+    name: "Wellness CORE Grain-Free",
+    price: 69.99,
+    weight: 26,
+    weightUnit: "lbs",
+    pricePerLb: 2.692,
+    size: "Large Breed",
+    type: "Dry",
+    ageGroup: "Adult",
+    condition: "New" as const,
+    brand: "Wellness"
+  }
+].sort((a, b) => a.pricePerLb - b.pricePerLb)
+
+// Category Configuration
+const categoryConfig = {
+  harddrives: {
+    title: "Disk Price Comparison",
+    count: "100 disks",
+    url: "bestprices.today/categories/storage",
+    unitLabel: "Price/TB",
+    insightText: "The 18TB drive is 4x cheaper per TB than the 8TB SSD!",
+    filters: {
+      filter1: { title: "Condition", options: ["New", "Used", "Renewed"] },
+      filter2: { title: "Capacity", options: ["18 TB", "14 TB", "8 TB", "4 TB"] },
+      filter3: { title: "Technology", options: ["HDD", "SSD"] }
+    }
+  },
+  batteries: {
+    title: "Battery Price Comparison",
+    count: "50 packs",
+    url: "bestprices.today/categories/batteries",
+    unitLabel: "Price/Unit",
+    insightText: "AmazonBasics 48-pack is 6x cheaper per battery than Duracell D 8-pack!",
+    filters: {
+      filter1: { title: "Condition", options: ["New", "Used", "Renewed"] },
+      filter2: { title: "Battery Type", options: ["AA", "AAA", "C", "D"] },
+      filter3: { title: "Pack Size", options: ["48 pack", "24 pack", "20 pack", "12 pack"] }
+    }
+  },
+  dogfood: {
+    title: "Dog Food Price Comparison",
+    count: "75 products",
+    url: "bestprices.today/categories/pet-supplies",
+    unitLabel: "Price/lb",
+    insightText: "Purina Pro Plan is 2x cheaper per pound than premium brands!",
+    filters: {
+      filter1: { title: "Size", options: ["Small Breed", "Medium Breed", "Large Breed"] },
+      filter2: { title: "Type", options: ["Dry", "Wet"] },
+      filter3: { title: "Age Group", options: ["Puppy", "Adult", "Senior"] }
+    }
+  }
+}
 
 export function HeroTableDemo() {
+  const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0)
+  const [fadeOut, setFadeOut] = useState(false)
+  
+  const categories: ProductCategory[] = ["harddrives", "batteries", "dogfood"]
+  const currentCategory = categories[currentCategoryIndex]
+  const config = categoryConfig[currentCategory]
+
+  // Rotation logic
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFadeOut(true)
+      setTimeout(() => {
+        setCurrentCategoryIndex((prev) => (prev + 1) % categories.length)
+        setFadeOut(false)
+      }, 300) // Half of transition duration
+    }, 5000)
+
+    return () => clearInterval(interval)
+  }, [])
+
+  // Get current products based on category
+  const getCurrentProducts = () => {
+    switch (currentCategory) {
+      case "harddrives":
+        return hardDriveProducts
+      case "batteries":
+        return batteryProducts
+      case "dogfood":
+        return dogFoodProducts
+    }
+  }
+
+  const products = getCurrentProducts()
+
   return (
     <div className="relative w-full max-w-5xl mx-auto perspective-1000">
       {/* Background Glow */}
@@ -105,7 +338,7 @@ export function HeroTableDemo() {
             <div className="h-4 w-px bg-border shrink-0" />
             <div className="flex items-center gap-2 text-xs text-muted-foreground min-w-0 flex-1">
               <Search className="w-3 h-3 shrink-0" />
-              <span className="truncate">bestprices.today/categories/storage</span>
+              <span className="truncate">{config.url}</span>
             </div>
           </div>
           
@@ -116,41 +349,41 @@ export function HeroTableDemo() {
           </Badge>
         </div>
 
-        <div className="flex h-[400px]">
+        <div className={cn("flex h-[400px] transition-opacity duration-300", fadeOut && "opacity-50")}>
           {/* Sidebar */}
           <div className="w-32 sm:w-48 border-r border-border bg-muted/20 p-2 sm:p-4 hidden sm:block">
             <div className="space-y-6">
               <div>
-                <h3 className="text-xs font-semibold text-foreground mb-3">Condition</h3>
+                <h3 className="text-xs font-semibold text-foreground mb-3">{config.filters.filter1.title}</h3>
                 <div className="space-y-2">
-                  {["New", "Used", "Renewed"].map((c) => (
-                    <div key={c} className="flex items-center gap-2">
+                  {config.filters.filter1.options.map((option) => (
+                    <div key={option} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-[3px] bg-primary/80" />
-                      <span className="text-[11px] text-muted-foreground">{c}</span>
+                      <span className="text-[11px] text-muted-foreground">{option}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-foreground mb-3">Capacity</h3>
+                <h3 className="text-xs font-semibold text-foreground mb-3">{config.filters.filter2.title}</h3>
                 <div className="space-y-2">
-                  {["18 TB", "14 TB", "8 TB", "4 TB"].map((c) => (
-                    <div key={c} className="flex items-center gap-2">
+                  {config.filters.filter2.options.map((option) => (
+                    <div key={option} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-[3px] border border-muted-foreground/30" />
-                      <span className="text-[11px] text-muted-foreground">{c}</span>
+                      <span className="text-[11px] text-muted-foreground">{option}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-foreground mb-3">Technology</h3>
+                <h3 className="text-xs font-semibold text-foreground mb-3">{config.filters.filter3.title}</h3>
                 <div className="space-y-2">
-                  {["HDD", "SSD"].map((t) => (
-                    <div key={t} className="flex items-center gap-2">
+                  {config.filters.filter3.options.map((option) => (
+                    <div key={option} className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-[3px] border border-muted-foreground/30" />
-                      <span className="text-[11px] text-muted-foreground">{t}</span>
+                      <span className="text-[11px] text-muted-foreground">{option}</span>
                     </div>
                   ))}
                 </div>
@@ -163,8 +396,8 @@ export function HeroTableDemo() {
             {/* Page Header */}
             <div className="px-3 py-2 border-b border-border">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-foreground">Disk Price Comparison</h2>
-                <span className="text-[10px] text-muted-foreground">· 100 disks</span>
+                <h2 className="text-sm font-bold text-foreground">{config.title}</h2>
+                <span className="text-[10px] text-muted-foreground">· {config.count}</span>
               </div>
             </div>
 
@@ -175,19 +408,31 @@ export function HeroTableDemo() {
                 <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-border text-[10px] font-semibold text-muted-foreground bg-muted/50">
                   <div className="col-span-2 flex items-center gap-1 text-primary">
                     <TrendingUp className="w-3 h-3" />
-                    Price/TB
+                    {config.unitLabel}
                   </div>
                   <div className="col-span-2">Price</div>
-                  <div className="col-span-2">Capacity</div>
-                  <div className="col-span-2">Warranty</div>
-                  <div className="col-span-1">Tech</div>
+                  <div className="col-span-2">
+                    {currentCategory === "harddrives" && "Capacity"}
+                    {currentCategory === "batteries" && "Pack Size"}
+                    {currentCategory === "dogfood" && "Weight"}
+                  </div>
+                  <div className="col-span-2">
+                    {currentCategory === "harddrives" && "Warranty"}
+                    {currentCategory === "batteries" && "Warranty"}
+                    {currentCategory === "dogfood" && "Size"}
+                  </div>
+                  <div className="col-span-1">
+                    {currentCategory === "harddrives" && "Tech"}
+                    {currentCategory === "batteries" && "Type"}
+                    {currentCategory === "dogfood" && "Type"}
+                  </div>
                   <div className="col-span-1">Cond.</div>
                   <div className="col-span-2">Link</div>
                 </div>
 
                 {/* Table Body */}
                 <div className="divide-y divide-border">
-                  {products.map((product, idx) => (
+                  {products.map((product: any, idx) => (
                     <div 
                       key={product.id}
                       className={cn(
@@ -196,7 +441,13 @@ export function HeroTableDemo() {
                       )}
                     >
                       <div className="col-span-2 font-mono font-medium text-primary flex items-center gap-2">
-                        ${product.pricePerTB?.toFixed(3) || "0.000"}
+                        ${
+                          currentCategory === "harddrives" 
+                            ? (product as HardDriveProduct).pricePerTB.toFixed(3)
+                            : currentCategory === "batteries"
+                            ? (product as BatteryProduct).pricePerUnit.toFixed(3)
+                            : (product as DogFoodProduct).pricePerLb.toFixed(3)
+                        }
                         {idx === 0 && (
                           <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-0 h-4 px-1.5 text-[8px] animate-in zoom-in">
                             Best
@@ -204,16 +455,22 @@ export function HeroTableDemo() {
                         )}
                       </div>
                       <div className="col-span-2 font-medium text-foreground">
-                        ${product.price?.toFixed(2) || "0.00"}
+                        ${product.price.toFixed(2)}
                       </div>
                       <div className="col-span-2 text-muted-foreground">
-                        {product.capacity} {product.capacityUnit}
+                        {currentCategory === "harddrives" && `${(product as HardDriveProduct).capacity} ${(product as HardDriveProduct).capacityUnit}`}
+                        {currentCategory === "batteries" && `${(product as BatteryProduct).packSize} pack`}
+                        {currentCategory === "dogfood" && `${(product as DogFoodProduct).weight} ${(product as DogFoodProduct).weightUnit}`}
                       </div>
                       <div className="col-span-2 text-muted-foreground">
-                        {product.warranty}
+                        {currentCategory === "harddrives" && (product as HardDriveProduct).warranty}
+                        {currentCategory === "batteries" && (product as BatteryProduct).warranty}
+                        {currentCategory === "dogfood" && (product as DogFoodProduct).size}
                       </div>
                       <div className="col-span-1 text-muted-foreground">
-                        {product.technology}
+                        {currentCategory === "harddrives" && (product as HardDriveProduct).technology}
+                        {currentCategory === "batteries" && (product as BatteryProduct).batteryType}
+                        {currentCategory === "dogfood" && (product as DogFoodProduct).type}
                       </div>
                       <div className="col-span-1">
                         <Badge variant="secondary" className={cn(
@@ -248,7 +505,7 @@ export function HeroTableDemo() {
           <div>
             <p className="text-[10px] font-medium text-primary mb-0.5">Hidden Value Found</p>
             <p className="text-[10px] text-muted-foreground leading-tight">
-              The 18TB drive is 4x cheaper per TB than the 8TB SSD!
+              {config.insightText}
             </p>
           </div>
         </div>
