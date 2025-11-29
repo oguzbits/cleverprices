@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, startTransition } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Check, Search, TrendingUp, Sparkles } from "lucide-react"
@@ -292,6 +292,7 @@ export function HeroTableDemo() {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0)
   const [fadeOut, setFadeOut] = useState(false)
   
+  // React Compiler automatically memoizes these - no need for useMemo
   const currentCategory = categories[currentCategoryIndex]
   const config = categoryConfig[currentCategory]
 
@@ -300,7 +301,10 @@ export function HeroTableDemo() {
     const interval = setInterval(() => {
       setFadeOut(true)
       setTimeout(() => {
-        setCurrentCategoryIndex((prev) => (prev + 1) % categories.length)
+        // Use startTransition for non-urgent state updates
+        startTransition(() => {
+          setCurrentCategoryIndex((prev) => (prev + 1) % categories.length)
+        })
         setFadeOut(false)
       }, 300) // Half of transition duration
     }, 8000) // Increased from 5000ms to 8000ms
@@ -308,7 +312,7 @@ export function HeroTableDemo() {
     return () => clearInterval(interval)
   }, [])
 
-  // Get current products based on category
+  // React Compiler automatically memoizes this - no need for useMemo
   const products = 
     currentCategory === "harddrives" ? hardDriveProducts :
     currentCategory === "batteries" ? batteryProducts :

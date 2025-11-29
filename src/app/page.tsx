@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 
-// Lazy load heavy components
+// Lazy load heavy components - only load when in viewport
 const InteractiveGlobe = dynamic(
   () => import("@/components/ui/globe").then((mod) => ({ default: mod.Globe })),
   { 
@@ -33,9 +33,13 @@ const InteractiveGlobe = dynamic(
   }
 );
 
+// Defer FeaturedDeals - load after initial render to reduce TBT
 const FeaturedDeals = dynamic(
   () => import("@/components/ui/featured-deals").then((mod) => ({ default: mod.FeaturedDeals })),
-  { ssr: true }
+  { 
+    ssr: false,
+    loading: () => <div className="container px-4 mx-auto py-12 h-64" />
+  }
 );
 
 const categories = [
@@ -59,16 +63,6 @@ const categories = [
   },
   { name: "Diapers", icon: Baby, count: "200+", slug: "diapers" },
   { name: "Batteries", icon: Battery, count: "300+", slug: "batteries" },
-];
-
-const data = [
-  { name: "Mon", value: 400 },
-  { name: "Tue", value: 300 },
-  { name: "Wed", value: 550 },
-  { name: "Thu", value: 450 },
-  { name: "Fri", value: 600 },
-  { name: "Sat", value: 700 },
-  { name: "Sun", value: 800 },
 ];
 
 export default function HomePage() {
