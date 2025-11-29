@@ -8,6 +8,7 @@ export function Globe({ className }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const pointerInteracting = useRef<number | null>(null);
   const pointerInteractionMovement = useRef(0);
+  const isInView = useRef(true); // Start as true to avoid initial flicker
   const [{ r }, api] = useSpring(() => ({
     r: 0,
     config: {
@@ -21,9 +22,25 @@ export function Globe({ className }: { className?: string }) {
   useEffect(() => {
     let phi = 0;
     let width = 0;
+    let frameCount = 0;
     const onResize = () => canvasRef.current && (width = canvasRef.current.offsetWidth);
     window.addEventListener("resize", onResize);
     onResize();
+    
+    // Intersection Observer to detect when globe is in viewport
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isInView.current = entry.isIntersecting;
+        });
+      },
+      { threshold: 0.1 }
+    );
+    
+    if (canvasRef.current) {
+      observer.observe(canvasRef.current);
+    }
+    
     const globe = createGlobe(canvasRef.current!, {
       devicePixelRatio: 2,
       width: width * 2,
@@ -62,8 +79,12 @@ export function Globe({ className }: { className?: string }) {
         { location: [20.5937, 78.9629], size: 0.05 },
       ],
         onRender: (state) => {
+        // Reduce frame rate to ~30fps for better performance
+        frameCount++;
+        if (frameCount % 2 !== 0) return; // Skip every other frame
+        
         // This prevents rotation while dragging
-        if (!pointerInteracting.current) {
+        if (!pointerInteracting.current && isInView.current) {
           // Called on every animation frame.
           // `state` will be an empty object, return updated params.
           phi += 0.003;
@@ -76,6 +97,7 @@ export function Globe({ className }: { className?: string }) {
     setTimeout(() => (canvasRef.current!.style.opacity = "1"));
     return () => {
       globe.destroy();
+      observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
   }, []);

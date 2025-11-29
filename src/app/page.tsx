@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,9 +33,21 @@ import {
   Tooltip,
   Rectangle,
 } from "recharts";
-import { Globe as InteractiveGlobe } from "@/components/ui/globe";
-import { FeaturedDeals } from "@/components/ui/featured-deals";
 import { HeroTableDemo } from "@/components/hero-table-demo";
+
+// Lazy load heavy components
+const InteractiveGlobe = dynamic(
+  () => import("@/components/ui/globe").then((mod) => ({ default: mod.Globe })),
+  { 
+    ssr: false,
+    loading: () => <div className="w-full max-w-[500px] aspect-square mx-auto" />
+  }
+);
+
+const FeaturedDeals = dynamic(
+  () => import("@/components/ui/featured-deals").then((mod) => ({ default: mod.FeaturedDeals })),
+  { ssr: true }
+);
 
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 
@@ -251,7 +264,7 @@ export default function HomePage() {
             <Link
               key={category.slug}
               href={`/categories/${category.slug}`}
-              className="w-full sm:w-64"
+              className="w-full sm:w-64 no-underline"
             >
               <Card className="relative h-full bg-card/50 hover:bg-card/80 backdrop-blur-sm transition-all duration-300 cursor-pointer border-primary/10 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 group">
                 {idx === 0 && (

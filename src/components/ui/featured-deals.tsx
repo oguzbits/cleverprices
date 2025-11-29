@@ -174,10 +174,10 @@ export function FeaturedDeals() {
           <button
             key={idx}
             onClick={() => setCurrentIndex(idx)}
-            className={`h-2 rounded-full transition-all duration-300 ${
+            className={`h-1.5 rounded-full transition-all duration-300 ${
               idx === currentIndex 
-                ? "w-8 bg-primary" 
-                : "w-2 bg-muted hover:bg-muted-foreground/50"
+                ? "w-6 bg-primary" 
+                : "w-1.5 bg-muted hover:bg-muted-foreground/50"
             }`}
             aria-label={`Go to slide ${idx + 1}`}
           />

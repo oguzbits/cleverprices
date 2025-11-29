@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Check, Search, TrendingUp, Sparkles } from "lucide-react"
@@ -294,7 +294,7 @@ export function HeroTableDemo() {
   const currentCategory = categories[currentCategoryIndex]
   const config = categoryConfig[currentCategory]
 
-  // Rotation logic
+  // Rotation logic - increased to 8s for better performance
   useEffect(() => {
     const interval = setInterval(() => {
       setFadeOut(true)
@@ -302,13 +302,13 @@ export function HeroTableDemo() {
         setCurrentCategoryIndex((prev) => (prev + 1) % categories.length)
         setFadeOut(false)
       }, 300) // Half of transition duration
-    }, 5000)
+    }, 8000) // Increased from 5000ms to 8000ms
 
     return () => clearInterval(interval)
   }, [])
 
-  // Get current products based on category
-  const getCurrentProducts = () => {
+  // Get current products based on category - memoized for performance
+  const products = useMemo(() => {
     switch (currentCategory) {
       case "harddrives":
         return hardDriveProducts
@@ -317,9 +317,7 @@ export function HeroTableDemo() {
       case "dogfood":
         return dogFoodProducts
     }
-  }
-
-  const products = getCurrentProducts()
+  }, [currentCategory])
 
   return (
     <div className="relative w-full max-w-5xl mx-auto perspective-1000">
@@ -349,7 +347,7 @@ export function HeroTableDemo() {
           </Badge>
         </div>
 
-        <div className={cn("flex h-[400px] transition-opacity duration-300", fadeOut && "opacity-50")}>
+        <div className={cn("flex h-[400px] transition-opacity duration-300", fadeOut && "opacity-50")} style={{ willChange: fadeOut ? 'opacity' : 'auto' }}>
           {/* Sidebar */}
           <div className="w-32 sm:w-48 border-r border-border bg-muted/20 p-2 sm:p-4 hidden sm:block">
             <div className="space-y-6">

@@ -45,24 +45,24 @@
 
 :root {
   --radius: 0.625rem;
-  --background: #F0F2F5;
-  --foreground: #1A1E23;
-  --card: #FFFFFF;
-  --card-foreground: #1A1E23;
-  --popover: #FFFFFF;
-  --popover-foreground: #1A1E23;
+  --background: #f0f2f5;
+  --foreground: #1a1e23;
+  --card: #ffffff;
+  --card-foreground: #1a1e23;
+  --popover: #ffffff;
+  --popover-foreground: #1a1e23;
   --primary: oklch(0.55 0.22 255);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: #F3F6F9;
-  --muted-foreground: #46505A;
+  --muted: #f3f6f9;
+  --muted-foreground: #46505a;
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: #E5EAF2;
-  --input: #E5EAF2;
+  --border: #e5eaf2;
+  --input: #e5eaf2;
   --ring: oklch(0.55 0.22 255);
   --chart-1: oklch(0.55 0.22 255);
   --chart-2: oklch(0.65 0.2 230);
@@ -119,6 +119,20 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  
+  /* Accessibility: Links should have underline on hover/focus, not just color */
+  a:not(.no-underline):hover,
+  a:not(.no-underline):focus-visible {
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
+  }
+  
+  /* Improved focus indicators for keyboard navigation */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 2px;
   }
 }
 

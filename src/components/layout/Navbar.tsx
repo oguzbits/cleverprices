@@ -60,6 +60,7 @@ export function Navbar() {
                 <button
                   onClick={() => setSearchOpen(true)}
                   className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/50 hover:bg-muted transition-colors cursor-pointer min-w-[240px]"
+                  aria-label="Open search"
                 >
                   <Search className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground flex-1 text-left">Search...</span>
@@ -81,6 +82,7 @@ export function Navbar() {
                   size="icon"
                   className="sm:hidden cursor-pointer"
                   onClick={() => setSearchOpen(true)}
+                  aria-label="Open search"
                 >
                   <Search className="h-5 w-5" />
                 </Button>
@@ -94,7 +96,7 @@ export function Navbar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-2 cursor-pointer">
+                    <Button variant="ghost" size="sm" className="gap-2 cursor-pointer" aria-label="Select region">
                       <span className="text-lg">{country.flag}</span>
                       <span className="hidden sm:inline-block">{country.code}</span>
                     </Button>
