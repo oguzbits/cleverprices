@@ -140,10 +140,14 @@ export default function HomePage() {
             </div>
 
             {/* Right Column: Interactive Demo */}
-            <div className="relative">
+            {/* Temporarily disabled for TBT testing */}
+            {/* <div className="relative">
               <Suspense fallback={<div className="w-full max-w-5xl mx-auto h-[400px] bg-muted/20 rounded-lg animate-pulse" />}>
                 <HeroTableDemo />
               </Suspense>
+            </div> */}
+            <div className="relative w-full max-w-5xl mx-auto h-[400px] bg-muted/20 rounded-lg flex items-center justify-center">
+              <p className="text-muted-foreground">Hero Table Demo (Temporarily Disabled for Testing)</p>
             </div>
           </div>
         </div>
