@@ -110,8 +110,7 @@ export default function HomePage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                {/* Temporarily disabled for TBT testing - Button component */}
-                {/* <Button
+                <Button
                   size="lg"
                   className="text-lg px-8 h-14 rounded-full shadow-lg shadow-primary/20 hover:brightness-110 transition-all group"
                   asChild
@@ -120,14 +119,7 @@ export default function HomePage() {
                     Start Saving Now
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
-                </Button> */}
-                <Link 
-                  href="/categories"
-                  className="inline-flex items-center justify-center text-lg px-8 h-14 rounded-full bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                >
-                  Start Saving Now
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
+                </Button>
               </div>
 
               <div className="flex items-center gap-8 border-t border-border/50 pt-8">
@@ -183,13 +175,9 @@ export default function HomePage() {
       </section>
 
       {/* Featured Deals Carousel */}
-      {/* Temporarily disabled for TBT testing */}
-      {/* <Suspense fallback={<div className="container px-4 mx-auto py-12 h-64" />}>
+      <Suspense fallback={<div className="container px-4 mx-auto py-12 h-64" />}>
         <ClientFeaturedDeals />
-      </Suspense> */}
-      <div className="container px-4 mx-auto py-12 h-64 flex items-center justify-center">
-        <p className="text-muted-foreground">Featured Deals (Temporarily Disabled for Testing)</p>
-      </div>
+      </Suspense>
 
       {/* Categories */}
       <section className="container px-4 mx-auto py-12">
