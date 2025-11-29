@@ -22,15 +22,9 @@ import {
   Battery,
   Globe,
 } from "lucide-react";
-// Lazy load heavy components
-const HeroTableDemo = dynamic(
-  () => import("@/components/hero-table-demo").then((mod) => ({ default: mod.HeroTableDemo })),
-  { 
-    ssr: false,
-    loading: () => <div className="w-full max-w-5xl mx-auto h-[400px] bg-muted/20 rounded-lg animate-pulse" />
-  }
-);
+import { HeroTableDemo } from "@/components/hero-table-demo";
 
+// Lazy load heavy components
 const InteractiveGlobe = dynamic(
   () => import("@/components/ui/globe").then((mod) => ({ default: mod.Globe })),
   { 

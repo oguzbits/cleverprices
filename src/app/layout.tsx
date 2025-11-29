@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { CookieConsent } from "@/components/CookieConsent";
+import { LazyCookieConsent } from "@/components/LazyCookieConsent";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -111,7 +111,7 @@ export default function RootLayout({
             <main className="flex-1">{children}</main>
             <Footer />
           </div>
-          <CookieConsent />
+          <LazyCookieConsent />
         </ThemeProvider>
       </body>
     </html>

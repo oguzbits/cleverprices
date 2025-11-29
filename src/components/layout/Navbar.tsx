@@ -11,13 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Moon, Sun, Search } from "lucide-react"
 import { useTheme } from "next-themes"
-import { SearchModal } from "@/components/SearchModal"
+import dynamic from "next/dynamic"
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+
+// Lazy load SearchModal - only needed when user clicks search
+const SearchModal = dynamic(
+  () => import("@/components/SearchModal").then((mod) => ({ default: mod.SearchModal })),
+  { ssr: false }
+)
 
 const countries = [
   { code: "US", name: "United States", flag: "🇺🇸", domain: "amazon.com" },
