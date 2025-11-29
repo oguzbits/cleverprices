@@ -117,7 +117,7 @@ export function FeaturedDeals() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {getVisibleDeals().map((deal, idx) => (
-          <Link key={`${deal.id}-${idx}`} href={`/categories/${deal.categorySlug}`}>
+          <Link key={`${deal.id}-${idx}`} className="no-underline" href={`/categories/${deal.categorySlug}`}>
             <Card className="group relative overflow-hidden bg-card/40 backdrop-blur-xl border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 cursor-pointer h-full">
               {deal.badge && (
                 <div className="absolute top-3 right-3 z-10">

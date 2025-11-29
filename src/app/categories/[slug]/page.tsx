@@ -120,51 +120,48 @@ export default function SubcategoryPage() {
   const [maxCapacity, setMaxCapacity] = React.useState("")
 
   // Filter Logic
-  const filteredProducts = React.useMemo(() => {
-    let data = [...allProducts]
+  // Filter Logic
+  let filteredProducts = [...allProducts]
 
-    if (searchTerm) {
-      data = data.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  if (searchTerm) {
+    filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  }
+
+  if (selectedConditions.length > 0) {
+    filteredProducts = filteredProducts.filter(p => selectedConditions.includes(p.condition))
+  }
+
+  if (selectedTechnologies.length > 0) {
+    filteredProducts = filteredProducts.filter(p => selectedTechnologies.includes(p.technology))
+  }
+
+  if (selectedFormFactors.length > 0) {
+    filteredProducts = filteredProducts.filter(p => selectedFormFactors.includes(p.formFactor))
+  }
+
+  if (minCapacity) {
+    const min = parseFloat(minCapacity)
+    if (!isNaN(min)) filteredProducts = filteredProducts.filter(p => (p.capacity / 1000) >= min)
+  }
+
+  if (maxCapacity) {
+    const max = parseFloat(maxCapacity)
+    if (!isNaN(max)) filteredProducts = filteredProducts.filter(p => (p.capacity / 1000) <= max)
+  }
+
+  // Sorting
+  filteredProducts.sort((a, b) => {
+    const aValue = a[sortConfig.key]
+    const bValue = b[sortConfig.key]
+
+    if (typeof aValue === 'number' && typeof bValue === 'number') {
+      return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue
     }
 
-    if (selectedConditions.length > 0) {
-      data = data.filter(p => selectedConditions.includes(p.condition))
-    }
-
-    if (selectedTechnologies.length > 0) {
-      data = data.filter(p => selectedTechnologies.includes(p.technology))
-    }
-
-    if (selectedFormFactors.length > 0) {
-      data = data.filter(p => selectedFormFactors.includes(p.formFactor))
-    }
-
-    if (minCapacity) {
-      const min = parseFloat(minCapacity)
-      if (!isNaN(min)) data = data.filter(p => (p.capacity / 1000) >= min)
-    }
-
-    if (maxCapacity) {
-      const max = parseFloat(maxCapacity)
-      if (!isNaN(max)) data = data.filter(p => (p.capacity / 1000) <= max)
-    }
-
-    // Sorting
-    data.sort((a, b) => {
-      const aValue = a[sortConfig.key]
-      const bValue = b[sortConfig.key]
-
-      if (typeof aValue === 'number' && typeof bValue === 'number') {
-        return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue
-      }
-
-      if (String(aValue) < String(bValue)) return sortConfig.direction === 'asc' ? -1 : 1
-      if (String(aValue) > String(bValue)) return sortConfig.direction === 'asc' ? 1 : -1
-      return 0
-    })
-
-    return data
-  }, [searchTerm, sortConfig, selectedConditions, selectedTechnologies, selectedFormFactors, minCapacity, maxCapacity])
+    if (String(aValue) < String(bValue)) return sortConfig.direction === 'asc' ? -1 : 1
+    if (String(aValue) > String(bValue)) return sortConfig.direction === 'asc' ? 1 : -1
+    return 0
+  })
 
   const handleSort = (key: keyof Product) => {
     setSortConfig(current => ({
@@ -188,101 +185,6 @@ export default function SubcategoryPage() {
       : <ChevronDown className="ml-1 h-3 w-3" />
   }
 
-  const FilterList = () => (
-    <Accordion type="multiple" defaultValue={["condition", "capacity", "technology", "form-factor"]} className="w-full">
-      <AccordionItem value="condition" className="border-b">
-        <AccordionTrigger className="text-sm font-semibold hover:no-underline pb-3 pt-0">Condition</AccordionTrigger>
-        <AccordionContent>
-          <div className="space-y-1.5 pt-1 pb-3">
-            {["New", "Used", "Renewed"].map((condition) => (
-              <div key={condition} className="flex items-center space-x-3">
-                <Checkbox
-                  id={`condition-${condition}`}
-                  checked={selectedConditions.includes(condition)}
-                  onCheckedChange={() => toggleFilter(setSelectedConditions, condition)}
-                />
-                <Label htmlFor={`condition-${condition}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{condition}</Label>
-              </div>
-            ))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="capacity" className="border-b">
-        <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Capacity (TB)</AccordionTrigger>
-        <AccordionContent>
-          <div className="flex items-center gap-2 pt-1 pb-3">
-            <div className="relative flex-1">
-              <Input
-                type="number"
-                placeholder="Min"
-                value={minCapacity}
-                onChange={(e) => setMinCapacity(e.target.value)}
-                className="w-full pr-8"
-              />
-              <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">TB</span>
-            </div>
-            <span className="text-muted-foreground">-</span>
-            <div className="relative flex-1">
-              <Input
-                type="number"
-                placeholder="Max"
-                value={maxCapacity}
-                onChange={(e) => setMaxCapacity(e.target.value)}
-                className="w-full pr-8"
-              />
-              <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">TB</span>
-            </div>
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="technology" className="border-b">
-        <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Technology</AccordionTrigger>
-        <AccordionContent>
-          <div className="space-y-1.5 pt-1 pb-3">
-            {["HDD", "SSD", "SAS"].map((tech) => (
-              <div key={tech} className="flex items-center space-x-3">
-                <Checkbox
-                  id={`tech-${tech}`}
-                  checked={selectedTechnologies.includes(tech)}
-                  onCheckedChange={() => toggleFilter(setSelectedTechnologies, tech)}
-                />
-                <Label htmlFor={`tech-${tech}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{tech}</Label>
-              </div>
-            ))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-
-      <AccordionItem value="form-factor" className="border-none">
-        <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Form Factor</AccordionTrigger>
-        <AccordionContent>
-          <div className="space-y-1.5 pt-1 pb-3">
-            {["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"].map((ff) => (
-              <div key={ff} className="flex items-center space-x-3">
-                <Checkbox
-                  id={`ff-${ff}`}
-                  checked={selectedFormFactors.includes(ff)}
-                  onCheckedChange={() => toggleFilter(setSelectedFormFactors, ff)}
-                />
-                <Label htmlFor={`ff-${ff}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{ff}</Label>
-              </div>
-            ))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  )
-
-  const FilterPanel = () => (
-    <Card className="p-4">
-      <CardContent className="p-0">
-        <FilterList />
-      </CardContent>
-    </Card>
-  )
-
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex flex-col gap-6">
@@ -303,18 +205,31 @@ export default function SubcategoryPage() {
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                aria-label="Search disks"
               />
             </div>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="lg:hidden">
+                <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open filters">
                   <Filter className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-[300px] sm:w-[400px] px-4 pb-4 pt-12">
                 <SheetTitle className="sr-only">Filters</SheetTitle>
                 <div className="h-full overflow-y-auto">
-                  <FilterPanel />
+                  <FilterPanel 
+                    selectedConditions={selectedConditions}
+                    setSelectedConditions={setSelectedConditions}
+                    selectedTechnologies={selectedTechnologies}
+                    setSelectedTechnologies={setSelectedTechnologies}
+                    selectedFormFactors={selectedFormFactors}
+                    setSelectedFormFactors={setSelectedFormFactors}
+                    minCapacity={minCapacity}
+                    setMinCapacity={setMinCapacity}
+                    maxCapacity={maxCapacity}
+                    setMaxCapacity={setMaxCapacity}
+                    toggleFilter={toggleFilter}
+                  />
                 </div>
               </SheetContent>
             </Sheet>
@@ -325,7 +240,19 @@ export default function SubcategoryPage() {
           {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-72 shrink-0">
             <div>
-              <FilterPanel />
+              <FilterPanel 
+                selectedConditions={selectedConditions}
+                setSelectedConditions={setSelectedConditions}
+                selectedTechnologies={selectedTechnologies}
+                setSelectedTechnologies={setSelectedTechnologies}
+                selectedFormFactors={selectedFormFactors}
+                setSelectedFormFactors={setSelectedFormFactors}
+                minCapacity={minCapacity}
+                setMinCapacity={setMinCapacity}
+                maxCapacity={maxCapacity}
+                setMaxCapacity={setMaxCapacity}
+                toggleFilter={toggleFilter}
+              />
             </div>
           </aside>
 
@@ -336,13 +263,49 @@ export default function SubcategoryPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('pricePerTB')}>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
+                      onClick={() => handleSort('pricePerTB')}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleSort('pricePerTB')
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-sort={sortConfig.key === 'pricePerTB' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      role="columnheader"
+                    >
                       <div className="flex items-center">Price/TB {getSortIcon('pricePerTB')}</div>
                     </TableHead>
-                    <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('price')}>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
+                      onClick={() => handleSort('price')}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleSort('price')
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-sort={sortConfig.key === 'price' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      role="columnheader"
+                    >
                       <div className="flex items-center">Price {getSortIcon('price')}</div>
                     </TableHead>
-                    <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleSort('capacity')}>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
+                      onClick={() => handleSort('capacity')}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleSort('capacity')
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-sort={sortConfig.key === 'capacity' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      role="columnheader"
+                    >
                       <div className="flex items-center">Capacity {getSortIcon('capacity')}</div>
                     </TableHead>
                     <TableHead className="hidden md:table-cell">Warranty</TableHead>
@@ -383,7 +346,7 @@ export default function SubcategoryPage() {
                           href={product.affiliateLink} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="text-primary hover:underline text-sm line-clamp-2 block"
+                          className="text-primary underline text-sm line-clamp-2 block"
                         >
                           {product.name}
                         </a>
@@ -401,5 +364,126 @@ export default function SubcategoryPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+interface FilterPanelProps {
+  selectedConditions: string[]
+  setSelectedConditions: React.Dispatch<React.SetStateAction<string[]>>
+  selectedTechnologies: string[]
+  setSelectedTechnologies: React.Dispatch<React.SetStateAction<string[]>>
+  selectedFormFactors: string[]
+  setSelectedFormFactors: React.Dispatch<React.SetStateAction<string[]>>
+  minCapacity: string
+  setMinCapacity: React.Dispatch<React.SetStateAction<string>>
+  maxCapacity: string
+  setMaxCapacity: React.Dispatch<React.SetStateAction<string>>
+  toggleFilter: (set: React.Dispatch<React.SetStateAction<string[]>>, value: string) => void
+}
+
+function FilterPanel({
+  selectedConditions,
+  setSelectedConditions,
+  selectedTechnologies,
+  setSelectedTechnologies,
+  selectedFormFactors,
+  setSelectedFormFactors,
+  minCapacity,
+  setMinCapacity,
+  maxCapacity,
+  setMaxCapacity,
+  toggleFilter
+}: FilterPanelProps) {
+  return (
+    <Card className="p-4">
+      <CardContent className="p-0">
+        <Accordion type="multiple" defaultValue={["condition", "capacity", "technology", "form-factor"]} className="w-full">
+          <AccordionItem value="condition" className="border-b">
+            <AccordionTrigger className="text-sm font-semibold hover:no-underline pb-3 pt-0">Condition</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-1.5 pt-1 pb-3">
+                {["New", "Used", "Renewed"].map((condition) => (
+                  <div key={condition} className="flex items-center space-x-3">
+                    <Checkbox
+                      id={`condition-${condition}`}
+                      checked={selectedConditions.includes(condition)}
+                      onCheckedChange={() => toggleFilter(setSelectedConditions, condition)}
+                    />
+                    <Label htmlFor={`condition-${condition}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{condition}</Label>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="capacity" className="border-b">
+            <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Capacity (TB)</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex items-center gap-2 pt-1 pb-3">
+                <div className="relative flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Min"
+                    value={minCapacity}
+                    onChange={(e) => setMinCapacity(e.target.value)}
+                    className="w-full pr-8"
+                    aria-label="Minimum capacity in TB"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">TB</span>
+                </div>
+                <span className="text-muted-foreground">-</span>
+                <div className="relative flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Max"
+                    value={maxCapacity}
+                    onChange={(e) => setMaxCapacity(e.target.value)}
+                    className="w-full pr-8"
+                    aria-label="Maximum capacity in TB"
+                  />
+                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">TB</span>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="technology" className="border-b">
+            <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Technology</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-1.5 pt-1 pb-3">
+                {["HDD", "SSD", "SAS"].map((tech) => (
+                  <div key={tech} className="flex items-center space-x-3">
+                    <Checkbox
+                      id={`tech-${tech}`}
+                      checked={selectedTechnologies.includes(tech)}
+                      onCheckedChange={() => toggleFilter(setSelectedTechnologies, tech)}
+                    />
+                    <Label htmlFor={`tech-${tech}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{tech}</Label>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="form-factor" className="border-none">
+            <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Form Factor</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-1.5 pt-1 pb-3">
+                {["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"].map((ff) => (
+                  <div key={ff} className="flex items-center space-x-3">
+                    <Checkbox
+                      id={`ff-${ff}`}
+                      checked={selectedFormFactors.includes(ff)}
+                      onCheckedChange={() => toggleFilter(setSelectedFormFactors, ff)}
+                    />
+                    <Label htmlFor={`ff-${ff}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{ff}</Label>
+                  </div>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </CardContent>
+    </Card>
   )
 }

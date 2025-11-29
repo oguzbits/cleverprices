@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   ArrowRight,
   TrendingUp,
-  ShoppingCart,
   Smartphone,
   HardDrive,
   Dumbbell,
@@ -22,17 +21,7 @@ import {
   Baby,
   Battery,
   Globe,
-  CheckCircle2,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Rectangle,
-} from "recharts";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 
 // Lazy load heavy components
@@ -48,8 +37,6 @@ const FeaturedDeals = dynamic(
   () => import("@/components/ui/featured-deals").then((mod) => ({ default: mod.FeaturedDeals })),
   { ssr: true }
 );
-
-import { AnimatedCounter } from "@/components/ui/animated-counter";
 
 const categories = [
   {
@@ -141,7 +128,7 @@ export default function HomePage() {
                   className="text-lg px-8 h-14 rounded-full shadow-lg shadow-primary/20 hover:brightness-110 transition-all group"
                   asChild
                 >
-                  <Link href="/categories">
+                  <Link className="no-underline" href="/categories">
                     Start Saving Now
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Link>

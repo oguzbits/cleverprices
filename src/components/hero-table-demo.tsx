@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Check, Search, TrendingUp, Sparkles } from "lucide-react"
@@ -307,17 +307,11 @@ export function HeroTableDemo() {
     return () => clearInterval(interval)
   }, [])
 
-  // Get current products based on category - memoized for performance
-  const products = useMemo(() => {
-    switch (currentCategory) {
-      case "harddrives":
-        return hardDriveProducts
-      case "batteries":
-        return batteryProducts
-      case "dogfood":
-        return dogFoodProducts
-    }
-  }, [currentCategory])
+  // Get current products based on category
+  const products = 
+    currentCategory === "harddrives" ? hardDriveProducts :
+    currentCategory === "batteries" ? batteryProducts :
+    dogFoodProducts;
 
   return (
     <div className="relative w-full max-w-5xl mx-auto perspective-1000">

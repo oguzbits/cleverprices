@@ -57,7 +57,7 @@ export default function CategoriesPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {group.subcategories.map((sub) => (
-                <Link key={sub.slug} href={`/categories/${sub.slug}`}>
+                <Link key={sub.slug} className="no-underline" href={`/categories/${sub.slug}`}>
                   <Card className="relative h-full bg-card/50 hover:bg-card/80 backdrop-blur-sm transition-all duration-300 cursor-pointer border-primary/10 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 group">
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
