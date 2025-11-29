@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 // Temporarily disabled for TBT testing
-// import { Navbar } from "@/components/layout/Navbar";
+import { Navbar } from "@/components/layout/Navbar";
 // import { Footer } from "@/components/layout/Footer";
 // import { LazyCookieConsent } from "@/components/LazyCookieConsent";
 import Link from "next/link";
@@ -109,8 +109,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <div className="flex min-h-screen flex-col">
-            {/* Temporarily disabled for TBT testing */}
-            {/* <Navbar /> */}
+            <Navbar />
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
               <div className="container flex h-14 items-center justify-between mx-auto px-4">
                 <Link href="/" className="font-bold text-xl tracking-tight">bestprices.today</Link>
