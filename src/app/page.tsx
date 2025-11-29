@@ -150,28 +150,65 @@ export default function HomePage() {
       </section>
 
       {/* Trending Stats */}
-      {/* Temporarily disabled for TBT testing - Card components */}
-      {/* <section className="container px-4 mx-auto mt-12 relative z-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>...</Card>
-        </div>
-      </section> */}
       <section className="container px-4 mx-auto mt-12 relative z-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-6 border rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">Most Viewed Today</p>
-            <p className="text-3xl font-bold">SSD Storage</p>
-          </div>
-          <div className="p-6 border rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">Smart Analysis</p>
-            <p className="text-3xl font-bold">True Value</p>
-          </div>
-          <div className="p-6 border rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">Global Coverage</p>
-            <p className="text-3xl font-bold">Worldwide</p>
-          </div>
+          <Card className="bg-card dark:bg-card backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Most Viewed Today
+              </CardTitle>
+              <div className="p-2 bg-muted/50 rounded-lg group-hover:bg-muted transition-colors">
+                <Smartphone className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">
+                SSD Storage
+              </div>
+              <p className="text-xs text-muted-foreground font-medium flex items-center mt-1">
+                <TrendingUp className="h-3 w-3 mr-1" /> +20.1% from yesterday
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card dark:bg-card backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Smart Analysis
+              </CardTitle>
+              <div className="p-2 bg-muted/50 rounded-lg group-hover:bg-muted transition-colors">
+                <span className="text-sm font-mono text-muted-foreground">
+                  $
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">
+                True Value
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Automatic price-per-unit calculation
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card dark:bg-card backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Global Coverage
+              </CardTitle>
+              <div className="p-2 bg-muted/50 rounded-lg group-hover:bg-muted transition-colors">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-foreground">
+                Worldwide
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Unified search across borders
+              </p>
+            </CardContent>
+          </Card>
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-4">Card Components (Temporarily Disabled for Testing)</p>
       </section>
 
       {/* Featured Deals Carousel */}
@@ -190,8 +227,7 @@ export default function HomePage() {
               Find the best deals across our most popular categories.
             </p>
           </div>
-          {/* Temporarily disabled for TBT testing - Button component */}
-          {/* <Button
+          <Button
             variant="ghost"
             className="text-primary hover:text-primary/80"
             asChild
@@ -199,12 +235,8 @@ export default function HomePage() {
             <Link href="/categories">
               View all <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
-          </Button> */}
-          <Link href="/categories" className="text-primary hover:text-primary/80 text-sm">
-            View all <ArrowRight className="ml-2 h-4 w-4 inline" />
-          </Link>
+          </Button>
         </div>
-        {/* Temporarily disabled for TBT testing - Card components */}
         <div className="flex flex-wrap justify-center gap-6">
           {categories.map((category, idx) => (
             <Link
@@ -229,7 +261,6 @@ export default function HomePage() {
             </Link>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground text-center mt-4">Card Components (Temporarily Disabled for Testing)</p>
       </section>
 
       {/* Supported Countries */}
