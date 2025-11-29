@@ -51,11 +51,6 @@ export function Navbar() {
           <Link href="/" className="flex items-center space-x-2 no-underline">
             <span className="font-bold text-xl tracking-tight">bestprices.today</span>
           </Link>
-          <nav className="flex items-center gap-4 md:gap-6 text-sm font-medium">
-            <Link href="/categories" className="transition-colors hover:text-foreground/80 text-foreground/60 no-underline">
-              Categories
-            </Link>
-          </nav>
         </div>
 
         <TooltipProvider>
