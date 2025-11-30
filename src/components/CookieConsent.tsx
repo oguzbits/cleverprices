@@ -56,9 +56,9 @@ export function CookieConsent() {
                   <strong className="text-foreground">EN:</strong> We use cookies for Amazon affiliate links. 
                   These are necessary to track purchases made through our links.
                 </p>
-                <p className="text-xs">
+                <p className="text-xs text-muted-foreground">
                   Mehr Informationen / More Information: {" "}
-                  <Link href="/datenschutz" className="text-primary hover:underline">
+                  <Link href="/datenschutz" className="text-blue-700 dark:text-blue-400 font-semibold hover:underline">
                     Datenschutz / Privacy
                   </Link>
                 </p>
