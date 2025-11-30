@@ -65,6 +65,13 @@ type Product = {
 
 // Mock Data Generator
 const generateProducts = (count: number): Product[] => {
+  // Simple seeded random number generator for deterministic data
+  let seed = 56789;
+  const random = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  }
+
   const formFactors = ["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"]
   const technologies = ["HDD", "SSD", "SAS"] as const
   const conditions = ["New", "Used", "Renewed"] as const
@@ -72,27 +79,27 @@ const generateProducts = (count: number): Product[] => {
   const brands = ["Seagate", "Western Digital", "Toshiba", "Samsung", "Crucial", "SanDisk", "Kingston"]
 
   return Array.from({ length: count }).map((_, i) => {
-    const isTB = Math.random() > 0.3
-    const capacityValue = isTB ? Math.floor(Math.random() * 18) + 1 : [256, 512, 1000][Math.floor(Math.random() * 3)]
+    const isTB = random() > 0.3
+    const capacityValue = isTB ? Math.floor(random() * 18) + 1 : [256, 512, 1000][Math.floor(random() * 3)]
     const capacityGB = isTB ? capacityValue * 1000 : capacityValue
 
     // Realistic pricing logic
-    const basePricePerTB = Math.random() * 15 + 10 // $10-$25 per TB
-    const price = (capacityGB / 1000) * basePricePerTB * (Math.random() * 0.5 + 0.8)
+    const basePricePerTB = random() * 15 + 10 // $10-$25 per TB
+    const price = (capacityGB / 1000) * basePricePerTB * (random() * 0.5 + 0.8)
 
     return {
       id: i,
-      name: `${brands[Math.floor(Math.random() * brands.length)]} ${capacityValue}${isTB ? 'TB' : 'GB'} ${formFactors[Math.floor(Math.random() * formFactors.length)]}`,
+      name: `${brands[Math.floor(random() * brands.length)]} ${capacityValue}${isTB ? 'TB' : 'GB'} ${formFactors[Math.floor(random() * formFactors.length)]}`,
       price: parseFloat(price.toFixed(2)),
       capacity: capacityGB,
       capacityUnit: isTB ? 'TB' : 'GB',
       pricePerTB: parseFloat((price / (capacityGB / 1000)).toFixed(3)),
-      warranty: warranties[Math.floor(Math.random() * warranties.length)],
-      formFactor: formFactors[Math.floor(Math.random() * formFactors.length)],
-      technology: technologies[Math.floor(Math.random() * technologies.length)],
-      condition: conditions[Math.floor(Math.random() * conditions.length)],
-      affiliateLink: `https://www.amazon.com/dp/B0${Math.random().toString(36).substring(7).toUpperCase()}?tag=bestprices-20`,
-      brand: brands[Math.floor(Math.random() * brands.length)],
+      warranty: warranties[Math.floor(random() * warranties.length)],
+      formFactor: formFactors[Math.floor(random() * formFactors.length)],
+      technology: technologies[Math.floor(random() * technologies.length)],
+      condition: conditions[Math.floor(random() * conditions.length)],
+      affiliateLink: `https://www.amazon.com/dp/B0${Math.floor(random() * 1000000).toString(36).toUpperCase()}?tag=bestprices-20`,
+      brand: brands[Math.floor(random() * brands.length)],
     }
   })
 }
@@ -337,7 +344,14 @@ export default function SubcategoryPage() {
                         {product.technology}
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">
-                        <Badge variant={product.condition === 'New' ? 'default' : 'secondary'} className="text-xs font-normal">
+                        <Badge 
+                          className={cn(
+                            "text-xs font-medium border-0 px-2 py-0.5",
+                            product.condition === 'New' && "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-500/30",
+                            product.condition === 'Renewed' && "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-500/30",
+                            product.condition === 'Used' && "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-500/30"
+                          )}
+                        >
                           {product.condition}
                         </Badge>
                       </TableCell>
@@ -404,7 +418,7 @@ function FilterPanel({
             <AccordionContent>
               <div className="space-y-1.5 pt-1 pb-3">
                 {["New", "Used", "Renewed"].map((condition) => (
-                  <div key={condition} className="flex items-center space-x-3">
+                  <div key={condition} className="flex items-center space-x-3 py-1.5">
                     <Checkbox
                       id={`condition-${condition}`}
                       checked={selectedConditions.includes(condition)}
@@ -453,7 +467,7 @@ function FilterPanel({
             <AccordionContent>
               <div className="space-y-1.5 pt-1 pb-3">
                 {["HDD", "SSD", "SAS"].map((tech) => (
-                  <div key={tech} className="flex items-center space-x-3">
+                  <div key={tech} className="flex items-center space-x-3 py-1.5">
                     <Checkbox
                       id={`tech-${tech}`}
                       checked={selectedTechnologies.includes(tech)}
@@ -471,7 +485,7 @@ function FilterPanel({
             <AccordionContent>
               <div className="space-y-1.5 pt-1 pb-3">
                 {["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"].map((ff) => (
-                  <div key={ff} className="flex items-center space-x-3">
+                  <div key={ff} className="flex items-center space-x-3 py-1.5">
                     <Checkbox
                       id={`ff-${ff}`}
                       checked={selectedFormFactors.includes(ff)}
