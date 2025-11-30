@@ -133,10 +133,15 @@ export function Globe({ className }: { className?: string }) {
       }}
       className={className}
     >
+      <div id="globe-instructions" className="sr-only">
+        Use arrow keys to rotate the globe. Left and right arrows rotate horizontally.
+      </div>
       <canvas
         ref={canvasRef}
         aria-label="Interactive 3D Globe showing supported countries"
+        aria-describedby="globe-instructions"
         role="img"
+        tabIndex={0}
         onPointerDown={(e) => {
           pointerInteracting.current =
             e.clientX - pointerInteractionMovement.current;
@@ -165,6 +170,19 @@ export function Globe({ className }: { className?: string }) {
             pointerInteractionMovement.current = delta;
             api.start({
               r: delta / 100,
+            });
+          }
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            api.start({
+              r: r.get() - 0.2,
+            });
+          } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            api.start({
+              r: r.get() + 0.2,
             });
           }
         }}

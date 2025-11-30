@@ -97,7 +97,7 @@ export function Navbar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-2 cursor-pointer" aria-label="Select region">
+                    <Button variant="ghost" size="sm" className="gap-2 cursor-pointer" aria-label={`Select region, currently ${country.name}`}>
                       <span className="text-lg">{country.flag}</span>
                       <span className="hidden sm:inline-block">{country.code}</span>
                     </Button>
@@ -127,6 +127,7 @@ export function Navbar() {
                   size="icon"
                   className="cursor-pointer"
                   onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                  aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
                 >
                   <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                   <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

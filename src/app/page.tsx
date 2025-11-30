@@ -78,15 +78,15 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden" aria-labelledby="hero-heading">
         {/* Left side background */}
-        <div className="absolute inset-0 bg-background z-0" />
+        <div className="absolute inset-0 bg-background z-0" aria-hidden="true" />
 
         {/* Right side background - MUI-inspired gradient */}
-        <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-1/2 bg-blue-50 dark:bg-[#050810] border-l border-slate-200 dark:border-[hsl(210,14%,13%)] z-0 rounded-bl-xl" />
+        <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-1/2 bg-blue-50 dark:bg-[#050810] border-l border-slate-200 dark:border-[hsl(210,14%,13%)] z-0 rounded-bl-xl" aria-hidden="true" />
 
         {/* Subtle gradient overlays */}
-        <div className="absolute top-0 left-0 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 opacity-30" />
+        <div className="absolute top-0 left-0 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 opacity-30" aria-hidden="true" />
 
         <div className="container relative z-10 px-4 mx-auto py-16 md:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -100,7 +100,7 @@ export default function HomePage() {
                 Automated Price Analysis
               </Badge>
 
-              <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 drop-shadow-sm leading-[1.1]">
+              <h1 id="hero-heading" className="text-5xl md:text-7xl font-bold tracking-tight mb-6 drop-shadow-sm leading-[1.1]">
                 <span className="text-primary">See the Real Value.</span>
               </h1>
 
@@ -150,7 +150,8 @@ export default function HomePage() {
       </section>
 
       {/* Trending Stats */}
-      <section className="container px-4 mx-auto mt-12 relative z-20">
+      <section className="container px-4 mx-auto mt-12 relative z-20" aria-labelledby="stats-heading">
+        <h2 id="stats-heading" className="sr-only">Platform Statistics</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="bg-card dark:bg-card backdrop-blur-xl border-border shadow-lg hover:shadow-xl hover:border-primary/20 transition-all group">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -217,7 +218,7 @@ export default function HomePage() {
       </Suspense>
 
       {/* Categories */}
-      <section className="container px-4 mx-auto py-12">
+      <section className="container px-4 mx-auto py-12" aria-labelledby="categories-heading">
         <div className="flex justify-between items-end mb-8">
           <div>
             <h2 className="text-3xl font-bold tracking-tight mb-2">
@@ -243,8 +244,9 @@ export default function HomePage() {
               key={category.slug}
               href={`/categories/${category.slug}`}
               className="w-full sm:w-64 no-underline"
+              aria-label={`Browse ${category.name} category with ${category.count} items`}
             >
-              <div className="relative h-full p-6 border rounded-lg hover:border-primary/30 transition-all cursor-pointer">
+              <div className="relative h-full p-6 border rounded-lg bg-card hover:border-primary/30 transition-all cursor-pointer">
                 {idx === 0 && (
                   <div className="absolute -top-2 -right-2 z-10 px-2 py-1 bg-primary text-primary-foreground text-xs rounded">
                     🔥 Hot
@@ -252,7 +254,7 @@ export default function HomePage() {
                 )}
                 <div className="text-center">
                   <div className="mx-auto bg-primary/5 p-4 rounded-2xl mb-4 w-fit">
-                    <category.icon className="h-8 w-8 text-primary" />
+                    <category.icon className="h-8 w-8 text-primary" aria-hidden="true" />
                   </div>
                   <h3 className="font-semibold mb-1">{category.name}</h3>
                   <p className="text-sm text-muted-foreground">{category.count} items</p>
@@ -264,23 +266,23 @@ export default function HomePage() {
       </section>
 
       {/* Supported Countries */}
-      <section className="container px-4 mx-auto py-24">
-        <h2 className="text-4xl font-bold mb-12 tracking-tight text-center">
+      <section className="container px-4 mx-auto py-24" aria-labelledby="global-heading">
+        <h2 id="global-heading" className="text-4xl font-bold mb-12 tracking-tight text-center">
           Global Availability
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Globe Container */}
-          <div className="relative flex w-full items-center justify-center overflow-hidden rounded-[2.5rem] border border-primary/20 dark:border-primary/10 bg-background/40 backdrop-blur-2xl px-4 py-20 shadow-2xl min-h-[500px] lg:h-[700px] group order-2 lg:order-2">
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
+          <div className="relative flex w-full items-center justify-center overflow-hidden rounded-[2.5rem] border border-primary/20 dark:border-primary/10 bg-background/40 backdrop-blur-2xl px-4 py-20 shadow-2xl min-h-[500px] lg:h-[700px] group order-2 lg:order-2" aria-label="Interactive globe visualization">
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" aria-hidden="true" />
             <Suspense fallback={<div className="w-full max-w-[500px] aspect-square mx-auto" />}>
               <ClientGlobe className="w-full max-w-[500px] aspect-square mx-auto z-10" />
             </Suspense>
-            <div className="pointer-events-none absolute inset-0 h-full bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary),0.1),rgba(255,255,255,0))]" />
+            <div className="pointer-events-none absolute inset-0 h-full bg-[radial-gradient(circle_at_50%_50%,rgba(var(--primary),0.1),rgba(255,255,255,0))]" aria-hidden="true" />
           </div>
 
           {/* Country Insights List */}
           <div className="space-y-4 order-1 lg:order-1">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="list" aria-label="Supported countries and regions">
               {[
                 {
                   name: "United States",
@@ -349,7 +351,7 @@ export default function HomePage() {
                   currency: "INR",
                 },
               ].map((country) => (
-                <div
+                <li
                   key={country.name}
                   className="flex items-center p-3 rounded-xl border border-primary/20 dark:border-primary/10 bg-background/40 backdrop-blur-md cursor-default group"
                 >
@@ -381,9 +383,9 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
             <div className="p-6 rounded-2xl bg-primary/10 border border-primary/20 dark:border-primary/10 mt-6">
               <h3 className="text-lg font-bold mb-2">
                 Real-time Global Tracking

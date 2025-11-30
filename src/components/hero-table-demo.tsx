@@ -291,13 +291,15 @@ const categories: ProductCategory[] = ["harddrives", "batteries", "dogfood"]
 export function HeroTableDemo() {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0)
   const [fadeOut, setFadeOut] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   
   // React Compiler automatically memoizes these - no need for useMemo
   const currentCategory = categories[currentCategoryIndex]
   const config = categoryConfig[currentCategory]
 
-  // Rotation logic - increased to 8s for better performance
+  // Rotation logic - pauses on hover/focus for accessibility
   useEffect(() => {
+    if (isHovered) return
     const interval = setInterval(() => {
       setFadeOut(true)
       setTimeout(() => {
@@ -310,7 +312,7 @@ export function HeroTableDemo() {
     }, 5000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [isHovered])
 
   // React Compiler automatically memoizes this - no need for useMemo
   const products = 
@@ -319,9 +321,18 @@ export function HeroTableDemo() {
     dogFoodProducts;
 
   return (
-    <div className="relative w-full max-w-5xl mx-auto perspective-1000">
+    <div 
+      className="relative w-full max-w-5xl mx-auto perspective-1000" 
+      role="region" 
+      aria-label="Interactive product comparison demo" 
+      aria-live="polite"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsHovered(true)}
+      onBlur={() => setIsHovered(false)}
+    >
       {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-primary/10 rounded-full blur-[120px] -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[110%] h-[110%] bg-primary/10 rounded-full blur-[120px] -z-10" aria-hidden="true" />
 
       <Card className="border-border/50 bg-card shadow-2xl overflow-hidden ring-1 ring-border">
         {/* Top Bar (Browser/App Header) */}
@@ -355,7 +366,7 @@ export function HeroTableDemo() {
                 <div className="space-y-2">
                   {config.filters.filter1.options.map((option) => (
                     <div key={option} className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-[3px] bg-primary/80" />
+                      <div className="w-3 h-3 rounded-[3px] bg-primary/80" aria-hidden="true" />
                       <span className="text-[11px] text-muted-foreground">{option}</span>
                     </div>
                   ))}
@@ -367,7 +378,7 @@ export function HeroTableDemo() {
                 <div className="space-y-2">
                   {config.filters.filter2.options.map((option) => (
                     <div key={option} className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-[3px] border border-muted-foreground/30" />
+                      <div className="w-3 h-3 rounded-[3px] border border-muted-foreground/30" aria-hidden="true" />
                       <span className="text-[11px] text-muted-foreground">{option}</span>
                     </div>
                   ))}
@@ -379,7 +390,7 @@ export function HeroTableDemo() {
                 <div className="space-y-2">
                   {config.filters.filter3.options.map((option) => (
                     <div key={option} className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-[3px] border border-muted-foreground/30" />
+                      <div className="w-3 h-3 rounded-[3px] border border-muted-foreground/30" aria-hidden="true" />
                       <span className="text-[11px] text-muted-foreground">{option}</span>
                     </div>
                   ))}

@@ -13,7 +13,7 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="text-sm">
+          <nav className="text-sm" aria-label="Legal information">
             <h4 className="font-semibold mb-3">Legal</h4>
             <ul className="space-y-2">
               <li>
@@ -27,7 +27,7 @@ export function Footer() {
                 </Link>
               </li>
             </ul>
-          </div>
+          </nav>
 
           <div className="text-sm text-muted-foreground md:text-right">
             <p className="mb-4 text-xs">

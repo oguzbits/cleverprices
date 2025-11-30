@@ -132,6 +132,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
               data-form-type="other"
               data-lpignore="true"
               data-1p-ignore="true"
+              aria-label="Search for categories and products"
             />
             <kbd className="px-2 py-1 text-xs border border-border/60 rounded-md bg-muted/50 text-muted-foreground font-mono shrink-0 font-medium">
               esc
@@ -140,7 +141,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
         </div>
 
         {/* Content Area */}
-        <div className="max-h-[500px] overflow-y-auto px-6 pb-6 pt-3">
+        <div className="max-h-[500px] overflow-y-auto px-6 pb-6 pt-3" role="region" aria-live="polite">
           {query === "" ? (
             // Show quick links when no search query
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -168,6 +169,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                               ? 'border-primary bg-primary/15 shadow-sm' 
                               : 'border-border bg-secondary hover:border-primary hover:bg-primary/10'
                           }`}
+                          aria-label={`Navigate to ${link.name} category`}
                         >
                           <IconComponent className="h-4 w-4 shrink-0 text-primary" />
                           <span className="text-xs font-medium text-primary">
@@ -201,6 +203,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                               ? 'border-primary bg-primary/15 shadow-sm' 
                               : 'border-border bg-secondary hover:border-primary hover:bg-primary/10'
                           }`}
+                          aria-label={`Navigate to ${category.name} category`}
                         >
                           <IconComponent className="h-4 w-4 shrink-0 text-primary" />
                           <div className="flex-1">

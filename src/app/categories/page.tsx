@@ -50,18 +50,18 @@ export default function CategoriesPage() {
 
       <div className="space-y-16">
         {categoryGroups.map((group) => (
-          <section key={group.name}>
+          <section key={group.name} aria-labelledby={`${group.name.toLowerCase()}-heading`}>
             <div className="flex items-center gap-3 mb-6 border-b pb-4">
-              <group.icon className="h-8 w-8 text-primary" />
-              <h2 className="text-2xl font-bold">{group.name}</h2>
+              <group.icon className="h-8 w-8 text-primary" aria-hidden="true" />
+              <h2 id={`${group.name.toLowerCase()}-heading`} className="text-2xl font-bold">{group.name}</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {group.subcategories.map((sub) => (
-                <Link key={sub.slug} className="no-underline" href={`/categories/${sub.slug}`}>
+                <Link key={sub.slug} className="no-underline" href={`/categories/${sub.slug}`} aria-label={`Browse ${sub.name}: ${sub.description}, ${sub.count} items`}>
                   <Card className="relative h-full bg-card/50 hover:bg-card/80 backdrop-blur-sm transition-all duration-300 cursor-pointer border-primary/10 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/10 group">
                     <CardHeader>
                       <div className="flex justify-between items-start mb-2">
-                        <sub.icon className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <sub.icon className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" aria-hidden="true" />
                         <Badge variant="secondary" className="text-xs">
                           {sub.count} items
                         </Badge>

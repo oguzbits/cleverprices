@@ -88,14 +88,16 @@ const deals: Deal[] = [
 
 export function FeaturedDeals() {
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isHovered, setIsHovered] = useState(false)
   const visibleDeals = 3
 
   useEffect(() => {
+    if (isHovered) return
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % deals.length)
     }, 4000)
     return () => clearInterval(interval)
-  }, [])
+  }, [isHovered])
 
   const getVisibleDeals = () => {
     const visible = []
@@ -106,7 +108,13 @@ export function FeaturedDeals() {
   }
 
   return (
-    <section className="container px-4 mx-auto py-12">
+    <section 
+      className="container px-4 mx-auto py-12"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsHovered(true)}
+      onBlur={() => setIsHovered(false)}
+    >
       <div className="text-center mb-8">
         <Badge variant="outline" className="mb-4 border-border text-muted-foreground bg-muted/30">
           Live Data
@@ -115,9 +123,14 @@ export function FeaturedDeals() {
         <p className="text-muted-foreground">Highest savings by unit price analysis • Updated hourly</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6" role="region" aria-live="polite" aria-atomic="true">
         {getVisibleDeals().map((deal, idx) => (
-          <Link key={`${deal.id}-${idx}`} className="no-underline" href={`/categories/${deal.categorySlug}`}>
+          <Link 
+            key={`${deal.id}-${idx}`} 
+            className="no-underline" 
+            href={`/categories/${deal.categorySlug}`}
+            aria-label={`${deal.name} in ${deal.category}, $${deal.bestUnitPrice} per ${deal.unitLabel}, ${deal.savings}% savings`}
+          >
             <Card className="group relative overflow-hidden bg-card/40 backdrop-blur-xl border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 cursor-pointer h-full">
               {deal.badge && (
                 <div className="absolute top-3 right-3 z-10">
