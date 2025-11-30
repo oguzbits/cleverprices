@@ -43,9 +43,14 @@ export function Navbar() {
   const { setTheme, theme } = useTheme()
   const [country, setCountry] = React.useState(countries[0])
   const [searchOpen, setSearchOpen] = React.useState(false)
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container flex h-14 items-center justify-between mx-auto px-4">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center space-x-2 no-underline">
@@ -128,7 +133,7 @@ export function Navbar() {
                   size="icon"
                   className="cursor-pointer"
                   onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-                  aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+                  aria-label={mounted ? `Switch to ${theme === "light" ? "dark" : "light"} mode` : "Toggle theme"}
                 >
                   <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
                   <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />

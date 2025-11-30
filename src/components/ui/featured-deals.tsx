@@ -116,7 +116,7 @@ export function FeaturedDeals() {
       onBlur={() => setIsHovered(false)}
     >
       <div className="text-center mb-8">
-        <Badge variant="outline" className="mb-4 border-border text-muted-foreground bg-muted/30">
+        <Badge variant="outline" className="mb-4 border-zinc-200 text-zinc-900 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100">
           Live Data
         </Badge>
         <h2 className="text-3xl font-bold tracking-tight mb-2">Top Value Opportunities</h2>
@@ -164,7 +164,7 @@ export function FeaturedDeals() {
                       </p>
                     </div>
                     
-                    <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 px-3 py-1">
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-50 border-emerald-200 dark:border-emerald-800 px-3 py-1">
                       <TrendingDown className="h-3 w-3 mr-1" />
                       {deal.savings}%
                     </Badge>

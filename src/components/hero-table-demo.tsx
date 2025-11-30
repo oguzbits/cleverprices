@@ -362,7 +362,7 @@ export function HeroTableDemo() {
           <div className="w-32 sm:w-48 border-r border-border bg-muted/20 p-2 sm:p-4 hidden sm:block">
             <div className="space-y-6">
               <div>
-                <h3 className="text-xs font-semibold text-foreground mb-3">{config.filters.filter1.title}</h3>
+                <div className="text-xs font-semibold text-foreground mb-3">{config.filters.filter1.title}</div>
                 <div className="space-y-2">
                   {config.filters.filter1.options.map((option) => (
                     <div key={option} className="flex items-center gap-2">
@@ -374,7 +374,7 @@ export function HeroTableDemo() {
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-foreground mb-3">{config.filters.filter2.title}</h3>
+                <div className="text-xs font-semibold text-foreground mb-3">{config.filters.filter2.title}</div>
                 <div className="space-y-2">
                   {config.filters.filter2.options.map((option) => (
                     <div key={option} className="flex items-center gap-2">
@@ -386,7 +386,7 @@ export function HeroTableDemo() {
               </div>
 
               <div>
-                <h3 className="text-xs font-semibold text-foreground mb-3">{config.filters.filter3.title}</h3>
+                <div className="text-xs font-semibold text-foreground mb-3">{config.filters.filter3.title}</div>
                 <div className="space-y-2">
                   {config.filters.filter3.options.map((option) => (
                     <div key={option} className="flex items-center gap-2">
@@ -445,7 +445,7 @@ export function HeroTableDemo() {
                       key={product.id}
                       className={cn(
                         "grid grid-cols-12 gap-2 px-4 py-2.5 items-center text-[11px] transition-colors hover:bg-muted/50",
-                        idx === 0 && "bg-primary/10 ring-1 ring-primary/20"
+                        idx === 0 && "bg-blue-50 dark:bg-blue-950/60 ring-1 ring-blue-200 dark:ring-blue-800"
                       )}
                     >
                       <div className="col-span-2 font-mono font-medium text-primary flex items-center gap-2">
@@ -457,7 +457,7 @@ export function HeroTableDemo() {
                             : (product as DogFoodProduct).pricePerLb.toFixed(3)
                         }
                         {idx === 0 && (
-                          <Badge className="bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 border-0 h-4 px-1.5 text-[8px] animate-in zoom-in font-semibold">
+                          <Badge className="bg-emerald-100 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-50 border-0 h-4 px-1.5 text-[8px] animate-in zoom-in font-semibold">
                             Best
                           </Badge>
                         )}
@@ -482,10 +482,10 @@ export function HeroTableDemo() {
                       </div>
                       <div className="col-span-1">
                         <Badge variant="secondary" className={cn(
-                          "h-4 px-1.5 text-[9px] border-0",
-                          product.condition === "New" ? "bg-emerald-500/20 text-emerald-700 dark:text-emerald-400" :  
-                          product.condition === "Used" ? "bg-orange-500/20 text-orange-700 dark:text-orange-400" :
-                          "bg-blue-500/20 text-blue-700 dark:text-blue-400"
+                          "h-4 px-1.5 text-[9px] border-0 font-medium",
+                          product.condition === "New" ? "bg-emerald-100 text-emerald-950 dark:bg-emerald-900 dark:text-emerald-50" :  
+                          product.condition === "Used" ? "bg-orange-100 text-orange-950 dark:bg-orange-900 dark:text-orange-50" :
+                          "bg-blue-100 text-blue-950 dark:bg-blue-900 dark:text-blue-50"
                         )}>
                           {product.condition}
                         </Badge>
@@ -511,7 +511,7 @@ export function HeroTableDemo() {
             <Check className="w-3 h-3 text-primary" />
           </div>
           <div>
-            <p className="text-[10px] font-medium text-primary mb-0.5">Hidden Value Found</p>
+            <p className="text-[10px] font-bold text-black dark:text-white mb-0.5">Hidden Value Found</p>
             <p className="text-[10px] text-muted-foreground leading-tight">
               {config.insightText}
             </p>

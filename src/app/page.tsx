@@ -230,7 +230,7 @@ export default function HomePage() {
           </div>
           <Button
             variant="ghost"
-            className="text-primary hover:text-primary/80"
+            className="text-foreground font-bold hover:text-foreground/80 hover:bg-transparent p-0"
             asChild
           >
             <Link href="/categories">
