@@ -112,7 +112,7 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-4 mb-10">
                 <Button
                   size="lg"
-                  className="text-lg px-8 h-14 rounded-full shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white hover:brightness-110 transition-all group"
+                  className="text-lg px-8 h-14 rounded-full shadow-lg shadow-blue-600/20 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white hover:brightness-110 transition-all group"
                   asChild
                 >
                   <Link className="no-underline" href="/categories">
@@ -248,7 +248,7 @@ export default function HomePage() {
             >
               <div className="relative h-full p-6 border rounded-lg bg-card hover:border-primary/30 transition-all cursor-pointer">
                 {idx === 0 && (
-                  <div className="absolute -top-2 -right-2 z-10 px-2 py-1 bg-primary text-primary-foreground text-xs rounded">
+                  <div className="absolute -top-2 -right-2 z-10 px-2 py-1 bg-blue-700 dark:bg-blue-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-lg animate-pulse-slow">
                     🔥 Hot
                   </div>
                 )}

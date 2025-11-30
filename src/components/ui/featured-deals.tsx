@@ -134,7 +134,7 @@ export function FeaturedDeals() {
             <Card className="group relative overflow-hidden bg-card/40 backdrop-blur-xl border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 cursor-pointer h-full">
               {deal.badge && (
                 <div className="absolute top-3 right-3 z-10">
-                  <Badge className="bg-blue-600 dark:bg-blue-500 border-0 text-white shadow-lg text-xs font-semibold">
+                  <Badge className="bg-blue-700 dark:bg-blue-600 border-0 text-white shadow-lg text-xs font-semibold">
                     {deal.badge}
                   </Badge>
                 </div>
