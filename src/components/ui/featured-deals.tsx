@@ -134,7 +134,7 @@ export function FeaturedDeals() {
             <Card className="group relative overflow-hidden bg-card/40 backdrop-blur-xl border-primary/20 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 cursor-pointer h-full">
               {deal.badge && (
                 <div className="absolute top-3 right-3 z-10">
-                  <Badge className="bg-primary border-0 text-primary-foreground shadow-lg text-xs">
+                  <Badge className="bg-blue-600 dark:bg-blue-500 border-0 text-white shadow-lg text-xs font-semibold">
                     {deal.badge}
                   </Badge>
                 </div>
@@ -182,18 +182,22 @@ export function FeaturedDeals() {
         ))}
       </div>
 
-      <div className="flex justify-center gap-2 mt-6">
+      <div className="flex justify-center gap-2 mt-6" role="group" aria-label="Carousel navigation">
         {deals.map((_, idx) => (
           <button
             key={idx}
+            type="button"
             onClick={() => setCurrentIndex(idx)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              idx === currentIndex 
-                ? "w-6 bg-primary" 
-                : "w-1.5 bg-muted hover:bg-muted-foreground/50"
-            }`}
+            className="relative p-3 cursor-pointer group outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-full"
             aria-label={`Go to slide ${idx + 1}`}
-          />
+            aria-current={idx === currentIndex ? "true" : "false"}
+          >
+            <span className={`block h-1.5 rounded-full transition-all duration-300 ${
+              idx === currentIndex 
+                ? "w-6 bg-blue-600 dark:bg-blue-500" 
+                : "w-1.5 bg-zinc-300 dark:bg-zinc-700 group-hover:bg-blue-400 dark:group-hover:bg-blue-400"
+            }`} />
+          </button>
         ))}
       </div>
     </section>

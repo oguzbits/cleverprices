@@ -59,6 +59,7 @@ export function Navbar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
+                  type="button"
                   onClick={() => setSearchOpen(true)}
                   className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/50 hover:bg-muted transition-colors cursor-pointer min-w-[240px]"
                   aria-label="Open search"

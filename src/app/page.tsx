@@ -112,7 +112,7 @@ export default function HomePage() {
               <div className="flex flex-col sm:flex-row gap-4 mb-10">
                 <Button
                   size="lg"
-                  className="text-lg px-8 h-14 rounded-full shadow-lg shadow-primary/20 hover:brightness-110 transition-all group"
+                  className="text-lg px-8 h-14 rounded-full shadow-lg shadow-blue-500/20 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white hover:brightness-110 transition-all group"
                   asChild
                 >
                   <Link className="no-underline" href="/categories">
@@ -353,7 +353,7 @@ export default function HomePage() {
               ].map((country) => (
                 <li
                   key={country.name}
-                  className="flex items-center p-3 rounded-xl border border-primary/20 dark:border-primary/10 bg-background/40 backdrop-blur-md cursor-default group"
+                  className="flex items-center p-3 rounded-xl border border-primary/20 bg-card shadow-sm dark:bg-card/50 dark:backdrop-blur-md cursor-default group hover:border-primary/40 transition-all"
                 >
                   <span className="text-3xl mr-3 transition-all">
                     {country.flag}
@@ -365,7 +365,7 @@ export default function HomePage() {
                       </h3>
                       <Badge
                         variant="secondary"
-                        className="text-[10px] h-4 px-1 bg-primary/10 text-primary border-primary/20"
+                        className="text-[10px] h-4 px-1 bg-primary/20 text-primary dark:text-primary border-primary/30 font-semibold"
                       >
                         {country.currency}
                       </Badge>
@@ -374,7 +374,7 @@ export default function HomePage() {
                       <p className="text-xs text-muted-foreground font-mono">
                         {country.domain}
                       </p>
-                      <div className="flex items-center text-[10px] text-emerald-500 font-medium">
+                      <div className="flex items-center text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">
                         <span className="relative flex h-1.5 w-1.5 mr-1.5">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>

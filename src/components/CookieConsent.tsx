@@ -36,6 +36,7 @@ export function CookieConsent() {
       <div className="container mx-auto max-w-6xl">
         <div className="relative bg-card/95 backdrop-blur-xl border border-primary/20 rounded-lg shadow-2xl p-6 md:p-8">
           <button
+            type="button"
             onClick={declineCookies}
             className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Close"

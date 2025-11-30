@@ -397,6 +397,7 @@ function FilterPanel({
   return (
     <Card className="p-4">
       <CardContent className="p-0">
+        <h2 className="sr-only">Filters</h2>
         <Accordion type="multiple" defaultValue={["condition", "capacity", "technology", "form-factor"]} className="w-full">
           <AccordionItem value="condition" className="border-b">
             <AccordionTrigger className="text-sm font-semibold hover:no-underline pb-3 pt-0">Condition</AccordionTrigger>

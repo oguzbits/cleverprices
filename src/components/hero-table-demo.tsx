@@ -457,7 +457,7 @@ export function HeroTableDemo() {
                             : (product as DogFoodProduct).pricePerLb.toFixed(3)
                         }
                         {idx === 0 && (
-                          <Badge className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-0 h-4 px-1.5 text-[8px] animate-in zoom-in">
+                          <Badge className="bg-emerald-500/20 text-emerald-900 dark:text-emerald-300 border-0 h-4 px-1.5 text-[8px] animate-in zoom-in font-semibold">
                             Best
                           </Badge>
                         )}
