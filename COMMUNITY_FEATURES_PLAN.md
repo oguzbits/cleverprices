@@ -6,7 +6,7 @@
 
 ## Quick Summary
 
-Transform bestprices.today into a community-driven platform with:
+Transform realpricedata.com into a community-driven platform with:
 
 - User accounts & profiles
 - Voting system (upvote/downvote products)

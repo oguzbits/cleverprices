@@ -3,4 +3,4 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://bestprices.today/sitemap.xml
+Sitemap: https://realpricedata.com/sitemap.xml

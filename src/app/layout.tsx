@@ -15,16 +15,16 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://bestprices.today'),
+  metadataBase: new URL('https://realpricedata.com'),
   title: {
-    default: "bestprices.today - Compare Price Per Unit",
-    template: "%s | bestprices.today",
+    default: "realpricedata.com - Compare Price Per Unit",
+    template: "%s | realpricedata.com",
   },
   description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
   keywords: ["price comparison", "price per unit", "best deals", "HDD prices", "SSD prices", "storage deals"],
   authors: [{ name: "BestPrices Team" }],
   creator: "BestPrices Team",
-  applicationName: "bestprices.today",
+  applicationName: "realpricedata.com",
   manifest: "/site.webmanifest",
   icons: {
     icon: [
@@ -47,22 +47,22 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://bestprices.today",
-    title: "bestprices.today - See the Real Value",
+    url: "https://realpricedata.com",
+    title: "realpricedata.com - See the Real Value",
     description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
-    siteName: "bestprices.today",
+    siteName: "realpricedata.com",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "bestprices.today - Find the best value by comparing price per unit",
+        alt: "realpricedata.com - Find the best value by comparing price per unit",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "bestprices.today - See the Real Value",
+    title: "realpricedata.com - See the Real Value",
     description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
     images: ["/og-image.png"],
     creator: "@bestprices",

@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: '/private/',
     },
-    sitemap: 'https://bestprices.today/sitemap.xml',
+    sitemap: 'https://realpricedata.com/sitemap.xml',
   }
 }

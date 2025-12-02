@@ -2,13 +2,13 @@ import type { Metadata } from "next"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 
 export const metadata: Metadata = {
-  title: "Legal Notice | bestprices.today",
-  description: "Legal notice and imprint for bestprices.today - Information according to § 5 DDG",
+  title: "Legal Notice | realpricedata.com",
+  description: "Legal notice and imprint for realpricedata.com - Information according to § 5 DDG",
   alternates: {
-    canonical: 'https://bestprices.today/en/impressum',
+    canonical: 'https://realpricedata.com/en/impressum',
     languages: {
-      'de': 'https://bestprices.today/impressum',
-      'en': 'https://bestprices.today/en/impressum',
+      'de': 'https://realpricedata.com/impressum',
+      'en': 'https://realpricedata.com/en/impressum',
     },
   },
 }

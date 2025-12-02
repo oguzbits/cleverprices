@@ -7,10 +7,10 @@ import {
 } from "@/components/ui/accordion"
 
 export const metadata: Metadata = {
-  title: "FAQ - Frequently Asked Questions | bestprices.today",
-  description: "Find answers to common questions about bestprices.today, price per unit comparison, and how to find the best deals.",
+  title: "FAQ - Frequently Asked Questions | realpricedata.com",
+  description: "Find answers to common questions about realpricedata.com, price per unit comparison, and how to find the best deals.",
   alternates: {
-    canonical: 'https://bestprices.today/faq',
+    canonical: 'https://realpricedata.com/faq',
   },
 }
 
@@ -27,9 +27,9 @@ export default function FAQPage() {
 
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="item-1">
-          <AccordionTrigger>What is bestprices.today?</AccordionTrigger>
+          <AccordionTrigger>What is realpricedata.com?</AccordionTrigger>
           <AccordionContent>
-            bestprices.today is a specialized price comparison engine that focuses on the "price per unit" 
+            realpricedata.com is a specialized price comparison engine that focuses on the "price per unit" 
             (e.g., price per Terabyte, price per Liter, price per Kilogram). Unlike standard price comparison 
             sites that just show the total price, we help you find the true best value by standardizing the cost.
           </AccordionContent>

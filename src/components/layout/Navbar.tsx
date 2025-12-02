@@ -54,7 +54,7 @@ export function Navbar() {
       <div className="container flex h-14 items-center justify-between mx-auto px-4">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center space-x-2 no-underline">
-            <span className="font-bold text-xl tracking-tight">bestprices.today</span>
+            <span className="font-bold text-xl tracking-tight">realpricedata.com</span>
           </Link>
         </div>
 

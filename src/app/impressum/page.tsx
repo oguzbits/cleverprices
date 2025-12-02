@@ -2,13 +2,13 @@ import type { Metadata } from "next"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 
 export const metadata: Metadata = {
-  title: "Impressum | bestprices.today",
-  description: "Impressum und rechtliche Angaben für bestprices.today - Angaben gemäß § 5 DDG",
+  title: "Impressum | realpricedata.com",
+  description: "Impressum und rechtliche Angaben für realpricedata.com - Angaben gemäß § 5 DDG",
   alternates: {
-    canonical: 'https://bestprices.today/impressum',
+    canonical: 'https://realpricedata.com/impressum',
     languages: {
-      'de': 'https://bestprices.today/impressum',
-      'en': 'https://bestprices.today/en/impressum',
+      'de': 'https://realpricedata.com/impressum',
+      'en': 'https://realpricedata.com/en/impressum',
     },
   },
 }
@@ -79,7 +79,7 @@ export default function ImpressumPage() {
           <div className="bg-card/50 p-6 rounded-lg border border-primary/20 space-y-4">
             <h3 className="text-lg font-semibold">Leistungsbeschreibung</h3>
             <p>
-              bestprices.today ist ein Preisvergleichsportal, das es Nutzern ermöglicht, Preise verschiedener Produkte 
+              realpricedata.com ist ein Preisvergleichsportal, das es Nutzern ermöglicht, Preise verschiedener Produkte 
               zu vergleichen. Wir verkaufen selbst keine Produkte, sondern verweisen auf Angebote Dritter (z.B. Amazon).
             </p>
 

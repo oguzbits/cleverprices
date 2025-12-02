@@ -61,11 +61,11 @@ export default function HomePage() {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "bestprices.today",
-    url: "https://bestprices.today",
+    name: "realpricedata.com",
+    url: "https://realpricedata.com",
     potentialAction: {
       "@type": "SearchAction",
-      target: "https://bestprices.today/search?q={search_term_string}",
+      target: "https://realpricedata.com/search?q={search_term_string}",
       "query-input": "required name=search_term_string",
     },
   };

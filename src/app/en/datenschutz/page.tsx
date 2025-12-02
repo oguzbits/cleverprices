@@ -2,13 +2,13 @@ import type { Metadata } from "next"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | bestprices.today",
-  description: "Privacy policy for bestprices.today - Information about data protection and privacy",
+  title: "Privacy Policy | realpricedata.com",
+  description: "Privacy policy for realpricedata.com - Information about data protection and privacy",
   alternates: {
-    canonical: 'https://bestprices.today/en/datenschutz',
+    canonical: 'https://realpricedata.com/en/datenschutz',
     languages: {
-      'de': 'https://bestprices.today/datenschutz',
-      'en': 'https://bestprices.today/en/datenschutz',
+      'de': 'https://realpricedata.com/datenschutz',
+      'en': 'https://realpricedata.com/en/datenschutz',
     },
   },
 }

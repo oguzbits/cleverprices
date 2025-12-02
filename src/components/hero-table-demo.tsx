@@ -251,7 +251,7 @@ const categoryConfig = {
   harddrives: {
     title: "Disk Price Comparison",
     count: "100 disks",
-    url: "bestprices.today/categories/storage",
+    url: "realpricedata.com/categories/storage",
     unitLabel: "Price/TB",
     insightText: "The 18TB drive is 4x cheaper per TB than the 8TB SSD!",
     filters: {
@@ -266,7 +266,7 @@ const categoryConfig = {
   batteries: {
     title: "Battery Price Comparison",
     count: "50 packs",
-    url: "bestprices.today/categories/batteries",
+    url: "realpricedata.com/categories/batteries",
     unitLabel: "Price/Unit",
     insightText:
       "AmazonBasics 48-pack is 6x cheaper per battery than Duracell D 8-pack!",
@@ -282,7 +282,7 @@ const categoryConfig = {
   dogfood: {
     title: "Dog Food Price Comparison",
     count: "75 products",
-    url: "bestprices.today/categories/pet-supplies",
+    url: "realpricedata.com/categories/pet-supplies",
     unitLabel: "Price/lb",
     insightText: "Purina Pro Plan is 2x cheaper per pound than premium brands!",
     filters: {
