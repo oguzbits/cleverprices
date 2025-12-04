@@ -5,7 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { LazyCookieConsent } from "@/components/LazyCookieConsent";
-import Link from "next/link";
+import { NuqsProvider } from "@/providers/nuqs-provider";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -107,12 +107,14 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <div className="flex min-h-screen flex-col">
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
-          <LazyCookieConsent />
+          <NuqsProvider>
+            <div className="flex min-h-screen flex-col">
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+            <LazyCookieConsent />
+          </NuqsProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -42,6 +42,7 @@ import {
 import { cn } from "@/lib/utils"
 import { getCategoryBySlug, getBreadcrumbs, getCategoryPath } from "@/lib/categories"
 import { isValidCountryCode, DEFAULT_COUNTRY } from "@/lib/countries"
+import { useProductFilters } from "@/hooks/use-product-filters"
 
 // Types
 type Product = {
@@ -133,11 +134,6 @@ const authenticStorageProducts: Product[] = [
   }
 ];
 
-type SortConfig = {
-  key: keyof Product
-  direction: 'asc' | 'desc'
-}
-
 export default function CategoryProductsPage() {
   const params = useParams()
   const countryCode = params.country as string
@@ -150,82 +146,63 @@ export default function CategoryProductsPage() {
   const category = getCategoryBySlug(categorySlug)
   const breadcrumbs = getBreadcrumbs(categorySlug)
 
-
-  // State
-  const [searchTerm, setSearchTerm] = React.useState("")
-  const [sortConfig, setSortConfig] = React.useState<SortConfig>({ key: 'pricePerTB', direction: 'asc' })
-
-  // Filters
-  const [selectedConditions, setSelectedConditions] = React.useState<string[]>(['New', 'Used', 'Renewed'])
-  const [selectedTechnologies, setSelectedTechnologies] = React.useState<string[]>(['HDD', 'SSD', 'SAS'])
-  const [selectedFormFactors, setSelectedFormFactors] = React.useState<string[]>([])
-  const [minCapacity, setMinCapacity] = React.useState("")
-  const [maxCapacity, setMaxCapacity] = React.useState("")
+  // Use nuqs for URL-synchronized filters
+  const { filters, setSearch, toggleArrayFilter, setCapacityRange, setSort, clearAllFilters } = useProductFilters()
 
   // Determine if this category has products (for now, only hard-drives)
   const hasProducts = categorySlug === 'hard-drives' || categorySlug === 'storage'
   const currentProducts = hasProducts ? authenticStorageProducts : []
   
+  // Apply filters
   let filteredProducts = [...currentProducts]
 
-  if (searchTerm) {
-    filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()))
+  if (filters.search) {
+    filteredProducts = filteredProducts.filter(p => p.name.toLowerCase().includes(filters.search.toLowerCase()))
   }
 
-  if (selectedConditions.length > 0) {
-    filteredProducts = filteredProducts.filter(p => selectedConditions.includes(p.condition))
+  if (filters.condition && filters.condition.length > 0) {
+    filteredProducts = filteredProducts.filter(p => filters.condition!.includes(p.condition))
   }
 
-  if (selectedTechnologies.length > 0) {
-    filteredProducts = filteredProducts.filter(p => selectedTechnologies.includes(p.technology))
+  if (filters.technology && filters.technology.length > 0) {
+    filteredProducts = filteredProducts.filter(p => filters.technology!.includes(p.technology))
   }
 
-  if (selectedFormFactors.length > 0) {
-    filteredProducts = filteredProducts.filter(p => selectedFormFactors.includes(p.formFactor))
+  if (filters.formFactor && filters.formFactor.length > 0) {
+    filteredProducts = filteredProducts.filter(p => filters.formFactor!.includes(p.formFactor))
   }
 
-  if (minCapacity) {
-    const min = parseFloat(minCapacity)
-    if (!isNaN(min)) filteredProducts = filteredProducts.filter(p => (p.capacity / 1000) >= min)
+  if (filters.minCapacity !== null && filters.minCapacity !== undefined) {
+    filteredProducts = filteredProducts.filter(p => (p.capacity / 1000) >= filters.minCapacity!)
   }
 
-  if (maxCapacity) {
-    const max = parseFloat(maxCapacity)
-    if (!isNaN(max)) filteredProducts = filteredProducts.filter(p => (p.capacity / 1000) <= max)
+  if (filters.maxCapacity !== null && filters.maxCapacity !== undefined) {
+    filteredProducts = filteredProducts.filter(p => (p.capacity / 1000) <= filters.maxCapacity!)
   }
 
   // Sorting
   filteredProducts.sort((a, b) => {
-    const aValue = a[sortConfig.key]
-    const bValue = b[sortConfig.key]
+    const key = filters.sortBy as keyof Product
+    const aValue = a[key]
+    const bValue = b[key]
 
     if (typeof aValue === 'number' && typeof bValue === 'number') {
-      return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue
+      return filters.sortOrder === 'asc' ? aValue - bValue : bValue - aValue
     }
 
-    if (String(aValue) < String(bValue)) return sortConfig.direction === 'asc' ? -1 : 1
-    if (String(aValue) > String(bValue)) return sortConfig.direction === 'asc' ? 1 : -1
+    if (String(aValue) < String(bValue)) return filters.sortOrder === 'asc' ? -1 : 1
+    if (String(aValue) > String(bValue)) return filters.sortOrder === 'asc' ? 1 : -1
     return 0
   })
 
   const handleSort = (key: keyof Product) => {
-    setSortConfig(current => ({
-      key,
-      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc'
-    }))
-  }
-
-  const toggleFilter = (set: React.Dispatch<React.SetStateAction<string[]>>, value: string) => {
-    set(current =>
-      current.includes(value)
-        ? current.filter(item => item !== value)
-        : [...current, value]
-    )
+    const newOrder = filters.sortBy === key && filters.sortOrder === 'asc' ? 'desc' : 'asc'
+    setSort(key, newOrder as 'asc' | 'desc')
   }
 
   const getSortIcon = (key: keyof Product) => {
-    if (sortConfig.key !== key) return <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />
-    return sortConfig.direction === 'asc'
+    if (filters.sortBy !== key) return <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />
+    return filters.sortOrder === 'asc'
       ? <ChevronUp className="ml-1 h-3 w-3" />
       : <ChevronDown className="ml-1 h-3 w-3" />
   }
@@ -301,8 +278,8 @@ export default function CategoryProductsPage() {
               <Input
                 placeholder="Search products..."
                 className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={filters.search}
+                onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search products"
               />
             </div>
@@ -316,17 +293,9 @@ export default function CategoryProductsPage() {
                 <SheetTitle className="sr-only">Filters</SheetTitle>
                 <div className="h-full overflow-y-auto">
                   <FilterPanel 
-                    selectedConditions={selectedConditions}
-                    setSelectedConditions={setSelectedConditions}
-                    selectedTechnologies={selectedTechnologies}
-                    setSelectedTechnologies={setSelectedTechnologies}
-                    selectedFormFactors={selectedFormFactors}
-                    setSelectedFormFactors={setSelectedFormFactors}
-                    minCapacity={minCapacity}
-                    setMinCapacity={setMinCapacity}
-                    maxCapacity={maxCapacity}
-                    setMaxCapacity={setMaxCapacity}
-                    toggleFilter={toggleFilter}
+                    filters={filters}
+                    toggleArrayFilter={toggleArrayFilter}
+                    setCapacityRange={setCapacityRange}
                   />
                 </div>
               </SheetContent>
@@ -341,17 +310,9 @@ export default function CategoryProductsPage() {
               <aside className="hidden lg:block w-72 shrink-0">
                 <div>
                   <FilterPanel 
-                    selectedConditions={selectedConditions}
-                    setSelectedConditions={setSelectedConditions}
-                    selectedTechnologies={selectedTechnologies}
-                    setSelectedTechnologies={setSelectedTechnologies}
-                    selectedFormFactors={selectedFormFactors}
-                    setSelectedFormFactors={setSelectedFormFactors}
-                    minCapacity={minCapacity}
-                    setMinCapacity={setMinCapacity}
-                    maxCapacity={maxCapacity}
-                    setMaxCapacity={setMaxCapacity}
-                    toggleFilter={toggleFilter}
+                    filters={filters}
+                    toggleArrayFilter={toggleArrayFilter}
+                    setCapacityRange={setCapacityRange}
                   />
                 </div>
               </aside>
@@ -373,7 +334,7 @@ export default function CategoryProductsPage() {
                               }
                             }}
                             tabIndex={0}
-                            aria-sort={sortConfig.key === 'pricePerTB' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                            aria-sort={filters.sortBy === 'pricePerTB' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                             role="columnheader"
                           >
                             <div className="flex items-center">Price/TB {getSortIcon('pricePerTB')}</div>
@@ -388,7 +349,7 @@ export default function CategoryProductsPage() {
                               }
                             }}
                             tabIndex={0}
-                            aria-sort={sortConfig.key === 'price' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                            aria-sort={filters.sortBy === 'price' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                             role="columnheader"
                           >
                             <div className="flex items-center">Price {getSortIcon('price')}</div>
@@ -403,7 +364,7 @@ export default function CategoryProductsPage() {
                               }
                             }}
                             tabIndex={0}
-                            aria-sort={sortConfig.key === 'capacity' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                            aria-sort={filters.sortBy === 'capacity' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                             role="columnheader"
                           >
                             <div className="flex items-center">Capacity {getSortIcon('capacity')}</div>
@@ -474,14 +435,7 @@ export default function CategoryProductsPage() {
                     </p>
                     <Button 
                       variant="outline" 
-                      onClick={() => {
-                        setSearchTerm("")
-                        setSelectedConditions(['New', 'Used', 'Renewed'])
-                        setSelectedTechnologies(['HDD', 'SSD', 'SAS'])
-                        setSelectedFormFactors([])
-                        setMinCapacity("")
-                        setMaxCapacity("")
-                      }}
+                      onClick={clearAllFilters}
                     >
                       Clear All Filters
                     </Button>
@@ -512,31 +466,15 @@ export default function CategoryProductsPage() {
 }
 
 interface FilterPanelProps {
-  selectedConditions: string[]
-  setSelectedConditions: React.Dispatch<React.SetStateAction<string[]>>
-  selectedTechnologies: string[]
-  setSelectedTechnologies: React.Dispatch<React.SetStateAction<string[]>>
-  selectedFormFactors: string[]
-  setSelectedFormFactors: React.Dispatch<React.SetStateAction<string[]>>
-  minCapacity: string
-  setMinCapacity: React.Dispatch<React.SetStateAction<string>>
-  maxCapacity: string
-  setMaxCapacity: React.Dispatch<React.SetStateAction<string>>
-  toggleFilter: (set: React.Dispatch<React.SetStateAction<string[]>>, value: string) => void
+  filters: ReturnType<typeof useProductFilters>['filters']
+  toggleArrayFilter: ReturnType<typeof useProductFilters>['toggleArrayFilter']
+  setCapacityRange: ReturnType<typeof useProductFilters>['setCapacityRange']
 }
 
 function FilterPanel({
-  selectedConditions,
-  setSelectedConditions,
-  selectedTechnologies,
-  setSelectedTechnologies,
-  selectedFormFactors,
-  setSelectedFormFactors,
-  minCapacity,
-  setMinCapacity,
-  maxCapacity,
-  setMaxCapacity,
-  toggleFilter
+  filters,
+  toggleArrayFilter,
+  setCapacityRange
 }: FilterPanelProps) {
   return (
     <Card className="p-4">
@@ -551,8 +489,8 @@ function FilterPanel({
                   <div key={condition} className="flex items-center space-x-3 py-1.5">
                     <Checkbox
                       id={`condition-${condition}`}
-                      checked={selectedConditions.includes(condition)}
-                      onCheckedChange={() => toggleFilter(setSelectedConditions, condition)}
+                      checked={filters.condition?.includes(condition) || false}
+                      onCheckedChange={() => toggleArrayFilter('condition', condition)}
                     />
                     <Label htmlFor={`condition-${condition}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{condition}</Label>
                   </div>
@@ -569,8 +507,11 @@ function FilterPanel({
                   <Input
                     type="number"
                     placeholder="Min"
-                    value={minCapacity}
-                    onChange={(e) => setMinCapacity(e.target.value)}
+                    value={filters.minCapacity ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value ? parseFloat(e.target.value) : null
+                      setCapacityRange(val, filters.maxCapacity ?? null)
+                    }}
                     className="w-full pr-8"
                     aria-label="Minimum capacity in TB"
                   />
@@ -581,8 +522,11 @@ function FilterPanel({
                   <Input
                     type="number"
                     placeholder="Max"
-                    value={maxCapacity}
-                    onChange={(e) => setMaxCapacity(e.target.value)}
+                    value={filters.maxCapacity ?? ''}
+                    onChange={(e) => {
+                      const val = e.target.value ? parseFloat(e.target.value) : null
+                      setCapacityRange(filters.minCapacity ?? null, val)
+                    }}
                     className="w-full pr-8"
                     aria-label="Maximum capacity in TB"
                   />
@@ -600,8 +544,8 @@ function FilterPanel({
                   <div key={tech} className="flex items-center space-x-3 py-1.5">
                     <Checkbox
                       id={`tech-${tech}`}
-                      checked={selectedTechnologies.includes(tech)}
-                      onCheckedChange={() => toggleFilter(setSelectedTechnologies, tech)}
+                      checked={filters.technology?.includes(tech) || false}
+                      onCheckedChange={() => toggleArrayFilter('technology', tech)}
                     />
                     <Label htmlFor={`tech-${tech}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{tech}</Label>
                   </div>
@@ -618,8 +562,8 @@ function FilterPanel({
                   <div key={ff} className="flex items-center space-x-3 py-1.5">
                     <Checkbox
                       id={`ff-${ff}`}
-                      checked={selectedFormFactors.includes(ff)}
-                      onCheckedChange={() => toggleFilter(setSelectedFormFactors, ff)}
+                      checked={filters.formFactor?.includes(ff) || false}
+                      onCheckedChange={() => toggleArrayFilter('formFactor', ff)}
                     />
                     <Label htmlFor={`ff-${ff}`} className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">{ff}</Label>
                   </div>
