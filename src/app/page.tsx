@@ -26,6 +26,7 @@ import {
 // Client components wrapped in Suspense for progressive loading
 import { ClientGlobe } from "@/components/client/ClientGlobe";
 import { ClientFeaturedDeals } from "@/components/client/ClientFeaturedDeals";
+import { getCategoryPath } from "@/lib/categories";
 
 const HeroTableDemo = dynamic(
   () => import("@/components/hero-table-demo").then((mod) => ({ default: mod.HeroTableDemo })),
@@ -34,11 +35,12 @@ const HeroTableDemo = dynamic(
   }
 );
 
+// Featured categories for homepage
 const categories = [
   {
     name: "Hard Drives & SSDs",
     icon: HardDrive,
-    slug: "storage",
+    slug: "hard-drives",
   },
   {
     name: "Protein Powder",
@@ -112,7 +114,7 @@ export default function HomePage() {
                   className="text-lg px-8 h-14 rounded-full shadow-lg shadow-blue-600/20 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white hover:brightness-110 transition-all group"
                   asChild
                 >
-                  <Link className="no-underline" href="/categories">
+                  <Link className="no-underline" href="/us">
                     Start Saving Now
                     <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                   </Link>
@@ -230,7 +232,7 @@ export default function HomePage() {
             className="text-foreground font-bold hover:text-foreground/80 hover:bg-transparent p-0"
             asChild
           >
-            <Link href="/categories">
+            <Link href="/us">
               View all <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -239,7 +241,7 @@ export default function HomePage() {
           {categories.map((category, idx) => (
             <Link
               key={category.slug}
-              href={`/categories/${category.slug}`}
+              href={getCategoryPath(category.slug)}
               className="w-full sm:w-64 no-underline"
               aria-label={`Browse ${category.name} category`}
             >

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,10 +19,7 @@ import { Label } from "@/components/ui/label"
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
-  SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet"
 import {
   Accordion,
@@ -29,24 +27,21 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import {
   Filter,
-  ExternalLink,
   Search,
   ChevronDown,
   ChevronUp,
   ChevronsUpDown,
-  Menu,
   Info
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getCategoryBySlug, getBreadcrumbs, getCategoryPath } from "@/lib/categories"
+import { isValidCountryCode, DEFAULT_COUNTRY } from "@/lib/countries"
 
 // Types
 type Product = {
@@ -64,47 +59,7 @@ type Product = {
   brand: string
 }
 
-// Mock Data Generator
-const generateProducts = (count: number): Product[] => {
-  // Simple seeded random number generator for deterministic data
-  let seed = 56789;
-  const random = () => {
-    seed = (seed * 9301 + 49297) % 233280;
-    return seed / 233280;
-  }
-
-  const formFactors = ["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"]
-  const technologies = ["HDD", "SSD", "SAS"] as const
-  const conditions = ["New", "Used", "Renewed"] as const
-  const warranties = ["1 year", "2 years", "3 years", "5 years", "Lifetime"]
-  const brands = ["Seagate", "Western Digital", "Toshiba", "Samsung", "Crucial", "SanDisk", "Kingston"]
-
-  return Array.from({ length: count }).map((_, i) => {
-    const isTB = random() > 0.3
-    const capacityValue = isTB ? Math.floor(random() * 18) + 1 : [256, 512, 1000][Math.floor(random() * 3)]
-    const capacityGB = isTB ? capacityValue * 1000 : capacityValue
-
-    // Realistic pricing logic
-    const basePricePerTB = random() * 15 + 10 // $10-$25 per TB
-    const price = (capacityGB / 1000) * basePricePerTB * (random() * 0.5 + 0.8)
-
-    return {
-      id: i,
-      name: `${brands[Math.floor(random() * brands.length)]} ${capacityValue}${isTB ? 'TB' : 'GB'} ${formFactors[Math.floor(random() * formFactors.length)]}`,
-      price: parseFloat(price.toFixed(2)),
-      capacity: capacityGB,
-      capacityUnit: isTB ? 'TB' : 'GB',
-      pricePerTB: parseFloat((price / (capacityGB / 1000)).toFixed(3)),
-      warranty: warranties[Math.floor(random() * warranties.length)],
-      formFactor: formFactors[Math.floor(random() * formFactors.length)],
-      technology: technologies[Math.floor(random() * technologies.length)],
-      condition: conditions[Math.floor(random() * conditions.length)],
-      affiliateLink: `https://www.amazon.com/dp/B0${Math.floor(random() * 1000000).toString(36).toUpperCase()}?tag=realpricedata-21`,
-      brand: brands[Math.floor(random() * brands.length)],
-    }
-  })
-}
-
+// Authentic storage products data
 const authenticStorageProducts: Product[] = [
   {
     id: 101,
@@ -178,16 +133,23 @@ const authenticStorageProducts: Product[] = [
   }
 ];
 
-const fakeProducts = generateProducts(100)
-
 type SortConfig = {
   key: keyof Product
   direction: 'asc' | 'desc'
 }
 
-export default function SubcategoryPage() {
+export default function CategoryProductsPage() {
   const params = useParams()
-  const slug = params.slug as string
+  const countryCode = params.country as string
+  const parentSlug = params.parent as string
+  const categorySlug = params.category as string
+  
+  // Validate country code
+  const validCountry = isValidCountryCode(countryCode) ? countryCode : DEFAULT_COUNTRY
+  
+  const category = getCategoryBySlug(categorySlug)
+  const breadcrumbs = getBreadcrumbs(categorySlug)
+
 
   // State
   const [searchTerm, setSearchTerm] = React.useState("")
@@ -200,9 +162,9 @@ export default function SubcategoryPage() {
   const [minCapacity, setMinCapacity] = React.useState("")
   const [maxCapacity, setMaxCapacity] = React.useState("")
 
-  // Filter Logic
-  const isStorage = slug === 'storage'
-  const currentProducts = isStorage ? authenticStorageProducts : []
+  // Determine if this category has products (for now, only hard-drives)
+  const hasProducts = categorySlug === 'hard-drives' || categorySlug === 'storage'
+  const currentProducts = hasProducts ? authenticStorageProducts : []
   
   let filteredProducts = [...currentProducts]
 
@@ -268,15 +230,68 @@ export default function SubcategoryPage() {
       : <ChevronDown className="ml-1 h-3 w-3" />
   }
 
+  if (!category) {
+    return (
+      <div className="container py-12 mx-auto px-4">
+        <div className="text-center py-24">
+          <h1 className="text-4xl font-bold mb-4">Category Not Found</h1>
+          <p className="text-muted-foreground mb-8">
+            The category you're looking for doesn't exist.
+          </p>
+          <Button asChild>
+            <Link href={`/${validCountry}`}>Browse All Categories</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex flex-col gap-6">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb">
+          <ol className="flex items-center gap-2 text-sm text-muted-foreground">
+            <li>
+              <Link href="/" className="hover:text-foreground transition-colors">
+                Home
+              </Link>
+            </li>
+            <li>/</li>
+            <li>
+              <Link href={`/${validCountry}`} className="hover:text-foreground transition-colors">
+                Categories
+              </Link>
+            </li>
+            {breadcrumbs.map((crumb, index) => (
+              <React.Fragment key={crumb.slug}>
+                <li>/</li>
+                <li>
+                  {index === breadcrumbs.length - 1 ? (
+                    <span className="text-foreground font-medium">{crumb.name}</span>
+                  ) : (
+                    <Link 
+                      href={getCategoryPath(crumb.slug, validCountry)} 
+                      className="hover:text-foreground transition-colors"
+                    >
+                      {crumb.name}
+                    </Link>
+                  )}
+                </li>
+              </React.Fragment>
+            ))}
+          </ol>
+        </nav>
+
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Disk Price Comparison</h1>
+            <div className="flex items-center gap-3 mb-2">
+              <category.icon className="h-8 w-8 text-primary" aria-hidden="true" />
+              <h1 className="text-2xl font-bold tracking-tight">{category.name}</h1>
+            </div>
             <p className="text-muted-foreground text-sm">
-              Showing {filteredProducts.length} disks.
+              {hasProducts ? `Showing ${filteredProducts.length} products` : category.description}
             </p>
           </div>
 
@@ -284,19 +299,19 @@ export default function SubcategoryPage() {
             <div className="relative flex-1 md:w-64">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search disks..."
+                placeholder="Search products..."
                 className="pl-8"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Search disks"
+                aria-label="Search products"
               />
             </div>
             <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open filters">
+              <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open filters" asChild>
+                <button>
                   <Filter className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
+                </button>
+              </Button>
               <SheetContent side="left" className="w-[300px] sm:w-[400px] px-4 pb-4 pt-12">
                 <SheetTitle className="sr-only">Filters</SheetTitle>
                 <div className="h-full overflow-y-auto">
@@ -320,7 +335,7 @@ export default function SubcategoryPage() {
         </div>
 
         <div className="flex gap-8">
-          {isStorage ? (
+          {hasProducts ? (
             <>
               {/* Desktop Sidebar */}
               <aside className="hidden lg:block w-72 shrink-0">
@@ -343,110 +358,135 @@ export default function SubcategoryPage() {
 
               {/* Main Content */}
               <div className="flex-1 min-w-0">
-                <div className="rounded-md border bg-card">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead 
-                          className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
-                          onClick={() => handleSort('pricePerTB')}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              handleSort('pricePerTB')
-                            }
-                          }}
-                          tabIndex={0}
-                          aria-sort={sortConfig.key === 'pricePerTB' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
-                          role="columnheader"
-                        >
-                          <div className="flex items-center">Price/TB {getSortIcon('pricePerTB')}</div>
-                        </TableHead>
-                        <TableHead 
-                          className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
-                          onClick={() => handleSort('price')}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              handleSort('price')
-                            }
-                          }}
-                          tabIndex={0}
-                          aria-sort={sortConfig.key === 'price' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
-                          role="columnheader"
-                        >
-                          <div className="flex items-center">Price {getSortIcon('price')}</div>
-                        </TableHead>
-                        <TableHead 
-                          className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
-                          onClick={() => handleSort('capacity')}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault()
-                              handleSort('capacity')
-                            }
-                          }}
-                          tabIndex={0}
-                          aria-sort={sortConfig.key === 'capacity' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
-                          role="columnheader"
-                        >
-                          <div className="flex items-center">Capacity {getSortIcon('capacity')}</div>
-                        </TableHead>
-                        <TableHead className="hidden md:table-cell">Warranty</TableHead>
-                        <TableHead className="hidden sm:table-cell">Form Factor</TableHead>
-                        <TableHead className="hidden sm:table-cell">Tech</TableHead>
-                        <TableHead className="hidden sm:table-cell">Condition</TableHead>
-                        <TableHead>Affiliate Link</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredProducts.map((product) => (
-                        <TableRow key={product.id} className="group">
-                          <TableCell className="font-medium">
-                            ${product.pricePerTB.toFixed(3)}
-                          </TableCell>
-                          <TableCell>
-                            ${product.price.toFixed(2)}
-                          </TableCell>
-                          <TableCell>
-                            {product.capacityUnit === 'TB' ? (product.capacity / 1000).toFixed(1) : product.capacity} {product.capacityUnit}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                            {product.warranty}
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                            {product.formFactor}
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                            {product.technology}
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <Badge 
-                              className={cn(
-                                "text-xs font-medium border-0 px-2 py-0.5",
-                                product.condition === 'New' && "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-500/30",
-                                product.condition === 'Renewed' && "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-500/30",
-                                product.condition === 'Used' && "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-500/30"
-                              )}
-                            >
-                              {product.condition}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <a 
-                              href={product.affiliateLink} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-primary underline text-sm line-clamp-2 block"
-                            >
-                              {product.name}
-                            </a>
-                          </TableCell>
+                {filteredProducts.length > 0 ? (
+                  <div className="rounded-md border bg-card">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
+                            onClick={() => handleSort('pricePerTB')}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleSort('pricePerTB')
+                              }
+                            }}
+                            tabIndex={0}
+                            aria-sort={sortConfig.key === 'pricePerTB' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                            role="columnheader"
+                          >
+                            <div className="flex items-center">Price/TB {getSortIcon('pricePerTB')}</div>
+                          </TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
+                            onClick={() => handleSort('price')}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleSort('price')
+                              }
+                            }}
+                            tabIndex={0}
+                            aria-sort={sortConfig.key === 'price' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                            role="columnheader"
+                          >
+                            <div className="flex items-center">Price {getSortIcon('price')}</div>
+                          </TableHead>
+                          <TableHead 
+                            className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
+                            onClick={() => handleSort('capacity')}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleSort('capacity')
+                              }
+                            }}
+                            tabIndex={0}
+                            aria-sort={sortConfig.key === 'capacity' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                            role="columnheader"
+                          >
+                            <div className="flex items-center">Capacity {getSortIcon('capacity')}</div>
+                          </TableHead>
+                          <TableHead className="hidden md:table-cell">Warranty</TableHead>
+                          <TableHead className="hidden sm:table-cell">Form Factor</TableHead>
+                          <TableHead className="hidden sm:table-cell">Tech</TableHead>
+                          <TableHead className="hidden sm:table-cell">Condition</TableHead>
+                          <TableHead>Product</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredProducts.map((product) => (
+                          <TableRow key={product.id} className="group">
+                            <TableCell className="font-medium">
+                              ${product.pricePerTB.toFixed(3)}
+                            </TableCell>
+                            <TableCell>
+                              ${product.price.toFixed(2)}
+                            </TableCell>
+                            <TableCell>
+                              {product.capacityUnit === 'TB' ? (product.capacity / 1000).toFixed(1) : product.capacity} {product.capacityUnit}
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                              {product.warranty}
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                              {product.formFactor}
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+                              {product.technology}
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                              <Badge 
+                                className={cn(
+                                  "text-xs font-medium border-0 px-2 py-0.5",
+                                  product.condition === 'New' && "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-500/30",
+                                  product.condition === 'Renewed' && "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-500/30",
+                                  product.condition === 'Used' && "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-500/30"
+                                )}
+                              >
+                                {product.condition}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <a 
+                                href={product.affiliateLink} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-primary underline text-sm line-clamp-2 block"
+                              >
+                                {product.name}
+                              </a>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-center border rounded-md bg-card/50">
+                    <div className="bg-muted/30 p-4 rounded-full mb-4">
+                      <Search className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold mb-2">No products found</h3>
+                    <p className="text-muted-foreground max-w-sm mb-6">
+                      We couldn't find any products matching your current filters. Try adjusting your search or filters.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setSearchTerm("")
+                        setSelectedConditions(['New', 'Used', 'Renewed'])
+                        setSelectedTechnologies(['HDD', 'SSD', 'SAS'])
+                        setSelectedFormFactors([])
+                        setMinCapacity("")
+                        setMaxCapacity("")
+                      }}
+                    >
+                      Clear All Filters
+                    </Button>
+                  </div>
+                )}
                 
                 <div className="mt-4 text-center text-xs text-muted-foreground">
                   Prices and availability are subject to change.
@@ -461,7 +501,7 @@ export default function SubcategoryPage() {
               <h2 className="text-2xl font-bold mb-3">Data Coming Soon</h2>
               <p className="text-muted-foreground max-w-md text-lg">
                 We are currently aggregating real-time price data for this category. 
-                Please check back shortly for the best deals on <span className="font-medium text-foreground">{slug.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')}</span>.
+                Please check back shortly for the best deals on <span className="font-medium text-foreground">{category.name}</span>.
               </p>
             </div>
           )}
