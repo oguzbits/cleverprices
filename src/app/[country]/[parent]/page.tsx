@@ -42,7 +42,7 @@ export default function ParentCategoryPageWithCountry() {
   }
 
   return (
-    <div className="container py-12 mx-auto px-4">
+    <div className="container py-6 mx-auto px-4">
       {/* Breadcrumb */}
       <nav className="mb-8" aria-label="Breadcrumb">
         <ol className="flex items-center gap-2 text-sm text-muted-foreground">
