@@ -10,6 +10,7 @@ import {
   type Country,
   countries,
 } from '@/lib/countries'
+import { trackSEO } from '@/lib/analytics'
 
 export function useCountry() {
   const pathname = usePathname()
@@ -51,15 +52,20 @@ export function useCountry() {
     }
 
     const urlCountry = getCountryFromPath()
+    const oldCountry = country
+    
     setCountry(newCountryCode)
     saveCountryPreference(newCountryCode)
+    
+    // Track country change for SEO analytics
+    trackSEO.countryChanged(oldCountry, newCountryCode)
 
     // Update URL if it currently has a country code
     if (urlCountry) {
       const newPath = pathname.replace(`/${urlCountry}`, `/${newCountryCode}`)
       router.push(newPath)
     }
-  }, [pathname, router, getCountryFromPath])
+  }, [pathname, router, getCountryFromPath, country])
 
   // Get current country object
   const currentCountry: Country | undefined = countries[country]

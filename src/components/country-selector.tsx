@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { useCountry } from "@/hooks/use-country"
 import { getAllCountries } from "@/lib/countries"
+import { trackSEO } from "@/lib/analytics"
 
 export function CountrySelector() {
   const { country, currentCountry, changeCountry } = useCountry()

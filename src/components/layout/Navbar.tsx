@@ -20,6 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useRouter, usePathname } from "next/navigation"
+import { trackSEO } from "@/lib/analytics"
 
 // Lazy load SearchModal - only needed when user clicks search
 const SearchModal = dynamic(
@@ -177,7 +178,12 @@ export function Navbar() {
                   variant="ghost"
                   size="icon"
                   className="cursor-pointer"
-                  onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+                  onClick={() => {
+                    const newTheme = theme === "light" ? "dark" : "light"
+                    setTheme(newTheme)
+                    // Track theme change for SEO analytics
+                    trackSEO.themeChanged(newTheme as 'light' | 'dark')
+                  }}
                   aria-label={mounted ? `Switch to ${theme === "light" ? "dark" : "light"} mode` : "Toggle theme"}
                 >
                   <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />

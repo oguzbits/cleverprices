@@ -43,6 +43,7 @@ import { cn } from "@/lib/utils"
 import { getCategoryBySlug, getBreadcrumbs, getCategoryPath } from "@/lib/categories"
 import { isValidCountryCode, DEFAULT_COUNTRY } from "@/lib/countries"
 import { useProductFilters } from "@/hooks/use-product-filters"
+import { trackSEO } from "@/lib/analytics"
 
 // Types
 type Product = {
@@ -207,6 +208,38 @@ export default function CategoryProductsPage() {
       : <ChevronDown className="ml-1 h-3 w-3" />
   }
 
+  // Track category view on page load
+  React.useEffect(() => {
+    if (category) {
+      trackSEO.categoryView(categorySlug, validCountry)
+    }
+  }, [categorySlug, validCountry, category])
+
+  // Track affiliate clicks (MOST IMPORTANT METRIC!)
+  const handleAffiliateClick = (product: Product, index: number) => {
+    trackSEO.affiliateClick({
+      productName: product.name,
+      category: categorySlug,
+      country: validCountry,
+      price: product.price,
+      pricePerUnit: product.pricePerTB,
+      position: index + 1,
+    })
+  }
+
+  // Track filter changes
+  const handleFilterChange = (filterName: string, value: string) => {
+    toggleArrayFilter(filterName as any, value)
+    trackSEO.filterApplied(filterName, value, categorySlug)
+  }
+
+  // Track sort changes
+  const handleSortWithTracking = (key: keyof Product) => {
+    const newOrder = filters.sortBy === key && filters.sortOrder === 'asc' ? 'desc' : 'asc'
+    setSort(key, newOrder as 'asc' | 'desc')
+    trackSEO.sortChanged(String(key), newOrder, categorySlug)
+  }
+
   if (!category) {
     return (
       <div className="container py-12 mx-auto px-4">
@@ -294,7 +327,7 @@ export default function CategoryProductsPage() {
                 <div className="h-full overflow-y-auto">
                   <FilterPanel 
                     filters={filters}
-                    toggleArrayFilter={toggleArrayFilter}
+                    toggleArrayFilter={handleFilterChange}
                     setCapacityRange={setCapacityRange}
                   />
                 </div>
@@ -311,7 +344,7 @@ export default function CategoryProductsPage() {
                 <div>
                   <FilterPanel 
                     filters={filters}
-                    toggleArrayFilter={toggleArrayFilter}
+                    toggleArrayFilter={handleFilterChange}
                     setCapacityRange={setCapacityRange}
                   />
                 </div>
@@ -326,11 +359,11 @@ export default function CategoryProductsPage() {
                         <TableRow>
                           <TableHead 
                             className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
-                            onClick={() => handleSort('pricePerTB')}
+                            onClick={() => handleSortWithTracking('pricePerTB')}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault()
-                                handleSort('pricePerTB')
+                                handleSortWithTracking('pricePerTB')
                               }
                             }}
                             tabIndex={0}
@@ -341,11 +374,11 @@ export default function CategoryProductsPage() {
                           </TableHead>
                           <TableHead 
                             className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
-                            onClick={() => handleSort('price')}
+                            onClick={() => handleSortWithTracking('price')}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault()
-                                handleSort('price')
+                                handleSortWithTracking('price')
                               }
                             }}
                             tabIndex={0}
@@ -356,11 +389,11 @@ export default function CategoryProductsPage() {
                           </TableHead>
                           <TableHead 
                             className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
-                            onClick={() => handleSort('capacity')}
+                            onClick={() => handleSortWithTracking('capacity')}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault()
-                                handleSort('capacity')
+                                handleSortWithTracking('capacity')
                               }
                             }}
                             tabIndex={0}
@@ -412,6 +445,7 @@ export default function CategoryProductsPage() {
                             <TableCell>
                               <a 
                                 href={product.affiliateLink} 
+                                onClick={() => handleAffiliateClick(product, filteredProducts.indexOf(product))}
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="text-primary underline text-sm line-clamp-2 block"

@@ -8,6 +8,8 @@ import { LazyCookieConsent } from "@/components/LazyCookieConsent";
 import { NuqsProvider } from "@/providers/nuqs-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { ScrollTracker } from "@/components/ScrollTracker";
+import { TimeTracker } from "@/components/TimeTracker";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -116,6 +118,11 @@ export default function RootLayout({
               <Footer />
             </div>
             <LazyCookieConsent />
+            
+            {/* Analytics Tracking */}
+            <ScrollTracker />
+            <TimeTracker />
+            
             <SpeedInsights />
             <Analytics />
           </NuqsProvider>
