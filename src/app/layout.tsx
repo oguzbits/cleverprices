@@ -7,6 +7,7 @@ import { Footer } from "@/components/layout/Footer";
 import { LazyCookieConsent } from "@/components/LazyCookieConsent";
 import { NuqsProvider } from "@/providers/nuqs-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -116,6 +117,7 @@ export default function RootLayout({
             </div>
             <LazyCookieConsent />
             <SpeedInsights />
+            <Analytics />
           </NuqsProvider>
         </ThemeProvider>
       </body>
