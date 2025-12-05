@@ -311,7 +311,7 @@ export default function CategoryProductsPage() {
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search products..."
-                className="pl-8 focus-visible:ring-0 focus-visible:border-primary/60 transition-colors"
+                className="pl-8 bg-card dark:bg-card shadow-sm focus-visible:ring-0 focus-visible:border-primary transition-colors"
                 value={filters.search}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search products"
@@ -319,7 +319,7 @@ export default function CategoryProductsPage() {
             </div>
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open filters">
+                <Button variant="outline" size="icon" className="lg:hidden bg-card dark:bg-card hover:bg-card dark:hover:bg-card" aria-label="Open filters">
                   <Filter className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
@@ -337,11 +337,11 @@ export default function CategoryProductsPage() {
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex gap-6">
           {hasProducts ? (
             <>
               {/* Desktop Sidebar */}
-              <aside className="hidden lg:block w-72 shrink-0">
+              <aside className="hidden lg:block w-60 shrink-0">
                 <div>
                   <FilterPanel 
                     filters={filters}
@@ -547,7 +547,7 @@ function FilterPanel({
                       const val = e.target.value ? parseFloat(e.target.value) : null
                       setCapacityRange(val, filters.maxCapacity ?? null)
                     }}
-                    className="w-full pr-8"
+                    className="w-full pr-8 bg-white dark:bg-secondary/40 shadow-sm focus-visible:ring-0 focus-visible:border-primary transition-colors"
                     aria-label="Minimum capacity in TB"
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">TB</span>
@@ -562,7 +562,7 @@ function FilterPanel({
                       const val = e.target.value ? parseFloat(e.target.value) : null
                       setCapacityRange(filters.minCapacity ?? null, val)
                     }}
-                    className="w-full pr-8"
+                    className="w-full pr-8 bg-white dark:bg-secondary/40 shadow-sm focus-visible:ring-0 focus-visible:border-primary transition-colors"
                     aria-label="Maximum capacity in TB"
                   />
                   <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">TB</span>

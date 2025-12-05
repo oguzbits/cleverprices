@@ -4,12 +4,6 @@ import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Moon, Sun, Search } from "lucide-react"
 import { useTheme } from "next-themes"
 import dynamic from "next/dynamic"
@@ -19,7 +13,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { useRouter, usePathname } from "next/navigation"
 import { trackSEO } from "@/lib/analytics"
 
 // Lazy load SearchModal - only needed when user clicks search
