@@ -20,6 +20,7 @@ import {
   Sheet,
   SheetContent,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet"
 import {
   Accordion,
@@ -310,18 +311,18 @@ export default function CategoryProductsPage() {
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search products..."
-                className="pl-8"
+                className="pl-8 focus-visible:ring-0 focus-visible:border-primary/60 transition-colors"
                 value={filters.search}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search products"
               />
             </div>
             <Sheet>
-              <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open filters" asChild>
-                <button>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="lg:hidden" aria-label="Open filters">
                   <Filter className="h-4 w-4" />
-                </button>
-              </Button>
+                </Button>
+              </SheetTrigger>
               <SheetContent side="left" className="w-[300px] sm:w-[400px] px-4 pb-4 pt-12">
                 <SheetTitle className="sr-only">Filters</SheetTitle>
                 <div className="h-full overflow-y-auto">
