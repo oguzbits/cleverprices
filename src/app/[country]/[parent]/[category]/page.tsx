@@ -261,13 +261,13 @@ export default function CategoryProductsPage() {
       <div className="flex flex-col gap-6">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb">
-          <ol className="flex items-center gap-2 text-sm text-muted-foreground">
+          <ol className="flex items-center flex-wrap gap-1.5 gap-y-2 sm:gap-2 text-xs sm:text-sm text-muted-foreground leading-normal">
             <li>
               <Link href="/" className="hover:text-foreground transition-colors">
                 Home
               </Link>
             </li>
-            <li>/</li>
+            <li className="text-muted-foreground/50">/</li>
             <li>
               <Link href={`/${validCountry}/categories`} className="hover:text-foreground transition-colors">
                 Categories
@@ -275,10 +275,10 @@ export default function CategoryProductsPage() {
             </li>
             {breadcrumbs.map((crumb, index) => (
               <React.Fragment key={crumb.slug}>
-                <li>/</li>
+                <li className="text-muted-foreground/50">/</li>
                 <li>
                   {index === breadcrumbs.length - 1 ? (
-                    <span className="text-foreground font-medium">{crumb.name}</span>
+                    <span className="text-foreground font-medium break-words">{crumb.name}</span>
                   ) : (
                     <Link 
                       href={getCategoryPath(crumb.slug, validCountry)} 
@@ -297,10 +297,10 @@ export default function CategoryProductsPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <category.icon className="h-8 w-8 text-primary" aria-hidden="true" />
-              <h1 className="text-2xl font-bold tracking-tight">{category.name}</h1>
+              <category.icon className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" aria-hidden="true" />
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{category.name}</h1>
             </div>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-muted-foreground text-xs sm:text-sm">
               {hasProducts ? `Showing ${filteredProducts.length} products` : category.description}
             </p>
           </div>
