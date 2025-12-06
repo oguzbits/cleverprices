@@ -377,7 +377,7 @@ export function HeroTableDemo() {
 
         <div
           className={cn(
-            "flex min-h-[300px] h-auto transition-opacity duration-300",
+            "flex h-[350px] sm:h-[450px] transition-opacity duration-300",
             fadeOut && "opacity-50"
           )}
           style={{ willChange: fadeOut ? "opacity" : "auto" }}

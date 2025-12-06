@@ -105,7 +105,7 @@ export function HomeContent({ country }: { country: string }) {
             </div>
             {/* Right Column: Interactive Demo */}
             <div className="relative">
-              <Suspense fallback={<div className="w-full max-w-5xl mx-auto h-[400px] bg-muted/20 rounded-lg animate-pulse" />}>
+              <Suspense fallback={<div className="w-full max-w-5xl mx-auto h-[400px] sm:h-[500px] bg-muted/20 rounded-lg animate-pulse" />}>
                 <HeroTableDemo />
               </Suspense>
             </div>
