@@ -1,10 +1,9 @@
 "use client"
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { TrendingDown, HardDrive } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { getCountryByCode } from "@/lib/countries"
 
 interface Deal {
   id: string
@@ -30,8 +29,8 @@ const deals: Deal[] = [
     category: "Hard Drives & SSDs",
     categorySlug: "hard-drives",
     parentSlug: "electronics",
-    originalPrice: 189.99,
-    bestUnitPrice: 94.99,
+    originalPrice: 197.99,
+    bestUnitPrice: 98.99,
     unitLabel: "TB",
     savings: 0,
     icon: HardDrive,
@@ -46,8 +45,8 @@ const deals: Deal[] = [
     category: "Hard Drives & SSDs",
     categorySlug: "hard-drives",
     parentSlug: "electronics",
-    originalPrice: 249.99,
-    bestUnitPrice: 13.89,
+    originalPrice: 319.99,
+    bestUnitPrice: 17.77,
     unitLabel: "TB",
     savings: 94,
     icon: HardDrive,
@@ -62,8 +61,8 @@ const deals: Deal[] = [
     category: "Hard Drives & SSDs",
     categorySlug: "hard-drives",
     parentSlug: "electronics",
-    originalPrice: 189.99,
-    bestUnitPrice: 94.99,
+    originalPrice: 176.90,
+    bestUnitPrice: 88.45,
     unitLabel: "TB",
     savings: 0,
     icon: HardDrive,
@@ -106,6 +105,18 @@ function Sparkline({ data, color = "currentColor", className }: { data: number[]
 export function FeaturedDeals({ country = "us" }: { country?: string }) {
   const [isHovered, setIsHovered] = useState(false)
   
+  // Get country configuration
+  const countryConfig = getCountryByCode(country)
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat(countryConfig?.locale || 'en-US', {
+      style: 'currency',
+      currency: countryConfig?.currency || 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)
+  }
+
   // Show all 3 deals
   const getVisibleDeals = () => {
     return deals.slice(0, 3) 
@@ -173,7 +184,7 @@ export function FeaturedDeals({ country = "us" }: { country?: string }) {
 
               {/* Price */}
               <div className="text-right font-mono font-bold tracking-tight text-foreground text-xs sm:text-sm">
-                ${deal.bestUnitPrice}
+                {formatCurrency(deal.bestUnitPrice)}
                 <span className="text-[10px] text-muted-foreground font-sans ml-0.5 text-normal block sm:inline">/{deal.unitLabel}</span>
               </div>
 
@@ -195,4 +206,3 @@ export function FeaturedDeals({ country = "us" }: { country?: string }) {
     </section>
   )
 }
-

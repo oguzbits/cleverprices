@@ -42,7 +42,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getCategoryBySlug, getBreadcrumbs, getCategoryPath } from "@/lib/categories"
-import { isValidCountryCode, DEFAULT_COUNTRY } from "@/lib/countries"
+import { isValidCountryCode, DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries"
 import { useProductFilters } from "@/hooks/use-product-filters"
 import { trackSEO } from "@/lib/analytics"
 
@@ -67,71 +67,71 @@ const authenticStorageProducts: Product[] = [
   {
     id: 101,
     name: "SAMSUNG 990 PRO SSD 2TB NVMe M.2 PCIe Gen4",
-    price: 189.99,
+    price: 197.99,
     capacity: 2000,
     capacityUnit: 'TB',
-    pricePerTB: 94.995,
+    pricePerTB: 98.995,
     warranty: "5 years",
     formFactor: "M.2 NVMe",
     technology: "SSD",
     condition: "New",
-    affiliateLink: "https://www.amazon.com/SAMSUNG-Internal-Expansion-MZ-V9P2T0B-AM/dp/B0BHJJ9Y77?_encoding=UTF8&pf_rd_r=8RW5ZQHVDEMVZYN3DV84&pf_rd_p=4e1b46a8-daf9-4433-b97e-d6df97cf3699&pd_rd_i=B0BHJJ9Y77&pd_rd_w=TGoZk&pd_rd_wg=vgfV0&pd_rd_r=9b70e2b3-98b0-4579-ac1c-fdba45c66fff&content-id=amzn1.sym.4e1b46a8-daf9-4433-b97e-d6df97cf3699&th=1",
+    affiliateLink: "https://amzn.to/48yJXRZ",
     brand: "Samsung"
   },
   {
     id: 102,
     name: "Seagate Exos X18 18TB Enterprise HDD",
-    price: 249.99,
+    price: 319.99,
     capacity: 18000,
     capacityUnit: 'TB',
-    pricePerTB: 13.89,
+    pricePerTB: 17.77,
     warranty: "5 years",
     formFactor: "Internal 3.5\"",
     technology: "HDD",
-    condition: "Renewed",
-    affiliateLink: "https://www.amazon.com/Seagate-ST18000NM000J-Internal-Drive-7200RPM/dp/B08L5GQR5V?dib=eyJ2IjoiMSJ9.HStqLltVfroQv5S02r6rJ4Zh7a28_EPWbdPk3teR1ux_ReoDsvzRZ3reYDyhllExSZatn972TwRfVo_WXJUkcMckEbiUzezGASy5Oza0l4iwVhr5kmEhMotQosqE7o8KdKP59H4gl-p3__TgQPbt9dcKPlgZl0rrQhdH54ZU9lheEXhpTrDtTc0R5zwcP_ff_2wszycvxarKHdDFmIgpv0sVcs_PPXTbkKAcW_tKz40.oSjhdbUp95Y47EqamjbBfstTcwqoR9Z7CPGMhsUqYQI&dib_tag=se&keywords=Seagate+Exos+X18+18TB+Enterprise+HDD&qid=1764701501&sr=8-1",
+    condition: "Used",
+    affiliateLink: "https://amzn.to/4a1mQ50",
     brand: "Seagate"
   },
   {
     id: 103,
     name: "WD_BLACK 2TB SN850X NVMe Internal Gaming SSD",
-    price: 189.99,
+    price: 176.90,
     capacity: 2000,
     capacityUnit: 'TB',
-    pricePerTB: 94.995,
+    pricePerTB: 88.45,
     warranty: "5 years",
     formFactor: "M.2 NVMe",
     technology: "SSD",
     condition: "New",
-    affiliateLink: "https://www.amazon.com/dp/B0B7CMZ3QH",
+    affiliateLink: "https://amzn.to/4oFAfUa",
     brand: "Western Digital"
   },
   {
     id: 104,
     name: "Crucial MX500 2TB 3D NAND SATA 2.5 Inch Internal SSD",
-    price: 179.99,
+    price: 134.99,
     capacity: 2000,
     capacityUnit: 'TB',
-    pricePerTB: 89.995,
+    pricePerTB: 67.495,
     warranty: "5 years",
     formFactor: "Internal 2.5\"",
     technology: "SSD",
-    condition: "Used",
-    affiliateLink: "https://www.amazon.com/dp/B003J5JB12",
+    condition: "New",
+    affiliateLink: "https://amzn.to/4pQefqv",
     brand: "Crucial"
   },
   {
     id: 105,
     name: "SanDisk 1TB Extreme Portable SSD",
-    price: 119.99,
+    price: 109.99,
     capacity: 1000,
     capacityUnit: 'TB',
-    pricePerTB: 119.99,
+    pricePerTB: 109.99,
     warranty: "3 years",
     formFactor: "External 2.5\"",
     technology: "SSD",
     condition: "New",
-    affiliateLink: "https://www.amazon.com/dp/B08GTYFC37",
+    affiliateLink: "https://amzn.to/3KGJYeO",
     brand: "SanDisk"
   }
 ];
@@ -147,6 +147,18 @@ export default function CategoryProductsPage() {
   
   const category = getCategoryBySlug(categorySlug)
   const breadcrumbs = getBreadcrumbs(categorySlug)
+
+  // Get country configuration
+  const countryConfig = getCountryByCode(validCountry)
+
+  const formatCurrency = (value: number, fractionDigits = 2) => {
+    return new Intl.NumberFormat(countryConfig?.locale || 'en-US', {
+      style: 'currency',
+      currency: countryConfig?.currency || 'USD',
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(value)
+  }
 
   // Use nuqs for URL-synchronized filters
   const { filters, setSearch, toggleArrayFilter, setCapacityRange, setSort, clearAllFilters } = useProductFilters()
@@ -414,10 +426,10 @@ export default function CategoryProductsPage() {
                         {filteredProducts.map((product) => (
                           <TableRow key={product.id} className="group">
                             <TableCell className="font-medium">
-                              ${product.pricePerTB.toFixed(3)}
+                              {formatCurrency(product.pricePerTB, 3)}
                             </TableCell>
                             <TableCell>
-                              ${product.price.toFixed(2)}
+                              {formatCurrency(product.price)}
                             </TableCell>
                             <TableCell>
                               {product.capacityUnit === 'TB' ? (product.capacity / 1000).toFixed(1) : product.capacity} {product.capacityUnit}
