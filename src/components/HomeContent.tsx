@@ -144,7 +144,7 @@ export function HomeContent({ country }: { country: string }) {
                    <div className="flex items-center justify-between">
                      <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">{category.name}</span>
                      {idx === 0 && (
-                       <Badge variant="secondary" className="px-1.5 py-0 h-4 text-[10px] bg-amber-500/10 text-amber-600 border-0">
+                       <Badge variant="secondary" className="px-1.5 py-0 h-4 text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border-0">
                          Hot
                        </Badge>
                      )}
