@@ -6,9 +6,13 @@
 
 ## Country-Specific Routing
 
-- All main pages are prefixed with /[country] (e.g., /us, /de)
-- The homepage for each country is /[country]; the category browser is at /[country]/categories
-- Users can switch countries at any time via the navbar dropdown, which updates the URL
+- All main pages are prefixed with `/[country]` (e.g., `/us`, `/de`)
+- The homepage for each country is `/[country]` (e.g., `/us`)
+- The category browser is at `/[country]/categories` (e.g., `/us/categories`)
+- Product pages follow: `/[country]/[parent]/[category]` (e.g., `/us/electronics/hard-drives`)
+- Users can switch countries via the navbar dropdown, which updates the URL
+- Country preference is saved to localStorage for persistence
+- Automatic country detection from browser locale on first visit
 
 ## Technology Stack
 
@@ -23,12 +27,22 @@
 ## Architecture & File Structure
 
 - **`src/app`**: Contains the App Router pages.
-  - `page.tsx`: Homepage with hero section, categories, and stats.
-  - `categories/page.tsx`: List of all product categories.
-  - `categories/[slug]/page.tsx`: The main product listing page. Contains the product table, sidebar filters, and sorting logic.
-- **`src/components/ui`**: Reusable UI components from shadcn/ui (Button, Card, Sheet, etc.).
-- **`src/lib`**: Utility functions and mock API definitions.
-  - `amazon-api.ts`: Mock implementation of the Amazon Product Advertising API (PA-API).
+  - `page.tsx`: Root homepage (redirects to country)
+  - `[country]/page.tsx`: Country-specific homepage
+  - `[country]/categories/page.tsx`: Category browser for that country
+  - `[country]/[parent]/page.tsx`: Parent category page (e.g., Electronics)
+  - `[country]/[parent]/[category]/page.tsx`: Product listing page with filters and sorting
+- **`src/components/ui`**: Reusable UI components from shadcn/ui (Button, Card, Sheet, etc.)
+- **`src/components`**: Feature components (Navbar, Footer, SearchModal, etc.)
+- **`src/lib`**: Utility functions and configuration
+  - `categories.ts`: Category definitions and helper functions
+  - `countries.ts`: Country configuration and detection logic
+  - `analytics.ts`: Analytics tracking utilities
+  - `amazon-api.ts`: Mock implementation of Amazon Product Advertising API
+- **`src/hooks`**: Custom React hooks
+  - `use-country.ts`: Country management and URL synchronization
+  - `use-product-filters.ts`: Filter state management with nuqs
+- **`src/providers`**: Context providers (NuqsProvider, ThemeProvider)
 
 ## Key Features
 
@@ -91,9 +105,10 @@ All categories must follow the **"Price per Unit"** principle. Products should b
 
 ### State Management
 
-- **Local state**: Use `useState` for component-level state
-- **Filtering/Sorting**: Keep state in the page component, pass down as props
-- **Future**: Plan to migrate to URL search params for shareable state
+- **URL state**: Use `nuqs` for filter state (shareable, bookmarkable)
+- **Local state**: Use `useState` for component-level UI state only
+- **Country state**: Managed by `useCountry()` hook with localStorage persistence
+- **Filter state**: Managed by `useProductFilters()` hook (nuqs-based)
 
 ### Performance
 
@@ -134,15 +149,27 @@ All categories must follow the **"Price per Unit"** principle. Products should b
 
 ## Common Patterns
 
-### Filter Pattern
+### Filter Pattern (with nuqs)
 
 ```tsx
-const [selectedItems, setSelectedItems] = useState<string[]>([]);
-const toggleFilter = (setter: Function, value: string) => {
-  setter((prev: string[]) =>
-    prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
-  );
-};
+import { useProductFilters } from "@/hooks/use-product-filters";
+
+const { filters, toggleArrayFilter, setSearch, clearAllFilters } =
+  useProductFilters();
+
+// Filters are automatically synced with URL
+// filters.condition - string[] | null
+// filters.search - string
+// filters.minCapacity - number | null
+
+// Toggle a filter value
+toggleArrayFilter("condition", "New");
+
+// Set search
+setSearch("samsung");
+
+// Clear all
+clearAllFilters();
 ```
 
 ### Sorting Pattern

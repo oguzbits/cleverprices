@@ -1,43 +1,60 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Search,
-  HardDrive,
-  Dumbbell,
-  Battery,
-  Droplets,
-  Baby,
-  Coffee,
-} from "lucide-react";
+import { Search } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
+import { getCategoryBySlug } from "@/lib/categories";
+import { QUICK_ACCESS_CATEGORIES } from "@/lib/constants";
+import type { LucideIcon } from "lucide-react";
 
-// Quick links data - shown immediately when search opens
-const QUICK_LINKS = {
+interface CategoryLink {
+  name: string;
+  slug: string;
+  icon: LucideIcon;
+}
+
+// Build quick links from our centralized category data
+const QUICK_LINKS: Record<string, CategoryLink[]> = {
   "POPULAR CATEGORIES": [
-    { name: "Hard Drives & SSDs", slug: "storage", icon: HardDrive },
-    { name: "Protein Powder", slug: "protein-powder", icon: Dumbbell },
-    { name: "Batteries", slug: "batteries", icon: Battery },
-  ],
+    getCategoryBySlug("hard-drives"),
+    getCategoryBySlug("protein-powder"),
+    getCategoryBySlug("batteries"),
+  ]
+    .filter(Boolean)
+    .map((cat) => ({
+      name: cat!.name,
+      slug: cat!.slug,
+      icon: cat!.icon,
+    })),
   "TRENDING NOW": [
-    { name: "Laundry Detergent", slug: "laundry-detergent", icon: Droplets },
-    { name: "Diapers", slug: "diapers", icon: Baby },
-    { name: "Coffee", slug: "coffee", icon: Coffee },
-  ],
+    getCategoryBySlug("laundry-detergent"),
+    getCategoryBySlug("diapers"),
+    getCategoryBySlug("coffee"),
+  ]
+    .filter(Boolean)
+    .map((cat) => ({
+      name: cat!.name,
+      slug: cat!.slug,
+      icon: cat!.icon,
+    })),
 };
 
-// All categories for search
-const ALL_CATEGORIES = [
-  { name: "Hard Drives & SSDs", slug: "storage", icon: HardDrive },
-  { name: "Protein Powder", slug: "protein-powder", icon: Dumbbell },
-  { name: "Laundry Detergent", slug: "laundry-detergent", icon: Droplets },
-  { name: "Diapers", slug: "diapers", icon: Baby },
-  { name: "Batteries", slug: "batteries", icon: Battery },
-];
+// All searchable categories
+const ALL_CATEGORIES: CategoryLink[] = QUICK_ACCESS_CATEGORIES.map((slug) => {
+  const cat = getCategoryBySlug(slug);
+  return cat
+    ? {
+        name: cat.name,
+        slug: cat.slug,
+        icon: cat.icon,
+      }
+    : null;
+}).filter(Boolean) as CategoryLink[];
+
 
 interface SearchModalProps {
   open: boolean;
