@@ -24,8 +24,13 @@ export function Footer() {
           </div>
 
           <nav className="text-sm" aria-label="Legal information">
-            <h4 className="font-semibold mb-3">Legal</h4>
+            <h4 className="font-semibold mb-3">Quick Links</h4>
             <ul className="space-y-2">
+              <li>
+                <Link href="/de/categories" className="text-muted-foreground hover:text-primary transition-colors">
+                  View All Categories
+                </Link>
+              </li>
               <li>
                 <Link href="/faq" className="text-muted-foreground hover:text-primary transition-colors">
                   FAQ

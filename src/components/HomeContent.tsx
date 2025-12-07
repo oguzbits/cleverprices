@@ -1,35 +1,12 @@
-import Link from "next/link";
 import { Suspense } from "react";
-import dynamic from "next/dynamic";
 import Script from "next/script";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  ArrowRight,
-  HardDrive,
-  Dumbbell,
-  Droplets,
-  Baby,
-  Battery,
-  Globe,
-} from "lucide-react";
 import { ClientGlobe } from "@/components/client/ClientGlobe";
-import { ClientFeaturedDeals } from "@/components/client/ClientFeaturedDeals";
-import { getCategoryPath } from "@/lib/categories";
 import { getAllCountries } from "@/lib/countries";
-
-const HeroTableDemo = dynamic(
-  () => import("@/components/hero-table-demo").then((mod) => ({ default: mod.HeroTableDemo })),
-  { ssr: true }
-);
-
-const categories = [
-  { name: "Hard Drives & SSDs", icon: HardDrive, slug: "hard-drives" },
-  { name: "Protein Powder", icon: Dumbbell, slug: "protein-powder" },
-  { name: "Laundry Detergent", icon: Droplets, slug: "laundry-detergent" },
-  { name: "Diapers", icon: Baby, slug: "diapers" },
-  { name: "Batteries", icon: Battery, slug: "batteries" },
-];
+import { HeroSearch } from "@/components/hero-search";
+import { HeroCategoryPills } from "@/components/hero-category-pills";
+import { HeroDealCards } from "@/components/hero-deal-cards";
+import { ComparisonDemoSection } from "@/components/comparison-demo-section";
 
 export function HomeContent({ country }: { country: string }) {
   const jsonLd = {
@@ -51,117 +28,82 @@ export function HomeContent({ country }: { country: string }) {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* Hero Section */}
-      <section className="relative overflow-hidden mb-2 sm:mb-8 md:mb-20" aria-labelledby="hero-heading">
-        {/* Left side background */}
+      <section id="hero-section" className="relative overflow-hidden mb-2 sm:mb-8 md:mb-20" aria-labelledby="hero-heading">
+        {/* Background gradients */}
         <div className="absolute inset-0 bg-background z-0" aria-hidden="true" />
-        {/* Right side background - MUI-inspired gradient */}
-        <div className="hidden lg:block absolute top-0 right-0 bottom-0 w-1/2 bg-blue-50 dark:bg-[#050810] border-l border-slate-200 dark:border-[hsl(210,14%,13%)] z-0 rounded-bl-xl" aria-hidden="true" />
-        {/* Subtle gradient overlays */}
         <div className="absolute top-0 left-0 w-[800px] h-[500px] bg-primary/10 rounded-full blur-[120px] -z-10 opacity-30" aria-hidden="true" />
-        <div className="container relative z-10 px-4 mx-auto py-4 sm:py-8 md:py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-            {/* Left Column: Content */}
-            <div className="text-left">
+        
+        <div className="container relative z-10 px-4 mx-auto py-8 sm:py-12 md:py-20">
+          <div className="max-w-5xl mx-auto">
+            {/* Header Badge */}
+            <div className="text-left sm:text-center mb-6">
               <Badge
                 variant="outline"
-                className="mb-6 px-4 py-1.5 text-sm border-border bg-muted/30 text-foreground hover:bg-muted/50 transition-colors shadow-sm w-fit"
+                className="mb-6 px-4 py-1.5 text-sm border-border bg-muted/30 text-foreground hover:bg-muted/50 transition-colors shadow-sm"
               >
                 <span className="font-mono text-xs mr-2">⚡️</span>
                 Automated Price Analysis
               </Badge>
-              <h1 id="hero-heading" className="text-5xl md:text-7xl font-bold tracking-tight mb-6 drop-shadow-sm leading-[1.1]">
-                <span className="text-primary">See the Real Value.</span>
-              </h1>
-              <p className="text-xl text-muted-foreground max-w-xl mb-8 leading-relaxed">
-                Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 mb-10">
-                <Button
-                  size="lg"
-                  className="text-lg px-8 h-14 rounded-full shadow-lg shadow-blue-600/20 bg-blue-700 hover:bg-blue-800 dark:bg-blue-600 dark:hover:bg-blue-700 text-white hover:brightness-110 transition-all group"
-                  asChild
-                >
-                  <Link className="no-underline" href="#top-value-opportunities">
-                    View Top Deals
-                    <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </Button>
-              </div>
-              <div className="flex items-center gap-8 border-t border-border/50 pt-8">
-                <div>
-                  <p className="text-3xl font-bold text-foreground">Thousands</p>
-                  <p className="text-sm text-muted-foreground">
-                    Products Tracked
-                  </p>
-                </div>
-                <div className="h-10 w-px bg-border/50" />
-                <div>
-                  <p className="text-3xl font-bold text-foreground">24/7</p>
-                  <p className="text-sm text-muted-foreground">
-                    Price Monitoring
-                  </p>
-                </div>
-              </div>
             </div>
-            {/* Right Column: Interactive Demo */}
-            <div className="relative">
-              <Suspense fallback={<div className="w-full max-w-5xl mx-auto h-[400px] sm:h-[500px] bg-muted/20 rounded-lg animate-pulse" />}>
-                <HeroTableDemo />
-              </Suspense>
+
+            {/* Main Heading */}
+            <h1 id="hero-heading" className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight mb-4 text-left sm:text-center leading-[1.1]">
+              <span className="text-primary">Find the Best Amazon Prices,</span>
+              <br />
+              <span className="text-foreground">Instantly</span>
+            </h1>
+            
+            {/* Subheading */}
+            <p className="text-lg sm:text-xl text-muted-foreground text-left sm:text-center max-w-2xl sm:mx-auto mb-8 leading-relaxed">
+              Compare products by their true cost per unit and never overpay again
+            </p>
+
+            {/* Hero Search */}
+            <div className="max-w-2xl mx-auto mb-6">
+              <HeroSearch />
+            </div>
+
+            {/* Category Pills */}
+            <div className="max-w-2xl mx-auto mb-10">
+              <HeroCategoryPills />
+            </div>
+
+            {/* Featured Deal Cards */}
+            <div className="mb-10">
+              <HeroDealCards />
+            </div>
+
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap items-center justify-start sm:justify-center gap-8 sm:gap-12 border-t border-border/50 pt-8 max-w-2xl sm:mx-auto">
+              <div className="text-left sm:text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">Thousands</p>
+                <p className="text-sm text-muted-foreground">Products Tracked</p>
+              </div>
+              <div className="h-10 w-px bg-border/50" />
+              <div className="text-left sm:text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">5+</p>
+                <p className="text-sm text-muted-foreground">Countries</p>
+              </div>
+              <div className="h-10 w-px bg-border/50" />
+              <div className="text-left sm:text-center">
+                <p className="text-2xl sm:text-3xl font-bold text-foreground">24/7</p>
+                <p className="text-sm text-muted-foreground">Price Monitoring</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Featured Deals - Top Value Opportunities */}
-      <div className="scroll-mt-24" id="top-value-opportunities">
-         <ClientFeaturedDeals country={country} />
-      </div>
+      {/* Comparison Demo Section */}
+      <ComparisonDemoSection />
 
-      {/* Categories */}
-      <section className="container px-4 mx-auto py-4 sm:py-6 md:py-10" aria-labelledby="categories-heading">
-        <div className="flex justify-between items-end mb-4 border-b border-border pb-2">
-          <h2 id="categories-heading" className="text-lg font-bold tracking-tight flex items-center gap-2">
-            Browse Categories
-          </h2>
-          <Link href={`/${country}/categories`} className="font-semibold px-3 py-1.5 rounded-full text-foreground flex items-center gap-1">
-            View All
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {categories.map((category, idx) => (
-              <Link
-                key={category.slug}
-                href={getCategoryPath(category.slug, country)}
-                className="group flex items-center gap-3 p-3 rounded-md border border-border/50 bg-card/50 hover:bg-muted/50 hover:border-primary/30 transition-all no-underline"
-                aria-label={`Browse ${category.name} category`}
-              >
-                <div className="shrink-0 w-8 h-8 rounded bg-primary/10 flex items-center justify-center text-primary group-hover:scale-105 transition-transform">
-                  <category.icon className="h-4 w-4" aria-hidden="true" />
-                </div>
-                <div className="flex-1 min-w-0">
-                   <div className="flex items-center justify-between">
-                     <span className="font-medium text-sm text-foreground group-hover:text-primary transition-colors">{category.name}</span>
-                     {idx === 0 && (
-                       <Badge variant="secondary" className="px-1.5 py-0 h-4 text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border-0">
-                         Hot
-                       </Badge>
-                     )}
-                   </div>
-                </div>
-                <div className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-transform">
-                  <ArrowRight className="h-4 w-4" />
-                </div>
-              </Link>
-            ))}
-        </div>
-      </section>
+
+
+
 
       {/* Supported Countries */}
       <section className="container px-4 mx-auto py-8 sm:py-12 md:py-16" aria-labelledby="global-heading">
-        <h2 id="global-heading" className="text-4xl font-bold mb-12 tracking-tight text-center">
+        <h2 id="global-heading" className="text-4xl font-bold mb-12 tracking-tight text-left sm:text-center">
           Global Availability
         </h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
@@ -220,10 +162,10 @@ export function HomeContent({ country }: { country: string }) {
               ))}
             </ul>
             <div className="p-6 rounded-2xl bg-primary/10 border border-primary/20 dark:border-primary/10 mt-6">
-              <h3 className="text-lg font-bold mb-2">
+              <h3 className="text-lg font-bold mb-2 text-left">
                 Real-time Global Tracking
               </h3>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-muted-foreground text-sm text-left">
                 We monitor prices worldwide to ensure you catch the latest price drops and currency fluctuations.
               </p>
             </div>

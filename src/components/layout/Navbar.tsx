@@ -6,7 +6,6 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Moon, Sun, Search } from "lucide-react"
 import { useTheme } from "next-themes"
-import dynamic from "next/dynamic"
 import {
   Tooltip,
   TooltipContent,
@@ -15,21 +14,45 @@ import {
 } from "@/components/ui/tooltip"
 import { trackSEO } from "@/lib/analytics"
 
-// Lazy load SearchModal - only needed when user clicks search
-const SearchModal = dynamic(
-  () => import("@/components/SearchModal").then((mod) => ({ default: mod.SearchModal })),
-  { ssr: false }
-)
-
 import { CountrySelector } from "@/components/country-selector"
+import { SearchModal } from "@/components/SearchModal"
 
 export function Navbar() {
   const { setTheme, theme } = useTheme()
-  const [searchOpen, setSearchOpen] = React.useState(false)
   const [mounted, setMounted] = React.useState(false)
+  const [searchOpen, setSearchOpen] = React.useState(false)
+  const [showSearch, setShowSearch] = React.useState(false)
 
   React.useEffect(() => {
     setMounted(true)
+    
+    // Observe hero search wrapper to show/hide navbar search
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // When hero search is NOT visible, show navbar search
+        setShowSearch(!entry.isIntersecting)
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of search is out of view
+        rootMargin: "0px",
+      }
+    )
+
+    // Wait for DOM to be ready
+    const timer = setTimeout(() => {
+      const heroSearchElement = document.querySelector('.search-with-animated-border')
+      if (heroSearchElement) {
+        observer.observe(heroSearchElement)
+      }
+    }, 100)
+
+    return () => {
+      clearTimeout(timer)
+      const heroSearchElement = document.querySelector('.search-with-animated-border')
+      if (heroSearchElement) {
+        observer.unobserve(heroSearchElement)
+      }
+    }
   }, [])
 
   return (
@@ -50,44 +73,46 @@ export function Navbar() {
 
         <TooltipProvider>
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* Search Input (MUI Style) */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(true)}
-                  className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/50 hover:bg-muted transition-colors cursor-pointer min-w-[240px]"
-                  aria-label="Open search"
-                >
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground flex-1 text-left">Search...</span>
-                  <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs border rounded bg-background">
-                    ⌘K
-                  </kbd>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Search products</p>
-              </TooltipContent>
-            </Tooltip>
+            {/* Conditional Search Button - shows when hero is scrolled out */}
+            <div className={`transition-all duration-300 ${showSearch ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setSearchOpen(true)}
+                    className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/50 hover:bg-muted transition-colors cursor-pointer min-w-[240px]"
+                    aria-label="Open search"
+                  >
+                    <Search className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground flex-1 text-left">Search...</span>
+                    <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs border rounded bg-background">
+                      ⌘K
+                    </kbd>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Search products</p>
+                </TooltipContent>
+              </Tooltip>
 
-            {/* Mobile Search Button */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="sm:hidden cursor-pointer"
-                  onClick={() => setSearchOpen(true)}
-                  aria-label="Open search"
-                >
-                  <Search className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Search products</p>
-              </TooltipContent>
-            </Tooltip>
+              {/* Mobile Search Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="sm:hidden cursor-pointer"
+                    onClick={() => setSearchOpen(true)}
+                    aria-label="Open search"
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Search products</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
             <CountrySelector />
 
@@ -120,7 +145,7 @@ export function Navbar() {
       </div>
 
       {/* Search Modal */}
-      <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />
+      {showSearch && <SearchModal open={searchOpen} onOpenChange={setSearchOpen} />}
     </header>
   )
 }
