@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import { Check, Globe } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -12,10 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
 import { useCountry } from "@/hooks/use-country"
 import { getAllCountries } from "@/lib/countries"
-import { trackSEO } from "@/lib/analytics"
 
 export function CountrySelector() {
   const { country, currentCountry, changeCountry } = useCountry()

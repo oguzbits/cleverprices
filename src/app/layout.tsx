@@ -4,7 +4,6 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { LazyCookieConsent } from "@/components/LazyCookieConsent";
 import { NuqsProvider } from "@/providers/nuqs-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
@@ -117,12 +116,10 @@ export default function RootLayout({
               <main className="flex-1">{children}</main>
               <Footer />
             </div>
-            <LazyCookieConsent />
             
-            {/* Analytics Tracking */}
+            {/* Cookieless Analytics - No consent needed! */}
             <ScrollTracker />
             <TimeTracker />
-            
             <SpeedInsights />
             <Analytics />
           </NuqsProvider>

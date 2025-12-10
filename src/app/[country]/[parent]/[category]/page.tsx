@@ -228,7 +228,8 @@ export default function CategoryProductsPage() {
     }
   }, [categorySlug, validCountry, category])
 
-  // Track affiliate clicks (MOST IMPORTANT METRIC!)
+  // Track affiliate clicks
+  // Vercel Analytics is cookieless - no consent needed!
   const handleAffiliateClick = (product: Product, index: number) => {
     trackSEO.affiliateClick({
       productName: product.name,
@@ -457,7 +458,7 @@ export default function CategoryProductsPage() {
                             </TableCell>
                             <TableCell>
                               <a 
-                                href={product.affiliateLink} 
+                                href={product.affiliateLink}
                                 onClick={() => handleAffiliateClick(product, filteredProducts.indexOf(product))}
                                 target="_blank" 
                                 rel="noopener noreferrer"
