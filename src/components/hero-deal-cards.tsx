@@ -1,9 +1,10 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { TrendingDown } from "lucide-react"
 import { useCountry } from "@/hooks/use-country"
 import { getCountryByCode } from "@/lib/countries"
+import { type ProductUIModel } from "@/lib/amazon-api"
+import { ProductCard } from "@/components/product-card"
 
 // Real product data - imported from the actual products list
 type Product = {
@@ -25,7 +26,7 @@ type ProductWithDiscount = Product & {
   discount: number
 }
 
-// Authentic storage products data - same as in the products page
+// Mock data for highlighted deals
 const authenticStorageProducts: Product[] = [
   {
     id: 101,
@@ -138,71 +139,25 @@ export function HeroDealCards() {
     }).format(value)
   }
 
-  const topDeals = getTopDeals()
+  const highlightedDeals = getTopDeals()
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {topDeals.map((product) => {
-        const wasPrice = product.price / (1 - product.discount / 100)
-        
-        return (
-          <a
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {highlightedDeals.map((product) => (
+          <ProductCard
             key={product.id}
-            href={product.affiliateLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative flex flex-col p-4 rounded-xl border border-border/50 bg-card hover:bg-muted/30 hover:border-primary/30 transition-all shadow-sm hover:shadow-lg hover:-translate-y-1 no-underline"
-          >
-            {/* Discount Badge */}
-            <div className="absolute -top-2 -right-2 z-10">
-              <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white border-0 shadow-lg px-2 py-1 text-xs font-bold">
-                <TrendingDown className="h-3 w-3 mr-1" />
-                -{product.discount}%
-              </Badge>
-            </div>
-
-            {/* Condition Badge */}
-            <div className="absolute top-3 left-3 z-10">
-              <Badge 
-                className={
-                  product.condition === 'New' 
-                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 text-xs border-0"
-                    : product.condition === 'Renewed'
-                    ? "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 text-xs border-0"
-                    : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 text-xs border-0"
-                }
-              >
-                {product.condition}
-              </Badge>
-            </div>
-
-            {/* Product Image Placeholder */}
-            <div className="w-full aspect-square bg-muted/30 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-              <div className="text-4xl text-muted-foreground/30">📦</div>
-            </div>
-
-            {/* Product Name */}
-            <h3 className="text-sm font-semibold text-foreground mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-              {product.name}
-            </h3>
-
-            {/* Price */}
-            <div className="mt-auto">
-              <div className="flex items-baseline gap-2">
-                <span className="text-lg font-bold text-foreground">
-                  {formatCurrency(product.price)}
-                </span>
-                <span className="text-xs text-muted-foreground line-through">
-                  {formatCurrency(wasPrice)}
-                </span>
-              </div>
-              <div className="text-xs text-muted-foreground mt-1">
-                {formatCurrency(product.pricePerTB)}/TB
-              </div>
-            </div>
-          </a>
-        )
-      })}
-    </div>
+            title={product.name}
+            price={product.price}
+            oldPrice={product.price * (1 + product.discount / 100)}
+            currency={countryConfig?.currency || "USD"}
+            url={product.affiliateLink}
+            pricePerUnit={`${countryConfig?.currency || "$"}${product.pricePerTB.toFixed(2)}/TB`}
+            countryCode={country}
+            badgeText={product.condition === 'New' ? "Good Deal" : product.condition}
+            badgeColor={product.condition === 'New' ? "blue" : "amber"}
+            discountPercentage={product.discount}
+          />
+        ))}
+      </div>
   )
 }

@@ -81,33 +81,6 @@ export const countries: Record<string, Country> = {
     locale: 'en-AU',
     isLive: false,
   },
-  se: {
-    code: 'se',
-    name: 'Sweden',
-    flag: '🇸🇪',
-    domain: 'amazon.se',
-    currency: 'SEK',
-    locale: 'sv-SE',
-    isLive: false,
-  },
-  ie: {
-    code: 'ie',
-    name: 'Ireland',
-    flag: '🇮🇪',
-    domain: 'amazon.co.uk',
-    currency: 'EUR',
-    locale: 'en-IE',
-    isLive: false,
-  },
-  in: {
-    code: 'in',
-    name: 'India',
-    flag: '🇮🇳',
-    domain: 'amazon.in',
-    currency: 'INR',
-    locale: 'en-IN',
-    isLive: false,
-  },
 }
 
 export const DEFAULT_COUNTRY = 'de'
@@ -146,8 +119,6 @@ export function detectCountryFromLocale(locale?: string): string {
     'fr': 'fr',
     'es': 'es',
     'it': 'it',
-    'sv': 'se',
-    'hi': 'in',
   }
   
   const languageCode = parts[0]

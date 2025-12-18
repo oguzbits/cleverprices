@@ -75,7 +75,11 @@ export function Navbar() {
               height={28}
               className="w-7 h-7"
             />
-            <span className="font-bold text-base sm:text-lg md:text-xl tracking-tight whitespace-nowrap">Real Price Data</span>
+            <span className="font-black text-base sm:text-lg md:text-xl tracking-tight whitespace-nowrap">
+              <span className="text-[#E53935] dark:text-[#EF5350]">Real</span>
+              <span className="text-[#FB8C00] dark:text-[#FFA726]">Price</span>
+              <span className="text-[#FBC02D] dark:text-[#FDD835]">Data</span>
+            </span>
           </Link>
         </div>
 
