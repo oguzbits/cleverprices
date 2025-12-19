@@ -85,27 +85,18 @@ export function Navbar() {
 
         {/* Center: Global Search Button - shows when hero is scrolled out */}
         <div className={`flex-1 flex justify-center px-4 ${showSearch ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(true)}
-                  className="hidden sm:flex items-center gap-3 px-4 py-2 rounded-md border border-border bg-card hover:bg-card/80 hover:border-primary/50 cursor-pointer w-full max-w-[320px] lg:max-w-[400px] shadow-sm"
-                  aria-label="Search all products"
-                >
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground flex-1 text-left">Search all products...</span>
-                  <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs border rounded bg-background/80 text-muted-foreground font-medium">
-                    ⌘K
-                  </kbd>
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Search all products</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <button
+            type="button"
+            onClick={() => setSearchOpen(true)}
+            className="hidden sm:flex items-center gap-3 px-4 py-2 rounded-md border border-border bg-card hover:bg-card/80 hover:border-primary/50 cursor-pointer w-full max-w-[320px] lg:max-w-[400px] shadow-sm"
+            aria-label="Search all products"
+          >
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground flex-1 text-left">Search all products...</span>
+            <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs border rounded bg-background/80 text-muted-foreground font-medium">
+              ⌘K
+            </kbd>
+          </button>
         </div>
 
         {/* Right: Controls */}
