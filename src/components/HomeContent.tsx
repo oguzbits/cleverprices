@@ -58,7 +58,7 @@ export async function HomeContent({ country }: { country: string }) {
         {/* Hero Section */}
         <section className="container px-4 mx-auto pt-4 sm:pt-8 md:pt-12 pb-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-16">
-            <div className="max-w-2xl text-left order-2 lg:order-1">
+            <div className="max-w-2xl text-left order-1 lg:order-1">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight mb-6 leading-[1.1] text-foreground">
                 Save money on your <br />
                 <span className="text-[rgb(0,102,204)] dark:text-blue-400">next Amazon purchase.</span>
@@ -78,7 +78,7 @@ export async function HomeContent({ country }: { country: string }) {
                  </div>
               </div>
             </div>
-            <div className="relative w-full max-w-[800px] mx-auto lg:ml-auto order-1 lg:order-2">
+            <div className="relative w-full max-w-[800px] mx-auto lg:ml-auto order-2 lg:order-2">
               <HeroTableDemo />
             </div>
           </div>
