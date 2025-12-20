@@ -134,15 +134,14 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             </div>
           </div>
 
-          <div className="w-full max-w-xl relative group">
-            <div className="absolute -inset-1.5 bg-linear-to-r from-primary/30 to-blue-500/30 rounded-2xl blur-lg opacity-20 group-focus-within:opacity-50 transition-opacity duration-500" />
-            <div className="relative flex items-center gap-4 px-6 py-5 md:px-8 md:py-6 rounded-2xl border border-border bg-background shadow-2xl focus-within:border-primary/50 focus-within:ring-8 focus-within:ring-primary/5 transition-all duration-300">
+          <div className="w-full max-w-xl relative">
+            <div className="relative flex items-center gap-0 px-6 py-5 md:px-8 md:py-6 rounded-2xl border border-border bg-background">
               <Search className="h-6 w-6 text-muted-foreground/30 shrink-0" />
               <Input
                 placeholder="What are you looking for?"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="border-0 focus-visible:ring-0 text-xl md:text-2xl h-auto py-0 flex-1 placeholder:text-muted-foreground/20 bg-transparent shadow-none font-bold p-0 tracking-tight"
+                className="border-0 focus-visible:ring-0 text-xl md:text-2xl h-auto flex-1 placeholder:text-muted-foreground/40 bg-background dark:bg-background shadow-none font-bold tracking-tight px-4 py-2"
                 autoFocus
                 autoComplete="off"
                 data-form-type="other"
