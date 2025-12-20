@@ -79,6 +79,17 @@ export default function CategoryProductsPage() {
   // Load products from Product Registry
   const currentProducts = getProductsByCategory(categorySlug)
   
+  // Determine unit and price field
+  const unitLabel = category?.unitType || 'TB'
+  const pricePerUnitField = unitLabel === 'TB' ? 'pricePerTB' : 'pricePerGB'
+
+  // Track category view on page load
+  React.useEffect(() => {
+    if (category) {
+      trackSEO.categoryView(categorySlug, validCountry)
+    }
+  }, [categorySlug, validCountry, category])
+
   // Apply filters
   let filteredProducts = [...currentProducts]
 
@@ -99,16 +110,24 @@ export default function CategoryProductsPage() {
   }
 
   if (filters.minCapacity !== null && filters.minCapacity !== undefined) {
-    filteredProducts = filteredProducts.filter(p => (p.capacity / 1000) >= filters.minCapacity!)
+    const minVal = unitLabel === 'TB' ? filters.minCapacity! * 1000 : filters.minCapacity!
+    filteredProducts = filteredProducts.filter(p => p.capacity >= minVal)
   }
 
   if (filters.maxCapacity !== null && filters.maxCapacity !== undefined) {
-    filteredProducts = filteredProducts.filter(p => (p.capacity / 1000) <= filters.maxCapacity!)
+    const maxVal = unitLabel === 'TB' ? filters.maxCapacity! * 1000 : filters.maxCapacity!
+    filteredProducts = filteredProducts.filter(p => p.capacity <= maxVal)
   }
 
   // Sorting
   filteredProducts.sort((a, b) => {
-    const key = filters.sortBy as keyof Product
+    let key = filters.sortBy as keyof Product
+    
+    // Map generic 'pricePerTB' sort request to actual field if needed
+    if (key === 'pricePerTB') {
+      key = pricePerUnitField as keyof Product
+    }
+
     const aValue = a[key]
     const bValue = b[key]
 
@@ -121,34 +140,22 @@ export default function CategoryProductsPage() {
     return 0
   })
 
-  const handleSort = (key: keyof Product) => {
-    const newOrder = filters.sortBy === key && filters.sortOrder === 'asc' ? 'desc' : 'asc'
-    setSort(key, newOrder as 'asc' | 'desc')
-  }
-
-  const getSortIcon = (key: keyof Product) => {
-    if (filters.sortBy !== key) return <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />
+  const getSortIcon = (key: string) => {
+    const currentSortBy = filters.sortBy === 'pricePerTB' ? pricePerUnitField : filters.sortBy
+    if (currentSortBy !== key) return <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />
     return filters.sortOrder === 'asc'
       ? <ChevronUp className="ml-1 h-3 w-3" />
       : <ChevronDown className="ml-1 h-3 w-3" />
   }
 
-  // Track category view on page load
-  React.useEffect(() => {
-    if (category) {
-      trackSEO.categoryView(categorySlug, validCountry)
-    }
-  }, [categorySlug, validCountry, category])
-
   // Track affiliate clicks
-  // Vercel Analytics is cookieless - no consent needed!
   const handleAffiliateClick = (product: Product, index: number) => {
     trackSEO.affiliateClick({
       productName: product.title,
       category: categorySlug,
       country: validCountry,
       price: product.price,
-      pricePerUnit: product.pricePerTB,
+      pricePerUnit: (product[pricePerUnitField as keyof Product] as number) || 0,
       position: index + 1,
     })
   }
@@ -160,10 +167,15 @@ export default function CategoryProductsPage() {
   }
 
   // Track sort changes
-  const handleSortWithTracking = (key: keyof Product) => {
-    const newOrder = filters.sortBy === key && filters.sortOrder === 'asc' ? 'desc' : 'asc'
-    setSort(key, newOrder as 'asc' | 'desc')
-    trackSEO.sortChanged(String(key), newOrder, categorySlug)
+  const handleSortWithTracking = (key: string) => {
+    const effectiveKey = key === 'pricePerTB' ? pricePerUnitField : key
+    const currentSortBy = filters.sortBy === 'pricePerTB' ? pricePerUnitField : filters.sortBy
+    
+    const newOrder = currentSortBy === effectiveKey && filters.sortOrder === 'asc' ? 'desc' : 'asc'
+    
+    // We keep the internal state as 'pricePerTB' for the broad sort category if it's unit price
+    setSort(key as any, newOrder as 'asc' | 'desc')
+    trackSEO.sortChanged(String(effectiveKey), newOrder, categorySlug)
   }
 
   if (!category) {
@@ -255,6 +267,8 @@ export default function CategoryProductsPage() {
                     filters={filters}
                     toggleArrayFilter={handleFilterChange}
                     setCapacityRange={setCapacityRange}
+                    unitLabel={unitLabel}
+                    categorySlug={categorySlug}
                   />
                 </div>
               </SheetContent>
@@ -272,6 +286,8 @@ export default function CategoryProductsPage() {
                     filters={filters}
                     toggleArrayFilter={handleFilterChange}
                     setCapacityRange={setCapacityRange}
+                    unitLabel={unitLabel}
+                    categorySlug={categorySlug}
                   />
                 </div>
               </aside>
@@ -296,7 +312,7 @@ export default function CategoryProductsPage() {
                             aria-sort={filters.sortBy === 'pricePerTB' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                             role="columnheader"
                           >
-                            <div className="flex items-center">Price/TB {getSortIcon('pricePerTB')}</div>
+                            <div className="flex items-center">Price/{unitLabel} {getSortIcon('pricePerTB')}</div>
                           </TableHead>
                           <TableHead 
                             className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
@@ -326,7 +342,7 @@ export default function CategoryProductsPage() {
                             aria-sort={filters.sortBy === 'capacity' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                             role="columnheader"
                           >
-                            <div className="flex items-center">Capacity {getSortIcon('capacity')}</div>
+                            <div className="flex items-center">Capacity ({unitLabel}) {getSortIcon('capacity')}</div>
                           </TableHead>
                           <TableHead className="hidden md:table-cell">Warranty</TableHead>
                           <TableHead className="hidden sm:table-cell">Form Factor</TableHead>
@@ -339,13 +355,13 @@ export default function CategoryProductsPage() {
                         {filteredProducts.map((product) => (
                           <TableRow key={product.id} className="group">
                             <TableCell className="font-medium">
-                              {formatCurrency(product.pricePerTB, 3)}
+                              {formatCurrency((product[pricePerUnitField as keyof Product] as number) || 0, 3)}
                             </TableCell>
                             <TableCell>
                               {formatCurrency(product.price)}
                             </TableCell>
                             <TableCell>
-                              {product.capacityUnit === 'TB' ? (product.capacity / 1000).toFixed(1) : product.capacity} {product.capacityUnit}
+                              {unitLabel === 'TB' ? (product.capacity / 1000).toFixed(1) : product.capacity} {product.capacityUnit}
                             </TableCell>
                             <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                               {product.warranty}
@@ -429,13 +445,24 @@ interface FilterPanelProps {
   filters: ReturnType<typeof useProductFilters>['filters']
   toggleArrayFilter: ReturnType<typeof useProductFilters>['toggleArrayFilter']
   setCapacityRange: ReturnType<typeof useProductFilters>['setCapacityRange']
+  unitLabel: string
+  categorySlug: string
 }
 
 function FilterPanel({
   filters,
   toggleArrayFilter,
-  setCapacityRange
+  setCapacityRange,
+  unitLabel,
+  categorySlug
 }: FilterPanelProps) {
+  const isRAM = categorySlug === 'ram'
+  
+  const techOptions = isRAM ? ["DDR4", "DDR5"] : ["HDD", "SSD", "SAS"]
+  const formFactorOptions = isRAM 
+    ? ["DIMM", "SO-DIMM"] 
+    : ["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"]
+
   return (
     <Card className="p-4">
       <CardContent className="p-0">
@@ -460,7 +487,7 @@ function FilterPanel({
           </AccordionItem>
 
           <AccordionItem value="capacity" className="border-b">
-            <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Capacity (TB)</AccordionTrigger>
+            <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Capacity ({unitLabel})</AccordionTrigger>
             <AccordionContent>
               <div className="flex items-center gap-2 pt-1 pb-3">
                 <div className="relative flex-1">
@@ -473,9 +500,9 @@ function FilterPanel({
                       setCapacityRange(val, filters.maxCapacity ?? null)
                     }}
                     className="w-full pr-8 bg-white dark:bg-secondary/40 shadow-sm focus-visible:ring-0 focus-visible:border-primary transition-colors"
-                    aria-label="Minimum capacity in TB"
+                    aria-label={`Minimum capacity in ${unitLabel}`}
                   />
-                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">TB</span>
+                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">{unitLabel}</span>
                 </div>
                 <span className="text-muted-foreground">-</span>
                 <div className="relative flex-1">
@@ -488,9 +515,9 @@ function FilterPanel({
                       setCapacityRange(filters.minCapacity ?? null, val)
                     }}
                     className="w-full pr-8 bg-white dark:bg-secondary/40 shadow-sm focus-visible:ring-0 focus-visible:border-primary transition-colors"
-                    aria-label="Maximum capacity in TB"
+                    aria-label={`Maximum capacity in ${unitLabel}`}
                   />
-                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">TB</span>
+                  <span className="absolute right-3 top-2.5 text-xs text-muted-foreground">{unitLabel}</span>
                 </div>
               </div>
             </AccordionContent>
@@ -500,7 +527,7 @@ function FilterPanel({
             <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Technology</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-1.5 pt-1 pb-3">
-                {["HDD", "SSD", "SAS"].map((tech) => (
+                {techOptions.map((tech) => (
                   <div key={tech} className="flex items-center space-x-3 py-1.5">
                     <Checkbox
                       id={`tech-${tech}`}
@@ -518,7 +545,7 @@ function FilterPanel({
             <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">Form Factor</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-1.5 pt-1 pb-3">
-                {["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"].map((ff) => (
+                {formFactorOptions.map((ff) => (
                   <div key={ff} className="flex items-center space-x-3 py-1.5">
                     <Checkbox
                       id={`ff-${ff}`}

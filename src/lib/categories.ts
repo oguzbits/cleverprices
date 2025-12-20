@@ -1,7 +1,4 @@
-import {
-  HardDrive,
-  type LucideIcon,
-} from "lucide-react";
+import { HardDrive, MemoryStick, type LucideIcon } from "lucide-react";
 
 export interface Category {
   name: string;
@@ -23,7 +20,7 @@ export interface CategoryHierarchy {
 // All categories in a flat structure
 export const allCategories: Record<string, Category> = {
   // Parent Category
-  "electronics": {
+  electronics: {
     name: "Electronics",
     slug: "electronics",
     description: "Digital storage solutions - compare price per terabyte",
@@ -45,12 +42,26 @@ export const allCategories: Record<string, Category> = {
     metaDescription:
       "Find the best hard drive and SSD deals by comparing price per terabyte. Compare internal and external storage from top brands.",
   },
+
+  "ram": {
+    name: "RAM & Memory",
+    slug: "ram",
+    description: "DDR4 and DDR5 RAM modules - compare price per GB",
+    icon: MemoryStick,
+    parent: "electronics",
+    unitType: "GB",
+    metaTitle: "RAM & Memory - Compare Price Per GB | RealPriceData",
+    metaDescription:
+      "Find the best RAM and memory deals by comparing price per gigabyte. Compare DDR4 and DDR5 modules from top brands like Crucial, Lexar, and Patriot.",
+  },
 };
 
 // Get category hierarchy (parent with children)
 export function getCategoryHierarchy(): CategoryHierarchy[] {
   const hierarchies: CategoryHierarchy[] = [];
-  const parents = Object.values(allCategories).filter((cat) => !cat.parent && !cat.hidden);
+  const parents = Object.values(allCategories).filter(
+    (cat) => !cat.parent && !cat.hidden
+  );
 
   parents.forEach((parent) => {
     const children = Object.values(allCategories).filter(
@@ -98,22 +109,25 @@ export function getBreadcrumbs(categorySlug: string): Category[] {
 }
 
 // Get full URL path for a category
-export function getCategoryPath(categorySlug: string, countryCode?: string): string {
+export function getCategoryPath(
+  categorySlug: string,
+  countryCode?: string
+): string {
   const category = allCategories[categorySlug];
   if (!category) return "/";
 
   let path = "";
-  
+
   if (category.parent) {
     path = `/${category.parent}/${category.slug}`;
   } else {
     path = `/${category.slug}`;
   }
-  
+
   // Prepend country code if provided
   if (countryCode) {
     path = `/${countryCode}${path}`;
   }
-  
+
   return path;
 }

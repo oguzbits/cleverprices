@@ -16,10 +16,11 @@ export interface Product {
   price: number;
   capacity: number;
   capacityUnit: "GB" | "TB";
-  pricePerTB: number;
+  pricePerTB?: number;
+  pricePerGB?: number;
   warranty: string;
   formFactor: string;
-  technology: "HDD" | "SSD" | "SAS";
+  technology: "HDD" | "SSD" | "SAS" | "DDR4" | "DDR5";
   condition: "New" | "Used" | "Renewed";
   brand: string;
 }

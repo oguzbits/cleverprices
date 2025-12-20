@@ -1,16 +1,13 @@
 "use client"
 
 import Link from "next/link"
-import { HardDrive, Dumbbell, Battery, Droplets, Baby } from "lucide-react"
+import { HardDrive, MemoryStick } from "lucide-react"
 import { getCategoryPath } from "@/lib/categories"
 import { useCountry } from "@/hooks/use-country"
 
 const categories = [
-  { name: "SSDs", icon: HardDrive, slug: "hard-drives" },
-  { name: "Protein", icon: Dumbbell, slug: "protein-powder" },
-  { name: "Batteries", icon: Battery, slug: "batteries" },
-  { name: "Detergent", icon: Droplets, slug: "laundry-detergent" },
-  { name: "Diapers", icon: Baby, slug: "diapers" },
+  { name: "Hard Drives & SSDs", icon: HardDrive, slug: "hard-drives" },
+  { name: "RAM & Memory", icon: MemoryStick, slug: "ram" },
 ]
 
 export function HeroCategoryPills() {
