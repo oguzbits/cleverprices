@@ -40,8 +40,7 @@ export function PriceDrops({ products }: PriceDropsProps) {
 
   const categories = [
     { label: "All Products", value: "all" },
-    { label: "Hard Drives", value: "harddrives" },
-    { label: "SSD", value: "ssd" },
+    { label: "Hard Drives", value: "hard-drives" },
     { label: "RAM", value: "ram" }
   ];
 
