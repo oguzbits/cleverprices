@@ -17,6 +17,8 @@ export interface ProductUIModel {
   category: string;
   capacity: string;
   pricePerUnit?: string;
+  oldPrice?: number;
+  discountPercentage?: number;
 }
 
 // Mock Data in Official PA-API 5.0 Structure

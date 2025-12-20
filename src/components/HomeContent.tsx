@@ -3,8 +3,9 @@ import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 import { PopularProducts } from "@/components/PopularProducts";
 import { PriceDrops } from "@/components/PriceDrops";
-import { getAllProducts, getAffiliateRedirectPath } from "@/lib/product-registry";
+import { getAllProducts } from "@/lib/product-registry";
 import { getCountryByCode, getAllCountries } from "@/lib/countries";
+import { adaptToUIModel } from "@/lib/utils/products";
 import { Sparkles, ArrowRight, Gift } from "lucide-react";
 import Link from "next/link";
 import Script from "next/script";
@@ -14,20 +15,7 @@ export async function HomeContent({ country }: { country: string }) {
   const allProducts = getAllProducts();
   
   // Adapt products to UI model
-  const uiProducts = allProducts.map(p => ({
-    asin: p.asin,
-    title: p.title,
-    price: { 
-      amount: p.price, 
-      currency: countryConfig?.currency || "EUR", 
-      displayAmount: `${p.price} ${countryConfig?.currency || "€"}` 
-    },
-    image: "", // Placeholder used in ProductCard anyway
-    url: getAffiliateRedirectPath(p.slug),
-    category: p.category,
-    capacity: `${p.capacity}${p.capacityUnit}`,
-    pricePerUnit: p.category === 'ram' ? (p.pricePerGB ? `${p.pricePerGB} ${countryConfig?.symbol || "€"}/GB` : undefined) : (p.pricePerTB ? `${p.pricePerTB} ${countryConfig?.symbol || "€"}/TB` : undefined)
-  }));
+  const uiProducts = allProducts.map(p => adaptToUIModel(p, countryConfig?.currency, countryConfig?.symbol));
 
   // Create mock data for sections using real products
   const mockPopularProducts = uiProducts.slice(0, 5).map(p => ({

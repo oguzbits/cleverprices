@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
-import { TrendingDown, Package } from "lucide-react";
 import { getCountryByCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
+import { Package } from "lucide-react";
 
 export interface ProductCardProps {
   title: string;

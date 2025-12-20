@@ -1,12 +1,10 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
+import { ProductSection } from "@/components/ProductSection"
 import { useCountry } from "@/hooks/use-country"
 import { getCountryByCode } from "@/lib/countries"
-import { ProductCard } from "@/components/product-card"
-import { getAllProducts, getAffiliateRedirectPath, type Product } from "@/lib/product-registry"
-
-
+import { getAllProducts, type Product } from "@/lib/product-registry"
+import { adaptToUIModel } from "@/lib/utils/products"
 
 type ProductWithDiscount = Product & {
   discount: number
@@ -46,65 +44,28 @@ const getTopDeals = (): ProductWithDiscount[] => {
     .slice(0, 3)
 }
 
-import React, { useRef } from "react";
-import { SectionHeader } from "@/components/SectionHeader";
-import { Carousel, CarouselRef } from "@/components/Carousel";
-
 export function HeroDealCards() {
   const { country } = useCountry();
   const countryConfig = getCountryByCode(country);
-  const carouselRef = useRef<CarouselRef>(null);
 
   const highlightedDeals = getTopDeals();
-
-  // Products already come with discount info, but we also want unit price badges
-  const productsWithUnitValue = highlightedDeals.map(p => {
-    const isRAM = p.category === 'ram';
-    const val = isRAM ? p.pricePerGB : p.pricePerTB;
+  const uiProducts = highlightedDeals.map(p => {
+    const ui = adaptToUIModel(p, countryConfig?.currency, countryConfig?.symbol);
     return {
-      ...p,
-      unitValue: val || Infinity,
-      unitLabel: isRAM ? 'GB' : 'TB'
+      ...ui,
+      oldPrice: ui.price.amount * (1 + p.discount / 100),
+      discountPercentage: p.discount
     };
   });
 
-  const minUnitValue = Math.min(...productsWithUnitValue.map(p => p.unitValue));
-  const avgUnitValue = productsWithUnitValue.reduce((acc, p) => acc + p.unitValue, 0) / (productsWithUnitValue.length || 1);
-
   return (
-    <section className="mb-16">
-      <SectionHeader 
-        title="Highlighted Deals"
-        description="These are outstanding deals we've found and feel are worth sharing."
-        href={`/${country}/categories`}
-        onScrollLeft={() => carouselRef.current?.scrollLeft()}
-        onScrollRight={() => carouselRef.current?.scrollRight()}
-      />
-
-      <Carousel ref={carouselRef}>
-        {productsWithUnitValue.map((product) => {
-          let badgeText = undefined;
-          if (product.unitValue === minUnitValue && minUnitValue !== Infinity) {
-            badgeText = "Best Price";
-          } else if (product.unitValue < avgUnitValue * 0.85 && product.unitValue !== Infinity) {
-            badgeText = "Good Deal";
-          }
-          
-          return (
-            <ProductCard
-              key={product.id || product.asin}
-              title={product.title}
-              price={product.price}
-              oldPrice={product.price * (1 + product.discount / 100)}
-              currency={countryConfig?.currency || "USD"}
-              url={getAffiliateRedirectPath(product.slug)}
-              pricePerUnit={product.unitValue !== Infinity ? `${countryConfig?.symbol || "$"}${product.unitValue.toFixed(2)}/${product.unitLabel}` : undefined}
-              countryCode={country}
-              badgeText={badgeText}
-            />
-          );
-        })}
-      </Carousel>
-    </section>
+    <ProductSection 
+      title="Highlighted Deals"
+      description="These are outstanding deals we've found and feel are worth sharing."
+      products={uiProducts}
+      productCardProps={{
+        // Custom logic for oldPrice in HeroDealCards
+      }}
+    />
   );
 }

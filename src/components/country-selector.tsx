@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Globe } from "lucide-react"
+import { CountryItem } from "@/components/CountryItem"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -10,9 +10,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Badge } from "@/components/ui/badge"
 import { useCountry } from "@/hooks/use-country"
 import { getAllCountries } from "@/lib/countries"
+import { Globe } from "lucide-react"
 
 export function CountrySelector() {
   const { country, currentCountry, changeCountry } = useCountry()
@@ -48,23 +48,13 @@ export function CountrySelector() {
             onClick={() => changeCountry(c.code)}
             className="cursor-pointer"
           >
-            <div className="flex items-center justify-between w-full">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{c.flag}</span>
-                <div className="flex flex-col">
-                  <span className="font-medium">{c.name}</span>
-                  <span className="text-xs text-muted-foreground">{c.domain}</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300">
-                  Live
-                </Badge>
-                {country === c.code && (
-                  <Check className="h-4 w-4 text-primary" />
-                )}
-              </div>
-            </div>
+            <CountryItem 
+              flag={c.flag}
+              name={c.name}
+              domain={c.domain}
+              isLive={true}
+              isActive={country === c.code}
+            />
           </DropdownMenuItem>
         ))}
         
@@ -82,20 +72,12 @@ export function CountrySelector() {
                 disabled
                 className="cursor-not-allowed opacity-60"
               >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{c.flag}</span>
-                    <div className="flex flex-col">
-                      <span className="font-medium">{c.name}</span>
-                      <span className="text-xs text-muted-foreground">{c.domain}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">
-                      Soon
-                    </Badge>
-                  </div>
-                </div>
+                <CountryItem 
+                  flag={c.flag}
+                  name={c.name}
+                  domain={c.domain}
+                  isLive={false}
+                />
               </DropdownMenuItem>
             ))}
           </>
