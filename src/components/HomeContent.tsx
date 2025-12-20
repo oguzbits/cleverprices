@@ -3,10 +3,10 @@ import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 import { PopularProducts } from "@/components/PopularProducts";
 import { PriceDrops } from "@/components/PriceDrops";
+import { getAllCountries, getCountryByCode } from "@/lib/countries";
 import { getAllProducts } from "@/lib/product-registry";
-import { getCountryByCode, getAllCountries } from "@/lib/countries";
 import { adaptToUIModel } from "@/lib/utils/products";
-import { Sparkles, ArrowRight, Gift } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Script from "next/script";
 

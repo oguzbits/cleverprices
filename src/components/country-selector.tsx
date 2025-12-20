@@ -1,6 +1,6 @@
 "use client"
 
-import { CountryItem } from "@/components/CountryItem"
+import { CountryItem } from "./CountryItem"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -28,7 +28,7 @@ export function CountrySelector() {
         <Button 
           variant="outline" 
           size="sm" 
-          className="gap-1 sm:gap-2 px-2 sm:px-3 min-w-[auto] sm:min-w-[140px]"
+          className="gap-1 sm:gap-2 px-2 sm:px-3 min-w-auto sm:min-w-[140px]"
           aria-label="Select country"
         >
           <Globe className="h-4 w-4" />
