@@ -98,7 +98,7 @@ export function HeroDealCards() {
               oldPrice={product.price * (1 + product.discount / 100)}
               currency={countryConfig?.currency || "USD"}
               url={getAffiliateRedirectPath(product.slug)}
-              pricePerUnit={product.unitValue !== Infinity ? `${countryConfig?.currency || "$"}${product.unitValue.toFixed(2)}/${product.unitLabel}` : undefined}
+              pricePerUnit={product.unitValue !== Infinity ? `${countryConfig?.symbol || "$"}${product.unitValue.toFixed(2)}/${product.unitLabel}` : undefined}
               countryCode={country}
               badgeText={badgeText}
             />

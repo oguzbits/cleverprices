@@ -67,14 +67,14 @@ export function ProductCard({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group relative flex flex-col p-3.5 rounded-2xl border border-border/60 bg-card no-underline w-[220px] sm:w-[240px] shrink-0 h-full shadow-sm hover:shadow-md transition-shadow",
+        "group relative flex flex-col p-4 rounded-2xl border border-border/60 bg-card no-underline w-[220px] sm:w-[240px] shrink-0 h-full shadow-sm hover:shadow-md transition-shadow",
         className
       )}
     >
       <div className="absolute top-2.5 left-2.5 z-10">
         {badgeText && (badgeText === "Best Price" || badgeText === "Good Deal") && (
           <Badge
-            className={`${getBadgeStyle()} border text-[10px] font-black py-0.5 px-2 rounded-lg capitalize shadow-md tracking-tight`}
+            className={`${getBadgeStyle()} border text-[9px] font-black py-0.5 px-1.5 rounded-md capitalize shadow-sm tracking-tight`}
           >
             {badgeText}
           </Badge>
@@ -82,34 +82,28 @@ export function ProductCard({
       </div>
 
       {/* Image Placeholder with Icon */}
-      <div className="relative aspect-square bg-muted/20 dark:bg-muted/10 rounded-xl mb-3 overflow-hidden flex items-center justify-center p-4">
-        <Package className="w-12 h-12 text-muted-foreground/10 stroke-1" />
+      <div className="relative aspect-4/3 bg-muted/20 dark:bg-muted/10 rounded-xl mb-3 overflow-hidden flex items-center justify-center p-3">
+        <Package className="w-10 h-10 text-muted-foreground/10 stroke-1" />
       </div>
 
-      {/* Title - Improved Readability based on CCC */}
-      <div className="h-[2.8rem] mb-3 overflow-hidden">
-        <h3 className="text-sm font-bold text-foreground leading-[1.4] line-clamp-2">
+      {/* Title */}
+      <div className="h-10 mb-3 overflow-hidden">
+        <h3 className="text-sm text-foreground leading-tight line-clamp-2">
           {title}
         </h3>
       </div>
 
       {/* Price Section */}
-      <div className="mt-auto space-y-2.5">
+      <div className="mt-auto space-y-3">
         <div className="flex flex-col gap-2">
-          <div className="flex flex-col">
-            <span className="text-xl font-black tracking-tighter text-foreground leading-none">
-              {formatCurrency(price)}
-            </span>
-            {oldPrice && (
-              <span className="text-[10px] text-muted-foreground/50 line-through mt-1 font-medium italic">
-                Was: {formatCurrency(oldPrice)}
-              </span>
-            )}
-          </div>
+          <span className="text-xl font-black tracking-tight text-foreground leading-none">
+            {formatCurrency(price)}
+          </span>
+          
           {pricePerUnit && (
             <div className="flex items-center justify-between pt-1 border-t border-border/40">
-              <span className="text-[9px] uppercase font-black text-muted-foreground/40 tracking-widest">Unit Price</span>
-              <span className="text-[10px] font-mono font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/5">
+              <span className="text-[10px] uppercase font-black text-muted-foreground/40 tracking-widest">Unit Price</span>
+              <span className="text-[12px] font-mono font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/5">
                 {pricePerUnit}
               </span>
             </div>
@@ -118,7 +112,7 @@ export function ProductCard({
 
         {/* CTA Button */}
         <div className="relative pt-0.5">
-          <button className="relative w-full py-2 bg-[#FFD814] hover:bg-[#F7CA00] text-black font-black text-xs rounded-lg shadow-sm border border-[#FCD200]/50 transition-all cursor-pointer overflow-hidden active:scale-[0.98]">
+          <button className="relative w-full py-1.5 bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold text-sm rounded-2xl shadow-sm border border-[#FCD200]/50 transition-all cursor-pointer overflow-hidden active:scale-[0.98]">
             <span className="relative z-10">View on Amazon</span>
           </button>
         </div>

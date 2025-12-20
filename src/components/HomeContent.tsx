@@ -26,7 +26,7 @@ export async function HomeContent({ country }: { country: string }) {
     url: getAffiliateRedirectPath(p.slug),
     category: p.category,
     capacity: `${p.capacity}${p.capacityUnit}`,
-    pricePerUnit: p.category === 'ram' ? (p.pricePerGB ? `${p.pricePerGB} ${countryConfig?.currency || "€"}/GB` : undefined) : (p.pricePerTB ? `${p.pricePerTB} ${countryConfig?.currency || "€"}/TB` : undefined)
+    pricePerUnit: p.category === 'ram' ? (p.pricePerGB ? `${p.pricePerGB} ${countryConfig?.symbol || "€"}/GB` : undefined) : (p.pricePerTB ? `${p.pricePerTB} ${countryConfig?.symbol || "€"}/TB` : undefined)
   }));
 
   // Create mock data for sections using real products

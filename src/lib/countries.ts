@@ -4,6 +4,7 @@ export interface Country {
   flag: string
   domain: string
   currency: string
+  symbol: string
   locale: string // e.g., 'en-US', 'de-DE'
   isLive: boolean
 }
@@ -15,6 +16,7 @@ export const countries: Record<string, Country> = {
     flag: '🇺🇸',
     domain: 'amazon.com',
     currency: 'USD',
+    symbol: '$',
     locale: 'en-US',
     isLive: false,
   },
@@ -24,6 +26,7 @@ export const countries: Record<string, Country> = {
     flag: '🇬🇧',
     domain: 'amazon.co.uk',
     currency: 'GBP',
+    symbol: '£',
     locale: 'en-GB',
     isLive: false,
   },
@@ -33,6 +36,7 @@ export const countries: Record<string, Country> = {
     flag: '🇨🇦',
     domain: 'amazon.ca',
     currency: 'CAD',
+    symbol: 'C$',
     locale: 'en-CA',
     isLive: false,
   },
@@ -42,6 +46,7 @@ export const countries: Record<string, Country> = {
     flag: '🇩🇪',
     domain: 'amazon.de',
     currency: 'EUR',
+    symbol: '€',
     locale: 'de-DE',
     isLive: true,
   },
@@ -51,6 +56,7 @@ export const countries: Record<string, Country> = {
     flag: '🇪🇸',
     domain: 'amazon.es',
     currency: 'EUR',
+    symbol: '€',
     locale: 'es-ES',
     isLive: false,
   },
@@ -60,6 +66,7 @@ export const countries: Record<string, Country> = {
     flag: '🇮🇹',
     domain: 'amazon.it',
     currency: 'EUR',
+    symbol: '€',
     locale: 'it-IT',
     isLive: false,
   },
@@ -69,6 +76,7 @@ export const countries: Record<string, Country> = {
     flag: '🇫🇷',
     domain: 'amazon.fr',
     currency: 'EUR',
+    symbol: '€',
     locale: 'fr-FR',
     isLive: false,
   },
@@ -78,6 +86,7 @@ export const countries: Record<string, Country> = {
     flag: '🇦🇺',
     domain: 'amazon.com.au',
     currency: 'AUD',
+    symbol: 'A$',
     locale: 'en-AU',
     isLive: false,
   },
