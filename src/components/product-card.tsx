@@ -74,7 +74,7 @@ export function ProductCard({
       <div className="absolute top-2.5 left-2.5 z-10">
         {badgeText && (badgeText === "Best Price" || badgeText === "Good Deal") && (
           <Badge
-            className={`${getBadgeStyle()} border text-[9px] font-black py-0.5 px-1.5 rounded-md capitalize shadow-sm tracking-tight`}
+            className={`${getBadgeStyle()} border text-[13px] font-bold rounded-2xl capitalize shadow-sm tracking-tight`}
           >
             {badgeText}
           </Badge>
