@@ -96,7 +96,7 @@ export function ProductCard({
       {/* Price Section */}
       <div className="mt-auto space-y-3">
         <div className="flex flex-col gap-2">
-          <span className="text-xl font-black tracking-tight text-foreground leading-none">
+          <span className="text-xl font-bold tracking-tight text-foreground leading-none">
             {formatCurrency(price)}
           </span>
           
