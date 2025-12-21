@@ -12,16 +12,27 @@ type ProductWithDiscount = Product & {
 
 // Calculate discount percentage based on market average or typical retail price
 const calculateDiscount = (product: Product): number => {
-  // Typical market prices per unit (TB for storage, GB for RAM)
-  const marketPrices: Record<Product['technology'], number> = {
+  // Typical market prices per unit (TB for storage, GB for RAM, W for PSU)
+  const marketPrices: Record<string, number> = {
     'SSD': 120, // Average $/TB
     'HDD': 25,  // Average $/TB
     'SAS': 30,  // Average $/TB
     'DDR4': 10, // Average $/GB
-    'DDR5': 15  // Average $/GB
+    'DDR5': 15, // Average $/GB
+    'GaN-MOSFET': 0.25, // Average $/W for high-end PSU
   }
   
-  const marketPrice = marketPrices[product.technology]
+  // Try to determine a market price based on category if technology is not found
+  let marketPrice = marketPrices[product.technology || ""]
+  
+  if (marketPrice === undefined) {
+    if (product.category === 'power-supplies') {
+      marketPrice = 0.20 // Default $/W for PSU
+    } else {
+      marketPrice = 0 // Unknown
+    }
+  }
+
   const currentPrice = product.pricePerUnit || 0
 
   if (marketPrice === 0 || currentPrice === 0) return 0

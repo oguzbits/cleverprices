@@ -1,13 +1,14 @@
 "use client"
 
 import Link from "next/link"
-import { HardDrive, MemoryStick } from "lucide-react"
+import { HardDrive, MemoryStick, Zap } from "lucide-react"
 import { getCategoryPath } from "@/lib/categories"
 import { useCountry } from "@/hooks/use-country"
 
 const categories = [
   { name: "Hard Drives & SSDs", icon: HardDrive, slug: "hard-drives" },
   { name: "RAM & Memory", icon: MemoryStick, slug: "ram" },
+  { name: "Power Supplies", icon: Zap, slug: "power-supplies" },
 ]
 
 export function HeroCategoryPills() {

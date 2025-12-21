@@ -10,7 +10,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Script from "next/script";
 
-export async function HomeContent({ country }: { country: string }) {
+export function HomeContent({ country }: { country: string }) {
   const countryConfig = getCountryByCode(country);
   const allProducts = getAllProducts();
   

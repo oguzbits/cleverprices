@@ -1,4 +1,4 @@
-import { HardDrive, MemoryStick, type LucideIcon } from "lucide-react";
+import { HardDrive, MemoryStick, Zap, type LucideIcon } from "lucide-react";
 
 export interface Category {
   name: string;
@@ -53,6 +53,18 @@ export const allCategories: Record<string, Category> = {
     metaTitle: "RAM & Memory - Compare Price Per GB | RealPriceData",
     metaDescription:
       "Find the best RAM and memory deals by comparing price per gigabyte. Compare DDR4 and DDR5 modules from top brands like Crucial, Lexar, and Patriot.",
+  },
+
+  "power-supplies": {
+    name: "Power Supplies",
+    slug: "power-supplies",
+    description: "ATX and SFX power supplies - compare price per Watt",
+    icon: Zap,
+    parent: "electronics",
+    unitType: "W",
+    metaTitle: "Power Supplies - Compare Price Per Watt | RealPriceData",
+    metaDescription:
+      "Find the best power supply deals by comparing price per watt. Compare 80+ Bronze, Gold, and Platinum PSUs from top brands.",
   },
 };
 

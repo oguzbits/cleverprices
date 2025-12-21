@@ -102,7 +102,15 @@ export default function CategoryProductsPage() {
   }
 
   if (filters.technology && filters.technology.length > 0) {
-    filteredProducts = filteredProducts.filter(p => filters.technology!.includes(p.technology))
+    filteredProducts = filteredProducts.filter(p => {
+      const techVal = p.technology || "";
+      const certVal = (p as any).certification || "";
+      
+      if (categorySlug === 'power-supplies') {
+        return filters.technology!.includes(techVal) || filters.technology!.includes(certVal);
+      }
+      return filters.technology!.includes(techVal);
+    });
   }
 
   if (filters.formFactor && filters.formFactor.length > 0) {
@@ -110,13 +118,20 @@ export default function CategoryProductsPage() {
   }
 
   if (filters.minCapacity !== null && filters.minCapacity !== undefined) {
-    const minVal = unitLabel === 'TB' ? filters.minCapacity! * 1000 : filters.minCapacity!
-    filteredProducts = filteredProducts.filter(p => (p.normalizedCapacity ?? p.capacity) >= minVal)
+    const minVal = (unitLabel === 'TB' || unitLabel === 'W') ? filters.minCapacity! : filters.minCapacity! // For W, it's already in W
+    // Wait, storage logic was: unitLabel === 'TB' ? filters.minCapacity! * 1000 : filters.minCapacity!
+    // But filters.minCapacity is usually what user types. If unit is TB, they type 2 (TB), but data is in GB? 
+    // Actually normalizedCapacity is in GB/TB? Let's check products.ts
+    // normalizedCapacity = capacity * fromFactor. fromFactor for TB is 1000. So normalizedCapacity is in GB.
+    // So if unitLabel is TB, and user types 2, we want 2000. Correct.
+    // If unitLabel is W, user types 600, we want 600. normalizedCapacity for W is W * 1. Correct.
+    const minValReal = unitLabel === 'TB' ? filters.minCapacity! * 1000 : filters.minCapacity!
+    filteredProducts = filteredProducts.filter(p => (p.normalizedCapacity ?? p.capacity) >= minValReal)
   }
 
   if (filters.maxCapacity !== null && filters.maxCapacity !== undefined) {
-    const maxVal = unitLabel === 'TB' ? filters.maxCapacity! * 1000 : filters.maxCapacity!
-    filteredProducts = filteredProducts.filter(p => (p.normalizedCapacity ?? p.capacity) <= maxVal)
+    const maxValReal = unitLabel === 'TB' ? filters.maxCapacity! * 1000 : filters.maxCapacity!
+    filteredProducts = filteredProducts.filter(p => (p.normalizedCapacity ?? p.capacity) <= maxValReal)
   }
 
   // Sorting
@@ -351,7 +366,9 @@ export default function CategoryProductsPage() {
                           </TableHead>
                           <TableHead className="hidden md:table-cell">Warranty</TableHead>
                           <TableHead className="hidden sm:table-cell">Form Factor</TableHead>
-                          <TableHead className="hidden sm:table-cell">Tech</TableHead>
+                          <TableHead className="hidden sm:table-cell">
+                            {categorySlug === 'power-supplies' ? 'Cert' : 'Tech'}
+                          </TableHead>
                           <TableHead className="hidden sm:table-cell">Condition</TableHead>
                           <TableHead>Product</TableHead>
                         </TableRow>
@@ -375,7 +392,7 @@ export default function CategoryProductsPage() {
                               {product.formFactor}
                             </TableCell>
                             <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                              {product.technology}
+                              {categorySlug === 'power-supplies' ? (product.certification || product.technology) : product.technology}
                             </TableCell>
                             <TableCell className="hidden sm:table-cell">
                               <Badge 
@@ -462,11 +479,25 @@ function FilterPanel({
   categorySlug
 }: FilterPanelProps) {
   const isRAM = categorySlug === 'ram'
+  const isPSU = categorySlug === 'power-supplies'
   
-  const techOptions = isRAM ? ["DDR4", "DDR5"] : ["HDD", "SSD", "SAS"]
+  const techOptions = isRAM 
+    ? ["DDR4", "DDR5"] 
+    : isPSU 
+      ? ["80+ Bronze", "80+ Gold", "80+ Platinum", "80+"]
+      : ["HDD", "SSD", "SAS"]
+
   const formFactorOptions = isRAM 
     ? ["DIMM", "SO-DIMM"] 
-    : ["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"]
+    : isPSU
+      ? ["ATX", "SFX", "SFX-L", "Mini-ITX"]
+      : ["Internal 3.5\"", "Internal 2.5\"", "External 3.5\"", "External 2.5\"", "M.2 NVMe", "M.2 SATA"]
+
+  // For PSUs, the "technology" filter should match certification if we use it that way
+  // or we could add a certification filter. For now, let's keep it simple.
+  const handleToggle = (filterName: string, value: string) => {
+    toggleArrayFilter(filterName as any, value)
+  }
 
   return (
     <Card className="p-4">

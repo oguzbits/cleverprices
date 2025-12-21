@@ -7,6 +7,7 @@ export const QUICK_ACCESS_CATEGORIES = [
   "electronics",
   "hard-drives",
   "ram",
+  "power-supplies",
 ] as const;
 
 export type QuickAccessCategory = (typeof QUICK_ACCESS_CATEGORIES)[number];
@@ -17,6 +18,7 @@ export type QuickAccessCategory = (typeof QUICK_ACCESS_CATEGORIES)[number];
 export const FEATURED_CATEGORIES = [
   "hard-drives",
   "ram",
+  "power-supplies",
 ] as const;
 
 /**

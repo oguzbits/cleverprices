@@ -14,7 +14,8 @@ export function PopularProducts({ products }: PopularProductsProps) {
   const categories = [
     { label: "All Products", value: "all" },
     { label: "Hard Drives", value: "hard-drives" },
-    { label: "RAM", value: "ram" }
+    { label: "RAM", value: "ram" },
+    { label: "Power Supplies", value: "power-supplies" }
   ];
 
   return (

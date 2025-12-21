@@ -16,14 +16,16 @@ export interface Product {
   affiliateUrl: string;
   price: number;
   capacity: number;
-  capacityUnit: "GB" | "TB";
+  capacityUnit: "GB" | "TB" | "W";
   normalizedCapacity?: number;
   pricePerUnit?: number;
   warranty: string;
   formFactor: string;
-  technology: "HDD" | "SSD" | "SAS" | "DDR4" | "DDR5";
+  technology?: string;
   condition: "New" | "Used" | "Renewed";
   brand: string;
+  certification?: string;
+  modularityTyp?: string;
 }
 
 // Type assertion and dynamic calculation of metrics
