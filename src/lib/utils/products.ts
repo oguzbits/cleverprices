@@ -1,5 +1,6 @@
 import { ProductUIModel } from "@/lib/amazon-api";
 import { Product } from "@/lib/product-registry";
+import { allCategories } from "@/lib/categories";
 
 /**
  * Parses numeric value from strings like "0.03€/GB" or "1.25$/TB"
@@ -29,24 +30,58 @@ export function calculateProductBadges(products: (ProductUIModel & { unitValue: 
   });
 }
 
+const UNIT_CONVERSION: Record<string, number> = {
+  "GB": 1,
+  "TB": 1000,
+};
+
+/**
+ * Calculates generic unit price based on category configuration.
+ */
+export function calculateProductMetrics(p: Partial<Product>): Partial<Product> {
+  const { price, capacity, capacityUnit, category } = p;
+  
+  if (!price || !capacity || !capacityUnit || !category) return p;
+
+  const categoryConfig = allCategories[category];
+  const comparisonUnit = categoryConfig?.unitType || capacityUnit; // Fallback to capacityUnit if category not found
+
+  const fromFactor = UNIT_CONVERSION[capacityUnit] || 1;
+  const toFactor = UNIT_CONVERSION[comparisonUnit] || 1;
+  
+  const normalizedCapacity = capacity * fromFactor;
+  const capacityInComparisonUnit = normalizedCapacity / toFactor;
+  const pricePerUnit = Number((price / capacityInComparisonUnit).toFixed(2));
+
+  return {
+    ...p,
+    pricePerUnit,
+    normalizedCapacity,
+  };
+}
+
 /**
  * Adapts internal Product model to ProductUIModel
  */
 export function adaptToUIModel(p: Product, currency: string = "EUR", symbol: string = "€"): ProductUIModel {
+  const enhancedProduct = calculateProductMetrics(p) as Product;
+  const categoryConfig = allCategories[p.category];
+  const displayUnit = categoryConfig?.unitType || p.capacityUnit;
+  
   return {
-    asin: p.asin,
-    title: p.title,
+    asin: enhancedProduct.asin,
+    title: enhancedProduct.title,
     price: { 
-      amount: p.price, 
+      amount: enhancedProduct.price, 
       currency, 
-      displayAmount: `${p.price} ${symbol}` 
+      displayAmount: `${enhancedProduct.price} ${symbol}` 
     },
     image: "", // Placeholder used in ProductCard anyway
-    url: `/out/${p.slug}`, // Standard redirect path
-    category: p.category,
-    capacity: `${p.capacity}${p.capacityUnit}`,
-    pricePerUnit: p.category === 'ram' 
-      ? (p.pricePerGB ? `${p.pricePerGB} ${symbol}/GB` : undefined) 
-      : (p.pricePerTB ? `${p.pricePerTB} ${symbol}/TB` : undefined)
+    url: `/out/${enhancedProduct.slug}`, // Standard redirect path
+    category: enhancedProduct.category,
+    capacity: `${enhancedProduct.capacity}${enhancedProduct.capacityUnit}`,
+    pricePerUnit: enhancedProduct.pricePerUnit 
+      ? `${enhancedProduct.pricePerUnit} ${symbol}/${displayUnit}` 
+      : undefined
   };
 }

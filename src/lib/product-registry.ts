@@ -1,3 +1,4 @@
+import { calculateProductMetrics } from "./utils/products";
 import productsData from "@/data/products.json";
 
 /**
@@ -16,8 +17,8 @@ export interface Product {
   price: number;
   capacity: number;
   capacityUnit: "GB" | "TB";
-  pricePerTB?: number;
-  pricePerGB?: number;
+  normalizedCapacity?: number;
+  pricePerUnit?: number;
   warranty: string;
   formFactor: string;
   technology: "HDD" | "SSD" | "SAS" | "DDR4" | "DDR5";
@@ -25,8 +26,8 @@ export interface Product {
   brand: string;
 }
 
-// Type assertion to ensure JSON matches Product interface
-const products = productsData as Product[];
+// Type assertion and dynamic calculation of metrics
+const products = (productsData as Product[]).map(p => calculateProductMetrics(p) as Product);
 
 /**
  * Get a product by its slug

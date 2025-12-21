@@ -22,9 +22,7 @@ const calculateDiscount = (product: Product): number => {
   }
   
   const marketPrice = marketPrices[product.technology]
-  const currentPrice = (product.technology === 'DDR4' || product.technology === 'DDR5')
-    ? (product.pricePerGB || 0)
-    : (product.pricePerTB || 0)
+  const currentPrice = product.pricePerUnit || 0
 
   if (marketPrice === 0 || currentPrice === 0) return 0
   

@@ -216,10 +216,10 @@ export function HeroTableDemo() {
                       <div className="col-span-2 font-mono font-bold text-primary flex items-center gap-2">
                         {config.currency}
                         {currentCategory === "harddrives"
-                          ? (product as HardDriveProduct).pricePerTB.toFixed(3)
+                          ? (product as HardDriveProduct).pricePerUnit.toFixed(3)
                           : currentCategory === "batteries"
                           ? (product as BatteryProduct).pricePerUnit.toFixed(2)
-                          : (product as DogFoodProduct).pricePerLb.toFixed(1)}
+                          : (product as DogFoodProduct).pricePerUnit.toFixed(1)}
                         {idx === 0 && (
                           <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border-0 h-4 px-2 text-[8px] animate-in zoom-in font-bold capitalize tracking-wide">
                             Best

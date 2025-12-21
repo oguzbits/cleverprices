@@ -81,7 +81,7 @@ export default function CategoryProductsPage() {
   
   // Determine unit and price field
   const unitLabel = category?.unitType || 'TB'
-  const pricePerUnitField = unitLabel === 'TB' ? 'pricePerTB' : 'pricePerGB'
+  const pricePerUnitField = 'pricePerUnit'
 
   // Track category view on page load
   React.useEffect(() => {
@@ -111,21 +111,26 @@ export default function CategoryProductsPage() {
 
   if (filters.minCapacity !== null && filters.minCapacity !== undefined) {
     const minVal = unitLabel === 'TB' ? filters.minCapacity! * 1000 : filters.minCapacity!
-    filteredProducts = filteredProducts.filter(p => p.capacity >= minVal)
+    filteredProducts = filteredProducts.filter(p => (p.normalizedCapacity ?? p.capacity) >= minVal)
   }
 
   if (filters.maxCapacity !== null && filters.maxCapacity !== undefined) {
     const maxVal = unitLabel === 'TB' ? filters.maxCapacity! * 1000 : filters.maxCapacity!
-    filteredProducts = filteredProducts.filter(p => p.capacity <= maxVal)
+    filteredProducts = filteredProducts.filter(p => (p.normalizedCapacity ?? p.capacity) <= maxVal)
   }
 
   // Sorting
   filteredProducts.sort((a, b) => {
     let key = filters.sortBy as keyof Product
     
-    // Map generic 'pricePerTB' sort request to actual field if needed
-    if (key === 'pricePerTB') {
-      key = pricePerUnitField as keyof Product
+    // Default to pricePerUnit if key is missing or is legacy 'pricePerUnit'
+    if (!key) {
+      key = 'pricePerUnit'
+    }
+
+    // Map 'capacity' sort request to 'normalizedCapacity' for correct unit-aware sorting
+    if (key === 'capacity') {
+      key = 'normalizedCapacity'
     }
 
     const aValue = a[key]
@@ -141,7 +146,7 @@ export default function CategoryProductsPage() {
   })
 
   const getSortIcon = (key: string) => {
-    const currentSortBy = filters.sortBy === 'pricePerTB' ? pricePerUnitField : filters.sortBy
+    const currentSortBy = !filters.sortBy ? 'pricePerUnit' : filters.sortBy
     if (currentSortBy !== key) return <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />
     return filters.sortOrder === 'asc'
       ? <ChevronUp className="ml-1 h-3 w-3" />
@@ -155,7 +160,7 @@ export default function CategoryProductsPage() {
       category: categorySlug,
       country: validCountry,
       price: product.price,
-      pricePerUnit: (product[pricePerUnitField as keyof Product] as number) || 0,
+      pricePerUnit: product.pricePerUnit || 0,
       position: index + 1,
     })
   }
@@ -168,12 +173,12 @@ export default function CategoryProductsPage() {
 
   // Track sort changes
   const handleSortWithTracking = (key: string) => {
-    const effectiveKey = key === 'pricePerTB' ? pricePerUnitField : key
-    const currentSortBy = filters.sortBy === 'pricePerTB' ? pricePerUnitField : filters.sortBy
+    const effectiveKey = !key ? 'pricePerUnit' : key
+    const currentSortBy = !filters.sortBy ? 'pricePerUnit' : filters.sortBy
     
     const newOrder = currentSortBy === effectiveKey && filters.sortOrder === 'asc' ? 'desc' : 'asc'
     
-    // We keep the internal state as 'pricePerTB' for the broad sort category if it's unit price
+    // We keep the internal state as 'pricePerUnit' for the broad sort category if it's unit price
     setSort(key as any, newOrder as 'asc' | 'desc')
     trackSEO.sortChanged(String(effectiveKey), newOrder, categorySlug)
   }
@@ -216,7 +221,7 @@ export default function CategoryProductsPage() {
                 <li className="text-muted-foreground/50">/</li>
                 <li>
                   {index === breadcrumbs.length - 1 ? (
-                    <span className="text-foreground font-medium break-words">{crumb.name}</span>
+                    <span className="text-foreground font-medium wrap-break-word">{crumb.name}</span>
                   ) : (
                     <Link 
                       href={getCategoryPath(crumb.slug, validCountry)} 
@@ -299,20 +304,20 @@ export default function CategoryProductsPage() {
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead 
-                            className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
-                            onClick={() => handleSortWithTracking('pricePerTB')}
+                            <TableHead 
+                              className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
+                              onClick={() => handleSortWithTracking('pricePerUnit')}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault()
-                                handleSortWithTracking('pricePerTB')
+                                handleSortWithTracking('pricePerUnit')
                               }
                             }}
                             tabIndex={0}
-                            aria-sort={filters.sortBy === 'pricePerTB' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+                            aria-sort={filters.sortBy === 'pricePerUnit' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                             role="columnheader"
                           >
-                            <div className="flex items-center">Price/{unitLabel} {getSortIcon('pricePerTB')}</div>
+                            <div className="flex items-center">Price/{unitLabel} {getSortIcon('pricePerUnit')}</div>
                           </TableHead>
                           <TableHead 
                             className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
@@ -342,7 +347,7 @@ export default function CategoryProductsPage() {
                             aria-sort={filters.sortBy === 'capacity' ? (filters.sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
                             role="columnheader"
                           >
-                            <div className="flex items-center">Capacity ({unitLabel}) {getSortIcon('capacity')}</div>
+                            <div className="flex items-center">Capacity {getSortIcon('capacity')}</div>
                           </TableHead>
                           <TableHead className="hidden md:table-cell">Warranty</TableHead>
                           <TableHead className="hidden sm:table-cell">Form Factor</TableHead>
@@ -354,14 +359,14 @@ export default function CategoryProductsPage() {
                       <TableBody>
                         {filteredProducts.map((product) => (
                           <TableRow key={product.id} className="group">
-                            <TableCell className="font-medium">
-                              {formatCurrency((product[pricePerUnitField as keyof Product] as number) || 0, 3)}
-                            </TableCell>
+                          <TableCell className="font-medium">
+                            {formatCurrency(product.pricePerUnit || 0, 3)}
+                          </TableCell>
                             <TableCell>
                               {formatCurrency(product.price)}
                             </TableCell>
                             <TableCell>
-                              {unitLabel === 'TB' ? (product.capacity / 1000).toFixed(1) : product.capacity} {product.capacityUnit}
+                              {product.capacity} {product.capacityUnit}
                             </TableCell>
                             <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                               {product.warranty}

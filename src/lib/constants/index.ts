@@ -22,7 +22,7 @@ export const FEATURED_CATEGORIES = [
 /**
  * Default sorting configuration
  */
-export const DEFAULT_SORT_BY = "pricePerTB";
+export const DEFAULT_SORT_BY = "pricePerUnit";
 export const DEFAULT_SORT_ORDER = "asc" as const;
 
 /**

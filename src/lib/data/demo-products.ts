@@ -10,7 +10,7 @@ export type HardDriveProduct = {
   price: number;
   capacity: number;
   capacityUnit: string;
-  pricePerTB: number;
+  pricePerUnit: number;
   warranty: string;
   formFactor: string;
   technology: string;
@@ -36,7 +36,7 @@ export type DogFoodProduct = {
   price: number;
   weight: number;
   weightUnit: string;
-  pricePerLb: number;
+  pricePerUnit: number;
   size: "Small Breed" | "Medium Breed" | "Large Breed";
   type: "Dry" | "Wet";
   ageGroup: "Puppy" | "Adult" | "Senior";
@@ -54,7 +54,7 @@ export const hardDriveProducts: HardDriveProduct[] = [
     price: 202.13,
     capacity: 18.0,
     capacityUnit: "TB",
-    pricePerTB: 11.229,
+    pricePerUnit: 11.229,
     warranty: "2 years",
     formFactor: 'External 2.5"',
     technology: "HDD",
@@ -67,7 +67,7 @@ export const hardDriveProducts: HardDriveProduct[] = [
     price: 215.5,
     capacity: 18.0,
     capacityUnit: "TB",
-    pricePerTB: 11.972,
+    pricePerUnit: 11.972,
     warranty: "5 years",
     formFactor: 'Internal 3.5"',
     technology: "HDD",
@@ -80,7 +80,7 @@ export const hardDriveProducts: HardDriveProduct[] = [
     price: 239.99,
     capacity: 14.0,
     capacityUnit: "TB",
-    pricePerTB: 17.142,
+    pricePerUnit: 17.142,
     warranty: "5 years",
     formFactor: 'Internal 3.5"',
     technology: "HDD",
@@ -93,7 +93,7 @@ export const hardDriveProducts: HardDriveProduct[] = [
     price: 349.0,
     capacity: 8.0,
     capacityUnit: "TB",
-    pricePerTB: 43.625,
+    pricePerUnit: 43.625,
     warranty: "3 years",
     formFactor: 'Internal 2.5"',
     technology: "SSD",
@@ -106,14 +106,14 @@ export const hardDriveProducts: HardDriveProduct[] = [
     price: 179.99,
     capacity: 4.0,
     capacityUnit: "TB",
-    pricePerTB: 44.997,
+    pricePerUnit: 44.997,
     warranty: "5 years",
     formFactor: 'Internal 2.5"',
     technology: "SSD",
     condition: "New" as const,
     brand: "Crucial",
   },
-].sort((a, b) => a.pricePerTB - b.pricePerTB);
+].sort((a, b) => a.pricePerUnit - b.pricePerUnit);
 
 // Battery Products (sorted by price per unit)
 export const batteryProducts: BatteryProduct[] = [
@@ -182,7 +182,7 @@ export const dogFoodProducts: DogFoodProduct[] = [
     price: 3999,
     weight: 15.9,
     weightUnit: "kg",
-    pricePerLb: 251.5,
+    pricePerUnit: 251.5,
     size: "Large Breed" as const,
     type: "Dry" as const,
     ageGroup: "Adult" as const,
@@ -195,7 +195,7 @@ export const dogFoodProducts: DogFoodProduct[] = [
     price: 4599,
     weight: 13.6,
     weightUnit: "kg",
-    pricePerLb: 338.2,
+    pricePerUnit: 338.2,
     size: "Medium Breed" as const,
     type: "Dry" as const,
     ageGroup: "Senior" as const,
@@ -208,7 +208,7 @@ export const dogFoodProducts: DogFoodProduct[] = [
     price: 4999,
     weight: 13.6,
     weightUnit: "kg",
-    pricePerLb: 367.6,
+    pricePerUnit: 367.6,
     size: "Small Breed" as const,
     type: "Dry" as const,
     ageGroup: "Puppy" as const,
@@ -221,7 +221,7 @@ export const dogFoodProducts: DogFoodProduct[] = [
     price: 5399,
     weight: 13.6,
     weightUnit: "kg",
-    pricePerLb: 397.0,
+    pricePerUnit: 397.0,
     size: "Medium Breed" as const,
     type: "Dry" as const,
     ageGroup: "Adult" as const,
@@ -234,14 +234,14 @@ export const dogFoodProducts: DogFoodProduct[] = [
     price: 5799,
     weight: 11.8,
     weightUnit: "kg",
-    pricePerLb: 491.4,
+    pricePerUnit: 491.4,
     size: "Large Breed" as const,
     type: "Dry" as const,
     ageGroup: "Adult" as const,
     condition: "New" as const,
     brand: "Wellness",
   },
-].sort((a, b) => a.pricePerLb - b.pricePerLb);
+].sort((a, b) => a.pricePerUnit - b.pricePerUnit);
 
 // Category configuration
 export const categoryConfig = {

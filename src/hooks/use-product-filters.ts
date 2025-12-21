@@ -22,7 +22,7 @@ export function useProductFilters() {
       maxCapacity: parseAsFloat,
       
       // Sorting
-      sortBy: parseAsString.withDefault('pricePerTB'),
+      sortBy: parseAsString.withDefault('pricePerUnit'),
       sortOrder: parseAsString.withDefault('asc'),
     },
     {
@@ -63,7 +63,7 @@ export function useProductFilters() {
       formFactor: null,
       minCapacity: null,
       maxCapacity: null,
-      sortBy: 'pricePerTB',
+      sortBy: 'pricePerUnit',
       sortOrder: 'asc', // Always enforce Value Sorting on reset
     })
   }
