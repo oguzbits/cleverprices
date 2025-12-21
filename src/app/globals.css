@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
@@ -52,7 +53,7 @@
   --radius: 0.75rem;
 
   /* Light Mode - Refined Neutrals */
-  --background: #FEFEFE;
+  --background: #fefefe;
   --foreground: oklch(0.2 0.02 240);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.2 0.02 240);

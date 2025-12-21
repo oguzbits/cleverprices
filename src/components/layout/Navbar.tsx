@@ -14,6 +14,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { trackSEO } from "@/lib/analytics"
+import { cn } from "@/lib/utils"
 
 import { CountrySelector } from "@/components/country-selector"
 import { SearchModal } from "@/components/SearchModal"
@@ -76,10 +77,10 @@ export function Navbar() {
               className="w-7 h-7"
             />
             <h3 className="text-lg font-black tracking-tight">
-                <span className="text-(--ccc-red)">real</span>
-                <span className="text-(--ccc-orange)">price</span>
-                <span className="text-(--ccc-yellow)">data</span>
-              </h3>
+              <span className="text-(--ccc-red)">real</span>
+              <span className="text-(--ccc-orange)">price</span>
+              <span className="text-(--ccc-yellow)">data</span>
+            </h3>
           </Link>
         </div>
 
