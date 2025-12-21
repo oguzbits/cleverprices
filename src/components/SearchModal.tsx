@@ -1,7 +1,12 @@
 "use client";
 
 import { CategoryButton } from "@/components/CategoryButton";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { getCategoryBySlug, getCategoryPath } from "@/lib/categories";
 import { FEATURED_CATEGORIES, QUICK_ACCESS_CATEGORIES } from "@/lib/constants";
@@ -40,7 +45,6 @@ const ALL_CATEGORIES: CategoryLink[] = QUICK_ACCESS_CATEGORIES.map((slug) => {
       }
     : null;
 }).filter(Boolean) as CategoryLink[];
-
 
 interface SearchModalProps {
   open: boolean;
@@ -81,7 +85,12 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
           (prev) => (prev - 1 + availableItems.length) % availableItems.length
         );
       }
-      if (e.key === "Enter" && selectedIndex >= 0 && availableItems.length > 0 && availableItems[selectedIndex]) {
+      if (
+        e.key === "Enter" &&
+        selectedIndex >= 0 &&
+        availableItems.length > 0 &&
+        availableItems[selectedIndex]
+      ) {
         e.preventDefault();
         handleLinkClick(availableItems[selectedIndex].slug);
       }
@@ -115,32 +124,31 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-[calc(100%-2rem)] max-w-3xl p-0 gap-0 bg-card border-border rounded-4xl shadow-2xl overflow-hidden focus:outline-none"
-      >
-        {/* Search Input Header */}
-        <div className="relative px-6 py-10 md:px-12 md:py-16 border-b border-border/10 flex flex-col items-center gap-10 bg-linear-to-b from-primary/10 via-primary/5 to-transparent">
-          <div className="flex flex-col items-center gap-6">
-            <div className="p-6 rounded-3xl bg-primary/10 border border-primary/20 shadow-[0_0_40px_-10px_rgba(var(--primary),0.3)] animate-in fade-in zoom-in duration-700">
-              <Search className="h-12 w-12 text-primary stroke-[1.5]" />
+        className="w-full h-dvh md:h-auto md:w-[calc(100%-2rem)] max-w-none md:max-w-2xl p-0 gap-0 bg-card border-border rounded-none md:rounded-4xl shadow-2xl overflow-hidden focus:outline-none md:max-h-[90vh] flex flex-col **:data-[slot=dialog-close]:top-6 **:data-[slot=dialog-close]:right-6 md:**:data-[slot=dialog-close]:top-8 md:**:data-[slot=dialog-close]:right-8 **:data-[slot=dialog-close]:[&_svg]:size-6!"
+      >  {/* Search Input Header */}
+        <div className="relative px-6 py-8 md:px-10 md:py-10 border-b border-border/10 flex flex-col items-start gap-8 bg-linear-to-b from-primary/10 via-primary/5 to-transparent shrink-0">
+          <div className="flex flex-col items-start gap-5">
+            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-[0_0_30px_-10px_rgba(var(--primary),0.3)] animate-in fade-in zoom-in duration-700">
+              <Search className="h-6 w-6 text-primary stroke-[1.5]" />
             </div>
-            <div className="text-center space-y-2">
-              <DialogTitle className="text-3xl md:text-4xl font-black tracking-tighter text-foreground">
+            <div className="space-y-1.5">
+              <DialogTitle className="text-2xl md:text-3xl font-black tracking-tighter text-foreground text-left">
                 Search Categories
               </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-sm md:text-lg max-w-[280px] md:max-w-md mx-auto leading-relaxed font-medium">
+              <DialogDescription className="text-muted-foreground text-xs md:text-sm max-w-md md:max-w-xl leading-relaxed font-medium text-left">
                 Compare and find the best unit prices across all available categories.
               </DialogDescription>
             </div>
           </div>
 
-          <div className="w-full max-w-xl relative">
-            <div className="relative flex items-center gap-0 px-6 py-5 md:px-8 md:py-6 rounded-2xl border border-border bg-background">
-              <Search className="h-6 w-6 text-muted-foreground/30 shrink-0" />
+          <div className="w-full relative">
+            <div className="relative flex items-center gap-0 px-5 py-3 md:px-6 md:py-4 rounded-xl border border-border bg-background">
+              <Search className="h-5 w-5 text-muted-foreground/30 shrink-0" />
               <Input
                 placeholder="What are you looking for?"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="border-0 focus-visible:ring-0 text-xl md:text-2xl h-auto flex-1 placeholder:text-muted-foreground/40 bg-background dark:bg-background shadow-none font-bold tracking-tight px-4 py-2"
+                className="border-0 focus-visible:ring-0 text-base md:text-lg h-auto flex-1 placeholder:text-muted-foreground/40 bg-background dark:bg-background shadow-none font-bold tracking-tight px-3 py-1.5"
                 autoFocus
                 autoComplete="off"
                 data-form-type="other"
@@ -153,7 +161,11 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
         </div>
 
         {/* Content Area */}
-        <div className="max-h-[60vh] overflow-y-auto px-6 pb-10 pt-8 md:px-12 md:pb-12" role="region" aria-live="polite">
+        <div
+          className="flex-1 overflow-y-auto px-6 pb-8 pt-6 md:px-10 md:pb-10"
+          role="region"
+          aria-live="polite"
+        >
           {query === "" ? (
             // Show quick links when no search query
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -166,12 +178,14 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                     {links.map((link, idx) => {
                       const IconComponent = link.icon;
                       // Only calculate selection when in quick links mode (query is empty)
-                      const globalIndex = query === "" 
-                         ? Object.values(QUICK_LINKS)
-                            .flat()
-                            .findIndex((l) => l.slug === link.slug)
-                        : -1;
-                      const isSelected = query === "" && globalIndex === selectedIndex;
+                      const globalIndex =
+                        query === ""
+                          ? Object.values(QUICK_LINKS)
+                              .flat()
+                              .findIndex((l) => l.slug === link.slug)
+                          : -1;
+                      const isSelected =
+                        query === "" && globalIndex === selectedIndex;
                       return (
                         <CategoryButton
                           key={link.slug}
@@ -223,7 +237,8 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                       No categories found
                     </p>
                     <p className="text-muted-foreground mt-2 max-w-xs mx-auto">
-                      We couldn't find anything matching "{query}". Try another keyword like "hard drives".
+                      We couldn't find anything matching "{query}". Try another
+                      keyword like "hard drives".
                     </p>
                   </div>
                 </div>
