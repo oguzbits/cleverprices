@@ -23,10 +23,10 @@ export function HeroCategoryPills() {
           <Link
             key={category.slug}
             href={getCategoryPath(category.slug, country)}
-            className="group flex items-center gap-2 px-4 py-2 rounded-full border border-border/50 bg-card/50 hover:bg-primary/10 hover:border-primary/50 transition-all no-underline shadow-sm hover:shadow-md"
+            className="group flex items-center gap-2 px-4 py-2 rounded-full border border-primary/20 bg-secondary shadow-sm hover:bg-secondary/80 transition-all no-underline"
           >
-            <Icon className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-            <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+            <Icon className="h-3.5 w-3.5 text-primary" />
+            <span className="text-sm font-bold text-primary group-hover:underline transition-colors">
               {category.name}
             </span>
           </Link>

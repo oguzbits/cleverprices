@@ -69,7 +69,7 @@ export function HomeContent({ country }: { country: string }) {
 
         <Link 
           href={`/${country}/categories`} 
-          className="relative z-10 flex items-center gap-1.5 text-[10px] sm:text-xs font-black bg-white text-[#e52a00] hover:bg-white/90 px-3.5 py-1.5 rounded-full transition-all border border-white ml-1 sm:ml-4 group active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+          className="relative z-10 flex items-center gap-1.5 text-[10px] sm:text-xs font-black bg-white text-primary hover:bg-white/95 px-3.5 py-1.5 rounded-full transition-all border border-white ml-1 sm:ml-4 group active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
         >
           EXPLORE DEALS
           <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -123,7 +123,7 @@ export function HomeContent({ country }: { country: string }) {
                   aria-disabled={!c.isLive}
                 >
                   <span className="text-4xl filter drop-shadow-sm">{c.flag}</span>
-                  <span className="text-[10px] font-bold text-muted-foreground group-hover:text-[#0066CC] dark:group-hover:text-blue-400 transition-colors">{c.code.toUpperCase()}</span>
+                  <span className="text-[10px] font-bold text-primary group-hover:underline">{c.code.toUpperCase()}</span>
                 </Link>
               ))}
             </div>

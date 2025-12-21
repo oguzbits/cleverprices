@@ -31,27 +31,27 @@ export function Footer() {
             <h4 className="font-semibold mb-3">Quick Links</h4>
             <ul className="space-y-2">
               <li>
-                <Link href="/de/categories" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/de/categories" className="text-primary hover:underline transition-all">
                   View All Categories
                 </Link>
               </li>
               <li>
-                <Link href="/blog" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/blog" className="text-primary hover:underline transition-all">
                   Blog
                 </Link>
               </li>
               <li>
-                <Link href="/faq" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/faq" className="text-primary hover:underline transition-all">
                   FAQ
                 </Link>
               </li>
               <li>
-                <Link href="/impressum" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/impressum" className="text-primary hover:underline transition-all">
                   Impressum / Legal Notice
                 </Link>
               </li>
               <li>
-                <Link href="/datenschutz" className="text-muted-foreground hover:text-primary transition-colors">
+                <Link href="/datenschutz" className="text-primary hover:underline transition-all">
                   Datenschutz / Privacy
                 </Link>
               </li>

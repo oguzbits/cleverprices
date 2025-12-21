@@ -41,7 +41,7 @@ export function PriceDrops({ products }: PriceDropsProps) {
           className={`px-4 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 cursor-pointer ${
             period === "daily" 
               ? "bg-primary text-primary-foreground border-primary shadow-sm" 
-              : "bg-background text-muted-foreground border-border hover:border-primary/30 hover:bg-primary/5"
+              : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-secondary/70"
           }`}
         >
           Daily Drops
@@ -51,7 +51,7 @@ export function PriceDrops({ products }: PriceDropsProps) {
           className={`px-4 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 cursor-pointer ${
             period === "weekly" 
               ? "bg-primary text-primary-foreground border-primary shadow-sm" 
-              : "bg-background text-muted-foreground border-border hover:border-primary/30 hover:bg-primary/5"
+              : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-secondary/70"
           }`}
         >
           Weekly Drops
