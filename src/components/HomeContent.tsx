@@ -77,8 +77,8 @@ export function HomeContent({ country }: { country: string }) {
       </div>
 
       <div className="flex flex-col gap-2 sm:gap-4 md:gap-8 pt-4">
-        {/* Hero Section */}
-        <section className="container px-4 mx-auto pt-4 sm:pt-8 md:pt-12 pb-10">
+        <section className="container px-4 mx-auto pt-4 sm:pt-8 md:pt-12">
+          {/* Hero Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center mb-16">
             <div className="max-w-2xl text-left order-1 lg:order-1">
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter mb-6 leading-[1.05] text-[#1a1a1a] dark:text-foreground">
@@ -95,17 +95,15 @@ export function HomeContent({ country }: { country: string }) {
               </p>
 
               <div className="flex flex-col gap-6">
-                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                   <HeroCategoryPills />
-                 </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <HeroCategoryPills />
+                </div>
               </div>
             </div>
             <div className="relative w-full max-w-[800px] mx-auto lg:ml-auto order-2 lg:order-2">
               <HeroTableDemo />
             </div>
           </div>
-
-          {/* Feature Cards Section */}
 
           {/* Country Flag Selection Wrapper */}
           <div className="flex flex-col items-center justify-center py-10 border-y border-border mb-16">
@@ -129,14 +127,9 @@ export function HomeContent({ country }: { country: string }) {
             </div>
           </div>
 
-          {/* Highlighted Deals Section */}
           <HeroDealCards />
-
-          <div className="container px-4 mx-auto pb-6 sm:pb-12">
-            <PopularProducts products={uiProducts} />
-            <PriceDrops products={mockPriceDrops} />
-          </div>
-
+          <PopularProducts products={uiProducts} />
+          <PriceDrops products={mockPriceDrops} />
         </section>
       </div>
     </div>

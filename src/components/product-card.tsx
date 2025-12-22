@@ -67,7 +67,7 @@ export function ProductCard({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group relative flex flex-col p-4 rounded-2xl border border-border/60 bg-card no-underline w-[220px] sm:w-[240px] shrink-0 h-full shadow-sm hover:shadow-md transition-shadow",
+        "group relative flex flex-col p-4 rounded-2xl border border-border/60 bg-card no-underline w-[220px] sm:w-[265px] md:w-[293px] lg:w-[238px] xl:w-[242px] 2xl:w-[293px] shrink-0 h-full shadow-sm hover:shadow-md transition-shadow",
         className
       )}
     >

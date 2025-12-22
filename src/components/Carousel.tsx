@@ -44,7 +44,7 @@ export const Carousel = forwardRef<CarouselRef, CarouselProps>(
         <div
           ref={scrollContainerRef}
           className={cn(
-            "flex items-stretch overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-6 pb-8 -mb-4 px-4 sm:px-0",
+            "flex items-stretch overflow-x-auto scrollbar-hide snap-x snap-mandatory gap-2 pb-8 -mb-4 px-4 sm:px-0",
             className
           )}
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
