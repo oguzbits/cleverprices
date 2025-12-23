@@ -19,7 +19,7 @@ export default function FAQPage() {
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <h1 className="text-4xl font-bold mb-8">Frequently Asked Questions</h1>
       
-      <div className="prose prose-invert max-w-none mb-8">
+      <div className="prose dark:prose-invert max-w-none mb-8">
         <p className="text-lg text-muted-foreground">
           Common questions about our price comparison engine and data.
         </p>

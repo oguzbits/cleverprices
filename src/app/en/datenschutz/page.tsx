@@ -20,7 +20,7 @@ export default function DatenschutzEnPage() {
       
       <LanguageSwitcher currentLang="en" currentPath="datenschutz" />
 
-      <div className="prose prose-invert max-w-none space-y-8">
+      <div className="prose dark:prose-invert max-w-none space-y-8">
         <section>
           <h2 className="text-2xl font-semibold mb-4">1. Privacy at a Glance</h2>
           
