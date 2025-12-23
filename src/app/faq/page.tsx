@@ -40,14 +40,14 @@ export default function FAQPage() {
           <AccordionContent className="text-muted-foreground leading-relaxed">
             We automatically extract quantity information (like 2TB for an SSD or 32GB for a RAM kit) 
             and divide the current market price by this amount. This gives you a comparable metric (like €/TB or €/GB) 
-            to easily spot which product offers the most value. We track these metrics in real-time to ensure you find the best deals.
+            to easily spot which product offers the most value. We track these metrics daily to ensure you find the best deals.
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="item-3">
           <AccordionTrigger className="text-left font-semibold">Where does the price data come from?</AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
-            We use official APIs (like Amazon's Product Advertising API) to retrieve live pricing and availability directly from major retailers. 
+            We use official APIs (like Amazon's Product Advertising API) to retrieve pricing and availability directly from major retailers. 
             This ensures that the data we display is accurate and sourced directly from the merchant.
           </AccordionContent>
         </AccordionItem>
@@ -55,7 +55,8 @@ export default function FAQPage() {
         <AccordionItem value="item-4">
           <AccordionTrigger className="text-left font-semibold">How often are hardware prices updated?</AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
-            Pricing feeds are updated multiple times per day. However, because hardware markets (especially memory and storage) can be extremely volatile, 
+            Currently, our prices are updated every 24 hours. We are working on increasing this frequency to multiple times 
+            per day in the future. Because hardware markets (especially memory and storage) can be volatile, 
             we always recommend clicking through to the retailer to verify the final price before checking out.
           </AccordionContent>
         </AccordionItem>
@@ -115,6 +116,15 @@ export default function FAQPage() {
             Yes, it is completely free for users. We are supported by the Amazon Associates Program, earning a small 
             commission on qualifying purchases made through our links. This revenue allows us to maintain the data infrastructure 
             and keep provide unbiased value metrics to the community.
+          </AccordionContent>
+        </AccordionItem>
+
+        <AccordionItem value="item-11">
+          <AccordionTrigger className="text-left font-semibold">Can I view historical price data for products?</AccordionTrigger>
+          <AccordionContent className="text-muted-foreground leading-relaxed">
+            Currently, our focus is on providing current market data to help you find the best value today. 
+            We do not provide historical price charts, and this is not a feature we currently have planned. Our engine is 
+            specifically optimized to simplify the decision-making process for current purchases by standardizing pricing across different capacities.
           </AccordionContent>
         </AccordionItem>
       </Accordion>
