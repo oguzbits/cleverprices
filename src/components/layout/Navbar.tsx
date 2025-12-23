@@ -122,7 +122,7 @@ export function Navbar() {
                   <Search className="h-5 w-5 text-primary relative z-10" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
+              <TooltipContent side="bottom">
                 <p>Search products</p>
               </TooltipContent>
             </Tooltip>
@@ -148,7 +148,7 @@ export function Navbar() {
                   <span className="sr-only">Toggle theme</span>
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>
+              <TooltipContent side="bottom">
                 <p>Toggle theme</p>
               </TooltipContent>
             </Tooltip>
