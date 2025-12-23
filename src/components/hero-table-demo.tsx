@@ -227,7 +227,7 @@ export function HeroTableDemo() {
                           `${(product as PowerSupplyProduct).wattage}W`}
                       </div>
                       <div className="col-span-5">
-                        <span className="text-primary hover:underline truncate block">
+                        <span className="text-primary truncate block">
                           {product.name}
                         </span>
                       </div>
