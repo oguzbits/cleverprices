@@ -2,6 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { getCountryByCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import { Package } from "lucide-react";
+import Image from "next/image";
 
 export interface ProductCardProps {
   title: string;
@@ -15,6 +16,7 @@ export interface ProductCardProps {
   badgeText?: string;
   badgeColor?: "blue" | "green" | "amber";
   countryCode?: string;
+  image?: string;
   className?: string;
 }
 
@@ -30,6 +32,7 @@ export function ProductCard({
   badgeText,
   badgeColor = "blue",
   countryCode = "de",
+  image,
   className,
 }: ProductCardProps) {
   const countryConfig = getCountryByCode(countryCode);
@@ -81,9 +84,19 @@ export function ProductCard({
         )}
       </div>
 
-      {/* Image Placeholder with Icon */}
+      {/* Image Container */}
       <div className="relative aspect-4/3 bg-muted/20 dark:bg-muted/10 rounded-xl mb-3 overflow-hidden flex items-center justify-center p-3">
-        <Package className="w-10 h-10 text-muted-foreground/10 stroke-1" />
+        {image ? (
+          <Image 
+            src={image} 
+            alt={title}
+            fill
+            className="object-contain p-4 transition-transform duration-300 group-hover:scale-110"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <Package className="w-10 h-10 text-muted-foreground/10 stroke-1" />
+        )}
       </div>
 
       {/* Title */}

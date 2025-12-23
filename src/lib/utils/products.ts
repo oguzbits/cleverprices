@@ -76,7 +76,7 @@ export function adaptToUIModel(p: Product, currency: string = "EUR", symbol: str
       currency, 
       displayAmount: `${enhancedProduct.price} ${symbol}` 
     },
-    image: "", // Placeholder used in ProductCard anyway
+    image: enhancedProduct.image || "", 
     url: `/out/${enhancedProduct.slug}`, // Standard redirect path
     category: enhancedProduct.category,
     capacity: `${enhancedProduct.capacity}${enhancedProduct.capacityUnit}`,

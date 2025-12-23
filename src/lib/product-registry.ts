@@ -13,6 +13,7 @@ export interface Product {
   asin: string;
   title: string;
   category: string;
+  image?: string;
   affiliateUrl: string;
   price: number;
   capacity: number;

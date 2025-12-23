@@ -70,6 +70,7 @@ export function ProductSection({
             discountPercentage={product.discountPercentage}
             currency={countryConfig?.currency || "USD"}
             url={product.url}
+            image={product.image}
             pricePerUnit={product.pricePerUnit}
             countryCode={country}
             badgeText={product.badgeText}
