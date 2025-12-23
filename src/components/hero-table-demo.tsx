@@ -207,7 +207,7 @@ export function HeroTableDemo() {
                           ? (product as BatteryProduct).pricePerUnit.toFixed(2)
                           : (product as PowerSupplyProduct).pricePerUnit.toFixed(3)}
                         {idx === 0 && (
-                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border-0 h-4 px-2 text-[8px] animate-in zoom-in font-bold capitalize tracking-wide">
+                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border-0 h-4 px-2 text-[12px] animate-in zoom-in font-bold capitalize tracking-wide">
                             Best
                           </Badge>
                         )}
