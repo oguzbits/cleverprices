@@ -104,13 +104,13 @@ export function ProductTable({
               <TableCell>
                 {product.capacity} {product.capacityUnit}
               </TableCell>
-              <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+              <TableCell className="hidden md:table-cell text-muted-foreground text-base">
                 {product.warranty}
               </TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+              <TableCell className="hidden sm:table-cell text-muted-foreground text-base">
                 {product.formFactor}
               </TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+              <TableCell className="hidden sm:table-cell text-muted-foreground text-base">
                 {categorySlug === 'power-supplies' 
                   ? (product.certification || product.technology) 
                   : product.technology}
@@ -118,7 +118,7 @@ export function ProductTable({
               <TableCell className="hidden sm:table-cell">
                 <Badge 
                   className={cn(
-                    "text-xs font-medium border-0 px-2 py-0.5",
+                    "text-sm font-medium border-0 px-2 py-0.5",
                     product.condition === 'New' && "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-500/30",
                     product.condition === 'Renewed' && "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-500/30",
                     product.condition === 'Used' && "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-500/30"
@@ -133,7 +133,7 @@ export function ProductTable({
                   onClick={() => onAffiliateClick(product, index)}
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="text-primary underline text-sm line-clamp-2 block"
+                  className="text-primary underline text-base line-clamp-2 block"
                 >
                   {product.title}
                 </a>

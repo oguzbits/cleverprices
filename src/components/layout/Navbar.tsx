@@ -98,8 +98,8 @@ export function Navbar() {
             aria-label="Search all products"
           >
             <Search className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground flex-1 text-left">Search all products...</span>
-            <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs border rounded bg-background/80 text-muted-foreground font-medium">
+            <span className="text-base text-muted-foreground flex-1 text-left">Search all products...</span>
+            <kbd className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-sm border rounded bg-background/80 text-muted-foreground font-medium">
               ⌘K
             </kbd>
           </button>

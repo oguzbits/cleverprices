@@ -73,13 +73,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <div className="container px-4 mx-auto py-12 md:py-20 max-w-4xl">
           <Link 
             href="/blog" 
-            className="inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary transition-colors mb-8 group"
+            className="inline-flex items-center gap-2 text-base font-bold text-muted-foreground hover:text-primary transition-colors mb-8 group"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Blog
           </Link>
           
-          <div className="flex flex-wrap items-center gap-4 mb-6 text-sm font-medium text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-4 mb-6 text-base font-medium text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-4 h-4" />
               <span>{new Date(post.publishDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
@@ -114,8 +114,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             <h2 className="text-xl font-bold mb-4">References</h2>
             <ul className="space-y-2">
               {post.references.map((ref, index) => (
-                <li key={index} className="text-sm text-muted-foreground">
-                  <span className="font-mono text-xs inline-block w-6">[{index + 1}]</span>
+                <li key={index} className="text-base text-muted-foreground">
+                  <span className="font-mono text-sm inline-block w-6">[{index + 1}]</span>
                   <a href={ref} target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors hover:underline">
                     {ref}
                   </a>

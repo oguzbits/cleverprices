@@ -20,7 +20,7 @@ export function AllCategoriesView({ categoryHierarchy, countryCode }: AllCategor
     <div className="container pt-6 pb-16 mx-auto px-4">
       {/* Breadcrumb */}
       <nav className="mb-8" aria-label="Breadcrumb">
-        <ol className="flex items-center gap-2 text-sm text-muted-foreground">
+        <ol className="flex items-center gap-2 text-base text-muted-foreground">
           <li>
             <Link href={`/${countryCode}`} className="hover:text-foreground transition-colors">
               Home

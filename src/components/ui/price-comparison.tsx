@@ -21,9 +21,9 @@ export function PriceComparison() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border bg-muted/40">
-                  <th className="text-left p-4 font-semibold text-sm">Product</th>
-                  <th className="text-right p-4 font-semibold text-sm">Total Price</th>
-                  <th className="text-right p-4 font-semibold text-sm">
+                  <th className="text-left p-4 font-semibold text-base">Product</th>
+                  <th className="text-right p-4 font-semibold text-base">Total Price</th>
+                  <th className="text-right p-4 font-semibold text-base">
                     <div className="flex items-center justify-end gap-1.5">
                       <Sparkles className="w-4 h-4 text-primary" />
                       <span className="text-primary">Price per TB</span>
@@ -37,12 +37,12 @@ export function PriceComparison() {
                   <td className="p-4">
                     <div>
                       <p className="font-medium">2TB SSD</p>
-                      <p className="text-xs text-muted-foreground">Brand A</p>
+                      <p className="text-sm text-muted-foreground">Brand A</p>
                     </div>
                   </td>
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-xs">
+                      <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-sm">
                         Lowest Price
                       </Badge>
                       <span className="text-lg font-bold">$179.99</span>
@@ -58,7 +58,7 @@ export function PriceComparison() {
                   <td className="p-4">
                     <div>
                       <p className="font-medium">4TB SSD</p>
-                      <p className="text-xs text-muted-foreground">Brand B</p>
+                      <p className="text-sm text-muted-foreground">Brand B</p>
                     </div>
                   </td>
                   <td className="p-4 text-right">
@@ -67,7 +67,7 @@ export function PriceComparison() {
                   <td className="p-4 text-right">
                     <div className="flex items-center justify-end gap-2">
                       <span className="text-lg font-mono font-bold text-primary">$74.99</span>
-                      <Badge className="bg-primary text-primary-foreground border-0 text-xs">
+                      <Badge className="bg-primary text-primary-foreground border-0 text-sm">
                         <TrendingDown className="w-3 h-3 mr-1" />
                         Best Value
                       </Badge>
@@ -80,7 +80,7 @@ export function PriceComparison() {
 
           {/* Insight Footer */}
           <div className="bg-primary/10 p-5 border-t border-primary/20">
-            <p className="text-center text-sm font-medium">
+            <p className="text-center text-base font-medium">
               <span className="text-primary font-bold">Save 17%</span> per TB by choosing the right product — 
               <span className="text-muted-foreground"> Real Price Data shows you this automatically</span>
             </p>

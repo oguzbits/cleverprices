@@ -40,8 +40,8 @@ export function HeroSearch({ isSticky = false }: { isSticky?: boolean }) {
             {isSticky ? "Search..." : "Search products..."}
           </span>
         </div>
-        <kbd className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-xs border border-border/60 rounded-md bg-muted/50 text-muted-foreground font-mono shrink-0">
-          <span className="text-sm">⌘</span>K
+        <kbd className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 text-sm border border-border/60 rounded-md bg-muted/50 text-muted-foreground font-mono shrink-0">
+          <span className="text-base">⌘</span>K
         </kbd>
       </button>
 

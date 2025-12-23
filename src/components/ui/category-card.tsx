@@ -22,16 +22,16 @@ export function CategoryCard({ category, Icon, country }: CategoryCardProps) {
         </div>
         <div className="ml-3 flex-1 min-w-0">
           <div className="flex items-center gap-2">
-             <h3 className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+             <h3 className="font-medium text-base text-foreground group-hover:text-primary transition-colors truncate">
                 {category.name}
              </h3>
              {category.unitType && (
-               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-muted text-muted-foreground uppercase tracking-wider">
+               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-sm font-medium bg-muted text-muted-foreground uppercase tracking-wider">
                  /{category.unitType}
                </span>
              )}
           </div>
-          <p className="text-xs text-muted-foreground truncate mt-0.5">
+          <p className="text-sm text-muted-foreground truncate mt-0.5">
             {category.description}
           </p>
         </div>

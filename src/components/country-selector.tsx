@@ -61,7 +61,7 @@ export function CountrySelector() {
         {comingSoonCountries.length > 0 && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-xs text-muted-foreground">
+            <DropdownMenuLabel className="text-sm text-muted-foreground">
               Coming Soon
             </DropdownMenuLabel>
             

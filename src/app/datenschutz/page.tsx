@@ -140,7 +140,7 @@ export default function DatenschutzPage() {
           </div>
         </section>
 
-        <p className="text-sm text-muted-foreground mt-12">
+        <p className="text-base text-muted-foreground mt-12">
           Stand: {new Date().toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
       </div>

@@ -20,7 +20,7 @@ export function ParentCategoryView({ parentCategory, childCategories, countryCod
     <div className="container py-6 mx-auto px-4">
       {/* Breadcrumb */}
       <nav className="mb-8" aria-label="Breadcrumb">
-        <ol className="flex items-center gap-2 text-sm text-muted-foreground">
+        <ol className="flex items-center gap-2 text-base text-muted-foreground">
           <li>
             <Link href="/" className="hover:text-foreground transition-colors">
               Home
@@ -49,7 +49,7 @@ export function ParentCategoryView({ parentCategory, childCategories, countryCod
             </p>
           </div>
         </div>
-        <Badge variant="outline" className="text-sm">
+        <Badge variant="outline" className="text-base">
           {childCategories.length} {childCategories.length === 1 ? 'Category' : 'Categories'}
         </Badge>
       </div>

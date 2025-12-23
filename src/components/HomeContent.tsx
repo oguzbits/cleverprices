@@ -72,7 +72,7 @@ export function HomeContent({ country }: { country: string }) {
               </p>
 
               <div className="flex flex-col gap-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 text-base text-muted-foreground">
                   <HeroCategoryPills />
                 </div>
               </div>
@@ -84,7 +84,7 @@ export function HomeContent({ country }: { country: string }) {
 
           {/* Country Flag Selection Wrapper */}
           <div className="flex flex-col items-center justify-center py-10 border-y border-border mb-16">
-            <p className="text-xs text-muted-foreground mb-6 uppercase tracking-widest font-bold">Supported Marketplaces</p>
+            <p className="text-sm text-muted-foreground mb-6 uppercase tracking-widest font-bold">Supported Marketplaces</p>
             <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
               {getAllCountries().map((c: any) => (
                 <Link 
@@ -98,7 +98,7 @@ export function HomeContent({ country }: { country: string }) {
                   aria-disabled={!c.isLive}
                 >
                   <span className="text-4xl filter drop-shadow-sm">{c.flag}</span>
-                  <span className="text-[10px] font-bold text-primary group-hover:underline">{c.code.toUpperCase()}</span>
+                  <span className="text-sm font-bold text-primary group-hover:underline">{c.code.toUpperCase()}</span>
                 </Link>
               ))}
             </div>

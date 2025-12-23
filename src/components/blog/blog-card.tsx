@@ -17,7 +17,7 @@ export function BlogCard({ post, className }: BlogCardProps) {
         className
       )}
     >
-      <div className="flex items-center gap-4 mb-4 text-xs text-muted-foreground font-medium">
+      <div className="flex items-center gap-4 mb-4 text-sm text-muted-foreground font-medium">
         <div className="flex items-center gap-1.5">
           <Calendar className="w-3.5 h-3.5" />
           <span>{new Date(post.publishDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
@@ -32,11 +32,11 @@ export function BlogCard({ post, className }: BlogCardProps) {
         {post.title}
       </h3>
 
-      <p className="text-muted-foreground text-sm line-clamp-3 mb-6 leading-relaxed">
+      <p className="text-muted-foreground text-base line-clamp-3 mb-6 leading-relaxed">
         {post.description}
       </p>
 
-      <div className="mt-auto flex items-center gap-2 text-sm font-semibold text-primary">
+      <div className="mt-auto flex items-center gap-2 text-base font-semibold text-primary">
         Read Article
         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
       </div>

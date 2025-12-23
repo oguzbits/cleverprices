@@ -133,7 +133,7 @@ export function FeaturedDeals({ country = "us" }: { country?: string }) {
     >
       <div className="flex justify-between items-end mb-4 border-b border-border pb-2">
          <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
-            Top Value <span className="text-muted-foreground font-normal text-sm hidden xs:inline">/ Low Unit Price</span>
+            Top Value <span className="text-muted-foreground font-normal text-base hidden xs:inline">/ Low Unit Price</span>
          </h2>
          <Link href={`/${country}/categories`} className="font-semibold px-3 py-1.5 rounded-full text-foreground flex items-center gap-1">
           View All
@@ -141,9 +141,9 @@ export function FeaturedDeals({ country = "us" }: { country?: string }) {
          </Link>
       </div>
 
-      <div className="w-full text-sm overflow-hidden rounded-lg border border-border/50">
+      <div className="w-full text-base overflow-hidden rounded-lg border border-border/50">
         {/* Table Header */}
-        <div className="grid grid-cols-[1.5rem_1fr_5rem_3.5rem] sm:grid-cols-[3rem_1fr_8rem_6rem_6rem] gap-2 sm:gap-4 px-2 sm:px-3 py-2 text-xs font-medium text-muted-foreground bg-muted/20 border-b border-border/50">
+        <div className="grid grid-cols-[1.5rem_1fr_5rem_3.5rem] sm:grid-cols-[3rem_1fr_8rem_6rem_6rem] gap-2 sm:gap-4 px-2 sm:px-3 py-2 text-sm font-medium text-muted-foreground bg-muted/20 border-b border-border/50">
            <div className="text-center">#</div>
            <div>Product</div>
            <div className="hidden sm:block">Category</div>
@@ -160,7 +160,7 @@ export function FeaturedDeals({ country = "us" }: { country?: string }) {
               href={`/${country}/${deal.parentSlug}/${deal.categorySlug}`}
             >
               {/* Rank */}
-              <div className="text-center font-mono font-medium text-muted-foreground group-hover:text-primary text-xs sm:text-sm">
+              <div className="text-center font-mono font-medium text-muted-foreground group-hover:text-primary text-sm sm:text-base">
                 {idx + 1}
               </div>
 
@@ -169,9 +169,9 @@ export function FeaturedDeals({ country = "us" }: { country?: string }) {
                 <div className="shrink-0 w-6 h-6 rounded bg-muted flex items-center justify-center text-muted-foreground hidden xs:flex">
                    <deal.icon className="h-3.5 w-3.5" />
                 </div>
-                <div className="truncate font-medium group-hover:text-primary transition-colors text-sm">
+                <div className="truncate font-medium group-hover:text-primary transition-colors text-base">
                   {deal.name}
-                  <div className="sm:hidden text-[10px] text-muted-foreground font-normal truncate">{deal.category}</div>
+                  <div className="sm:hidden text-sm text-muted-foreground font-normal truncate">{deal.category}</div>
                 </div>
                 {idx === 0 && (
                    <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse hidden sm:block" />
@@ -179,18 +179,18 @@ export function FeaturedDeals({ country = "us" }: { country?: string }) {
               </div>
 
               {/* Category (Desktop) */}
-              <div className="hidden sm:block text-xs text-muted-foreground truncate">
+              <div className="hidden sm:block text-sm text-muted-foreground truncate">
                 {deal.category}
               </div>
 
               {/* Price */}
-              <div className="text-right font-mono font-bold tracking-tight text-foreground text-xs sm:text-sm">
+              <div className="text-right font-mono font-bold tracking-tight text-foreground text-sm sm:text-base">
                 {formatCurrency(deal.bestUnitPrice)}
-                <span className="text-[10px] text-muted-foreground font-sans ml-0.5 text-normal block sm:inline">/{deal.unitLabel}</span>
+                <span className="text-sm text-muted-foreground font-sans ml-0.5 text-normal block sm:inline">/{deal.unitLabel}</span>
               </div>
 
               {/* Trend */}
-              <div className="text-right text-xs">
+              <div className="text-right text-sm">
                 {deal.savings > 0 ? (
                   <span className="text-emerald-600 font-medium inline-flex items-center justify-end gap-0.5 sm:gap-1">
                     <span className="hidden sm:inline">Drop</span>

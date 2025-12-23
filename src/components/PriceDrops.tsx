@@ -38,7 +38,7 @@ export function PriceDrops({ products }: PriceDropsProps) {
       <div className="flex gap-2 mb-6 -mt-2">
         <button
           onClick={() => setPeriod("daily")}
-          className={`px-4 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 cursor-pointer ${
+          className={`px-4 py-1.5 text-sm font-bold rounded-xl border transition-all duration-300 cursor-pointer ${
             period === "daily" 
               ? "bg-primary text-primary-foreground border-primary shadow-sm" 
               : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-secondary/70"
@@ -48,7 +48,7 @@ export function PriceDrops({ products }: PriceDropsProps) {
         </button>
         <button
           onClick={() => setPeriod("weekly")}
-          className={`px-4 py-1.5 text-xs font-bold rounded-xl border transition-all duration-300 cursor-pointer ${
+          className={`px-4 py-1.5 text-sm font-bold rounded-xl border transition-all duration-300 cursor-pointer ${
             period === "weekly" 
               ? "bg-primary text-primary-foreground border-primary shadow-sm" 
               : "bg-secondary/50 text-muted-foreground border-border hover:border-primary/30 hover:bg-secondary/70"

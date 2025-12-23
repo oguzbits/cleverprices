@@ -28,7 +28,7 @@ export function CategoryHeader({
     <div className="flex flex-col gap-6">
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb">
-        <ol className="flex items-center flex-wrap gap-1.5 gap-y-2 sm:gap-2 text-xs sm:text-sm text-muted-foreground leading-normal">
+        <ol className="flex items-center flex-wrap gap-1.5 gap-y-2 sm:gap-2 text-sm sm:text-base text-muted-foreground leading-normal">
           <li>
             <Link href="/" className="hover:text-foreground transition-colors">
               Home
@@ -67,7 +67,7 @@ export function CategoryHeader({
             <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" aria-hidden="true" />
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{category.name}</h1>
           </div>
-          <p className="text-muted-foreground text-xs sm:text-sm">
+          <p className="text-muted-foreground text-sm sm:text-base">
             {productCount > 0 ? `Showing ${productCount} products` : category.description}
           </p>
         </div>

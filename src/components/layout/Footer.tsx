@@ -21,7 +21,7 @@ export function Footer() {
                 <span className="text-(--ccc-yellow)">data</span>
               </h3>
             </div>
-            <p className="text-sm text-muted-foreground max-w-xs">
+            <p className="text-base text-muted-foreground max-w-xs">
               Compare products by price per unit to find the best value.
               Data-driven, neutral, and efficient.
             </p>
@@ -31,7 +31,7 @@ export function Footer() {
             </p>
           </div>
 
-          <nav className="text-sm" aria-label="Legal information">
+          <nav className="text-base" aria-label="Legal information">
             <h4 className="font-semibold mb-3">Quick Links</h4>
             <ul className="space-y-2">
               <li>
@@ -62,8 +62,8 @@ export function Footer() {
             </ul>
           </nav>
 
-          <div className="text-sm text-muted-foreground md:text-right">
-            <p className="mb-4 text-xs">
+          <div className="text-base text-muted-foreground md:text-right">
+            <p className="mb-4 text-sm">
               As an Amazon Associate, we earn from qualifying purchases. Amazon and the Amazon logo are 
               trademarks of Amazon.com, Inc. or its affiliates.
             </p>

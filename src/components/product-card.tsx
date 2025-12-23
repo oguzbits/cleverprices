@@ -77,7 +77,7 @@ export function ProductCard({
       <div className="absolute top-2.5 left-2.5 z-10">
         {badgeText && (badgeText === "Best Price" || badgeText === "Good Deal") && (
           <Badge
-            className={`${getBadgeStyle()} border text-[13px] font-bold rounded-2xl capitalize shadow-sm tracking-tight`}
+            className={`${getBadgeStyle()} border text-base font-bold rounded-2xl capitalize shadow-sm tracking-tight`}
           >
             {badgeText}
           </Badge>
@@ -102,7 +102,7 @@ export function ProductCard({
 
       {/* Title */}
       <div className="h-10 mb-3 overflow-hidden">
-        <h3 className="text-sm text-foreground leading-tight line-clamp-2">
+        <h3 className="text-base text-foreground leading-tight line-clamp-2">
           {title}
         </h3>
       </div>
@@ -116,8 +116,8 @@ export function ProductCard({
           
           {pricePerUnit && (
             <div className="flex items-center justify-between pt-1 border-t border-border/40">
-              <span className="text-[10px] uppercase font-black text-muted-foreground/40 tracking-widest">Unit Price</span>
-              <span className="text-[12px] font-mono font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/5">
+              <span className="text-sm uppercase font-black text-muted-foreground/40 tracking-widest">Unit Price</span>
+              <span className="text-base font-mono font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/5">
                 {pricePerUnit}
               </span>
             </div>
@@ -126,7 +126,7 @@ export function ProductCard({
 
         {/* CTA Button */}
         <div className="relative pt-0.5">
-          <button className="relative w-full py-1.5 bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold text-sm rounded-2xl shadow-sm border border-[#FCD200]/50 transition-all cursor-pointer overflow-hidden active:scale-[0.98]">
+          <button className="relative w-full py-1.5 bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold text-base rounded-2xl shadow-sm border border-[#FCD200]/50 transition-all cursor-pointer overflow-hidden active:scale-[0.98]">
             <span className="relative z-10">View on Amazon</span>
           </button>
         </div>

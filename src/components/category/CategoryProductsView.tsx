@@ -149,7 +149,7 @@ export function CategoryProductsView({ category, countryCode }: CategoryProducts
                   <NoProductsMatchingFilters onClear={clearAllFilters} />
                 )}
                 
-                <div className="mt-4 text-center text-xs text-muted-foreground">
+                <div className="mt-4 text-center text-sm text-muted-foreground">
                   Prices and availability are subject to change.
                 </div>
               </div>

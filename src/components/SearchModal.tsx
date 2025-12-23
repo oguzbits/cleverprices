@@ -135,7 +135,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
               <DialogTitle className="text-2xl md:text-3xl font-black tracking-tighter text-foreground text-left">
                 Search Categories
               </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-xs md:text-sm max-w-md md:max-w-xl leading-relaxed font-medium text-left">
+              <DialogDescription className="text-muted-foreground text-sm md:text-base max-w-md md:max-w-xl leading-relaxed font-medium text-left">
                 Compare and find the best unit prices across all available categories.
               </DialogDescription>
             </div>
@@ -171,7 +171,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               {Object.entries(QUICK_LINKS).map(([section, links]) => (
                 <div key={section} className="flex flex-col gap-4">
-                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">
+                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">
                     {section}
                   </h3>
                   <div className="flex flex-col gap-2.5">
@@ -206,7 +206,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             <div className="flex flex-col gap-8">
               {filteredCategories.length > 0 ? (
                 <div className="flex flex-col gap-4">
-                  <h3 className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">
+                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">
                     Search Results
                   </h3>
                   <div className="flex flex-col gap-2.5">

@@ -11,7 +11,7 @@ export function PromoBanner() {
 
       <div className="flex items-center gap-2 relative z-10">
         <Sparkles className="w-4 h-4 text-white/90 animate-pulse hidden sm:block" />
-        <p className="text-sm font-bold tracking-tight drop-shadow-sm">
+        <p className="text-base font-bold tracking-tight drop-shadow-sm">
           <span className="hidden sm:inline">Holiday Savings: </span>
           Compare real-time deals and save big! 🎁
         </p>
@@ -21,7 +21,7 @@ export function PromoBanner() {
         href="https://amzn.to/4aZGtec"
         target="_blank"
         rel="noopener noreferrer"
-        className="relative z-10 flex items-center gap-1.5 text-[10px] sm:text-xs font-black bg-white text-primary hover:bg-white/95 px-3.5 py-1.5 rounded-full transition-all border border-white ml-1 sm:ml-4 group active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+        className="relative z-10 flex items-center gap-1.5 text-sm sm:text-sm font-black bg-white text-primary hover:bg-white/95 px-3.5 py-1.5 rounded-full transition-all border border-white ml-1 sm:ml-4 group active:scale-95 shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
       >
         EXPLORE DEALS
         <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />

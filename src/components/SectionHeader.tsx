@@ -42,7 +42,7 @@ export function SectionHeader({
               {title} →
             </h2>
           </Link>
-          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+          <p className="text-base text-muted-foreground max-w-2xl leading-relaxed">
             {description}
           </p>
         </div>
@@ -50,12 +50,12 @@ export function SectionHeader({
         <div className="flex items-center gap-3 self-start md:self-end">
           {categories && onCategoryChange && (
             <Select value={selectedCategory} onValueChange={onCategoryChange}>
-              <SelectTrigger className="w-[160px] h-9 bg-secondary/50 border-border/60 rounded-xl text-xs font-bold ring-offset-background transition-all hover:bg-secondary/70 hover:border-primary/30">
+              <SelectTrigger className="w-[160px] h-9 bg-secondary/50 border-border/60 rounded-xl text-sm font-bold ring-offset-background transition-all hover:bg-secondary/70 hover:border-primary/30">
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-border/60">
                 {categories.map((cat) => (
-                  <SelectItem key={cat.value} value={cat.value} className="text-xs font-medium rounded-lg">
+                  <SelectItem key={cat.value} value={cat.value} className="text-sm font-medium rounded-lg">
                     {cat.label}
                   </SelectItem>
                 ))}

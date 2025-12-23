@@ -113,7 +113,7 @@ export default function DatenschutzEnPage() {
           </div>
         </section>
 
-        <p className="text-sm text-muted-foreground mt-12">
+        <p className="text-base text-muted-foreground mt-12">
           Last updated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         </p>
       </div>
