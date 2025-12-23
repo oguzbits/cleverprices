@@ -174,18 +174,18 @@ export function HeroTableDemo() {
             <div className="flex-1 overflow-hidden">
               <div className="w-full min-w-[600px]">
                 {/* Table Header */}
-                <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-border text-sm font-semibold text-muted-foreground bg-muted/50">
-                  <div className="col-span-3 flex items-center gap-1 text-primary">
+                <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-border text-[11px] sm:text-sm font-semibold text-muted-foreground bg-muted/50">
+                  <div className="col-span-3 flex items-center gap-1">
                     <TrendingUp className="w-3 h-3" />
                     {config.unitLabel}
                   </div>
+                  <div className="col-span-5 sm:col-span-4">Product</div>
                   <div className="col-span-2">Price</div>
                   <div className="col-span-2">
                     {currentCategory === "harddrives" && "Capacity"}
-                    {currentCategory === "batteries" && "Pack Size"}
-                    {currentCategory === "powersupplies" && "Wattage"}
+                    {currentCategory === "batteries" && "Pack"}
+                    {currentCategory === "powersupplies" && "Watts"}
                   </div>
-                  <div className="col-span-5">Link</div>
                 </div>
 
                 {/* Table Body */}
@@ -194,12 +194,12 @@ export function HeroTableDemo() {
                     <div
                       key={product.id}
                       className={cn(
-                        "grid grid-cols-12 gap-2 px-4 py-3 items-center text-sm transition-all hover:bg-muted/50",
+                        "grid grid-cols-12 gap-2 px-4 py-3 items-center text-xs sm:text-sm transition-all hover:bg-muted/50",
                         idx === 0 &&
-                          "bg-blue-50 dark:bg-blue-950/60 ring-1 ring-blue-200 dark:ring-blue-800"
+                          "bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-200/50 dark:ring-blue-800/50"
                       )}
                     >
-                      <div className="col-span-3 font-mono font-bold text-primary flex items-center gap-2">
+                      <div className="col-span-3 font-mono font-bold text-foreground flex items-center gap-2">
                         {config.currency}
                         {currentCategory === "harddrives"
                           ? (product as HardDriveProduct).pricePerUnit.toFixed(3)
@@ -207,55 +207,49 @@ export function HeroTableDemo() {
                           ? (product as BatteryProduct).pricePerUnit.toFixed(2)
                           : (product as PowerSupplyProduct).pricePerUnit.toFixed(3)}
                         {idx === 0 && (
-                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border-0 h-4 px-2 text-[12px] animate-in zoom-in font-bold capitalize tracking-wide">
-                            Best
+                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border-0 h-4 px-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+                            Top
                           </Badge>
                         )}
                       </div>
-                      <div className="col-span-2 font-medium text-foreground">
+                      <div className="col-span-5 sm:col-span-4">
+                        <span className="text-primary font-medium truncate block">
+                          {product.name}
+                        </span>
+                      </div>
+                      <div className="col-span-2 font-mono text-muted-foreground">
                         {config.currency}
                         {product.price.toFixed(2)}
                       </div>
-                      <div className="col-span-2 text-muted-foreground">
+                      <div className="col-span-2 font-mono text-muted-foreground text-[11px] sm:text-sm">
                         {currentCategory === "harddrives" &&
-                          `${(product as HardDriveProduct).capacity} ${
-                            (product as HardDriveProduct).capacityUnit
-                          }`}
+                          `${(product as HardDriveProduct).capacity}${(product as HardDriveProduct).capacityUnit}`}
                         {currentCategory === "batteries" &&
-                          `${(product as BatteryProduct).packSize} pack`}
+                          `${(product as BatteryProduct).packSize}p`}
                         {currentCategory === "powersupplies" &&
                           `${(product as PowerSupplyProduct).wattage}W`}
-                      </div>
-                      <div className="col-span-5">
-                        <span className="text-primary truncate block">
-                          {product.name}
-                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
+
+            {/* Integrated Insight Bar - Replaces the obstructive floating box */}
+            <div className="mt-auto px-4 py-3 border-t border-border bg-primary/3 backdrop-blur-sm">
+              <div className="flex items-center gap-2 text-sm">
+                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 rounded-full text-xs font-bold text-primary shrink-0 uppercase tracking-wider">
+                  <Sparkles className="w-3 h-3" />
+                  Insight
+                </div>
+                <p className="text-foreground/80 font-medium truncate">
+                  {config.insightText}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </Card>
-
-      {/* Floating Insight - Always visible */}
-      <div className="absolute -right-2 sm:-right-6 top-1/3 bg-background/90 backdrop-blur-md p-3 rounded-xl border border-primary/30 shadow-xl max-w-[180px] animate-in fade-in slide-in-from-right-4 duration-700">
-        <div className="flex items-start gap-2">
-          <div className="p-1.5 bg-primary/10 rounded-full shrink-0">
-            <Check className="w-3 h-3 text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-black dark:text-white mb-0.5">
-              Hidden Value Found
-            </p>
-            <p className="text-sm text-muted-foreground leading-tight">
-              {config.insightText}
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
