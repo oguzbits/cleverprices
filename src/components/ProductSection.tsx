@@ -18,6 +18,7 @@ interface ProductSectionProps {
   onCategoryChange?: (category: string) => void;
   children?: React.ReactNode;
   productCardProps?: Partial<React.ComponentProps<typeof ProductCard>>;
+  priorityIndices?: number[];
 }
 
 export function ProductSection({
@@ -28,7 +29,8 @@ export function ProductSection({
   selectedCategory,
   onCategoryChange,
   children,
-  productCardProps
+  productCardProps,
+  priorityIndices
 }: ProductSectionProps) {
   const { country } = useCountry();
   const countryConfig = getCountryByCode(country);
@@ -70,19 +72,18 @@ export function ProductSection({
         ref={carouselRef}
         onScrollStateChange={setScrollState}
       >
-        {processedProducts.map((product) => (
+        {processedProducts.map((product, index) => (
           <ProductCard
             key={product.asin}
             title={product.title}
             price={product.price.amount}
-            oldPrice={product.oldPrice || product.price.amount * 1.15}
-            discountPercentage={product.discountPercentage}
             currency={countryConfig?.currency || "USD"}
             url={product.url}
             image={product.image}
             pricePerUnit={product.pricePerUnit}
             countryCode={country}
             badgeText={product.badgeText}
+            priority={priorityIndices?.includes(index)}
             {...productCardProps}
           />
         ))}

@@ -1,13 +1,20 @@
+import Link from "next/link";
+import Script from "next/script";
+import dynamic from "next/dynamic";
 import { HeroCategoryPills } from "@/components/hero-category-pills";
 import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
-import { PopularProducts } from "@/components/PopularProducts";
-import { PriceDrops } from "@/components/PriceDrops";
 import { getAllCountries, getCountryByCode } from "@/lib/countries";
 import { getAllProducts } from "@/lib/product-registry";
 import { adaptToUIModel } from "@/lib/utils/products";
-import Link from "next/link";
-import Script from "next/script";
+
+const PopularProducts = dynamic(() => import("@/components/PopularProducts").then(mod => mod.PopularProducts), {
+  ssr: true,
+});
+
+const PriceDrops = dynamic(() => import("@/components/PriceDrops").then(mod => mod.PriceDrops), {
+  ssr: true,
+});
 
 export function HomeContent({ country }: { country: string }) {
   const countryConfig = getCountryByCode(country);

@@ -1,15 +1,15 @@
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+import { PromoBanner } from "@/components/layout/PromoBanner";
+import { ScrollTracker } from "@/components/ScrollTracker";
+import { ThemeProvider } from "@/components/theme-provider";
+import { TimeTracker } from "@/components/TimeTracker";
+import { NuqsProvider } from "@/providers/nuqs-provider";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Navbar } from "@/components/layout/Navbar";
-import { PromoBanner } from "@/components/layout/PromoBanner";
-import { Footer } from "@/components/layout/Footer";
-import { NuqsProvider } from "@/providers/nuqs-provider";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
-import { ScrollTracker } from "@/components/ScrollTracker";
-import { TimeTracker } from "@/components/TimeTracker";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -122,6 +122,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://m.media-amazon.com" />
+        <link rel="dns-prefetch" href="https://m.media-amazon.com" />
       </head>
       <body className={`${inter.variable} ${inter.className}`}>
         <ThemeProvider

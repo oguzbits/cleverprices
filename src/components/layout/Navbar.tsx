@@ -16,8 +16,12 @@ import {
 import { trackSEO } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 
+import dynamic from "next/dynamic"
 import { CountrySelector } from "@/components/country-selector"
-import { SearchModal } from "@/components/SearchModal"
+
+const SearchModal = dynamic(() => import("@/components/SearchModal").then(mod => mod.SearchModal), {
+  ssr: true,
+})
 
 export function Navbar() {
   const { setTheme, theme } = useTheme()

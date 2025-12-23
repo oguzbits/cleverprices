@@ -26,6 +26,7 @@ export function PopularProducts({ products }: PopularProductsProps) {
       categories={categories}
       selectedCategory={category}
       onCategoryChange={setCategory}
+      priorityIndices={[0]}
     />
   );
 }

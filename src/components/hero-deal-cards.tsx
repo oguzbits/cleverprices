@@ -72,6 +72,7 @@ export function HeroDealCards() {
       title="Highlighted Deals"
       description="These are outstanding deals we've found and feel are worth sharing."
       products={uiProducts}
+      priorityIndices={[0, 1]}
       productCardProps={{
         // Custom logic for oldPrice in HeroDealCards
       }}

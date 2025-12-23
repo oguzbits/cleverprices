@@ -7,33 +7,29 @@ import Image from "next/image";
 export interface ProductCardProps {
   title: string;
   price: number;
-  oldPrice?: number;
   currency: string;
   url: string;
   pricePerUnit?: string;
-  condition?: string;
-  discountPercentage?: number;
   badgeText?: string;
   badgeColor?: "blue" | "green" | "amber";
   countryCode?: string;
   image?: string;
   className?: string;
+  priority?: boolean;
 }
 
 export function ProductCard({
   title,
   price,
-  oldPrice,
   currency,
   url,
   pricePerUnit,
-  condition = "New",
-  discountPercentage,
   badgeText,
   badgeColor = "blue",
   countryCode = "de",
   image,
   className,
+  priority = false,
 }: ProductCardProps) {
   const countryConfig = getCountryByCode(countryCode);
 
@@ -94,6 +90,7 @@ export function ProductCard({
             className="object-contain p-4"
             sizes="(max-width: 640px) 220px, (max-width: 768px) 265px, (max-width: 1024px) 293px, 300px"
             quality={50}
+            priority={priority}
           />
         ) : (
           <Package className="w-10 h-10 text-muted-foreground/10 stroke-1" />
