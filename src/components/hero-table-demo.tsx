@@ -8,12 +8,12 @@ import { cn } from "@/lib/utils";
 import {
   hardDriveProducts,
   batteryProducts,
-  dogFoodProducts,
+  powerSupplyProducts,
   categoryConfig,
   categories,
   type HardDriveProduct,
   type BatteryProduct,
-  type DogFoodProduct,
+  type PowerSupplyProduct,
 } from "@/lib/data/demo-products";
 
 export function HeroTableDemo() {
@@ -48,7 +48,7 @@ export function HeroTableDemo() {
       ? hardDriveProducts
       : currentCategory === "batteries"
       ? batteryProducts
-      : dogFoodProducts;
+      : powerSupplyProducts;
 
   return (
     <div
@@ -167,9 +167,6 @@ export function HeroTableDemo() {
                 <h2 className="text-sm font-bold text-foreground">
                   {config.title}
                 </h2>
-                <span className="text-[10px] text-muted-foreground">
-                  · {config.count}
-                </span>
               </div>
             </div>
 
@@ -178,7 +175,7 @@ export function HeroTableDemo() {
               <div className="w-full min-w-[600px]">
                 {/* Table Header */}
                 <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-border text-[10px] font-semibold text-muted-foreground bg-muted/50">
-                  <div className="col-span-2 flex items-center gap-1 text-primary">
+                  <div className="col-span-3 flex items-center gap-1 text-primary">
                     <TrendingUp className="w-3 h-3" />
                     {config.unitLabel}
                   </div>
@@ -186,20 +183,9 @@ export function HeroTableDemo() {
                   <div className="col-span-2">
                     {currentCategory === "harddrives" && "Capacity"}
                     {currentCategory === "batteries" && "Pack Size"}
-                    {currentCategory === "dogfood" && "Weight"}
+                    {currentCategory === "powersupplies" && "Wattage"}
                   </div>
-                  <div className="col-span-2">
-                    {currentCategory === "harddrives" && "Warranty"}
-                    {currentCategory === "batteries" && "Warranty"}
-                    {currentCategory === "dogfood" && "Size"}
-                  </div>
-                  <div className="col-span-1">
-                    {currentCategory === "harddrives" && "Tech"}
-                    {currentCategory === "batteries" && "Type"}
-                    {currentCategory === "dogfood" && "Type"}
-                  </div>
-                  <div className="col-span-1">Cond.</div>
-                  <div className="col-span-2">Link</div>
+                  <div className="col-span-5">Link</div>
                 </div>
 
                 {/* Table Body */}
@@ -213,13 +199,13 @@ export function HeroTableDemo() {
                           "bg-blue-50 dark:bg-blue-950/60 ring-1 ring-blue-200 dark:ring-blue-800"
                       )}
                     >
-                      <div className="col-span-2 font-mono font-bold text-primary flex items-center gap-2">
+                      <div className="col-span-3 font-mono font-bold text-primary flex items-center gap-2">
                         {config.currency}
                         {currentCategory === "harddrives"
                           ? (product as HardDriveProduct).pricePerUnit.toFixed(3)
                           : currentCategory === "batteries"
                           ? (product as BatteryProduct).pricePerUnit.toFixed(2)
-                          : (product as DogFoodProduct).pricePerUnit.toFixed(1)}
+                          : (product as PowerSupplyProduct).pricePerUnit.toFixed(2)}
                         {idx === 0 && (
                           <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border-0 h-4 px-2 text-[8px] animate-in zoom-in font-bold capitalize tracking-wide">
                             Best
@@ -227,7 +213,8 @@ export function HeroTableDemo() {
                         )}
                       </div>
                       <div className="col-span-2 font-medium text-foreground">
-                        {config.currency}{currentCategory === "dogfood" ? product.price.toFixed(0) : product.price.toFixed(2)}
+                        {config.currency}
+                        {product.price.toFixed(2)}
                       </div>
                       <div className="col-span-2 text-muted-foreground">
                         {currentCategory === "harddrives" &&
@@ -236,43 +223,10 @@ export function HeroTableDemo() {
                           }`}
                         {currentCategory === "batteries" &&
                           `${(product as BatteryProduct).packSize} pack`}
-                        {currentCategory === "dogfood" &&
-                          `${(product as DogFoodProduct).weight} ${
-                            (product as DogFoodProduct).weightUnit
-                          }`}
+                        {currentCategory === "powersupplies" &&
+                          `${(product as PowerSupplyProduct).wattage}W`}
                       </div>
-                      <div className="col-span-2 text-muted-foreground">
-                        {currentCategory === "harddrives" &&
-                          (product as HardDriveProduct).warranty}
-                        {currentCategory === "batteries" &&
-                          (product as BatteryProduct).warranty}
-                        {currentCategory === "dogfood" &&
-                          (product as DogFoodProduct).size}
-                      </div>
-                      <div className="col-span-1 text-muted-foreground">
-                        {currentCategory === "harddrives" &&
-                          (product as HardDriveProduct).technology}
-                        {currentCategory === "batteries" &&
-                          (product as BatteryProduct).batteryType}
-                        {currentCategory === "dogfood" &&
-                          (product as DogFoodProduct).type}
-                      </div>
-                      <div className="col-span-1">
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            "h-4 px-1.5 text-[9px] border-0 font-medium",
-                            product.condition === "New"
-                              ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300"
-                              : product.condition === "Used"
-                              ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300"
-                              : "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300"
-                          )}
-                        >
-                          {product.condition}
-                        </Badge>
-                      </div>
-                      <div className="col-span-2">
+                      <div className="col-span-5">
                         <span className="text-primary hover:underline truncate block">
                           {product.name}
                         </span>

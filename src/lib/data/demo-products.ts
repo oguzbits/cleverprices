@@ -30,21 +30,20 @@ export type BatteryProduct = {
   warranty: string;
 };
 
-export type DogFoodProduct = {
+export type PowerSupplyProduct = {
   id: string;
   name: string;
   price: number;
-  weight: number;
-  weightUnit: string;
-  pricePerUnit: number;
-  size: "Small Breed" | "Medium Breed" | "Large Breed";
-  type: "Dry" | "Wet";
-  ageGroup: "Puppy" | "Adult" | "Senior";
+  wattage: number;
+  pricePerUnit: number; // Price per 100W
+  efficiency: "80+ Gold" | "80+ Platinum" | "80+ Bronze" | "80+ White";
+  modularity: "Full" | "Semi" | "Non";
   condition: "New" | "Used" | "Renewed";
   brand: string;
+  warranty: string;
 };
 
-export type ProductCategory = "harddrives" | "batteries" | "dogfood";
+export type ProductCategory = "harddrives" | "batteries" | "powersupplies";
 
 // Hard Drive Products (sorted by price per TB)
 export const hardDriveProducts: HardDriveProduct[] = [
@@ -174,80 +173,74 @@ export const batteryProducts: BatteryProduct[] = [
   },
 ].sort((a, b) => a.pricePerUnit - b.pricePerUnit);
 
-// Dog Food Products (sorted by price per lb)
-export const dogFoodProducts: DogFoodProduct[] = [
+// Power Supply Products (sorted by price per 100W)
+export const powerSupplyProducts: PowerSupplyProduct[] = [
   {
     id: "1",
-    name: "Purina Pro Plan Adult",
-    price: 3999,
-    weight: 15.9,
-    weightUnit: "kg",
-    pricePerUnit: 251.5,
-    size: "Large Breed" as const,
-    type: "Dry" as const,
-    ageGroup: "Adult" as const,
+    name: "Corsair RM750e (2023)",
+    price: 89.99,
+    wattage: 750,
+    pricePerUnit: 11.99,
+    efficiency: "80+ Gold" as const,
+    modularity: "Full" as const,
     condition: "New" as const,
-    brand: "Purina",
+    brand: "Corsair",
+    warranty: "7 years",
   },
   {
     id: "2",
-    name: "Blue Buffalo Senior",
-    price: 4599,
-    weight: 13.6,
-    weightUnit: "kg",
-    pricePerUnit: 338.2,
-    size: "Medium Breed" as const,
-    type: "Dry" as const,
-    ageGroup: "Senior" as const,
+    name: "EVGA SuperNOVA 850 GT",
+    price: 109.99,
+    wattage: 850,
+    pricePerUnit: 12.94,
+    efficiency: "80+ Gold" as const,
+    modularity: "Full" as const,
     condition: "New" as const,
-    brand: "Blue Buffalo",
+    brand: "EVGA",
+    warranty: "7 years",
   },
   {
     id: "3",
-    name: "Royal Canin Puppy",
-    price: 4999,
-    weight: 13.6,
-    weightUnit: "kg",
-    pricePerUnit: 367.6,
-    size: "Small Breed" as const,
-    type: "Dry" as const,
-    ageGroup: "Puppy" as const,
+    name: "Thermaltake Toughpower GX2",
+    price: 79.99,
+    wattage: 600,
+    pricePerUnit: 13.33,
+    efficiency: "80+ Gold" as const,
+    modularity: "Non" as const,
     condition: "New" as const,
-    brand: "Royal Canin",
+    brand: "Thermaltake",
+    warranty: "5 years",
   },
   {
     id: "4",
-    name: "Hill's Science Diet Adult",
-    price: 5399,
-    weight: 13.6,
-    weightUnit: "kg",
-    pricePerUnit: 397.0,
-    size: "Medium Breed" as const,
-    type: "Dry" as const,
-    ageGroup: "Adult" as const,
+    name: "Seasonic FOCUS GX-750",
+    price: 119.99,
+    wattage: 750,
+    pricePerUnit: 15.99,
+    efficiency: "80+ Gold" as const,
+    modularity: "Full" as const,
     condition: "New" as const,
-    brand: "Hill's",
+    brand: "Seasonic",
+    warranty: "10 years",
   },
   {
     id: "5",
-    name: "Wellness CORE Grain-Free",
-    price: 5799,
-    weight: 11.8,
-    weightUnit: "kg",
-    pricePerUnit: 491.4,
-    size: "Large Breed" as const,
-    type: "Dry" as const,
-    ageGroup: "Adult" as const,
+    name: "be quiet! Straight Power 12",
+    price: 189.99,
+    wattage: 850,
+    pricePerUnit: 22.35,
+    efficiency: "80+ Platinum" as const,
+    modularity: "Full" as const,
     condition: "New" as const,
-    brand: "Wellness",
+    brand: "be quiet!",
+    warranty: "10 years",
   },
 ].sort((a, b) => a.pricePerUnit - b.pricePerUnit);
 
 // Category configuration
 export const categoryConfig = {
   harddrives: {
-    title: "Disk Price Comparison",
-    count: "100 disks",
+    title: "Hard Drives",
     url: "realpricedata.com/us/electronics/hard-drives",
     unitLabel: "Price/TB",
     currency: "$",
@@ -262,8 +255,7 @@ export const categoryConfig = {
     },
   },
   batteries: {
-    title: "Battery Price Comparison",
-    count: "50 packs",
+    title: "Batteries",
     url: "realpricedata.com/de/electronics/batteries",
     unitLabel: "Price/Unit",
     currency: "€",
@@ -277,22 +269,19 @@ export const categoryConfig = {
       },
     },
   },
-  dogfood: {
-    title: "Dog Food Price Comparison",
-    count: "75 products",
-    url: "realpricedata.com/in/groceries/pet-food",
-    unitLabel: "Price/kg",
-    currency: "₹",
-    insightText: "Buying in bulk is 2x cheaper per kg than smaller bags!",
+  powersupplies: {
+    title: "Power Supplies",
+    url: "realpricedata.com/us/electronics/power-supplies",
+    unitLabel: "Price/100W",
+    currency: "$",
+    insightText: "Mid-range 750W units often offer the best value per watt!",
     filters: {
-      filter1: {
-        title: "Size",
-        options: ["Small Breed", "Medium Breed", "Large Breed"],
-      },
-      filter2: { title: "Type", options: ["Dry", "Wet"] },
-      filter3: { title: "Age Group", options: ["Puppy", "Adult", "Senior"] },
+      filter1: { title: "Efficiency", options: ["80+ Gold", "80+ Platinum", "80+ Bronze"] },
+      filter2: { title: "Modularity", options: ["Full", "Semi", "Non"] },
+      filter3: { title: "Wattage", options: ["600W", "750W", "850W", "1000W"] },
     },
   },
 } as const;
 
-export const categories: ProductCategory[] = ["harddrives", "batteries", "dogfood"];
+export const categories: ProductCategory[] = ["harddrives", "batteries", "powersupplies"];
+
