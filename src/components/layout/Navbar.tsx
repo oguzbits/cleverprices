@@ -68,7 +68,12 @@ export function Navbar() {
       <div className="container px-4 flex h-16 items-center mx-auto">
         {/* Left: Logo */}
         <div className="flex items-center gap-2 sm:gap-6 shrink-0">
-          <Link href="/" className="flex items-center space-x-2 no-underline">
+          <Link 
+            href="/" 
+            className="flex items-center space-x-2 no-underline"
+            title="Amazon Price Per Unit Tracker, Storage Deals & True Value"
+            aria-label="Real Price Data Home - Amazon Price Per Unit Tracker"
+          >
             <Image 
               src="/icon-192.png" 
               alt="Real Price Data Logo" 

@@ -25,6 +25,10 @@ export function Footer() {
               Compare products by price per unit to find the best value.
               Data-driven, neutral, and efficient.
             </p>
+            <p className="sr-only">
+              Amazon Price Tracker & Price per Unit Calculator. 
+              Find the best storage deals, HDD prices, and SSD savings on Amazon DE, US, UK and International marketplaces.
+            </p>
           </div>
 
           <nav className="text-sm" aria-label="Legal information">

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Navbar } from "@/components/layout/Navbar";
+import { PromoBanner } from "@/components/layout/PromoBanner";
 import { Footer } from "@/components/layout/Footer";
 import { NuqsProvider } from "@/providers/nuqs-provider";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -20,11 +21,24 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL('https://realpricedata.com'),
   title: {
-    default: "realpricedata.com - Compare Price Per Unit",
+    default: "Amazon Germany (DE) Price Per Unit Tracker, Storage Deals & True Value | realpricedata.com",
     template: "%s | realpricedata.com",
   },
-  description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
-  keywords: ["price comparison", "price per unit", "best deals", "HDD prices", "SSD prices", "storage deals"],
+  description: "Amazon Germany (DE) price per unit tracker and value calculator. Compare HDD, SSD, and RAM prices by their true cost (EUR/TB). Find the best storage deals and Amazon.de savings instantly.",
+  keywords: [
+    "Amazon price tracker",
+    "price per unit",
+    "cost per TB",
+    "HDD deals",
+    "SSD prices",
+    "RAM price tracker",
+    "price comparison",
+    "true value finder",
+    "storage deals",
+    "best prices",
+    "Amazon savings",
+    "price drop tracker"
+  ],
   authors: [{ name: "RealPriceData Team" }],
   creator: "RealPriceData Team",
   applicationName: "realpricedata.com",
@@ -51,22 +65,22 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://realpricedata.com",
-    title: "realpricedata.com - See the Real Value",
-    description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
+    title: "realpricedata.com - Amazon Germany (DE) Price Per Unit Tracker",
+    description: "Compare Amazon.de products by their true cost per TB, GB, or unit. Find the best storage deals and hardware savings in Germany instantly.",
     siteName: "realpricedata.com",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "realpricedata.com - Find the best value by comparing price per unit",
+        alt: "realpricedata.com - Find the best value on Amazon Germany",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "realpricedata.com - See the Real Value",
-    description: "Compare Amazon products in your region by their true cost per liter, kilogram, or item. Find the best deals instantly.",
+    title: "realpricedata.com - Amazon Germany (DE) Price Per Unit Tracker",
+    description: "Compare Amazon.de products by their true cost per TB, GB, or unit. Find the best storage deals and hardware savings in Germany instantly.",
     images: ["/og-image.png"],
     creator: "@realpricedata",
   },
@@ -82,6 +96,11 @@ export const metadata: Metadata = {
     "msapplication-TileColor": "#3B82F6",
     "msapplication-config": "/browserconfig.xml",
     "color-scheme": "light dark",
+    "mobile-web-app-capable": "yes",
+    "apple-mobile-web-app-status-bar-style": "black-translucent",
+  },
+  alternates: {
+    canonical: 'https://realpricedata.com',
   },
   robots: {
     index: true,
@@ -103,6 +122,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://m.media-amazon.com" />
+      </head>
       <body className={`${inter.variable} ${inter.className}`}>
         <ThemeProvider
           attribute="class"
@@ -112,6 +134,7 @@ export default function RootLayout({
         >
           <NuqsProvider>
             <div className="flex min-h-screen flex-col">
+              <PromoBanner />
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />
