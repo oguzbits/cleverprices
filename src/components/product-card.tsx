@@ -66,25 +66,26 @@ export function ProductCard({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group relative flex flex-col p-4 rounded-2xl border border-border/60 bg-card no-underline w-[220px] sm:w-[265px] md:w-[293px] lg:w-[238px] xl:w-[242px] 2xl:w-[293px] shrink-0 h-full shadow-sm hover:shadow-md transition-shadow",
-        className
+        "group border-border/60 bg-card relative flex h-full w-[220px] shrink-0 flex-col rounded-2xl border p-4 no-underline shadow-sm transition-shadow hover:shadow-md sm:w-[265px] md:w-[293px] lg:w-[238px] xl:w-[242px] 2xl:w-[293px]",
+        className,
       )}
     >
       <div className="absolute top-2.5 left-2.5 z-10">
-        {badgeText && (badgeText === "Best Price" || badgeText === "Good Deal") && (
-          <Badge
-            className={`${getBadgeStyle()} border text-base font-bold rounded-2xl capitalize shadow-sm tracking-tight`}
-          >
-            {badgeText}
-          </Badge>
-        )}
+        {badgeText &&
+          (badgeText === "Best Price" || badgeText === "Good Deal") && (
+            <Badge
+              className={`${getBadgeStyle()} rounded-2xl border text-base font-bold tracking-tight capitalize shadow-sm`}
+            >
+              {badgeText}
+            </Badge>
+          )}
       </div>
 
       {/* Image Container */}
-      <div className="relative aspect-4/3 bg-muted/20 dark:bg-muted/10 rounded-xl mb-3 overflow-hidden flex items-center justify-center p-3">
+      <div className="bg-muted/20 dark:bg-muted/10 relative mb-3 flex aspect-4/3 items-center justify-center overflow-hidden rounded-xl p-3">
         {image ? (
-          <Image 
-            src={image} 
+          <Image
+            src={image}
             alt={title}
             fill
             className="object-contain p-4"
@@ -93,13 +94,13 @@ export function ProductCard({
             priority={priority}
           />
         ) : (
-          <Package className="w-10 h-10 text-muted-foreground/10 stroke-1" />
+          <Package className="text-muted-foreground/10 h-10 w-10 stroke-1" />
         )}
       </div>
 
       {/* Title */}
-      <div className="h-10 mb-3 overflow-hidden">
-        <h3 className="text-base text-foreground leading-tight line-clamp-2">
+      <div className="mb-3 h-10 overflow-hidden">
+        <h3 className="text-foreground line-clamp-2 text-base leading-tight">
           {title}
         </h3>
       </div>
@@ -107,14 +108,16 @@ export function ProductCard({
       {/* Price Section */}
       <div className="mt-auto space-y-3">
         <div className="flex flex-col gap-2">
-          <span className="text-xl font-bold tracking-tight text-foreground leading-none">
+          <span className="text-foreground text-xl leading-none font-bold tracking-tight">
             {formatCurrency(price)}
           </span>
-          
+
           {pricePerUnit && (
-            <div className="flex items-center justify-between pt-1 border-t border-border/40">
-              <span className="text-sm uppercase font-black text-muted-foreground/40 tracking-widest">Unit Price</span>
-              <span className="text-base font-mono font-bold text-primary px-1.5 py-0.5 rounded-md bg-primary/5">
+            <div className="border-border/40 flex items-center justify-between border-t pt-1">
+              <span className="text-muted-foreground/40 text-sm font-black tracking-widest uppercase">
+                Unit Price
+              </span>
+              <span className="text-primary bg-primary/5 rounded-md px-1.5 py-0.5 font-mono text-base font-bold">
                 {pricePerUnit}
               </span>
             </div>
@@ -123,7 +126,7 @@ export function ProductCard({
 
         {/* CTA Button */}
         <div className="relative pt-0.5">
-          <button className="relative w-full py-1.5 bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold text-base rounded-2xl shadow-sm border border-[#FCD200]/50 transition-all cursor-pointer overflow-hidden active:scale-[0.98]">
+          <button className="relative w-full cursor-pointer overflow-hidden rounded-2xl border border-[#FCD200]/50 bg-[#FFD814] py-1.5 text-base font-bold text-black shadow-sm transition-all hover:bg-[#F7CA00] active:scale-[0.98]">
             <span className="relative z-10">View on Amazon</span>
           </button>
         </div>

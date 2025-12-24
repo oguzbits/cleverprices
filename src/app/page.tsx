@@ -4,7 +4,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   alternates: {
-    canonical: 'https://realpricedata.com',
+    canonical: "https://realpricedata.com",
   },
 };
 

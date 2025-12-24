@@ -7,9 +7,11 @@ import { Category } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
 
 interface CategoryHeaderProps {
-  category: Omit<Category, 'icon'>;
+  category: Omit<Category, "icon">;
   countryCode: string;
-  breadcrumbs: (Omit<Category, 'icon'> & { Icon: React.ComponentType<{ className?: string }> })[];
+  breadcrumbs: (Omit<Category, "icon"> & {
+    Icon: React.ComponentType<{ className?: string }>;
+  })[];
   productCount: number;
   searchValue: string;
   onSearchChange: (value: string) => void;
@@ -28,7 +30,7 @@ export function CategoryHeader({
     <div className="flex flex-col gap-6">
       {/* Breadcrumb */}
       <nav aria-label="Breadcrumb">
-        <ol className="flex items-center flex-wrap gap-1.5 gap-y-2 sm:gap-2 text-sm sm:text-base text-muted-foreground leading-normal">
+        <ol className="text-muted-foreground flex flex-wrap items-center gap-1.5 gap-y-2 text-sm leading-normal sm:gap-2 sm:text-base">
           <li>
             <Link href="/" className="hover:text-foreground transition-colors">
               Home
@@ -36,7 +38,10 @@ export function CategoryHeader({
           </li>
           <li className="text-muted-foreground/50">/</li>
           <li>
-            <Link href={`/${countryCode}/categories`} className="hover:text-foreground transition-colors">
+            <Link
+              href={`/${countryCode}/categories`}
+              className="hover:text-foreground transition-colors"
+            >
               Categories
             </Link>
           </li>
@@ -45,10 +50,12 @@ export function CategoryHeader({
               <li className="text-muted-foreground/50">/</li>
               <li>
                 {index === breadcrumbs.length - 1 ? (
-                  <span className="text-foreground font-medium wrap-break-word">{crumb.name}</span>
+                  <span className="text-foreground font-medium wrap-break-word">
+                    {crumb.name}
+                  </span>
                 ) : (
-                  <Link 
-                    href={`/${countryCode}/${crumb.parent ? crumb.parent + '/' : ''}${crumb.slug}`} 
+                  <Link
+                    href={`/${countryCode}/${crumb.parent ? crumb.parent + "/" : ""}${crumb.slug}`}
                     className="hover:text-foreground transition-colors"
                   >
                     {crumb.name}
@@ -61,23 +68,30 @@ export function CategoryHeader({
       </nav>
 
       {/* Header Content */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <Icon className="h-6 w-6 sm:h-8 sm:w-8 text-primary shrink-0" aria-hidden="true" />
-            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{category.name}</h1>
+          <div className="mb-2 flex items-center gap-3">
+            <Icon
+              className="text-primary h-6 w-6 shrink-0 sm:h-8 sm:w-8"
+              aria-hidden="true"
+            />
+            <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
+              {category.name}
+            </h1>
           </div>
           <p className="text-muted-foreground text-sm sm:text-base">
-            {productCount > 0 ? `Showing ${productCount} products` : category.description}
+            {productCount > 0
+              ? `Showing ${productCount} products`
+              : category.description}
           </p>
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="flex w-full items-center gap-2 md:w-auto">
           <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
             <Input
               placeholder="Search products..."
-              className="pl-8 bg-card dark:bg-card shadow-sm focus-visible:ring-0 focus-visible:border-primary transition-colors"
+              className="bg-card dark:bg-card focus-visible:border-primary pl-8 shadow-sm transition-colors focus-visible:ring-0"
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
               aria-label="Search products"

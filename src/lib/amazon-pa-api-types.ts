@@ -56,20 +56,20 @@ export interface PAAPI_ItemInfo {
       DisplayValue: string;
     };
     UnitCount?: {
-        DisplayValue: number;
-        Label: string; // e.g. "Count", "Ounce"
+      DisplayValue: number;
+      Label: string; // e.g. "Count", "Ounce"
     };
   };
   Classifications?: {
-      Binding: {
-          DisplayValue: string;
-          Label: string;
-      };
-      ProductGroup: {
-          DisplayValue: string;
-          Label: string;
-      };
-  }
+    Binding: {
+      DisplayValue: string;
+      Label: string;
+    };
+    ProductGroup: {
+      DisplayValue: string;
+      Label: string;
+    };
+  };
 }
 
 export interface PAAPI_Item {
@@ -80,7 +80,7 @@ export interface PAAPI_Item {
   Offers?: {
     Listings: PAAPI_OfferListing[];
     Summaries: {
-        LowestPrice: PAAPI_Price;
+      LowestPrice: PAAPI_Price;
     }[];
   };
 }

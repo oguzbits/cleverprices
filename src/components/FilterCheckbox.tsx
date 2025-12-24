@@ -23,7 +23,7 @@ export function FilterCheckbox({
       <Checkbox id={id} checked={checked} onCheckedChange={onCheckedChange} />
       <Label
         htmlFor={id}
-        className="text-base font-normal cursor-pointer leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        className="cursor-pointer text-base leading-none font-normal peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
       >
         {label}
       </Label>

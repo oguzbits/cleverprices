@@ -143,7 +143,7 @@ export const batteryProducts: BatteryProduct[] = [
     name: "Duracell AA 20-Pack",
     price: 11.99,
     packSize: 20,
-    pricePerUnit: 0.60,
+    pricePerUnit: 0.6,
     batteryType: "AA" as const,
     condition: "New" as const,
     brand: "Duracell",
@@ -276,12 +276,18 @@ export const categoryConfig = {
     currency: "$",
     insightText: "Mid-range 750W units often offer the best value per watt!",
     filters: {
-      filter1: { title: "Efficiency", options: ["80+ Gold", "80+ Platinum", "80+ Bronze"] },
+      filter1: {
+        title: "Efficiency",
+        options: ["80+ Gold", "80+ Platinum", "80+ Bronze"],
+      },
       filter2: { title: "Modularity", options: ["Full", "Semi", "Non"] },
       filter3: { title: "Wattage", options: ["600W", "750W", "850W", "1000W"] },
     },
   },
 } as const;
 
-export const categories: ProductCategory[] = ["harddrives", "batteries", "powersupplies"];
-
+export const categories: ProductCategory[] = [
+  "harddrives",
+  "batteries",
+  "powersupplies",
+];

@@ -32,13 +32,13 @@ export function Globe({ className }: { className?: string }) {
           }
         });
       },
-      { threshold: 0.1, rootMargin: "50px" } // Start loading slightly before visible
+      { threshold: 0.1, rootMargin: "50px" }, // Start loading slightly before visible
     );
-    
+
     if (canvasRef.current) {
       observer.observe(canvasRef.current);
     }
-    
+
     return () => {
       observer.disconnect();
     };
@@ -51,10 +51,11 @@ export function Globe({ className }: { className?: string }) {
     let phi = 0;
     let width = 0;
     let frameCount = 0;
-    const onResize = () => canvasRef.current && (width = canvasRef.current.offsetWidth);
+    const onResize = () =>
+      canvasRef.current && (width = canvasRef.current.offsetWidth);
     window.addEventListener("resize", onResize);
     onResize();
-    
+
     const globe = createGlobe(canvasRef.current, {
       devicePixelRatio: 2,
       width: width * 2,
@@ -70,11 +71,19 @@ export function Globe({ className }: { className?: string }) {
       glowColor: [1.2, 1.2, 1.2],
       markers: [
         // US (Orange - Coming Soon)
-        { location: [37.0902, -95.7129], size: 0.05, color: [0.98, 0.45, 0.08] },
+        {
+          location: [37.0902, -95.7129],
+          size: 0.05,
+          color: [0.98, 0.45, 0.08],
+        },
         // UK (Orange - Coming Soon)
-        { location: [55.3781, -3.4360], size: 0.05, color: [0.98, 0.45, 0.08] },
+        { location: [55.3781, -3.436], size: 0.05, color: [0.98, 0.45, 0.08] },
         // Canada
-        { location: [56.1304, -106.3468], size: 0.05, color: [0.98, 0.45, 0.08] },
+        {
+          location: [56.1304, -106.3468],
+          size: 0.05,
+          color: [0.98, 0.45, 0.08],
+        },
         // Germany (Green - Live)
         { location: [51.1657, 10.4515], size: 0.08, color: [0.06, 0.72, 0.5] },
         // Spain
@@ -84,7 +93,11 @@ export function Globe({ className }: { className?: string }) {
         // France
         { location: [46.2276, 2.2137], size: 0.05, color: [0.98, 0.45, 0.08] },
         // Australia
-        { location: [-25.2744, 133.7751], size: 0.05, color: [0.98, 0.45, 0.08] },
+        {
+          location: [-25.2744, 133.7751],
+          size: 0.05,
+          color: [0.98, 0.45, 0.08],
+        },
         // Sweden
         { location: [60.1282, 18.6435], size: 0.05, color: [0.98, 0.45, 0.08] },
         // Ireland
@@ -95,11 +108,11 @@ export function Globe({ className }: { className?: string }) {
       onRender: (state) => {
         // Skip rendering entirely when not in view
         if (!isInView.current) return;
-        
+
         // Reduce frame rate to ~30fps for better performance
         frameCount++;
         if (frameCount % 2 !== 0) return; // Skip every other frame
-        
+
         // This prevents rotation while dragging
         if (!pointerInteracting.current) {
           // Called on every animation frame.
@@ -111,13 +124,13 @@ export function Globe({ className }: { className?: string }) {
         state.height = width * 2;
       },
     });
-    
+
     setTimeout(() => {
       if (canvasRef.current) {
         canvasRef.current.style.opacity = "1";
       }
     }, 100);
-    
+
     return () => {
       globe.destroy();
       window.removeEventListener("resize", onResize);
@@ -134,7 +147,8 @@ export function Globe({ className }: { className?: string }) {
       className={className}
     >
       <div id="globe-instructions" className="sr-only">
-        Use arrow keys to rotate the globe. Left and right arrows rotate horizontally.
+        Use arrow keys to rotate the globe. Left and right arrows rotate
+        horizontally.
       </div>
       <canvas
         ref={canvasRef}

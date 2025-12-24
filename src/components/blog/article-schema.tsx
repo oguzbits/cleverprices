@@ -1,4 +1,4 @@
-import { BlogPost } from '@/types/blog';
+import { BlogPost } from "@/types/blog";
 
 interface ArticleSchemaProps {
   post: BlogPost;
@@ -6,28 +6,28 @@ interface ArticleSchemaProps {
 
 export function ArticleSchema({ post }: ArticleSchemaProps) {
   const schema = {
-    '@context': 'https://schema.org',
-    '@type': 'Article',
+    "@context": "https://schema.org",
+    "@type": "Article",
     headline: post.title,
     description: post.description,
     author: {
-      '@type': 'Organization',
-      name: 'RealPriceData',
-      url: 'https://realpricedata.com',
+      "@type": "Organization",
+      name: "RealPriceData",
+      url: "https://realpricedata.com",
     },
     publisher: {
-      '@type': 'Organization',
-      name: 'RealPriceData',
+      "@type": "Organization",
+      name: "RealPriceData",
       logo: {
-        '@type': 'ImageObject',
-        url: 'https://realpricedata.com/icon-512.png',
+        "@type": "ImageObject",
+        url: "https://realpricedata.com/icon-512.png",
       },
     },
     datePublished: post.publishDate,
     dateModified: post.lastUpdated || post.publishDate,
     mainEntityOfPage: {
-      '@type': 'WebPage',
-      '@id': `https://realpricedata.com/blog/${post.slug}`,
+      "@type": "WebPage",
+      "@id": `https://realpricedata.com/blog/${post.slug}`,
     },
     // Optional: add citations/references to schema if desired
     citations: post.references || [],

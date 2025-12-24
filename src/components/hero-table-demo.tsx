@@ -47,12 +47,12 @@ export function HeroTableDemo() {
     currentCategory === "harddrives"
       ? hardDriveProducts
       : currentCategory === "batteries"
-      ? batteryProducts
-      : powerSupplyProducts;
+        ? batteryProducts
+        : powerSupplyProducts;
 
   return (
     <div
-      className="relative w-full max-w-5xl mx-auto perspective-1000"
+      className="perspective-1000 relative mx-auto w-full max-w-5xl"
       role="region"
       aria-label="Interactive product comparison demo"
       aria-live="polite"
@@ -63,43 +63,40 @@ export function HeroTableDemo() {
     >
       {/* Background Glow */}
       <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-primary/10 rounded-full blur-[120px] -z-10"
+        className="bg-primary/10 absolute top-1/2 left-1/2 -z-10 h-full w-full -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px]"
         aria-hidden="true"
       />
 
-      <Card className="border-border/40 bg-card/80 backdrop-blur-xl shadow-2xl overflow-hidden ring-1 ring-border/50 rounded-3xl">
+      <Card className="border-border/40 bg-card/80 ring-border/50 overflow-hidden rounded-3xl shadow-2xl ring-1 backdrop-blur-xl">
         {/* Top Bar (Browser/App Header) */}
-        <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-muted/40">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-            <div className="flex gap-1.5 shrink-0">
-              <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
-              <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-              <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+        <div className="border-border bg-muted/40 flex items-center justify-between gap-3 border-b px-4 py-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-4">
+            <div className="flex shrink-0 gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-[#FF5F56]" />
+              <div className="h-3 w-3 rounded-full bg-[#FFBD2E]" />
+              <div className="h-3 w-3 rounded-full bg-[#27C93F]" />
             </div>
-            <div className="h-4 w-px bg-border shrink-0" />
-            <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0 flex-1">
-              <Search className="w-3 h-3 shrink-0" />
+            <div className="bg-border h-4 w-px shrink-0" />
+            <div className="text-muted-foreground flex min-w-0 flex-1 items-center gap-2 text-sm">
+              <Search className="h-3 w-3 shrink-0" />
               <span className="truncate">{config.url}</span>
             </div>
           </div>
-
         </div>
 
         <div
           className={cn(
-            "flex h-[350px] sm:h-[450px] transition-opacity duration-300",
-            fadeOut && "opacity-50"
+            "flex h-[350px] transition-opacity duration-300 sm:h-[450px]",
+            fadeOut && "opacity-50",
           )}
           style={{ willChange: fadeOut ? "opacity" : "auto" }}
         >
-
-
           {/* Main Content */}
-          <div className="flex-1 flex flex-col min-w-0 bg-muted/40">
+          <div className="bg-muted/40 flex min-w-0 flex-1 flex-col">
             {/* Page Header */}
-            <div className="px-3 py-2 border-b border-border">
+            <div className="border-border border-b px-3 py-2">
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-foreground">
+                <h2 className="text-foreground text-base font-bold">
                   {config.title}
                 </h2>
               </div>
@@ -109,9 +106,9 @@ export function HeroTableDemo() {
             <div className="flex-1 overflow-hidden">
               <div className="w-full min-w-[600px]">
                 {/* Table Header */}
-                <div className="grid grid-cols-12 gap-2 px-4 py-2 border-b border-border text-[11px] sm:text-sm font-semibold text-muted-foreground bg-muted/50">
+                <div className="border-border text-muted-foreground bg-muted/50 grid grid-cols-12 gap-2 border-b px-4 py-2 text-[11px] font-semibold sm:text-sm">
                   <div className="col-span-3 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
+                    <TrendingUp className="h-3 w-3" />
                     {config.unitLabel}
                   </div>
                   <div className="col-span-5 sm:col-span-4">Product</div>
@@ -124,39 +121,45 @@ export function HeroTableDemo() {
                 </div>
 
                 {/* Table Body */}
-                <div className="divide-y divide-border">
+                <div className="divide-border divide-y">
                   {products.map((product: any, idx) => (
                     <div
                       key={product.id}
                       className={cn(
-                        "grid grid-cols-12 gap-2 px-4 py-3 items-center text-xs sm:text-sm transition-all hover:bg-muted/50",
+                        "hover:bg-muted/50 grid grid-cols-12 items-center gap-2 px-4 py-3 text-xs transition-all sm:text-sm",
                         idx === 0 &&
-                          "bg-blue-50/50 dark:bg-blue-950/30 ring-1 ring-blue-200/50 dark:ring-blue-800/50"
+                          "bg-blue-50/50 ring-1 ring-blue-200/50 dark:bg-blue-950/30 dark:ring-blue-800/50",
                       )}
                     >
-                      <div className="col-span-3 font-mono font-bold text-foreground flex items-center gap-2">
+                      <div className="text-foreground col-span-3 flex items-center gap-2 font-mono font-bold">
                         {config.currency}
                         {currentCategory === "harddrives"
-                          ? (product as HardDriveProduct).pricePerUnit.toFixed(3)
+                          ? (product as HardDriveProduct).pricePerUnit.toFixed(
+                              3,
+                            )
                           : currentCategory === "batteries"
-                          ? (product as BatteryProduct).pricePerUnit.toFixed(2)
-                          : (product as PowerSupplyProduct).pricePerUnit.toFixed(3)}
+                            ? (product as BatteryProduct).pricePerUnit.toFixed(
+                                2,
+                              )
+                            : (
+                                product as PowerSupplyProduct
+                              ).pricePerUnit.toFixed(3)}
                         {idx === 0 && (
-                          <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border-0 h-4 px-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+                          <Badge className="h-4 border-0 bg-emerald-100 px-1.5 text-[10px] font-bold tracking-wider text-emerald-800 uppercase sm:text-[11px] dark:bg-emerald-500/20 dark:text-emerald-300">
                             Top
                           </Badge>
                         )}
                       </div>
                       <div className="col-span-5 sm:col-span-4">
-                        <span className="text-primary font-medium truncate block">
+                        <span className="text-primary block truncate font-medium">
                           {product.name}
                         </span>
                       </div>
-                      <div className="col-span-2 font-mono text-muted-foreground">
+                      <div className="text-muted-foreground col-span-2 font-mono">
                         {config.currency}
                         {product.price.toFixed(2)}
                       </div>
-                      <div className="col-span-2 font-mono text-muted-foreground text-[11px] sm:text-sm">
+                      <div className="text-muted-foreground col-span-2 font-mono text-[11px] sm:text-sm">
                         {currentCategory === "harddrives" &&
                           `${(product as HardDriveProduct).capacity}${(product as HardDriveProduct).capacityUnit}`}
                         {currentCategory === "batteries" &&
@@ -171,13 +174,13 @@ export function HeroTableDemo() {
             </div>
 
             {/* Integrated Insight Bar - Replaces the obstructive floating box */}
-            <div className="mt-auto px-4 py-3 border-t border-border bg-primary/3 backdrop-blur-sm">
+            <div className="border-border bg-primary/3 mt-auto border-t px-4 py-3 backdrop-blur-sm">
               <div className="flex items-center gap-2 text-sm">
-                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 rounded-full text-xs font-bold text-primary shrink-0 uppercase tracking-wider">
-                  <Sparkles className="w-3 h-3" />
+                <div className="bg-primary/10 text-primary flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-bold tracking-wider uppercase">
+                  <Sparkles className="h-3 w-3" />
                   <p className="hidden xl:block">Insight</p>
                 </div>
-                <p className="text-foreground/80 font-medium truncate">
+                <p className="text-foreground/80 truncate font-medium">
                   {config.insightText}
                 </p>
               </div>

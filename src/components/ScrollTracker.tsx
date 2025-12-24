@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
-import { trackEngagement } from '@/lib/analytics';
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { trackEngagement } from "@/lib/analytics";
 
 /**
  * ScrollTracker Component
- * 
+ *
  * Trackt wie weit Nutzer auf der Seite scrollen.
  * Wichtig für SEO: Zeigt ob Content engaging ist.
- * 
+ *
  * Usage: Füge <ScrollTracker /> in dein Layout ein
  */
 export function ScrollTracker() {
@@ -28,8 +28,8 @@ export function ScrollTracker() {
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       const scrollTop = window.scrollY;
-      
-      const scrollPercentage = 
+
+      const scrollPercentage =
         ((scrollTop + windowHeight) / documentHeight) * 100;
 
       maxScroll = Math.max(maxScroll, scrollPercentage);
@@ -56,13 +56,13 @@ export function ScrollTracker() {
       }
     };
 
-    window.addEventListener('scroll', throttledScroll, { passive: true });
-    
+    window.addEventListener("scroll", throttledScroll, { passive: true });
+
     // Initial check (falls Seite schon gescrollt ist)
     handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', throttledScroll);
+      window.removeEventListener("scroll", throttledScroll);
     };
   }, [pathname]);
 

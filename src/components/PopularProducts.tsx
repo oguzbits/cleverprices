@@ -15,11 +15,11 @@ export function PopularProducts({ products }: PopularProductsProps) {
     { label: "All Products", value: "all" },
     { label: "Hard Drives", value: "hard-drives" },
     { label: "RAM", value: "ram" },
-    { label: "Power Supplies", value: "power-supplies" }
+    { label: "Power Supplies", value: "power-supplies" },
   ];
 
   return (
-    <ProductSection 
+    <ProductSection
       title="Popular Products"
       description="The most-viewed products right now, analyzed and compared for total value."
       products={products}

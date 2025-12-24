@@ -1,9 +1,9 @@
-import fs from 'fs';
-import path from 'path';
-import matter from 'gray-matter';
-import { BlogPost, BlogFrontmatter } from '@/types/blog';
+import fs from "fs";
+import path from "path";
+import matter from "gray-matter";
+import { BlogPost, BlogFrontmatter } from "@/types/blog";
 
-const BLOG_DIRECTORY = path.join(process.cwd(), 'src/content/blog');
+const BLOG_DIRECTORY = path.join(process.cwd(), "src/content/blog");
 
 export async function getAllBlogPosts(): Promise<BlogPost[]> {
   if (!fs.existsSync(BLOG_DIRECTORY)) {
@@ -11,12 +11,12 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
   }
 
   const fileNames = fs.readdirSync(BLOG_DIRECTORY);
-  
+
   const posts = fileNames
-    .filter((fileName) => fileName.endsWith('.md'))
+    .filter((fileName) => fileName.endsWith(".md"))
     .map((fileName) => {
       const fullPath = path.join(BLOG_DIRECTORY, fileName);
-      const fileContents = fs.readFileSync(fullPath, 'utf8');
+      const fileContents = fs.readFileSync(fullPath, "utf8");
       const { data, content } = matter(fileContents);
       const frontmatter = data as BlogFrontmatter;
 
@@ -29,12 +29,17 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
         },
       } as BlogPost;
     })
-    .sort((a, b) => (new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()));
+    .sort(
+      (a, b) =>
+        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime(),
+    );
 
   return posts;
 }
 
-export async function getBlogPostBySlug(slug: string): Promise<BlogPost | null> {
+export async function getBlogPostBySlug(
+  slug: string,
+): Promise<BlogPost | null> {
   const posts = await getAllBlogPosts();
   return posts.find((post) => post.slug === slug) || null;
 }

@@ -7,17 +7,22 @@ type Props = {
   children: React.ReactNode;
 };
 
-export async function generateMetadata({ params }: { params: Promise<{ country: string; parent: string; category: string }> }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ country: string; parent: string; category: string }>;
+}): Promise<Metadata> {
   const { country, category: categorySlug } = await params;
-  
-  const countryConfig = getCountryByCode(country) || getCountryByCode(DEFAULT_COUNTRY);
+
+  const countryConfig =
+    getCountryByCode(country) || getCountryByCode(DEFAULT_COUNTRY);
   const countryName = countryConfig?.name || "Global";
   const countryCode = (countryConfig?.code || country || "US").toUpperCase();
   const domain = countryConfig?.domain || "amazon.com";
   const category = getCategoryBySlug(categorySlug);
-  
+
   const categoryName = category?.name || "Products";
-  
+
   return {
     title: `Best ${categoryName} Price Per Unit (Amazon ${countryCode})`,
     description: `Find the best deals on ${categoryName} at Amazon ${countryName} (${domain}). Compare by true cost per unit/TB and see real-time price drops.`,
@@ -26,8 +31,8 @@ export async function generateMetadata({ params }: { params: Promise<{ country: 
       `${categoryName} ${countryCode}`,
       `${categoryName} price per unit`,
       `best ${categoryName} deals ${countryCode}`,
-      `Amazon ${countryCode} storage deals`
-    ]
+      `Amazon ${countryCode} storage deals`,
+    ],
   };
 }
 

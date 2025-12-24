@@ -58,7 +58,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
   // Filter categories based on query
   const filteredCategories = ALL_CATEGORIES.filter((cat) =>
-    cat.name.toLowerCase().includes(query.toLowerCase())
+    cat.name.toLowerCase().includes(query.toLowerCase()),
   );
 
   // Get all available items (quick links or search results)
@@ -82,7 +82,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
       if (e.key === "ArrowUp" && availableItems.length > 0) {
         e.preventDefault();
         setSelectedIndex(
-          (prev) => (prev - 1 + availableItems.length) % availableItems.length
+          (prev) => (prev - 1 + availableItems.length) % availableItems.length,
         );
       }
       if (
@@ -123,32 +123,33 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="w-full h-dvh md:h-auto md:w-[calc(100%-2rem)] max-w-none md:max-w-2xl p-0 gap-0 bg-card border-border rounded-none md:rounded-4xl shadow-2xl overflow-hidden focus:outline-none md:max-h-[90vh] flex flex-col **:data-[slot=dialog-close]:top-6 **:data-[slot=dialog-close]:right-6 md:**:data-[slot=dialog-close]:top-8 md:**:data-[slot=dialog-close]:right-8 **:data-[slot=dialog-close]:[&_svg]:size-6!"
-      >  {/* Search Input Header */}
-        <div className="relative px-6 py-8 md:px-10 md:py-10 border-b border-border/10 flex flex-col items-start gap-8 bg-linear-to-b from-primary/10 via-primary/5 to-transparent shrink-0">
+      <DialogContent className="bg-card border-border flex h-dvh w-full max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 shadow-2xl focus:outline-none **:data-[slot=dialog-close]:top-6 **:data-[slot=dialog-close]:right-6 md:h-auto md:max-h-[90vh] md:w-[calc(100%-2rem)] md:max-w-2xl md:rounded-4xl md:**:data-[slot=dialog-close]:top-8 md:**:data-[slot=dialog-close]:right-8 **:data-[slot=dialog-close]:[&_svg]:size-6!">
+        {" "}
+        {/* Search Input Header */}
+        <div className="border-border/10 from-primary/10 via-primary/5 relative flex shrink-0 flex-col items-start gap-8 border-b bg-linear-to-b to-transparent px-6 py-8 md:px-10 md:py-10">
           <div className="flex flex-col items-start gap-5">
-            <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-[0_0_30px_-10px_rgba(var(--primary),0.3)] animate-in fade-in zoom-in duration-700">
-              <Search className="h-6 w-6 text-primary stroke-[1.5]" />
+            <div className="bg-primary/10 border-primary/20 animate-in fade-in zoom-in rounded-2xl border p-3 shadow-[0_0_30px_-10px_rgba(var(--primary),0.3)] duration-700">
+              <Search className="text-primary h-6 w-6 stroke-[1.5]" />
             </div>
             <div className="space-y-1.5">
-              <DialogTitle className="text-2xl md:text-3xl font-black tracking-tighter text-foreground text-left">
+              <DialogTitle className="text-foreground text-left text-2xl font-black tracking-tighter md:text-3xl">
                 Search Categories
               </DialogTitle>
-              <DialogDescription className="text-muted-foreground text-sm md:text-base max-w-md md:max-w-xl leading-relaxed font-medium text-left">
-                Compare and find the best unit prices across all available categories.
+              <DialogDescription className="text-muted-foreground max-w-md text-left text-sm leading-relaxed font-medium md:max-w-xl md:text-base">
+                Compare and find the best unit prices across all available
+                categories.
               </DialogDescription>
             </div>
           </div>
 
-          <div className="w-full relative">
-            <div className="relative flex items-center gap-0 px-5 py-3 md:px-6 md:py-4 rounded-xl border border-border bg-background">
-              <Search className="h-5 w-5 text-muted-foreground/30 shrink-0" />
+          <div className="relative w-full">
+            <div className="border-border bg-background relative flex items-center gap-0 rounded-xl border px-5 py-3 md:px-6 md:py-4">
+              <Search className="text-muted-foreground/30 h-5 w-5 shrink-0" />
               <Input
                 placeholder="What are you looking for?"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="border-0 focus-visible:ring-0 text-base md:text-lg h-auto flex-1 placeholder:text-muted-foreground/40 bg-background dark:bg-background shadow-none font-bold tracking-tight px-3 py-1.5"
+                className="placeholder:text-muted-foreground/40 bg-background dark:bg-background h-auto flex-1 border-0 px-3 py-1.5 text-base font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-lg"
                 autoFocus
                 autoComplete="off"
                 data-form-type="other"
@@ -159,19 +160,18 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             </div>
           </div>
         </div>
-
         {/* Content Area */}
         <div
-          className="flex-1 overflow-y-auto px-6 pb-8 pt-6 md:px-10 md:pb-10"
+          className="flex-1 overflow-y-auto px-6 pt-6 pb-8 md:px-10 md:pb-10"
           role="region"
           aria-live="polite"
         >
           {query === "" ? (
             // Show quick links when no search query
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
               {Object.entries(QUICK_LINKS).map(([section, links]) => (
                 <div key={section} className="flex flex-col gap-4">
-                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">
+                  <h3 className="text-muted-foreground px-1 text-sm font-bold tracking-[0.2em] uppercase">
                     {section}
                   </h3>
                   <div className="flex flex-col gap-2.5">
@@ -206,7 +206,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             <div className="flex flex-col gap-8">
               {filteredCategories.length > 0 ? (
                 <div className="flex flex-col gap-4">
-                  <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-[0.2em] px-1">
+                  <h3 className="text-muted-foreground px-1 text-sm font-bold tracking-[0.2em] uppercase">
                     Search Results
                   </h3>
                   <div className="flex flex-col gap-2.5">
@@ -228,15 +228,15 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-20 flex flex-col items-center gap-4">
-                  <div className="p-6 rounded-full bg-secondary w-fit">
-                    <Search className="h-10 w-10 text-muted-foreground/20" />
+                <div className="flex flex-col items-center gap-4 py-20 text-center">
+                  <div className="bg-secondary w-fit rounded-full p-6">
+                    <Search className="text-muted-foreground/20 h-10 w-10" />
                   </div>
                   <div>
-                    <p className="text-xl font-bold text-foreground">
+                    <p className="text-foreground text-xl font-bold">
                       No categories found
                     </p>
-                    <p className="text-muted-foreground mt-2 max-w-xs mx-auto">
+                    <p className="text-muted-foreground mx-auto mt-2 max-w-xs">
                       We couldn't find anything matching "{query}". Try another
                       keyword like "hard drives".
                     </p>

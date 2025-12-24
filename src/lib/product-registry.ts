@@ -8,7 +8,7 @@ import productsData from "@/data/products.json";
  */
 
 export interface Product {
-  id?: number  // Optional for backwards compatibility
+  id?: number; // Optional for backwards compatibility
   slug: string;
   asin: string;
   title: string;
@@ -30,7 +30,9 @@ export interface Product {
 }
 
 // Type assertion and dynamic calculation of metrics
-const products = (productsData as Product[]).map(p => calculateProductMetrics(p) as Product);
+const products = (productsData as Product[]).map(
+  (p) => calculateProductMetrics(p) as Product,
+);
 
 /**
  * Get a product by its slug

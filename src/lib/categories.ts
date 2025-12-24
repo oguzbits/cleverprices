@@ -43,7 +43,7 @@ export const allCategories: Record<string, Category> = {
       "Find the best hard drive and SSD deals by comparing price per terabyte. Compare internal and external storage from top brands.",
   },
 
-  "ram": {
+  ram: {
     name: "RAM & Memory",
     slug: "ram",
     description: "DDR4 and DDR5 RAM modules - compare price per GB",
@@ -72,12 +72,12 @@ export const allCategories: Record<string, Category> = {
 export function getCategoryHierarchy(): CategoryHierarchy[] {
   const hierarchies: CategoryHierarchy[] = [];
   const parents = Object.values(allCategories).filter(
-    (cat) => !cat.parent && !cat.hidden
+    (cat) => !cat.parent && !cat.hidden,
   );
 
   parents.forEach((parent) => {
     const children = Object.values(allCategories).filter(
-      (cat) => cat.parent === parent.slug && !cat.hidden
+      (cat) => cat.parent === parent.slug && !cat.hidden,
     );
     hierarchies.push({ parent, children });
   });
@@ -100,7 +100,7 @@ export function getParentCategory(categorySlug: string): Category | undefined {
 // Get children of a parent category
 export function getChildCategories(parentSlug: string): Category[] {
   return Object.values(allCategories).filter(
-    (cat) => cat.parent === parentSlug && !cat.hidden
+    (cat) => cat.parent === parentSlug && !cat.hidden,
   );
 }
 
@@ -123,7 +123,7 @@ export function getBreadcrumbs(categorySlug: string): Category[] {
 // Get full URL path for a category
 export function getCategoryPath(
   categorySlug: string,
-  countryCode?: string
+  countryCode?: string,
 ): string {
   const category = allCategories[categorySlug];
   if (!category) return "/";

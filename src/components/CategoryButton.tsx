@@ -17,33 +17,36 @@ export function CategoryButton({
   icon: IconComponent,
   isSelected,
   onClick,
-  showExplore = false
+  showExplore = false,
 }: CategoryButtonProps) {
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl border text-left group cursor-pointer transition-all ${
-        isSelected 
-          ? 'border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20' 
-          : 'border-border bg-secondary/50 hover:border-primary/20 hover:bg-secondary/70'
+      className={`group flex w-full cursor-pointer items-center gap-4 rounded-2xl border px-5 py-4 text-left transition-all ${
+        isSelected
+          ? "border-primary bg-primary/10 ring-primary/20 shadow-sm ring-1"
+          : "border-border bg-secondary/50 hover:border-primary/20 hover:bg-secondary/70"
       }`}
       aria-label={`Navigate to ${name} category`}
     >
-      <div className="p-2.5 rounded-xl bg-background border border-border group-hover:border-primary/20 transition-colors">
-        <IconComponent className="h-5 w-5 shrink-0 text-primary" />
+      <div className="bg-background border-border group-hover:border-primary/20 rounded-xl border p-2.5 transition-colors">
+        <IconComponent className="text-primary h-5 w-5 shrink-0" />
       </div>
       <div className="flex-1">
-        <p className="text-base md:text-base font-semibold text-foreground group-hover:text-primary transition-colors">
+        <p className="text-foreground group-hover:text-primary text-base font-semibold transition-colors md:text-base">
           {name}
         </p>
         {showExplore && (
-          <p className="text-sm text-muted-foreground font-bold uppercase tracking-wider mt-0.5">
+          <p className="text-muted-foreground mt-0.5 text-sm font-bold tracking-wider uppercase">
             Category
           </p>
         )}
       </div>
       {showExplore && (
-        <Badge variant="outline" className="ml-auto shrink-0 border-border/50 text-muted-foreground group-hover:border-primary/30 group-hover:text-primary transition-all text-sm px-2 py-0.5 rounded-full">
+        <Badge
+          variant="outline"
+          className="border-border/50 text-muted-foreground group-hover:border-primary/30 group-hover:text-primary ml-auto shrink-0 rounded-full px-2 py-0.5 text-sm transition-all"
+        >
           Explore
         </Badge>
       )}

@@ -283,7 +283,7 @@ export function useCategoryFilters() {
     {
       shallow: true,
       clearOnDefault: true,
-    }
+    },
   );
 
   return { filters, setFilters };

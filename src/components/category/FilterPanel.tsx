@@ -1,9 +1,9 @@
 import * as React from "react";
-import { 
-  Accordion, 
-  AccordionContent, 
-  AccordionItem, 
-  AccordionTrigger 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -32,26 +32,43 @@ export function FilterPanel({
   unitLabel,
   categorySlug,
 }: FilterPanelProps) {
-  const { techOptions, formFactorOptions } = getCategoryFilterOptions(categorySlug);
+  const { techOptions, formFactorOptions } =
+    getCategoryFilterOptions(categorySlug);
 
   return (
-    <Card className="p-4 border-none shadow-none lg:border lg:shadow-sm">
+    <Card className="border-none p-4 shadow-none lg:border lg:shadow-sm">
       <CardContent className="p-0">
         <h2 className="sr-only">Filters</h2>
-        <Accordion type="multiple" defaultValue={["condition", "capacity", "technology", "form-factor"]} className="w-full">
+        <Accordion
+          type="multiple"
+          defaultValue={["condition", "capacity", "technology", "form-factor"]}
+          className="w-full"
+        >
           {/* Condition Filter */}
           <AccordionItem value="condition" className="border-b">
-            <AccordionTrigger className="text-base font-semibold hover:no-underline pb-3 pt-0">Condition</AccordionTrigger>
+            <AccordionTrigger className="pt-0 pb-3 text-base font-semibold hover:no-underline">
+              Condition
+            </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-1.5 pt-1 pb-3">
                 {["New", "Used", "Renewed"].map((condition) => (
-                  <div key={condition} className="flex items-center space-x-3 py-1.5">
+                  <div
+                    key={condition}
+                    className="flex items-center space-x-3 py-1.5"
+                  >
                     <Checkbox
                       id={`condition-${condition}`}
                       checked={filters.condition?.includes(condition) || false}
-                      onCheckedChange={() => onFilterChange('condition', condition)}
+                      onCheckedChange={() =>
+                        onFilterChange("condition", condition)
+                      }
                     />
-                    <Label htmlFor={`condition-${condition}`} className="text-base font-normal leading-none cursor-pointer">{condition}</Label>
+                    <Label
+                      htmlFor={`condition-${condition}`}
+                      className="cursor-pointer text-base leading-none font-normal"
+                    >
+                      {condition}
+                    </Label>
                   </div>
                 ))}
               </div>
@@ -60,35 +77,45 @@ export function FilterPanel({
 
           {/* Capacity Filter */}
           <AccordionItem value="capacity" className="border-b">
-            <AccordionTrigger className="text-base font-semibold hover:no-underline py-3">Capacity ({unitLabel})</AccordionTrigger>
+            <AccordionTrigger className="py-3 text-base font-semibold hover:no-underline">
+              Capacity ({unitLabel})
+            </AccordionTrigger>
             <AccordionContent>
               <div className="flex items-center gap-2 pt-1 pb-3">
                 <div className="relative flex-1">
                   <Input
                     type="number"
                     placeholder="Min"
-                    value={filters.minCapacity ?? ''}
+                    value={filters.minCapacity ?? ""}
                     onChange={(e) => {
-                      const val = e.target.value ? parseFloat(e.target.value) : null;
+                      const val = e.target.value
+                        ? parseFloat(e.target.value)
+                        : null;
                       onCapacityChange(val, filters.maxCapacity ?? null);
                     }}
-                    className="w-full pr-8 bg-white dark:bg-secondary/40 shadow-sm transition-colors"
+                    className="dark:bg-secondary/40 w-full bg-white pr-8 shadow-sm transition-colors"
                   />
-                  <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">{unitLabel}</span>
+                  <span className="text-muted-foreground absolute top-2.5 right-3 text-sm">
+                    {unitLabel}
+                  </span>
                 </div>
                 <span className="text-muted-foreground">-</span>
                 <div className="relative flex-1">
                   <Input
                     type="number"
                     placeholder="Max"
-                    value={filters.maxCapacity ?? ''}
+                    value={filters.maxCapacity ?? ""}
                     onChange={(e) => {
-                      const val = e.target.value ? parseFloat(e.target.value) : null;
+                      const val = e.target.value
+                        ? parseFloat(e.target.value)
+                        : null;
                       onCapacityChange(filters.minCapacity ?? null, val);
                     }}
-                    className="w-full pr-8 bg-white dark:bg-secondary/40 shadow-sm transition-colors"
+                    className="dark:bg-secondary/40 w-full bg-white pr-8 shadow-sm transition-colors"
                   />
-                  <span className="absolute right-3 top-2.5 text-sm text-muted-foreground">{unitLabel}</span>
+                  <span className="text-muted-foreground absolute top-2.5 right-3 text-sm">
+                    {unitLabel}
+                  </span>
                 </div>
               </div>
             </AccordionContent>
@@ -96,19 +123,29 @@ export function FilterPanel({
 
           {/* Technology Filter */}
           <AccordionItem value="technology" className="border-b">
-            <AccordionTrigger className="text-base font-semibold hover:no-underline py-3">
-              {categorySlug === 'power-supplies' ? 'Certification' : 'Technology'}
+            <AccordionTrigger className="py-3 text-base font-semibold hover:no-underline">
+              {categorySlug === "power-supplies"
+                ? "Certification"
+                : "Technology"}
             </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-1.5 pt-1 pb-3">
                 {techOptions.map((tech) => (
-                  <div key={tech} className="flex items-center space-x-3 py-1.5">
+                  <div
+                    key={tech}
+                    className="flex items-center space-x-3 py-1.5"
+                  >
                     <Checkbox
                       id={`tech-${tech}`}
                       checked={filters.technology?.includes(tech) || false}
-                      onCheckedChange={() => onFilterChange('technology', tech)}
+                      onCheckedChange={() => onFilterChange("technology", tech)}
                     />
-                    <Label htmlFor={`tech-${tech}`} className="text-base font-normal leading-none cursor-pointer">{tech}</Label>
+                    <Label
+                      htmlFor={`tech-${tech}`}
+                      className="cursor-pointer text-base leading-none font-normal"
+                    >
+                      {tech}
+                    </Label>
                   </div>
                 ))}
               </div>
@@ -117,7 +154,9 @@ export function FilterPanel({
 
           {/* Form Factor Filter */}
           <AccordionItem value="form-factor" className="border-none">
-            <AccordionTrigger className="text-base font-semibold hover:no-underline py-3">Form Factor</AccordionTrigger>
+            <AccordionTrigger className="py-3 text-base font-semibold hover:no-underline">
+              Form Factor
+            </AccordionTrigger>
             <AccordionContent>
               <div className="space-y-1.5 pt-1 pb-3">
                 {formFactorOptions.map((ff) => (
@@ -125,9 +164,14 @@ export function FilterPanel({
                     <Checkbox
                       id={`ff-${ff}`}
                       checked={filters.formFactor?.includes(ff) || false}
-                      onCheckedChange={() => onFilterChange('formFactor', ff)}
+                      onCheckedChange={() => onFilterChange("formFactor", ff)}
                     />
-                    <Label htmlFor={`ff-${ff}`} className="text-base font-normal leading-none cursor-pointer">{ff}</Label>
+                    <Label
+                      htmlFor={`ff-${ff}`}
+                      className="cursor-pointer text-base leading-none font-normal"
+                    >
+                      {ff}
+                    </Label>
                   </div>
                 ))}
               </div>

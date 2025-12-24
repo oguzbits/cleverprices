@@ -8,7 +8,8 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country } = await params;
-  const countryConfig = getCountryByCode(country) || getCountryByCode(DEFAULT_COUNTRY);
+  const countryConfig =
+    getCountryByCode(country) || getCountryByCode(DEFAULT_COUNTRY);
   const name = countryConfig?.name || "Global";
   const code = (countryConfig?.code || country || "US").toUpperCase();
   const domain = countryConfig?.domain || "amazon.com";
@@ -19,11 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `https://realpricedata.com/${country.toLowerCase()}`,
       languages: {
-        'en-US': 'https://realpricedata.com/us',
-        'de-DE': 'https://realpricedata.com/de',
-        'en-GB': 'https://realpricedata.com/uk',
-      }
-    }
+        "en-US": "https://realpricedata.com/us",
+        "de-DE": "https://realpricedata.com/de",
+        "en-GB": "https://realpricedata.com/uk",
+      },
+    },
   };
 }
 

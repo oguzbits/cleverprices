@@ -45,7 +45,7 @@ export function getActiveFilterCount(filters: Record<string, any>): number {
 export function applyFilters<T extends Record<string, any>>(
   items: T[],
   filters: Record<string, any>,
-  matcher: (item: T, key: string, value: any) => boolean
+  matcher: (item: T, key: string, value: any) => boolean,
 ): T[] {
   return items.filter((item) => {
     return Object.entries(filters).every(([key, value]) => {

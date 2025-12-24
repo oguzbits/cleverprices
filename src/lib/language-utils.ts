@@ -3,9 +3,9 @@
  * Detects user's preferred language from browser settings and manages manual overrides
  */
 
-const STORAGE_KEY = 'preferred-language';
-const SUPPORTED_LANGUAGES = ['de', 'en'] as const;
-type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
+const STORAGE_KEY = "preferred-language";
+const SUPPORTED_LANGUAGES = ["de", "en"] as const;
+type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 /**
  * Detects the user's preferred language based on:
@@ -15,8 +15,8 @@ type SupportedLanguage = typeof SUPPORTED_LANGUAGES[number];
  */
 export function getPreferredLanguage(): SupportedLanguage {
   // Check if running in browser
-  if (typeof window === 'undefined') {
-    return 'en';
+  if (typeof window === "undefined") {
+    return "en";
   }
 
   // First, check if user has manually set a preference
@@ -27,7 +27,7 @@ export function getPreferredLanguage(): SupportedLanguage {
     }
   } catch (error) {
     // localStorage might not be available (privacy mode, etc.)
-    console.warn('Could not access localStorage:', error);
+    console.warn("Could not access localStorage:", error);
   }
 
   // Detect from browser language settings
@@ -40,8 +40,8 @@ export function getPreferredLanguage(): SupportedLanguage {
  * Checks navigator.languages array and navigator.language
  */
 function detectBrowserLanguage(): SupportedLanguage {
-  if (typeof navigator === 'undefined') {
-    return 'en';
+  if (typeof navigator === "undefined") {
+    return "en";
   }
 
   // Get all browser languages in order of preference
@@ -56,7 +56,7 @@ function detectBrowserLanguage(): SupportedLanguage {
   }
 
   // Default to English if no supported language found
-  return 'en';
+  return "en";
 }
 
 /**
@@ -64,11 +64,11 @@ function detectBrowserLanguage(): SupportedLanguage {
  * Examples: 'de-DE' -> 'de', 'en-US' -> 'en', 'de-AT' -> 'de'
  */
 function normalizeLangCode(langCode: string): string {
-  if (!langCode) return 'en';
-  
+  if (!langCode) return "en";
+
   // Extract the primary language code (before the hyphen)
-  const primaryLang = langCode.toLowerCase().split('-')[0];
-  
+  const primaryLang = langCode.toLowerCase().split("-")[0];
+
   return primaryLang;
 }
 
@@ -77,12 +77,12 @@ function normalizeLangCode(langCode: string): string {
  * This overrides automatic detection
  */
 export function setLanguagePreference(language: SupportedLanguage): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   try {
     localStorage.setItem(STORAGE_KEY, language);
   } catch (error) {
-    console.warn('Could not save language preference:', error);
+    console.warn("Could not save language preference:", error);
   }
 }
 
@@ -91,12 +91,12 @@ export function setLanguagePreference(language: SupportedLanguage): void {
  * Returns to automatic browser-based detection
  */
 export function clearLanguagePreference(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (error) {
-    console.warn('Could not clear language preference:', error);
+    console.warn("Could not clear language preference:", error);
   }
 }
 
@@ -104,11 +104,7 @@ export function clearLanguagePreference(): void {
  * Checks if a language preference has been manually set
  */
 export function hasStoredPreference(): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
 
-  try {
-    return localStorage.getItem(STORAGE_KEY) !== null;
-  } catch (error) {
-    return false;
-  }
+  return localStorage.getItem(STORAGE_KEY) !== null;
 }

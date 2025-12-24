@@ -30,7 +30,7 @@ export function ProductSection({
   onCategoryChange,
   children,
   productCardProps,
-  priorityIndices
+  priorityIndices,
 }: ProductSectionProps) {
   const { country } = useCountry();
   const countryConfig = getCountryByCode(country);
@@ -40,20 +40,23 @@ export function ProductSection({
     canScrollRight: false,
   });
 
-  const filteredProducts = !onCategoryChange || !selectedCategory || selectedCategory === "all"
-    ? products
-    : products.filter(p => p.category.toLowerCase() === selectedCategory.toLowerCase());
+  const filteredProducts =
+    !onCategoryChange || !selectedCategory || selectedCategory === "all"
+      ? products
+      : products.filter(
+          (p) => p.category.toLowerCase() === selectedCategory.toLowerCase(),
+        );
 
   const processedProducts = calculateProductBadges(
-    filteredProducts.map(p => ({
+    filteredProducts.map((p) => ({
       ...p,
-      unitValue: parseUnitValue(p.pricePerUnit)
-    }))
+      unitValue: parseUnitValue(p.pricePerUnit),
+    })),
   );
 
   return (
     <section className="mb-16">
-      <SectionHeader 
+      <SectionHeader
         title={title}
         description={description}
         href={`/${country}/categories`}
@@ -68,10 +71,7 @@ export function ProductSection({
 
       {children}
 
-      <Carousel 
-        ref={carouselRef}
-        onScrollStateChange={setScrollState}
-      >
+      <Carousel ref={carouselRef} onScrollStateChange={setScrollState}>
         {processedProducts.map((product, index) => (
           <ProductCard
             key={product.asin}
@@ -91,4 +91,3 @@ export function ProductSection({
     </section>
   );
 }
-

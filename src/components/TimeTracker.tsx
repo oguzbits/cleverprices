@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
-import { trackEngagement } from '@/lib/analytics';
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { trackEngagement } from "@/lib/analytics";
 
 /**
  * TimeTracker Component
- * 
+ *
  * Trackt wie lange Nutzer auf einer Seite bleiben.
  * Wichtig für SEO: Zeigt Engagement und Content-Qualität.
- * 
+ *
  * Usage: Füge <TimeTracker /> in dein Layout ein
  */
 export function TimeTracker() {
@@ -26,7 +26,7 @@ export function TimeTracker() {
       if (hasTrackedRef.current) return;
 
       const timeOnPage = Math.floor((Date.now() - startTimeRef.current) / 1000);
-      
+
       // Nur tracken wenn mindestens 5 Sekunden auf der Seite
       if (timeOnPage >= 5) {
         trackEngagement.timeOnPage(pathname, timeOnPage);
@@ -46,15 +46,15 @@ export function TimeTracker() {
       }
     };
 
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
       // Track auch beim Route-Wechsel (SPA Navigation)
       trackTime();
-      
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [pathname]);
 

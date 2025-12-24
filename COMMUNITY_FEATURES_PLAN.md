@@ -121,7 +121,6 @@ create table public.community_picks (
 ### Must Update Before Launch:
 
 1. **Datenschutzerklärung (Privacy Policy)**
-
    - Add section on user account data collection
    - Mention Supabase as data processor
    - Explain user activity tracking (votes, comments)
@@ -129,7 +128,6 @@ create table public.community_picks (
    - User rights (export data, delete account)
 
 2. **Create Terms of Service** (`/terms`)
-
    - Community guidelines
    - Content moderation policy
    - User-generated content rules

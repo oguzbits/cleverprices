@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { useEffect, useState, useCallback } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState, useCallback } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   getUserCountry,
   saveCountryPreference,
@@ -9,66 +9,72 @@ import {
   DEFAULT_COUNTRY,
   type Country,
   countries,
-} from '@/lib/countries'
-import { trackSEO } from '@/lib/analytics'
+} from "@/lib/countries";
+import { trackSEO } from "@/lib/analytics";
 
 export function useCountry() {
-  const pathname = usePathname()
-  const router = useRouter()
-  const [country, setCountry] = useState<string>(DEFAULT_COUNTRY)
-  const [isLoading, setIsLoading] = useState(true)
+  const pathname = usePathname();
+  const router = useRouter();
+  const [country, setCountry] = useState<string>(DEFAULT_COUNTRY);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Extract country from URL
   const getCountryFromPath = useCallback((): string | null => {
-    const segments = pathname.split('/').filter(Boolean)
+    const segments = pathname.split("/").filter(Boolean);
     if (segments.length > 0 && isValidCountryCode(segments[0])) {
-      return segments[0]
+      return segments[0];
     }
-    return null
-  }, [pathname])
+    return null;
+  }, [pathname]);
 
   // Initialize country on mount
   useEffect(() => {
-    const urlCountry = getCountryFromPath()
-    
+    const urlCountry = getCountryFromPath();
+
     if (urlCountry) {
       // URL has country code - use it and save preference
-      setCountry(urlCountry)
-      saveCountryPreference(urlCountry)
-      setIsLoading(false)
+      setCountry(urlCountry);
+      saveCountryPreference(urlCountry);
+      setIsLoading(false);
     } else {
       // No country in URL - get user's preferred/detected country
-      const userCountry = getUserCountry()
-      setCountry(userCountry)
-      setIsLoading(false)
+      const userCountry = getUserCountry();
+      setCountry(userCountry);
+      setIsLoading(false);
     }
-  }, [getCountryFromPath])
+  }, [getCountryFromPath]);
 
   // Change country and update URL
-  const changeCountry = useCallback((newCountryCode: string) => {
-    if (!isValidCountryCode(newCountryCode)) {
-      console.error(`Invalid country code: ${newCountryCode}`)
-      return
-    }
+  const changeCountry = useCallback(
+    (newCountryCode: string) => {
+      if (!isValidCountryCode(newCountryCode)) {
+        console.error(`Invalid country code: ${newCountryCode}`);
+        return;
+      }
 
-    const urlCountry = getCountryFromPath()
-    const oldCountry = country
-    
-    setCountry(newCountryCode)
-    saveCountryPreference(newCountryCode)
-    
-    // Track country change for SEO analytics
-    trackSEO.countryChanged(oldCountry, newCountryCode)
+      const urlCountry = getCountryFromPath();
+      const oldCountry = country;
 
-    // Update URL if it currently has a country code
-    if (urlCountry) {
-      const newPath = pathname.replace(`/${urlCountry}`, `/${newCountryCode}`)
-      router.push(newPath)
-    }
-  }, [pathname, router, getCountryFromPath, country])
+      setCountry(newCountryCode);
+      saveCountryPreference(newCountryCode);
+
+      // Track country change for SEO analytics
+      trackSEO.countryChanged(oldCountry, newCountryCode);
+
+      // Update URL if it currently has a country code
+      if (urlCountry) {
+        const newPath = pathname.replace(
+          `/${urlCountry}`,
+          `/${newCountryCode}`,
+        );
+        router.push(newPath);
+      }
+    },
+    [pathname, router, getCountryFromPath, country],
+  );
 
   // Get current country object
-  const currentCountry: Country | undefined = countries[country]
+  const currentCountry: Country | undefined = countries[country];
 
   return {
     country,
@@ -76,5 +82,5 @@ export function useCountry() {
     changeCountry,
     isLoading,
     hasCountryInUrl: !!getCountryFromPath(),
-  }
+  };
 }

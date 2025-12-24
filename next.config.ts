@@ -30,14 +30,14 @@ const nextConfig: NextConfig = {
     qualities: [50, 75],
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'm.media-amazon.com',
-        pathname: '/images/**',
+        protocol: "https",
+        hostname: "m.media-amazon.com",
+        pathname: "/images/**",
       },
       {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
       },
     ],
   },

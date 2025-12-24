@@ -1,11 +1,11 @@
 import * as React from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp, ChevronsUpDown, Info } from "lucide-react";
@@ -39,71 +39,103 @@ export function ProductTable({
   onAffiliateClick,
 }: ProductTableProps) {
   const getSortIcon = (key: string) => {
-    const effectiveSortBy = !sortBy ? 'pricePerUnit' : sortBy;
-    if (effectiveSortBy !== key) return <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />;
-    return sortOrder === 'asc'
-      ? <ChevronUp className="ml-1 h-3 w-3" />
-      : <ChevronDown className="ml-1 h-3 w-3" />;
+    const effectiveSortBy = !sortBy ? "pricePerUnit" : sortBy;
+    if (effectiveSortBy !== key)
+      return <ChevronsUpDown className="ml-1 h-3 w-3 opacity-50" />;
+    return sortOrder === "asc" ? (
+      <ChevronUp className="ml-1 h-3 w-3" />
+    ) : (
+      <ChevronDown className="ml-1 h-3 w-3" />
+    );
   };
 
   const handleKeyDown = (e: React.KeyboardEvent, key: string) => {
-    if (e.key === 'Enter' || e.key === ' ') {
+    if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       onSort(key);
     }
   };
 
   return (
-    <div className="rounded-md border bg-card">
+    <div className="bg-card rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead 
-              className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset w-[140px]" 
-              onClick={() => onSort('pricePerUnit')}
-              onKeyDown={(e) => handleKeyDown(e, 'pricePerUnit')}
+            <TableHead
+              className="hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-primary w-[140px] cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset"
+              onClick={() => onSort("pricePerUnit")}
+              onKeyDown={(e) => handleKeyDown(e, "pricePerUnit")}
               tabIndex={0}
-              aria-sort={sortBy === 'pricePerUnit' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+              aria-sort={
+                sortBy === "pricePerUnit"
+                  ? sortOrder === "asc"
+                    ? "ascending"
+                    : "descending"
+                  : "none"
+              }
               role="columnheader"
             >
               <div className="flex items-center gap-1.5">
                 <span>Price/{unitLabel}</span>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground/70 hover:text-foreground transition-colors cursor-help" />
+                    <Info className="text-muted-foreground/70 hover:text-foreground h-3.5 w-3.5 cursor-help transition-colors" />
                   </TooltipTrigger>
-                  <TooltipContent side="top" align="start" className="max-w-[200px]">
-                    This is the calculated price per {unitLabel} of capacity, allowing you to easily compare value across different sizes.
+                  <TooltipContent
+                    side="top"
+                    align="start"
+                    className="max-w-[200px]"
+                  >
+                    This is the calculated price per {unitLabel} of capacity,
+                    allowing you to easily compare value across different sizes.
                   </TooltipContent>
                 </Tooltip>
-                {getSortIcon('pricePerUnit')}
+                {getSortIcon("pricePerUnit")}
               </div>
             </TableHead>
             <TableHead className="min-w-[200px]">Product</TableHead>
-            <TableHead 
-              className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset pr-12" 
-              onClick={() => onSort('price')}
-              onKeyDown={(e) => handleKeyDown(e, 'price')}
+            <TableHead
+              className="hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-primary cursor-pointer pr-12 outline-none focus-visible:ring-2 focus-visible:ring-inset"
+              onClick={() => onSort("price")}
+              onKeyDown={(e) => handleKeyDown(e, "price")}
               tabIndex={0}
-              aria-sort={sortBy === 'price' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+              aria-sort={
+                sortBy === "price"
+                  ? sortOrder === "asc"
+                    ? "ascending"
+                    : "descending"
+                  : "none"
+              }
               role="columnheader"
             >
-              <div className="flex items-center">Price {getSortIcon('price')}</div>
+              <div className="flex items-center">
+                Price {getSortIcon("price")}
+              </div>
             </TableHead>
-            <TableHead 
-              className="cursor-pointer hover:bg-muted/50 focus-visible:bg-muted/50 outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset" 
-              onClick={() => onSort('capacity')}
-              onKeyDown={(e) => handleKeyDown(e, 'capacity')}
+            <TableHead
+              className="hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:ring-primary cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset"
+              onClick={() => onSort("capacity")}
+              onKeyDown={(e) => handleKeyDown(e, "capacity")}
               tabIndex={0}
-              aria-sort={sortBy === 'capacity' ? (sortOrder === 'asc' ? 'ascending' : 'descending') : 'none'}
+              aria-sort={
+                sortBy === "capacity"
+                  ? sortOrder === "asc"
+                    ? "ascending"
+                    : "descending"
+                  : "none"
+              }
               role="columnheader"
             >
-              <div className="flex items-center">Capacity {getSortIcon('capacity')}</div>
+              <div className="flex items-center">
+                Capacity {getSortIcon("capacity")}
+              </div>
             </TableHead>
             <TableHead className="hidden md:table-cell">Warranty</TableHead>
             <TableHead className="hidden sm:table-cell">Form Factor</TableHead>
             <TableHead className="hidden sm:table-cell">
-              {categorySlug === 'power-supplies' ? 'Certification' : 'Technology'}
+              {categorySlug === "power-supplies"
+                ? "Certification"
+                : "Technology"}
             </TableHead>
             <TableHead className="hidden sm:table-cell">Condition</TableHead>
             <TableHead className="text-right">Action</TableHead>
@@ -111,61 +143,67 @@ export function ProductTable({
         </TableHeader>
         <TableBody>
           {products.map((product, index) => (
-            <TableRow key={product.id || product.slug} className="group hover:bg-muted/30 transition-colors">
-              <TableCell className="font-mono font-bold text-foreground">
+            <TableRow
+              key={product.id || product.slug}
+              className="group hover:bg-muted/30 transition-colors"
+            >
+              <TableCell className="text-foreground font-mono font-bold">
                 {formatCurrency(product.pricePerUnit || 0, 3)}
               </TableCell>
               <TableCell>
-                <a 
+                <a
                   href={getAffiliateRedirectPath(product.slug)}
                   onClick={() => onAffiliateClick(product, index)}
-                  target="_blank" 
+                  target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary font-medium hover:underline text-base line-clamp-2 block leading-snug"
+                  className="text-primary line-clamp-2 block text-base leading-snug font-medium hover:underline"
                 >
                   {product.title}
                 </a>
               </TableCell>
-              <TableCell className="font-mono text-muted-foreground whitespace-nowrap pr-12">
+              <TableCell className="text-muted-foreground pr-12 font-mono whitespace-nowrap">
                 {formatCurrency(product.price)}
               </TableCell>
-              <TableCell className="font-mono text-muted-foreground">
+              <TableCell className="text-muted-foreground font-mono">
                 {product.capacity} {product.capacityUnit}
               </TableCell>
 
-              <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+              <TableCell className="text-muted-foreground hidden text-sm md:table-cell">
                 {product.warranty}
               </TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
+              <TableCell className="text-muted-foreground hidden text-sm sm:table-cell">
                 {product.formFactor}
               </TableCell>
-              <TableCell className="hidden sm:table-cell text-muted-foreground text-sm">
-                {categorySlug === 'power-supplies' 
-                  ? (product.certification || product.technology) 
+              <TableCell className="text-muted-foreground hidden text-sm sm:table-cell">
+                {categorySlug === "power-supplies"
+                  ? product.certification || product.technology
                   : product.technology}
               </TableCell>
               <TableCell className="hidden sm:table-cell">
-                <Badge 
+                <Badge
                   variant="outline"
                   className={cn(
-                    "text-xs font-semibold px-2 py-0 border-0 shadow-none",
-                    product.condition === 'New' && "bg-emerald-100/50 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300",
-                    product.condition === 'Renewed' && "bg-blue-100/50 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300",
-                    product.condition === 'Used' && "bg-amber-100/50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300"
+                    "border-0 px-2 py-0 text-xs font-semibold shadow-none",
+                    product.condition === "New" &&
+                      "bg-emerald-100/50 text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-300",
+                    product.condition === "Renewed" &&
+                      "bg-blue-100/50 text-blue-800 dark:bg-blue-500/10 dark:text-blue-300",
+                    product.condition === "Used" &&
+                      "bg-amber-100/50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300",
                   )}
                 >
                   {product.condition}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <a 
+                <a
                   href={getAffiliateRedirectPath(product.slug)}
                   onClick={() => onAffiliateClick(product, index)}
-                  target="_blank" 
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="inline-block"
                 >
-                  <button className="h-9 px-4 bg-[#FFD814] hover:bg-[#F7CA00] text-black font-bold text-sm rounded-xl shadow-sm border border-[#FCD200]/50 transition-all cursor-pointer whitespace-nowrap active:scale-[0.98]">
+                  <button className="h-9 cursor-pointer rounded-xl border border-[#FCD200]/50 bg-[#FFD814] px-4 text-sm font-bold whitespace-nowrap text-black shadow-sm transition-all hover:bg-[#F7CA00] active:scale-[0.98]">
                     View Deal
                   </button>
                 </a>

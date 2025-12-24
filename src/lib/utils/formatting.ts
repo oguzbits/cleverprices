@@ -29,7 +29,7 @@ export function formatCurrency(amount: number, countryCode: string): string {
 export function formatPricePerUnit(
   price: number,
   unit: string,
-  countryCode: string
+  countryCode: string,
 ): string {
   const formattedPrice = formatCurrency(price, countryCode);
   return `${formattedPrice}/${unit}`;
@@ -48,7 +48,7 @@ export function formatCapacity(value: number, unit: string): string {
 export function formatNumber(
   value: number,
   decimals: number = 2,
-  locale: string = "en-US"
+  locale: string = "en-US",
 ): string {
   return new Intl.NumberFormat(locale, {
     minimumFractionDigits: decimals,

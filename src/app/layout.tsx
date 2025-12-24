@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   preload: true,
@@ -19,12 +19,14 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://realpricedata.com'),
+  metadataBase: new URL("https://realpricedata.com"),
   title: {
-    default: "Amazon Germany (DE) Price Per Unit Tracker, Storage Deals & True Value | realpricedata.com",
+    default:
+      "Amazon Germany (DE) Price Per Unit Tracker, Storage Deals & True Value | realpricedata.com",
     template: "%s | realpricedata.com",
   },
-  description: "Amazon Germany (DE) price per unit tracker and value calculator. Compare HDD, SSD, and RAM prices by their true cost (EUR/TB). Find the best storage deals and Amazon.de savings instantly.",
+  description:
+    "Amazon Germany (DE) price per unit tracker and value calculator. Compare HDD, SSD, and RAM prices by their true cost (EUR/TB). Find the best storage deals and Amazon.de savings instantly.",
   keywords: [
     "Amazon price tracker",
     "price per unit",
@@ -37,7 +39,7 @@ export const metadata: Metadata = {
     "storage deals",
     "best prices",
     "Amazon savings",
-    "price drop tracker"
+    "price drop tracker",
   ],
   authors: [{ name: "RealPriceData Team" }],
   creator: "RealPriceData Team",
@@ -66,7 +68,8 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://realpricedata.com",
     title: "realpricedata.com - Amazon Germany (DE) Price Per Unit Tracker",
-    description: "Compare Amazon.de products by their true cost per TB, GB, or unit. Find the best storage deals and hardware savings in Germany instantly.",
+    description:
+      "Compare Amazon.de products by their true cost per TB, GB, or unit. Find the best storage deals and hardware savings in Germany instantly.",
     siteName: "realpricedata.com",
     images: [
       {
@@ -80,7 +83,8 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "realpricedata.com - Amazon Germany (DE) Price Per Unit Tracker",
-    description: "Compare Amazon.de products by their true cost per TB, GB, or unit. Find the best storage deals and hardware savings in Germany instantly.",
+    description:
+      "Compare Amazon.de products by their true cost per TB, GB, or unit. Find the best storage deals and hardware savings in Germany instantly.",
     images: ["/og-image.png"],
     creator: "@realpricedata",
   },
@@ -106,9 +110,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
     },
   },
 };
@@ -138,7 +142,7 @@ export default function RootLayout({
               <main className="flex-1">{children}</main>
               <Footer />
             </div>
-            
+
             {/* Cookieless Analytics - No consent needed! */}
             <ScrollTracker />
             <TimeTracker />

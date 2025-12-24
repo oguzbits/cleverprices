@@ -141,7 +141,7 @@ export const trackSEO = {
   filterApplied: (
     filter: string,
     value: string | string[],
-    category: string
+    category: string,
   ) => {
     track("filter_applied", {
       filter,

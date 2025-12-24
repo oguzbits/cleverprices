@@ -1,25 +1,24 @@
-"use client"
+"use client";
 
-import { TrendingDown, HardDrive, ArrowRight } from "lucide-react"
-import Link from "next/link"
-import { useState } from "react"
-import { getCountryByCode } from "@/lib/countries"
+import { getCountryByCode } from "@/lib/countries";
+import { ArrowRight, HardDrive, TrendingDown } from "lucide-react";
+import Link from "next/link";
 
 interface Deal {
-  id: string
-  name: string
-  category: string
-  categorySlug: string
-  parentSlug: string
-  originalPrice: number
-  bestUnitPrice: number
-  unitLabel: string
-  savings: number
-  icon: React.ComponentType<{ className?: string }>
-  iconColor: string
-  badge?: string
-  priceHistory: number[] // Last 7 data points
-  lastChecked: string
+  id: string;
+  name: string;
+  category: string;
+  categorySlug: string;
+  parentSlug: string;
+  originalPrice: number;
+  bestUnitPrice: number;
+  unitLabel: string;
+  savings: number;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
+  badge?: string;
+  priceHistory: number[]; // Last 7 data points
+  lastChecked: string;
 }
 
 const deals: Deal[] = [
@@ -37,7 +36,7 @@ const deals: Deal[] = [
     iconColor: "from-muted/50 to-muted",
     badge: "Most Viewed",
     priceHistory: [160, 155, 158, 140, 120, 100, 94.99],
-    lastChecked: "2 mins ago"
+    lastChecked: "2 mins ago",
   },
   {
     id: "102",
@@ -53,7 +52,7 @@ const deals: Deal[] = [
     iconColor: "from-muted/50 to-muted",
     badge: "Best Value",
     priceHistory: [280, 275, 260, 255, 240, 250, 249.99], // Price history of the Unit Total, or per Unit? Let's assume Unit Total for graph usually.
-    lastChecked: "Just now"
+    lastChecked: "Just now",
   },
   {
     id: "103",
@@ -61,138 +60,112 @@ const deals: Deal[] = [
     category: "Hard Drives & SSDs",
     categorySlug: "hard-drives",
     parentSlug: "electronics",
-    originalPrice: 176.90,
+    originalPrice: 176.9,
     bestUnitPrice: 88.45,
     unitLabel: "TB",
     savings: 0,
     icon: HardDrive,
     iconColor: "from-muted/50 to-muted",
     priceHistory: [180, 180, 180, 180, 180, 180, 180], // Flat line
-    lastChecked: "1 hour ago"
-  }
-]
-
-// Simple SVG Sparkline Component
-function Sparkline({ data, color = "currentColor", className }: { data: number[], color?: string, className?: string }) {
-  const min = Math.min(...data)
-  const max = Math.max(...data)
-  const range = max - min || 1
-  
-  // Create SVG path
-  const points = data.map((d, i) => {
-    const x = (i / (data.length - 1)) * 100
-    const y = 100 - ((d - min) / range) * 100
-    return `${x},${y}`
-  }).join(" ")
-
-  return (
-    <div className={className}>
-      <svg viewBox="0 0 100 100" className="w-full h-full overflow-visible" preserveAspectRatio="none">
-        <polyline
-          fill="none"
-          stroke={color}
-          strokeWidth="3"
-          points={points}
-          vectorEffect="non-scaling-stroke"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </div>
-  )
-}
+    lastChecked: "1 hour ago",
+  },
+];
 
 export function FeaturedDeals({ country = "us" }: { country?: string }) {
-  const [isHovered, setIsHovered] = useState(false)
-  
   // Get country configuration
-  const countryConfig = getCountryByCode(country)
+  const countryConfig = getCountryByCode(country);
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat(countryConfig?.locale || 'en-US', {
-      style: 'currency',
-      currency: countryConfig?.currency || 'USD',
+    return new Intl.NumberFormat(countryConfig?.locale || "en-US", {
+      style: "currency",
+      currency: countryConfig?.currency || "USD",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value)
-  }
+    }).format(value);
+  };
 
   // Show all 3 deals
   const getVisibleDeals = () => {
-    return deals.slice(0, 3) 
-  }
+    return deals.slice(0, 3);
+  };
 
   return (
-    <section 
+    <section
       id="top-value-opportunities"
-      className="container px-4 mx-auto py-4 sm:py-10 scroll-mt-20 sm:scroll-mt-32"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onFocus={() => setIsHovered(true)}
-      onBlur={() => setIsHovered(false)}
+      className="container mx-auto scroll-mt-20 px-4 py-4 sm:scroll-mt-32 sm:py-10"
     >
-      <div className="flex justify-between items-end mb-4 border-b border-border pb-2">
-         <h2 className="text-lg font-bold tracking-tight flex items-center gap-2">
-            Top Value <span className="text-muted-foreground font-normal text-base hidden xs:inline">/ Low Unit Price</span>
-         </h2>
-         <Link href={`/${country}/categories`} className="font-semibold px-3 py-1.5 rounded-full text-foreground flex items-center gap-1">
+      <div className="border-border mb-4 flex items-end justify-between border-b pb-2">
+        <h2 className="flex items-center gap-2 text-lg font-bold tracking-tight">
+          Top Value{" "}
+          <span className="text-muted-foreground xs:inline hidden text-base font-normal">
+            / Low Unit Price
+          </span>
+        </h2>
+        <Link
+          href={`/${country}/categories`}
+          className="text-foreground flex items-center gap-1 rounded-full px-3 py-1.5 font-semibold"
+        >
           View All
           <ArrowRight className="h-4 w-4" />
-         </Link>
+        </Link>
       </div>
 
-      <div className="w-full text-base overflow-hidden rounded-lg border border-border/50">
+      <div className="border-border/50 w-full overflow-hidden rounded-lg border text-base">
         {/* Table Header */}
-        <div className="grid grid-cols-[1.5rem_1fr_5rem_3.5rem] sm:grid-cols-[3rem_1fr_8rem_6rem_6rem] gap-2 sm:gap-4 px-2 sm:px-3 py-2 text-sm font-medium text-muted-foreground bg-muted/20 border-b border-border/50">
-           <div className="text-center">#</div>
-           <div>Product</div>
-           <div className="hidden sm:block">Category</div>
-           <div className="text-right">Unit Price</div>
-           <div className="text-right">Trend</div>
+        <div className="text-muted-foreground bg-muted/20 border-border/50 grid grid-cols-[1.5rem_1fr_5rem_3.5rem] gap-2 border-b px-2 py-2 text-sm font-medium sm:grid-cols-[3rem_1fr_8rem_6rem_6rem] sm:gap-4 sm:px-3">
+          <div className="text-center">#</div>
+          <div>Product</div>
+          <div className="hidden sm:block">Category</div>
+          <div className="text-right">Unit Price</div>
+          <div className="text-right">Trend</div>
         </div>
 
         {/* Table Body */}
-        <div className="divide-y divide-border/50">
+        <div className="divide-border/50 divide-y">
           {getVisibleDeals().map((deal, idx) => (
-            <Link 
-              key={`${deal.id}-${idx}`} 
-              className="grid grid-cols-[1.5rem_1fr_5rem_3.5rem] sm:grid-cols-[3rem_1fr_8rem_6rem_6rem] gap-2 sm:gap-4 px-2 sm:px-3 py-3 items-center hover:bg-muted/30 transition-colors group no-underline text-foreground"
+            <Link
+              key={`${deal.id}-${idx}`}
+              className="hover:bg-muted/30 group text-foreground grid grid-cols-[1.5rem_1fr_5rem_3.5rem] items-center gap-2 px-2 py-3 no-underline transition-colors sm:grid-cols-[3rem_1fr_8rem_6rem_6rem] sm:gap-4 sm:px-3"
               href={`/${country}/${deal.parentSlug}/${deal.categorySlug}`}
             >
               {/* Rank */}
-              <div className="text-center font-mono font-medium text-muted-foreground group-hover:text-primary text-sm sm:text-base">
+              <div className="text-muted-foreground group-hover:text-primary text-center font-mono text-sm font-medium sm:text-base">
                 {idx + 1}
               </div>
 
               {/* Product */}
-              <div className="flex items-center gap-2 sm:gap-3 min-w-0 overflow-hidden">
-                <div className="shrink-0 w-6 h-6 rounded bg-muted flex items-center justify-center text-muted-foreground hidden xs:flex">
-                   <deal.icon className="h-3.5 w-3.5" />
+              <div className="flex min-w-0 items-center gap-2 overflow-hidden sm:gap-3">
+                <div className="bg-muted text-muted-foreground xs:flex flex hidden h-6 w-6 shrink-0 items-center justify-center rounded">
+                  <deal.icon className="h-3.5 w-3.5" />
                 </div>
-                <div className="truncate font-medium group-hover:text-primary transition-colors text-base">
+                <div className="group-hover:text-primary truncate text-base font-medium transition-colors">
                   {deal.name}
-                  <div className="sm:hidden text-sm text-muted-foreground font-normal truncate">{deal.category}</div>
+                  <div className="text-muted-foreground truncate text-sm font-normal sm:hidden">
+                    {deal.category}
+                  </div>
                 </div>
                 {idx === 0 && (
-                   <span className="shrink-0 h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse hidden sm:block" />
+                  <span className="hidden h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500 sm:block" />
                 )}
               </div>
 
               {/* Category (Desktop) */}
-              <div className="hidden sm:block text-sm text-muted-foreground truncate">
+              <div className="text-muted-foreground hidden truncate text-sm sm:block">
                 {deal.category}
               </div>
 
               {/* Price */}
-              <div className="text-right font-mono font-bold tracking-tight text-foreground text-sm sm:text-base">
+              <div className="text-foreground text-right font-mono text-sm font-bold tracking-tight sm:text-base">
                 {formatCurrency(deal.bestUnitPrice)}
-                <span className="text-sm text-muted-foreground font-sans ml-0.5 text-normal block sm:inline">/{deal.unitLabel}</span>
+                <span className="text-muted-foreground text-normal ml-0.5 block font-sans text-sm sm:inline">
+                  /{deal.unitLabel}
+                </span>
               </div>
 
               {/* Trend */}
               <div className="text-right text-sm">
                 {deal.savings > 0 ? (
-                  <span className="text-emerald-600 font-medium inline-flex items-center justify-end gap-0.5 sm:gap-1">
+                  <span className="inline-flex items-center justify-end gap-0.5 font-medium text-emerald-600 sm:gap-1">
                     <span className="hidden sm:inline">Drop</span>
                     <TrendingDown className="h-3 w-3" />
                   </span>
@@ -205,5 +178,5 @@ export function FeaturedDeals({ country = "us" }: { country?: string }) {
         </div>
       </div>
     </section>
-  )
+  );
 }
