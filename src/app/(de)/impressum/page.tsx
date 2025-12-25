@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     languages: {
       de: "https://realpricedata.com/impressum",
       en: "https://realpricedata.com/en/legal-notice",
+      "x-default": "https://realpricedata.com/en/legal-notice",
     },
   },
 };

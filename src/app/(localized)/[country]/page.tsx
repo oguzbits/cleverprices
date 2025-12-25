@@ -1,5 +1,6 @@
 import HomeContent from "@/components/HomeContent";
 import { getCountryByCode, DEFAULT_COUNTRY } from "@/lib/countries";
+import { getAlternateLanguages } from "@/lib/metadata";
 import { Metadata } from "next";
 
 type Props = {
@@ -19,9 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `Compare Amazon ${name} (${domain}) products by their true cost per TB, GB, or unit. Find the best storage deals and hardware savings in ${name} instantly.`,
     alternates: {
       canonical: `https://realpricedata.com/${country.toLowerCase()}`,
-      languages: {
-        "en-DE": "https://realpricedata.com/de",
-      },
+      languages: getAlternateLanguages(),
     },
   };
 }

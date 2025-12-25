@@ -97,3 +97,16 @@ export const siteMetadata: Metadata = {
     },
   },
 };
+
+export function getAlternateLanguages(path: string = "") {
+  const baseUrl = "https://realpricedata.com";
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const cleanPath = normalizedPath === "/" ? "" : normalizedPath;
+
+  // We are currently using /de as our primary localized version for Amazon.de unit prices
+  // x-default should point to our primary version for global users
+  return {
+    "en-DE": `${baseUrl}/de${cleanPath}`,
+    "x-default": `${baseUrl}/de${cleanPath}`,
+  };
+}

@@ -2,6 +2,7 @@ import { ParentCategoryView } from "@/components/category/ParentCategoryView";
 import { Button } from "@/components/ui/button";
 import { getCategoryBySlug, getChildCategories } from "@/lib/categories";
 import { DEFAULT_COUNTRY, isValidCountryCode } from "@/lib/countries";
+import { getAlternateLanguages } from "@/lib/metadata";
 import { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -31,6 +32,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `Explore ${parentCategory.name} categories on Amazon ${validCountry.toUpperCase()}. Find the best value on hardware with our price per unit comparison.`,
     alternates: {
       canonical: canonicalUrl,
+      languages: getAlternateLanguages(`/${parentSlug.toLowerCase()}`),
     },
   };
 }

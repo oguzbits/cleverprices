@@ -1,6 +1,7 @@
 import { AllCategoriesView } from "@/components/category/AllCategoriesView";
 import { getCategoryHierarchy } from "@/lib/categories";
 import { DEFAULT_COUNTRY, isValidCountryCode } from "@/lib/countries";
+import { getAlternateLanguages } from "@/lib/metadata";
 import { Metadata } from "next";
 
 interface Props {
@@ -20,6 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description: `Browse all tracked product categories on Amazon ${validCountry.toUpperCase()}. Compare HDD, SSD, RAM and more by price per unit.`,
     alternates: {
       canonical: canonicalUrl,
+      languages: getAlternateLanguages("/categories"),
     },
   };
 }
