@@ -20,9 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     alternates: {
       canonical: `https://realpricedata.com/${country.toLowerCase()}`,
       languages: {
-        "en-US": "https://realpricedata.com/us",
-        "de-DE": "https://realpricedata.com/de",
-        "en-GB": "https://realpricedata.com/uk",
+        "en-DE": "https://realpricedata.com/de",
       },
     },
   };

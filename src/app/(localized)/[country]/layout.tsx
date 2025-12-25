@@ -11,7 +11,7 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country } = await params;
   const countryConfig = getCountryByCode(country);
-  const locale = countryConfig?.locale.replace("-", "_") || "en_US";
+  const locale = `en_${countryConfig?.code.toUpperCase() || "US"}`;
 
   return {
     ...siteMetadata,
@@ -22,13 +22,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function LocalizedLayout({ children, params }: Props) {
-  const { country } = await params;
-  const countryConfig = getCountryByCode(country);
-  const lang = countryConfig?.locale.split("-")[0] || "en";
-
+export default async function LocalizedLayout({ children }: Props) {
   return (
-    <html lang={lang} suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://m.media-amazon.com" />
         <link rel="dns-prefetch" href="https://m.media-amazon.com" />

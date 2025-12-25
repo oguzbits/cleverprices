@@ -5,6 +5,9 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   alternates: {
     canonical: "https://realpricedata.com",
+    languages: {
+      "en-DE": "https://realpricedata.com/de",
+    },
   },
 };
 
