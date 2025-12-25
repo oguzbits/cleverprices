@@ -8,7 +8,7 @@ export const siteMetadata: Metadata = {
     template: "%s | realpricedata.com",
   },
   description:
-    "Amazon Germany (DE) price per unit tracker and value calculator. Compare HDD, SSD, and RAM prices by their true cost (EUR/TB). Find the best storage deals and Amazon.de savings instantly.",
+    "Amazon Germany (DE) unit price tracker. Compare HDD, SSD, and RAM by true cost per unit (EUR/TB & GB). Find the best storage deals and hardware savings instantly.",
   keywords: [
     "Amazon price tracker",
     "price per unit",

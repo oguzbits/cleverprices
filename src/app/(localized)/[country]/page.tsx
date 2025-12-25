@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `Amazon ${code} Unit Price Tracker & Deals | realpricedata.com`,
-    description: `Compare Amazon ${name} (${domain}) products by their true cost per TB, GB, or unit. Find the best storage deals and hardware savings in ${name} instantly.`,
+    description: `Compare Amazon ${name} products by true cost per unit. Find the best storage deals and hardware savings in ${name} with our real price tracker.`,
     alternates: {
       canonical: `https://realpricedata.com/${country.toLowerCase()}`,
       languages: getAlternateLanguages(),

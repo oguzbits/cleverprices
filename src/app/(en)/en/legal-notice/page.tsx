@@ -4,7 +4,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 export const metadata: Metadata = {
   title: "Legal Notice | realpricedata.com",
   description:
-    "Legal notice and imprint for realpricedata.com - Information according to § 5 DDG",
+    "Legal notice and imprint for realpricedata.com. Information according to § 5 DDG, contact details, and legal disclaimer.",
   alternates: {
     canonical: "https://realpricedata.com/en/legal-notice",
     languages: {

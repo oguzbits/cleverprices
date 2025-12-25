@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   return {
     title: `${parentCategory.name} Unit Price Tracker (${validCountry.toUpperCase()}) | realpricedata.com`,
-    description: `Explore ${parentCategory.name} categories on Amazon ${validCountry.toUpperCase()}. Find the best value on hardware with our price per unit comparison.`,
+    description: `Explore ${parentCategory.name} categories on Amazon ${validCountry.toUpperCase()}. Compare products by their true cost per unit and find the best hardware deals instantly.`,
     alternates: {
       canonical: canonicalUrl,
       languages: getAlternateLanguages(`/${parentSlug.toLowerCase()}`),

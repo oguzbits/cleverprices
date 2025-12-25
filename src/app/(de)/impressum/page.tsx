@@ -4,7 +4,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 export const metadata: Metadata = {
   title: "Impressum | realpricedata.com",
   description:
-    "Impressum und rechtliche Angaben für realpricedata.com - Angaben gemäß § 5 DDG",
+    "Impressum und rechtliche Angaben für realpricedata.com. Informationen gemäß § 5 DDG, Kontakt details und Haftungsausschluss.",
   alternates: {
     canonical: "https://realpricedata.com/impressum",
     languages: {

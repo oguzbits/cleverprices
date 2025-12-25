@@ -5,7 +5,7 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "Blog | Hardware Pricing & Market Trends",
   description:
-    "In-depth analysis of RAM, SSD, and HDD pricing trends. Learn how to save money on your next hardware purchase.",
+    "In-depth analysis of RAM, SSD, and HDD pricing trends. Learn how to save money and find the best value on your next hardware purchase.",
   alternates: {
     canonical: "https://realpricedata.com/blog",
   },

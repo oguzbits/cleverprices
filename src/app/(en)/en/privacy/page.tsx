@@ -4,7 +4,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 export const metadata: Metadata = {
   title: "Privacy Policy | realpricedata.com",
   description:
-    "Privacy policy for realpricedata.com - Information about data protection and privacy",
+    "Privacy policy for realpricedata.com. Learn about how we handle data protection, privacy rights, and our cookieless analytics approach.",
   alternates: {
     canonical: "https://realpricedata.com/en/privacy",
     languages: {
