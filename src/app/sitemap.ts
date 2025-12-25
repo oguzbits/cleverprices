@@ -5,22 +5,39 @@ import {
   allCategories,
 } from "@/lib/categories";
 import { getAllCountries } from "@/lib/countries";
+import { getAllBlogPosts } from "@/lib/blog";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://realpricedata.com";
 
   // Static routes
-  const routes = ["", "/impressum", "/datenschutz", "/faq"].map((route) => ({
+  const staticRoutes = [
+    "",
+    "/impressum",
+    "/datenschutz",
+    "/faq",
+    "/blog",
+    "/en/impressum",
+    "/en/datenschutz",
+  ].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: "daily" as const,
-    priority: route === "" ? 1 : 0.8,
+    priority: route === "" ? 1.0 : 0.8,
+  }));
+
+  // Blog posts
+  const blogPosts = await getAllBlogPosts();
+  const blogRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: new Date(post.lastUpdated || post.publishDate),
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
   }));
 
   // Get category hierarchy
   const categoryHierarchy = getCategoryHierarchy();
 
-  // Generate URLs for all supported countries
   // Generate URLs for all live countries
   const countries = getAllCountries()
     .filter((c) => c.isLive)
@@ -42,7 +59,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/${country}/categories`,
       lastModified: new Date(),
       changeFrequency: "daily" as const,
-      priority: 0.9,
+      priority: 0.8,
     });
 
     // Parent category pages
@@ -68,5 +85,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       });
   });
 
-  return [...routes, ...countryRoutes];
+  return [...staticRoutes, ...blogRoutes, ...countryRoutes];
 }
