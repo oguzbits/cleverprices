@@ -1,24 +1,6 @@
-import { Footer } from "@/components/layout/Footer";
-import { Navbar } from "@/components/layout/Navbar";
-import { PromoBanner } from "@/components/layout/PromoBanner";
-import { ScrollTracker } from "@/components/ScrollTracker";
-import { ThemeProvider } from "@/components/theme-provider";
-import { TimeTracker } from "@/components/TimeTracker";
-import { NuqsProvider } from "@/providers/nuqs-provider";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  preload: true,
-  variable: "--font-inter",
-});
-
-export const metadata: Metadata = {
+export const siteMetadata: Metadata = {
   metadataBase: new URL("https://realpricedata.com"),
   title: {
     default:
@@ -103,7 +85,6 @@ export const metadata: Metadata = {
     "mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "black-translucent",
   },
-
   robots: {
     index: true,
     follow: true,
@@ -116,41 +97,3 @@ export const metadata: Metadata = {
     },
   },
 };
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://m.media-amazon.com" />
-        <link rel="dns-prefetch" href="https://m.media-amazon.com" />
-      </head>
-      <body className={`${inter.variable} ${inter.className}`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <NuqsProvider>
-            <div className="flex min-h-screen flex-col">
-              <PromoBanner />
-              <Navbar />
-              <main className="flex-1">{children}</main>
-              <Footer />
-            </div>
-
-            {/* Cookieless Analytics - No consent needed! */}
-            <ScrollTracker />
-            <TimeTracker />
-            <SpeedInsights />
-            <Analytics />
-          </NuqsProvider>
-        </ThemeProvider>
-      </body>
-    </html>
-  );
-}

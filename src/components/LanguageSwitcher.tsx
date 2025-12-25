@@ -3,14 +3,14 @@ import { cn } from "@/lib/utils";
 
 interface LanguageSwitcherProps {
   currentLang: "de" | "en";
-  currentPath: "impressum" | "datenschutz";
+  currentPath: "legal-notice" | "privacy";
 }
 
 export function LanguageSwitcher({
   currentLang,
   currentPath,
 }: LanguageSwitcherProps) {
-  const dePath = `/${currentPath}`;
+  const dePath = currentPath === "privacy" ? "/datenschutz" : "/impressum";
   const enPath = `/en/${currentPath}`;
 
   return (

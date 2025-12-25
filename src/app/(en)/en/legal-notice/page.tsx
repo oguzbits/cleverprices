@@ -6,20 +6,20 @@ export const metadata: Metadata = {
   description:
     "Legal notice and imprint for realpricedata.com - Information according to § 5 DDG",
   alternates: {
-    canonical: "https://realpricedata.com/en/impressum",
+    canonical: "https://realpricedata.com/en/legal-notice",
     languages: {
       de: "https://realpricedata.com/impressum",
-      en: "https://realpricedata.com/en/impressum",
+      en: "https://realpricedata.com/en/legal-notice",
     },
   },
 };
 
-export default function ImpressumEnPage() {
+export default function LegalNoticePage() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
       <h1 className="mb-8 text-4xl font-bold">Legal Notice</h1>
 
-      <LanguageSwitcher currentLang="en" currentPath="impressum" />
+      <LanguageSwitcher currentLang="en" currentPath="legal-notice" />
 
       <div className="prose dark:prose-invert max-w-none space-y-8">
         <section>

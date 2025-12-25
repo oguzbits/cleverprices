@@ -9,7 +9,7 @@ export const metadata: Metadata = {
     canonical: "https://realpricedata.com/impressum",
     languages: {
       de: "https://realpricedata.com/impressum",
-      en: "https://realpricedata.com/en/impressum",
+      en: "https://realpricedata.com/en/legal-notice",
     },
   },
 };
@@ -19,7 +19,7 @@ export default function ImpressumPage() {
     <div className="container mx-auto max-w-4xl px-4 py-12">
       <h1 className="mb-8 text-4xl font-bold">Impressum</h1>
 
-      <LanguageSwitcher currentLang="de" currentPath="impressum" />
+      <LanguageSwitcher currentLang="de" currentPath="legal-notice" />
 
       <div className="prose dark:prose-invert max-w-none space-y-8">
         <section>

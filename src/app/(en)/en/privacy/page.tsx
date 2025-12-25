@@ -6,20 +6,20 @@ export const metadata: Metadata = {
   description:
     "Privacy policy for realpricedata.com - Information about data protection and privacy",
   alternates: {
-    canonical: "https://realpricedata.com/en/datenschutz",
+    canonical: "https://realpricedata.com/en/privacy",
     languages: {
       de: "https://realpricedata.com/datenschutz",
-      en: "https://realpricedata.com/en/datenschutz",
+      en: "https://realpricedata.com/en/privacy",
     },
   },
 };
 
-export default function DatenschutzEnPage() {
+export default function PrivacyPage() {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
       <h1 className="mb-8 text-4xl font-bold">Privacy Policy</h1>
 
-      <LanguageSwitcher currentLang="en" currentPath="datenschutz" />
+      <LanguageSwitcher currentLang="en" currentPath="privacy" />
 
       <div className="prose dark:prose-invert max-w-none space-y-8">
         <section>
