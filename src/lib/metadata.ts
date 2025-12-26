@@ -1,28 +1,25 @@
 import type { Metadata } from "next";
+import { Category } from "./categories";
+
+export const coreKeywords = [
+  "Amazon price tracker",
+  "price per unit",
+  "unit price comparison",
+  "true value finder",
+  "best value hardware",
+  "Amazon hardware deals",
+  "realpricedata",
+];
 
 export const siteMetadata: Metadata = {
   metadataBase: new URL("https://realpricedata.com"),
   title: {
-    default:
-      "Amazon DE Unit Price Tracker & Deals | realpricedata.com",
+    default: "Amazon DE Unit Price Tracker & Deals | realpricedata.com",
     template: "%s | realpricedata.com",
   },
   description:
     "Amazon DE price tracker for hardware & storage. Compare HDD, SSD, RAM and more by true cost per TB/GB. Find the best value hardware deals instantly.",
-  keywords: [
-    "Amazon price tracker",
-    "price per unit",
-    "cost per TB",
-    "HDD deals",
-    "SSD prices",
-    "RAM price tracker",
-    "price comparison",
-    "true value finder",
-    "storage deals",
-    "best prices",
-    "Amazon savings",
-    "price drop tracker",
-  ],
+  keywords: coreKeywords,
   authors: [{ name: "RealPriceData Team" }],
   creator: "RealPriceData Team",
   applicationName: "realpricedata.com",
@@ -117,4 +114,37 @@ export function getAlternateLanguages(path: string = "") {
   }
 
   return alternates;
+}
+
+/**
+ * Generates SEO keywords dynamically based on category and units.
+ */
+export function generateKeywords(category?: Category, extraKeywords: string[] = []): string[] {
+  const baseKeywords = [
+    ...coreKeywords,
+    ...extraKeywords,
+  ];
+
+  if (!category) return baseKeywords;
+
+  const unit = category.unitType;
+  const unitKeywords = unit ? [
+    `price per ${unit}`,
+    `cost per ${unit}`,
+    `cheapest ${category.name} per ${unit}`,
+    `best ${unit} value`,
+  ] : [];
+
+  // Add specific aliases for common units
+  if (unit === "W") {
+    unitKeywords.push("price per watt", "cost per watt", "price per kW");
+  } else if (unit === "TB") {
+    unitKeywords.push("price per terabyte", "cost per gigabyte", "price per GB");
+  }
+
+  return [...new Set([
+    category.name,
+    ...unitKeywords,
+    ...baseKeywords,
+  ])];
 }

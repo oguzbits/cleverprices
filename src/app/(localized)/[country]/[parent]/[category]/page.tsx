@@ -2,7 +2,7 @@ import { CategoryProductsView } from "@/components/category/CategoryProductsView
 import { Button } from "@/components/ui/button";
 import { getCategoryBySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, isValidCountryCode } from "@/lib/countries";
-import { getAlternateLanguages } from "@/lib/metadata";
+import { getAlternateLanguages, generateKeywords } from "@/lib/metadata";
 import { Metadata } from "next";
 import Link from "next/link";
 
@@ -36,6 +36,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         `/${parent.toLowerCase()}/${categorySlug.toLowerCase()}`
       ),
     },
+    keywords: generateKeywords(category),
   };
 }
 
