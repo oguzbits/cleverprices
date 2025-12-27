@@ -10,8 +10,8 @@ import productsData from "@/data/products.json";
 export interface Product {
   id?: number;
   slug: string;
-  asin: string | Record<string, string>;
-  title: string | Record<string, string>;
+  asin: string;
+  title: string;
   category: string;
   image?: string;
   affiliateUrl: string;

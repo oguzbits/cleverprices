@@ -2,14 +2,8 @@
   {
     "id": 101,
     "slug": "samsung-990-pro-2tb",
-    "asin": {
-      "de": "B0B9C4DKKG",
-      "us": "B0B9C4DKKG"
-    },
-    "title": {
-      "de": "SAMSUNG 990 PRO SSD 2TB NVMe M.2 PCIe Gen4",
-      "us": "SAMSUNG 990 PRO SSD 2TB NVMe M.2 PCIe Gen4"
-    },
+    "asin": "B0B9C4DKKG",
+    "title": "SAMSUNG 990 PRO SSD 2TB NVMe M.2 PCIe Gen4",
     "category": "hard-drives",
     "affiliateUrl": "https://amzn.to/44KJR90",
     "image": "https://m.media-amazon.com/images/I/71ByVZ1x2vL._AC_SX522_.jpg",
@@ -21,21 +15,20 @@
     "condition": "New",
     "brand": "Samsung",
     "prices": {
-      "de": 229.99,
-      "us": 229.99
+      "us": 249.00,
+      "ca": null,
+      "it": 203.99,
+      "fr": 209.99,
+      "uk": 188.08,
+      "de": 229.95,
+      "es": 246.12
     }
   },
   {
     "id": 102,
     "slug": "seagate-exos-x18-18tb",
-    "asin": {
-      "de": "B08JV6PP9B",
-      "us": "B08JV6PP9B"
-    },
-    "title": {
-      "de": "Seagate Exos X18 18TB Enterprise HDD",
-      "us": "Seagate Exos X18 18TB Enterprise HDD"
-    },
+    "asin": "B08JV6PP9B",
+    "title": "Seagate Exos X18 18TB Enterprise HDD",
     "category": "hard-drives",
     "affiliateUrl": "https://amzn.to/3MMe2GJ",
     "image": "https://m.media-amazon.com/images/I/71JVv-0JWiL._AC_SX522_.jpg",
@@ -44,24 +37,23 @@
     "warranty": "5 years",
     "formFactor": "Internal 3.5\"",
     "technology": "HDD",
-    "condition": "Used",
+    "condition": "New",
     "brand": "Seagate",
     "prices": {
-      "de": 308.37,
-      "us": 308.37
+      "us": 449.99,
+      "ca": 710.30,
+      "uk": null,
+      "it": 440.00,
+      "fr": 452.00,
+      "de": 487.91,
+      "es": 489.99
     }
   },
   {
     "id": 103,
     "slug": "wd-black-sn850x-2tb",
-    "asin": {
-      "de": "B0B7CMZ3QH",
-      "us": "B0B7CMZ3QH"
-    },
-    "title": {
-      "de": "WD_BLACK 2TB SN850X NVMe Internal Gaming SSD",
-      "us": "WD_BLACK 2TB SN850X NVMe Internal Gaming SSD"
-    },
+    "asin": "B0B7CMZ3QH",
+    "title": "WD_BLACK 2TB SN850X NVMe Internal Gaming SSD",
     "category": "hard-drives",
     "affiliateUrl": "https://amzn.to/4av5sG8",
     "image": "https://m.media-amazon.com/images/I/61TDOUVWvTL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -73,21 +65,20 @@
     "condition": "New",
     "brand": "Western Digital",
     "prices": {
-      "de": 210.44,
-      "us": 210.44
+      "us": 243.68,
+      "ca": 338.14,
+      "uk": 201.99,
+      "it": 222.26,
+      "fr": 201.51,
+      "de": 210.43,
+      "es": 172.02
     }
   },
   {
     "id": 104,
     "slug": "crucial-mx500-2tb",
-    "asin": {
-      "de": "B0CCN9QWKT",
-      "us": "B0CCN9QWKT"
-    },
-    "title": {
-      "de": "Crucial MX500 2TB 3D NAND SATA 2.5 Inch Internal SSD",
-      "us": "Crucial MX500 2TB 3D NAND SATA 2.5 Inch Internal SSD"
-    },
+    "asin": "B0CCN9QWKT",
+    "title": "Crucial MX500 2TB 3D NAND SATA 2.5 Inch Internal SSD",
     "category": "hard-drives",
     "affiliateUrl": "https://amzn.to/4ped2Zt",
     "image": "https://m.media-amazon.com/images/I/51zhuXxYuRL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -99,21 +90,20 @@
     "condition": "New",
     "brand": "Crucial",
     "prices": {
+      "us": 222.00,
+      "ca": null,
+      "uk": 159.99,
+      "it": 199.99,
+      "fr": 179.99,
       "de": 179.99,
-      "us": 179.99
+      "es": 186.99
     }
   },
   {
     "id": 105,
     "slug": "sandisk-extreme-portable-1tb",
-    "asin": {
-      "de": "B08GTYFC37",
-      "us": "B08GTYFC37"
-    },
-    "title": {
-      "de": "SanDisk 1TB Extreme Portable SSD",
-      "us": "SanDisk 1TB Extreme Portable SSD"
-    },
+    "asin": "B08GTYFC37",
+    "title": "SanDisk 1TB Extreme Portable SSD",
     "category": "hard-drives",
     "affiliateUrl": "https://amzn.to/4p2tkUZ",
     "image": "https://m.media-amazon.com/images/I/61zuR3UMnWL._AC_SY879_.jpg",
@@ -125,21 +115,20 @@
     "condition": "New",
     "brand": "SanDisk",
     "prices": {
-      "de": 115.81,
-      "us": 115.81
+      "us": 119.99,
+      "ca": 179.10,
+      "uk": 111.97,
+      "it": 120.00,
+      "fr": 127.85,
+      "de": 119.00,
+      "es": 119.00
     }
   },
   {
     "id": 106,
     "slug": "sandisk-ultra-3d-ssd-500gb",
-    "asin": {
-      "de": "B0B7VWFN4B",
-      "us": "B0B7VWFN4B"
-    },
-    "title": {
-      "de": "SanDisk Ultra 3D SSD 500 GB 2.5 Inch Internal",
-      "us": "SanDisk Ultra 3D SSD 500 GB 2.5 Inch Internal"
-    },
+    "asin": "B0B7VWFN4B",
+    "title": "SanDisk Ultra 3D SSD 500 GB 2.5 Inch Internal",
     "category": "hard-drives",
     "affiliateUrl": "https://amzn.to/4s9lYSj",
     "image": "https://m.media-amazon.com/images/I/61i26O8nWPL._AC_SX522_.jpg",
@@ -151,47 +140,45 @@
     "condition": "New",
     "brand": "SanDisk",
     "prices": {
-      "de": 54.29,
-      "us": 54.29
+      "us": 84.99,
+      "ca": 91.99,
+      "uk": 63.99,
+      "it": 96.49,
+      "fr": 93.18,
+      "de": 56.99,
+      "es": 69.49
     }
   },
   {
     "id": 107,
-    "slug": "netac-nv150hk-4tb",
-    "asin": {
-      "de": "B0FYDFWZ2H",
-      "us": "B0FYDFWZ2H"
-    },
-    "title": {
-      "de": "Netac NV150HK 4TB Internal SSD PCIe Gen5×4 NVMe M.2",
-      "us": "Netac NV150HK 4TB Internal SSD PCIe Gen5×4 NVMe M.2"
-    },
+    "slug": "seagate-ironwolf-pro-16tb",
+    "asin": "B0B94NFYWX",
+    "title": "Seagate IronWolf Pro 16TB, NAS Internal HDD, 3.5 Inch",
     "category": "hard-drives",
-    "affiliateUrl": "https://amzn.to/3MNYYbz",
-    "image": "https://m.media-amazon.com/images/I/51BRnFV4dtL._AC_SX522_.jpg",
-    "capacity": 4,
+    "affiliateUrl": "https://amzn.to/3LmbAWV",
+    "image": "https://m.media-amazon.com/images/I/71TZ2FTKZEL._AC_SX679_.jpg",
+    "capacity": 16,
     "capacityUnit": "TB",
-    "warranty": "5 years",
-    "formFactor": "M.2 NVMe",
-    "technology": "SSD",
+    "warranty": "3 years",
+    "formFactor": "Internal 3.5\"",
+    "technology": "HDD",
     "condition": "New",
-    "brand": "Netac",
+    "brand": "Seagate",
     "prices": {
-      "de": 395.99,
-      "us": 395.99
+      "us": 479.99,
+      "ca": null,
+      "uk": 338.99,
+      "it": 435.00,
+      "fr": 384.00,
+      "de": 384.99,
+      "es": 399.99
     }
   },
   {
     "id": 108,
     "slug": "crucial-p310-ssd-1tb",
-    "asin": {
-      "de": "B0DC8VPSHV",
-      "us": "B0DC8VPSHV"
-    },
-    "title": {
-      "de": "Crucial P310 SSD 1TB M.2 2280 PCIe Gen4 NVMe",
-      "us": "Crucial P310 SSD 1TB M.2 2280 PCIe Gen4 NVMe"
-    },
+    "asin": "B0DC8VPSHV",
+    "title": "Crucial P310 SSD 1TB M.2 2280 PCIe Gen4 NVMe",
     "category": "hard-drives",
     "affiliateUrl": "https://amzn.to/4j8fMpG",
     "image": "https://m.media-amazon.com/images/I/51NpTSkw68L._AC_SX522_.jpg",
@@ -203,21 +190,20 @@
     "condition": "New",
     "brand": "Crucial",
     "prices": {
+      "us": 147.00,
+      "ca": 165.00,
+      "uk": 87.98,
+      "it": 123.99,
+      "fr": 109.99,
       "de": 109.99,
-      "us": 109.99
+      "es": 114.99
     }
   },
   {
     "id": 109,
     "slug": "sandisk-extreme-m2-nvme-ssd-2tb",
-    "asin": {
-      "de": "B0CN1NFYZ6",
-      "us": "B0CN1NFYZ6"
-    },
-    "title": {
-      "de": "SanDisk Extreme M.2 NVMe SSD 2 TB",
-      "us": "SanDisk Extreme M.2 NVMe SSD 2 TB"
-    },
+    "asin": "B0CN1NFYZ6",
+    "title": "SanDisk Extreme M.2 NVMe SSD 2 TB",
     "category": "hard-drives",
     "affiliateUrl": "https://amzn.to/3YDVPxA",
     "image": "https://m.media-amazon.com/images/I/51k1Y-liFbL._AC_SX522_.jpg",
@@ -229,47 +215,45 @@
     "condition": "New",
     "brand": "SanDisk",
     "prices": {
-      "de": 143.99,
-      "us": 143.99
+      "us": 249.49,
+      "ca": 408.99,
+      "uk": 126.98,
+      "it": 208.99,
+      "fr": 153.99,
+      "de": 152.99,
+      "es": 200.43
     }
   },
   {
     "id": 110,
-    "slug": "msi-spatium-m461-pcie-4.0-nvme-m2-2tb",
-    "asin": {
-      "de": "B0BTPH7YZM",
-      "us": "B0BTPH7YZM"
-    },
-    "title": {
-      "de": "MSI SPATIUM M461 PCIe 4.0 NVMe M.2 2TB",
-      "us": "MSI SPATIUM M461 PCIe 4.0 NVMe M.2 2TB"
-    },
+    "slug": "crucial-t705-ssd-2tb",
+    "asin": "B0CTRVZKG7",
+    "title": "Crucial T705 PCIe Gen5 NVMe 2TB SSD",
     "category": "hard-drives",
-    "affiliateUrl": "https://amzn.to/3L8NUVP",
-    "image": "https://m.media-amazon.com/images/I/71H07m+44GL._AC_SX522_.jpg",
+    "affiliateUrl": "https://amzn.to/4jox0iU",
+    "image": "https://m.media-amazon.com/images/I/51yIMd4Q2GL._AC_SX522_.jpg",
     "capacity": 2,
     "capacityUnit": "TB",
     "warranty": "5 years",
     "formFactor": "M.2 NVMe",
     "technology": "SSD",
     "condition": "New",
-    "brand": "MSI",
+    "brand": "Crucial",
     "prices": {
-      "de": 145.95,
-      "us": 145.95
+      "us": 239.99,
+      "ca": 395.00,
+      "uk": 201.99,
+      "it": 257.99,
+      "fr": 231.99,
+      "de": 229.99,
+      "es": 237.99
     }
   },
   {
     "id": 111,
     "slug": "crucial-pro-ddr5-ram-32gb-kit-2x16gb-6000mhz-cl36",
-    "asin": {
-      "de": "B0CTHXMYL8",
-      "us": "B0CTHXMYL8"
-    },
-    "title": {
-      "de": "Crucial Pro DDR5 RAM 32GB Kit (2x16GB) 6000MHz CL36",
-      "us": "Crucial Pro DDR5 RAM 32GB Kit (2x16GB) 6000MHz CL36"
-    },
+    "asin": "B0CTHXMYL8",
+    "title": "Crucial Pro DDR5 RAM 32GB Kit (2x16GB) 6000MHz CL36",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/4pR3ch4",
     "image": "https://m.media-amazon.com/images/I/51EJt5geVEL._AC_SX522_.jpg",
@@ -281,21 +265,15 @@
     "condition": "New",
     "brand": "Crucial",
     "prices": {
-      "de": 349.99,
-      "us": 349.99
+      "de": 444.99,
+      "us": 427
     }
   },
   {
     "id": 112,
     "slug": "lexar-udimm-ddr4-ram-8gb",
-    "asin": {
-      "de": "B0C7Z4C6YJ",
-      "us": "B0C7Z4C6YJ"
-    },
-    "title": {
-      "de": "Lexar UDIMM DDR4 RAM 8GB",
-      "us": "Lexar UDIMM DDR4 RAM 8GB"
-    },
+    "asin": "B0C7Z4C6YJ",
+    "title": "Lexar UDIMM DDR4 RAM 8GB",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/4qIdsZl",
     "image": "https://m.media-amazon.com/images/I/61n-gmo9AuL._AC_SX522_.jpg",
@@ -314,14 +292,8 @@
   {
     "id": 113,
     "slug": "crucial-ddr5-ram-8gb-4800mhz",
-    "asin": {
-      "de": "B09HWFZZM4",
-      "us": "B09HWFZZM4"
-    },
-    "title": {
-      "de": "Crucial DDR5 RAM 8GB 4800MHz",
-      "us": "Crucial DDR5 RAM 8GB 4800MHz"
-    },
+    "asin": "B09HWFZZM4",
+    "title": "Crucial DDR5 RAM 8GB 4800MHz",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/4p4TN4l",
     "image": "https://m.media-amazon.com/images/I/71rIspMTJwL._AC_SX522_.jpg",
@@ -340,14 +312,8 @@
   {
     "id": 114,
     "slug": "lexar-ares-rgb-ddr4-ram-16gb-kit-8gb-x-2-4000-mhz",
-    "asin": {
-      "de": "B09TD7RBZH",
-      "us": "B09TD7RBZH"
-    },
-    "title": {
-      "de": "Lexar ARES RGB DDR4 RAM 16GB Kit (8GB x 2) 4000 MHz",
-      "us": "Lexar ARES RGB DDR4 RAM 16GB Kit (8GB x 2) 4000 MHz"
-    },
+    "asin": "B09TD7RBZH",
+    "title": "Lexar ARES RGB DDR4 RAM 16GB Kit (8GB x 2) 4000 MHz",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/3NfZyPi",
     "image": "https://m.media-amazon.com/images/I/71AGt70X-6L._AC_SX522_.jpg",
@@ -359,21 +325,14 @@
     "condition": "New",
     "brand": "Lexar",
     "prices": {
-      "de": 124.83,
-      "us": 124.83
+      "de": 125.16
     }
   },
   {
     "id": 115,
     "slug": "patriot-memory-viper-venom-kit-ddr5-ram-16gb-2-x-8gb-5200mhz-cl36",
-    "asin": {
-      "de": "B09XY688YP",
-      "us": "B09XY688YP"
-    },
-    "title": {
-      "de": "Patriot Memory Viper Venom Kit DDR5 RAM 16GB (2 x 8GB) 5200MHz CL36",
-      "us": "Patriot Memory Viper Venom Kit DDR5 RAM 16GB (2 x 8GB) 5200MHz CL36"
-    },
+    "asin": "B09XY688YP",
+    "title": "Patriot Memory Viper Venom Kit DDR5 RAM 16GB (2 x 8GB) 5200MHz CL36",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/49oaT8B",
     "image": "https://m.media-amazon.com/images/I/610Hy5HZ00L._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -392,14 +351,8 @@
   {
     "id": 116,
     "slug": "corsair-vengeance-lpx-16gb-ddr4-ram-2-x-8gb-3200mhz-cl16-xmp-2-0-high-performance",
-    "asin": {
-      "de": "B0143UM4TC",
-      "us": "B0143UM4TC"
-    },
-    "title": {
-      "de": "Corsair Vengeance LPX 16GB (2x8GB) DDR4 3200MHz C16 XMP 2,0 High Performance",
-      "us": "Corsair Vengeance LPX 16GB (2x8GB) DDR4 3200MHz C16 XMP 2,0 High Performance"
-    },
+    "asin": "B0143UM4TC",
+    "title": "Corsair Vengeance LPX 16GB (2x8GB) DDR4 3200MHz C16 XMP 2,0 High Performance",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/3Li0Ybz",
     "image": "https://m.media-amazon.com/images/I/61wCOVcyvFL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -418,14 +371,8 @@
   {
     "id": 117,
     "slug": "corsair-vengeance-rgb-ddr5-ram-16gb-1-x-16gb-6000mhz-cl36-44-44-96-1-35v-amd-expo-intel-xmp-3-0",
-    "asin": {
-      "de": "B0F2B244T4",
-      "us": "B0F2B244T4"
-    },
-    "title": {
-      "de": "Corsair Vengeance RGB DDR5 RAM 16GB (1x16GB) 6000MHz CL36-44-44-96 1.35V AMD Expo Intel XMP 3.0",
-      "us": "Corsair Vengeance RGB DDR5 RAM 16GB (1x16GB) 6000MHz CL36-44-44-96 1.35V AMD Expo Intel XMP 3.0"
-    },
+    "asin": "B0F2B244T4",
+    "title": "Corsair Vengeance RGB DDR5 RAM 16GB (1x16GB) 6000MHz CL36-44-44-96 1.35V AMD Expo Intel XMP 3.0",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/3N0SOEZ",
     "image": "https://m.media-amazon.com/images/I/71qnz2USWXL._AC_SX522_.jpg",
@@ -444,14 +391,8 @@
   {
     "id": 118,
     "slug": "corsair-vengeance-ddr5-ram-16gb-1-x-16gb-5600mhz-cl40-40-40-77-1-25v-amd-expo-intel-xmp-3-0",
-    "asin": {
-      "de": "B0DK9H2YZQ",
-      "us": "B0DK9H2YZQ"
-    },
-    "title": {
-      "de": "Corsair Vengeance DDR5 RAM 16GB (1x16GB) 5600MHz CL40-40-40-77 1.25V AMD Expo Intel XMP 3.0",
-      "us": "Corsair Vengeance DDR5 RAM 16GB (1x16GB) 5600MHz CL40-40-40-77 1.25V AMD Expo Intel XMP 3.0"
-    },
+    "asin": "B0DK9H2YZQ",
+    "title": "Corsair Vengeance DDR5 RAM 16GB (1x16GB) 5600MHz CL40-40-40-77 1.25V AMD Expo Intel XMP 3.0",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/49oV3L4",
     "image": "https://m.media-amazon.com/images/I/61yNsuivQML._AC_SX300_SY300_QL70_ML2_.jpg",
@@ -470,14 +411,8 @@
   {
     "id": 119,
     "slug": "crucial-pro-ddr4-ram-32gb-kit-2x16gb-3200mhz-intel-xmp-2-0",
-    "asin": {
-      "de": "B0C29R9LNL",
-      "us": "B0C29R9LNL"
-    },
-    "title": {
-      "de": "Crucial Pro DDR4 RAM 32GB Kit (2x16GB) 3200MHz, Intel XMP 2.0",
-      "us": "Crucial Pro DDR4 RAM 32GB Kit (2x16GB) 3200MHz, Intel XMP 2.0"
-    },
+    "asin": "B0C29R9LNL",
+    "title": "Crucial Pro DDR4 RAM 32GB Kit (2x16GB) 3200MHz, Intel XMP 2.0",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/49oaYcp",
     "image": "https://m.media-amazon.com/images/I/516R-HtUrQL._AC_SX522_.jpg",
@@ -496,14 +431,8 @@
   {
     "id": 120,
     "slug": "kingston-fury-beast-64gb-2x32gb-3200mhz-ddr4-cl16",
-    "asin": {
-      "de": "B097K4DBDF",
-      "us": "B097K4DBDF"
-    },
-    "title": {
-      "de": "Kingston FURY Beast 64GB (2x32GB) 3200MHz DDR4 CL16",
-      "us": "Kingston FURY Beast 64GB (2x32GB) 3200MHz DDR4 CL16"
-    },
+    "asin": "B097K4DBDF",
+    "title": "Kingston FURY Beast 64GB (2x32GB) 3200MHz DDR4 CL16",
     "category": "ram",
     "affiliateUrl": "https://amzn.to/4sbBDAL",
     "image": "https://m.media-amazon.com/images/I/61uXihcspuL._AC_SX522_.jpg",
@@ -522,14 +451,8 @@
   {
     "id": 121,
     "slug": "asus-rog-strix-1200w-platinum-gaming-netzteil",
-    "asin": {
-      "de": "B09T9P4MSL",
-      "us": "B09T9P4MSL"
-    },
-    "title": {
-      "de": "ASUS ROG Strix 1200W Platinum Gaming Netzteil (Vollmodulares ATX Netzteil, GaN-MOSFET, 80+ Platinum, patentiertes GPU-First, Cybenetics Platinum Zertifizierung, ATX 3.1, PCIE 5.1, 12V-2x6 Connector)",
-      "us": "ASUS ROG Strix 1200W Platinum Gaming Netzteil (Vollmodulares ATX Netzteil, GaN-MOSFET, 80+ Platinum, patentiertes GPU-First, Cybenetics Platinum Zertifizierung, ATX 3.1, PCIE 5.1, 12V-2x6 Connector)"
-    },
+    "asin": "B09T9P4MSL",
+    "title": "ASUS ROG Strix 1200W Platinum Gaming Netzteil (Vollmodulares ATX Netzteil, GaN-MOSFET, 80+ Platinum, patentiertes GPU-First, Cybenetics Platinum Zertifizierung, ATX 3.1, PCIE 5.1, 12V-2x6 Connector)",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/498TuiY",
     "image": "https://m.media-amazon.com/images/I/813smWpWe5L._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -550,14 +473,8 @@
   {
     "id": 122,
     "slug": "thermaltake-toughpower-gt-850w",
-    "asin": {
-      "de": "B0DCZJSJ7Z",
-      "us": "B0DCZJSJ7Z"
-    },
-    "title": {
-      "de": "Thermaltake Toughpower GT 850W | ATX 3.1 | PCIe 5.1 12V-2x6-Anschluss | ultraleise Smart-Zero-Funktion | Low Profile Kabel | 80+ Gold | Modular",
-      "us": "Thermaltake Toughpower GT 850W | ATX 3.1 | PCIe 5.1 12V-2x6-Anschluss | ultraleise Smart-Zero-Funktion | Low Profile Kabel | 80+ Gold | Modular"
-    },
+    "asin": "B0DCZJSJ7Z",
+    "title": "Thermaltake Toughpower GT 850W | ATX 3.1 | PCIe 5.1 12V-2x6-Anschluss | ultraleise Smart-Zero-Funktion | Low Profile Kabel | 80+ Gold | Modular",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/498LhLI",
     "image": "https://m.media-amazon.com/images/I/7150fqSZ6HL._AC_SX522_.jpg",
@@ -578,14 +495,8 @@
   {
     "id": 123,
     "slug": "corsair-cx650-atx-650w-netzteil",
-    "asin": {
-      "de": "B0CK8NDN1Q",
-      "us": "B0CK8NDN1Q"
-    },
-    "title": {
-      "de": "CORSAIR CX650 ATX 650W Netzteil - 80 Plus Bronze Zertifiziert - Geräuscharm - Ummantelte Kabel - Nicht Modular - EU - Schwarz",
-      "us": "CORSAIR CX650 ATX 650W Netzteil - 80 Plus Bronze Zertifiziert - Geräuscharm - Ummantelte Kabel - Nicht Modular - EU - Schwarz"
-    },
+    "asin": "B0CK8NDN1Q",
+    "title": "CORSAIR CX650 ATX 650W Netzteil - 80 Plus Bronze Zertifiziert - Geräuscharm - Ummantelte Kabel - Nicht Modular - EU - Schwarz",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/4s78erz",
     "image": "https://m.media-amazon.com/images/I/71-8QqxEbrL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -606,14 +517,8 @@
   {
     "id": 124,
     "slug": "corsair-rm850x-atx-850w-netzteil",
-    "asin": {
-      "de": "B0D9C1DT62",
-      "us": "B0D9C1DT62"
-    },
-    "title": {
-      "de": "CORSAIR RM850x Vollständig modulares, geräuscharmes ATX-Netzteil – ATX 3.1-kompatibel – PCIe 5.1-Unterstützung – Cybenetics Gold-Effizienz – Native 12V-2x6-Anschluss – Schwarz",
-      "us": "CORSAIR RM850x Vollständig modulares, geräuscharmes ATX-Netzteil – ATX 3.1-kompatibel – PCIe 5.1-Unterstützung – Cybenetics Gold-Effizienz – Native 12V-2x6-Anschluss – Schwarz"
-    },
+    "asin": "B0D9C1DT62",
+    "title": "CORSAIR RM850x Vollständig modulares, geräuscharmes ATX-Netzteil – ATX 3.1-kompatibel – PCIe 5.1-Unterstützung – Cybenetics Gold-Effizienz – Native 12V-2x6-Anschluss – Schwarz",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/3MRfveL",
     "image": "https://m.media-amazon.com/images/I/61eKAbgBZRL._AC_SX300_SY300_QL70_ML2_.jpg",
@@ -634,14 +539,8 @@
   {
     "id": 125,
     "slug": "msi-mag-a650bn-atx-650w-netzteil",
-    "asin": {
-      "de": "B0991TZ399",
-      "us": "B0991TZ399"
-    },
-    "title": {
-      "de": "MSI MAG A650BN Netzteil, EU-Stecker - 650W, 80 Plus Bronze zertifiziert, ATX-Netzteil, 12V Single-Rail, DC/DC-Spannungswandler-Design, 120mm Lüfter - 5 Jahre Garantie",
-      "us": "MSI MAG A650BN Netzteil, EU-Stecker - 650W, 80 Plus Bronze zertifiziert, ATX-Netzteil, 12V Single-Rail, DC/DC-Spannungswandler-Design, 120mm Lüfter - 5 Jahre Garantie"
-    },
+    "asin": "B0991TZ399",
+    "title": "MSI MAG A650BN Netzteil, EU-Stecker - 650W, 80 Plus Bronze zertifiziert, ATX-Netzteil, 12V Single-Rail, DC/DC-Spannungswandler-Design, 120mm Lüfter - 5 Jahre Garantie",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/3Nd69Km",
     "image": "https://m.media-amazon.com/images/I/81eLlIQ5PsL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -662,14 +561,8 @@
   {
     "id": 126,
     "slug": "thermaltake-berlin-750w-atx-650w-netzteil",
-    "asin": {
-      "de": "B0DNKBNV52",
-      "us": "B0DNKBNV52"
-    },
-    "title": {
-      "de": "Thermaltake Berlin 750W Netzteil | ATX 3.1 | 12V-2 * 6 Pin | 80Plus Weiß Zertifiziert | geräuscharmer Betrieb | German Series",
-      "us": "Thermaltake Berlin 750W Netzteil | ATX 3.1 | 12V-2 * 6 Pin | 80Plus Weiß Zertifiziert | geräuscharmer Betrieb | German Series"
-    },
+    "asin": "B0DNKBNV52",
+    "title": "Thermaltake Berlin 750W Netzteil | ATX 3.1 | 12V-2 * 6 Pin | 80Plus Weiß Zertifiziert | geräuscharmer Betrieb | German Series",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/497v8X4",
     "image": "https://m.media-amazon.com/images/I/71SRRX5pJyL._AC_SX522_.jpg",
@@ -690,14 +583,8 @@
   {
     "id": 127,
     "slug": "corsair-sf1000-2024-fully-modular-80-plus-platinum-atx-netzteil",
-    "asin": {
-      "de": "B0D5HYSKHL",
-      "us": "B0D5HYSKHL"
-    },
-    "title": {
-      "de": "CORSAIR SF1000 (2024) Vollständig Modulares Geräuscharmes 80 Plus Platinum ATX-Netzteil – ATX 3.1-Kompatibel – PCIe 5.1-Fähig – SFX-to-ATX-Halterung im Lieferumfang Enthalten – Schwarz",
-      "us": "CORSAIR SF1000 (2024) Vollständig Modulares Geräuscharmes 80 Plus Platinum ATX-Netzteil – ATX 3.1-Kompatibel – PCIe 5.1-Fähig – SFX-to-ATX-Halterung im Lieferumfang Enthalten – Schwarz"
-    },
+    "asin": "B0D5HYSKHL",
+    "title": "CORSAIR SF1000 (2024) Vollständig Modulares Geräuscharmes 80 Plus Platinum ATX-Netzteil – ATX 3.1-Kompatibel – PCIe 5.1-Fähig – SFX-to-ATX-Halterung im Lieferumfang Enthalten – Schwarz",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/4pf7eih",
     "image": "https://m.media-amazon.com/images/I/81hJaFdwQyL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -718,14 +605,8 @@
   {
     "id": 128,
     "slug": "asus-rog-loki-sfx-l-850w-platinum-gaming-netzteil",
-    "asin": {
-      "de": "B0BT4S6LDS",
-      "us": "B0BT4S6LDS"
-    },
-    "title": {
-      "de": "ASUS ROG Loki SFX-L 850W Platinum Gaming Netzteil (Vollmodulares Netzteil, 120mm PWM ARGB Lüfter, Aura Sync RGB, Cybenetics Platinum Zertifizierung, ATX 3.1, PCIE 5.1, 12V-2x6 Connector, Weiß)",
-      "us": "ASUS ROG Loki SFX-L 850W Platinum Gaming Netzteil (Vollmodulares Netzteil, 120mm PWM ARGB Lüfter, Aura Sync RGB, Cybenetics Platinum Zertifizierung, ATX 3.1, PCIE 5.1, 12V-2x6 Connector, Weiß)"
-    },
+    "asin": "B0BT4S6LDS",
+    "title": "ASUS ROG Loki SFX-L 850W Platinum Gaming Netzteil (Vollmodulares Netzteil, 120mm PWM ARGB Lüfter, Aura Sync RGB, Cybenetics Platinum Zertifizierung, ATX 3.1, PCIE 5.1, 12V-2x6 Connector, Weiß)",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/4ssOqPB",
     "image": "https://m.media-amazon.com/images/I/71ddixVJDYL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -746,14 +627,8 @@
   {
     "id": 129,
     "slug": "corsair-sf850",
-    "asin": {
-      "de": "B0D5J24PJZ",
-      "us": "B0D5J24PJZ"
-    },
-    "title": {
-      "de": "Corsair PC-Netzteil SF850",
-      "us": "Corsair PC-Netzteil SF850"
-    },
+    "asin": "B0D5J24PJZ",
+    "title": "Corsair PC-Netzteil SF850",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/4ssOrD9",
     "image": "https://m.media-amazon.com/images/I/81ddSPKXUtL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -774,14 +649,8 @@
   {
     "id": 130,
     "slug": "be-quiet-sfx-l-power-600w-80-plus-gold",
-    "asin": {
-      "de": "B07MT3VFMB",
-      "us": "B07MT3VFMB"
-    },
-    "title": {
-      "de": "Netzteil be quiet! SFX-L Power 600W 80+ Gold",
-      "us": "Netzteil be quiet! SFX-L Power 600W 80+ Gold"
-    },
+    "asin": "B07MT3VFMB",
+    "title": "Netzteil be quiet! SFX-L Power 600W 80+ Gold",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/3Y6oOKn",
     "image": "https://m.media-amazon.com/images/I/81QHzeKEFxL._AC_SX522_.jpg",

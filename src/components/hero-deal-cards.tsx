@@ -40,7 +40,8 @@ const calculateDiscount = (product: Product, countryCode: string = "us"): number
   }
 
   // Calculate pricePerUnit for this specific country price
-  const enhanced = calculateProductMetrics(product, price);
+  const finalPrice = price ?? 0;
+  const enhanced = calculateProductMetrics(product, finalPrice);
   const currentPricePerUnit = enhanced.pricePerUnit || 0;
 
   if (marketPrice === 0 || currentPricePerUnit === 0) return 0;
@@ -55,6 +56,10 @@ const calculateDiscount = (product: Product, countryCode: string = "us"): number
 const getTopDeals = (countryCode: string = "us"): ProductWithDiscount[] => {
   const allProducts = getAllProducts();
   return allProducts
+    .filter((p) => {
+      const { price } = getLocalizedProductData(p, countryCode);
+      return price !== null && price !== 0;
+    })
     .map((product) => ({
       ...product,
       discount: calculateDiscount(product, countryCode),

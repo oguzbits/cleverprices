@@ -28,7 +28,7 @@ export const countries: Record<string, Country> = {
     currency: "GBP",
     symbol: "£",
     locale: "en-GB",
-    isLive: false,
+    isLive: true,
   },
   ca: {
     code: "ca",
@@ -38,7 +38,7 @@ export const countries: Record<string, Country> = {
     currency: "CAD",
     symbol: "C$",
     locale: "en-CA",
-    isLive: false,
+    isLive: true,
   },
   de: {
     code: "de",
@@ -58,7 +58,7 @@ export const countries: Record<string, Country> = {
     currency: "EUR",
     symbol: "€",
     locale: "es-ES",
-    isLive: false,
+    isLive: true,
   },
   it: {
     code: "it",
@@ -68,7 +68,7 @@ export const countries: Record<string, Country> = {
     currency: "EUR",
     symbol: "€",
     locale: "it-IT",
-    isLive: false,
+    isLive: true,
   },
   fr: {
     code: "fr",
@@ -78,7 +78,7 @@ export const countries: Record<string, Country> = {
     currency: "EUR",
     symbol: "€",
     locale: "fr-FR",
-    isLive: false,
+    isLive: true,
   },
   au: {
     code: "au",

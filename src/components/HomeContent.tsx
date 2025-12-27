@@ -6,7 +6,7 @@ import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 import { getAllCountries, getCountryByCode } from "@/lib/countries";
 import { getAllProducts } from "@/lib/product-registry";
-import { adaptToUIModel } from "@/lib/utils/products";
+import { adaptToUIModel, getLocalizedProductData } from "@/lib/utils/products";
 
 const PopularProducts = dynamic(
   () =>
@@ -28,14 +28,19 @@ export function HomeContent({ country }: { country: string }) {
   const allProducts = getAllProducts();
 
   // Adapt products to UI model
-  const uiProducts = allProducts.map((p) =>
-    adaptToUIModel(
-      p,
-      countryConfig?.code || country,
-      countryConfig?.currency,
-      countryConfig?.symbol,
-    ),
-  );
+  const uiProducts = allProducts
+    .map((p) => {
+      const { price } = getLocalizedProductData(p, countryConfig?.code || country);
+      if (price === null || price === 0) return null;
+
+      return adaptToUIModel(
+        p,
+        countryConfig?.code || country,
+        countryConfig?.currency,
+        countryConfig?.symbol,
+      );
+    })
+    .filter((p): p is NonNullable<typeof p> => p !== null);
 
   // Create mock data for sections using real products
   const mockPopularProducts = uiProducts.slice(0, 5).map((p) => ({

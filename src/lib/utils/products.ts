@@ -97,18 +97,17 @@ export function getOptimizedImageUrl(
  */
 export function getLocalizedProductData(p: Product, countryCode: string = "us") {
   const code = countryCode.toLowerCase();
+  const price = p.prices?.[code];
   
-  const price = p.prices?.[code] || p.prices?.["us"] || 0;
+  if (price === null) return { price: null, title: p.title, asin: p.asin };
   
-  const title = typeof p.title === "string" 
-    ? p.title 
-    : p.title[code] || p.title["us"] || Object.values(p.title)[0];
+  // Fallback to 'us' only if the current code is not 'us' AND the current price is undefined (missing)
+  const finalPrice = price !== undefined ? price : (code !== "us" ? p.prices?.["us"] : 0) || 0;
+  
+  const title = p.title;
+  const asin = p.asin;
     
-  const asin = typeof p.asin === "string"
-    ? p.asin
-    : p.asin[code] || p.asin["us"] || Object.values(p.asin)[0];
-    
-  return { price, title, asin };
+  return { price: finalPrice, title, asin };
 }
 
 /**
@@ -121,7 +120,8 @@ export function adaptToUIModel(
   symbol: string = "$",
 ): ProductUIModel {
   const { price, title, asin } = getLocalizedProductData(p, countryCode);
-  const enhancedProduct = calculateProductMetrics(p, price) as Product;
+  const finalPrice = price ?? 0;
+  const enhancedProduct = calculateProductMetrics(p, finalPrice) as Product;
   
   const categoryConfig = allCategories[p.category];
   const displayUnit = categoryConfig?.unitType || p.capacityUnit;
@@ -130,9 +130,9 @@ export function adaptToUIModel(
     asin,
     title,
     price: {
-      amount: price,
+      amount: finalPrice,
       currency,
-      displayAmount: `${price} ${symbol}`,
+      displayAmount: `${finalPrice} ${symbol}`,
     },
     image: getOptimizedImageUrl(enhancedProduct.image),
     url: `/out/${enhancedProduct.slug}`, // Standard redirect path

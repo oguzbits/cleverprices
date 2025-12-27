@@ -26,7 +26,7 @@ export function filterProducts(
   if (filters.search) {
     const searchLower = filters.search.toLowerCase();
     filtered = filtered.filter((p) => {
-      const title = typeof p.title === "string" ? p.title : Object.values(p.title).join(" ");
+      const title = p.title;
       return title.toLowerCase().includes(searchLower);
     });
   }
@@ -109,8 +109,8 @@ export function sortProducts(
       return isAsc ? aValue - bValue : bValue - aValue;
     }
 
-    const aStr = typeof aValue === "string" ? aValue : typeof aValue === "object" && aValue !== null ? Object.values(aValue)[0] : String(aValue || "");
-    const bStr = typeof bValue === "string" ? bValue : typeof bValue === "object" && bValue !== null ? Object.values(bValue)[0] : String(bValue || "");
+    const aStr = String(aValue || "");
+    const bStr = String(bValue || "");
 
     if (aStr < bStr) return isAsc ? -1 : 1;
     if (aStr > bStr) return isAsc ? 1 : -1;

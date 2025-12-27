@@ -61,13 +61,20 @@ export function useCountry() {
       // Track country change for SEO analytics
       trackSEO.countryChanged(oldCountry, newCountryCode);
 
-      // Update URL if it currently has a country code
+      // Update URL
       if (urlCountry) {
-        const newPath = pathname.replace(
-          `/${urlCountry}`,
-          `/${newCountryCode}`,
-        );
-        router.push(newPath);
+        // Safe way to replace ONLY the first segment (the country code)
+        const segments = pathname.split("/"); // e.g. ["", "us", "electronics"]
+        segments[1] = newCountryCode;
+        const newPath = segments.join("/");
+        router.push(newPath || "/");
+      } else if (pathname === "/") {
+        // If we're on the root homepage, redirect to the country homepage
+        router.push(`/${newCountryCode}`);
+      } else {
+        // Optional: If we're on a non-localized page (like /blog), 
+        // we might want to redirect to localized versions if they exist.
+        // For now, we stay on the page as the state has already been updated.
       }
     },
     [pathname, router, getCountryFromPath, country],

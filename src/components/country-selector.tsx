@@ -47,9 +47,9 @@ export function CountrySelector() {
         {liveCountries.map((c) => (
           <DropdownMenuItem
             key={c.code}
-            onClick={() => changeCountry(c.code)}
-            className="cursor-pointer"
-          >
+          onSelect={() => changeCountry(c.code)}
+          className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
+        >
             <CountryItem
               flag={c.flag}
               name={c.name}

@@ -39,17 +39,21 @@ export function useCategoryProducts({
 
   // Localize products for this country
   const localizedProducts = useMemo(() => {
-    return rawProducts.map((p): LocalizedProduct => {
-      const { price, title, asin } = getLocalizedProductData(p, countryCode);
-      const enhanced = calculateProductMetrics(p, price);
-      return {
-        ...p,
-        price,
-        title,
-        asin,
-        pricePerUnit: enhanced.pricePerUnit,
-      };
-    });
+    return rawProducts
+      .map((p) => {
+        const { price, title, asin } = getLocalizedProductData(p, countryCode);
+        if (price === null || price === 0) return null;
+        
+        const enhanced = calculateProductMetrics(p, price);
+        return {
+          ...p,
+          price,
+          title,
+          asin,
+          pricePerUnit: enhanced.pricePerUnit,
+        } as LocalizedProduct;
+      })
+      .filter((p): p is LocalizedProduct => p !== null);
   }, [rawProducts, countryCode]);
 
   // Apply filtering and sorting
