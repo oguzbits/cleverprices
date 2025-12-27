@@ -18,7 +18,7 @@ export function PromoBanner() {
       </div>
 
       <Link
-        href="https://amzn.to/4aZGtec"
+        href="https://amzn.to/4pVWqqm"
         target="_blank"
         rel="noopener noreferrer"
         className="text-primary group relative z-10 ml-1 flex items-center gap-1.5 rounded-full border border-white bg-white px-3.5 py-1.5 text-sm font-black shadow-[0_4px_12px_rgba(0,0,0,0.1)] transition-all hover:bg-white/95 active:scale-95 sm:ml-4 sm:text-sm"
