@@ -19,7 +19,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     title: `Amazon ${code} Unit Price Tracker & Deals | realpricedata.com`,
     description: `Amazon ${code} price tracker for hardware & storage. Compare HDD, SSD, RAM and more by true cost per TB/GB. Find the best value hardware deals instantly.`,
     alternates: {
-      canonical: `https://realpricedata.com/${country.toLowerCase()}`,
+      canonical:
+        country.toLowerCase() === DEFAULT_COUNTRY
+          ? "https://realpricedata.com"
+          : `https://realpricedata.com/${country.toLowerCase()}`,
       languages: getAlternateLanguages(),
     },
   };

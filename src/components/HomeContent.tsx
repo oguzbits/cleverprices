@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { HeroCategoryPills } from "@/components/hero-category-pills";
 import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
-import { getAllCountries, getCountryByCode } from "@/lib/countries";
+import { getAllCountries, getCountryByCode, DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAllProducts } from "@/lib/product-registry";
 import { adaptToUIModel, getLocalizedProductData } from "@/lib/utils/products";
 
@@ -121,7 +121,13 @@ export function HomeContent({ country }: { country: string }) {
               {getAllCountries().map((c: any) => (
                 <Link
                   key={c.code}
-                  href={c.isLive ? `/${c.code}` : "#"}
+                  href={
+                    c.isLive
+                      ? c.code === DEFAULT_COUNTRY
+                        ? "/"
+                        : `/${c.code}`
+                      : "#"
+                  }
                   className={`group flex flex-col items-center gap-2 no-underline transition-transform ${
                     c.isLive
                       ? "cursor-pointer hover:scale-110"

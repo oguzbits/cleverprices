@@ -36,13 +36,26 @@ export function useCountry() {
       setCountry(urlCountry);
       saveCountryPreference(urlCountry);
       setIsLoading(false);
+
+      // If it's the default country landing page, redirect to root to avoid duplicate content
+      if (
+        urlCountry === DEFAULT_COUNTRY &&
+        pathname === `/${DEFAULT_COUNTRY}`
+      ) {
+        router.replace("/");
+      }
     } else {
       // No country in URL - get user's preferred/detected country
       const userCountry = getUserCountry();
       setCountry(userCountry);
       setIsLoading(false);
+
+      // If we're on the root homepage, redirect to the country homepage (unless it's default)
+      if (pathname === "/" && userCountry !== DEFAULT_COUNTRY) {
+        router.replace(`/${userCountry}`);
+      }
     }
-  }, [getCountryFromPath]);
+  }, [getCountryFromPath, pathname, router]);
 
   // Change country and update URL
   const changeCountry = useCallback(
@@ -63,18 +76,24 @@ export function useCountry() {
 
       // Update URL
       if (urlCountry) {
-        // Safe way to replace ONLY the first segment (the country code)
-        const segments = pathname.split("/"); // e.g. ["", "us", "electronics"]
-        segments[1] = newCountryCode;
-        const newPath = segments.join("/");
-        router.push(newPath || "/");
+        // If switching TO the default country from its localized landing page, go to root
+        if (
+          newCountryCode === DEFAULT_COUNTRY &&
+          pathname === `/${urlCountry}`
+        ) {
+          router.push("/");
+        } else {
+          // Safe way to replace ONLY the first segment (the country code)
+          const segments = pathname.split("/"); // e.g. ["", "us", "electronics"]
+          segments[1] = newCountryCode;
+          const newPath = segments.join("/");
+          router.push(newPath || "/");
+        }
       } else if (pathname === "/") {
-        // If we're on the root homepage, redirect to the country homepage
-        router.push(`/${newCountryCode}`);
-      } else {
-        // Optional: If we're on a non-localized page (like /blog), 
-        // we might want to redirect to localized versions if they exist.
-        // For now, we stay on the page as the state has already been updated.
+        // If we're on the root homepage and switching away from default, redirect
+        if (newCountryCode !== DEFAULT_COUNTRY) {
+          router.push(`/${newCountryCode}`);
+        }
       }
     },
     [pathname, router, getCountryFromPath, country],
