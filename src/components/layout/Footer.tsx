@@ -1,7 +1,13 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useCountry } from "@/hooks/use-country";
+import { getCategoryPath } from "@/lib/categories";
 
 export function Footer() {
+  const { country } = useCountry();
+  
   return (
     <footer className="bg-muted/40 border-t">
       <div className="container mx-auto px-4 py-8 md:py-12">
@@ -32,21 +38,39 @@ export function Footer() {
             </p>
           </div>
 
-          <nav className="text-base" aria-label="Legal information">
-            <h4 className="mb-3 font-semibold">About realpricedata</h4>
+          <nav className="text-base" aria-label="Quick Links">
+            <h4 className="mb-3 font-semibold">Popular Categories</h4>
             <ul className="space-y-2">
               <li>
-                <Link
-                  href="/de/categories"
-                  className="text-primary"
-                >
-                  View All Categories
+                <Link href={getCategoryPath("hard-drives", country)} className="text-primary hover:underline">
+                  Hard Drives & SSDs
                 </Link>
               </li>
               <li>
+                <Link href={getCategoryPath("ram", country)} className="text-primary hover:underline">
+                  RAM & Memory
+                </Link>
+              </li>
+              <li>
+                <Link href={getCategoryPath("power-supplies", country)} className="text-primary hover:underline">
+                  Power Supplies
+                </Link>
+              </li>
+              <li>
+                <Link href={`/${country}/categories`} className="text-primary hover:underline">
+                  All Categories
+                </Link>
+              </li>
+            </ul>
+          </nav>
+
+          <nav className="text-base" aria-label="Legal information">
+            <h4 className="mb-3 font-semibold">About realpricedata.com</h4>
+            <ul className="space-y-2">
+              <li>
                 <Link
                   href="/blog"
-                  className="text-primary"
+                  className="text-primary hover:underline"
                 >
                   Blog
                 </Link>
@@ -85,7 +109,7 @@ export function Footer() {
               affiliates.
             </p>
             <p>
-              &copy; {new Date().getFullYear()} Real Price Data. All rights
+              &copy; {new Date().getFullYear()} realpricedata.com. All rights
               reserved.
             </p>
           </div>

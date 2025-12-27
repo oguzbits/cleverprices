@@ -25,7 +25,7 @@ export const allCategories: Record<string, Category> = {
     slug: "electronics",
     description: "Digital storage solutions - compare price per terabyte",
     icon: HardDrive,
-    metaTitle: "Hard Drive Storage - Best Price Per TB | RealPriceData",
+    metaTitle: "Hard Drive Storage - Best Price Per TB | realpricedata.com",
     metaDescription:
       "Compare hard drive and SSD prices by cost per terabyte. Find the best deals on storage from top brands like Samsung, WD, Seagate, and Crucial.",
   },
@@ -38,7 +38,7 @@ export const allCategories: Record<string, Category> = {
     icon: HardDrive,
     parent: "electronics",
     unitType: "TB",
-    metaTitle: "Hard Drives & SSDs - Compare Price Per TB | RealPriceData",
+    metaTitle: "Hard Drives & SSDs - Compare Price Per TB | realpricedata.com",
     metaDescription:
       "Find the best hard drive and SSD deals by comparing price per terabyte. Compare internal and external storage from top brands.",
   },
@@ -50,7 +50,7 @@ export const allCategories: Record<string, Category> = {
     icon: MemoryStick,
     parent: "electronics",
     unitType: "GB",
-    metaTitle: "RAM & Memory - Compare Price Per GB | RealPriceData",
+    metaTitle: "RAM & Memory - Compare Price Per GB | realpricedata.com",
     metaDescription:
       "Find the best RAM and memory deals by comparing price per gigabyte. Compare DDR4 and DDR5 modules from top brands like Crucial, Lexar, and Patriot.",
   },
@@ -62,7 +62,7 @@ export const allCategories: Record<string, Category> = {
     icon: Zap,
     parent: "electronics",
     unitType: "W",
-    metaTitle: "Power Supplies - Compare Price Per Watt | RealPriceData",
+    metaTitle: "Power Supplies - Compare Price Per Watt | realpricedata.com",
     metaDescription:
       "Find the best power supply deals by comparing price per watt. Compare 80+ Bronze, Gold, and Platinum PSUs from top brands.",
   },

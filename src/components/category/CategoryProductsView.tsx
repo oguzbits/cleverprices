@@ -10,11 +10,13 @@ import {
 import { useCategoryProducts } from "@/hooks/use-category-products";
 import { useProductFilters } from "@/hooks/use-product-filters";
 import { trackSEO } from "@/lib/analytics";
-import { Category, getBreadcrumbs, stripCategoryIcon } from "@/lib/categories";
+import { Category, getBreadcrumbs, stripCategoryIcon, getChildCategories, getCategoryPath } from "@/lib/categories";
+import { CategoryCard } from "@/components/ui/category-card";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { getCountryByCode } from "@/lib/countries";
 import { Product } from "@/lib/product-registry";
 import { LocalizedProduct } from "@/hooks/use-category-products";
+import Link from "next/link";
 import { Filter, Info, Search } from "lucide-react";
 import * as React from "react";
 
@@ -164,6 +166,23 @@ export function CategoryProductsView({
 
                 <div className="text-muted-foreground mt-4 text-center text-sm">
                   Prices and availability are subject to change.
+                </div>
+
+                {/* Related Categories for SEO/PR */}
+                <div className="mt-12 border-t pt-8">
+                  <h3 className="mb-6 text-lg font-bold">Popular Categories</h3>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {getChildCategories(category.parent || "electronics")
+                      .filter((c) => c.slug !== categorySlug)
+                      .map((related) => (
+                        <CategoryCard
+                          key={related.slug}
+                          category={related}
+                          Icon={getCategoryIcon(related.slug)}
+                          country={countryCode}
+                        />
+                      ))}
+                  </div>
                 </div>
               </div>
             </>

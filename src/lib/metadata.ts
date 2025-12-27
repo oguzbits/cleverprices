@@ -14,14 +14,14 @@ export const coreKeywords = [
 export const siteMetadata: Metadata = {
   metadataBase: new URL("https://realpricedata.com"),
   title: {
-    default: "Amazon Unit Price Tracker & Deals",
-    template: "%s | RealPriceData",
+    default: "Amazon Unit Price Tracker & Deals | realpricedata.com",
+    template: "%s | realpricedata.com",
   },
   description:
     "Amazon price tracker for hardware & storage. Compare HDD, SSD, and RAM by true cost per TB/GB. Find the best value hardware deals instantly.",
   keywords: coreKeywords,
-  authors: [{ name: "RealPriceData Team" }],
-  creator: "RealPriceData Team",
+  authors: [{ name: "realpricedata.com Team" }],
+  creator: "realpricedata.com Team",
   applicationName: "realpricedata.com",
   manifest: "/site.webmanifest",
   icons: {
@@ -69,7 +69,7 @@ export const siteMetadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "realpricedata",
+    title: "realpricedata.com",
   },
   formatDetection: {
     telephone: false,
