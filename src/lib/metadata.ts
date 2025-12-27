@@ -14,8 +14,8 @@ export const coreKeywords = [
 export const siteMetadata: Metadata = {
   metadataBase: new URL("https://realpricedata.com"),
   title: {
-    default: "Amazon Unit Price Tracker & Deals | realpricedata.com",
-    template: "%s | realpricedata.com",
+    default: "Amazon Unit Price Tracker & Deals",
+    template: "%s | RealPriceData",
   },
   description:
     "Amazon price tracker for hardware & storage across multiple markets. Compare HDD, SSD, RAM and more by true cost per TB/GB. Find the best value hardware deals instantly.",
