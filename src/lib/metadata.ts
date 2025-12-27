@@ -18,7 +18,7 @@ export const siteMetadata: Metadata = {
     template: "%s | RealPriceData",
   },
   description:
-    "Amazon price tracker for hardware & storage across multiple markets. Compare HDD, SSD, RAM and more by true cost per TB/GB. Find the best value hardware deals instantly.",
+    "Amazon price tracker for hardware & storage. Compare HDD, SSD, and RAM by true cost per TB/GB. Find the best value hardware deals instantly.",
   keywords: coreKeywords,
   authors: [{ name: "RealPriceData Team" }],
   creator: "RealPriceData Team",
@@ -48,7 +48,7 @@ export const siteMetadata: Metadata = {
     url: "https://realpricedata.com",
     title: "realpricedata.com - Unit Price Tracker",
     description:
-      "Compare Amazon hardware by true cost per TB/GB across multiple markets. Track HDD, SSD, and RAM prices to find the best value deals instantly.",
+      "Compare Amazon hardware by true cost per TB/GB. Track HDD, SSD, and RAM prices to find the best value deals instantly.",
     siteName: "realpricedata.com",
     images: [
       {
@@ -63,7 +63,7 @@ export const siteMetadata: Metadata = {
     card: "summary_large_image",
     title: "realpricedata.com - Unit Price Tracker",
     description:
-      "Compare Amazon hardware by true cost per TB/GB across multiple markets. Track HDD, SSD, and RAM prices to find the best value deals instantly.",
+      "Compare Amazon hardware by true cost per TB/GB. Track HDD, SSD, and RAM prices to find the best value deals instantly.",
     images: ["/og-image.png"],
     creator: "@realpricedata",
   },
