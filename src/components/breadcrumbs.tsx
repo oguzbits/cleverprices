@@ -23,7 +23,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
             {item.href && index < items.length - 1 ? (
               <Link
                 href={item.href}
-                className="hover:text-foreground transition-colors hover:underline"
+                className="text-primary"
               >
                 {item.name}
               </Link>

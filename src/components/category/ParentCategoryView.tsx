@@ -26,7 +26,7 @@ export function ParentCategoryView({
       <nav className="mb-8" aria-label="Breadcrumb">
         <ol className="text-muted-foreground flex items-center gap-2 text-base">
           <li>
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link href="/" className="text-primary">
               Home
             </Link>
           </li>
@@ -34,7 +34,7 @@ export function ParentCategoryView({
           <li>
             <Link
               href={`/${countryCode}/categories`}
-              className="hover:text-foreground transition-colors"
+              className="text-primary"
             >
               Categories
             </Link>

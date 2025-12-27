@@ -32,7 +32,7 @@ export function CategoryHeader({
       <nav aria-label="Breadcrumb">
         <ol className="text-muted-foreground flex flex-wrap items-center gap-1.5 gap-y-2 text-sm leading-normal sm:gap-2 sm:text-base">
           <li>
-            <Link href="/" className="hover:text-foreground transition-colors">
+            <Link href="/" className="text-primary">
               Home
             </Link>
           </li>
@@ -40,7 +40,7 @@ export function CategoryHeader({
           <li>
             <Link
               href={`/${countryCode}/categories`}
-              className="hover:text-foreground transition-colors"
+              className="text-primary"
             >
               Categories
             </Link>
@@ -56,7 +56,7 @@ export function CategoryHeader({
                 ) : (
                   <Link
                     href={`/${countryCode}/${crumb.parent ? crumb.parent + "/" : ""}${crumb.slug}`}
-                    className="hover:text-foreground transition-colors"
+                    className="text-primary"
                   >
                     {crumb.name}
                   </Link>

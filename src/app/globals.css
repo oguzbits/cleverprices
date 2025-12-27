@@ -117,18 +117,16 @@
     overflow-x: clip;
   }
 
-  /* Link styling: Blue with underline by default */
+  /* Link styling: Blue with underline only on hover */
   a:not(.no-underline) {
     color: var(--primary);
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 4px;
-    transition: text-decoration-color 0.2s;
+    text-decoration: none;
   }
 
   a:not(.no-underline):hover {
-    text-decoration-color: var(--primary);
-    text-decoration-thickness: 2px;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 4px;
   }
 
   /* Improved focus indicators for keyboard navigation */

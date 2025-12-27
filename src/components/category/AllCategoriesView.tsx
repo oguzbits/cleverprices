@@ -27,7 +27,7 @@ export function AllCategoriesView({
           <li>
             <Link
               href={`/${countryCode}`}
-              className="hover:text-foreground transition-colors"
+              className="text-primary"
             >
               Home
             </Link>

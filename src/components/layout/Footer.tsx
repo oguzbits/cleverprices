@@ -38,7 +38,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/de/categories"
-                  className="text-primary transition-all hover:underline"
+                  className="text-primary"
                 >
                   View All Categories
                 </Link>
@@ -46,7 +46,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/blog"
-                  className="text-primary transition-all hover:underline"
+                  className="text-primary"
                 >
                   Blog
                 </Link>
@@ -54,7 +54,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/faq"
-                  className="text-primary transition-all hover:underline"
+                  className="text-primary"
                 >
                   FAQ
                 </Link>
@@ -62,7 +62,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/impressum"
-                  className="text-primary transition-all hover:underline"
+                  className="text-primary"
                 >
                   Impressum / Legal Notice
                 </Link>
@@ -70,7 +70,7 @@ export function Footer() {
               <li>
                 <Link
                   href="/datenschutz"
-                  className="text-primary transition-all hover:underline"
+                  className="text-primary"
                 >
                   Datenschutz / Privacy
                 </Link>
