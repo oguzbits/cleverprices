@@ -4,7 +4,7 @@ import {
   getCategoryPath,
   allCategories,
 } from "@/lib/categories";
-import { getAllCountries } from "@/lib/countries";
+import { getAllCountries, DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAllBlogPosts } from "@/lib/blog";
 import { getAlternateLanguages } from "@/lib/metadata";
 
@@ -57,16 +57,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const countryRoutes: MetadataRoute.Sitemap = [];
 
   countries.forEach((country) => {
-    // Country home page
-    countryRoutes.push({
-      url: `${baseUrl}/${country}`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.9,
-      alternates: {
-        languages: getAlternateLanguages(""),
-      },
-    });
+    // Country home page - skip for default country (US) as the root domain (/)
+    // handles it and /us is non-canonical.
+    if (country !== DEFAULT_COUNTRY) {
+      countryRoutes.push({
+        url: `${baseUrl}/${country}`,
+        lastModified: new Date(),
+        changeFrequency: "daily" as const,
+        priority: 0.9,
+        alternates: {
+          languages: getAlternateLanguages(""),
+        },
+      });
+    }
 
     // Country categories page
     countryRoutes.push({
