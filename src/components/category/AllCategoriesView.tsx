@@ -7,6 +7,8 @@ import { CategoryCard } from "@/components/ui/category-card";
 import { getCategoryIcon } from "@/lib/category-icons";
 import * as React from "react";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
+
 interface AllCategoriesViewProps {
   categoryHierarchy: {
     parent: Omit<Category, "icon">;
@@ -19,23 +21,14 @@ export function AllCategoriesView({
   categoryHierarchy,
   countryCode,
 }: AllCategoriesViewProps) {
+  const breadcrumbItems = [
+    { name: "Home", href: `/${countryCode}` },
+    { name: "Categories" },
+  ];
+
   return (
     <div className="container mx-auto px-4 pt-6 pb-16">
-      {/* Breadcrumb */}
-      <nav className="mb-8" aria-label="Breadcrumb">
-        <ol className="text-muted-foreground flex items-center gap-2 text-base">
-          <li>
-            <Link
-              href={`/${countryCode}`}
-              className="text-primary"
-            >
-              Home
-            </Link>
-          </li>
-          <li>/</li>
-          <li className="text-foreground font-medium">Categories</li>
-        </ol>
-      </nav>
+      <Breadcrumbs items={breadcrumbItems} />
       <div className="mb-12">
         <h1 className="mb-4 text-4xl font-bold tracking-tight">
           All Categories

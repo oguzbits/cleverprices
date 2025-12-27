@@ -13,6 +13,8 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
+
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -67,6 +69,12 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
     notFound();
   }
 
+  const breadcrumbItems = [
+    { name: "Home", href: "/" },
+    { name: "Blog", href: "/blog" },
+    { name: post.title },
+  ];
+
   return (
     <article className="bg-background min-h-screen pb-20">
       <ArticleSchema post={post} />
@@ -74,32 +82,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       {/* Article Header */}
       <header className="bg-muted/30 border-b">
         <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
-          {/* Breadcrumb */}
-          <nav className="mb-8" aria-label="Breadcrumb">
-            <ol className="text-muted-foreground flex flex-wrap items-center gap-1.5 gap-y-2 text-sm leading-normal sm:gap-2 sm:text-base">
-              <li>
-                <Link
-                  href="/"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Home
-                </Link>
-              </li>
-              <li className="text-muted-foreground/50">/</li>
-              <li>
-                <Link
-                  href="/blog"
-                  className="hover:text-foreground transition-colors"
-                >
-                  Blog
-                </Link>
-              </li>
-              <li className="text-muted-foreground/50">/</li>
-              <li className="text-foreground font-medium wrap-break-word">
-                {post.title}
-              </li>
-            </ol>
-          </nav>
+          <Breadcrumbs items={breadcrumbItems} />
 
           <div className="text-muted-foreground mb-6 flex flex-wrap items-center gap-4 text-base font-medium">
             <div className="flex items-center gap-1.5">

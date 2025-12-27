@@ -6,6 +6,8 @@ import { Category } from "@/lib/categories";
 
 import { getCategoryIcon } from "@/lib/category-icons";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
+
 interface CategoryHeaderProps {
   category: Omit<Category, "icon">;
   countryCode: string;
@@ -26,46 +28,19 @@ export function CategoryHeader({
   onSearchChange,
 }: CategoryHeaderProps) {
   const Icon = getCategoryIcon(category.slug);
+
+  const breadcrumbItems = [
+    { name: "Home", href: "/" },
+    { name: "Categories", href: `/${countryCode}/categories` },
+    ...breadcrumbs.map((crumb) => ({
+      name: crumb.name,
+      href: `/${countryCode}/${crumb.parent ? crumb.parent + "/" : ""}${crumb.slug}`,
+    })),
+  ];
+
   return (
     <div className="flex flex-col gap-6">
-      {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb">
-        <ol className="text-muted-foreground flex flex-wrap items-center gap-1.5 gap-y-2 text-sm leading-normal sm:gap-2 sm:text-base">
-          <li>
-            <Link href="/" className="text-primary">
-              Home
-            </Link>
-          </li>
-          <li className="text-muted-foreground/50">/</li>
-          <li>
-            <Link
-              href={`/${countryCode}/categories`}
-              className="text-primary"
-            >
-              Categories
-            </Link>
-          </li>
-          {breadcrumbs.map((crumb, index) => (
-            <React.Fragment key={crumb.slug}>
-              <li className="text-muted-foreground/50">/</li>
-              <li>
-                {index === breadcrumbs.length - 1 ? (
-                  <span className="text-foreground font-medium wrap-break-word">
-                    {crumb.name}
-                  </span>
-                ) : (
-                  <Link
-                    href={`/${countryCode}/${crumb.parent ? crumb.parent + "/" : ""}${crumb.slug}`}
-                    className="text-primary"
-                  >
-                    {crumb.name}
-                  </Link>
-                )}
-              </li>
-            </React.Fragment>
-          ))}
-        </ol>
-      </nav>
+      <Breadcrumbs items={breadcrumbItems} className="mb-0" />
 
       {/* Header Content */}
       <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">

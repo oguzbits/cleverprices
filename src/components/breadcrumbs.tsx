@@ -1,5 +1,5 @@
+import React from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { BreadcrumbItem } from "@/types";
 
@@ -11,32 +11,34 @@ interface BreadcrumbsProps {
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
     <nav className={cn("mb-8", className)} aria-label="Breadcrumb">
-      <ol className="text-muted-foreground flex flex-wrap items-center gap-2 text-base">
+      <ol className="text-muted-foreground flex flex-wrap items-center gap-1.5 gap-y-2 text-sm leading-normal sm:gap-2 sm:text-base">
         {items.map((item, index) => (
-          <li key={index} className="flex items-center gap-2">
+          <React.Fragment key={index}>
             {index > 0 && (
-              <ChevronRight
-                className="text-muted-foreground/50 h-4 w-4"
-                aria-hidden="true"
-              />
+              <li className="text-muted-foreground/50" aria-hidden="true">
+                /
+              </li>
             )}
-            {item.href && index < items.length - 1 ? (
-              <Link
-                href={item.href}
-                className="text-primary"
-              >
-                {item.name}
-              </Link>
-            ) : (
-              <span
-                className={cn(
-                  index === items.length - 1 && "text-foreground font-medium",
-                )}
-              >
-                {item.name}
-              </span>
-            )}
-          </li>
+            <li>
+              {item.href && index < items.length - 1 ? (
+                <Link
+                  href={item.href}
+                  className="text-primary hover:underline transition-colors"
+                >
+                  {item.name}
+                </Link>
+              ) : (
+                <span
+                  className={cn(
+                    "wrap-break-word",
+                    index === items.length - 1 && "text-foreground font-medium",
+                  )}
+                >
+                  {item.name}
+                </span>
+              )}
+            </li>
+          </React.Fragment>
         ))}
       </ol>
     </nav>

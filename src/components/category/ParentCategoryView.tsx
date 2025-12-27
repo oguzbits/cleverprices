@@ -9,6 +9,8 @@ import { Category } from "@/lib/categories";
 import { Button } from "@/components/ui/button";
 import { CategoryCard } from "@/components/ui/category-card";
 
+import { Breadcrumbs } from "@/components/breadcrumbs";
+
 interface ParentCategoryViewProps {
   parentCategory: Omit<Category, "icon">;
   childCategories: Omit<Category, "icon">[];
@@ -20,29 +22,15 @@ export function ParentCategoryView({
   childCategories,
   countryCode,
 }: ParentCategoryViewProps) {
+  const breadcrumbItems = [
+    { name: "Home", href: "/" },
+    { name: "Categories", href: `/${countryCode}/categories` },
+    { name: parentCategory.name },
+  ];
+
   return (
     <div className="container mx-auto px-4 py-6">
-      {/* Breadcrumb */}
-      <nav className="mb-8" aria-label="Breadcrumb">
-        <ol className="text-muted-foreground flex items-center gap-2 text-base">
-          <li>
-            <Link href="/" className="text-primary">
-              Home
-            </Link>
-          </li>
-          <li>/</li>
-          <li>
-            <Link
-              href={`/${countryCode}/categories`}
-              className="text-primary"
-            >
-              Categories
-            </Link>
-          </li>
-          <li>/</li>
-          <li className="text-foreground font-medium">{parentCategory.name}</li>
-        </ol>
-      </nav>
+      <Breadcrumbs items={breadcrumbItems} />
 
       <div className="mb-12">
         <div className="mb-4 flex items-center gap-4">
