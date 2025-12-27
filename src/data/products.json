@@ -503,7 +503,7 @@
     "id": 121,
     "slug": "asus-rog-strix-1200w-platinum-gaming-netzteil",
     "asin": "B09T9P4MSL",
-    "title": "ASUS ROG Strix 1200W Platinum Gaming Netzteil (Vollmodulares ATX Netzteil, GaN-MOSFET, 80+ Platinum, patentiertes GPU-First, Cybenetics Platinum Zertifizierung, ATX 3.1, PCIE 5.1, 12V-2x6 Connector)",
+    "title": "ASUS ROG Strix 1200W Platinum Gaming Power Supply",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/498TuiY",
     "image": "https://m.media-amazon.com/images/I/813smWpWe5L._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -517,15 +517,20 @@
     "condition": "New",
     "brand": "ASUS",
     "prices": {
-      "de": 212.07,
-      "us": 212.07
+      "us": 559.00,
+      "ca": 720.51,
+      "uk": 261.77,
+      "it": 249.99,
+      "fr": 219.89,
+      "de": 212.15,
+      "es": 248.96
     }
   },
   {
     "id": 122,
     "slug": "thermaltake-toughpower-gt-850w",
     "asin": "B0DCZJSJ7Z",
-    "title": "Thermaltake Toughpower GT 850W | ATX 3.1 | PCIe 5.1 12V-2x6-Anschluss | ultraleise Smart-Zero-Funktion | Low Profile Kabel | 80+ Gold | Modular",
+    "title": "Thermaltake Toughpower GT 850W ATX 3.1",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/498LhLI",
     "image": "https://m.media-amazon.com/images/I/7150fqSZ6HL._AC_SX522_.jpg",
@@ -539,15 +544,20 @@
     "condition": "New",
     "brand": "Thermaltake",
     "prices": {
-      "de": 90.09,
-      "us": 90.09
+      "us": 233.00,
+      "ca": 215.09,
+      "uk": 83.67,
+      "it": 109.99,
+      "fr": 94.25,
+      "de": 92.14,
+      "es": 86.90
     }
   },
   {
     "id": 123,
     "slug": "corsair-cx650-atx-650w-netzteil",
     "asin": "B0CK8NDN1Q",
-    "title": "CORSAIR CX650 ATX 650W Netzteil - 80 Plus Bronze Zertifiziert - Geräuscharm - Ummantelte Kabel - Nicht Modular - EU - Schwarz",
+    "title": "Corsair CX650 ATX 650W Power Supply",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/4s78erz",
     "image": "https://m.media-amazon.com/images/I/71-8QqxEbrL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -561,15 +571,20 @@
     "condition": "New",
     "brand": "Corsair",
     "prices": {
-      "de": 62.11,
-      "us": 62.11
+      "us": null,
+      "ca": 160.01,
+      "uk": 80.71,
+      "it": 64.90,
+      "fr": 59.99,
+      "de": 61.90,
+      "es": 52.99
     }
   },
   {
     "id": 124,
     "slug": "corsair-rm850x-atx-850w-netzteil",
     "asin": "B0D9C1DT62",
-    "title": "CORSAIR RM850x Vollständig modulares, geräuscharmes ATX-Netzteil – ATX 3.1-kompatibel – PCIe 5.1-Unterstützung – Cybenetics Gold-Effizienz – Native 12V-2x6-Anschluss – Schwarz",
+    "title": "Corsair RM850x ATX 850W Power Supply",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/3MRfveL",
     "image": "https://m.media-amazon.com/images/I/61eKAbgBZRL._AC_SX300_SY300_QL70_ML2_.jpg",
@@ -583,15 +598,20 @@
     "condition": "New",
     "brand": "Corsair",
     "prices": {
-      "de": 127,
-      "us": 127
+      "us": null,
+      "ca": null,
+      "uk": 133.97,
+      "it": 144.25,
+      "fr": 129.44,
+      "de": 124.90,
+      "es": 150.90
     }
   },
   {
     "id": 125,
     "slug": "msi-mag-a650bn-atx-650w-netzteil",
     "asin": "B0991TZ399",
-    "title": "MSI MAG A650BN Netzteil, EU-Stecker - 650W, 80 Plus Bronze zertifiziert, ATX-Netzteil, 12V Single-Rail, DC/DC-Spannungswandler-Design, 120mm Lüfter - 5 Jahre Garantie",
+    "title": "MSI MAG A650BN ATX 650W Power Supply",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/3Nd69Km",
     "image": "https://m.media-amazon.com/images/I/81eLlIQ5PsL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -605,15 +625,20 @@
     "condition": "New",
     "brand": "MSI",
     "prices": {
-      "de": 58.73,
-      "us": 58.73
+      "us": 60.34,
+      "ca": 104.63,
+      "uk": 42.99,
+      "it": 72.73,
+      "fr": 54.00,
+      "de": 59.90,
+      "es": 58.97
     }
   },
   {
     "id": 126,
     "slug": "thermaltake-berlin-750w-atx-650w-netzteil",
     "asin": "B0DNKBNV52",
-    "title": "Thermaltake Berlin 750W Netzteil | ATX 3.1 | 12V-2 * 6 Pin | 80Plus Weiß Zertifiziert | geräuscharmer Betrieb | German Series",
+    "title": "Thermaltake Berlin 750W ATX 3.1 | 12V-2 * 6 Pin | German Series",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/497v8X4",
     "image": "https://m.media-amazon.com/images/I/71SRRX5pJyL._AC_SX522_.jpg",
@@ -627,15 +652,20 @@
     "condition": "New",
     "brand": "Thermaltake",
     "prices": {
+      "us": 185.00,
+      "ca": null,
+      "uk": null,
+      "it": 68.28,
+      "fr": 75.51,
       "de": 55.55,
-      "us": 55.55
+      "es": 91.80
     }
   },
   {
     "id": 127,
     "slug": "corsair-sf1000-2024-fully-modular-80-plus-platinum-atx-netzteil",
     "asin": "B0D5HYSKHL",
-    "title": "CORSAIR SF1000 (2024) Vollständig Modulares Geräuscharmes 80 Plus Platinum ATX-Netzteil – ATX 3.1-Kompatibel – PCIe 5.1-Fähig – SFX-to-ATX-Halterung im Lieferumfang Enthalten – Schwarz",
+    "title": "Corsair SF1000 Fully Modular 80 Plus Platinum ATX-Netzteil",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/4pf7eih",
     "image": "https://m.media-amazon.com/images/I/81hJaFdwQyL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -649,15 +679,20 @@
     "condition": "New",
     "brand": "Corsair",
     "prices": {
-      "de": 219.75,
-      "us": 219.75
+      "us": 268.50,
+      "ca": null,
+      "uk": 337.99,
+      "it": 220.90,
+      "fr": 202.95,
+      "de": 209.90,
+      "es": 214.95
     }
   },
   {
     "id": 128,
     "slug": "asus-rog-loki-sfx-l-850w-platinum-gaming-netzteil",
     "asin": "B0BT4S6LDS",
-    "title": "ASUS ROG Loki SFX-L 850W Platinum Gaming Netzteil (Vollmodulares Netzteil, 120mm PWM ARGB Lüfter, Aura Sync RGB, Cybenetics Platinum Zertifizierung, ATX 3.1, PCIE 5.1, 12V-2x6 Connector, Weiß)",
+    "title": "ASUS ROG Loki SFX-L 850W Platinum Gaming PSU",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/4ssOqPB",
     "image": "https://m.media-amazon.com/images/I/71ddixVJDYL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -671,15 +706,20 @@
     "condition": "New",
     "brand": "ASUS",
     "prices": {
+      "us": null,
+      "ca": null,
+      "uk": 149.99,
+      "it": 222.39,
+      "fr": 189.90,
       "de": 185.94,
-      "us": 185.94
+      "es": 229.95
     }
   },
   {
     "id": 129,
     "slug": "corsair-sf850",
     "asin": "B0D5J24PJZ",
-    "title": "Corsair PC-Netzteil SF850",
+    "title": "Corsair Power Supply SF850",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/4ssOrD9",
     "image": "https://m.media-amazon.com/images/I/81ddSPKXUtL._AC_SY300_SX300_QL70_ML2_.jpg",
@@ -693,15 +733,20 @@
     "condition": "New",
     "brand": "Corsair",
     "prices": {
-      "de": 189.9,
-      "us": 189.9
+      "us": null,
+      "ca": 496.84,
+      "uk": 294.91,
+      "it": 196.50,
+      "fr": 178.34,
+      "de": 189.90,
+      "es": 172.67
     }
   },
   {
     "id": 130,
     "slug": "be-quiet-sfx-l-power-600w-80-plus-gold",
     "asin": "B07MT3VFMB",
-    "title": "Netzteil be quiet! SFX-L Power 600W 80+ Gold",
+    "title": "Be Quiet! 600W SFX-L Power PSU",
     "category": "power-supplies",
     "affiliateUrl": "https://amzn.to/3Y6oOKn",
     "image": "https://m.media-amazon.com/images/I/81QHzeKEFxL._AC_SX522_.jpg",
@@ -715,8 +760,13 @@
     "condition": "New",
     "brand": "be quiet!",
     "prices": {
-      "de": 124.9,
-      "us": 124.9
+      "us": 368.00,
+      "ca": null,
+      "uk": 106.96,
+      "it": 137.13,
+      "fr": 134.90,
+      "de": 137.85,
+      "es": 148.17
     }
   }
 ]

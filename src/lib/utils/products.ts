@@ -97,17 +97,17 @@ export function getOptimizedImageUrl(
  */
 export function getLocalizedProductData(p: Product, countryCode: string = "us") {
   const code = countryCode.toLowerCase();
-  const price = p.prices?.[code];
   
-  if (price === null) return { price: null, title: p.title, asin: p.asin };
+  // Return null if prices object is missing or if the specific country price is null or undefined
+  if (!p.prices || p.prices[code] === null || p.prices[code] === undefined) {
+    return { price: null, title: p.title, asin: p.asin };
+  }
   
-  // Fallback to 'us' only if the current code is not 'us' AND the current price is undefined (missing)
-  const finalPrice = price !== undefined ? price : (code !== "us" ? p.prices?.["us"] : 0) || 0;
-  
+  const price = p.prices[code];
   const title = p.title;
   const asin = p.asin;
     
-  return { price: finalPrice, title, asin };
+  return { price, title, asin };
 }
 
 /**
