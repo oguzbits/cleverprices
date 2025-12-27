@@ -102,7 +102,7 @@ export function Footer() {
             </ul>
           </nav>
 
-          <div className="text-muted-foreground text-base md:text-right">
+          <div className="text-muted-foreground text-base">
             <p className="mb-4 text-sm">
               As an Amazon Associate, we earn from qualifying purchases. Amazon
               and the Amazon logo are trademarks of Amazon.com, Inc. or its
