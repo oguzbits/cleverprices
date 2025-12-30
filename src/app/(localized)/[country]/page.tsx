@@ -1,6 +1,6 @@
 import HomeContent from "@/components/HomeContent";
 import { getCountryByCode, DEFAULT_COUNTRY } from "@/lib/countries";
-import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
+import { getHomePageMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 
 type Props = {
@@ -11,32 +11,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country } = await params;
   const countryConfig =
     getCountryByCode(country) || getCountryByCode(DEFAULT_COUNTRY);
-  const name = countryConfig?.name || "Global";
-  const code = (countryConfig?.code || country || "US").toUpperCase();
-  const domain = countryConfig?.domain || "amazon.com";
+  const countryCode = countryConfig?.code || DEFAULT_COUNTRY;
+  const countryName = countryConfig?.name || "Global";
 
-  const canonicalUrl =
-    country.toLowerCase() === DEFAULT_COUNTRY
-      ? "https://realpricedata.com"
-      : `https://realpricedata.com/${country.toLowerCase()}`;
-
-  const title = `Price Tracker - Amazon ${code}`;
-  const description = `Amazon ${code} price tracker for hardware & storage. Compare HDD, SSD, RAM and more by true cost per TB/GB. Find the best value hardware deals instantly.`;
-
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: getAlternateLanguages(""),
-    },
-    openGraph: getOpenGraph({
-      title,
-      description,
-      url: canonicalUrl,
-      locale: `en_${code}`,
-    }),
-  };
+  return getHomePageMetadata(countryCode, countryName);
 }
 
 export default async function CountryHomePage({ params }: Props) {

@@ -186,3 +186,45 @@ export function getOpenGraph(overrides: {
     ...overrides,
   };
 }
+
+/**
+ * Generates consistent homepage metadata for all marketplaces.
+ * Ensures US and other country homepages follow the same pattern.
+ * 
+ * @param countryCode - ISO country code (e.g., 'us', 'ca', 'uk')
+ * @param countryName - Full country name (optional, for future use)
+ * @returns Complete Metadata object for the homepage
+ */
+export function getHomePageMetadata(
+  countryCode: string,
+  countryName?: string
+): import("next").Metadata {
+  const code = countryCode.toUpperCase();
+  const isUS = countryCode.toLowerCase() === "us";
+  
+  // Canonical URL: US uses root domain, others use /{country}
+  const canonicalUrl = isUS
+    ? "https://realpricedata.com"
+    : `https://realpricedata.com/${countryCode.toLowerCase()}`;
+  
+  // Consistent title pattern for all marketplaces
+  const title = `Price Tracker - Amazon ${code}`;
+  
+  // Description with country code
+  const description = `Amazon ${code} price tracker for hardware & storage. Compare HDD, SSD, RAM and more by true cost per TB/GB. Find the best value hardware deals instantly.`;
+  
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: canonicalUrl,
+      languages: getAlternateLanguages(""),
+    },
+    openGraph: getOpenGraph({
+      title,
+      description,
+      url: canonicalUrl,
+      locale: `en_${code === "UK" ? "GB" : code}`, // Correct ISO code for UK
+    }),
+  };
+}
