@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country } = await params;
   const title = `Blog | Hardware Pricing & Market Trends - ${country.toUpperCase()}`;
   const description =
-    "In-depth analysis of RAM, SSD, and HDD pricing trends and hardware market insights.";
+    "Expert analysis of RAM, SSD, and HDD pricing trends. Track market fluctuations and get the best value for your PC build.";
   const url = `https://realpricedata.com/${country}/blog`;
 
   return {
