@@ -1,86 +1,78 @@
 # realpricedata.com - AI Assistant Rules
 
-You are working on realpricedata.com, a price comparison platform focused on "Price per Unit" analysis.
+You are working on realpricedata.com, a premium price comparison platform focused on "Price per Unit" analysis.
 
 ## Core Principles
 
-1. **Price per Unit First**: All product categories must support meaningful unit price comparison (e.g., $/TB, $/kg, $/count)
-2. **Premium UI**: Dark mode, glassmorphism, smooth animations, vibrant accents
-3. **TypeScript Strict**: Always use proper TypeScript types and interfaces
-4. **Component Reuse**: Prefer shadcn/ui components over custom implementations
+1.  **Price per Unit First**: All product categories must support meaningful unit price comparison (e.g., $/TB, $/kg, $/count).
+2.  **Premium UI (Zinc Aesthetic)**: Use the Zinc/Grey palette. Dark mode by default with glassmorphism, smooth animations, and subtle orange accents.
+3.  **SEO & Branding**:
+    - Always use `realpricedata.com` for branding (avoid "RealPriceData").
+    - Every page must have a unique title, meta description, canonical URL, and Open Graph tags.
+    - Title format: `[Page Title] - realpricedata.com`.
+4.  **Performance**: Prioritize local assets (e.g., use local SVG flags in `/public/flags/` instead of CDNs).
 
 ## Technology Stack
 
 - Next.js 14+ (App Router)
-- TypeScript
+- TypeScript (Strict mode)
 - Tailwind CSS
-- shadcn/ui (Radix UI primitives)
-- Lucide React (icons)
+- shadcn/ui (Radix UI)
+- Lucide React (Icons)
+- nuqs (URL-based state)
 
 ## Coding Standards
 
-### Components
+### Components & Styling
 
-- Use functional components with TypeScript
-- Default exports for pages, named exports for components
-- Define explicit prop interfaces
-- Arrow functions for event handlers
+- Use functional components with explicit TypeScript interfaces for props.
+- **Links**: No underline by default, underline **ONLY on hover**. Do not change color on hover.
+- **Tables**: Use `HeroTableDemo` patterns. Round "Price per Unit" to **two decimal places**.
+- **Responsive**: Mobile-first. Hide non-critical columns in tables on small screens. Use Sheet for mobile filters.
 
-### Styling
+### Data & Logic
 
-- Tailwind-first approach, avoid custom CSS
-- Mobile-first responsive design
-- Dark mode by default
+- **Country Filtering**: Products must be filtered by `countryCode`. Only show products available in the active marketplace.
+- **Affiliate Disclosures**: Ensure footer contains visible affiliate disclosures.
+- **Local Assets**: Reference flags using `getFlagUrl(countryCode)` which points to `/public/flags/[code].svg`.
 
-### File Structure
+## Content & Blog Guidelines
 
-- Pages: `src/app/[route]/page.tsx`
-- UI Components: `src/components/ui/`
-- Utilities: `src/lib/`
+- **SEO Strategy**: Blog posts should target real search intent and build topical relevance.
+- **Internal Linking**: Blog posts must link to "money pages" (category/product listings).
+- **Tone**: Professional, data-driven, and helpful.
 
-## Category Rules
+## File Structure
 
-### ✅ Valid Categories (Consumables/Capacity-based)
-
-- Storage (Hard Drives, SSDs, MicroSD, USB) - Price per GB/TB
-- Food (Protein Powder, Coffee, Rice, Snacks) - Price per kg/lb/oz
-- Household (Detergent, Paper Products, Trash Bags) - Price per load/count
-- Batteries - Price per count
-
-### ❌ Invalid Categories
-
-- Single-unit electronics (Monitors, CPUs, GPUs, Laptops, Phones)
-- Furniture, Appliances
-- Anything without a meaningful unit metric
+- Pages: `src/app/[country]/...`
+- Components: `src/components/` (UI components in `src/components/ui/`)
+- Hooks: `src/hooks/` (e.g., `useCountry`, `useProductFilters`)
+- Lib: `src/lib/` (e.g., `metadata.ts`, `amazon-api.ts`)
+- Assets: `public/flags/` for country flags.
 
 ## Common Tasks
 
 ### Adding a Category
 
-1. Update `src/app/page.tsx` with new category + icon
-2. Ensure valid "price per unit" metric exists
-3. Add to `src/app/categories/page.tsx`
-4. Update mock data in `src/lib/amazon-api.ts` if needed
+1. Define in `src/lib/categories.ts`.
+2. Add to `src/app/[country]/page.tsx` and `src/app/[country]/categories/page.tsx`.
+3. Ensure unit price logic (e.g., `pricePerTB`) is correctly implemented in `amazon-api.ts` and listing components.
 
-### Adding a Filter
+### SEO Updates
 
-1. Add `useState` in page component
-2. Update `FilterList` component UI
-3. Apply filter in product list logic
-4. Test on both desktop + mobile
+- Update `src/lib/metadata.ts` for global defaults.
+- Ensure `metadata` or `generateMetadata` in `page.tsx` includes `canonical` and `openGraph`.
 
 ## UI Patterns
 
-- **Filters**: Use Accordion for collapsible sections
-- **Mobile**: Use Sheet component for slide-out panels
-- **Tables**: Hide non-critical columns on mobile
-- **Icons**: Lucide React only
-- **Forms**: shadcn/ui Input, Checkbox, Label components
+- **Filters**: Accordion for desktop sidebar, Sheet for mobile.
+- **Modals**: Use search modals with high z-index (layered above banners).
+- **Badges**: Use "Best" instead of "TOP" for premium-rated products.
 
-## Performance
+## Performance & Optimization
 
-- Use `next/image` for all images
-- `useMemo` for expensive filtering/sorting
-- Dynamic imports for heavy components
+- `next/image` for all images.
+- `useMemo` for heavy filtering/sorting of product lists.
+- Avoid external CDNs for small assets like icons or flags.
 
-## Read PROJECT_CONTEXT.md for comprehensive documentation
+Refer to `PROJECT_CONTEXT.md` for detailed architecture and project history.
