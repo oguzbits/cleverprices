@@ -73,7 +73,7 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  href="/blog"
+                  href={country === DEFAULT_COUNTRY ? "/blog" : `/${country}/blog`}
                   className="text-primary hover:underline"
                 >
                   Blog

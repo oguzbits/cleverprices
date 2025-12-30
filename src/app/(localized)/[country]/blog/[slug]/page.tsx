@@ -2,35 +2,36 @@ import { BlogPostView } from "@/components/blog/blog-post-view";
 import { getAllBlogPosts, getBlogPostBySlug } from "@/lib/blog";
 import { getOpenGraph } from "@/lib/metadata";
 import { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-interface BlogPostPageProps {
-  params: Promise<{ slug: string }>;
+interface LocalizedBlogPostPageProps {
+  params: Promise<{ country: string; slug: string }>;
 }
 
 export async function generateStaticParams() {
   const posts = await getAllBlogPosts();
-  return posts.map((post) => ({
-    slug: post.slug,
-  }));
+  // We can pre-render some main countries if needed, or just let it be dynamic
+  // For now, let's keep it simple.
+  return []; 
 }
 
 export async function generateMetadata({
   params,
-}: BlogPostPageProps): Promise<Metadata> {
-  const { slug } = await params;
+}: LocalizedBlogPostPageProps): Promise<Metadata> {
+  const { slug, country } = await params;
   const post = await getBlogPostBySlug(slug);
 
   if (!post) {
-    return {
-      title: "Post Not Found",
-    };
+    return { title: "Post Not Found" };
   }
+
+  const url = `https://realpricedata.com/${country}/blog/${post.slug}`;
 
   return {
     title: post.title,
     description: post.description,
     alternates: {
-      canonical: `https://realpricedata.com/blog/${post.slug}`,
+      canonical: url,
     },
     openGraph: getOpenGraph({
       title: post.title,
@@ -39,12 +40,14 @@ export async function generateMetadata({
       publishedTime: post.publishDate,
       modifiedTime: post.lastUpdated,
       authors: [post.author.name],
-      url: `https://realpricedata.com/blog/${post.slug}`,
+      url,
     }),
   };
 }
 
-export default async function BlogPostPage({ params }: BlogPostPageProps) {
-  const { slug } = await params;
-  return <BlogPostView slug={slug} country="us" />;
+export default async function LocalizedBlogPostPage({
+  params,
+}: LocalizedBlogPostPageProps) {
+  const { slug, country } = await params;
+  return <BlogPostView slug={slug} country={country} />;
 }

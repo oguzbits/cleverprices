@@ -1,17 +1,20 @@
-import Link from "next/link";
-import { BlogPost } from "@/types/blog";
 import { cn } from "@/lib/utils";
-import { Calendar, Clock, ArrowRight } from "lucide-react";
+import { BlogPost } from "@/types/blog";
+import { ArrowRight, Calendar, Clock } from "lucide-react";
+import Link from "next/link";
 
 interface BlogCardProps {
   post: BlogPost;
+  country?: string;
   className?: string;
 }
 
-export function BlogCard({ post, className }: BlogCardProps) {
+export function BlogCard({ post, country = "us", className }: BlogCardProps) {
+  const blogUrl = country === "us" ? `/blog/${post.slug}` : `/${country}/blog/${post.slug}`;
+  
   return (
     <Link
-      href={`/blog/${post.slug}`}
+      href={blogUrl}
       className={cn(
         "group border-border/60 bg-card flex flex-col rounded-2xl border p-6 no-underline transition-all duration-300 hover:shadow-lg",
         className,

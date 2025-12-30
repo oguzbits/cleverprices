@@ -1,7 +1,7 @@
+import { BlogFrontmatter, BlogPost } from "@/types/blog";
 import fs from "fs";
-import path from "path";
 import matter from "gray-matter";
-import { BlogPost, BlogFrontmatter } from "@/types/blog";
+import path from "path";
 
 const BLOG_DIRECTORY = path.join(process.cwd(), "src/content/blog");
 
@@ -13,7 +13,7 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
   const fileNames = fs.readdirSync(BLOG_DIRECTORY);
 
   const posts = fileNames
-    .filter((fileName) => fileName.endsWith(".md"))
+    .filter((fileName) => fileName.endsWith(".md") || fileName.endsWith(".mdx"))
     .map((fileName) => {
       const fullPath = path.join(BLOG_DIRECTORY, fileName);
       const fileContents = fs.readFileSync(fullPath, "utf8");

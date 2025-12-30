@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   getUserCountry,
@@ -19,15 +19,15 @@ export function useCountry() {
   const [isLoading, setIsLoading] = useState(true);
 
   // Extract country from URL
-  const getCountryFromPath = useCallback((): string | null => {
+  const getCountryFromPath = (): string | null => {
     const segments = pathname.split("/").filter(Boolean);
     if (segments.length > 0 && isValidCountryCode(segments[0])) {
       return segments[0];
     }
     return null;
-  }, [pathname]);
+  };
 
-  // Initialize country on mount
+  // Initialize country on mount and on pathname changes
   useEffect(() => {
     const urlCountry = getCountryFromPath();
 
@@ -55,49 +55,46 @@ export function useCountry() {
         router.replace(`/${userCountry}`);
       }
     }
-  }, [getCountryFromPath, pathname, router]);
+  }, [pathname, router]);
 
   // Change country and update URL
-  const changeCountry = useCallback(
-    (newCountryCode: string) => {
-      if (!isValidCountryCode(newCountryCode)) {
-        console.error(`Invalid country code: ${newCountryCode}`);
-        return;
+  const changeCountry = (newCountryCode: string) => {
+    if (!isValidCountryCode(newCountryCode)) {
+      console.error(`Invalid country code: ${newCountryCode}`);
+      return;
+    }
+
+    const urlCountry = getCountryFromPath();
+    const oldCountry = country;
+
+    setCountry(newCountryCode);
+    saveCountryPreference(newCountryCode);
+
+    // Track country change for SEO analytics
+    trackSEO.countryChanged(oldCountry, newCountryCode);
+
+    // Update URL
+    if (urlCountry) {
+      // If switching TO the default country from its localized landing page, go to root
+      if (
+        newCountryCode === DEFAULT_COUNTRY &&
+        pathname === `/${urlCountry}`
+      ) {
+        router.push("/");
+      } else {
+        // Safe way to replace ONLY the first segment (the country code)
+        const segments = pathname.split("/"); // e.g. ["", "us", "electronics"]
+        segments[1] = newCountryCode;
+        const newPath = segments.join("/");
+        router.push(newPath || "/");
       }
-
-      const urlCountry = getCountryFromPath();
-      const oldCountry = country;
-
-      setCountry(newCountryCode);
-      saveCountryPreference(newCountryCode);
-
-      // Track country change for SEO analytics
-      trackSEO.countryChanged(oldCountry, newCountryCode);
-
-      // Update URL
-      if (urlCountry) {
-        // If switching TO the default country from its localized landing page, go to root
-        if (
-          newCountryCode === DEFAULT_COUNTRY &&
-          pathname === `/${urlCountry}`
-        ) {
-          router.push("/");
-        } else {
-          // Safe way to replace ONLY the first segment (the country code)
-          const segments = pathname.split("/"); // e.g. ["", "us", "electronics"]
-          segments[1] = newCountryCode;
-          const newPath = segments.join("/");
-          router.push(newPath || "/");
-        }
-      } else if (pathname === "/") {
-        // If we're on the root homepage and switching away from default, redirect
-        if (newCountryCode !== DEFAULT_COUNTRY) {
-          router.push(`/${newCountryCode}`);
-        }
+    } else if (pathname === "/") {
+      // If we're on the root homepage and switching away from default, redirect
+      if (newCountryCode !== DEFAULT_COUNTRY) {
+        router.push(`/${newCountryCode}`);
       }
-    },
-    [pathname, router, getCountryFromPath, country],
-  );
+    }
+  };
 
   // Get current country object
   const currentCountry: Country | undefined = countries[country];

@@ -136,8 +136,8 @@ export function getCategoryPath(
     path = `/${category.slug}`;
   }
 
-  // Prepend country code if provided
-  if (countryCode) {
+  // Prepend country code if provided and it's not the default country
+  if (countryCode && countryCode !== "us") {
     path = `/${countryCode}${path}`;
   }
 

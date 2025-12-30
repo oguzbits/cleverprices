@@ -36,7 +36,7 @@ export const countries: Record<string, Country> = {
     flag: "🇨🇦",
     domain: "amazon.ca",
     currency: "CAD",
-    symbol: "C$",
+    symbol: "$",
     locale: "en-CA",
     isLive: true,
   },

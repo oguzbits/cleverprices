@@ -205,7 +205,7 @@ export function ProductTable({
                   className="inline-block"
                 >
                   <button className="h-9 cursor-pointer rounded-xl border border-[#FCD200]/50 bg-[#FFD814] px-4 text-sm font-bold whitespace-nowrap text-black shadow-sm transition-all hover:bg-[#F7CA00] active:scale-[0.98]">
-                    View Deal
+                    View on Amazon
                   </button>
                 </a>
               </TableCell>
