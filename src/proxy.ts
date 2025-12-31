@@ -28,6 +28,7 @@ export function proxy(request: NextRequest) {
       path: "/",
       maxAge: 31536000,
       sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
     });
     return response;
   }

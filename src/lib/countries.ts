@@ -155,7 +155,8 @@ export function saveCountryPreference(countryCode: string): void {
   if (typeof window === "undefined") return;
   try {
     // Set cookie for 1 year, Lax, Root path to ensure Proxy visibility
-    document.cookie = `country=${countryCode.toLowerCase()}; path=/; max-age=31536000; SameSite=Lax`;
+    const isSecure = window.location.protocol === "https:";
+    document.cookie = `country=${countryCode.toLowerCase()}; path=/; max-age=31536000; SameSite=Lax${isSecure ? "; Secure" : ""}`;
 
     // Cleanup legacy localStorage if it exists
     localStorage.removeItem(COUNTRY_STORAGE_KEY);
