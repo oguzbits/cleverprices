@@ -8,7 +8,7 @@ import { Inter } from "next/font/google";
 import * as React from "react";
 
 const inter = Inter({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   display: "swap",
   preload: true,
   variable: "--font-inter",

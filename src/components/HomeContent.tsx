@@ -3,12 +3,11 @@ import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 import { PopularProducts } from "@/components/PopularProducts";
 import { PriceDrops } from "@/components/PriceDrops";
+import { getFlag, type CountryCode } from "@/lib/countries";
 import {
   getAllCountries,
   getCountryByCode,
-  getFlag,
-  type CountryCode,
-} from "@/lib/countries";
+} from "@/lib/server/cached-countries";
 import { getAllProducts } from "@/lib/server/cached-products";
 import { adaptToUIModel, getLocalizedProductData } from "@/lib/utils/products";
 import Image from "next/image";
@@ -16,7 +15,8 @@ import Link from "next/link";
 import Script from "next/script";
 
 export async function HomeContent({ country }: { country: CountryCode }) {
-  const countryConfig = getCountryByCode(country);
+  const countryConfig = await getCountryByCode(country);
+  const allCountries = await getAllCountries();
   const allProducts = await getAllProducts();
 
   // Adapt products to UI model
@@ -113,7 +113,7 @@ export async function HomeContent({ country }: { country: CountryCode }) {
               Supported Marketplaces
             </p>
             <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
-              {getAllCountries().map((c) => {
+              {allCountries.map((c) => {
                 const isActive = c.code === country;
                 const flagUrl = getFlag(c.code);
                 const href = c.isLive ? `/${c.code}` : "#";
@@ -142,7 +142,7 @@ export async function HomeContent({ country }: { country: CountryCode }) {
                         width={64}
                         height={40}
                         className="h-8 w-12 object-cover transition-all sm:h-10 sm:w-16"
-                        loading="lazy"
+                        priority={isActive}
                       />
                     </div>
                   </Link>
@@ -152,7 +152,11 @@ export async function HomeContent({ country }: { country: CountryCode }) {
           </div>
 
           <HeroDealCards country={country} />
-          <PopularProducts products={uiProducts} country={country} />
+          <PopularProducts
+            products={uiProducts}
+            country={country}
+            priorityIndices={[0, 1]}
+          />
           <PriceDrops products={mockPriceDrops} country={country} />
         </section>
       </div>

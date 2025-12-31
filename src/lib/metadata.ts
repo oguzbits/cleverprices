@@ -69,6 +69,7 @@ export const siteMetadata: Metadata = {
       "Compare Amazon hardware by true cost per TB/GB. Track HDD, SSD, and RAM prices to find the best value deals instantly.",
     images: ["/og-image.png"],
     creator: "@realpricedata",
+    site: "@realpricedata",
   },
   appleWebApp: {
     capable: true,

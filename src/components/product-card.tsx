@@ -90,7 +90,7 @@ export function ProductCard({
             fill
             className="object-contain p-4"
             sizes="(max-width: 640px) 220px, (max-width: 768px) 265px, (max-width: 1024px) 293px, 300px"
-            quality={50}
+            quality={75}
             priority={priority}
           />
         ) : (

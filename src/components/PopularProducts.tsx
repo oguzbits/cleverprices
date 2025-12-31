@@ -7,9 +7,14 @@ import { parseAsString, useQueryState } from "nuqs";
 interface PopularProductsProps {
   products: Product[];
   country: string;
+  priorityIndices?: number[];
 }
 
-export function PopularProducts({ products, country }: PopularProductsProps) {
+export function PopularProducts({
+  products,
+  country,
+  priorityIndices,
+}: PopularProductsProps) {
   const [category, setCategory] = useQueryState(
     "popularCategory",
     parseAsString.withDefault("all"),
@@ -31,7 +36,7 @@ export function PopularProducts({ products, country }: PopularProductsProps) {
       categories={categories}
       selectedCategory={category}
       onCategoryChange={setCategory}
-      priorityIndices={[0]}
+      priorityIndices={priorityIndices}
     />
   );
 }
