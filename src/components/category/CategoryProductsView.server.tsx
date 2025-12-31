@@ -160,7 +160,7 @@ function NoProductsMatchingFilters() {
       </div>
       <h3 className="mb-2 text-lg font-semibold">No products found</h3>
       <p className="text-muted-foreground mb-6 max-w-sm">
-        We couldn't find any products matching your current filters.
+        We couldn&apos;t find any products matching your current filters.
         Try adjusting your filters or search term.
       </p>
     </div>

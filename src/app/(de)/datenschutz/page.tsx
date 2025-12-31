@@ -120,7 +120,7 @@ export default function DatenschutzPage() {
               Local Storage (Funktionale Speicherung)
             </h3>
             <p>
-              Wir nutzen den "Local Storage" Ihres Browsers, um Ihre regionale
+              Wir nutzen den &quot;Local Storage&quot; Ihres Browsers, um Ihre regionale
               Präferenz (z. B. den gewählten Marktplatz wie USA oder
               Deutschland) zu speichern. Dies dient ausschließlich der technisch
               korrekten Darstellung von Währungen, Preisen und regionalen
@@ -136,8 +136,8 @@ export default function DatenschutzPage() {
               auf die Website des Anbieters weitergeleitet werden. In diesem
               Moment können vom jeweiligen Anbieter (z. B. Amazon) Cookies auf
               dessen Domain gesetzt werden, um die Herkunft der Bestellung
-              nachzuvollziehen. Details dazu finden Sie im Abschnitt "Amazon
-              Partnerprogramm".
+              nachzuvollziehen. Details dazu finden Sie im Abschnitt &quot;Amazon
+              Partnerprogramm&quot;.
             </p>
           </div>
         </section>

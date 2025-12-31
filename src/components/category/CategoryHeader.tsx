@@ -18,7 +18,6 @@ export function CategoryHeader({
   category,
   countryCode,
   breadcrumbs,
-  productCount,
   filterTrigger,
 }: CategoryHeaderProps) {
   const Icon = getCategoryIcon(category.slug);

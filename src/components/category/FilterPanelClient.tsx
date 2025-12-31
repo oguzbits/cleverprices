@@ -25,7 +25,7 @@ export function FilterPanelClient({
   unitLabel,
   initialFilters,
 }: FilterPanelClientProps) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [filters, setFilters] = useQueryStates(
     {
       condition: parseAsArrayOf(parseAsString).withDefault(

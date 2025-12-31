@@ -102,7 +102,7 @@ export function getCountryByCode(code: string | null | undefined): Country | und
 // Detect country from browser locale
 export function detectCountryFromLocale(locale?: string): CountryCode {
   if (!locale && typeof navigator !== "undefined") {
-    locale = navigator.language || (navigator as any).userLanguage;
+    locale = navigator.language || (navigator as Navigator & { userLanguage?: string }).userLanguage;
   }
 
   if (!locale) return DEFAULT_COUNTRY;

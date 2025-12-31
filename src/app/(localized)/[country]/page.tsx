@@ -12,9 +12,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const countryConfig =
     getCountryByCode(country) || getCountryByCode(DEFAULT_COUNTRY);
   const countryCode = countryConfig?.code || DEFAULT_COUNTRY;
-  const countryName = countryConfig?.name || "Global";
 
-  return getHomePageMetadata(countryCode, countryName);
+  return getHomePageMetadata(countryCode);
 }
 
 export default async function CountryHomePage({ params }: Props) {

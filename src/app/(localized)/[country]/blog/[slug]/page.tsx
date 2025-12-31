@@ -1,15 +1,13 @@
 import { BlogPostView } from "@/components/blog/blog-post-view";
-import { getAllBlogPosts, getBlogPostBySlug } from "@/lib/blog";
+import { getBlogPostBySlug } from "@/lib/blog";
 import { getOpenGraph } from "@/lib/metadata";
 import { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 interface LocalizedBlogPostPageProps {
   params: Promise<{ country: string; slug: string }>;
 }
 
 export async function generateStaticParams() {
-  const posts = await getAllBlogPosts();
   // We can pre-render some main countries if needed, or just let it be dynamic
   // For now, let's keep it simple.
   return []; 

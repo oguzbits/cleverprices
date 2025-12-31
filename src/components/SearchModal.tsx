@@ -14,7 +14,7 @@ import { DEFAULT_COUNTRY, type CountryCode } from "@/lib/countries";
 import type { LucideIcon } from "lucide-react";
 import { Search } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface CategoryLink {
   name: string;
@@ -56,6 +56,15 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const router = useRouter();
 
+  // Wrap onOpenChange to reset state when closing
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!newOpen) {
+      setQuery("");
+      setSelectedIndex(-1);
+    }
+    onOpenChange(newOpen);
+  };
+
   // Filter categories based on query
   const filteredCategories = ALL_CATEGORIES.filter((cat) =>
     cat.name.toLowerCase().includes(query.toLowerCase()),
@@ -65,15 +74,24 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const availableItems =
     query === "" ? Object.values(QUICK_LINKS).flat() : filteredCategories;
 
+  const params = useParams();
+  const country = (params?.country as CountryCode) || DEFAULT_COUNTRY;
+
+  const handleLinkClick = (slug: string) => {
+    const path = getCategoryPath(slug as CategorySlug, country);
+    router.push(path);
+    handleOpenChange(false);
+  };
+
   // Handle keyboard shortcuts and navigation
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        onOpenChange(!open);
+        handleOpenChange(!open);
       }
       if (e.key === "Escape") {
-        onOpenChange(false);
+        handleOpenChange(false);
       }
       if (e.key === "ArrowDown" && availableItems.length > 0) {
         e.preventDefault();
@@ -98,31 +116,17 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, [open, onOpenChange, selectedIndex, availableItems]);
+  }, [open, handleOpenChange, selectedIndex, availableItems, handleLinkClick]);
 
-  // Reset query and selection when modal closes or query changes
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setSelectedIndex(-1);
-    }
-  }, [open]);
-
-  useEffect(() => {
+  // Handle input change and index reset
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQuery(e.target.value);
     setSelectedIndex(-1);
-  }, [query]);
-
-  const params = useParams();
-  const country = (params?.country as CountryCode) || DEFAULT_COUNTRY;
-
-  const handleLinkClick = (slug: string) => {
-    const path = getCategoryPath(slug as CategorySlug, country);
-    router.push(path);
-    onOpenChange(false);
   };
 
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="bg-card border-border flex h-dvh w-full max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 shadow-2xl focus:outline-none **:data-[slot=dialog-close]:top-6 **:data-[slot=dialog-close]:right-6 md:h-auto md:max-h-[90vh] md:w-[calc(100%-2rem)] md:max-w-2xl md:rounded-4xl md:**:data-[slot=dialog-close]:top-8 md:**:data-[slot=dialog-close]:right-8 **:data-[slot=dialog-close]:[&_svg]:size-6!">
         {" "}
         {/* Search Input Header */}
@@ -148,7 +152,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
               <Input
                 placeholder="What are you looking for?"
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={handleQueryChange}
                 className="placeholder:text-muted-foreground/40 bg-background dark:bg-background h-auto flex-1 border-0 px-3 py-1.5 text-base font-bold tracking-tight shadow-none focus-visible:ring-0 md:text-lg"
                 autoFocus
                 autoComplete="off"
@@ -175,8 +179,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                     {section}
                   </h3>
                   <div className="flex flex-col gap-2.5">
-                    {links.map((link, idx) => {
-                      const IconComponent = link.icon;
+                    {links.map((link) => {
                       // Only calculate selection when in quick links mode (query is empty)
                       const globalIndex =
                         query === ""
@@ -211,7 +214,6 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   </h3>
                   <div className="flex flex-col gap-2.5">
                     {filteredCategories.map((category, idx) => {
-                      const IconComponent = category.icon;
                       const isSelected = idx === selectedIndex;
                       return (
                         <CategoryButton
@@ -237,8 +239,8 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                       No categories found
                     </p>
                     <p className="text-muted-foreground mx-auto mt-2 max-w-xs">
-                      We couldn't find anything matching "{query}". Try another
-                      keyword like "hard drives".
+                      We couldn&apos;t find anything matching &quot;{query}&quot;. Try another
+                      keyword like &quot;hard drives&quot;.
                     </p>
                   </div>
                 </div>

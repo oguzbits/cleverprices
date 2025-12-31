@@ -8,7 +8,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
-import { Suspense } from "react";
+import React, { Suspense } from "react";
 
 const PopularProducts = dynamic(
   () =>
@@ -45,7 +45,9 @@ export function HomeContent({ country }: { country: CountryCode }) {
     .filter((p): p is NonNullable<typeof p> => p !== null);
 
   const mockPriceDrops = uiProducts.slice(2, 6).map((p) => {
-    const dropPercentage = Math.floor(Math.random() * 20) + 10;
+    // Use a stable value based on ASIN for purity
+    const hash = p.asin.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const dropPercentage = (hash % 10) + 5; // Stable 5-15% drop
     const oldPrice = p.price.amount / (1 - dropPercentage / 100);
     return {
       ...p,

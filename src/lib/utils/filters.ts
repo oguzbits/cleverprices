@@ -30,7 +30,7 @@ export function hasFilterValue<T>(array: T[] | null, value: T): boolean {
 /**
  * Get count of active filters
  */
-export function getActiveFilterCount(filters: Record<string, any>): number {
+export function getActiveFilterCount(filters: Record<string, unknown>): number {
   return Object.values(filters).filter((value) => {
     if (value === null || value === undefined || value === "") return false;
     if (Array.isArray(value)) return value.length > 0;
@@ -42,10 +42,10 @@ export function getActiveFilterCount(filters: Record<string, any>): number {
  * Apply filters to an array of items
  * Generic filter function that works with any object type
  */
-export function applyFilters<T extends Record<string, any>>(
+export function applyFilters<T extends Record<string, unknown>>(
   items: T[],
-  filters: Record<string, any>,
-  matcher: (item: T, key: string, value: any) => boolean,
+  filters: Record<string, unknown>,
+  matcher: (item: T, key: string, value: unknown) => boolean,
 ): T[] {
   return items.filter((item) => {
     return Object.entries(filters).every(([key, value]) => {

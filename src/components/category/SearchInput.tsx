@@ -9,7 +9,7 @@ import { useTransition } from "react";
  * Client component for search input that syncs with URL
  */
 export function SearchInput() {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [search, setSearch] = useQueryState(
     "search",
     parseAsString.withDefault("").withOptions({

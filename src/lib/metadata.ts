@@ -177,7 +177,7 @@ export function getOpenGraph(overrides: {
   url?: string;
   type?: "website" | "article";
   locale?: string;
-  [key: string]: any;
+  [key: string]: string | boolean | undefined | number | string[];
 } = {}) {
   // If no title/description provided, Next.js will use the page's top-level title/description
   // but it's better to be explicit to ensure they are present in the OG tags.
@@ -196,8 +196,7 @@ export function getOpenGraph(overrides: {
  * @returns Complete Metadata object for the homepage
  */
 export function getHomePageMetadata(
-  countryCode: string,
-  countryName?: string
+  countryCode: string
 ): import("next").Metadata {
   const code = countryCode.toUpperCase();
   const isUS = countryCode.toLowerCase() === "us";

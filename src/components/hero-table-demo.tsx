@@ -1,20 +1,20 @@
 "use client";
 
-import { useState, useEffect, startTransition } from "react";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Check, Search, TrendingUp, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Card } from "@/components/ui/card";
 import {
-  hardDriveProducts,
   batteryProducts,
-  powerSupplyProducts,
-  categoryConfig,
   categories,
-  type HardDriveProduct,
+  categoryConfig,
+  hardDriveProducts,
+  powerSupplyProducts,
   type BatteryProduct,
+  type HardDriveProduct,
   type PowerSupplyProduct,
 } from "@/lib/data/demo-products";
+import { cn } from "@/lib/utils";
+import { Search, Sparkles, TrendingUp } from "lucide-react";
+import { startTransition, useEffect, useState } from "react";
 
 export function HeroTableDemo() {
   const [currentCategoryIndex, setCurrentCategoryIndex] = useState(0);
@@ -122,7 +122,7 @@ export function HeroTableDemo() {
 
                 {/* Table Body */}
                 <div className="divide-border divide-y">
-                  {products.map((product: any, idx) => (
+                  {products.map((product: BatteryProduct | HardDriveProduct | PowerSupplyProduct, idx) => (
                     <div
                       key={product.id}
                       className={cn(

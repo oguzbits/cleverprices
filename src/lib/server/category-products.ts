@@ -87,7 +87,7 @@ export function getCategoryProducts(
 
   // Apply filtering
   const filtered = filterProducts(
-    localizedProducts as any,
+    localizedProducts,
     filters,
     category.slug,
     unitLabel,
@@ -95,7 +95,7 @@ export function getCategoryProducts(
 
   // Apply sorting
   const sorted = sortProducts(
-    filtered as any,
+    filtered as LocalizedProduct[],
     filters.sortBy,
     filters.sortOrder,
   ) as LocalizedProduct[];

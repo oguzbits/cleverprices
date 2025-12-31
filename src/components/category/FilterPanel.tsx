@@ -8,7 +8,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
 import { getCategoryFilterOptions } from "@/lib/utils/category-utils";
 
 interface FilterPanelProps {

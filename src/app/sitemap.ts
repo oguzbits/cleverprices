@@ -21,7 +21,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/en/legal-notice",
     "/en/privacy",
   ].map((route) => {
-    const entry: any = {
+    const entry: MetadataRoute.Sitemap[number] = {
       url: `${baseUrl}${route}`,
       lastModified: new Date(),
       changeFrequency: "daily" as const,

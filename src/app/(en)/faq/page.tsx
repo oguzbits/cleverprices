@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
-import { getOpenGraph } from "@/lib/metadata";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { getOpenGraph } from "@/lib/metadata";
+import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "FAQ - Frequently Asked Questions",
@@ -39,7 +40,7 @@ export default function FAQPage() {
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
             realpricedata.com is a specialized price comparison engine that
-            focuses on the "price per unit" (e.g., price per Terabyte, price per
+            focuses on the &quot;price per unit&quot; (e.g., price per Terabyte, price per
             Gigabyte, or price per item). Unlike standard price comparison sites
             that just show the total price, we help you find the true best value
             by standardizing the cost across different package sizes and
@@ -49,7 +50,7 @@ export default function FAQPage() {
 
         <AccordionItem value="item-2">
           <AccordionTrigger className="text-left font-semibold">
-            How is the "price per unit" calculated for RAM and SSDs?
+            How is the &quot;price per unit&quot; calculated for RAM and SSDs?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
             We automatically extract quantity information (like 2TB for an SSD
@@ -65,7 +66,7 @@ export default function FAQPage() {
             Where does the price data come from?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
-            We use official APIs (like Amazon's Product Advertising API) to
+            We use official APIs (like Amazon&apos;s Product Advertising API) to
             retrieve pricing and availability directly from major retailers.
             This ensures that the data we display is accurate and sourced
             directly from the merchant.
@@ -95,12 +96,12 @@ export default function FAQPage() {
             production capacity toward high-margin enterprise memory, reducing
             the supply for consumer-grade DDR4, DDR5, and SSDs. Read our full
             analysis on
-            <a
+            <Link
               href="/blog/ram-ssd-price-trends-2025"
               className="text-primary ml-1 hover:underline"
             >
               Why RAM and SSD Prices Are Rising in 2025
-            </a>
+            </Link>
             .
           </AccordionContent>
         </AccordionItem>
@@ -111,13 +112,13 @@ export default function FAQPage() {
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
             You can use our{" "}
-            <a
+            <Link
               href="/de/electronics/hard-drives"
               className="text-primary hover:underline"
             >
               Hard Drive & SSD
-            </a>{" "}
-            comparison pages and sort by "Value (Price per Unit)". This will
+            </Link>{" "}
+            comparison pages and sort by &quot;Value (Price per Unit)&quot;. This will
             instantly rank all available storage products by their actual cost
             per TB, allowing you to save money regardless of the total drive
             capacity.
@@ -130,9 +131,9 @@ export default function FAQPage() {
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
             Yes! Our{" "}
-            <a href="/blog" className="text-primary hover:underline">
+            <Link href="/blog" className="text-primary hover:underline">
               Blog
-            </a>{" "}
+            </Link>{" "}
             features in-depth articles on hardware market trends, pricing
             predictions, and evergreen tips on how to optimize your PC builds
             for the best value. We focus on data-driven insights for storage,
@@ -142,10 +143,10 @@ export default function FAQPage() {
 
         <AccordionItem value="item-8">
           <AccordionTrigger className="text-left font-semibold">
-            Why shouldn't I just buy the cheapest product on the list?
+            Why shouldn&apos;t I just buy the cheapest product on the list?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
-            The "Best Price per Unit" is a powerful value indicator, but you
+            The &quot;Best Price per Unit&quot; is a powerful value indicator, but you
             should also consider brand reputation, warranty length, and
             performance specs (like NVMe speeds vs SATA). Our data helps you
             find the most efficient deals, but we always encourage checking user
@@ -160,19 +161,19 @@ export default function FAQPage() {
           <AccordionContent className="text-muted-foreground leading-relaxed">
             On any category page, use the side filters (or the filter icon on
             mobile) to narrow down by technology (e.g.,{" "}
-            <a
+            <Link
               href="/de/electronics/ram?technology=DDR5"
               className="text-primary hover:underline"
             >
               DDR5
-            </a>
+            </Link>
             ) or form factor (e.g.,{" "}
-            <a
+            <Link
               href="/de/electronics/hard-drives?formFactor=M.2+NVMe"
               className="text-primary hover:underline"
             >
               M.2 NVMe
-            </a>
+            </Link>
             ). Our engine will keep calculating the unit price even as you apply
             multiple filters.
           </AccordionContent>

@@ -14,7 +14,7 @@ You are working on realpricedata.com, a premium price comparison platform focuse
 
 ## Technology Stack
 
-- Next.js 14+ (App Router)
+- Next.js 16+ (App Router)
 - TypeScript (Strict mode)
 - Tailwind CSS
 - shadcn/ui (Radix UI)

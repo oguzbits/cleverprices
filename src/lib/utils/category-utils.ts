@@ -97,7 +97,7 @@ export function sortProducts(
 
     // Map 'capacity' sort request to 'normalizedCapacity' for correct unit-aware sorting
     if (key === "capacity") {
-      key = "normalizedCapacity" as any;
+      key = "normalizedCapacity" as keyof Product;
     }
 
     const aValue = a[key];

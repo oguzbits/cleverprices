@@ -61,14 +61,14 @@ export function useCategoryProducts({
     if (!category) return [];
 
     const filtered = filterProducts(
-      localizedProducts as any,
+      localizedProducts,
       filters,
       category.slug,
       unitLabel,
     );
 
     return sortProducts(
-      filtered as any,
+      filtered as LocalizedProduct[],
       filters.sortBy,
       filters.sortOrder,
     ) as LocalizedProduct[];

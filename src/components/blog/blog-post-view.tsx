@@ -44,17 +44,25 @@ export async function BlogPostView({ slug, country }: BlogPostViewProps) {
         />
       );
     },
-    Link: (props: any) => <LocalizedLink {...props} country={country} />,
-    h2: (props: any) => (
+    Link: (props: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
+      <LocalizedLink
+        {...props}
+        href={props.href!}
+        country={country}
+      >
+        {props.children}
+      </LocalizedLink>
+    ),
+    h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
       <h2
         className="mb-8 mt-16 text-3xl font-black uppercase italic tracking-tight"
         {...props}
       />
     ),
-    h3: (props: any) => (
+    h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
       <h3 className="mb-4 mt-12 text-xl font-bold uppercase" {...props} />
     ),
-    p: (props: any) => (
+    p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
       <p
         className="text-muted-foreground mb-6 text-lg font-medium leading-relaxed"
         {...props}
