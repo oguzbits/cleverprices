@@ -1,5 +1,4 @@
-import { Footer } from "@/components/layout/Footer";
-import { Navbar } from "@/components/layout/Navbar";
+import { PageLayout } from "@/components/layout/PageLayout";
 import { siteMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 
@@ -17,10 +16,8 @@ export default function EnglishLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
-      <Navbar country="us" />
+    <PageLayout country="us">
       {children}
-      <Footer country="us" />
-    </>
+    </PageLayout>
   );
 }
