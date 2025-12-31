@@ -10,7 +10,8 @@ export function proxy(request: NextRequest) {
     pathname.startsWith("/_next") ||
     pathname.includes(".") ||
     pathname.startsWith("/api") ||
-    pathname.startsWith("/flags")
+    pathname.startsWith("/flags") ||
+    pathname.startsWith("/out")
   ) {
     return NextResponse.next();
   }
