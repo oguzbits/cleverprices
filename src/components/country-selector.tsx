@@ -12,12 +12,12 @@ import {
 import { DEFAULT_COUNTRY, getAllCountries, getCountryByCode, getFlag, isValidCountryCode } from "@/lib/countries";
 import { Globe } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { CountryItem } from "./CountryItem";
 
 export function CountrySelector({ currentCountryCode }: { currentCountryCode?: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const allCountries = getAllCountries();
   const currentCountry = getCountryByCode(currentCountryCode || DEFAULT_COUNTRY);
 
@@ -76,10 +76,10 @@ export function CountrySelector({ currentCountryCode }: { currentCountryCode?: s
             return (
               <DropdownMenuItem
                 key={c.code}
-                asChild
+                onClick={() => router.push(targetHref)}
                 className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               >
-                <Link href={targetHref} className="no-underline w-full">
+                <div className="w-full">
                   <CountryItem
                     code={c.code}
                     name={c.name}
@@ -87,7 +87,7 @@ export function CountrySelector({ currentCountryCode }: { currentCountryCode?: s
                     isLive={true}
                     isActive={currentCountryCode === c.code}
                   />
-                </Link>
+                </div>
               </DropdownMenuItem>
             );
           })}
