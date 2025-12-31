@@ -63,7 +63,7 @@ export function QuickPicks({ category, products, country, limit = 3 }: QuickPick
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-lg leading-snug text-foreground transition-colors group-hover:text-foreground/90">
-                  <a href={`/out/${product.slug}?country=${country}`} target="_blank" rel="noopener noreferrer" className="no-underline hover:underline decoration-primary/50 decoration-2 underline-offset-4">
+                  <a href={`/out/${product.slug}?country=${country}`} target="_blank" rel="noopener noreferrer" className="no-underline">
                     {product.title}
                   </a>
                 </h4>
@@ -71,7 +71,7 @@ export function QuickPicks({ category, products, country, limit = 3 }: QuickPick
                   <span className="font-bold text-primary tabular-nums">
                     {product.displayPrice}
                   </span>
-                  <span className="flex items-center gap-1.5 text-muted-foreground font-medium lowercase">
+                  <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
                     <TrendingDown className="h-3.5 w-3.5 text-primary/70" />
                     <span className="text-foreground font-bold tabular-nums">{product.pricePerUnit}</span> / {product.unitType}
                   </span>
@@ -80,29 +80,19 @@ export function QuickPicks({ category, products, country, limit = 3 }: QuickPick
             </div>
             
             <div className="flex items-center gap-3 self-end sm:self-center">
-              {idx === 0 && (
-                <span className="hidden lg:inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-primary border border-primary/20">
-                  Best Value
-                </span>
-              )}
+
               
               <a 
                 href={`/out/${product.slug}?country=${country}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex h-10 items-center justify-center rounded-xl border border-[#FCD200]/50 bg-[#FFD814] px-6 py-2 text-sm font-bold text-black shadow-sm transition-all hover:bg-[#F7CA00] active:scale-[0.98]"
+                className="inline-flex h-8 items-center justify-center rounded-lg border border-[#FCD200]/50 bg-[#FFD814] px-3 text-[11px] font-bold whitespace-nowrap text-black shadow-sm transition-all hover:bg-[#F7CA00] active:scale-[0.98] sm:h-9 sm:rounded-xl sm:px-4 sm:text-sm no-underline hover:no-underline"
               >
                 View on Amazon
               </a>
             </div>
 
-            {idx === 0 && (
-              <div className="absolute top-0 right-0 sm:hidden">
-                <span className="bg-primary px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white rounded-bl-lg">
-                  Best Value
-                </span>
-              </div>
-            )}
+
           </div>
         ))}
       </div>
