@@ -113,7 +113,13 @@ export function CountrySelector({
                 <Link
                   href={targetHref}
                   className="focus:bg-accent focus:text-accent-foreground flex w-full cursor-pointer items-center px-2 py-1.5 no-underline"
-                  onClick={() => saveCountryPreference(c.code)}
+                  onClick={(e) => {
+                    saveCountryPreference(c.code);
+                    if (c.code === DEFAULT_COUNTRY) {
+                      e.preventDefault();
+                      window.location.href = targetHref;
+                    }
+                  }}
                   prefetch={true}
                 >
                   <CountryItem

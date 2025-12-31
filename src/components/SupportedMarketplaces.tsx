@@ -33,10 +33,17 @@ export function SupportedMarketplaces({
               key={c.code}
               href={href}
               prefetch={c.code !== "us"}
-              onClick={() => {
+              onClick={(e) => {
                 if (c.isLive) {
                   // Save preference to cookie + localStorage
                   saveCountryPreference(c.code);
+
+                  // Force hard reload for US to bypass router cache/redirect loops
+                  // This is necessary because mobile browsers/Next.js router aggressively cache the 'redirect to non-US' response
+                  if (c.code === "us") {
+                    e.preventDefault();
+                    window.location.href = href;
+                  }
                 }
               }}
               className={`group relative flex flex-col items-center no-underline transition-all ${

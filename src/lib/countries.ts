@@ -133,29 +133,34 @@ export function detectCountryFromLocale(locale?: string): CountryCode {
   return fallbackMap[languageCode] || DEFAULT_COUNTRY;
 }
 
-// LocalStorage key for country preference
+// LocalStorage key for country preference (Deprecated, kept for cleanup)
 export const COUNTRY_STORAGE_KEY = "realpricedata_country";
 
-// Get saved country preference from localStorage
+// Get saved country preference from Cookies (Client-side)
 export function getSavedCountry(): CountryCode | null {
   if (typeof window === "undefined") return null;
   try {
-    const saved = localStorage.getItem(COUNTRY_STORAGE_KEY);
-    return saved as CountryCode | null;
+    const match = document.cookie.match(/(^| )country=([^;]+)/);
+    if (match) {
+      return match[2] as CountryCode;
+    }
   } catch {
-    return null;
+    // Ignore error
   }
+  return null;
 }
 
-// Save country preference to localStorage and Cookies
+// Save country preference to Cookies matches Server Proxy expectation
 export function saveCountryPreference(countryCode: string): void {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(COUNTRY_STORAGE_KEY, countryCode.toLowerCase());
-    // Also set cookie for middleware so the Server Proxy respects the choice
+    // Set cookie for 1 year, Lax, Root path to ensure Proxy visibility
     document.cookie = `country=${countryCode.toLowerCase()}; path=/; max-age=31536000; SameSite=Lax`;
+
+    // Cleanup legacy localStorage if it exists
+    localStorage.removeItem(COUNTRY_STORAGE_KEY);
   } catch {
-    // Silently fail if localStorage/cookies are not available
+    // Silently fail if cookies are blocked
   }
 }
 
