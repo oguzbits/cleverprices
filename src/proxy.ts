@@ -22,14 +22,20 @@ export function proxy(request: NextRequest) {
   if (setCountryParam && isValidCountryCode(setCountryParam)) {
     const url = request.nextUrl.clone();
     url.searchParams.delete("set_country");
+    const countryCode = setCountryParam.toLowerCase();
 
+    // Use 302 to prevent browser caching of the redirect
     const response = NextResponse.redirect(url);
-    response.cookies.set("country", setCountryParam, {
+
+    // Force aggressive cookie setting
+    response.headers.set("Cache-Control", "no-store, max-age=0");
+    response.cookies.set("country", countryCode, {
       path: "/",
       maxAge: 31536000,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
     });
+
     return response;
   }
 
