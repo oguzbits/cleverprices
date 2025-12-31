@@ -20,11 +20,28 @@ export function proxy(request: NextRequest) {
   const firstSegment = segments[0]
   
   if (firstSegment && isValidCountryCode(firstSegment)) {
-    // If it's a valid country code but it's the default country AND it's just the country home (e.g., /us),
-    // we might want to redirect to / to keep URLs clean.
-    // However, for SEO, it's often better to have ONE canonical URL.
-    // Let's allow /[country] for all countries for consistency.
-    return NextResponse.next()
+    const response = NextResponse.next()
+    
+    // Update the country cookie to match the explicit URL preference
+    // This allows the user to switch regions just by clicking a link
+    if (request.cookies.get('country')?.value !== firstSegment) {
+      response.cookies.set('country', firstSegment, {
+        path: '/',
+        maxAge: 31536000,
+        sameSite: 'lax'
+      })
+    }
+
+    // Special case: Redirect the default country home (e.g., /us) to root (/)
+    // but KEEP the path for sub-pages (e.g., /us/blog -> keep it or redirect?)
+    // Based on sitemap.ts, /us is non-canonical for the homepage.
+    if (firstSegment === DEFAULT_COUNTRY && segments.length === 1) {
+      return NextResponse.redirect(new URL('/', request.url), {
+        headers: response.headers // Carry over the new cookie!
+      })
+    }
+
+    return response
   }
 
   // 2. If no country code, detect the best country
@@ -36,7 +53,7 @@ export function proxy(request: NextRequest) {
        // Redirect naked paths (e.g., / or /blog) to localized versions (e.g., /de or /de/blog)
        return NextResponse.redirect(new URL(`/${savedCountry}${pathname}`, request.url))
     }
-    // If it's the default country, we stay on the current path
+    // If it's the default country (us), we stay on the current path (/)
     return NextResponse.next()
   }
 

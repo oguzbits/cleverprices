@@ -1,7 +1,7 @@
 import { HeroCategoryPills } from "@/components/hero-category-pills";
 import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
-import { DEFAULT_COUNTRY, getAllCountries, getCountryByCode, getFlag } from "@/lib/countries";
+import { getAllCountries, getCountryByCode, getFlag } from "@/lib/countries";
 import { getAllProducts } from "@/lib/product-registry";
 import { adaptToUIModel, getLocalizedProductData } from "@/lib/utils/products";
 import dynamic from "next/dynamic";
@@ -43,13 +43,6 @@ export function HomeContent({ country }: { country: string }) {
       );
     })
     .filter((p): p is NonNullable<typeof p> => p !== null);
-
-  // Create mock data for sections using real products
-  const mockPopularProducts = uiProducts.slice(0, 5).map((p) => ({
-    ...p,
-    rating: 4.5 + Math.random() * 0.5,
-    reviewCount: Math.floor(Math.random() * 1000) + 50,
-  }));
 
   const mockPriceDrops = uiProducts.slice(2, 6).map((p) => {
     const dropPercentage = Math.floor(Math.random() * 20) + 10;
@@ -123,11 +116,16 @@ export function HomeContent({ country }: { country: string }) {
               {getAllCountries().map((c) => {
                 const isActive = c.code === country;
                 const flagUrl = getFlag(c.code);
+                
+                // We use standard hierarchical URLs for all countries.
+                // The proxy/middleware will handle updating the session cookie
+                // and redirecting /us to / automatically.
+                const href = c.isLive ? `/${c.code}` : "#";
 
                 return (
                   <Link
                     key={c.code}
-                    href={c.isLive ? (c.code === DEFAULT_COUNTRY ? "/" : `/${c.code}`) : "#"}
+                    href={href}
                     className={`group relative flex flex-col items-center no-underline transition-all ${
                       c.isLive
                         ? "cursor-pointer"
