@@ -16,7 +16,7 @@ export function Navbar({ country: propCountry }: { country?: string }) {
         {/* Left: Logo */}
         <div className="flex shrink-0 items-center gap-2 sm:gap-6">
           <Link
-            href="/"
+            href={`/${country}`}
             className="flex items-center space-x-2 no-underline"
             title="Amazon Price Per Unit Tracker, Storage Deals & True Value"
             aria-label="Real Price Data Home - Amazon Price Per Unit Tracker"
