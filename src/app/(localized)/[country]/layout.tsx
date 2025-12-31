@@ -1,5 +1,5 @@
 import { PageLayout } from "@/components/layout/PageLayout";
-import { getCountryByCode } from "@/lib/countries";
+import { DEFAULT_COUNTRY, isValidCountryCode } from "@/lib/countries";
 import { siteMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 
@@ -10,8 +10,12 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country } = await params;
-  const countryConfig = getCountryByCode(country);
-  const locale = `en_${countryConfig?.code.toUpperCase() || "US"}`;
+  const isInternalCountry = isValidCountryCode(country);
+  const countryCode = isInternalCountry
+    ? country.toUpperCase()
+    : DEFAULT_COUNTRY.toUpperCase();
+
+  const locale = `en_${countryCode}`;
 
   return {
     ...siteMetadata,
@@ -24,5 +28,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LocalizedLayout({ children, params }: Props) {
   const { country } = await params;
-  return <PageLayout country={country}>{children}</PageLayout>;
+  const isInternalCountry = isValidCountryCode(country);
+  const normalizedCountry = isInternalCountry ? country : DEFAULT_COUNTRY;
+
+  return <PageLayout country={normalizedCountry}>{children}</PageLayout>;
 }

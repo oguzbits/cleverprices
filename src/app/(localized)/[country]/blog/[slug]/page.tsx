@@ -3,6 +3,7 @@ import { getBlogPostBySlug } from "@/lib/blog";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { generateBlogPostParams } from "@/lib/static-params";
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 interface LocalizedBlogPostPageProps {
   params: Promise<{ country: string; slug: string }>;
@@ -22,7 +23,10 @@ export async function generateMetadata({
     return { title: "Post Not Found" };
   }
 
-  const url = `https://realpricedata.com/${country}/blog/${post.slug}`;
+  const isUS = country.toLowerCase() === "us";
+  const url = isUS
+    ? `https://realpricedata.com/blog/${post.slug}`
+    : `https://realpricedata.com/${country}/blog/${post.slug}`;
 
   return {
     title: post.title,
@@ -47,5 +51,10 @@ export default async function LocalizedBlogPostPage({
   params,
 }: LocalizedBlogPostPageProps) {
   const { slug, country } = await params;
+
+  if (country.toLowerCase() === "us") {
+    redirect(`/blog/${slug}`);
+  }
+
   return <BlogPostViewMDX slug={slug} country={country} />;
 }

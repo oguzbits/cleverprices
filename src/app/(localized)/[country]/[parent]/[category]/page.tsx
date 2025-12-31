@@ -1,6 +1,5 @@
 import { CategoryProductsView } from "@/components/category/CategoryProductsView.server";
-import { Button } from "@/components/ui/button";
-import { getCategoryBySlug } from "@/lib/categories";
+import { getCategoryBySlug, getCategoryPath } from "@/lib/categories";
 import {
   DEFAULT_COUNTRY,
   isValidCountryCode,
@@ -13,7 +12,7 @@ import {
 } from "@/lib/metadata";
 import { generateCategoryProductParams } from "@/lib/static-params";
 import { Metadata } from "next";
-import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{
@@ -30,16 +29,15 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country, parent, category: categorySlug } = await params;
-  const validCountry = isValidCountryCode(country) ? country : DEFAULT_COUNTRY;
+  const validCountry = isValidCountryCode(country)
+    ? (country.toLowerCase() as CountryCode)
+    : DEFAULT_COUNTRY;
   const category = getCategoryBySlug(categorySlug);
 
-  if (!category) {
-    return {
-      title: "Category Not Found",
-    };
-  }
+  if (!category) return { title: "Category Not Found" };
 
-  const canonicalUrl = `https://realpricedata.com/${validCountry.toLowerCase()}/${parent.toLowerCase()}/${categorySlug.toLowerCase()}`;
+  // Use the new getCategoryPath which handles root domain for US
+  const canonicalUrl = `https://realpricedata.com${getCategoryPath(category.slug, validCountry)}`;
   const title = `${category.name} - Amazon ${validCountry.toUpperCase()}`;
   const description = `Compare ${category.name} on Amazon ${validCountry.toUpperCase()} by true cost per TB/GB. Find the best value on storage and memory deals instantly.`;
 
@@ -66,32 +64,28 @@ export default async function CategoryProductsPage({
   params,
   searchParams,
 }: Props) {
-  const { country, category: categorySlug } = await params;
+  const { country, parent, category: categorySlug } = await params;
   const filters = await searchParams;
-  const validCountry = isValidCountryCode(country) ? country : DEFAULT_COUNTRY;
-  const category = getCategoryBySlug(categorySlug);
 
-  if (!category) {
+  // 1. Redirect /us/electronics/hard-drives to /electronics/hard-drives
+  if (country.toLowerCase() === "us") {
+    redirect(`/${parent}/${categorySlug}`);
+  }
+
+  // 2. Handle valid country codes
+  if (isValidCountryCode(country)) {
+    const category = getCategoryBySlug(categorySlug);
+    if (!category) notFound();
+
     return (
-      <div className="container mx-auto px-4 py-12 text-center">
-        <div className="py-24">
-          <h1 className="mb-4 text-4xl font-bold">Category Not Found</h1>
-          <p className="text-muted-foreground mb-8">
-            The category you&apos;re looking for doesn&apos;t exist.
-          </p>
-          <Button asChild>
-            <Link href={`/${validCountry}`}>Browse All Categories</Link>
-          </Button>
-        </div>
-      </div>
+      <CategoryProductsView
+        category={JSON.parse(JSON.stringify(category))}
+        countryCode={country.toLowerCase() as CountryCode}
+        searchParams={filters}
+      />
     );
   }
 
-  return (
-    <CategoryProductsView
-      category={JSON.parse(JSON.stringify(category))}
-      countryCode={validCountry as CountryCode}
-      searchParams={filters}
-    />
-  );
+  // 3. Otherwise 404
+  notFound();
 }

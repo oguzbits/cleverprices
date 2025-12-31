@@ -1,5 +1,5 @@
+import { CategoryProductsView } from "@/components/category/CategoryProductsView.server";
 import { ParentCategoryView } from "@/components/category/ParentCategoryView";
-import { Button } from "@/components/ui/button";
 import {
   getCategoryBySlug,
   getChildCategories,
@@ -13,13 +13,12 @@ import {
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { generateParentCategoryParams } from "@/lib/static-params";
 import { Metadata } from "next";
-import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{
-    country: CountryCode;
-    parent: CategorySlug;
+    country: string;
+    parent: string;
   }>;
 }
 
@@ -29,74 +28,121 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country, parent: parentSlug } = await params;
-  const validCountry = isValidCountryCode(country) ? country : DEFAULT_COUNTRY;
-  const parentCategory = getCategoryBySlug(parentSlug);
 
-  if (!parentCategory) {
+  // Case 1: Valid country code (local or /us/ prefix)
+  if (isValidCountryCode(country as string)) {
+    const validCountry = country.toLowerCase() as CountryCode;
+    const parentCategory = getCategoryBySlug(parentSlug);
+
+    if (!parentCategory) return { title: "Category Not Found" };
+
+    const canonicalUrl = `https://realpricedata.com/${validCountry !== "us" ? validCountry + "/" : ""}${parentSlug.toLowerCase()}`;
+    const title = `${parentCategory.name} - Amazon ${validCountry.toUpperCase()}`;
+    const description = `Track ${parentCategory.name} prices on Amazon ${validCountry.toUpperCase()} by true cost per TB/GB. Compare hardware value and find the best storage deals instantly.`;
+
     return {
-      title: "Category Not Found",
+      title,
+      description,
+      alternates: {
+        canonical: canonicalUrl,
+        languages: getAlternateLanguages(`/${parentSlug.toLowerCase()}`),
+      },
+      openGraph: getOpenGraph({
+        title,
+        description,
+        url: canonicalUrl,
+        locale: `en_${validCountry.toUpperCase()}`,
+      }),
     };
   }
 
-  const canonicalUrl = `https://realpricedata.com/${validCountry.toLowerCase()}/${parentSlug.toLowerCase()}`;
-  const title = `${parentCategory.name} - Amazon ${validCountry.toUpperCase()}`;
-  const description = `Track ${parentCategory.name} prices on Amazon ${validCountry.toUpperCase()} by true cost per TB/GB. Compare hardware value and find the best storage deals instantly.`;
+  // Case 2: Country segment is actually a parent category (e.g. /electronics/hard-drives)
+  const parentCategory = getCategoryBySlug(country as string);
+  if (parentCategory && !parentCategory.parent) {
+    const childCategory = getCategoryBySlug(parentSlug as string);
+    if (
+      childCategory &&
+      (childCategory.parent as string) === (country as string)
+    ) {
+      // Rendering US child category metadata
+      const validCountry = DEFAULT_COUNTRY;
+      const title = `${childCategory.name} - Amazon ${validCountry.toUpperCase()}`;
+      const description = `Compare ${childCategory.name} on Amazon ${validCountry.toUpperCase()} by true cost per TB/GB. Find the best value on storage and memory deals instantly.`;
+      const canonicalUrl = `https://realpricedata.com/${parentCategory.slug}/${childCategory.slug}`;
 
-  return {
-    title,
-    description,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: getAlternateLanguages(`/${parentSlug.toLowerCase()}`),
-    },
-    openGraph: getOpenGraph({
-      title,
-      description,
-      url: canonicalUrl,
-      locale: `en_${validCountry.toUpperCase()}`,
-    }),
-  };
+      return {
+        title,
+        description,
+        alternates: {
+          canonical: canonicalUrl,
+          languages: getAlternateLanguages(
+            `/${parentCategory.slug}/${childCategory.slug}`,
+          ),
+        },
+        openGraph: getOpenGraph({
+          title,
+          description,
+          url: canonicalUrl,
+          locale: `en_${validCountry.toUpperCase()}`,
+        }),
+      };
+    }
+  }
+
+  return { title: "Category Not Found" };
 }
 
 export default async function ParentCategoryPage({ params }: Props) {
   const { country: countryCode, parent: parentSlug } = await params;
 
-  // If country code is invalid (e.g. it's actually a parent category like "electronics"),
-  // redirect to the default country URL
-  if (!isValidCountryCode(countryCode)) {
-    redirect(`/${DEFAULT_COUNTRY}/${countryCode}/${parentSlug}`);
-  }
+  // 1. If valid country code
+  if (isValidCountryCode(countryCode)) {
+    // Redirect /us/electronics to /electronics
+    if (countryCode.toLowerCase() === "us") {
+      redirect(`/${parentSlug}`);
+    }
 
-  const parentCategory = getCategoryBySlug(parentSlug);
+    const parentCategory = getCategoryBySlug(parentSlug);
 
-  // If this is actually a child category (e.g. /us/hard-drives), redirect to the nested path (e.g. /us/electronics/hard-drives)
-  if (parentCategory?.parent) {
-    redirect(`/${countryCode}/${parentCategory.parent}/${parentSlug}`);
-  }
+    // If this is actually a child category (e.g. /uk/hard-drives), redirect to localized parent/child nested path
+    if (parentCategory?.parent) {
+      redirect(`/${countryCode}/${parentCategory.parent}/${parentSlug}`);
+    }
 
-  const childCategories = getChildCategories(parentSlug);
+    if (!parentCategory) {
+      notFound();
+    }
 
-  if (!parentCategory) {
+    const childCategories = getChildCategories(parentSlug as CategorySlug);
+
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="py-24 text-center">
-          <h1 className="mb-4 text-4xl font-bold">Category Not Found</h1>
-          <p className="text-muted-foreground mb-8">
-            The category you&apos;re looking for doesn&apos;t exist.
-          </p>
-          <Button asChild>
-            <Link href={`/${countryCode}`}>Browse All Categories</Link>
-          </Button>
-        </div>
-      </div>
+      <ParentCategoryView
+        parentCategory={JSON.parse(JSON.stringify(parentCategory))}
+        childCategories={JSON.parse(JSON.stringify(childCategories))}
+        countryCode={countryCode as CountryCode}
+      />
     );
   }
 
-  return (
-    <ParentCategoryView
-      parentCategory={JSON.parse(JSON.stringify(parentCategory))}
-      childCategories={JSON.parse(JSON.stringify(childCategories))}
-      countryCode={countryCode}
-    />
-  );
+  // 2. If country code is actually a parent slug (e.g. /electronics/hard-drives)
+  const parentCategory = getCategoryBySlug(countryCode as string);
+  if (parentCategory && !parentCategory.parent) {
+    const childCategory = getCategoryBySlug(parentSlug as string);
+    if (
+      childCategory &&
+      (childCategory.parent as string) === (countryCode as string)
+    ) {
+      // Render as US Child Category
+      return (
+        <CategoryProductsView
+          category={JSON.parse(JSON.stringify(childCategory))}
+          countryCode={DEFAULT_COUNTRY}
+          searchParams={{}}
+        />
+      );
+    }
+  }
+
+  // 3. Otherwise 404
+  notFound();
 }

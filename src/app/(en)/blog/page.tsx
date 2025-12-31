@@ -3,7 +3,7 @@ import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog | Hardware Pricing & Market Trends",
+  title: "Blog: Hardware Pricing & Market Trends",
   description:
     "Expert analysis of RAM, SSD, and HDD pricing trends. Track market fluctuations and get the best value for your PC build.",
   alternates: {
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     languages: getAlternateLanguages("blog"),
   },
   openGraph: getOpenGraph({
-    title: "Blog | Hardware Pricing & Market Trends",
+    title: "Blog: Hardware Pricing & Market Trends",
     description:
       "Expert analysis of RAM, SSD, and HDD pricing trends. Track market fluctuations and get the best value for your PC build.",
     url: "https://realpricedata.com/blog",

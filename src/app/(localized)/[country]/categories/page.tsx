@@ -8,6 +8,7 @@ import {
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { generateCountryParams } from "@/lib/static-params";
 import { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{
@@ -21,9 +22,14 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country } = await params;
-  const validCountry = isValidCountryCode(country) ? country : DEFAULT_COUNTRY;
+  const isUS = country.toLowerCase() === "us";
+  const validCountry = isValidCountryCode(country)
+    ? (country.toLowerCase() as CountryCode)
+    : DEFAULT_COUNTRY;
 
-  const canonicalUrl = `https://realpricedata.com/${validCountry.toLowerCase()}/categories`;
+  const canonicalUrl = isUS
+    ? "https://realpricedata.com/categories"
+    : `https://realpricedata.com/${validCountry}/categories`;
 
   const title = `All Categories - Amazon ${validCountry.toUpperCase()}`;
   const description = `Browse all tracked product categories on Amazon ${validCountry.toUpperCase()}. Compare hardware prices by true cost per TB/GB to find the best value deals.`;
@@ -46,14 +52,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CategoriesPage({ params }: Props) {
   const { country } = await params;
-  const validCountry = isValidCountryCode(country) ? country : DEFAULT_COUNTRY;
+
+  if (country.toLowerCase() === "us") {
+    redirect("/categories");
+  }
+
+  if (!isValidCountryCode(country)) {
+    notFound();
+  }
+
   const hierarchyRaw = getCategoryHierarchy();
   const categoryHierarchy = JSON.parse(JSON.stringify(hierarchyRaw));
 
   return (
     <AllCategoriesView
       categoryHierarchy={categoryHierarchy}
-      countryCode={validCountry as CountryCode}
+      countryCode={country.toLowerCase() as CountryCode}
     />
   );
 }

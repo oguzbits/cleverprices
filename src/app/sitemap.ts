@@ -1,12 +1,12 @@
-import { MetadataRoute } from "next";
+import { getAllBlogPosts } from "@/lib/blog";
 import {
+  allCategories,
   getCategoryHierarchy,
   getCategoryPath,
-  allCategories,
 } from "@/lib/categories";
-import { getAllCountries, DEFAULT_COUNTRY } from "@/lib/countries";
-import { getAllBlogPosts } from "@/lib/blog";
+import { DEFAULT_COUNTRY, getAllCountries } from "@/lib/countries";
 import { getAlternateLanguages } from "@/lib/metadata";
+import { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://realpricedata.com";
@@ -97,28 +97,54 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     // Country categories page
-    countryRoutes.push({
-      url: `${baseUrl}/${country}/categories`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.8,
-      alternates: {
-        languages: getAlternateLanguages("/categories"),
-      },
-    });
+    if (country !== DEFAULT_COUNTRY) {
+      countryRoutes.push({
+        url: `${baseUrl}/${country}/categories`,
+        lastModified: new Date(),
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+        alternates: {
+          languages: getAlternateLanguages("/categories"),
+        },
+      });
+    } else {
+      // Add root categories page once
+      countryRoutes.push({
+        url: `${baseUrl}/categories`,
+        lastModified: new Date(),
+        changeFrequency: "daily" as const,
+        priority: 0.8,
+        alternates: {
+          languages: getAlternateLanguages("/categories"),
+        },
+      });
+    }
 
     // Parent category pages
     categoryHierarchy.forEach((hierarchy) => {
       const path = `/${hierarchy.parent.slug}`;
-      countryRoutes.push({
-        url: `${baseUrl}/${country}${path}`,
-        lastModified: new Date(),
-        changeFrequency: "weekly" as const,
-        priority: 0.8,
-        alternates: {
-          languages: getAlternateLanguages(path),
-        },
-      });
+      if (country !== DEFAULT_COUNTRY) {
+        countryRoutes.push({
+          url: `${baseUrl}/${country}${path}`,
+          lastModified: new Date(),
+          changeFrequency: "weekly" as const,
+          priority: 0.8,
+          alternates: {
+            languages: getAlternateLanguages(path),
+          },
+        });
+      } else {
+        // Add root parent page once
+        countryRoutes.push({
+          url: `${baseUrl}${path}`,
+          lastModified: new Date(),
+          changeFrequency: "weekly" as const,
+          priority: 0.8,
+          alternates: {
+            languages: getAlternateLanguages(path),
+          },
+        });
+      }
     });
 
     // Child category pages (product listing pages)
@@ -126,15 +152,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       .filter((cat) => cat.parent) // Only categories with parents
       .forEach((category) => {
         const fullPath = getCategoryPath(category.slug, country);
+        const alternatesPath = `/${category.parent}/${category.slug}`;
+
         countryRoutes.push({
           url: `${baseUrl}${fullPath}`,
           lastModified: new Date(),
           changeFrequency: "daily" as const,
           priority: 0.9, // Higher priority for product pages
           alternates: {
-            languages: getAlternateLanguages(
-              `/${category.parent}/${category.slug}`,
-            ),
+            languages: getAlternateLanguages(alternatesPath),
           },
         });
       });
