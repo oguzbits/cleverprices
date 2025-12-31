@@ -83,40 +83,71 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
     handleOpenChange(false);
   };
 
+  // Use a ref to store the latest state for the global keydown listener
+  // to avoid re-registering the listener on every render or dependency change.
+  const stateRef = React.useRef({
+    open,
+    handleOpenChange,
+    selectedIndex,
+    availableItems,
+    handleLinkClick,
+  });
+
+  // Update the ref after every render to ensure the keydown listener has latest state
+  useEffect(() => {
+    stateRef.current = {
+      open,
+      handleOpenChange,
+      selectedIndex,
+      availableItems,
+      handleLinkClick,
+    };
+  });
+
   // Handle keyboard shortcuts and navigation
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      const {
+        open: currentOpen,
+        handleOpenChange: currentHandleOpenChange,
+        selectedIndex: currentSelectedIndex,
+        availableItems: currentAvailableItems,
+        handleLinkClick: currentHandleLinkClick,
+      } = stateRef.current;
+
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        handleOpenChange(!open);
+        currentHandleOpenChange(!currentOpen);
       }
       if (e.key === "Escape") {
-        handleOpenChange(false);
+        currentHandleOpenChange(false);
       }
-      if (e.key === "ArrowDown" && availableItems.length > 0) {
+      if (e.key === "ArrowDown" && currentAvailableItems.length > 0) {
         e.preventDefault();
-        setSelectedIndex((prev) => (prev + 1) % availableItems.length);
+        setSelectedIndex((prev) => (prev + 1) % currentAvailableItems.length);
       }
-      if (e.key === "ArrowUp" && availableItems.length > 0) {
+      if (e.key === "ArrowUp" && currentAvailableItems.length > 0) {
         e.preventDefault();
         setSelectedIndex(
-          (prev) => (prev - 1 + availableItems.length) % availableItems.length,
+          (prev) =>
+            (prev - 1 + currentAvailableItems.length) %
+            currentAvailableItems.length,
         );
       }
       if (
         e.key === "Enter" &&
-        selectedIndex >= 0 &&
-        availableItems.length > 0 &&
-        availableItems[selectedIndex]
+        currentSelectedIndex >= 0 &&
+        currentAvailableItems.length > 0 &&
+        currentAvailableItems[currentSelectedIndex]
       ) {
         e.preventDefault();
-        handleLinkClick(availableItems[selectedIndex].slug);
+        currentHandleLinkClick(currentAvailableItems[currentSelectedIndex].slug);
       }
     };
 
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
-  }, [open, handleOpenChange, selectedIndex, availableItems, handleLinkClick]);
+  }, []); // Run once on mount
 
   // Handle input change and index reset
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
