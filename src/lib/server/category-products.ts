@@ -1,6 +1,6 @@
 "use cache";
 
-import { Category } from "@/lib/categories";
+import { allCategories, CategorySlug } from "@/lib/categories";
 import { Product, getProductsByCategory } from "@/lib/product-registry";
 import { filterProducts, sortProducts } from "@/lib/utils/category-utils";
 import {
@@ -34,13 +34,14 @@ export interface FilterParams {
  * This replaces the client-side useCategoryProducts hook
  */
 export async function getCategoryProducts(
-  category: Omit<Category, "icon">,
+  categorySlug: string,
   countryCode: string,
   filterParams: FilterParams,
 ) {
   // Load raw products for this category
-  const rawProducts = getProductsByCategory(category.slug);
-  const unitLabel = category.unitType || "TB";
+  const rawProducts = getProductsByCategory(categorySlug);
+  const category = allCategories[categorySlug as CategorySlug];
+  const unitLabel = category?.unitType || "TB";
 
   // Localize products for this country
   const localizedProducts = rawProducts
@@ -91,7 +92,7 @@ export async function getCategoryProducts(
   const filtered = filterProducts(
     localizedProducts,
     filters,
-    category.slug,
+    categorySlug,
     unitLabel,
   );
 

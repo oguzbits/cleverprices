@@ -48,9 +48,12 @@ export async function CategoryProductsView({
   }));
   const countryConfig = getCountryByCode(countryCode);
 
-  // SERVER-SIDE FILTERING - This is the key optimization!
+  /*
+   * SERVER-SIDE FILTERING - This is the key optimization!
+   * Refactored to pass primitive arguments (slug) for better caching and stability.
+   */
   const { products, filteredCount, unitLabel, hasProducts, filters } =
-    await getCategoryProducts(category, countryCode, searchParams);
+    await getCategoryProducts(category.slug, countryCode, searchParams);
 
   const formatCurrency = (value: number, fractionDigits = 2) => {
     return new Intl.NumberFormat(countryConfig?.locale || "en-US", {
