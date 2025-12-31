@@ -62,12 +62,15 @@ export function CountrySelector({ currentCountryCode }: { currentCountryCode?: s
             const hasCountryInUrl = firstSegment && isValidCountryCode(firstSegment);
             
             let targetHref = "";
+            
             if (hasCountryInUrl) {
+              // Replace the country identifier in the URL
               const newSegments = [...segments];
               newSegments[0] = c.code;
-              targetHref = `/${newSegments.join('/')}`;
+              targetHref = `/${newSegments.join("/")}`;
             } else {
-              targetHref = `/${c.code}${pathname === '/' ? '' : pathname}`;
+              // Add country identifier to the path
+              targetHref = `/${c.code}${pathname === "/" ? "" : pathname}`;
             }
 
             return (

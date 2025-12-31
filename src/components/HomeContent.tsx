@@ -3,7 +3,7 @@ import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 import { PopularProducts } from "@/components/PopularProducts";
 import { PriceDrops } from "@/components/PriceDrops";
-import { getAllCountries, getCountryByCode, getFlag, type CountryCode } from "@/lib/countries";
+import { DEFAULT_COUNTRY, getAllCountries, getCountryByCode, getFlag, type CountryCode } from "@/lib/countries";
 import { getAllProducts } from "@/lib/server/cached-products";
 import { adaptToUIModel, getLocalizedProductData } from "@/lib/utils/products";
 import Image from "next/image";

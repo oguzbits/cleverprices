@@ -1,12 +1,14 @@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import Image from "next/image";
 import Link from "next/link";
+import { DEFAULT_COUNTRY } from "@/lib/countries";
 
 import { CountrySelector } from "@/components/country-selector";
 import { SearchButton } from "@/components/layout/SearchButton";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
-export function Navbar({ country }: { country?: string }) {
+export function Navbar({ country: propCountry }: { country?: string }) {
+  const country = propCountry || DEFAULT_COUNTRY;
 
   return (
     <header className="bg-background/95 supports-backdrop-filter:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">

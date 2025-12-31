@@ -1,4 +1,5 @@
-import { BaseLayoutContent } from "@/components/layout/BaseLayoutContent";
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
 import { siteMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 
@@ -16,12 +17,10 @@ export default function EnglishLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <BaseLayoutContent country="us">
-        <link rel="preconnect" href="https://m.media-amazon.com" />
-        <link rel="dns-prefetch" href="https://m.media-amazon.com" />
-        {children}
-      </BaseLayoutContent>
-    </html>
+    <>
+      <Navbar country="us" />
+      {children}
+      <Footer country="us" />
+    </>
   );
 }

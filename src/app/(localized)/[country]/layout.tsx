@@ -1,4 +1,5 @@
-import { BaseLayoutContent } from "@/components/layout/BaseLayoutContent";
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { siteMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
@@ -24,20 +25,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LocalizedLayout({ children, params }: Props) {
   const { country } = await params;
-  const countryConfig = getCountryByCode(country);
-  
-  // Use 'en-REGION' because the UI is English across all marketplaces.
-  // UK is mapped to GB for valid ISO language-region codes.
-  const region = countryConfig?.code.toUpperCase() === "UK" ? "GB" : countryConfig?.code.toUpperCase() || "US";
-  const lang = `en-${region}`;
-  
   return (
-    <html lang={lang} suppressHydrationWarning>
-      <BaseLayoutContent country={country as CountryCode}>
-        <link rel="preconnect" href="https://m.media-amazon.com" />
-        <link rel="dns-prefetch" href="https://m.media-amazon.com" />
-        {children}
-      </BaseLayoutContent>
-    </html>
+    <>
+      <Navbar country={country} />
+      {children}
+      <Footer country={country} />
+    </>
   );
 }

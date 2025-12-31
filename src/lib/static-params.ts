@@ -9,7 +9,7 @@ import { allCategories } from "./categories";
 /**
  * Supported countries for static generation
  */
-export const SUPPORTED_COUNTRIES = ['ca', 'de', 'uk', 'fr', 'it', 'es'] as const;
+export const SUPPORTED_COUNTRIES = ['us', 'ca', 'de', 'uk', 'fr', 'it', 'es'] as const;
 
 export type SupportedCountry = typeof SUPPORTED_COUNTRIES[number];
 

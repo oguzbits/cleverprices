@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 
 interface FooterProps {
-  country?: CountryCode;
+  country?: string;
 }
 
-export function Footer({ country = DEFAULT_COUNTRY }: FooterProps) {
+export function Footer({ country: propCountry }: FooterProps) {
+  const country = (propCountry || DEFAULT_COUNTRY) as CountryCode;
   return (
     <footer className="bg-muted/40 border-t">
       <div className="container mx-auto px-4 py-8 md:py-12">
