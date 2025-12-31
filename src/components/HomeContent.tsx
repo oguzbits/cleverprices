@@ -67,7 +67,11 @@ export async function HomeContent({ country }: { country: CountryCode }) {
       <Script
         id="json-ld"
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          // The following snippet uses JSON.stringify, which does not sanitize malicious strings used in XSS injection.
+          // To prevent this type of vulnerability, you can scrub HTML tags from the JSON-LD payload, for example, by replacing the character, <, with its unicode equivalent, \u003c.
+          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
+        }}
       />
 
       <div className="flex flex-col gap-2 pt-4 sm:gap-4 md:gap-8">
