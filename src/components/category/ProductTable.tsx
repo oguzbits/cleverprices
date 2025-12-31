@@ -11,6 +11,7 @@ interface ProductTableProps {
   sortBy: string;
   sortOrder: string;
   formatCurrency: (value: number, fractionDigits?: number) => string;
+  formatPricePerUnit: (value: number) => string;
 }
 
 export function ProductTable({
@@ -20,6 +21,7 @@ export function ProductTable({
   sortBy,
   sortOrder,
   formatCurrency,
+  formatPricePerUnit,
 }: ProductTableProps) {
   return (
     <div className="bg-card w-full overflow-x-auto rounded-md border">
@@ -79,7 +81,7 @@ export function ProductTable({
               className="hover:bg-muted/30 data-[state=selected]:bg-muted group border-b transition-colors"
             >
               <td className="text-foreground p-2 align-middle font-mono text-[13px] font-bold whitespace-nowrap sm:text-base">
-                {formatCurrency(product.pricePerUnit || 0, 2)}
+                {formatPricePerUnit(product.pricePerUnit || 0)}
               </td>
               <td className="text-muted-foreground hidden p-2 pr-4 align-middle font-mono whitespace-nowrap sm:table-cell sm:pr-12">
                 {formatCurrency(product.price)}

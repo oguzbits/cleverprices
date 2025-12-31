@@ -61,6 +61,15 @@ export async function CategoryProductsView({
     }).format(value);
   };
 
+  const formatPricePerUnit = (value: number) => {
+    return new Intl.NumberFormat(countryConfig?.locale || "en-US", {
+      style: "currency",
+      currency: countryConfig?.currency || "USD",
+      minimumSignificantDigits: 4,
+      maximumSignificantDigits: 4,
+    }).format(value);
+  };
+
   // Mobile filter sheet (client component for interactivity)
   const mobileFilterTrigger = (
     <Sheet>
@@ -124,6 +133,7 @@ export async function CategoryProductsView({
                     sortBy={filters.sortBy}
                     sortOrder={filters.sortOrder}
                     formatCurrency={formatCurrency}
+                    formatPricePerUnit={formatPricePerUnit}
                   />
                 ) : (
                   <NoProductsMatchingFilters />
