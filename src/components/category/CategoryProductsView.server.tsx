@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/sheet";
 import { Category, getBreadcrumbs, getChildCategories, stripCategoryIcon } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
-import { getCountryByCode } from "@/lib/countries";
+import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { FilterParams, getCategoryProducts } from "@/lib/server/category-products";
 import { Filter, Info, Search } from "lucide-react";
 
@@ -20,7 +20,7 @@ import { ProductTable } from "@/components/category/ProductTable";
 
 interface CategoryProductsViewProps {
   category: Omit<Category, "icon">;
-  countryCode: string;
+  countryCode: CountryCode;
   searchParams: FilterParams;
 }
 

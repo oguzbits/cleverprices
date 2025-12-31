@@ -3,7 +3,14 @@
  * Centralized types to avoid duplication across the codebase
  */
 
+import type { CategorySlug, UnitType } from "@/lib/categories";
+import type { CountryCode } from "@/lib/countries";
 import type { LucideIcon } from "lucide-react";
+
+/**
+ * Common types
+ */
+export type Currency = "USD" | "GBP" | "CAD" | "EUR";
 
 /**
  * Product types
@@ -13,7 +20,7 @@ export interface Product {
   title: string;
   price: {
     amount: number;
-    currency: string;
+    currency: Currency;
     displayAmount: string;
   };
   image: string;
@@ -36,11 +43,13 @@ export interface FilterState {
   formFactor: string[] | null;
   minCapacity: number | null;
   maxCapacity: number | null;
-  sortBy: string;
+  sortBy: SortBy;
   sortOrder: SortOrder;
 }
 
 export type SortOrder = "asc" | "desc";
+
+export type SortBy = "relevance" | "price" | "pricePerUnit" | "rating" | "capacity";
 
 /**
  * Product condition types
@@ -52,13 +61,13 @@ export type Condition = "New" | "Used" | "Renewed";
  */
 export interface Category {
   name: string;
-  slug: string;
+  slug: CategorySlug;
   description: string;
   icon: LucideIcon;
-  parent?: string;
+  parent?: CategorySlug;
   metaTitle?: string;
   metaDescription?: string;
-  unitType?: string;
+  unitType?: UnitType;
   hidden?: boolean;
 }
 
@@ -69,7 +78,7 @@ export interface CategoryHierarchy {
 
 export interface CategoryLink {
   name: string;
-  slug: string;
+  slug: CategorySlug;
   icon: LucideIcon;
 }
 
@@ -77,9 +86,9 @@ export interface CategoryLink {
  * Country types
  */
 export interface Country {
-  code: string;
+  code: CountryCode;
   name: string;
-  currency: string;
+  currency: Currency;
   locale: string;
   flag: string;
   comingSoon?: boolean;
@@ -100,8 +109,8 @@ export interface BreadcrumbItem {
  */
 export interface AffiliateClickParams {
   productName: string;
-  category: string;
-  country: string;
+  category: CategorySlug;
+  country: CountryCode;
   price: number;
   pricePerUnit?: number;
   position?: number;
@@ -110,11 +119,11 @@ export interface AffiliateClickParams {
 export interface FilterAppliedParams {
   filter: string;
   value: string | string[];
-  category: string;
+  category: CategorySlug;
 }
 
 export interface SortChangedParams {
-  sortBy: string;
+  sortBy: SortBy;
   order: SortOrder;
-  category: string;
+  category: CategorySlug;
 }

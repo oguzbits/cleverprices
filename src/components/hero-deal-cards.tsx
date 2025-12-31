@@ -1,5 +1,5 @@
 import { ProductSection } from "@/components/ProductSection";
-import { getCountryByCode } from "@/lib/countries";
+import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { getAllProducts, type Product } from "@/lib/product-registry";
 import {
   adaptToUIModel,
@@ -12,7 +12,7 @@ type ProductWithDiscount = Product & {
 };
 
 // Calculate discount percentage based on market average or typical retail price
-const calculateDiscount = (product: Product, countryCode: string = "us"): number => {
+const calculateDiscount = (product: Product, countryCode: CountryCode = "us"): number => {
   const { price } = getLocalizedProductData(product, countryCode);
   
   // Typical market prices per unit (TB for storage, GB for RAM, W for PSU)
@@ -50,7 +50,7 @@ const calculateDiscount = (product: Product, countryCode: string = "us"): number
 };
 
 // Get the top 3 deals based on discount percentage
-const getTopDeals = (countryCode: string = "us"): ProductWithDiscount[] => {
+const getTopDeals = (countryCode: CountryCode = "us"): ProductWithDiscount[] => {
   const allProducts = getAllProducts();
   return allProducts
     .filter((p) => {
@@ -65,7 +65,7 @@ const getTopDeals = (countryCode: string = "us"): ProductWithDiscount[] => {
     .slice(0, 3);
 };
 
-export function HeroDealCards({ country }: { country: string }) {
+export function HeroDealCards({ country }: { country: CountryCode }) {
   const countryConfig = getCountryByCode(country);
 
   const highlightedDeals = getTopDeals(country);

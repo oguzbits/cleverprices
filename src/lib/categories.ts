@@ -1,14 +1,19 @@
 import { HardDrive, MemoryStick, Zap, type LucideIcon } from "lucide-react";
+import type { CountryCode } from "./countries";
+
+export type UnitType = "TB" | "GB" | "W";
+
+export type CategorySlug = "electronics" | "hard-drives" | "ram" | "power-supplies";
 
 export interface Category {
   name: string;
-  slug: string;
+  slug: CategorySlug;
   description: string;
   icon: LucideIcon;
-  parent?: string; // Parent category slug
+  parent?: CategorySlug; // Parent category slug
   metaTitle?: string;
   metaDescription?: string;
-  unitType?: string; // e.g., "TB", "kg", "load", "count"
+  unitType?: UnitType; // e.g., "TB", "GB", "W"
   hidden?: boolean;
 }
 
@@ -18,7 +23,7 @@ export interface CategoryHierarchy {
 }
 
 // All categories in a flat structure
-export const allCategories: Record<string, Category> = {
+export const allCategories: Record<CategorySlug, Category> = {
   // Parent Category
   electronics: {
     name: "Electronics",
@@ -87,25 +92,25 @@ export function getCategoryHierarchy(): CategoryHierarchy[] {
 
 // Get category by slug
 export function getCategoryBySlug(slug: string): Category | undefined {
-  return allCategories[slug];
+  return allCategories[slug as CategorySlug];
 }
 
 // Get parent category for a given category
-export function getParentCategory(categorySlug: string): Category | undefined {
+export function getParentCategory(categorySlug: CategorySlug): Category | undefined {
   const category = allCategories[categorySlug];
   if (!category?.parent) return undefined;
   return allCategories[category.parent];
 }
 
 // Get children of a parent category
-export function getChildCategories(parentSlug: string): Category[] {
+export function getChildCategories(parentSlug: CategorySlug): Category[] {
   return Object.values(allCategories).filter(
     (cat) => cat.parent === parentSlug && !cat.hidden,
   );
 }
 
 // Get breadcrumb trail for a category
-export function getBreadcrumbs(categorySlug: string): Category[] {
+export function getBreadcrumbs(categorySlug: CategorySlug): Category[] {
   const breadcrumbs: Category[] = [];
   const category = allCategories[categorySlug];
 
@@ -122,8 +127,8 @@ export function getBreadcrumbs(categorySlug: string): Category[] {
 
 // Get full URL path for a category
 export function getCategoryPath(
-  categorySlug: string,
-  countryCode?: string,
+  categorySlug: CategorySlug,
+  countryCode?: CountryCode,
 ): string {
   const category = allCategories[categorySlug];
   if (!category) return "/";

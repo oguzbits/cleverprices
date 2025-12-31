@@ -1,6 +1,6 @@
 import { AllCategoriesView } from "@/components/category/AllCategoriesView";
 import { getCategoryHierarchy } from "@/lib/categories";
-import { DEFAULT_COUNTRY, isValidCountryCode } from "@/lib/countries";
+import { DEFAULT_COUNTRY, isValidCountryCode, type CountryCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { Metadata } from "next";
 
@@ -44,7 +44,7 @@ export default async function CategoriesPage({ params }: Props) {
   return (
     <AllCategoriesView
       categoryHierarchy={categoryHierarchy}
-      countryCode={validCountry}
+      countryCode={validCountry as CountryCode}
     />
   );
 }

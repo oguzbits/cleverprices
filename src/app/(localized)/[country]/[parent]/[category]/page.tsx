@@ -1,7 +1,7 @@
 import { CategoryProductsView } from "@/components/category/CategoryProductsView.server";
 import { Button } from "@/components/ui/button";
 import { getCategoryBySlug } from "@/lib/categories";
-import { DEFAULT_COUNTRY, isValidCountryCode } from "@/lib/countries";
+import { DEFAULT_COUNTRY, isValidCountryCode, type CountryCode } from "@/lib/countries";
 import { generateKeywords, getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -74,7 +74,7 @@ export default async function CategoryProductsPage({ params, searchParams }: Pro
   return (
     <CategoryProductsView
       category={JSON.parse(JSON.stringify(category))}
-      countryCode={validCountry}
+      countryCode={validCountry as CountryCode}
       searchParams={filters}
     />
   );

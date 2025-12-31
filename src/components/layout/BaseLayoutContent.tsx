@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { PromoBanner } from "@/components/layout/PromoBanner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { type CountryCode } from "@/lib/countries";
 import { NuqsProvider } from "@/providers/nuqs-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -20,7 +21,7 @@ export function BaseLayoutContent({
   country 
 }: { 
   children: React.ReactNode;
-  country?: string;
+  country?: CountryCode;
 }) {
   return (
     <body className={`${inter.variable} ${inter.className}`}>

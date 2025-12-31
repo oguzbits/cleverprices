@@ -1,5 +1,5 @@
 import HomeContent from "@/components/HomeContent";
-import { getCountryByCode, DEFAULT_COUNTRY } from "@/lib/countries";
+import { DEFAULT_COUNTRY, getCountryByCode, type CountryCode } from "@/lib/countries";
 import { getHomePageMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 
@@ -19,5 +19,5 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function CountryHomePage({ params }: Props) {
   const { country } = await params;
-  return <HomeContent country={(country || DEFAULT_COUNTRY).toLowerCase()} />;
+  return <HomeContent country={(country || DEFAULT_COUNTRY).toLowerCase() as CountryCode} />;
 }

@@ -1,18 +1,19 @@
-import * as React from "react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft } from "lucide-react";
-import { getCategoryIcon } from "@/lib/category-icons";
-import { Category } from "@/lib/categories";
 import { Button } from "@/components/ui/button";
 import { CategoryCard } from "@/components/ui/category-card";
+import { Category } from "@/lib/categories";
+import { getCategoryIcon } from "@/lib/category-icons";
+import { type CountryCode } from "@/lib/countries";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import * as React from "react";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 
 interface ParentCategoryViewProps {
   parentCategory: Omit<Category, "icon">;
   childCategories: Omit<Category, "icon">[];
-  countryCode: string;
+  countryCode: CountryCode;
 }
 
 export function ParentCategoryView({

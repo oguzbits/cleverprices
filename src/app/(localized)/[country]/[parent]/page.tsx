@@ -1,7 +1,7 @@
 import { ParentCategoryView } from "@/components/category/ParentCategoryView";
 import { Button } from "@/components/ui/button";
-import { getCategoryBySlug, getChildCategories } from "@/lib/categories";
-import { DEFAULT_COUNTRY, isValidCountryCode } from "@/lib/countries";
+import { getCategoryBySlug, getChildCategories, type CategorySlug } from "@/lib/categories";
+import { DEFAULT_COUNTRY, isValidCountryCode, type CountryCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { Metadata } from "next";
 import Link from "next/link";
@@ -9,8 +9,8 @@ import { redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{
-    country: string;
-    parent: string;
+    country: CountryCode;
+    parent: CategorySlug;
   }>;
 }
 

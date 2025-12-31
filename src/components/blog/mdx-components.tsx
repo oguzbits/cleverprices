@@ -1,7 +1,7 @@
-import { getCategoryPath } from "@/lib/categories";
+import { getCategoryPath, type CategorySlug } from "@/lib/categories";
+import { DEFAULT_COUNTRY, getCountryByCode, type CountryCode } from "@/lib/countries";
 import { Product } from "@/lib/product-registry";
 import { calculateProductMetrics, getLocalizedProductData } from "@/lib/utils/products";
-import { getCountryByCode, DEFAULT_COUNTRY } from "@/lib/countries";
 import { TrendingDown, Zap } from "lucide-react";
 import Link from "next/link";
 
@@ -108,7 +108,7 @@ export function QuickPicks({ category, products, country, limit = 3 }: QuickPick
       </div>
       <div className="bg-muted/10 dark:bg-muted/5 px-6 py-4 text-center border-t border-border/30">
         <Link 
-          href={getCategoryPath(category, country)}
+          href={getCategoryPath(category as CategorySlug, country as CountryCode)}
           className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-all flex items-center justify-center gap-2 group"
         >
           View all {category.replace("-", " ")} deals

@@ -8,9 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { getCategoryBySlug, getCategoryPath } from "@/lib/categories";
+import { getCategoryBySlug, getCategoryPath, type CategorySlug } from "@/lib/categories";
 import { FEATURED_CATEGORIES, QUICK_ACCESS_CATEGORIES } from "@/lib/constants";
-import { DEFAULT_COUNTRY } from "@/lib/countries";
+import { DEFAULT_COUNTRY, type CountryCode } from "@/lib/countries";
 import type { LucideIcon } from "lucide-react";
 import { Search } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
@@ -113,10 +113,10 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   }, [query]);
 
   const params = useParams();
-  const country = (params?.country as string) || DEFAULT_COUNTRY;
+  const country = (params?.country as CountryCode) || DEFAULT_COUNTRY;
 
   const handleLinkClick = (slug: string) => {
-    const path = getCategoryPath(slug, country);
+    const path = getCategoryPath(slug as CategorySlug, country);
     router.push(path);
     onOpenChange(false);
   };

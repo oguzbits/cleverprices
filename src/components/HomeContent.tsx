@@ -1,7 +1,7 @@
 import { HeroCategoryPills } from "@/components/hero-category-pills";
 import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
-import { getAllCountries, getCountryByCode, getFlag } from "@/lib/countries";
+import { getAllCountries, getCountryByCode, getFlag, type CountryCode } from "@/lib/countries";
 import { getAllProducts } from "@/lib/product-registry";
 import { adaptToUIModel, getLocalizedProductData } from "@/lib/utils/products";
 import dynamic from "next/dynamic";
@@ -25,7 +25,7 @@ const PriceDrops = dynamic(
   },
 );
 
-export function HomeContent({ country }: { country: string }) {
+export function HomeContent({ country }: { country: CountryCode }) {
   const countryConfig = getCountryByCode(country);
   const allProducts = getAllProducts();
 

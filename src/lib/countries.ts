@@ -1,15 +1,19 @@
+import { type Currency } from "@/types";
+
+export type CountryCode = "us" | "uk" | "ca" | "de" | "es" | "it" | "fr";
+
 export interface Country {
-  code: string; // ISO 3166-1 alpha-2
+  code: CountryCode; // ISO 3166-1 alpha-2
   name: string;
   flag: string;
   domain: string;
-  currency: string;
+  currency: Currency;
   symbol: string;
   locale: string; // e.g., 'en-US', 'de-DE'
   isLive: boolean;
 }
 
-export const countries: Record<string, Country> = {
+export const countries: Record<CountryCode, Country> = {
   us: {
     code: "us",
     name: "United States",
@@ -82,7 +86,7 @@ export const countries: Record<string, Country> = {
   },
 };
 
-export const DEFAULT_COUNTRY = "us";
+export const DEFAULT_COUNTRY: CountryCode = "us";
 
 // Get all countries as array
 export function getAllCountries(): Country[] {
@@ -92,11 +96,11 @@ export function getAllCountries(): Country[] {
 // Get country by code
 export function getCountryByCode(code: string | null | undefined): Country | undefined {
   if (!code) return undefined;
-  return countries[code.toLowerCase()];
+  return countries[code.toLowerCase() as CountryCode];
 }
 
 // Detect country from browser locale
-export function detectCountryFromLocale(locale?: string): string {
+export function detectCountryFromLocale(locale?: string): CountryCode {
   if (!locale && typeof navigator !== "undefined") {
     locale = navigator.language || (navigator as any).userLanguage;
   }
@@ -105,7 +109,7 @@ export function detectCountryFromLocale(locale?: string): string {
 
   // Extract country code from locale (e.g., 'en-US' -> 'us')
   const parts = locale.toLowerCase().split("-");
-  const countryCode = parts[parts.length - 1];
+  const countryCode = parts[parts.length - 1] as CountryCode;
 
   // Check if we support this country
   if (countries[countryCode]) {
@@ -113,7 +117,7 @@ export function detectCountryFromLocale(locale?: string): string {
   }
 
   // Fallback mappings for common cases
-  const fallbackMap: Record<string, string> = {
+  const fallbackMap: Record<string, CountryCode> = {
     en: "us",
     de: "de",
     fr: "fr",
@@ -129,10 +133,11 @@ export function detectCountryFromLocale(locale?: string): string {
 export const COUNTRY_STORAGE_KEY = "realpricedata_country";
 
 // Get saved country preference from localStorage
-export function getSavedCountry(): string | null {
+export function getSavedCountry(): CountryCode | null {
   if (typeof window === "undefined") return null;
   try {
-    return localStorage.getItem(COUNTRY_STORAGE_KEY);
+    const saved = localStorage.getItem(COUNTRY_STORAGE_KEY);
+    return saved as CountryCode | null;
   } catch {
     return null;
   }
@@ -149,7 +154,7 @@ export function saveCountryPreference(countryCode: string): void {
 }
 
 // Get user's country (saved preference > detected > default)
-export function getUserCountry(): string {
+export function getUserCountry(): CountryCode {
   // 1. Check saved preference
   const saved = getSavedCountry();
   if (saved && countries[saved] && countries[saved].isLive) {
@@ -176,5 +181,5 @@ export function getFlag(code: string): string {
 // Validate country code
 export function isValidCountryCode(code: string | null | undefined): boolean {
   if (!code) return false;
-  return !!countries[code.toLowerCase()];
+  return !!countries[code.toLowerCase() as CountryCode];
 }

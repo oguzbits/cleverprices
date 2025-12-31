@@ -1,19 +1,20 @@
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import type { Category } from "@/lib/categories";
+import type { Category, CategorySlug } from "@/lib/categories";
 import { getCategoryPath } from "@/lib/categories";
+import { type CountryCode } from "@/lib/countries";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 interface CategoryCardProps {
   category: Omit<Category, "icon">;
   Icon: React.ComponentType<{ className?: string }>;
-  country: string;
+  country: CountryCode;
 }
 
 export function CategoryCard({ category, Icon, country }: CategoryCardProps) {
   return (
     <Link
       className="group no-underline"
-      href={getCategoryPath(category.slug, country)}
+      href={getCategoryPath(category.slug as CategorySlug, country)}
       aria-label={`Browse ${category.name}: ${category.description}`}
     >
       <div className="border-border/50 bg-card/40 hover:bg-muted/40 hover:border-primary/30 flex items-center rounded-lg border p-3 transition-all">

@@ -1,10 +1,10 @@
+import { getCategoryPath } from "@/lib/categories";
+import { DEFAULT_COUNTRY, type CountryCode } from "@/lib/countries";
 import Image from "next/image";
 import Link from "next/link";
-import { getCategoryPath } from "@/lib/categories";
-import { DEFAULT_COUNTRY } from "@/lib/countries";
 
 interface FooterProps {
-  country?: string;
+  country?: CountryCode;
 }
 
 export function Footer({ country = DEFAULT_COUNTRY }: FooterProps) {
@@ -45,17 +45,17 @@ export function Footer({ country = DEFAULT_COUNTRY }: FooterProps) {
             <h4 className="mb-3 font-semibold">Popular Categories</h4>
             <ul className="space-y-2">
               <li>
-                <Link href={getCategoryPath("hard-drives", country)} className="text-primary hover:underline">
+                <Link href={getCategoryPath("hard-drives", country as CountryCode)} className="text-primary hover:underline">
                   Hard Drives & SSDs
                 </Link>
               </li>
               <li>
-                <Link href={getCategoryPath("ram", country)} className="text-primary hover:underline">
+                <Link href={getCategoryPath("ram", country as CountryCode)} className="text-primary hover:underline">
                   RAM & Memory
                 </Link>
               </li>
               <li>
-                <Link href={getCategoryPath("power-supplies", country)} className="text-primary hover:underline">
+                <Link href={getCategoryPath("power-supplies", country as CountryCode)} className="text-primary hover:underline">
                   Power Supplies
                 </Link>
               </li>

@@ -3,15 +3,16 @@
  * Helpers for building breadcrumb trails
  */
 
+import { getCategoryBySlug, getParentCategory, type CategorySlug } from "@/lib/categories";
+import type { CountryCode } from "@/lib/countries";
 import type { BreadcrumbItem } from "@/types";
-import { getCategoryBySlug, getParentCategory } from "@/lib/categories";
 
 /**
  * Build breadcrumbs for a category page
  */
 export function buildCategoryBreadcrumbs(
-  categorySlug: string,
-  countryCode: string,
+  categorySlug: CategorySlug,
+  countryCode: CountryCode,
 ): BreadcrumbItem[] {
   const breadcrumbs: BreadcrumbItem[] = [
     { name: "Home", href: "/" },
@@ -43,8 +44,8 @@ export function buildCategoryBreadcrumbs(
  * Build breadcrumbs for a parent category page
  */
 export function buildParentBreadcrumbs(
-  parentSlug: string,
-  countryCode: string,
+  parentSlug: CategorySlug,
+  countryCode: CountryCode,
 ): BreadcrumbItem[] {
   const parent = getCategoryBySlug(parentSlug);
 
@@ -59,7 +60,7 @@ export function buildParentBreadcrumbs(
  * Build breadcrumbs for categories page
  */
 export function buildCategoriesBreadcrumbs(
-  countryCode: string,
+  countryCode: CountryCode,
 ): BreadcrumbItem[] {
   return [
     { name: "Home", href: "/" },

@@ -1,6 +1,7 @@
-import Link from "next/link";
+import { getCategoryPath, type CategorySlug } from "@/lib/categories";
+import { type CountryCode } from "@/lib/countries";
 import { HardDrive, MemoryStick, Zap } from "lucide-react";
-import { getCategoryPath } from "@/lib/categories";
+import Link from "next/link";
 
 const categories = [
   { name: "Hard Drives & SSDs", icon: HardDrive, slug: "hard-drives" },
@@ -8,7 +9,7 @@ const categories = [
   { name: "Power Supplies", icon: Zap, slug: "power-supplies" },
 ];
 
-export function HeroCategoryPills({ country }: { country: string }) {
+export function HeroCategoryPills({ country }: { country: CountryCode }) {
 
   return (
     <div className="flex flex-wrap gap-2">
@@ -20,7 +21,7 @@ export function HeroCategoryPills({ country }: { country: string }) {
         return (
           <Link
             key={category.slug}
-            href={getCategoryPath(category.slug, country)}
+            href={getCategoryPath(category.slug as CategorySlug, country)}
             className="group border-primary/20 bg-secondary hover:bg-secondary/80 flex items-center gap-2 rounded-full border px-4 py-2 no-underline shadow-sm transition-all"
           >
             <Icon className="text-primary h-3.5 w-3.5" />

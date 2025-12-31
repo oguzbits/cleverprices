@@ -1,6 +1,8 @@
 import { ProductUIModel } from "@/lib/amazon-api";
+import { allCategories, type CategorySlug } from "@/lib/categories";
+import { type CountryCode } from "@/lib/countries";
 import { Product } from "@/lib/product-registry";
-import { allCategories } from "@/lib/categories";
+import { type Currency } from "@/types";
 
 /**
  * Parses numeric value from strings like "0.03€/GB" or "1.25$/TB"
@@ -57,7 +59,7 @@ export function calculateProductMetrics(
 
   if (price === undefined || !capacity || !capacityUnit || !category) return p;
 
-  const categoryConfig = allCategories[category];
+  const categoryConfig = allCategories[category as CategorySlug];
   const comparisonUnit = categoryConfig?.unitType || capacityUnit; // Fallback to capacityUnit if category not found
 
   const fromFactor = UNIT_CONVERSION[capacityUnit] || 1;
@@ -115,15 +117,15 @@ export function getLocalizedProductData(p: Product, countryCode: string = "us") 
  */
 export function adaptToUIModel(
   p: Product,
-  countryCode: string = "us",
-  currency: string = "USD",
+  countryCode: CountryCode = "us",
+  currency: Currency = "USD",
   symbol: string = "$",
 ): ProductUIModel {
   const { price, title, asin } = getLocalizedProductData(p, countryCode);
   const finalPrice = price ?? 0;
   const enhancedProduct = calculateProductMetrics(p, finalPrice) as Product;
   
-  const categoryConfig = allCategories[p.category];
+  const categoryConfig = allCategories[p.category as CategorySlug];
   const displayUnit = categoryConfig?.unitType || p.capacityUnit;
 
   return {
