@@ -85,6 +85,8 @@ export function proxy(request: NextRequest) {
   return NextResponse.next();
 }
 
+export default proxy;
+
 export const config = {
   matcher: [
     // Match all paths except static files and internal Next.js paths
