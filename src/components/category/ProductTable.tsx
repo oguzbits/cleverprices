@@ -1,6 +1,6 @@
 import { SortableTableHead } from "@/components/category/SortableTableHead";
 import { Badge } from "@/components/ui/badge";
-import { getAffiliateRedirectPath } from "@/lib/product-registry";
+import { getAffiliateRedirectPath } from "@/lib/affiliate-utils";
 import { LocalizedProduct } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 

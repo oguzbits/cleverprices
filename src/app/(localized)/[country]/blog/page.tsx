@@ -1,10 +1,16 @@
 import { BlogIndexView } from "@/components/blog/blog-index-view";
 import { getOpenGraph } from "@/lib/metadata";
+import { generateCountryParams } from "@/lib/static-params";
 import { Metadata } from "next";
 
 type Props = {
   params: Promise<{ country: string }>;
 };
+
+export async function generateStaticParams() {
+  return generateCountryParams();
+}
+
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country } = await params;

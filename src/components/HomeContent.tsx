@@ -2,13 +2,13 @@ import { HeroCategoryPills } from "@/components/hero-category-pills";
 import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 import { getAllCountries, getCountryByCode, getFlag, type CountryCode } from "@/lib/countries";
-import { getAllProducts } from "@/lib/product-registry";
+import { getAllProducts } from "@/lib/server/cached-products";
 import { adaptToUIModel, getLocalizedProductData } from "@/lib/utils/products";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import Script from "next/script";
-import React, { Suspense } from "react";
+import { Suspense } from "react";
 
 const PopularProducts = dynamic(
   () =>
@@ -25,9 +25,9 @@ const PriceDrops = dynamic(
   },
 );
 
-export function HomeContent({ country }: { country: CountryCode }) {
+export async function HomeContent({ country }: { country: CountryCode }) {
   const countryConfig = getCountryByCode(country);
-  const allProducts = getAllProducts();
+  const allProducts = await getAllProducts();
 
   // Adapt products to UI model
   const uiProducts = allProducts

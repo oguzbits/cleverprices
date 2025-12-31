@@ -2,6 +2,7 @@ import { AllCategoriesView } from "@/components/category/AllCategoriesView";
 import { getCategoryHierarchy } from "@/lib/categories";
 import { DEFAULT_COUNTRY, isValidCountryCode, type CountryCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
+import { generateCountryParams } from "@/lib/static-params";
 import { Metadata } from "next";
 
 interface Props {
@@ -9,6 +10,11 @@ interface Props {
     country: string;
   }>;
 }
+
+export async function generateStaticParams() {
+  return generateCountryParams();
+}
+
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country } = await params;

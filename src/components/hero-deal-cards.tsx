@@ -1,6 +1,7 @@
 import { ProductSection } from "@/components/ProductSection";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
-import { getAllProducts, type Product } from "@/lib/product-registry";
+import { type Product } from "@/lib/product-registry";
+import { getAllProducts } from "@/lib/server/cached-products";
 import {
   adaptToUIModel,
   calculateProductMetrics,
@@ -50,8 +51,8 @@ const calculateDiscount = (product: Product, countryCode: CountryCode = "us"): n
 };
 
 // Get the top 3 deals based on discount percentage
-const getTopDeals = (countryCode: CountryCode = "us"): ProductWithDiscount[] => {
-  const allProducts = getAllProducts();
+const getTopDeals = async (countryCode: CountryCode = "us"): Promise<ProductWithDiscount[]> => {
+  const allProducts = await getAllProducts();
   return allProducts
     .filter((p) => {
       const { price } = getLocalizedProductData(p, countryCode);
@@ -65,10 +66,10 @@ const getTopDeals = (countryCode: CountryCode = "us"): ProductWithDiscount[] => 
     .slice(0, 3);
 };
 
-export function HeroDealCards({ country }: { country: CountryCode }) {
+export async function HeroDealCards({ country }: { country: CountryCode }) {
   const countryConfig = getCountryByCode(country);
 
-  const highlightedDeals = getTopDeals(country);
+  const highlightedDeals = await getTopDeals(country);
   const uiProducts = highlightedDeals.map((p) => {
     const ui = adaptToUIModel(
       p,

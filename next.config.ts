@@ -1,7 +1,11 @@
+import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  cacheComponents: true, // Enable "use cache" directive for caching
+  // Configure MDX file extensions
+  pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   // Enable experimental features for better performance
   experimental: {
     optimizePackageImports: [
@@ -22,7 +26,7 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-tabs",
       "@radix-ui/react-tooltip",
     ],
-  },
+  } as any, // Type assertion for experimental features not yet in type definitions
   // Optimize images
   images: {
     formats: ["image/avif", "image/webp"],
@@ -43,4 +47,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Wrap config with MDX support
+const withMDX = createMDX({
+  // Add markdown plugins here, as desired
+  options: {
+    remarkPlugins: [
+      "remark-gfm",
+      ["remark-frontmatter", { type: "yaml", marker: "-" }],
+      "remark-mdx-frontmatter",
+    ],
+    rehypePlugins: [],
+  },
+});
+
+export default withMDX(nextConfig);

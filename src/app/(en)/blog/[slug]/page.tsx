@@ -1,4 +1,4 @@
-import { BlogPostView } from "@/components/blog/blog-post-view";
+import { BlogPostViewMDX } from "@/components/blog/blog-post-view-mdx";
 import { getAllBlogPosts, getBlogPostBySlug } from "@/lib/blog";
 import { getOpenGraph } from "@/lib/metadata";
 import { Metadata } from "next";
@@ -46,5 +46,5 @@ export async function generateMetadata({
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  return <BlogPostView slug={slug} country="us" />;
+  return <BlogPostViewMDX slug={slug} country="us" />;
 }

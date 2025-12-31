@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { getCategoryBySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, isValidCountryCode, type CountryCode } from "@/lib/countries";
 import { generateKeywords, getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
+import { generateCategoryProductParams } from "@/lib/static-params";
 import { Metadata } from "next";
 import Link from "next/link";
 
@@ -14,6 +15,12 @@ interface Props {
   }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
+
+export async function generateStaticParams() {
+  return generateCategoryProductParams();
+}
+
+
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { country, parent, category: categorySlug } = await params;

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { getOpenGraph } from "@/lib/metadata";
+import { BUILD_TIME } from "@/lib/build-config";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | realpricedata.com",
@@ -22,6 +23,12 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
+  const lastUpdated = new Date(BUILD_TIME).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-12">
       <h1 className="mb-8 text-4xl font-bold">Privacy Policy</h1>
@@ -177,12 +184,7 @@ export default function PrivacyPage() {
         </section>
 
         <p className="text-muted-foreground mt-12 text-base">
-          Last updated:{" "}
-          {new Date().toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
+          Last updated: {lastUpdated}
         </p>
       </div>
     </div>

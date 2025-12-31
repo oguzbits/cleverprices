@@ -1,3 +1,4 @@
+import { COPYRIGHT_YEAR } from "@/lib/build-config";
 import { getCategoryPath } from "@/lib/categories";
 import { DEFAULT_COUNTRY, type CountryCode } from "@/lib/countries";
 import Image from "next/image";
@@ -112,7 +113,7 @@ export function Footer({ country = DEFAULT_COUNTRY }: FooterProps) {
               affiliates.
             </p>
             <p>
-              &copy; {new Date().getFullYear()} realpricedata.com. All rights
+              &copy; {COPYRIGHT_YEAR} realpricedata.com. All rights
               reserved.
             </p>
           </div>

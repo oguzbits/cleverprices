@@ -1,6 +1,7 @@
-import { BlogPostView } from "@/components/blog/blog-post-view";
+import { BlogPostViewMDX } from "@/components/blog/blog-post-view-mdx";
 import { getBlogPostBySlug } from "@/lib/blog";
 import { getOpenGraph } from "@/lib/metadata";
+import { generateBlogPostParams } from "@/lib/static-params";
 import { Metadata } from "next";
 
 interface LocalizedBlogPostPageProps {
@@ -8,9 +9,7 @@ interface LocalizedBlogPostPageProps {
 }
 
 export async function generateStaticParams() {
-  // We can pre-render some main countries if needed, or just let it be dynamic
-  // For now, let's keep it simple.
-  return []; 
+  return await generateBlogPostParams();
 }
 
 export async function generateMetadata({
@@ -47,5 +46,5 @@ export default async function LocalizedBlogPostPage({
   params,
 }: LocalizedBlogPostPageProps) {
   const { slug, country } = await params;
-  return <BlogPostView slug={slug} country={country} />;
+  return <BlogPostViewMDX slug={slug} country={country} />;
 }

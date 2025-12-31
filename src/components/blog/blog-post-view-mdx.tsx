@@ -8,17 +8,20 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { getBlogPostBySlug } from "@/lib/blog";
-import { getAllProducts } from "@/lib/product-registry";
+import { getAllProducts } from "@/lib/server/cached-products";
 import { Calendar, Clock, User } from "lucide-react";
-import { MDXRemote } from "next-mdx-remote/rsc";
 import { notFound } from "next/navigation";
 
-interface BlogPostViewProps {
+interface BlogPostViewMDXProps {
   slug: string;
   country: string;
 }
 
-export async function BlogPostView({ slug, country }: BlogPostViewProps) {
+/**
+ * Blog post view using build-time compiled MDX
+ * This replaces next-mdx-remote with @next/mdx for better performance
+ */
+export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
   const post = await getBlogPostBySlug(slug);
 
   if (!post) {
@@ -31,10 +34,20 @@ export async function BlogPostView({ slug, country }: BlogPostViewProps) {
     { name: post.title },
   ];
 
+  // Dynamically import the compiled MDX file
+  let MDXContent;
+  try {
+    const mdxModule = await import(`@/content/blog/${slug}.mdx`);
+    MDXContent = mdxModule.default;
+  } catch (error) {
+    console.error(`Failed to load MDX for slug: ${slug}`, error);
+    notFound();
+  }
+
+  // Prepare MDX components with server-side data
   const components = {
-    QuickPicks: ({ category, limit }: { category: string; limit?: number }) => {
-      // Fetch products on the server
-      const products = getAllProducts().filter((p) => p.category === category);
+    QuickPicks: async ({ category, limit }: { category: string; limit?: number }) => {
+      const products = (await getAllProducts()).filter((p) => p.category === category);
       return (
         <QuickPicks
           category={category}
@@ -52,21 +65,6 @@ export async function BlogPostView({ slug, country }: BlogPostViewProps) {
       >
         {props.children}
       </LocalizedLink>
-    ),
-    h2: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
-      <h2
-        className="mb-8 mt-16 text-3xl font-black uppercase italic tracking-tight"
-        {...props}
-      />
-    ),
-    h3: (props: React.HTMLAttributes<HTMLHeadingElement>) => (
-      <h3 className="mb-4 mt-12 text-xl font-bold uppercase" {...props} />
-    ),
-    p: (props: React.HTMLAttributes<HTMLParagraphElement>) => (
-      <p
-        className="text-muted-foreground mb-6 text-lg font-medium leading-relaxed"
-        {...props}
-      />
     ),
   };
 
@@ -113,7 +111,7 @@ export async function BlogPostView({ slug, country }: BlogPostViewProps) {
 
       <div className="container mx-auto max-w-4xl px-4 py-16">
         <div className="prose prose-neutral dark:prose-invert max-w-none prose-a:text-primary prose-a:no-underline">
-          <MDXRemote source={post.content} components={components} />
+          <MDXContent components={components} />
         </div>
 
         {post.references && post.references.length > 0 && (

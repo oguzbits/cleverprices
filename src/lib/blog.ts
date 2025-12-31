@@ -1,3 +1,5 @@
+"use cache";
+
 import { BlogFrontmatter, BlogPost } from "@/types/blog";
 import fs from "fs";
 import matter from "gray-matter";
@@ -40,11 +42,36 @@ export async function getAllBlogPosts(): Promise<BlogPost[]> {
 export async function getBlogPostBySlug(
   slug: string,
 ): Promise<BlogPost | null> {
-  const posts = await getAllBlogPosts();
-  return posts.find((post) => post.slug === slug) || null;
+  // Optimized: Read only the requested file instead of all files
+  const mdxPath = path.join(BLOG_DIRECTORY, `${slug}.mdx`);
+  const mdPath = path.join(BLOG_DIRECTORY, `${slug}.md`);
+
+  let filePath: string | null = null;
+  if (fs.existsSync(mdxPath)) {
+    filePath = mdxPath;
+  } else if (fs.existsSync(mdPath)) {
+    filePath = mdPath;
+  }
+
+  if (!filePath) {
+    return null;
+  }
+
+  const fileContents = fs.readFileSync(filePath, "utf8");
+  const { data, content } = matter(fileContents);
+  const frontmatter = data as BlogFrontmatter;
+
+  return {
+    ...frontmatter,
+    content,
+    author: {
+      name: frontmatter.authorName,
+      role: frontmatter.authorRole,
+    },
+  } as BlogPost;
 }
 
-export function calculateReadingTime(content: string): string {
+export async function calculateReadingTime(content: string): Promise<string> {
   const wordsPerMinute = 200;
   const words = content.trim().split(/\s+/).length;
   const time = Math.ceil(words / wordsPerMinute);
