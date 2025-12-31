@@ -1,5 +1,5 @@
 import { HardDrive, MemoryStick, Zap, type LucideIcon } from "lucide-react";
-import type { CountryCode } from "./countries";
+import { DEFAULT_COUNTRY, type CountryCode } from "./countries";
 
 export type UnitType = "TB" | "GB" | "W";
 
@@ -147,8 +147,9 @@ export function getCategoryPath(
     path = `/${category.slug}`;
   }
 
-  // Prepend country code if provided
-  if (countryCode) {
+  // Prepend country code if provided, but skip if it's the default country (US)
+  // US content is served from root, not /us/
+  if (countryCode && countryCode.toLowerCase() !== DEFAULT_COUNTRY) {
     path = `/${countryCode.toLowerCase()}${path}`;
   }
 

@@ -1,4 +1,3 @@
-import { BaseLayout } from "@/components/layout/BaseLayout";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { siteMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
@@ -16,9 +15,5 @@ export default function GermanLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <BaseLayout lang="de">
-      <PageLayout country="de">{children}</PageLayout>
-    </BaseLayout>
-  );
+  return <PageLayout country="de">{children}</PageLayout>;
 }

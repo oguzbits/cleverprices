@@ -3,7 +3,8 @@ import { HeroDealCards } from "@/components/hero-deal-cards";
 import { HeroTableDemo } from "@/components/hero-table-demo";
 import { PopularProducts } from "@/components/PopularProducts";
 import { PriceDrops } from "@/components/PriceDrops";
-import { getFlag, type CountryCode } from "@/lib/countries";
+import { SupportedMarketplaces } from "@/components/SupportedMarketplaces";
+import { type CountryCode } from "@/lib/countries";
 import {
   getAllCountries,
   getCountryByCode,
@@ -108,48 +109,10 @@ export async function HomeContent({ country }: { country: CountryCode }) {
           </div>
 
           {/* Country Flag Selection Wrapper */}
-          <div className="border-border mb-16 flex flex-col items-center justify-center border-y py-10">
-            <p className="text-muted-foreground mb-6 text-sm font-bold tracking-widest uppercase">
-              Supported Marketplaces
-            </p>
-            <div className="flex flex-wrap justify-center gap-6 sm:gap-10">
-              {allCountries.map((c) => {
-                const isActive = c.code === country;
-                const flagUrl = getFlag(c.code);
-                const href = c.isLive ? `/${c.code}` : "#";
-
-                return (
-                  <Link
-                    key={c.code}
-                    href={href}
-                    className={`group relative flex flex-col items-center no-underline transition-all ${
-                      c.isLive
-                        ? "cursor-pointer"
-                        : "pointer-events-none cursor-not-allowed opacity-20 grayscale"
-                    }`}
-                    aria-disabled={!c.isLive}
-                  >
-                    <div
-                      className={`flex items-center justify-center overflow-hidden border-2 transition-all duration-300 ${
-                        isActive
-                          ? "border-primary/30 bg-primary/10 rounded-2xl p-4 shadow-sm"
-                          : "border-transparent bg-transparent p-4"
-                      }`}
-                    >
-                      <Image
-                        src={flagUrl}
-                        alt={c.name}
-                        width={64}
-                        height={40}
-                        className="h-8 w-12 object-cover transition-all sm:h-10 sm:w-16"
-                        priority={isActive}
-                      />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          <SupportedMarketplaces
+            allCountries={allCountries}
+            currentCountry={country}
+          />
 
           <HeroDealCards country={country} />
           <PopularProducts

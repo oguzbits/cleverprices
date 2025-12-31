@@ -21,13 +21,18 @@ export function proxy(request: NextRequest) {
   const firstSegment = segments[0];
 
   if (firstSegment && isValidCountryCode(firstSegment)) {
-    // If it's the default country home (e.g., /us), redirect to root (/)
-    // Otherwise, just continue to the localized page
-    const shouldRedirectToRoot =
-      firstSegment === DEFAULT_COUNTRY && segments.length === 1;
-    const response = shouldRedirectToRoot
-      ? NextResponse.redirect(new URL("/", request.url))
-      : NextResponse.next();
+    // If it's the US country code, redirect to root path (301 permanent redirect)
+    // US content is served from root domain, not /us/
+    if (firstSegment === DEFAULT_COUNTRY) {
+      const newPath =
+        segments.length === 1 ? "/" : "/" + segments.slice(1).join("/");
+      return NextResponse.redirect(new URL(newPath, request.url), {
+        status: 301,
+      });
+    }
+
+    // For other countries, continue to the localized page
+    const response = NextResponse.next();
 
     // Synchronize the country cookie with the explicit URL preference
     if (request.cookies.get("country")?.value !== firstSegment) {

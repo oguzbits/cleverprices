@@ -152,8 +152,10 @@ export function saveCountryPreference(countryCode: string): void {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(COUNTRY_STORAGE_KEY, countryCode.toLowerCase());
+    // Also set cookie for middleware
+    document.cookie = `country=${countryCode.toLowerCase()}; path=/; max-age=31536000; SameSite=Lax`;
   } catch {
-    // Silently fail if localStorage is not available
+    // Silently fail if localStorage/cookies are not available
   }
 }
 

@@ -79,13 +79,27 @@ export function CountrySelector({
             let targetHref = "";
 
             if (hasCountryInUrl) {
-              // Replace the country code in the URL
-              const newSegments = [...segments];
-              newSegments[0] = c.code;
-              targetHref = `/${newSegments.join("/")}`;
+              if (c.code === DEFAULT_COUNTRY) {
+                // Switching TO US (Default): Remove the country segment
+                // e.g., /ca/categories -> /categories
+                const newSegments = segments.slice(1);
+                targetHref = `/${newSegments.join("/")}`;
+              } else {
+                // Switching between non-US countries
+                // e.g., /ca/categories -> /de/categories
+                const newSegments = [...segments];
+                newSegments[0] = c.code;
+                targetHref = `/${newSegments.join("/")}`;
+              }
             } else {
-              // Add country code to the path (for root path)
-              targetHref = `/${c.code}${pathname === "/" ? "" : pathname}`;
+              if (c.code === DEFAULT_COUNTRY) {
+                // Staying on US (Default): Keep path as is
+                targetHref = pathname;
+              } else {
+                // Switching FROM US to another country
+                // e.g., /categories -> /ca/categories
+                targetHref = `/${c.code}${pathname === "/" ? "" : pathname}`;
+              }
             }
 
             const queryString = searchParams.toString();
