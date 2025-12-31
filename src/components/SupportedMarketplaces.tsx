@@ -32,6 +32,7 @@ export function SupportedMarketplaces({
             <Link
               key={c.code}
               href={href}
+              prefetch={c.code !== "us"}
               onClick={() => {
                 if (c.isLive) {
                   // Save preference to cookie + localStorage
