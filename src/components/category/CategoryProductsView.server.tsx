@@ -28,7 +28,7 @@ interface CategoryProductsViewProps {
  * SERVER COMPONENT - Filters and renders products on the server
  * This is much faster than client-side filtering and better for SEO
  */
-export function CategoryProductsView({
+export async function CategoryProductsView({
   category,
   countryCode,
   searchParams,
@@ -42,7 +42,7 @@ export function CategoryProductsView({
 
   // SERVER-SIDE FILTERING - This is the key optimization!
   const { products, filteredCount, unitLabel, hasProducts, filters } =
-    getCategoryProducts(category, countryCode, searchParams);
+    await getCategoryProducts(category, countryCode, searchParams);
 
   const formatCurrency = (value: number, fractionDigits = 2) => {
     return new Intl.NumberFormat(countryConfig?.locale || "en-US", {

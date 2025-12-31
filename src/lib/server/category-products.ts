@@ -1,3 +1,5 @@
+"use cache";
+
 import { Category } from "@/lib/categories";
 import { Product, getProductsByCategory } from "@/lib/product-registry";
 import {
@@ -31,7 +33,7 @@ export interface FilterParams {
  * Server-side function to get and filter products for a category
  * This replaces the client-side useCategoryProducts hook
  */
-export function getCategoryProducts(
+export async function getCategoryProducts(
   category: Omit<Category, "icon">,
   countryCode: string,
   filterParams: FilterParams,

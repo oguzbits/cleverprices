@@ -54,66 +54,66 @@ export function CountrySelector({ currentCountryCode }: { currentCountryCode?: s
         <DropdownMenuLabel>Select Your Region</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* Live Countries */}
-        {liveCountries.map((c) => {
-          // Build target path that preserves the current relative URL
-          const segments = pathname.split('/').filter(Boolean);
-          const firstSegment = segments[0];
-          const hasCountryInUrl = firstSegment && isValidCountryCode(firstSegment);
-          
-          let targetHref = "";
-          if (hasCountryInUrl) {
-            const newSegments = [...segments];
-            newSegments[0] = c.code;
-            targetHref = `/${newSegments.join('/')}`;
-          } else {
-            // No country code in URL (likely on a root or shared page)
-            targetHref = `/${c.code}${pathname === '/' ? '' : pathname}`;
-          }
+        <div className="py-1">
+          {/* Live Countries */}
+          {liveCountries.map((c) => {
+            const segments = pathname.split('/').filter(Boolean);
+            const firstSegment = segments[0];
+            const hasCountryInUrl = firstSegment && isValidCountryCode(firstSegment);
+            
+            let targetHref = "";
+            if (hasCountryInUrl) {
+              const newSegments = [...segments];
+              newSegments[0] = c.code;
+              targetHref = `/${newSegments.join('/')}`;
+            } else {
+              targetHref = `/${c.code}${pathname === '/' ? '' : pathname}`;
+            }
 
-          return (
-            <DropdownMenuItem
-              key={c.code}
-              asChild
-              className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
-            >
-              <Link href={targetHref} prefetch={false} className="no-underline w-full">
-                <CountryItem
-                  code={c.code}
-                  name={c.name}
-                  domain={c.domain}
-                  isLive={true}
-                  isActive={currentCountryCode === c.code}
-                />
-              </Link>
-            </DropdownMenuItem>
-          );
-        })}
-
-        {comingSoonCountries.length > 0 && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel className="text-muted-foreground text-sm">
-              Coming Soon
-            </DropdownMenuLabel>
-
-            {/* Coming Soon Countries */}
-            {comingSoonCountries.map((c) => (
+            return (
               <DropdownMenuItem
                 key={c.code}
-                disabled
-                className="cursor-not-allowed opacity-60"
+                asChild
+                className="cursor-pointer focus:bg-accent focus:text-accent-foreground"
               >
-                <CountryItem
-                  code={c.code}
-                  name={c.name}
-                  domain={c.domain}
-                  isLive={false}
-                />
+                <Link href={targetHref} className="no-underline w-full">
+                  <CountryItem
+                    code={c.code}
+                    name={c.name}
+                    domain={c.domain}
+                    isLive={true}
+                    isActive={currentCountryCode === c.code}
+                  />
+                </Link>
               </DropdownMenuItem>
-            ))}
-          </>
-        )}
+            );
+          })}
+
+          {comingSoonCountries.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-muted-foreground text-sm">
+                Coming Soon
+              </DropdownMenuLabel>
+
+              {/* Coming Soon Countries */}
+              {comingSoonCountries.map((c) => (
+                <DropdownMenuItem
+                  key={c.code}
+                  disabled
+                  className="cursor-not-allowed opacity-60"
+                >
+                  <CountryItem
+                    code={c.code}
+                    name={c.name}
+                    domain={c.domain}
+                    isLive={false}
+                  />
+                </DropdownMenuItem>
+              ))}
+            </>
+          )}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
