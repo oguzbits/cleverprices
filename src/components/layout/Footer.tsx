@@ -18,6 +18,7 @@ export function Footer({ country: propCountry }: FooterProps) {
             <Link
               href={country === DEFAULT_COUNTRY ? "/" : `/${country}`}
               className="mb-2 flex items-center space-x-2 no-underline"
+              prefetch={true}
             >
               <Image
                 src="/icon-192.png"
@@ -50,6 +51,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                 <Link
                   href={getCategoryPath("hard-drives", country as CountryCode)}
                   className="text-primary hover:underline"
+                  prefetch={true}
                 >
                   Hard Drives & SSDs
                 </Link>
@@ -58,6 +60,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                 <Link
                   href={getCategoryPath("ram", country as CountryCode)}
                   className="text-primary hover:underline"
+                  prefetch={true}
                 >
                   RAM & Memory
                 </Link>
@@ -69,6 +72,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                     country as CountryCode,
                   )}
                   className="text-primary hover:underline"
+                  prefetch={true}
                 >
                   Power Supplies
                 </Link>
@@ -77,6 +81,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                 <Link
                   href={`/${country}/categories`}
                   className="text-primary hover:underline"
+                  prefetch={true}
                 >
                   All Categories
                 </Link>

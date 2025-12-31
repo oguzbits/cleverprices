@@ -20,6 +20,7 @@ export function Navbar({ country: propCountry }: { country?: string }) {
             className="flex items-center space-x-2 no-underline"
             title="Amazon Price Per Unit Tracker, Storage Deals & True Value"
             aria-label="Real Price Data Home - Amazon Price Per Unit Tracker"
+            prefetch={true}
           >
             <Image
               src="/icon-192.png"

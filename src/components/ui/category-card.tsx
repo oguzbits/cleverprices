@@ -16,6 +16,7 @@ export function CategoryCard({ category, Icon, country }: CategoryCardProps) {
       className="group no-underline"
       href={getCategoryPath(category.slug as CategorySlug, country)}
       aria-label={`Browse ${category.name}: ${category.description}`}
+      prefetch={true}
     >
       <div className="border-border/50 bg-card/40 hover:bg-muted/40 hover:border-primary/30 flex items-center rounded-lg border p-3 transition-all">
         <div className="bg-muted/50 text-muted-foreground group-hover:text-primary flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors">

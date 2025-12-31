@@ -50,6 +50,7 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
                   <Link
                     href={item.href}
                     className="hover:text-primary underline-offset-4 transition-colors hover:underline"
+                    prefetch={true}
                   >
                     {content}
                   </Link>
