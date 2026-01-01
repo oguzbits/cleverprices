@@ -39,11 +39,12 @@ export function Navbar({ country: propCountry }: { country?: string }) {
         </div>
 
         {/* Center: Global Search Button */}
-        <SearchButton />
+        <SearchButton mode="desktop" />
 
         {/* Right: Controls */}
         <TooltipProvider>
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+            <SearchButton mode="mobile" />
             <CountrySelector currentCountryCode={country} />
             <ThemeToggle />
           </div>
