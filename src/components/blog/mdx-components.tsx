@@ -126,6 +126,7 @@ export function QuickPicks({
             country as CountryCode,
           )}
           className="text-muted-foreground hover:text-primary group flex items-center justify-center gap-2 text-xs font-black tracking-[0.2em] uppercase transition-all"
+          prefetch={true}
         >
           View all {category.replace("-", " ")} deals
           <span className="transition-transform group-hover:translate-x-1">
