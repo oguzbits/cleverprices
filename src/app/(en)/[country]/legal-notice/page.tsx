@@ -3,10 +3,11 @@ import ValidLegalNoticePage, {
 } from "@/app/(en)/(root)/legal-notice/page";
 import { isValidCountryCode } from "@/lib/countries";
 import { generateCountryParams } from "@/lib/static-params";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export async function generateStaticParams() {
-  return generateCountryParams();
+  const params = generateCountryParams();
+  return params.filter((p) => p.country !== "de");
 }
 
 interface Props {
@@ -23,6 +24,10 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function LocalizedLegalNoticePage({ params }: Props) {
   const { country } = await params;
+
+  if (country === "de") {
+    redirect("/de/impressum");
+  }
 
   if (!isValidCountryCode(country)) {
     notFound();
