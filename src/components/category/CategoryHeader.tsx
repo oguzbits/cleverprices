@@ -49,7 +49,11 @@ export function CategoryHeader({
     <div className="flex flex-col gap-4">
       {/* Top Row: Breadcrumbs (includes H1) + Search / Filters */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <Breadcrumbs items={breadcrumbItems} className="mb-0" />
+        <Breadcrumbs
+          items={breadcrumbItems}
+          className="mb-0"
+          renderLastAsH1={true}
+        />
 
         <div className="hidden items-center gap-2 md:flex">
           <SearchInput />

@@ -6,9 +6,14 @@ import type { BreadcrumbItem } from "@/types";
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];
   className?: string;
+  renderLastAsH1?: boolean;
 }
 
-export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
+export function Breadcrumbs({
+  items,
+  className,
+  renderLastAsH1 = false,
+}: BreadcrumbsProps) {
   return (
     <nav className={cn("mb-4", className)} aria-label="Breadcrumb">
       <ol className="text-muted-foreground flex flex-wrap items-center gap-1.5 gap-y-1 text-sm leading-normal sm:gap-2">
@@ -55,7 +60,11 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
                     {content}
                   </Link>
                 ) : isLast ? (
-                  <h1 className="inline">{content}</h1>
+                  renderLastAsH1 ? (
+                    <h1 className="inline">{content}</h1>
+                  ) : (
+                    <span className="inline">{content}</span>
+                  )
                 ) : (
                   content
                 )}
