@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -108,11 +110,16 @@ export function CountrySelector({
               targetHref += `${separator}${queryString}`;
             }
 
+            const isActive = currentCountryCode === c.code;
+
             return (
               <DropdownMenuItem key={c.code} asChild>
                 <Link
                   href={targetHref}
-                  className="focus:bg-accent focus:text-accent-foreground flex w-full cursor-pointer items-center px-2 py-1.5 no-underline"
+                  className={cn(
+                    "focus:bg-accent focus:text-accent-foreground flex w-full cursor-pointer items-center px-2 py-1.5 no-underline",
+                    isActive && "bg-emerald-50/80 dark:bg-emerald-500/10",
+                  )}
                   onClick={() => {
                     saveCountryPreference(c.code);
                     // Explicitly refresh to update server components with new cookie
@@ -125,7 +132,7 @@ export function CountrySelector({
                     name={c.name}
                     domain={c.domain}
                     isLive={true}
-                    isActive={currentCountryCode === c.code}
+                    isActive={isActive}
                   />
                 </Link>
               </DropdownMenuItem>
