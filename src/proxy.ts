@@ -22,9 +22,9 @@ export function proxy(request: NextRequest) {
   }
 
   const segments = pathname.split("/").filter(Boolean);
-  if (segments.length === 0) return NextResponse.next();
+  // Removed early return for root path to allow cookie enforcement
 
-  const firstSegment = segments[0].toLowerCase();
+  const firstSegment = segments.length > 0 ? segments[0].toLowerCase() : "";
   const isExplicitCountryPath = isValidCountryCode(firstSegment);
 
   // 2. SEO Category Aliases (Root Level)
