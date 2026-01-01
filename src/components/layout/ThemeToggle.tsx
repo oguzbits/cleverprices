@@ -22,8 +22,8 @@ export function ThemeToggle() {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          variant="ghost"
-          size="icon"
+          variant="outline"
+          size="icon-sm"
           className="cursor-pointer"
           onClick={() => {
             const newTheme = theme === "light" ? "dark" : "light";
