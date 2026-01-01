@@ -23,10 +23,6 @@ export function ParentCategoryView({
 }: ParentCategoryViewProps) {
   const breadcrumbItems = [
     { name: "Home", href: countryCode === "us" ? "/" : `/${countryCode}` },
-    {
-      name: "Categories",
-      href: countryCode === "us" ? "/categories" : `/${countryCode}/categories`,
-    },
     { name: parentCategory.name },
   ];
 

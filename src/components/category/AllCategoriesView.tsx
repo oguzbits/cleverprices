@@ -20,8 +20,11 @@ export function AllCategoriesView({
   countryCode,
 }: AllCategoriesViewProps) {
   const breadcrumbItems = [
-    { name: "Home", href: `/${countryCode}` },
-    { name: "Categories" },
+    {
+      name: "Home",
+      href: countryCode === "us" ? "/" : `/${countryCode}`,
+    },
+    { name: "All Categories" },
   ];
 
   return (
