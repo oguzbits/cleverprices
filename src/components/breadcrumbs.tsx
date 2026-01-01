@@ -26,6 +26,9 @@ export function Breadcrumbs({
               className={cn(
                 "inline-flex items-center gap-1.5 wrap-break-word",
                 isLast && "text-foreground font-bold",
+                !isLast &&
+                  item.href &&
+                  "group-hover:underline group-hover:decoration-1 group-hover:underline-offset-4",
               )}
             >
               {Icon && (
@@ -54,7 +57,7 @@ export function Breadcrumbs({
                 {item.href && !isLast ? (
                   <Link
                     href={item.href}
-                    className="hover:text-primary underline-offset-4 transition-colors hover:underline"
+                    className="group text-muted-foreground"
                     prefetch={true}
                   >
                     {content}

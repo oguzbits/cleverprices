@@ -50,7 +50,7 @@ export function Footer({ country: propCountry }: FooterProps) {
               <li>
                 <Link
                   href={getCategoryPath("hard-drives", country as CountryCode)}
-                  className="text-primary hover:underline"
+                  className="text-muted-foreground hover:text-primary hover:underline"
                   prefetch={true}
                 >
                   Hard Drives & SSDs
@@ -59,7 +59,7 @@ export function Footer({ country: propCountry }: FooterProps) {
               <li>
                 <Link
                   href={getCategoryPath("ram", country as CountryCode)}
-                  className="text-primary hover:underline"
+                  className="text-muted-foreground hover:text-primary hover:underline"
                   prefetch={true}
                 >
                   RAM & Memory
@@ -71,7 +71,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                     "power-supplies",
                     country as CountryCode,
                   )}
-                  className="text-primary hover:underline"
+                  className="text-muted-foreground hover:text-primary hover:underline"
                   prefetch={true}
                 >
                   Power Supplies
@@ -84,7 +84,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                       ? "/categories"
                       : `/${country}/categories`
                   }
-                  className="text-primary hover:underline"
+                  className="text-muted-foreground hover:text-primary hover:underline"
                   prefetch={true}
                 >
                   All Categories
@@ -101,7 +101,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                   href={
                     country === DEFAULT_COUNTRY ? "/blog" : `/${country}/blog`
                   }
-                  className="text-primary hover:underline"
+                  className="text-muted-foreground hover:text-primary hover:underline"
                 >
                   Blog
                 </Link>
@@ -111,7 +111,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                   href={
                     country === DEFAULT_COUNTRY ? "/faq" : `/${country}/faq`
                   }
-                  className="text-primary hover:underline"
+                  className="text-muted-foreground hover:text-primary hover:underline"
                 >
                   FAQ
                 </Link>
@@ -121,7 +121,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                   <li>
                     <Link
                       href="/impressum"
-                      className="text-primary hover:underline"
+                      className="text-muted-foreground hover:text-primary hover:underline"
                     >
                       Impressum
                     </Link>
@@ -129,7 +129,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                   <li>
                     <Link
                       href="/datenschutz"
-                      className="text-primary hover:underline"
+                      className="text-muted-foreground hover:text-primary hover:underline"
                     >
                       Datenschutz
                     </Link>
@@ -144,7 +144,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                           ? "/legal-notice"
                           : `/${country}/legal-notice`
                       }
-                      className="text-primary hover:underline"
+                      className="text-muted-foreground hover:text-primary hover:underline"
                     >
                       Legal Notice
                     </Link>
@@ -156,7 +156,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                           ? "/privacy"
                           : `/${country}/privacy`
                       }
-                      className="text-primary hover:underline"
+                      className="text-muted-foreground hover:text-primary hover:underline"
                     >
                       Privacy
                     </Link>
