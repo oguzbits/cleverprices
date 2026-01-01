@@ -22,11 +22,7 @@ export function SupportedMarketplaces({
         {allCountries.map((c) => {
           const isActive = c.code === currentCountry;
           const flagUrl = getFlag(c.code);
-          const href = c.isLive
-            ? c.code === "us"
-              ? "/?set_country=us"
-              : `/${c.code}`
-            : "#";
+          const href = c.isLive ? (c.code === "us" ? "/" : `/${c.code}`) : "#";
 
           return (
             <Link

@@ -84,7 +84,7 @@ export function CountrySelector({
                 // Switching TO US (Default): Remove the country segment
                 // e.g., /ca/categories -> /categories
                 const newSegments = segments.slice(1);
-                targetHref = `/${newSegments.join("/")}?set_country=us`;
+                targetHref = `/${newSegments.join("/")}`;
               } else {
                 // Switching between non-US countries
                 // e.g., /ca/categories -> /de/categories
@@ -95,7 +95,7 @@ export function CountrySelector({
             } else {
               if (c.code === DEFAULT_COUNTRY) {
                 // Staying on US (Default): Keep path as is
-                targetHref = `${pathname}?set_country=us`;
+                targetHref = `${pathname}`;
               } else {
                 // Switching FROM US to another country
                 // e.g., /categories -> /ca/categories
