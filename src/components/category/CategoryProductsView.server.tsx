@@ -14,12 +14,17 @@ import {
   stripCategoryIcon,
 } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
+import { getCategoryFAQs } from "@/lib/category-faqs";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import {
   FilterParams,
   getCategoryProducts,
 } from "@/lib/server/category-products";
 import { Filter, Info, Search } from "lucide-react";
+
+// FAQ components for SEO
+import { FAQSchema } from "@/components/category/FAQSchema";
+import { FAQSection } from "@/components/category/FAQSection";
 
 // Client components
 import { CategoryHeader } from "@/components/category/CategoryHeader";
@@ -160,6 +165,17 @@ export async function CategoryProductsView({
                       ))}
                   </div>
                 </div>
+
+                {/* FAQ Section for SEO */}
+                {getCategoryFAQs(categorySlug).length > 0 && (
+                  <>
+                    <FAQSchema faqs={getCategoryFAQs(categorySlug)} />
+                    <FAQSection
+                      faqs={getCategoryFAQs(categorySlug)}
+                      categoryName={category.name}
+                    />
+                  </>
+                )}
               </div>
             </>
           ) : (
