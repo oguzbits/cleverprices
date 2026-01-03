@@ -64,7 +64,7 @@ export default function DatenschutzPage() {
             </p>
             <p className="mb-2">Boberger Anger 87</p>
             <p className="mb-2">21031 Hamburg</p>
-            <p className="mb-4">E-Mail: oguz.oeztuerk.bd@gmail.com</p>
+            <p className="mb-4">E-Mail: info@realpricedata.com</p>
           </div>
 
           <h3 className="mb-3 text-xl font-semibold">

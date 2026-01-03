@@ -58,7 +58,7 @@ export default function PrivacyPage() {
             </p>
             <p className="mb-2">Boberger Anger 87</p>
             <p className="mb-2">21031 Hamburg</p>
-            <p className="mb-4">Email: oguz.oeztuerk.bd@gmail.com</p>
+            <p className="mb-4">Email: info@realpricedata.com</p>
           </div>
         </section>
 

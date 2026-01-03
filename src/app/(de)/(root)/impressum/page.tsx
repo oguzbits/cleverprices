@@ -46,7 +46,7 @@ export default function ImpressumPage() {
         <section>
           <h2 className="mb-4 text-2xl font-semibold">Kontakt</h2>
           <div className="bg-card/50 border-primary/20 rounded-lg border p-6">
-            <p className="mb-2">E-Mail: oguz.oeztuerk.bd@gmail.com</p>
+            <p className="mb-2">E-Mail: info@realpricedata.com</p>
           </div>
         </section>
 
