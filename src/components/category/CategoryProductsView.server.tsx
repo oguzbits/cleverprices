@@ -121,7 +121,7 @@ export async function CategoryProductsView({
             <>
               {/* Desktop Filters - CLIENT COMPONENT */}
               <aside className="hidden w-60 shrink-0 lg:block">
-                <div className="bg-card sticky top-24 rounded-lg border p-4 shadow-sm">
+                <div className="bg-card rounded-lg border p-4 shadow-sm">
                   <FilterPanelClient
                     categorySlug={categorySlug}
                     unitLabel={unitLabel}
