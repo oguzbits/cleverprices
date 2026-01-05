@@ -1,55 +1,46 @@
-# Amazon PA API Integration
+# Amazon PA API Integration (LEGACY)
 
-## Status: Ready to implement when PA API access is approved
+## ⚠️ This folder is now superseded by the Multi-Source Architecture
 
-## Files in this folder:
+The PA API integration has been moved and refactored into the new unified data source layer:
 
-| File                          | Purpose                                                   |
-| ----------------------------- | --------------------------------------------------------- |
-| `amazon-paapi.ts`             | PA API v5 client with AWS Signature v4 auth               |
-| `price-sync.ts`               | Automated price sync script for all products/marketplaces |
-| `price-cache.ts`              | TypeScript types for timestamped price data               |
-| `PriceFreshnessIndicator.tsx` | UI component showing when prices were updated             |
+**New location:** `src/lib/data-sources/`
 
-## How to activate:
+**Files:**
 
-1. **Get PA API Access**
-   - Need 3 qualifying sales in 180 days for Amazon Associates
-   - Apply for PA API in Associates Central
+- `amazon-paapi.ts` - Updated PA API client implementing DataSourceProvider interface
+- `keepa.ts` - Keepa API client (price history + backup data)
+- `ebay.ts` - eBay Finding API client (used/refurbished alternatives)
+- `static-data.ts` - Fallback static JSON source
+- `index.ts` - Unified data aggregator
+- `types.ts` - Shared type definitions
 
-2. **Move files back to src/**
+**See also:**
 
-   ```bash
-   mv .future/pa-api-integration/amazon-paapi.ts src/lib/
-   mv .future/pa-api-integration/price-sync.ts src/lib/
-   mv .future/pa-api-integration/price-cache.ts src/types/
-   mv .future/pa-api-integration/PriceFreshnessIndicator.tsx src/components/
-   ```
+- `/MULTI_SOURCE_STRATEGY.md` - Complete multi-source strategy documentation
 
-3. **Add credentials to `.env.local`**
+---
 
-   ```
-   PAAPI_ACCESS_KEY=your_access_key
-   PAAPI_SECRET_KEY=your_secret_key
-   PAAPI_PARTNER_TAG=yoursite-20
-   ```
+## Legacy Files (Can be deleted)
 
-4. **Run price sync**
+The files in this folder are the original, non-refactored versions:
 
-   ```bash
-   bun run sync-prices
-   ```
+| File                          | Status      | New Location                              |
+| ----------------------------- | ----------- | ----------------------------------------- |
+| `amazon-paapi.ts`             | ✅ Migrated | `src/lib/data-sources/amazon-paapi.ts`    |
+| `price-sync.ts`               | ⏳ Pending  | Needs updating for new architecture       |
+| `price-cache.ts`              | ⏳ Pending  | Types merged into `types.ts`              |
+| `PriceFreshnessIndicator.tsx` | ⏳ Pending  | Will move to `src/components/` when ready |
 
-5. **Set up cron job** for automated updates every 4-6 hours
+## To fully migrate
 
-## Browse Node IDs (for searching products)
+Once you have PA API access:
 
-| Category       | US Node ID |
-| -------------- | ---------- |
-| Internal SSDs  | 1292116011 |
-| Internal HDDs  | 1254762011 |
-| Desktop RAM    | 172500     |
-| Laptop RAM     | 172501     |
-| Power Supplies | 1161760    |
-| CPUs           | 229189     |
-| GPUs           | 284822     |
+1. Delete this legacy folder
+2. Add credentials to `.env.local`
+3. The new architecture will automatically pick up the PA API source
+
+```bash
+# Clean up legacy folder (optional)
+rm -rf .future/pa-api-integration
+```

@@ -1,13 +1,16 @@
 import { SortableTableHead } from "@/components/category/SortableTableHead";
 import { Badge } from "@/components/ui/badge";
 import { getAffiliateRedirectPath } from "@/lib/affiliate-utils";
+import { DEFAULT_COUNTRY, type CountryCode } from "@/lib/countries";
 import { LocalizedProduct } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface ProductTableProps {
   products: LocalizedProduct[];
   unitLabel: string;
   categorySlug: string;
+  countryCode: CountryCode;
   sortBy: string;
   sortOrder: string;
   formatCurrency: (value: number, fractionDigits?: number) => string;
@@ -18,6 +21,7 @@ export function ProductTable({
   products,
   unitLabel,
   categorySlug,
+  countryCode,
   sortBy,
   sortOrder,
   formatCurrency,
@@ -91,14 +95,16 @@ export function ProductTable({
               </td>
               <td className="max-w-0 p-2 align-middle sm:max-w-none">
                 <div className="flex flex-col">
-                  <a
-                    href={getAffiliateRedirectPath(product.slug)}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href={
+                      countryCode === DEFAULT_COUNTRY
+                        ? `/p/${product.slug}`
+                        : `/${countryCode}/p/${product.slug}`
+                    }
                     className="text-primary line-clamp-2 block text-sm leading-snug font-medium hover:underline sm:text-base"
                   >
                     {product.title}
-                  </a>
+                  </Link>
                   <div className="text-muted-foreground mt-1 flex items-center gap-1.5 font-mono text-[10px] sm:hidden">
                     <span>{formatCurrency(product.price)}</span>
                     <span className="text-muted-foreground/30">•</span>

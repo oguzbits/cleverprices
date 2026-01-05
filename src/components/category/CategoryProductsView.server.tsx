@@ -136,6 +136,7 @@ export async function CategoryProductsView({
                     products={products}
                     unitLabel={unitLabel}
                     categorySlug={categorySlug}
+                    countryCode={countryCode}
                     sortBy={filters.sortBy}
                     sortOrder={filters.sortOrder}
                     formatCurrency={formatCurrency}
