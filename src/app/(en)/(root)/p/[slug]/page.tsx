@@ -50,8 +50,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const price =
     product.prices[DEFAULT_COUNTRY] || Object.values(product.prices)[0];
 
-  const title = `${product.title} - Compare Prices | ${BRAND_DOMAIN}`;
-  const description = `Compare prices for ${product.title} across Amazon, eBay, and more. Current best price: $${price?.toFixed(2)}. Find the best deal on ${category?.name || product.category}.`;
+  // Simple, compelling title focused on product
+  const title = `${product.title} - Best Price & Deals | ${BRAND_DOMAIN}`;
+
+  // Clear description: what it is + price + call to action
+  let description = `${product.brand} ${product.title}`;
+
+  if (price) {
+    description += ` - Currently $${price.toFixed(2)}.`;
+  }
+
+  description +=
+    ` Check current prices, specs, and find the best deal on this ${product.capacity}${product.capacityUnit} ${product.technology || ""} ${category?.name || "product"}.`.trim();
+
   const canonicalUrl = `https://${BRAND_DOMAIN}/p/${slug}`;
 
   return {
@@ -70,11 +81,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     keywords: [
       product.brand,
       product.title,
-      "price comparison",
-      "best deal",
-      category?.name,
+      `${product.capacity}${product.capacityUnit}`,
+      product.technology,
+      "price",
+      "deal",
       "buy",
-      "review",
+      category?.name,
     ].filter(Boolean) as string[],
   };
 }

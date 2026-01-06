@@ -25,42 +25,42 @@ const SOURCE_CONFIG: Record<
   amazon: {
     name: "Amazon",
     logo: "/logos/amazon.svg",
-    color: "bg-[#FF9900]/10 hover:bg-[#FF9900]/20",
+    color: "bg-[#FF9900]/10",
   },
   "amazon-paapi": {
     name: "Amazon",
     logo: "/logos/amazon.svg",
-    color: "bg-[#FF9900]/10 hover:bg-[#FF9900]/20",
+    color: "bg-[#FF9900]/10",
   },
   keepa: {
     name: "Amazon (via Keepa)",
     logo: "/logos/amazon.svg",
-    color: "bg-[#FF9900]/10 hover:bg-[#FF9900]/20",
+    color: "bg-[#FF9900]/10",
   },
   ebay: {
     name: "eBay",
     logo: "/logos/ebay.svg",
-    color: "bg-[#E53238]/10 hover:bg-[#E53238]/20",
+    color: "bg-[#E53238]/10",
   },
   newegg: {
     name: "Newegg",
     logo: "/logos/newegg.svg",
-    color: "bg-[#F7931E]/10 hover:bg-[#F7931E]/20",
+    color: "bg-[#F7931E]/10",
   },
   bhphoto: {
     name: "B&H Photo",
     logo: "/logos/bhphoto.svg",
-    color: "bg-[#0066CC]/10 hover:bg-[#0066CC]/20",
+    color: "bg-[#0066CC]/10",
   },
   walmart: {
     name: "Walmart",
     logo: "/logos/walmart.svg",
-    color: "bg-[#0071CE]/10 hover:bg-[#0071CE]/20",
+    color: "bg-[#0071CE]/10",
   },
   static: {
     name: "Amazon",
     logo: "/logos/amazon.svg",
-    color: "bg-[#FF9900]/10 hover:bg-[#FF9900]/20",
+    color: "bg-[#FF9900]/10",
   },
 };
 
@@ -148,11 +148,7 @@ export function OfferComparisonTable({
                       – {offer.seller}
                     </span>
                   )}
-                  {isBestPrice && (
-                    <Badge className="bg-emerald-500 text-white">
-                      Best Price
-                    </Badge>
-                  )}
+                  {isBestPrice && <Badge variant="default">Best Price</Badge>}
                 </div>
                 <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-3 text-sm">
                   {offer.freeShipping && (
@@ -194,7 +190,7 @@ export function OfferComparisonTable({
                 href={offer.affiliateLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="shrink-0"
+                className="shrink-0 no-underline"
               >
                 <button
                   className={cn(

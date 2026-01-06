@@ -59,3 +59,55 @@ export function getProductsByCategory(category: string): Product[] {
 export function getAllProducts(): Product[] {
   return [...products];
 }
+
+/**
+ * Get similar products (same category, different product)
+ * @param product - The current product
+ * @param limit - Maximum number of similar products to return
+ * @param countryCode - Country code for price comparison
+ * @returns Array of similar products sorted by price similarity
+ */
+export function getSimilarProducts(
+  product: Product,
+  limit: number = 4,
+  countryCode: string = "us",
+): Product[] {
+  // Get products in same category with valid prices
+  const categoryProducts = products.filter(
+    (p) =>
+      p.category === product.category &&
+      p.slug !== product.slug &&
+      p.prices[countryCode] !== undefined &&
+      p.prices[countryCode] !== null &&
+      p.prices[countryCode] > 0,
+  );
+
+  // Sort by price similarity to current product
+  const currentPrice = product.prices[countryCode] || 0;
+
+  const sorted = categoryProducts.sort((a, b) => {
+    const priceA = a.prices[countryCode] || 0;
+    const priceB = b.prices[countryCode] || 0;
+
+    // Sort by absolute difference from current price
+    return Math.abs(priceA - currentPrice) - Math.abs(priceB - currentPrice);
+  });
+
+  return sorted.slice(0, limit);
+}
+
+/**
+ * Get products by brand
+ * @param brand - The brand name
+ * @param excludeSlug - Optional slug to exclude (current product)
+ * @returns Array of products from that brand
+ */
+export function getProductsByBrand(
+  brand: string,
+  excludeSlug?: string,
+): Product[] {
+  return products.filter(
+    (p) =>
+      p.brand.toLowerCase() === brand.toLowerCase() && p.slug !== excludeSlug,
+  );
+}

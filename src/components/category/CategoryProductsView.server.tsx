@@ -15,6 +15,7 @@ import {
 } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { getCategoryFAQs } from "@/lib/category-faqs";
+import { getCategoryContent } from "@/lib/category-content";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import {
   FilterParams,
@@ -52,6 +53,7 @@ export async function CategoryProductsView({
     Icon: getCategoryIcon(crumb.slug),
   }));
   const countryConfig = getCountryByCode(countryCode);
+  const content = getCategoryContent(categorySlug);
 
   /*
    * SERVER-SIDE FILTERING - This is the key optimization!
@@ -166,6 +168,36 @@ export async function CategoryProductsView({
                       ))}
                   </div>
                 </div>
+
+                {/* Intro & Buying Guide for SEO */}
+                {content && (
+                  <div className="mt-12 border-t pt-8">
+                    <h2 className="mb-6 text-2xl font-bold">
+                      {content.title || `About ${category.name}`}
+                    </h2>
+
+                    {content.intro && (
+                      <p className="text-muted-foreground mb-8 max-w-4xl text-lg leading-relaxed">
+                        {content.intro}
+                      </p>
+                    )}
+
+                    {content.guide && content.guide.length > 0 && (
+                      <div className="grid gap-8 md:grid-cols-2">
+                        {content.guide.map((section, idx) => (
+                          <div key={idx} className="space-y-3">
+                            <h3 className="text-xl font-semibold">
+                              {section.title}
+                            </h3>
+                            <p className="text-muted-foreground leading-relaxed">
+                              {section.content}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* FAQ Section for SEO */}
                 {getCategoryFAQs(categorySlug).length > 0 && (
