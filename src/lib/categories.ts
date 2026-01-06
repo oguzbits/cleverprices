@@ -1,4 +1,11 @@
-import { HardDrive, MemoryStick, Zap, type LucideIcon } from "lucide-react";
+import {
+  Cpu,
+  HardDrive,
+  MemoryStick,
+  Monitor,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { DEFAULT_COUNTRY, type CountryCode } from "./countries";
 import { BRAND_DOMAIN } from "./site-config";
 
@@ -8,7 +15,10 @@ export type CategorySlug =
   | "electronics"
   | "hard-drives"
   | "ram"
-  | "power-supplies";
+  | "ram"
+  | "power-supplies"
+  | "cpu"
+  | "gpu";
 
 export interface Category {
   name: string;
@@ -89,6 +99,39 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
       { label: "80+ Gold PSUs", params: "technology=80%2B+Gold" },
     ],
     aliases: ["psu"],
+  },
+
+  cpu: {
+    name: "CPUs",
+    description: "Compare processors by core count and speed",
+    icon: Cpu,
+    parent: "electronics",
+    hidden: true,
+    metaTitle: `Processors (CPUs) - Compare Prices | ${BRAND_DOMAIN}`,
+    metaDescription:
+      "Find the best prices on Intel and AMD processors. Compare core counts, clock speeds, and benchmarks.",
+    popularFilters: [
+      { label: "Intel Core i7", params: "brand=Intel&series=Core+i7" },
+      { label: "AMD Ryzen 7", params: "brand=AMD&series=Ryzen+7" },
+    ],
+    aliases: ["processors", "chips"],
+  },
+
+  gpu: {
+    name: "Graphics Cards",
+    description: "Compare GPUs by VRAM and performance",
+    icon: Monitor,
+    parent: "electronics",
+    hidden: true,
+    unitType: "GB",
+    metaTitle: `Graphics Cards (GPUs) - Compare Prices | ${BRAND_DOMAIN}`,
+    metaDescription:
+      "Find the best graphics card deals. Compare NVIDIA GeForce and AMD Radeon GPUs by price and performance.",
+    popularFilters: [
+      { label: "NVIDIA RTX 4070", params: "brand=NVIDIA&model=RTX+4070" },
+      { label: "12GB+ VRAM", params: "min_memory=12" },
+    ],
+    aliases: ["video-cards", "vga"],
   },
 };
 
