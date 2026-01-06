@@ -85,11 +85,15 @@ export async function HomeContent({ country }: { country: CountryCode }) {
                 </span>
               </h1>
               <p className="text-muted-foreground mb-8 max-w-xl text-lg leading-relaxed md:text-xl">
-                <strong className="font-black tracking-tight">
-                  <span className="text-(--ccc-red)">clever</span>
-                  <span className="text-(--ccc-orange)">prices</span>
-                  <span className="text-muted-foreground/60">.com</span>
-                </strong>{" "}
+                <span className="relative inline-flex items-baseline">
+                  <strong className="text-foreground font-bold tracking-tight">
+                    cleverprices
+                  </strong>
+                  <span
+                    className="absolute right-0 -bottom-[3px] left-0 h-[3px] w-full"
+                    style={{ backgroundColor: "var(--ccc-orange)" }}
+                  />
+                </span>{" "}
                 is an Amazon price tracker and unit-price calculator to ensure
                 you never overpay again.
               </p>
