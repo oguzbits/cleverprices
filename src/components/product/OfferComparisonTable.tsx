@@ -2,7 +2,6 @@
  * Offer Comparison Table
  *
  * Displays all price offers from different sources (Amazon, eBay, Newegg, etc.)
- * Similar to idealo.de's price comparison list.
  */
 
 import { Badge } from "@/components/ui/badge";

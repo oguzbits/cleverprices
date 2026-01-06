@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <defs>
+    <style type="text/css">
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf') format('truetype');
+      }
+      .logo-text {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        fill: #FFFFFF;
+      }
+    </style>
+  </defs>
+  
+  <!-- Zinc-800 background -->
+  <rect width="48" height="48" fill="#27272a"/>
+  
+  <!-- White "c" using Inter Bold - larger -->
+  <text x="24" y="38" class="logo-text" font-size="60" text-anchor="middle">c</text>
+  
+  <!-- Orange underline - matching c width -->
+  <rect x="9" y="42" width="30" height="3" fill="#FF6200"/>
+</svg>

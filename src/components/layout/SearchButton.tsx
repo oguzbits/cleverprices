@@ -31,14 +31,14 @@ export function SearchButton({
           <button
             type="button"
             onClick={handleOpen}
-            className="border-border bg-card hover:bg-card/80 hover:border-primary/50 hidden w-[320px] cursor-pointer items-center gap-3 rounded-md border px-4 py-2 shadow-sm sm:flex lg:w-[400px]"
+            className="hidden w-[320px] cursor-pointer items-center gap-3 rounded-full border border-white/20 bg-white px-5 py-2.5 shadow-lg transition-all hover:shadow-xl sm:flex lg:w-[450px]"
             aria-label="Search all products"
           >
-            <Search className="text-muted-foreground h-4 w-4" />
-            <span className="text-muted-foreground flex-1 text-left text-base">
-              Search all products...
+            <Search className="h-5 w-5 text-zinc-500" />
+            <span className="flex-1 text-left text-base text-zinc-500">
+              Search products, categories...
             </span>
-            <kbd className="bg-background/80 text-muted-foreground hidden items-center gap-1 rounded border px-2 py-0.5 text-sm font-medium lg:inline-flex">
+            <kbd className="hidden items-center gap-1 rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-sm font-medium text-zinc-600 lg:inline-flex">
               {isMac ? "⌘" : "Ctrl+"}K
             </kbd>
           </button>

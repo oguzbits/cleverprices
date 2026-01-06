@@ -68,6 +68,16 @@
   --ccc-orange: #ff6200;
   --ccc-yellow: #ff9a03;
   --hero-emphasis: #ff6200;
+
+  --header-bg: oklch(
+    0.21 0.006 285.88
+  ); /* zinc-900 - Easy to change to #002B5B */
+  --header-fg: #ffffff;
+  --footer-bg: oklch(0.21 0.006 285.88); /* zinc-900 */
+  --footer-fg: #ffffff;
+  --section-bg: oklch(0.967 0.001 286.37); /* zinc-100 */
+  --section-alt-bg: #ffffff;
+  --accent-orange: #ff6000;
 }
 
 .dark {

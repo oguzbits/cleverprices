@@ -1,7 +1,8 @@
+import { Logo } from "@/components/layout/Logo";
 import { COPYRIGHT_YEAR } from "@/lib/build-config";
 import { getCategoryPath } from "@/lib/categories";
 import { DEFAULT_COUNTRY, type CountryCode } from "@/lib/countries";
-import Image from "next/image";
+import { Mail } from "lucide-react";
 import Link from "next/link";
 
 interface FooterProps {
@@ -10,46 +11,45 @@ interface FooterProps {
 
 export function Footer({ country: propCountry }: FooterProps) {
   const country = (propCountry || DEFAULT_COUNTRY) as CountryCode;
+
   return (
-    <footer className="bg-muted/40 border-t">
-      <div className="container mx-auto px-4 py-8 md:py-12">
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-          <div>
-            <Link
-              href={country === DEFAULT_COUNTRY ? "/" : `/${country}`}
-              className="mb-2 flex items-center space-x-2 no-underline"
-              prefetch={true}
-            >
-              <Image
-                src="/icon-192.png"
-                alt="CleverPrices Logo"
-                width={24}
-                height={24}
-                className="h-6 w-6"
-              />
-              <h3 className="text-lg font-black tracking-tight">
-                <span className="text-(--ccc-red)">clever</span>
-                <span className="text-(--ccc-orange)">prices</span>
-              </h3>
-            </Link>
-            <p className="text-muted-foreground max-w-xs text-base">
+    <footer
+      className="border-t border-white/10"
+      style={{ backgroundColor: "var(--footer-bg)", color: "var(--footer-fg)" }}
+    >
+      <div className="container mx-auto px-4 py-10 md:py-14">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Brand Column */}
+          <div className="space-y-4">
+            <Logo country={country} />
+            <p className="max-w-xs text-sm leading-relaxed text-white/70">
               Compare products by price per unit to find the best value.
               Data-driven, neutral, and efficient.
             </p>
-            <p className="sr-only">
-              Amazon Price Tracker & Price per Unit Calculator. Find the best
-              storage deals, HDD prices, and SSD savings on Amazon DE, US, UK
-              and International marketplaces.
-            </p>
+
+            {/* Contact */}
+            <div className="flex items-center gap-3 pt-2">
+              <a
+                href="mailto:info@cleverprices.com"
+                className="text-white/60 no-underline transition-colors hover:text-white"
+                aria-label="Email"
+              >
+                <Mail className="h-5 w-5" />
+              </a>
+            </div>
           </div>
 
-          <nav className="text-base" aria-label="Quick Links">
-            <h4 className="mb-3 font-semibold">Popular Categories</h4>
-            <ul className="space-y-2">
+          {/* Categories Column */}
+          <nav className="text-sm" aria-label="Popular Categories">
+            <h4 className="mb-4 font-semibold text-white">
+              Popular Categories
+            </h4>
+            <ul className="space-y-3">
               <li>
                 <Link
                   href={getCategoryPath("hard-drives", country as CountryCode)}
-                  className="text-muted-foreground hover:text-primary hover:underline"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
                   prefetch={true}
                 >
                   Hard Drives & SSDs
@@ -58,7 +58,7 @@ export function Footer({ country: propCountry }: FooterProps) {
               <li>
                 <Link
                   href={getCategoryPath("ram", country as CountryCode)}
-                  className="text-muted-foreground hover:text-primary hover:underline"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
                   prefetch={true}
                 >
                   RAM & Memory
@@ -70,7 +70,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                     "power-supplies",
                     country as CountryCode,
                   )}
-                  className="text-muted-foreground hover:text-primary hover:underline"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
                   prefetch={true}
                 >
                   Power Supplies
@@ -83,24 +83,25 @@ export function Footer({ country: propCountry }: FooterProps) {
                       ? "/categories"
                       : `/${country}/categories`
                   }
-                  className="text-muted-foreground hover:text-primary hover:underline"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
                   prefetch={true}
                 >
-                  All Categories
+                  All Categories →
                 </Link>
               </li>
             </ul>
           </nav>
 
-          <nav className="text-base" aria-label="Legal information">
-            <h4 className="mb-3 font-semibold">About cleverprices.com</h4>
-            <ul className="space-y-2">
+          {/* Resources Column */}
+          <nav className="text-sm" aria-label="Resources">
+            <h4 className="mb-4 font-semibold text-white">Resources</h4>
+            <ul className="space-y-3">
               <li>
                 <Link
                   href={
                     country === DEFAULT_COUNTRY ? "/blog" : `/${country}/blog`
                   }
-                  className="text-muted-foreground hover:text-primary hover:underline"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
                 >
                   Blog
                 </Link>
@@ -110,17 +111,24 @@ export function Footer({ country: propCountry }: FooterProps) {
                   href={
                     country === DEFAULT_COUNTRY ? "/faq" : `/${country}/faq`
                   }
-                  className="text-muted-foreground hover:text-primary hover:underline"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
                 >
                   FAQ
                 </Link>
               </li>
+            </ul>
+          </nav>
+
+          {/* Legal Column */}
+          <nav className="text-sm" aria-label="Legal information">
+            <h4 className="mb-4 font-semibold text-white">Legal</h4>
+            <ul className="space-y-3">
               {country === "de" ? (
                 <>
                   <li>
                     <Link
                       href="/impressum"
-                      className="text-muted-foreground hover:text-primary hover:underline"
+                      className="text-white/70 no-underline transition-colors hover:text-white"
                     >
                       Impressum
                     </Link>
@@ -128,7 +136,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                   <li>
                     <Link
                       href="/datenschutz"
-                      className="text-muted-foreground hover:text-primary hover:underline"
+                      className="text-white/70 no-underline transition-colors hover:text-white"
                     >
                       Datenschutz
                     </Link>
@@ -143,7 +151,7 @@ export function Footer({ country: propCountry }: FooterProps) {
                           ? "/legal-notice"
                           : `/${country}/legal-notice`
                       }
-                      className="text-muted-foreground hover:text-primary hover:underline"
+                      className="text-white/70 no-underline transition-colors hover:text-white"
                     >
                       Legal Notice
                     </Link>
@@ -155,28 +163,32 @@ export function Footer({ country: propCountry }: FooterProps) {
                           ? "/privacy"
                           : `/${country}/privacy`
                       }
-                      className="text-muted-foreground hover:text-primary hover:underline"
+                      className="text-white/70 no-underline transition-colors hover:text-white"
                     >
-                      Privacy
+                      Privacy Policy
                     </Link>
                   </li>
                 </>
               )}
             </ul>
           </nav>
+        </div>
 
-          <div className="text-muted-foreground text-base">
-            <p className="mb-4 text-sm">
-              As an Amazon Associate, we earn from qualifying purchases. Amazon
-              and the Amazon logo are trademarks of Amazon.com, Inc. or its
-              affiliates.
-            </p>
-            <p>
-              &copy; {COPYRIGHT_YEAR} cleverprices.com. All rights reserved.
-            </p>
+        {/* Bottom Bar */}
+        <div className="mt-10 border-t border-white/10 pt-6">
+          <div className="flex flex-col items-center justify-between gap-4 text-sm text-white/60 sm:flex-row">
+            <p>As an Amazon Associate, we earn from qualifying purchases.</p>
+            <p>© {COPYRIGHT_YEAR} cleverprices.com. All rights reserved.</p>
           </div>
         </div>
       </div>
+
+      {/* Hidden SEO text */}
+      <p className="sr-only">
+        Amazon Price Tracker & Price per Unit Calculator. Find the best storage
+        deals, HDD prices, and SSD savings on Amazon DE, US, UK and
+        International marketplaces.
+      </p>
     </footer>
   );
 }

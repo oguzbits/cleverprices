@@ -10,7 +10,11 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import * as React from "react";
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  variant?: "default" | "dark";
+}
+
+export function ThemeToggle({ variant = "default" }: ThemeToggleProps) {
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
@@ -18,13 +22,19 @@ export function ThemeToggle() {
     setMounted(true);
   }, []);
 
+  const isDark = variant === "dark";
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
         <Button
-          variant="outline"
+          variant={isDark ? "ghost" : "outline"}
           size="icon-sm"
-          className="cursor-pointer"
+          className={`cursor-pointer ${
+            isDark
+              ? "border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
+              : ""
+          }`}
           onClick={() => {
             const newTheme = theme === "light" ? "dark" : "light";
             setTheme(newTheme);

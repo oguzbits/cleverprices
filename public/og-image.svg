@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <defs>
+    <style type="text/css">
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 700;
+        src: url('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf') format('truetype');
+      }
+      .logo-text {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        fill: #FFFFFF;
+      }
+    </style>
+  </defs>
+  
+  <!-- Zinc-800 background -->
+  <rect width="1200" height="630" fill="#27272a"/>
+  
+  <!-- White "cleverprices" text - larger -->
+  <text x="600" y="350" class="logo-text" font-size="180" text-anchor="middle">cleverprices</text>
+  
+  <!-- Orange underline - matching text width -->
+  <rect x="60" y="420" width="1080" height="30" fill="#FF6200"/>
+</svg>

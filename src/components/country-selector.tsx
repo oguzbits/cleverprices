@@ -27,8 +27,10 @@ import { CountryItem } from "./CountryItem";
 
 export function CountrySelector({
   currentCountryCode,
+  variant = "default",
 }: {
   currentCountryCode?: string;
+  variant?: "default" | "dark";
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -42,13 +44,19 @@ export function CountrySelector({
   const liveCountries = allCountries.filter((c) => c.isLive);
   const comingSoonCountries = allCountries.filter((c) => !c.isLive);
 
+  const isDark = variant === "dark";
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
+          variant={isDark ? "ghost" : "outline"}
           size="sm"
-          className="min-w-auto gap-1 px-2 sm:min-w-[140px] sm:gap-2 sm:px-3"
+          className={`min-w-auto gap-1 px-2 sm:min-w-[140px] sm:gap-2 sm:px-3 ${
+            isDark
+              ? "border-white/20 text-white/80 hover:bg-white/10 hover:text-white"
+              : ""
+          }`}
           aria-label="Select country"
         >
           <Globe className="h-4 w-4" />
