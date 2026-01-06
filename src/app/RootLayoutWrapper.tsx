@@ -3,6 +3,7 @@ import "@/app/globals.css";
 import { PromoBanner } from "@/components/layout/PromoBanner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { NuqsProvider } from "@/providers/nuqs-provider";
+import { QueryProvider } from "@/providers/query-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter } from "next/font/google";
@@ -37,14 +38,16 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <NuqsProvider>
-            <div className="flex min-h-screen flex-col">
-              <PromoBanner />
-              {children}
-            </div>
-            <SpeedInsights />
-            <Analytics />
-          </NuqsProvider>
+          <QueryProvider>
+            <NuqsProvider>
+              <div className="flex min-h-screen flex-col">
+                <PromoBanner />
+                {children}
+              </div>
+              <SpeedInsights />
+              <Analytics />
+            </NuqsProvider>
+          </QueryProvider>
         </ThemeProvider>
       </body>
     </html>

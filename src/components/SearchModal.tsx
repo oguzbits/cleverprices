@@ -10,6 +10,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { DEFAULT_COUNTRY, isValidCountryCode } from "@/lib/countries";
+import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   FileText,
@@ -18,9 +19,7 @@ import {
   Package,
   Search,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
-import * as React from "react";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 interface SearchModalProps {
   open: boolean;
@@ -34,10 +33,10 @@ interface SearchItem {
   group: string;
   url: string;
   icon?: string;
-  meta?: any;
+  meta?: { price?: number; currency?: string };
 }
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, typeof Search> = {
   LayoutGrid,
   FileText,
   Package,
@@ -45,92 +44,77 @@ const ICON_MAP: Record<string, any> = {
   BookOpen,
 };
 
+const GROUP_ORDER = [
+  "Categories",
+  "Products",
+  "Calculators",
+  "Articles",
+  "Navigation",
+];
+
+// Simple fetch function
+const fetchSearchIndex = async (country: string): Promise<SearchItem[]> => {
+  const res = await fetch(`/api/search?country=${country}`);
+  return res.json();
+};
+
 export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const pathname = usePathname();
-
-  // Extract country from pathname - check if first segment is a valid country code
+  const router = useRouter();
   const pathSegments = pathname.split("/").filter(Boolean);
-  const firstSegment = pathSegments[0] || "";
-  const country = isValidCountryCode(firstSegment)
-    ? firstSegment
+  const country = isValidCountryCode(pathSegments[0] || "")
+    ? pathSegments[0]
     : DEFAULT_COUNTRY;
 
-  const [items, setItems] = useState<SearchItem[]>([]);
-  const [loading, setLoading] = useState(false);
+  // React Query handles caching automatically
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["search", country],
+    queryFn: () => fetchSearchIndex(country),
+    enabled: open, // Only fetch when modal is open
+  });
 
-  // Fetch search index on open
-  useEffect(() => {
-    if (open && items.length === 0) {
-      setLoading(true);
-      // Use absolute URL to avoid relative path issues
-      const apiUrl = `${window.location.origin}/api/search?country=${country}`;
-      fetch(apiUrl)
-        .then((res) => res.json())
-        .then((data) => {
-          setItems(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          console.error("Failed to load search index", err);
-          setLoading(false);
-        });
-    }
-  }, [open, country, items.length]);
-
-  const handleSelect = React.useCallback(
-    (url: string) => {
-      onOpenChange(false);
-      // Use window.location for absolute navigation
-      window.location.href = url;
+  // Group items by category
+  const groupedItems = items.reduce<Record<string, SearchItem[]>>(
+    (acc, item) => {
+      (acc[item.group] ??= []).push(item);
+      return acc;
     },
-    [onOpenChange],
+    {},
   );
 
-  const groupedItems = React.useMemo(() => {
-    const groups: Record<string, SearchItem[]> = {};
-    items.forEach((item) => {
-      if (!groups[item.group]) groups[item.group] = [];
-      groups[item.group].push(item);
-    });
-    return groups;
-  }, [items]);
-
-  const groupOrder = [
-    "Categories",
-    "Products",
-    "Calculators",
-    "Articles",
-    "Navigation",
-  ];
+  // Navigate and close modal
+  const handleSelect = (url: string) => {
+    onOpenChange(false);
+    router.push(url);
+  };
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput placeholder="Search for products, categories, or guides..." />
       <CommandList>
         <CommandEmpty>No results found.</CommandEmpty>
-        {loading && (
+        {isLoading && (
           <div className="text-muted-foreground p-4 text-center text-sm">
             Loading...
           </div>
         )}
-        {!loading &&
-          groupOrder.map((group) => {
+        {!isLoading &&
+          GROUP_ORDER.map((group) => {
             const groupItems = groupedItems[group];
-            if (!groupItems || groupItems.length === 0) return null;
+            if (!groupItems?.length) return null;
 
             return (
-              <React.Fragment key={group}>
+              <div key={group}>
                 <CommandGroup heading={group}>
                   {groupItems.map((item) => {
-                    const IconComponent =
-                      (item.icon && ICON_MAP[item.icon]) || Search;
+                    const Icon = (item.icon && ICON_MAP[item.icon]) || Search;
                     return (
                       <CommandItem
                         key={item.id}
                         value={`${item.title} ${item.description || ""} ${item.group} ${item.url}`}
                         onSelect={() => handleSelect(item.url)}
                       >
-                        <IconComponent className="mr-2 h-4 w-4" />
+                        <Icon className="mr-2 h-4 w-4" />
                         <div className="flex flex-col">
                           <span className="text-base">{item.title}</span>
                           {item.description && (
@@ -152,10 +136,15 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   })}
                 </CommandGroup>
                 <CommandSeparator />
-              </React.Fragment>
+              </div>
             );
           })}
       </CommandList>
     </CommandDialog>
   );
 }
+
+// Prefetch function for hover
+export const prefetchSearchIndex = (country: string = DEFAULT_COUNTRY) => {
+  fetch(`/api/search?country=${country}`).catch(() => {});
+};

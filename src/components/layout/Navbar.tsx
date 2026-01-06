@@ -6,6 +6,7 @@ import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { CountrySelector } from "@/components/country-selector";
 import { SearchButton } from "@/components/layout/SearchButton";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { SearchManager } from "@/components/layout/SearchManager";
 
 export function Navbar({ country: propCountry }: { country?: string }) {
   const country = propCountry || DEFAULT_COUNTRY;
@@ -49,6 +50,8 @@ export function Navbar({ country: propCountry }: { country?: string }) {
           </div>
         </TooltipProvider>
       </div>
+      {/* Centralized Search Manager handles the single Modal instance */}
+      <SearchManager />
     </header>
   );
 }
