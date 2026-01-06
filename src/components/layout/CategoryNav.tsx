@@ -61,7 +61,7 @@ export function CategoryNav({ country }: { country: string }) {
   }
 
   return (
-    <div className="sticky top-16 z-40 border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="sticky top-20 z-40 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-800">
       <div className="relative container mx-auto px-4">
         {/* Left scroll button */}
         {canScrollLeft && (
@@ -84,8 +84,7 @@ export function CategoryNav({ country }: { country: string }) {
           {/* All Categories Button */}
           <Link
             href={country === "us" ? "/categories" : `/${country}/categories`}
-            className="flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white no-underline transition-all hover:opacity-90"
-            style={{ backgroundColor: "var(--header-bg)" }}
+            className="flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-zinc-700 no-underline transition-all hover:bg-zinc-100 hover:text-(--ccc-orange) dark:text-zinc-300 dark:hover:bg-zinc-800"
             prefetch={true}
           >
             <Grid3X3 className="h-8 w-8" />

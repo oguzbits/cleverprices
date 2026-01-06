@@ -18,7 +18,7 @@ export function Navbar({ country: propCountry }: { country?: string }) {
         className="sticky top-0 z-50 w-full border-b border-white/10"
         style={{ backgroundColor: "var(--header-bg)" }}
       >
-        <div className="relative container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="relative container mx-auto flex h-20 items-center justify-between px-4">
           {/* Left: Logo */}
           <div className="flex shrink-0 items-center gap-2 sm:gap-6">
             <Logo country={country} />

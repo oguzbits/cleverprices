@@ -69,9 +69,7 @@
   --ccc-yellow: #ff9a03;
   --hero-emphasis: #ff6200;
 
-  --header-bg: oklch(
-    0.21 0.006 285.88
-  ); /* zinc-900 - Easy to change to #002B5B */
+  --header-bg: oklch(0.21 0.006 285.88); /* zinc-900 */
   --header-fg: #ffffff;
   --footer-bg: oklch(0.21 0.006 285.88); /* zinc-900 */
   --footer-fg: #ffffff;
