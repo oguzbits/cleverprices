@@ -9,16 +9,20 @@ import {
 import { Search } from "lucide-react";
 import * as React from "react";
 
-// Detect Mac once on client
-const isMac =
-  typeof navigator !== "undefined" &&
-  /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-
 export function SearchButton({
   mode = "desktop",
 }: {
   mode?: "mobile" | "desktop";
 }) {
+  const [isMac, setIsMac] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMac(
+      typeof navigator !== "undefined" &&
+        /Mac|iPod|iPhone|iPad/.test(navigator.platform),
+    );
+  }, []);
+
   const handleOpen = (e: React.MouseEvent) => {
     e.preventDefault();
     window.triggerSearch?.();
