@@ -113,7 +113,7 @@ export async function ProductDetailView({
       />
       <BreadcrumbSchema items={breadcrumbItems} />
 
-      <div className="mx-auto max-w-[1200px] px-4 py-4 md:py-6">
+      <div className="mx-auto max-w-[1280px] px-4 py-4 md:py-6">
         {/* Breadcrumbs - Now above the title container */}
         <div className="mb-4">
           <Breadcrumbs

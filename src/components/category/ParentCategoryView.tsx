@@ -27,7 +27,7 @@ export function ParentCategoryView({
   ];
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="mx-auto max-w-[1280px] px-4 py-12">
       <Breadcrumbs items={breadcrumbItems} />
 
       <div className="mb-12">

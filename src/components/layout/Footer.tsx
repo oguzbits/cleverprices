@@ -9,7 +9,7 @@ export function Footer() {
       className="border-t border-white/10"
       style={{ backgroundColor: "var(--footer-bg)", color: "var(--footer-fg)" }}
     >
-      <div className="mx-auto max-w-[1200px] px-4 py-10 md:py-14">
+      <div className="mx-auto max-w-[1280px] px-4 py-10 md:py-14">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}

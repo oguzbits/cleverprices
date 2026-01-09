@@ -72,8 +72,8 @@ export function CategoryNav({ country }: { country: string }) {
   }
 
   return (
-    <div className="z-40 border-b border-white/10 bg-[var(--sub-header-bg)] dark:bg-[var(--sub-header-bg)]">
-      <div className="relative mx-auto max-w-[1200px] px-4">
+    <div className="z-40 border-b border-white/10 bg-(--sub-header-bg) dark:bg-(--sub-header-bg)">
+      <div className="relative mx-auto max-w-[1280px] px-4">
         {/* Left scroll button */}
         {canScrollLeft && (
           <button

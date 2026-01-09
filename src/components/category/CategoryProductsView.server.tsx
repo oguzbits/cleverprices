@@ -124,7 +124,7 @@ export async function CategoryProductsView({
   // Main render - Idealo style layout
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[1200px] px-4 py-6">
+      <div className="mx-auto max-w-[1280px] px-4 py-6">
         {/* Breadcrumbs */}
         <Breadcrumbs
           items={breadcrumbItems}

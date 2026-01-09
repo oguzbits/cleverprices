@@ -21,7 +21,7 @@ export function IdealoSection({
 }: IdealoSectionProps) {
   return (
     <section className={`py-6 ${bgColors[variant]} ${className}`}>
-      <div className="mx-auto max-w-[1200px] px-4">{children}</div>
+      <div className="mx-auto max-w-[1280px] px-4">{children}</div>
     </section>
   );
 }

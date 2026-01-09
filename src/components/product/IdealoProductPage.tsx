@@ -101,11 +101,11 @@ export async function IdealoProductPage({
       />
       <BreadcrumbSchema items={breadcrumbItems} />
 
-      <div className="mx-auto max-w-[1280px] px-2.5 sm:px-[15px] xl:px-0">
+      <div className="mx-auto max-w-[1280px] px-4">
         {/* Breadcrumbs */}
         <Breadcrumbs
           items={breadcrumbItems}
-          className="mb-4 px-2.5 py-3 text-xs text-[#666] sm:px-[15px] xl:px-[15px]"
+          className="mb-4 py-3 text-xs text-[#666]"
         />
 
         {/* ============================================ */}
@@ -246,7 +246,7 @@ export async function IdealoProductPage({
           <div
             className={cn(
               "oopStage-details",
-              "w-full min-w-0 flex-1 px-2.5 sm:px-[15px]",
+              "w-full min-w-0 flex-1 lg:pl-6",
               // Mobile: row 3
               "col-start-1 row-start-3",
               // Desktop: column 2, row 2 to end
@@ -385,7 +385,7 @@ export async function IdealoProductPage({
           className={cn(
             "oop-mainWrapper",
             "flex flex-wrap [overflow-anchor:none]",
-            "mx-auto max-w-[1280px] xl:px-0",
+            "w-full",
           )}
         >
           {/* ============================================ */}
@@ -397,7 +397,7 @@ export async function IdealoProductPage({
               "oopMarginal",
               "hidden xl:block",
               "min-w-0 xl:w-1/4",
-              "px-2.5 sm:px-[15px] xl:px-[15px]",
+              "xl:pr-[15px]",
               "text-[14px] leading-[16px] text-[#2d2d2d]",
               "mb-[45px]",
               "order-1",
@@ -453,7 +453,7 @@ export async function IdealoProductPage({
               "datasheet",
               "order-3 w-full min-w-0",
               "scroll-mt-[15vh]",
-              "mb-5 px-2.5 sm:px-[15px] xl:px-0",
+              "mb-5",
             )}
           >
             <h2 className="datasheet-title mb-5 border-b border-[#b4b4b4] pb-4 text-lg font-bold sm:text-2xl lg:mb-8">
@@ -488,7 +488,7 @@ export async function IdealoProductPage({
               "productOffers",
               "w-full min-w-0 xl:w-3/4",
               "scroll-mt-[15vh]",
-              "mb-11 px-2.5 sm:px-[15px] xl:px-0",
+              "mb-11 xl:pl-[15px]",
               "order-2",
             )}
           >
