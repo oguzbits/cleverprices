@@ -1,4 +1,4 @@
-import { ProductDetailView } from "@/components/product";
+import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import {
   DEFAULT_COUNTRY,
@@ -99,7 +99,7 @@ export default async function ProductPage({ params }: Props) {
   }
 
   return (
-    <ProductDetailView
+    <IdealoProductPage
       product={product}
       countryCode={countryCode}
       unifiedProduct={unifiedProduct}

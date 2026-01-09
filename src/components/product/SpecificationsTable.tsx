@@ -4,7 +4,6 @@
  * Displays full product specifications in a clean table format.
  */
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
 
@@ -13,40 +12,36 @@ interface SpecificationsTableProps {
 }
 
 export function SpecificationsTable({ product }: SpecificationsTableProps) {
-  // Build specifications array from product data
+  // Build specifications array from product data (German labels to match Idealo)
   const specs: { label: string; value: string | undefined }[] = [
-    { label: "Brand", value: product.brand },
-    { label: "Capacity", value: `${product.capacity} ${product.capacityUnit}` },
-    { label: "Form Factor", value: product.formFactor },
-    { label: "Technology", value: product.technology },
-    { label: "Condition", value: product.condition },
-    { label: "Warranty", value: product.warranty },
-    { label: "Certification", value: product.certification },
-    { label: "Modularity", value: product.modularityTyp },
+    { label: "Marke", value: product.brand },
+    {
+      label: "Speicherkapazität",
+      value: `${product.capacity} ${product.capacityUnit}`,
+    },
+    { label: "Formfaktor", value: product.formFactor },
+    { label: "Zustand", value: product.condition },
+    { label: "Garantie", value: product.warranty },
   ].filter((spec) => spec.value); // Remove empty values
 
   return (
-    <div className="overflow-hidden">
-      <table className="w-full border-collapse border-t border-zinc-100">
-        <tbody>
-          {specs.map((spec, index) => (
-            <tr
-              key={spec.label}
-              className={cn(
-                "transition-colors hover:bg-zinc-50/80",
-                index % 2 === 0 ? "bg-zinc-50/40" : "bg-white",
-              )}
-            >
-              <td className="w-2/5 px-6 py-3.5 text-[13px] font-bold tracking-wider text-zinc-400 uppercase">
-                {spec.label}
-              </td>
-              <td className="border-l border-zinc-50 px-6 py-3.5 text-[13px] font-bold text-zinc-900">
-                {spec.value}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <ul className="datasheet-list w-full text-sm">
+      {specs.map((spec) => (
+        <li
+          key={spec.label}
+          className={cn(
+            "datasheet-listItem flex w-full border-b border-[#f5f5f5] py-2",
+            "last:border-0",
+          )}
+        >
+          <span className="datasheet-listItemKey w-[35%] shrink-0 text-[#767676] md:w-[40%]">
+            {spec.label}
+          </span>
+          <span className="datasheet-listItemValue flex-1 text-[#2d2d2d]">
+            {spec.value}
+          </span>
+        </li>
+      ))}
+    </ul>
   );
 }

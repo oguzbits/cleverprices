@@ -11,8 +11,8 @@ export function Navbar({ country: propCountry }: { country?: string }) {
 
   return (
     <>
-      <header className="z-50 w-full bg-[var(--header-bg)] shadow-md">
-        <div className="mx-auto flex h-20 max-w-[1200px] items-center justify-between gap-4 px-4">
+      <header className="z-50 w-full bg-(--header-bg) shadow-md">
+        <div className="mx-auto flex h-20 max-w-[1280px] items-center justify-between gap-4 px-4">
           {/* Logo */}
           <div className="flex shrink-0 items-center">
             <Logo />

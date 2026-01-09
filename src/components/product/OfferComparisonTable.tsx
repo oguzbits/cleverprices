@@ -172,7 +172,7 @@ export function OfferComparisonTable({
                     <span>+ Versand</span>
                   )}
                   <span className="flex items-center gap-1 font-bold tracking-tighter text-emerald-600 uppercase">
-                    <Check className="h-3 w-3 stroke-[3]" /> Auf Lager
+                    <Check className="h-3 w-3 stroke-3" /> Auf Lager
                   </span>
                 </div>
               </div>
@@ -222,7 +222,7 @@ export function OfferComparisonTable({
                   )}
                 >
                   Zum Shop
-                  <ExternalLink className="h-3.5 w-3.5 stroke-[3]" />
+                  <ExternalLink className="h-3.5 w-3.5 stroke-3" />
                 </button>
               </a>
             </div>

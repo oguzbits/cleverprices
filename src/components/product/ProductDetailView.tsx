@@ -260,11 +260,11 @@ export async function ProductDetailView({
                 <div className="md:col-span-5">
                   <div className="rounded-sm border border-zinc-200 bg-white p-5 shadow-sm">
                     <div className="mb-4 flex items-center justify-between">
-                      <div className="flex items-center gap-1.5 rounded-sm border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-black tracking-wider text-blue-700 uppercase">
-                        Bester Preis
+                      <div className="flex items-center gap-1.5 rounded-sm border border-[#c8e6c9] bg-[#e8f5e9] px-2 py-0.5 text-[10px] font-bold tracking-wide text-[#2e7d32]">
+                        BESTER PREIS
                       </div>
-                      <div className="flex items-center gap-1 text-[11px] font-bold text-emerald-600">
-                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#f97316]">
+                        <div className="h-1.5 w-1.5 rounded-full bg-[#f97316]" />
                         Lagernd
                       </div>
                     </div>
@@ -292,7 +292,7 @@ export async function ProductDetailView({
                     >
                       <button className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-[#22c55e] py-3 text-lg font-black tracking-wide text-white uppercase shadow-sm transition-all hover:bg-[#16a34a] active:scale-[0.99]">
                         Zum Shop
-                        <ChevronRight className="h-5 w-5 stroke-[3]" />
+                        <ChevronRight className="h-5 w-5 stroke-3" />
                       </button>
                     </a>
 
