@@ -509,16 +509,16 @@ export async function IdealoProductPage({
                 <label className="flex cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-[#b4b4b4]"
+                    className="h-4 w-4 rounded border-[#b4b4b4] bg-white accent-[#0771d0]"
                   />
-                  <span>Inkl. Versandkosten</span>
+                  <span className="text-[#2d2d2d]">Inkl. Versandkosten</span>
                 </label>
                 <label className="flex cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-[#b4b4b4]"
+                    className="h-4 w-4 rounded border-[#b4b4b4] bg-white accent-[#0771d0]"
                   />
-                  <span>Sofort lieferbar</span>
+                  <span className="text-[#2d2d2d]">Sofort lieferbar</span>
                 </label>
               </div>
             </div>

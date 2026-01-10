@@ -120,27 +120,27 @@ export interface CategoryHierarchy {
 const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   // Parent Category
   electronics: {
-    name: "Electronics",
-    description: "Digital storage solutions - compare price per terabyte",
+    name: "Elektronik",
+    description: "Digitale Speicherlösungen - Preis pro Terabyte vergleichen",
     icon: HardDrive,
     categoryType: "standard", // Parent categories are standard
-    metaTitle: `Hard Drive Storage - Best Price Per TB | ${BRAND_DOMAIN}`,
+    metaTitle: `Festplatten & Speicher - Bester Preis pro TB | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare hard drive and SSD prices by cost per terabyte. Find the best deals on storage from top brands like Samsung, WD, Seagate, and Crucial.",
+      "Vergleichen Sie Festplatten- und SSD-Preise nach Kosten pro Terabyte. Finden Sie die besten Angebote für Speicher von Samsung, WD, Seagate und Crucial.",
   },
 
   // Electronics Children (ONLY monetized categories)
   "hard-drives": {
-    name: "Hard Drives & SSDs",
-    description: "HDD and SSD storage solutions - compare price per TB",
+    name: "Festplatten & SSDs",
+    description: "HDD- und SSD-Speicherlösungen - Preis pro TB vergleichen",
     icon: HardDrive,
     parent: "electronics",
     categoryType: "analytical",
     unitType: "TB",
-    unitLabel: "per TB",
-    metaTitle: `Hard Drives & SSDs - Compare Price Per TB | ${BRAND_DOMAIN}`,
+    unitLabel: "pro TB",
+    metaTitle: `Festplatten & SSDs - Preis pro TB vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best hard drive and SSD deals by comparing price per terabyte. Compare internal and external storage from top brands.",
+      "Finden Sie die besten Festplatten- und SSD-Angebote durch Preisvergleich pro Terabyte. Vergleichen Sie interne und externe Speicher von Top-Marken.",
     popularFilters: [
       { label: "SSDs", params: "technology=SSD" },
       { label: "HDDs", params: "technology=HDD" },
@@ -150,16 +150,16 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   ram: {
-    name: "RAM & Memory",
-    description: "DDR4 and DDR5 RAM modules - compare price per GB",
+    name: "Arbeitsspeicher",
+    description: "DDR4- und DDR5-RAM-Module - Preis pro GB vergleichen",
     icon: MemoryStick,
     parent: "electronics",
     categoryType: "analytical",
     unitType: "GB",
-    unitLabel: "per GB",
-    metaTitle: `RAM & Memory - Compare Price Per GB | ${BRAND_DOMAIN}`,
+    unitLabel: "pro GB",
+    metaTitle: `Arbeitsspeicher (RAM) - Preis pro GB vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best RAM and memory deals by comparing price per gigabyte. Compare DDR4 and DDR5 modules from top brands like Crucial, Lexar, and Patriot.",
+      "Finden Sie die besten RAM-Angebote durch Preisvergleich pro Gigabyte. Vergleichen Sie DDR4- und DDR5-Module von Crucial, Lexar und Patriot.",
     popularFilters: [
       { label: "DDR4 RAM", params: "technology=DDR4" },
       { label: "DDR5 RAM", params: "technology=DDR5" },
@@ -169,34 +169,32 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "power-supplies": {
-    name: "Power Supplies",
-    description: "ATX and SFX power supplies - compare price per Watt",
+    name: "Netzteile",
+    description: "ATX- und SFX-Netzteile - Preis pro Watt vergleichen",
     icon: Zap,
     parent: "electronics",
     categoryType: "analytical",
     unitType: "W",
-    unitLabel: "per Watt",
-    metaTitle: `Power Supplies - Compare Price Per Watt | ${BRAND_DOMAIN}`,
+    unitLabel: "pro Watt",
+    metaTitle: `Netzteile - Preis pro Watt vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best power supply deals by comparing price per watt. Compare 80+ Bronze, Gold, and Platinum PSUs from top brands.",
-    popularFilters: [
-      { label: "80+ Gold PSUs", params: "technology=80%2B+Gold" },
-    ],
+      "Finden Sie die besten Netzteil-Angebote durch Preisvergleich pro Watt. Vergleichen Sie 80+ Bronze, Gold und Platinum PSUs von Top-Marken.",
+    popularFilters: [{ label: "80+ Gold", params: "technology=80%2B+Gold" }],
     aliases: ["psu"],
   },
 
   cpu: {
-    name: "CPUs",
-    description: "Compare processors by core count and performance",
+    name: "Prozessoren",
+    description: "Prozessoren nach Kernanzahl und Leistung vergleichen",
     icon: HardDrive,
     parent: "electronics",
     categoryType: "analytical",
     unitType: "core",
-    unitLabel: "per core",
+    unitLabel: "pro Kern",
     hidden: false, // Unhide when ready to launch
-    metaTitle: `Processors (CPUs) - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Prozessoren (CPUs) - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best prices on Intel and AMD processors. Compare core counts, clock speeds, and benchmarks.",
+      "Finden Sie die besten Preise für Intel- und AMD-Prozessoren. Vergleichen Sie Kernanzahl, Taktfrequenzen und Benchmarks.",
     popularFilters: [
       { label: "Intel Core i7", params: "brand=Intel&series=Core+i7" },
       { label: "AMD Ryzen 7", params: "brand=AMD&series=Ryzen+7" },
@@ -205,17 +203,17 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   gpu: {
-    name: "Graphics Cards",
-    description: "Compare GPUs by VRAM and performance",
+    name: "Grafikkarten",
+    description: "GPUs nach VRAM und Leistung vergleichen",
     icon: HardDrive,
     parent: "electronics",
     categoryType: "analytical",
     unitType: "GB",
-    unitLabel: "per GB VRAM",
+    unitLabel: "pro GB VRAM",
     hidden: false, // Unhide when ready to launch
-    metaTitle: `Graphics Cards (GPUs) - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Grafikkarten (GPUs) - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best graphics card deals. Compare NVIDIA GeForce and AMD Radeon GPUs by price and performance.",
+      "Finden Sie die besten Grafikkarten-Angebote. Vergleichen Sie NVIDIA GeForce und AMD Radeon GPUs nach Preis und Leistung.",
     popularFilters: [
       { label: "NVIDIA RTX 4070", params: "brand=NVIDIA&model=RTX+4070" },
       { label: "12GB+ VRAM", params: "min_memory=12" },
@@ -228,17 +226,18 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   // ======================
 
   monitors: {
-    name: "Monitors",
-    description: "Compare monitors by size, resolution, and refresh rate",
+    name: "Monitore",
+    description:
+      "Monitore nach Größe, Auflösung und Bildwiederholrate vergleichen",
     icon: Monitor,
     parent: "electronics",
     categoryType: "standard",
     hidden: false, // Unhide when ready to launch
-    metaTitle: `Computer Monitors - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Monitore - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best monitor deals. Compare 4K, ultrawide, and gaming monitors from top brands like LG, Samsung, Dell, and ASUS.",
+      "Finden Sie die besten Monitor-Angebote. Vergleichen Sie 4K-, Ultrawide- und Gaming-Monitore von LG, Samsung, Dell und ASUS.",
     popularFilters: [
-      { label: "4K Monitors", params: "resolution=4K" },
+      { label: "4K Monitore", params: "resolution=4K" },
       { label: "Gaming 144Hz+", params: "refresh_rate=144" },
       { label: "Ultrawide", params: "aspect_ratio=21:9" },
     ],
@@ -246,55 +245,55 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   keyboards: {
-    name: "Keyboards",
-    description: "Mechanical and membrane keyboards for gaming and work",
+    name: "Tastaturen",
+    description: "Mechanische und Membran-Tastaturen für Gaming und Arbeit",
     icon: Keyboard,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Keyboards - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Tastaturen - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best keyboard deals. Compare mechanical, membrane, and wireless keyboards from Logitech, Razer, Corsair, and more.",
+      "Finden Sie die besten Tastatur-Angebote. Vergleichen Sie mechanische, Membran- und kabellose Tastaturen von Logitech, Razer, Corsair und mehr.",
     popularFilters: [
-      { label: "Mechanical", params: "type=mechanical" },
-      { label: "Wireless", params: "connectivity=wireless" },
+      { label: "Mechanisch", params: "type=mechanical" },
+      { label: "Kabellos", params: "connectivity=wireless" },
       { label: "RGB", params: "features=rgb" },
     ],
     aliases: ["tastaturen"],
   },
 
   mice: {
-    name: "Mice",
-    description: "Gaming and productivity mice for precision and comfort",
+    name: "Mäuse",
+    description: "Gaming- und Produktivitätsmäuse für Präzision und Komfort",
     icon: Mouse,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Computer Mice - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Computer-Mäuse - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best mouse deals. Compare gaming mice, ergonomic mice, and wireless mice from Logitech, Razer, and SteelSeries.",
+      "Finden Sie die besten Maus-Angebote. Vergleichen Sie Gaming-Mäuse, ergonomische Mäuse und kabellose Mäuse von Logitech, Razer und SteelSeries.",
     popularFilters: [
-      { label: "Gaming Mice", params: "type=gaming" },
-      { label: "Wireless", params: "connectivity=wireless" },
-      { label: "Ergonomic", params: "type=ergonomic" },
+      { label: "Gaming-Mäuse", params: "type=gaming" },
+      { label: "Kabellos", params: "connectivity=wireless" },
+      { label: "Ergonomisch", params: "type=ergonomic" },
     ],
     aliases: ["mäuse", "maus"],
   },
 
   headphones: {
-    name: "Headphones",
-    description: "Over-ear, in-ear, and gaming headsets",
+    name: "Kopfhörer",
+    description: "Over-Ear-, In-Ear- und Gaming-Headsets",
     icon: Headphones,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Headphones & Headsets - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Kopfhörer & Headsets - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best headphone deals. Compare over-ear, in-ear, and gaming headsets from Sony, Bose, Sennheiser, and more.",
+      "Finden Sie die besten Kopfhörer-Angebote. Vergleichen Sie Over-Ear-, In-Ear- und Gaming-Headsets von Sony, Bose, Sennheiser und mehr.",
     popularFilters: [
       { label: "Over-Ear", params: "type=over-ear" },
-      { label: "Wireless", params: "connectivity=wireless" },
-      { label: "Gaming Headsets", params: "type=gaming" },
+      { label: "Kabellos", params: "connectivity=wireless" },
+      { label: "Gaming-Headsets", params: "type=gaming" },
       { label: "Noise Cancelling", params: "features=anc" },
     ],
     aliases: ["kopfhörer", "headsets"],
@@ -302,14 +301,14 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
 
   webcams: {
     name: "Webcams",
-    description: "HD and 4K webcams for streaming and video calls",
+    description: "HD- und 4K-Webcams für Streaming und Videokonferenzen",
     icon: Camera,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Webcams - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Webcams - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Find the best webcam deals. Compare HD and 4K webcams for streaming, video conferencing, and content creation.",
+      "Finden Sie die besten Webcam-Angebote. Vergleichen Sie HD- und 4K-Webcams für Streaming, Videokonferenzen und Content-Erstellung.",
     popularFilters: [
       { label: "4K Webcams", params: "resolution=4K" },
       { label: "1080p", params: "resolution=1080p" },
@@ -323,17 +322,17 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   // ======================
 
   "external-storage": {
-    name: "External Storage",
-    description: "External hard drives and portable SSDs",
+    name: "Externe Speicher",
+    description: "Externe Festplatten und tragbare SSDs",
     icon: HardDrive,
     parent: "electronics",
     categoryType: "analytical",
     unitType: "TB",
-    unitLabel: "per TB",
+    unitLabel: "pro TB",
     hidden: false,
-    metaTitle: `External Storage - Compare Prices per TB | ${BRAND_DOMAIN}`,
+    metaTitle: `Externe Speicher - Preis pro TB vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare external hard drives and portable SSDs by price per TB. Find the best deals on WD, Seagate, Samsung, and SanDisk.",
+      "Vergleichen Sie externe Festplatten und tragbare SSDs nach Preis pro TB. Finden Sie die besten Angebote von WD, Seagate, Samsung und SanDisk.",
     popularFilters: [
       { label: "Portable SSD", params: "type=ssd" },
       { label: "USB-C", params: "interface=usb-c" },
@@ -342,33 +341,33 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   routers: {
-    name: "Routers",
-    description: "WiFi routers and mesh systems",
+    name: "WLAN-Router",
+    description: "WiFi-Router und Mesh-Systeme",
     icon: Router,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `WiFi Routers - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `WLAN-Router - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare WiFi 6 and WiFi 7 routers from ASUS, TP-Link, Netgear, and more. Find the best deals on mesh systems.",
+      "Vergleichen Sie WiFi 6- und WiFi 7-Router von ASUS, TP-Link, Netgear und mehr. Finden Sie die besten Angebote für Mesh-Systeme.",
     popularFilters: [
       { label: "WiFi 6", params: "wifi=6" },
       { label: "WiFi 7", params: "wifi=7" },
-      { label: "Mesh Systems", params: "type=mesh" },
+      { label: "Mesh-Systeme", params: "type=mesh" },
     ],
     aliases: ["wlan-router", "mesh"],
   },
 
   nas: {
-    name: "NAS Systems",
-    description: "Network attached storage for home and office",
+    name: "NAS-Systeme",
+    description: "Netzwerkspeicher für Zuhause und Büro",
     icon: Server,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `NAS Systems - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `NAS-Systeme - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare NAS devices from Synology, QNAP, and more. Find the best deals for home servers and media storage.",
+      "Vergleichen Sie NAS-Geräte von Synology, QNAP und mehr. Finden Sie die besten Angebote für Home-Server und Medienspeicher.",
     popularFilters: [
       { label: "2-Bay", params: "bays=2" },
       { label: "4-Bay", params: "bays=4" },
@@ -378,120 +377,120 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "usb-hubs": {
-    name: "USB Hubs",
-    description: "USB hubs and port expanders",
+    name: "USB-Hubs",
+    description: "USB-Hubs und Port-Erweiterungen",
     icon: Usb,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `USB Hubs - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `USB-Hubs - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare USB-C and USB-A hubs. Find the best deals on powered hubs and docking solutions.",
+      "Vergleichen Sie USB-C- und USB-A-Hubs. Finden Sie Angebote für aktive Hubs und Docking-Lösungen.",
     popularFilters: [
       { label: "USB-C", params: "type=usb-c" },
-      { label: "Powered", params: "powered=true" },
+      { label: "Aktiv", params: "powered=true" },
     ],
     aliases: ["usb-verteiler"],
   },
 
   speakers: {
-    name: "Speakers",
-    description: "Computer speakers and audio systems",
+    name: "Lautsprecher",
+    description: "PC-Lautsprecher und Audiosysteme",
     icon: Speaker,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Computer Speakers - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `PC-Lautsprecher - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare PC speakers, soundbars, and 2.1 systems. Find deals from Logitech, Creative, and more.",
+      "Vergleichen Sie PC-Lautsprecher, Soundbars und 2.1-Systeme. Finden Sie Angebote von Logitech, Creative und mehr.",
     popularFilters: [
-      { label: "2.1 Systems", params: "type=2.1" },
+      { label: "2.1-Systeme", params: "type=2.1" },
       { label: "Bluetooth", params: "connectivity=bluetooth" },
     ],
     aliases: ["lautsprecher", "pc-lautsprecher"],
   },
 
   microphones: {
-    name: "Microphones",
-    description: "USB and XLR microphones for streaming and podcasting",
+    name: "Mikrofone",
+    description: "USB- und XLR-Mikrofone für Streaming und Podcasting",
     icon: Mic,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Microphones - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Mikrofone - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare USB and XLR microphones for streaming, gaming, and podcasting. Find deals on Blue, Rode, and Shure.",
+      "Vergleichen Sie USB- und XLR-Mikrofone für Streaming, Gaming und Podcasting. Finden Sie Angebote von Blue, Rode und Shure.",
     popularFilters: [
-      { label: "USB Mics", params: "type=usb" },
+      { label: "USB-Mikrofone", params: "type=usb" },
       { label: "XLR", params: "type=xlr" },
-      { label: "Condenser", params: "type=condenser" },
+      { label: "Kondensator", params: "type=condenser" },
     ],
     aliases: ["mikrofone", "streaming-mikrofon"],
   },
 
   "gaming-chairs": {
-    name: "Gaming Chairs",
-    description: "Ergonomic gaming and office chairs",
+    name: "Gaming-Stühle",
+    description: "Ergonomische Gaming- und Bürostühle",
     icon: Armchair,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Gaming Chairs - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Gaming-Stühle - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare gaming chairs from Secretlab, Noblechairs, and more. Find ergonomic chairs for long gaming sessions.",
+      "Vergleichen Sie Gaming-Stühle von Secretlab, Noblechairs und mehr. Finden Sie ergonomische Stühle für lange Gaming-Sessions.",
     popularFilters: [
       { label: "Secretlab", params: "brand=Secretlab" },
-      { label: "Ergonomic", params: "features=ergonomic" },
+      { label: "Ergonomisch", params: "features=ergonomic" },
     ],
     aliases: ["gaming-stühle", "bürostühle"],
   },
 
   tablets: {
     name: "Tablets",
-    description: "iPads, Android tablets, and drawing tablets",
+    description: "iPads, Android-Tablets und Grafik-Tablets",
     icon: Tablet,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Tablets - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Tablets - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare tablets from Apple, Samsung, and Lenovo. Find deals on iPads, Android tablets, and drawing tablets.",
+      "Vergleichen Sie Tablets von Apple, Samsung und Lenovo. Finden Sie Angebote für iPads, Android-Tablets und Grafik-Tablets.",
     popularFilters: [
       { label: "iPad", params: "brand=Apple" },
       { label: "Samsung Galaxy Tab", params: "brand=Samsung" },
-      { label: "Drawing Tablets", params: "type=drawing" },
+      { label: "Grafik-Tablets", params: "type=drawing" },
     ],
     aliases: ["tablet-pc"],
   },
 
   smartwatches: {
     name: "Smartwatches",
-    description: "Smartwatches and fitness trackers",
+    description: "Smartwatches und Fitness-Tracker",
     icon: Watch,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Smartwatches - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Smartwatches - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare smartwatches from Apple, Samsung, Garmin, and Fitbit. Find deals on fitness trackers and smart bands.",
+      "Vergleichen Sie Smartwatches von Apple, Samsung, Garmin und Fitbit. Finden Sie Angebote für Fitness-Tracker und Smart-Bänder.",
     popularFilters: [
       { label: "Apple Watch", params: "brand=Apple" },
       { label: "Garmin", params: "brand=Garmin" },
-      { label: "Fitness Trackers", params: "type=fitness" },
+      { label: "Fitness-Tracker", params: "type=fitness" },
     ],
     aliases: ["fitness-tracker", "smart-uhren"],
   },
 
   cables: {
-    name: "Cables & Adapters",
-    description: "USB, HDMI, DisplayPort cables and adapters",
+    name: "Kabel & Adapter",
+    description: "USB-, HDMI- und DisplayPort-Kabel und -Adapter",
     icon: Cable,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Cables & Adapters - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Kabel & Adapter - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare USB-C, HDMI, and DisplayPort cables. Find deals on adapters and cable accessories.",
+      "Vergleichen Sie USB-C-, HDMI- und DisplayPort-Kabel. Finden Sie Angebote für Adapter und Kabelzubehör.",
     popularFilters: [
       { label: "USB-C", params: "type=usb-c" },
       { label: "HDMI 2.1", params: "type=hdmi-2.1" },
@@ -501,32 +500,32 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "laptop-stands": {
-    name: "Laptop Stands",
-    description: "Laptop stands, risers, and cooling pads",
+    name: "Laptop-Ständer",
+    description: "Laptop-Ständer, Erhöhungen und Kühlpads",
     icon: Laptop,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Laptop Stands - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Laptop-Ständer - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare laptop stands, risers, and cooling pads for ergonomic setups.",
+      "Vergleichen Sie Laptop-Ständer, Erhöhungen und Kühlpads für ergonomische Setups.",
     popularFilters: [
-      { label: "Adjustable", params: "type=adjustable" },
-      { label: "With Cooling", params: "features=cooling" },
+      { label: "Verstellbar", params: "type=adjustable" },
+      { label: "Mit Kühlung", params: "features=cooling" },
     ],
     aliases: ["laptop-ständer", "notebook-halter"],
   },
 
   "mouse-pads": {
-    name: "Mouse Pads",
-    description: "Gaming and desk mouse pads",
+    name: "Mauspads",
+    description: "Gaming- und Schreibtisch-Mauspads",
     icon: Mouse,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Mouse Pads - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Mauspads - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare gaming mouse pads and desk mats. Find deals on extended pads and RGB mouse mats.",
+      "Vergleichen Sie Gaming-Mauspads und Schreibtischunterlagen. Finden Sie Angebote für XXL-Pads und RGB-Mauspads.",
     popularFilters: [
       { label: "Extended/XXL", params: "size=xxl" },
       { label: "RGB", params: "features=rgb" },
@@ -535,15 +534,15 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "docking-stations": {
-    name: "Docking Stations",
-    description: "USB-C and Thunderbolt docking stations",
+    name: "Docking-Stationen",
+    description: "USB-C- und Thunderbolt-Docking-Stationen",
     icon: Usb,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Docking Stations - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Docking-Stationen - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare USB-C and Thunderbolt docking stations. Find deals on laptop docks with multiple ports.",
+      "Vergleichen Sie USB-C- und Thunderbolt-Docking-Stationen. Finden Sie Angebote für Laptop-Docks mit mehreren Anschlüssen.",
     popularFilters: [
       { label: "Thunderbolt 4", params: "type=thunderbolt-4" },
       { label: "USB-C", params: "type=usb-c" },
@@ -552,15 +551,15 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   ups: {
-    name: "UPS / Battery Backup",
-    description: "Uninterruptible power supplies for PCs and NAS",
+    name: "USV / Notstromversorgung",
+    description: "Unterbrechungsfreie Stromversorgungen für PCs und NAS",
     icon: Battery,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `UPS Battery Backup - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `USV Notstromversorgung - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare UPS systems from APC, CyberPower, and Eaton. Protect your PC and NAS from power outages.",
+      "Vergleichen Sie USV-Systeme von APC, CyberPower und Eaton. Schützen Sie Ihren PC und NAS vor Stromausfällen.",
     popularFilters: [
       { label: "600VA+", params: "capacity=600" },
       { label: "1000VA+", params: "capacity=1000" },
@@ -569,15 +568,15 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "pc-cases": {
-    name: "PC Cases",
-    description: "Computer cases for gaming and workstation builds",
+    name: "PC-Gehäuse",
+    description: "Computer-Gehäuse für Gaming- und Workstation-Builds",
     icon: Server,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `PC Cases - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `PC-Gehäuse - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare PC cases from Fractal Design, NZXT, Corsair, and more. Find deals on ATX, mATX, and ITX cases.",
+      "Vergleichen Sie PC-Gehäuse von Fractal Design, NZXT, Corsair und mehr. Finden Sie Angebote für ATX-, mATX- und ITX-Gehäuse.",
     popularFilters: [
       { label: "ATX", params: "form-factor=atx" },
       { label: "mATX", params: "form-factor=matx" },
@@ -591,32 +590,32 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   // ======================
 
   "cpu-coolers": {
-    name: "CPU Coolers",
-    description: "Air and liquid CPU coolers for optimal temperatures",
+    name: "CPU-Kühler",
+    description: "Luft- und Flüssigkeits-CPU-Kühler für optimale Temperaturen",
     icon: Fan,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `CPU Coolers - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `CPU-Kühler - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare air and AIO liquid CPU coolers. Find deals on Noctua, be quiet!, Corsair, and more.",
+      "Vergleichen Sie Luft- und AIO-Flüssigkeits-CPU-Kühler. Finden Sie Angebote von Noctua, be quiet!, Corsair und mehr.",
     popularFilters: [
-      { label: "Air Coolers", params: "type=air" },
-      { label: "AIO Liquid", params: "type=aio" },
+      { label: "Luftkühler", params: "type=air" },
+      { label: "AIO-Wasserkühlung", params: "type=aio" },
     ],
     aliases: ["kühler", "cpu-kühler"],
   },
 
   "case-fans": {
-    name: "Case Fans",
-    description: "PC case fans and fan controllers",
+    name: "Gehäuselüfter",
+    description: "PC-Gehäuselüfter und Lüftersteuerungen",
     icon: Fan,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Case Fans - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Gehäuselüfter - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare PC case fans from Noctua, Arctic, Corsair, and more. Find RGB and high-airflow options.",
+      "Vergleichen Sie PC-Gehäuselüfter von Noctua, Arctic, Corsair und mehr. Finden Sie RGB- und High-Airflow-Optionen.",
     popularFilters: [
       { label: "120mm", params: "size=120" },
       { label: "140mm", params: "size=140" },
@@ -626,15 +625,15 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "thermal-paste": {
-    name: "Thermal Paste",
-    description: "Thermal compounds and pads for CPU and GPU",
+    name: "Wärmeleitpaste",
+    description: "Thermische Verbindungen und Pads für CPU und GPU",
     icon: Thermometer,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Thermal Paste - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Wärmeleitpaste - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare thermal paste from Noctua, Thermal Grizzly, and Arctic. Find the best thermal compounds.",
+      "Vergleichen Sie Wärmeleitpaste von Noctua, Thermal Grizzly und Arctic. Finden Sie die besten thermischen Verbindungen.",
     popularFilters: [
       { label: "High Performance", params: "type=premium" },
       { label: "Thermal Pads", params: "type=pad" },
@@ -643,15 +642,15 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "network-switches": {
-    name: "Network Switches",
-    description: "Ethernet switches for home and office networks",
+    name: "Netzwerk-Switches",
+    description: "Ethernet-Switches für Heim- und Büronetzwerke",
     icon: Network,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Network Switches - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Netzwerk-Switches - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare network switches from TP-Link, Netgear, and Ubiquiti. Managed and unmanaged options.",
+      "Vergleichen Sie Netzwerk-Switches von TP-Link, Netgear und Ubiquiti. Managed- und Unmanaged-Optionen.",
     popularFilters: [
       { label: "8 Port", params: "ports=8" },
       { label: "PoE", params: "features=poe" },
@@ -661,15 +660,15 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "network-cards": {
-    name: "Network Cards",
-    description: "PCIe WiFi and Ethernet adapters",
+    name: "Netzwerkkarten",
+    description: "PCIe-WLAN- und Ethernet-Adapter",
     icon: Network,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Network Cards - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Netzwerkkarten - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare WiFi and Ethernet adapters. PCIe and USB network cards for desktop and laptop.",
+      "Vergleichen Sie WLAN- und Ethernet-Adapter. PCIe- und USB-Netzwerkkarten für Desktop und Laptop.",
     popularFilters: [
       { label: "WiFi 6", params: "wifi=6" },
       { label: "2.5GbE", params: "speed=2.5gbe" },
@@ -678,151 +677,151 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "cable-management": {
-    name: "Cable Management",
-    description: "Cable ties, sleeves, and organization solutions",
+    name: "Kabelmanagement",
+    description: "Kabelbinder, Kabelkanäle und Organisationslösungen",
     icon: Cable,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Cable Management - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Kabelmanagement - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare cable management solutions. Cable ties, sleeves, trays, and under-desk organizers.",
+      "Vergleichen Sie Kabelmanagement-Lösungen. Kabelbinder, Kabelkanäle, Kabelwannen und Schreibtisch-Organizer.",
     popularFilters: [
-      { label: "Cable Sleeves", params: "type=sleeve" },
-      { label: "Cable Ties", params: "type=ties" },
+      { label: "Kabelkanäle", params: "type=sleeve" },
+      { label: "Kabelbinder", params: "type=ties" },
     ],
     aliases: ["kabelmanagement"],
   },
 
   "monitor-arms": {
-    name: "Monitor Arms",
-    description: "Monitor mounts and desk arms",
+    name: "Monitorhalterungen",
+    description: "Monitorhalterungen und Schreibtisch-Arme",
     icon: Monitor,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Monitor Arms - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Monitorhalterungen - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare monitor arms and mounts from Ergotron, AmazonBasics, and more. Single and dual options.",
+      "Vergleichen Sie Monitorhalterungen und -arme von Ergotron, AmazonBasics und mehr. Einzel- und Dual-Optionen.",
     popularFilters: [
-      { label: "Single Monitor", params: "type=single" },
-      { label: "Dual Monitor", params: "type=dual" },
+      { label: "Einzelmonitor", params: "type=single" },
+      { label: "Dual-Monitor", params: "type=dual" },
     ],
     aliases: ["monitorhalterung", "monitor-arm"],
   },
 
   "desk-accessories": {
-    name: "Desk Accessories",
-    description: "Desk organizers, lamps, and accessories",
+    name: "Schreibtisch-Zubehör",
+    description: "Schreibtisch-Organizer, Lampen und Zubehör",
     icon: Package,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Desk Accessories - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Schreibtisch-Zubehör - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare desk accessories. Desk lamps, organizers, and workspace essentials.",
+      "Vergleichen Sie Schreibtisch-Zubehör. Schreibtischlampen, Organizer und Arbeitsplatz-Essentials.",
     popularFilters: [
-      { label: "Desk Lamps", params: "type=lamp" },
-      { label: "Organizers", params: "type=organizer" },
+      { label: "Schreibtischlampen", params: "type=lamp" },
+      { label: "Organizer", params: "type=organizer" },
     ],
     aliases: ["schreibtisch-zubehör"],
   },
 
   "office-chairs": {
-    name: "Office Chairs",
-    description: "Ergonomic office chairs for productivity",
+    name: "Bürostühle",
+    description: "Ergonomische Bürostühle für Produktivität",
     icon: Armchair,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Office Chairs - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Bürostühle - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare ergonomic office chairs from Herman Miller, Steelcase, and affordable alternatives.",
+      "Vergleichen Sie ergonomische Bürostühle von Herman Miller, Steelcase und günstigen Alternativen.",
     popularFilters: [
-      { label: "Ergonomic", params: "features=ergonomic" },
-      { label: "Mesh Back", params: "type=mesh" },
+      { label: "Ergonomisch", params: "features=ergonomic" },
+      { label: "Mesh-Rücken", params: "type=mesh" },
     ],
     aliases: ["bürostühle"],
   },
 
   "standing-desks": {
-    name: "Standing Desks",
-    description: "Height-adjustable and standing desks",
+    name: "Stehschreibtische",
+    description: "Höhenverstellbare Schreibtische und Stehpulte",
     icon: Monitor,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Standing Desks - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Stehschreibtische - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare standing desks and sit-stand desks. Electric and manual height-adjustable options.",
+      "Vergleichen Sie Stehschreibtische und Sitz-Steh-Tische. Elektrische und manuelle höhenverstellbare Optionen.",
     popularFilters: [
-      { label: "Electric", params: "type=electric" },
-      { label: "Manual", params: "type=manual" },
+      { label: "Elektrisch", params: "type=electric" },
+      { label: "Manuell", params: "type=manual" },
     ],
     aliases: ["stehschreibtisch", "höhenverstellbar"],
   },
 
   "tablet-accessories": {
-    name: "Tablet Accessories",
-    description: "Cases, stands, and accessories for tablets",
+    name: "Tablet-Zubehör",
+    description: "Hüllen, Ständer und Zubehör für Tablets",
     icon: Tablet,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Tablet Accessories - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Tablet-Zubehör - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare tablet cases, stands, and styluses. iPad and Android tablet accessories.",
+      "Vergleichen Sie Tablet-Hüllen, -Ständer und -Stifte. iPad- und Android-Tablet-Zubehör.",
     popularFilters: [
-      { label: "iPad Cases", params: "type=ipad-case" },
-      { label: "Styluses", params: "type=stylus" },
+      { label: "iPad-Hüllen", params: "type=ipad-case" },
+      { label: "Stifte", params: "type=stylus" },
     ],
     aliases: ["tablet-zubehör"],
   },
 
   "phone-accessories": {
-    name: "Phone Accessories",
-    description: "Phone cases, chargers, and accessories",
+    name: "Handy-Zubehör",
+    description: "Handyhüllen, Ladegeräte und Zubehör",
     icon: Smartphone,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Phone Accessories - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Handy-Zubehör - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare phone cases, wireless chargers, and phone accessories for iPhone and Android.",
+      "Vergleichen Sie Handyhüllen, kabellose Ladegeräte und Handy-Zubehör für iPhone und Android.",
     popularFilters: [
-      { label: "Wireless Chargers", params: "type=wireless-charger" },
-      { label: "Phone Cases", params: "type=case" },
+      { label: "Kabellose Ladegeräte", params: "type=wireless-charger" },
+      { label: "Handyhüllen", params: "type=case" },
     ],
     aliases: ["handy-zubehör"],
   },
 
   "game-controllers": {
-    name: "Game Controllers",
-    description: "Gamepads, controllers, and joysticks",
+    name: "Game-Controller",
+    description: "Gamepads, Controller und Joysticks",
     icon: Gamepad2,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Game Controllers - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Game-Controller - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare game controllers and gamepads from Xbox, PlayStation, and third-party brands.",
+      "Vergleichen Sie Game-Controller und Gamepads von Xbox, PlayStation und Drittanbietern.",
     popularFilters: [
-      { label: "Xbox Controllers", params: "brand=Xbox" },
+      { label: "Xbox Controller", params: "brand=Xbox" },
       { label: "PlayStation", params: "brand=PlayStation" },
     ],
     aliases: ["controller", "gamepad"],
   },
 
   "vr-headsets": {
-    name: "VR Headsets",
-    description: "Virtual reality headsets and accessories",
+    name: "VR-Brillen",
+    description: "Virtual-Reality-Headsets und Zubehör",
     icon: Glasses,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `VR Headsets - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `VR-Brillen - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare VR headsets from Meta Quest, HTC Vive, and Valve Index. Standalone and PC VR options.",
+      "Vergleichen Sie VR-Headsets von Meta Quest, HTC Vive und Valve Index. Standalone- und PC-VR-Optionen.",
     popularFilters: [
       { label: "Standalone", params: "type=standalone" },
       { label: "PC VR", params: "type=pcvr" },
@@ -831,15 +830,15 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
   },
 
   "capture-cards": {
-    name: "Capture Cards",
-    description: "Video capture cards for streaming and recording",
+    name: "Capture-Karten",
+    description: "Videoaufnahme-Karten für Streaming und Recording",
     icon: Video,
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Capture Cards - Compare Prices | ${BRAND_DOMAIN}`,
+    metaTitle: `Capture-Karten - Preise vergleichen | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Compare capture cards from Elgato, AVerMedia, and more. USB and PCIe options for streaming.",
+      "Vergleichen Sie Capture-Karten von Elgato, AVerMedia und mehr. USB- und PCIe-Optionen für Streaming.",
     popularFilters: [
       { label: "USB", params: "type=usb" },
       { label: "PCIe", params: "type=pcie" },
