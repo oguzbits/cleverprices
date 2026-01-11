@@ -11,7 +11,7 @@ export function Footer() {
     >
       <div className="mx-auto max-w-[1280px] px-4 py-10 md:py-14">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {/* Brand Column */}
           <div className="space-y-4">
             <Logo />
@@ -32,61 +32,9 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Categories Column - Core PC Components */}
-          <nav className="text-sm" aria-label="PC-Komponenten">
-            <h4 className="mb-4 font-semibold text-white">PC-Komponenten</h4>
-            <ul className="space-y-3">
-              <li>
-                <Link
-                  href="/cpu"
-                  className="text-white/70 no-underline transition-colors hover:text-white"
-                  prefetch={true}
-                >
-                  Prozessoren (CPU)
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/gpu"
-                  className="text-white/70 no-underline transition-colors hover:text-white"
-                  prefetch={true}
-                >
-                  Grafikkarten (GPU)
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/ram"
-                  className="text-white/70 no-underline transition-colors hover:text-white"
-                  prefetch={true}
-                >
-                  Arbeitsspeicher (RAM)
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/hard-drives"
-                  className="text-white/70 no-underline transition-colors hover:text-white"
-                  prefetch={true}
-                >
-                  Festplatten & SSDs
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/categories"
-                  className="text-white/70 no-underline transition-colors hover:text-white"
-                  prefetch={true}
-                >
-                  Alle Kategorien →
-                </Link>
-              </li>
-            </ul>
-          </nav>
-
           {/* Resources Column */}
           <nav className="text-sm" aria-label="Ressourcen">
-            <h4 className="mb-4 text-[12px] font-bold tracking-wider text-white uppercase">
+            <h4 className="mb-4 text-[14px] font-bold tracking-wider text-white uppercase">
               Informationen
             </h4>
             <ul className="space-y-3">
@@ -111,7 +59,9 @@ export function Footer() {
 
           {/* Legal Column */}
           <nav className="text-sm" aria-label="Rechtliches">
-            <h4 className="mb-4 font-semibold text-white">Rechtliches</h4>
+            <h4 className="mb-4 text-[14px] font-bold tracking-wider text-white uppercase">
+              Rechtliches
+            </h4>
             <ul className="space-y-3">
               <li>
                 <Link

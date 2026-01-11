@@ -1,27 +1,22 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { CategoryCard } from "@/components/ui/category-card";
-import { Category, CategorySlug, getCategoryPath } from "@/lib/categories";
+import { Category } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
-import { type CountryCode } from "@/lib/countries";
-import Link from "next/link";
 import * as React from "react";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
+import { CategoryHubCard } from "@/components/category/CategoryHubCard";
 import {
   ProductBestsellerGrid,
   type BestsellerProduct,
 } from "@/components/category/ProductBestsellerGrid";
-import { CategoryHubCard } from "@/components/category/CategoryHubCard";
+import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
 
 interface ParentCategoryViewProps {
   parentCategory: Omit<Category, "icon">;
   childCategories: (Omit<Category, "icon"> & {
     popularFilters?: { label: string; params: string }[];
   })[];
-  countryCode: CountryCode;
   /** Bestseller products for the grid section */
   bestsellers?: BestsellerProduct[];
   /** New products for the carousel section */
@@ -33,15 +28,11 @@ interface ParentCategoryViewProps {
 export function ParentCategoryView({
   parentCategory,
   childCategories,
-  countryCode,
   bestsellers = [],
   newProducts = [],
   deals = [],
 }: ParentCategoryViewProps) {
   const [isExpanded, setIsExpanded] = React.useState(false);
-  const visibleCategories = isExpanded
-    ? childCategories
-    : childCategories.slice(0, 8);
   const hasMore = childCategories.length > 8;
 
   const breadcrumbItems = [
@@ -52,25 +43,6 @@ export function ParentCategoryView({
   return (
     <div className="mx-auto max-w-[1280px] px-4 py-8">
       <Breadcrumbs items={breadcrumbItems} />
-      {/* Header Section */}
-      <div className="mb-8">
-        <div className="mb-6 flex items-center gap-5">
-          <div className="rounded-2xl bg-[#e8f4fd] p-4">
-            {React.createElement(getCategoryIcon(parentCategory.slug), {
-              className: "h-10 w-10 text-[#0066cc]",
-              "aria-hidden": "true",
-            })}
-          </div>
-          <div>
-            <h1 className="text-[28px] font-bold text-[#2d2d2d]">
-              {parentCategory.name}
-            </h1>
-            <p className="mt-1 max-w-2xl text-[14px] text-[#666]">
-              {parentCategory.description}
-            </p>
-          </div>
-        </div>
-      </div>
       {/* Subcategory Hub Cards Grid */}
       <section className="mb-20">
         <h2 className="mb-10 text-[28px] font-bold text-[#2d2d2d]">

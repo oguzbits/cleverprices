@@ -43,6 +43,7 @@ import { IdealoTopBar } from "./IdealoTopBar";
 // FAQ components for SEO
 import { FAQSchema } from "@/components/category/FAQSchema";
 import { FAQSection } from "@/components/category/FAQSection";
+import { MobileFilterDrawer } from "./MobileFilterDrawer";
 
 interface Props {
   category: Omit<Category, "icon">;
@@ -161,24 +162,11 @@ export async function IdealoCategoryPage({
                 )}
               >
                 {/* Mobile Filter Button */}
-                <div className="mb-4 flex items-center gap-2 min-[840px]:hidden">
-                  <button className="flex h-10 items-center gap-2 rounded border border-[#b4b4b4] bg-white px-4 text-[14px] font-bold text-[#2d2d2d]">
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-                      />
-                    </svg>
-                    Filter
-                  </button>
-                </div>
+                <MobileFilterDrawer
+                  categorySlug={categorySlug}
+                  unitLabel={unitLabel}
+                  categoryName={category.name}
+                />
 
                 {/* ============================================ */}
                 {/* PRODUCT GRID/LIST - sr-resultList */}

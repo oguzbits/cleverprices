@@ -36,22 +36,15 @@ export function SearchButton({
       )}
 
       {mode === "mobile" && (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon-sm"
-              className="cursor-pointer sm:hidden"
-              onClick={handleOpen}
-              aria-label="Open search"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Search products</p>
-          </TooltipContent>
-        </Tooltip>
+        <button
+          type="button"
+          onClick={handleOpen}
+          className="flex h-10 w-full max-w-[180px] cursor-pointer items-center gap-2 rounded-full border border-white/20 bg-white px-3 shadow-md transition-all sm:hidden"
+          aria-label="Open search"
+        >
+          <Search className="h-4 w-4 text-zinc-500" />
+          <span className="truncate text-sm text-zinc-500">Search...</span>
+        </button>
       )}
     </>
   );
