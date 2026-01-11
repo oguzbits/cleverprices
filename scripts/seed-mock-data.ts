@@ -20,7 +20,7 @@ async function main() {
     title:
       "Samsung 990 PRO M.2 NVMe SSD 2 tb, PCIe 4.0, 7.450 MB/s Lesegeschwindigkeit, Interne SSD, Für Gaming und Videobearbeitung, Festplatte für Konsole und PC, MZ-V9P2T0BW",
     brand: "Samsung",
-    category: "ssd",
+    category: "hard-drives",
     imageUrl:
       "https://images-na.ssl-images-amazon.com/images/I/71W690L%2B5cL._AC_SL1500_.jpg",
     capacity: 2,

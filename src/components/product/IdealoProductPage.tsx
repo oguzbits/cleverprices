@@ -31,6 +31,7 @@ import { Check, ChevronRight, Heart, Package, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { IdealoPriceChart } from "./IdealoPriceChart";
+import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
 import { SpecificationsTable } from "./SpecificationsTable";
 
 interface IdealoProductPageProps {
@@ -46,7 +47,7 @@ export async function IdealoProductPage({
 }: IdealoProductPageProps) {
   const countryConfig = getCountryByCode(countryCode);
   const category = getCategoryBySlug(product.category);
-  const similarProducts = await getSimilarProducts(product, 6, countryCode);
+  const similarProducts = await getSimilarProducts(product, 12, countryCode);
   const price = product.prices[countryCode];
 
   // Build breadcrumbs
@@ -788,6 +789,22 @@ export async function IdealoProductPage({
               * Alle Preise inkl. MwSt. Angaben ohne Gewähr.
             </p>
           </div>
+        </div>
+        {/* ============================================ */}
+        {/* RELATED PRODUCTS CAROUSEL */}
+        {/* ============================================ */}
+        <div className="mt-8 mb-12">
+          <IdealoProductCarousel
+            title="Das könnte dich auch interessieren"
+            products={similarProducts.map((p) => ({
+              title: p.title,
+              price: p.prices[countryCode] || 0,
+              slug: p.slug,
+              image: p.image,
+              rating: p.rating,
+              ratingCount: p.reviewCount,
+            }))}
+          />
         </div>
       </div>
     </div>

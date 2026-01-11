@@ -14,12 +14,14 @@ import {
 } from "./site-config";
 
 export const coreKeywords = [
-  "Amazon price tracker",
-  "price per unit",
-  "unit price comparison",
-  "true value finder",
-  "best value hardware",
-  "Amazon hardware deals",
+  "Preisvergleich",
+  "Preis pro TB",
+  "Preis pro GB",
+  "günstigste Hardware",
+  "beste Preise Festplatte",
+  "SSD Preisvergleich",
+  "RAM günstig kaufen",
+  "Hardware Angebote Deutschland",
   BRAND_NAME.toLowerCase(),
 ];
 
@@ -57,25 +59,25 @@ export const siteMetadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    locale: "en_US",
-    title: `${BRAND_DOMAIN} - Unit Price Tracker`,
+    locale: "de_DE",
+    title: `${BRAND_DOMAIN} - Preisvergleich für Hardware & Speicher`,
     description:
-      "Compare Amazon hardware by true cost per TB/GB. Track HDD, SSD, and RAM prices to find the best value deals instantly.",
+      "Vergleichen Sie Hardware nach echtem Preis pro TB/GB. Finden Sie die günstigsten SSDs, Festplatten und RAM mit unserem Preisvergleich.",
     siteName: BRAND_DOMAIN,
     images: [
       {
         url: LOGO.ogImage,
         width: 1200,
         height: 630,
-        alt: `${BRAND_DOMAIN} - Find the best value on Amazon US`,
+        alt: `${BRAND_DOMAIN} - Hardware Preisvergleich Deutschland`,
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: `${BRAND_DOMAIN} - Unit Price Tracker`,
+    title: `${BRAND_DOMAIN} - Preisvergleich für Hardware & Speicher`,
     description:
-      "Compare Amazon hardware by true cost per TB/GB. Track HDD, SSD, and RAM prices to find the best value deals instantly.",
+      "Vergleichen Sie Hardware nach echtem Preis pro TB/GB. Finden Sie die günstigsten SSDs, Festplatten und RAM.",
     images: [LOGO.ogImage],
     creator: TWITTER_AT,
     site: TWITTER_AT,
@@ -156,7 +158,7 @@ export function getAlternateLanguages(
 }
 
 /**
- * Generates SEO keywords dynamically based on category and units.
+ * Generates SEO keywords dynamically based on category and units (German).
  */
 export function generateKeywords(
   category?: Category,
@@ -169,21 +171,23 @@ export function generateKeywords(
   const unit = category.unitType;
   const unitKeywords = unit
     ? [
-        `price per ${unit}`,
-        `cost per ${unit}`,
-        `cheapest ${category.name} per ${unit}`,
-        `best ${unit} value`,
+        `Preis pro ${unit}`,
+        `Kosten pro ${unit}`,
+        `günstigste ${category.name} pro ${unit}`,
+        `${category.name} Preisvergleich`,
+        `beste ${category.name} ${unit}`,
       ]
     : [];
 
-  // Add specific aliases for common units
+  // Add specific aliases for common units (German)
   if (unit === "W") {
-    unitKeywords.push("price per watt", "cost per watt", "price per kW");
+    unitKeywords.push("Preis pro Watt", "Kosten pro Watt", "Euro pro kW");
   } else if (unit === "TB") {
     unitKeywords.push(
-      "price per terabyte",
-      "cost per gigabyte",
-      "price per GB",
+      "Preis pro Terabyte",
+      "Kosten pro Gigabyte",
+      "Euro pro GB",
+      "günstigste SSD pro TB",
     );
   }
 

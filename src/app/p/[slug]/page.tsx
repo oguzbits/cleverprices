@@ -38,7 +38,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const product = await getProductBySlug(slug);
   if (!product) {
-    return { title: "Product Not Found" };
+    return { title: "Produkt nicht gefunden" };
   }
 
   const countryCode = DEFAULT_COUNTRY;
@@ -46,8 +46,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const category = allCategories[product.category as CategorySlug];
   const price = product.prices[countryCode] || Object.values(product.prices)[0];
 
-  const title = `${product.title} - Best Price | ${BRAND_DOMAIN}`;
-  const description = `Compare prices for ${product.title}. Current best price: ${countryConfig?.currency || "EUR"} ${price?.toFixed(2)}. Find the best deal on ${category?.name || product.category}.`;
+  // Calculate price per unit for SEO
+  const pricePerUnit =
+    product.normalizedCapacity && price
+      ? (price / product.normalizedCapacity).toFixed(2)
+      : null;
+  const unitPriceText =
+    pricePerUnit && category?.unitType
+      ? ` - ${pricePerUnit}€ pro ${category.unitType}`
+      : "";
+
+  // German SEO-optimized title with low-competition keywords
+  const title = `${product.title} günstig kaufen${unitPriceText}`;
+
+  // German description with price and value proposition
+  const description =
+    pricePerUnit && category?.unitType
+      ? `${product.title} Preisvergleich: Aktueller Preis ${price?.toFixed(2)}€, nur ${pricePerUnit}€ pro ${category.unitType}. Vergleichen Sie ${category?.name || product.category} und sparen Sie!`
+      : `${product.title} Preisvergleich: Aktueller Preis ${countryConfig?.currency || "EUR"} ${price?.toFixed(2)}. Finden Sie das beste Angebot für ${category?.name || product.category}.`;
+
   const canonicalUrl = `https://${BRAND_DOMAIN}/p/${slug}`;
 
   return {
@@ -66,11 +83,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     keywords: [
       product.brand,
       product.title,
-      "price comparison",
-      "best deal",
-      category?.name,
-      "DE",
-      "buy",
+      "Preisvergleich",
+      "günstig kaufen",
+      `${category?.name} Preis`,
+      category?.unitType ? `Preis pro ${category.unitType}` : null,
+      "beste Angebot",
+      "Deutschland",
     ].filter(Boolean) as string[],
   };
 }

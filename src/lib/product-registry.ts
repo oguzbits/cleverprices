@@ -4,6 +4,7 @@ import {
   prices,
   priceHistory,
   type Product as DbProduct,
+  type Price,
 } from "@/db/schema";
 import { calculateProductMetrics } from "./utils/products";
 import { eq, inArray } from "drizzle-orm";
@@ -35,13 +36,15 @@ export interface Product {
   certification?: string;
   modularityTyp?: string; // Kept 'Typ' to match legacy usage if any
   priceHistory?: { date: string; price: number }[];
+  rating?: number;
+  reviewCount?: number;
 }
 
 // Helper to map DB to Interface
 function mapDbProduct(
-  p: any,
-  pricesList: any[],
-  historyList: any[] = [],
+  p: DbProduct,
+  pricesList: Price[],
+  historyList: { recordedAt: Date | null; price: number }[] = [],
 ): Product {
   const pricesObj: Record<string, number> = {};
   if (pricesList) {
@@ -62,19 +65,21 @@ function mapDbProduct(
     affiliateUrl: `https://www.amazon.de/dp/${p.asin}?tag=cleverprices-21`,
     prices: pricesObj,
     capacity: p.capacity || 0,
-    capacityUnit: (p.capacityUnit as any) || "TB",
+    capacityUnit: (p.capacityUnit as "TB" | "GB" | "W" | "core") || "TB",
     normalizedCapacity: p.normalizedCapacity || 0,
     warranty: p.warranty || "2 Years",
     formFactor: p.formFactor || "Standard",
     technology: p.technology || "",
-    condition: (p.condition as any) || "New",
+    condition: (p.condition as "New" | "Used" | "Renewed") || "New",
     brand: p.brand || "Generic",
     certification: p.certification || undefined,
     modularityTyp: p.modularityType || undefined,
     priceHistory: historyList.map((h) => ({
-      date: new Date(h.recordedAt * 1000).toISOString(),
+      date: (h.recordedAt || new Date()).toISOString(),
       price: h.price,
     })),
+    rating: p.rating || 0,
+    reviewCount: p.reviewCount || 0,
   };
 
   return calculateProductMetrics(item) as Product;

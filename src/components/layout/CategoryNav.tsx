@@ -19,7 +19,7 @@ import { useEffect, useRef, useState } from "react";
 const categories: {
   slug: CategorySlug | null;
   label: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { slug: null, label: "Alle Kategorien", icon: Grid3X3 },
   { slug: "cpu", label: "Prozessoren", icon: Cpu },

@@ -95,7 +95,7 @@ export function ProductSchema({
           "@type": "Organization",
           name: "Amazon",
         },
-        priceValidUntil: "2026-12-31", // Static date to avoid dynamic server usage errors
+        priceValidUntil: "2027-12-31", // Static date - Cache Components don't allow Date.now()
       };
     }
   }
