@@ -6,7 +6,7 @@
     "dev": "next dev",
     "db:setup": "mkdir -p data && DATABASE_PATH=file:./data/cleverprices.db npx drizzle-kit push && DATABASE_PATH=file:./data/cleverprices.db npx tsx scripts/seed-mock-data.ts",
     "db:reset": "rm -f data/cleverprices.db && bun run db:setup",
-    "build": "mkdir -p data && DATABASE_PATH=file:./data/cleverprices.db npx drizzle-kit push && DATABASE_PATH=file:./data/cleverprices.db npx tsx scripts/seed-mock-data.ts && DATABASE_PATH=file:./data/cleverprices.db next build",
+    "build": "mkdir -p data && bun run db:setup && DATABASE_PATH=file:./data/cleverprices.db next build",
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write .",

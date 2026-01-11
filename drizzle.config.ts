@@ -13,13 +13,17 @@ import { defineConfig } from "drizzle-kit";
  * - `bun run db:generate` - Generate migration files
  */
 
-const url = process.env.TURSO_DATABASE_URL || "file:./data/cleverprices.db";
+const url =
+  process.env.DATABASE_PATH ||
+  process.env.TURSO_DATABASE_URL ||
+  "file:./data/cleverprices.db";
 const authToken = process.env.TURSO_AUTH_TOKEN;
+const isLocal = url.startsWith("file:");
 
 export default defineConfig({
   schema: "./src/db/schema.ts",
   out: "./drizzle",
-  dialect: "turso",
+  dialect: isLocal ? "sqlite" : "turso",
   dbCredentials: {
     url,
     authToken,
