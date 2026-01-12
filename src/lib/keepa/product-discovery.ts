@@ -105,6 +105,9 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   "case-fans": { de: "430200031" },
   "thermal-paste": { de: "22217638031" },
   "gaming-chairs": { de: "52173584031" },
+  // Peripherals
+  webcams: { de: "430292031" },
+  "usb-hubs": { de: "430146031" },
 };
 
 // ... (in getCategoryKeywords function)

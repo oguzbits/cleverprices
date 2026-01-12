@@ -29,23 +29,16 @@ async function migrate() {
   console.log("📂 Opening local database...");
   const localDb = new Database("./data/cleverprices.db");
 
-  // 1. WIPE
-  console.log("🧹 Wiping cloud database (ordered)...");
-  try {
-    // Wrap deletions in try-catch to ignore errors if tables don't exist yet or are already empty
-    await db.delete(priceHistory).catch(() => {});
-    await db.delete(productOffers).catch(() => {});
-    await db.delete(prices).catch(() => {});
-    await db.delete(products).catch(() => {});
-  } catch (e) {
-    console.warn(
-      "⚠️ Warning during wipe phase (continuing):",
-      (e as any).message,
-    );
-  }
+  // 1. COMPARISON (Safe Sync)
+  console.log("📊 Comparing Local vs Cloud...");
 
-  // 2. LOAD LOCAL
-  console.log("📦 Reading local data...");
+  // Fetch just IDs/ASINs from cloud to compare
+  const cloudAsins = await db.select({ asin: products.asin }).from(products);
+  const cloudAsinSet = new Set(cloudAsins.map((p) => p.asin));
+
+  console.log(
+    `📦 Reading local data... (Cloud has ${cloudAsinSet.size} products)`,
+  );
   const localProducts = localDb
     .prepare("SELECT * FROM products")
     .all() as any[];
@@ -54,9 +47,48 @@ async function migrate() {
     .prepare("SELECT * FROM product_offers")
     .all() as any[];
 
-  // 3. PUSH PRODUCTS
-  console.log(`☁️  Pushing ${localProducts.length} products...`);
-  // Process in batches of 50 to avoid request size limits
+  // Calculate distinct counts
+  let newCount = 0;
+  let updateCount = 0;
+  for (const p of localProducts) {
+    if (cloudAsinSet.has(p.asin)) {
+      updateCount++;
+    } else {
+      newCount++;
+    }
+  }
+
+  console.log(`\n📊 Database Comparison:`);
+  console.log(`   Local Products:     ${localProducts.length}`);
+  console.log(`   Cloud Products:     ${cloudAsinSet.size}`);
+
+  // Items in Cloud but NOT in Local (will remain untouched)
+  const untouchedInCloud = cloudAsinSet.size - updateCount;
+
+  console.log("\n📈 Sync Plan (Local -> Cloud):");
+  console.log(`   🆕 To Insert:       ${newCount} (New in Local)`);
+  console.log(`   🔄 To Update:       ${updateCount} (Common to both)`);
+  console.log(`   ⏭️  Untouched:       ${untouchedInCloud} (Only in Cloud)`);
+
+  console.log(`\n   - Prices to Sync:   ${localPrices.length}`);
+  console.log(`   - Offers to Sync:   ${localOffers.length}`);
+  console.log("\n🧹 Cleaning transient tables (prices/offers)...");
+
+  // Only wipe transient data, NOT products (to preserve IDs/Refs if we needed them, though we map by slug later)
+  // Actually, we map by slug later, so wiping Products is actually strictly unnecessary and risky if we ever add other relations.
+  // Best practice: Upsert Products, Replace Prices.
+  try {
+    await db.delete(priceHistory).catch(() => {});
+    await db.delete(productOffers).catch(() => {});
+    await db.delete(prices).catch(() => {});
+    // await db.delete(products).catch(() => {}); // <--- DO NOT WIPE PRODUCTS
+  } catch (e) {
+    console.warn("⚠️ Warning during cleanup:", (e as any).message);
+  }
+
+  // 3. PUSH PRODUCTS (Upsert)
+  console.log(`\n☁️  Syncing ${localProducts.length} products...`);
+  // Process in batches of 50
   const productBatchSize = 50;
   for (let i = 0; i < localProducts.length; i += productBatchSize) {
     const batch = localProducts.slice(i, i + productBatchSize);
@@ -100,21 +132,19 @@ async function migrate() {
         .onConflictDoUpdate({
           target: products.asin,
           set: {
+            // Update all important fields
             title: sql`excluded.title`,
             salesRank: sql`excluded.sales_rank`,
             monthlySold: sql`excluded.monthly_sold`,
             updatedAt: sql`excluded.updated_at`,
+            rating: sql`excluded.rating`,
+            reviewCount: sql`excluded.review_count`,
+            imageUrl: sql`excluded.image_url`,
           },
         });
-      console.log(
-        `   Processed ${i + batch.length}/${localProducts.length} products...`,
-      );
+      // console.log(`   Processed ${i + batch.length}/${localProducts.length}...`);
     } catch (e: any) {
-      console.error(
-        `❌ Batch failed at index ${i} (First ASIN: ${records[0]?.asin}):`,
-        e.message,
-        e.code,
-      );
+      console.error(`❌ Batch failed at index ${i}:`, e.message);
     }
   }
 

@@ -132,7 +132,7 @@ async function importProduct(
   raw: KeepaProductRaw,
   category: string,
   country: CountryCode,
-): Promise<boolean> {
+): Promise<"inserted" | "updated" | "skipped"> {
   try {
     const domain = KEEPA_DOMAINS[country];
     const currency = DOMAIN_CURRENCIES[domain] || "USD";
@@ -153,8 +153,8 @@ async function importProduct(
 
     const bestPrice = amazonPrice ?? newPrice;
     if (!bestPrice) {
-      console.log(`  [Skip] ${raw.asin}: No price available`);
-      return false;
+      // console.log(`  [Skip] ${raw.asin}: No price available`);
+      return "skipped";
     }
 
     // Calculate price per unit
@@ -210,20 +210,22 @@ async function importProduct(
     });
 
     let productId: number;
+    let status: "inserted" | "updated" = "inserted";
+
     if (existing) {
       await db
         .update(products)
         .set(productData)
         .where(eq(products.id, existing.id));
       productId = existing.id;
-      console.log(`  [Update] ${raw.asin}: ${raw.title?.slice(0, 50)}...`);
+      status = "updated";
     } else {
       const result = await db
         .insert(products)
         .values(productData)
         .returning({ id: products.id });
       productId = result[0].id;
-      console.log(`  [Insert] ${raw.asin}: ${raw.title?.slice(0, 50)}...`);
+      status = "inserted";
     }
 
     // Upsert price
@@ -254,10 +256,10 @@ async function importProduct(
       await db.insert(prices).values(priceData);
     }
 
-    return true;
+    return status;
   } catch (error) {
     console.error(`  [Error] ${raw.asin}:`, error);
-    return false;
+    return "skipped";
   }
 }
 
@@ -271,18 +273,22 @@ async function importCategory(
   console.log(`\n📦 Importing ${category} (${country.toUpperCase()})...`);
 
   const rawProducts = await discoverProducts(category, country, 100);
-  console.log(`  Found ${rawProducts.length} products`);
+  console.log(`  Found ${rawProducts.length} candidate products`);
 
-  let imported = 0;
-  let skipped = 0;
+  const stats = {
+    inserted: 0,
+    updated: 0,
+    skipped: 0,
+  };
 
   for (const product of rawProducts) {
-    const success = await importProduct(product, category, country);
-    if (success) imported++;
-    else skipped++;
+    const result = await importProduct(product, category, country);
+    stats[result]++;
   }
 
-  console.log(`  ✓ Imported: ${imported}, Skipped: ${skipped}`);
+  console.log(
+    `  ✅ Category Result: ${stats.inserted} new, ${stats.updated} updated, ${stats.skipped} skipped`,
+  );
 }
 
 /**
