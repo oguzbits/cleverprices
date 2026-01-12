@@ -5,6 +5,7 @@ import {
   sqliteTable,
   text,
   index,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
 /**
@@ -64,6 +65,11 @@ export const products = sqliteTable(
     // Features/Description
     features: text("features"), // JSON array
     description: text("description"),
+
+    // Variations
+    variationCSV: text("variation_csv"), // ASINs of variations (Keepa format)
+    eanList: text("ean_list"), // JSON array of all EANs
+    energyLabel: text("energy_label"), // EU Energy Efficiency Class (A-G)
 
     // Timestamps
     createdAt: integer("created_at", { mode: "timestamp" })
@@ -130,7 +136,10 @@ export const prices = sqliteTable(
       .default(sql`(unixepoch())`),
   },
   (table) => [
-    index("idx_prices_product_country").on(table.productId, table.country),
+    uniqueIndex("unique_price_product_country").on(
+      table.productId,
+      table.country,
+    ),
   ],
 );
 

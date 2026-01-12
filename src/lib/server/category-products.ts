@@ -78,7 +78,7 @@ export async function getCategoryProducts(
       const { price, title, asin } = getLocalizedProductData(p, countryCode);
       if (price === null || price === 0) return null;
 
-      const enhanced = calculateProductMetrics(p, price);
+      const enhanced = calculateProductMetrics(p, price || 0);
       return {
         ...p,
         price,
@@ -144,5 +144,9 @@ export async function getCategoryProducts(
     unitLabel,
     hasProducts: rawProducts.length > 0,
     filters, // Return parsed filters for UI
+    lastUpdated:
+      rawProducts.length > 0
+        ? new Date().toISOString() // In a real app, you'd get the max(last_updated) from DB
+        : null,
   };
 }

@@ -17,28 +17,38 @@ import { asc, eq, lt, sql } from "drizzle-orm";
 
 import {
   getBestsellers,
+  getDeals,
   getProducts,
   type KeepaProductRaw,
 } from "./product-discovery";
 import {
   getMaxProductsToday,
-  getRecommendedBatchSize,
-  getTokenStatus,
-  hasTokenBudget,
+  checkBudget,
   recordTokenUsage,
 } from "./token-tracker";
 
 /**
- * Sync configuration - simplified for max products
+ * Sync configuration - optimized for 24/7 scanning
  */
 export const SYNC_CONFIG = {
-  // Update all products once per day
-  refreshIntervalMs: 24 * 60 * 60 * 1000, // 24 hours
-  // Batch size for processing
-  batchSize: 100,
+  // Target product count for the "Deep Scan" phase
+  deepScanTarget: 25000,
+  // Batch size for processing (Keepa supports up to 100)
+  batchSize: 50,
   // Delay between batches (ms) to avoid rate limits
-  batchDelayMs: 500,
+  batchDelayMs: 1000,
 } as const;
+
+/**
+ * Calculate refresh interval based on how many products we are tracking.
+ * Fewer products = More frequent updates (freshness).
+ */
+export function getDynamicRefreshInterval(productCount: number): number {
+  if (productCount < 1000) return 1 * 60 * 60 * 1000; // 1 hour
+  if (productCount < 5000) return 6 * 60 * 60 * 1000; // 6 hours
+  if (productCount < 15000) return 12 * 60 * 60 * 1000; // 12 hours
+  return 24 * 60 * 60 * 1000; // 24 hours (Standard)
+}
 
 /**
  * Get all active (non-hidden) categories
@@ -65,7 +75,9 @@ export async function getProductCount(): Promise<number> {
 export async function getProductsNeedingRefresh(
   limit?: number,
 ): Promise<{ asin: string; category: string }[]> {
-  const cutoff = new Date(Date.now() - SYNC_CONFIG.refreshIntervalMs);
+  const count = await getProductCount();
+  const interval = getDynamicRefreshInterval(count);
+  const cutoff = new Date(Date.now() - interval);
   const maxProducts = limit || getMaxProductsToday();
 
   if (maxProducts <= 0) {
@@ -101,12 +113,13 @@ export async function runDailySync(): Promise<{
     errors: [] as string[],
   };
 
-  // Check token budget
-  const tokenStatus = getTokenStatus();
-  if (!tokenStatus.canProceed) {
-    result.success = false;
-    result.errors.push("Daily token budget exhausted");
-    return result;
+  // Check token budget and wait if needed
+  const budgetCheck = checkBudget(50); // Initial check
+  if (!budgetCheck.allowed) {
+    console.log(
+      `[Sync] Budget low, waiting ${budgetCheck.waitTimeMs / 1000}s...`,
+    );
+    await sleep(budgetCheck.waitTimeMs);
   }
 
   // Get products needing refresh
@@ -126,10 +139,17 @@ export async function runDailySync(): Promise<{
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
 
-    // Check if we still have budget
-    if (!hasTokenBudget(batch.length)) {
-      console.log(`[Sync] Token budget exhausted after ${i} batches`);
-      break;
+    // Check budget for batch
+    const batchCost = batch.length;
+    let budget = checkBudget(batchCost);
+
+    if (!budget.allowed) {
+      console.log(
+        `[Sync] Bucket empty. Waiting ${Math.ceil(budget.waitTimeMs / 1000)}s for refill...`,
+      );
+      await sleep(budget.waitTimeMs);
+      // Re-check just to be safe (though wait implies we are good)
+      budget = checkBudget(batchCost);
     }
 
     try {
@@ -158,10 +178,8 @@ export async function runDailySync(): Promise<{
         `[Sync] Batch ${i + 1}/${batches.length}: Updated ${keepaProducts.length} products`,
       );
 
-      // Delay between batches
-      if (i < batches.length - 1) {
-        await sleep(SYNC_CONFIG.batchDelayMs);
-      }
+      // Delay between batches to respect rate limits
+      await sleep(SYNC_CONFIG.batchDelayMs);
     } catch (error) {
       result.errors.push(`Batch ${i + 1} failed: ${error}`);
     }
@@ -194,51 +212,84 @@ export async function discoverProducts(
   };
 
   // Check token budget
-  if (!hasTokenBudget(limit + 10)) {
-    result.success = false;
-    result.errors.push("Insufficient token budget for discovery");
-    return result;
+  const budget = checkBudget(limit + 10);
+  if (!budget.allowed) {
+    console.log(
+      `[Discovery] Budget low, waiting ${budget.waitTimeMs / 1000}s...`,
+    );
+    await sleep(budget.waitTimeMs);
   }
 
   try {
-    // Get bestsellers from Keepa
-    const asins = await getBestsellers(category, "de", limit);
+    // 1. Get bestsellers from Keepa
+    const bestsellers = await getBestsellers(category, "de", limit);
+    const allAsins = new Set<string>(bestsellers);
 
-    if (asins.length === 0) {
+    if (allAsins.size === 0) {
       console.log(`[Discovery] No products found for category: ${category}`);
-      return result;
+      // Don't return yet, try deals
     }
 
-    // Fetch product details
-    const keepaProducts = await getProducts(asins, "de", {
-      includeHistory: false,
-      days: 0,
-    });
-
-    // Record token usage
-    const tokensUsed = keepaProducts.length + 1; // +1 for bestseller query
-    recordTokenUsage(tokensUsed);
-    result.tokensUsed = tokensUsed;
-
-    // Check which are new (not in database)
-    for (const keepaProduct of keepaProducts) {
-      const existing = await db
-        .select({ id: products.id })
-        .from(products)
-        .where(eq(products.asin, keepaProduct.asin))
-        .limit(1);
-
-      if (existing.length === 0) {
-        await upsertProductFromKeepa(keepaProduct, category);
-        result.newProducts++;
+    // 2. Get deals (price drops) - High priority for value
+    // Cost: 5 tokens per 150 items
+    try {
+      const dealBudget = checkBudget(5);
+      if (dealBudget.allowed) {
+        const deals = await getDeals(category, "de", 150);
+        if (deals.length > 0) {
+          deals.forEach((asin) => allAsins.add(asin));
+          console.log(`[Discovery] Got ${deals.length} deals for ${category}`);
+        }
       } else {
-        // Update existing product
-        await upsertProductFromKeepa(keepaProduct);
+        console.log(`[Discovery] Skipping deals due to low budget`);
       }
+    } catch (error) {
+      console.error(`[Discovery] Deals failed for ${category}:`, error);
     }
+
+    // 3. Process in batches if > 50 ASINs
+    const asinsArray = Array.from(allAsins);
+    const batches = chunkArray(asinsArray, SYNC_CONFIG.batchSize);
+
+    for (const batch of batches) {
+      // Fetch product details
+      const keepaProducts = await getProducts(batch, "de", {
+        includeHistory: false,
+        days: 90,
+      });
+
+      // Record token usage
+      const tokensUsed = keepaProducts.length;
+      recordTokenUsage(tokensUsed);
+      result.tokensUsed += tokensUsed;
+
+      // Check which are new (not in database)
+      for (const keepaProduct of keepaProducts) {
+        const existing = await db
+          .select({ id: products.id })
+          .from(products)
+          .where(eq(products.asin, keepaProduct.asin))
+          .limit(1);
+
+        if (existing.length === 0) {
+          await upsertProductFromKeepa(keepaProduct, category);
+          result.newProducts++;
+        } else {
+          // Update existing product
+          await upsertProductFromKeepa(keepaProduct);
+        }
+      }
+
+      // Respect rate limits between batches
+      await sleep(SYNC_CONFIG.batchDelayMs);
+    }
+
+    // Add tokens for the initial bestseller search query (Keepa charges 50 for a list)
+    recordTokenUsage(50);
+    result.tokensUsed += 50;
 
     console.log(
-      `[Discovery] ${category}: Found ${result.newProducts} new products, ${tokensUsed} tokens used`,
+      `[Discovery] ${category}: Found ${result.newProducts} new products, ${result.tokensUsed} tokens used`,
     );
   } catch (error) {
     result.success = false;
@@ -271,13 +322,23 @@ export async function importAllCategories(
   const categories = getActiveCategories();
   console.log(`[Import] Starting import for ${categories.length} categories`);
 
+  const currentCount = await getProductCount();
+  const isDeepScan = currentCount < SYNC_CONFIG.deepScanTarget;
+
+  if (isDeepScan) {
+    console.log(
+      `[Deep Scan] Current count (${currentCount}) is below target (${SYNC_CONFIG.deepScanTarget}). Initializing aggressive discovery.`,
+    );
+  }
+
   for (const category of categories) {
     // Check budget before each category
-    if (!hasTokenBudget(productsPerCategory + 10)) {
-      console.log(`[Import] Token budget low, stopping at ${category}`);
-      result.success = false;
-      result.errors.push("Token budget exhausted");
-      break;
+    const catBudget = checkBudget(productsPerCategory + 10);
+    if (!catBudget.allowed) {
+      console.log(
+        `[Import] Waiting ${catBudget.waitTimeMs / 1000}s for tokens...`,
+      );
+      await sleep(catBudget.waitTimeMs);
     }
 
     try {
@@ -304,7 +365,7 @@ export async function importAllCategories(
 /**
  * Upsert a product from Keepa data
  */
-async function upsertProductFromKeepa(
+export async function upsertProductFromKeepa(
   keepaProduct: KeepaProductRaw,
   category?: CategorySlug,
 ): Promise<void> {
@@ -332,12 +393,41 @@ async function upsertProductFromKeepa(
     currentStats[17] && currentStats[17] > 0 ? currentStats[17] : null;
 
   // Extract price statistics
-  const minStats = keepaProduct.stats?.min || [];
-  const maxStats = keepaProduct.stats?.max || [];
+  // Extract price statistics
+  // min and max are [timestamp, price] pairs in the API response
+  const minStats = keepaProduct.stats?.min;
+  const maxStats = keepaProduct.stats?.max;
   const avg30Stats = keepaProduct.stats?.avg30 || [];
-  const priceMin = keepaPriceToDecimal(minStats[0]); // All-time lowest Amazon price
-  const priceMax = keepaPriceToDecimal(maxStats[0]); // All-time highest Amazon price
+  const avg90Stats = keepaProduct.stats?.avg90 || [];
+
+  // Helper to get price from min/max array which might be [time, price]
+  const getMinMaxPrice = (arr: any[] | undefined, index: number) => {
+    if (!arr || !arr[index]) return null;
+    const val = arr[index];
+    if (Array.isArray(val)) return val[1]; // [time, price]
+    return val;
+  };
+
+  const priceMin = keepaPriceToDecimal(getMinMaxPrice(minStats, 0)); // All-time lowest Amazon price
+  const priceMax = keepaPriceToDecimal(getMinMaxPrice(maxStats, 0)); // All-time highest Amazon price
   const priceAvg30 = keepaPriceToDecimal(avg30Stats[0]); // 30-day average
+
+  // Refined Price Logic:
+  // 1. Try Current Amazon
+  // 2. Try Current New
+  // 3. Try Avg90 Amazon
+  // 4. Try Avg90 New
+
+  // We prefer current prices, but if OOS (-1), we look at averages to at least show *something* or a "market value"
+  // However, for proper comparison, we strictly want "Buyable" prices.
+  // Idealo shows "last known" sometimes.
+
+  const avg90Amazon = keepaPriceToDecimal(avg90Stats[0]);
+  const avg90New = keepaPriceToDecimal(avg90Stats[1]);
+
+  console.log(
+    `[Sync Debug] ${keepaProduct.asin} Prices - Amazon: ${amazonPrice}, New: ${newPrice}, Avg90Amz: ${avg90Amazon}, Avg90New: ${avg90New}`,
+  );
 
   // Monthly sold and Prime eligibility
   const monthlySold = keepaProduct.monthlySold || null;
@@ -353,7 +443,7 @@ async function upsertProductFromKeepa(
   const brand = keepaProduct.brand || keepaProduct.manufacturer || null;
 
   // Generate slug from title
-  const slug = generateSlug(keepaProduct.title || keepaProduct.asin);
+  const slug = generateSlug(keepaProduct.title || keepaProduct.asin, brand);
 
   // Get first image URL
   let imageUrl: string | undefined;
@@ -365,7 +455,7 @@ async function upsertProductFromKeepa(
   }
 
   // Upsert product with all fields
-  await db
+  const [product] = await db
     .insert(products)
     .values({
       asin: keepaProduct.asin,
@@ -387,6 +477,9 @@ async function upsertProductFromKeepa(
         ? JSON.stringify(keepaProduct.features)
         : undefined,
       description: keepaProduct.description,
+      variationCSV: keepaProduct.variationCSV,
+      eanList: JSON.stringify(keepaProduct.eanList || []),
+      energyLabel: null, // To be extracted from features if needed
       updatedAt: now,
     })
     .onConflictDoUpdate({
@@ -408,41 +501,26 @@ async function upsertProductFromKeepa(
           ? JSON.stringify(keepaProduct.features)
           : undefined,
         description: keepaProduct.description,
+        variationCSV: keepaProduct.variationCSV,
+        eanList: JSON.stringify(keepaProduct.eanList || []),
         updatedAt: now,
       },
-    });
-
-  // Get product ID for price updates
-  const [product] = await db
-    .select({ id: products.id })
-    .from(products)
-    .where(eq(products.asin, keepaProduct.asin))
-    .limit(1);
+    })
+    .returning({ id: products.id });
 
   if (!product) return;
 
   // Upsert price for Germany with all statistics
-  const bestPrice = amazonPrice || newPrice;
+  // Fallback to average new price if current prices are missing (OOS)
+  const bestPrice = amazonPrice || newPrice || avg90New;
+
   if (bestPrice !== null) {
-    await db
-      .insert(prices)
-      .values({
-        productId: product.id,
-        country: "de",
-        amazonPrice,
-        newPrice,
-        usedPrice,
-        listPrice,
-        priceMin,
-        priceMax,
-        priceAvg30,
-        currency: "EUR",
-        source: "keepa",
-        lastUpdated: now,
-      })
-      .onConflictDoUpdate({
-        target: [prices.productId, prices.country],
-        set: {
+    try {
+      await db
+        .insert(prices)
+        .values({
+          productId: product.id,
+          country: "de",
           amazonPrice,
           newPrice,
           usedPrice,
@@ -450,19 +528,36 @@ async function upsertProductFromKeepa(
           priceMin,
           priceMax,
           priceAvg30,
+          currency: "EUR",
+          source: "keepa",
           lastUpdated: now,
-        },
-      });
+        })
+        .onConflictDoUpdate({
+          target: [prices.productId, prices.country],
+          set: {
+            amazonPrice,
+            newPrice,
+            usedPrice,
+            listPrice,
+            priceMin,
+            priceMax,
+            priceAvg30,
+            lastUpdated: now,
+          },
+        });
 
-    // Add to price history
-    await db.insert(priceHistory).values({
-      productId: product.id,
-      country: "de",
-      price: bestPrice,
-      currency: "EUR",
-      priceType: amazonPrice !== null ? "amazon" : "new",
-      recordedAt: now,
-    });
+      // Add to price history
+      await db.insert(priceHistory).values({
+        productId: product.id,
+        country: "de",
+        price: bestPrice,
+        currency: "EUR",
+        priceType: amazonPrice !== null ? "amazon" : "new",
+        recordedAt: now,
+      });
+    } catch (error) {
+      console.error(`[Sync] Price error for ${keepaProduct.asin}:`, error);
+    }
   }
 }
 
@@ -475,14 +570,34 @@ function keepaPriceToDecimal(price: number | null | undefined): number | null {
 }
 
 /**
- * Generate URL-safe slug from title
+ * Generate URL-safe slug from title, favoring "Brand Model Specs" format
  */
-function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")
-    .slice(0, 100);
+function generateSlug(title: string, brand?: string | null): string {
+  let slug = title.toLowerCase();
+
+  // If brand is known, ensure it starts with brand
+  if (brand) {
+    const cleanBrand = brand.toLowerCase();
+    if (!slug.startsWith(cleanBrand)) {
+      slug = `${cleanBrand}-${slug}`;
+    }
+  }
+
+  // Sanitize
+  slug = slug.replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+
+  // Truncate intelligently
+  // If > 100 chars, try to cut at the last dash before 80 chars
+  if (slug.length > 80) {
+    const cutoff = slug.substring(0, 80).lastIndexOf("-");
+    if (cutoff > 30) {
+      slug = slug.substring(0, cutoff);
+    } else {
+      slug = slug.substring(0, 80);
+    }
+  }
+
+  return slug;
 }
 
 /**
@@ -508,19 +623,19 @@ export const PRODUCT_TIERS = {
   hot: {
     name: "All Products",
     productsPerCategory: 500,
-    refreshIntervalMs: SYNC_CONFIG.refreshIntervalMs,
+    refreshIntervalMs: 24 * 60 * 60 * 1000,
     priority: 1,
   },
   active: {
     name: "All Products",
     productsPerCategory: 500,
-    refreshIntervalMs: SYNC_CONFIG.refreshIntervalMs,
+    refreshIntervalMs: 24 * 60 * 60 * 1000,
     priority: 1,
   },
   longTail: {
     name: "All Products",
     productsPerCategory: 500,
-    refreshIntervalMs: SYNC_CONFIG.refreshIntervalMs,
+    refreshIntervalMs: 24 * 60 * 60 * 1000,
     priority: 1,
   },
 } as const;

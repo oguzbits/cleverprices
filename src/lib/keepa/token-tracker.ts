@@ -9,109 +9,94 @@
  * - 3,800 tokens buffer for discovery/errors
  */
 
-// Token budget configuration
+/**
+ * Token Tracker for Keepa API
+ *
+ * Implements the "Leaky Bucket" algorithm used by Keepa.
+ * - Capacity: 1200 tokens (for €49 plan)
+ * - Refill Rate: 20 tokens / minute (1 token every 3s)
+ * - Bursting: Allowed until bucket is empty
+ */
+
 export const TOKEN_BUDGET = {
-  // €49 plan limits
-  TOKENS_PER_MINUTE: 20,
-  TOKENS_PER_DAY: 28_800,
-
-  // Simplified allocation (maximize products)
-  DAILY_ALLOCATION: {
-    updates: 25_000, // ~25,000 products with 1x daily refresh
-    discovery: 2_000, // New product discovery
-    buffer: 1_800, // Error handling buffer
-  },
-
-  // Safety thresholds
-  WARNING_THRESHOLD: 0.85, // 85% of daily budget
-  CRITICAL_THRESHOLD: 0.95, // 95% of daily budget
+  BUCKET_CAPACITY: 1200, // Max burst size
+  REFILL_RATE_PER_MIN: 20, // 20 tokens per minute
+  REFILL_MS_PER_TOKEN: 3000, // 3000ms per token
+  SAFE_MINIMUM: 100, // Stop if below this to leave room for emergency queries
 } as const;
 
-// In-memory token tracking (resets on deploy)
-let dailyTokensUsed = 0;
-let lastResetDate = new Date().toDateString();
+// Global state to track bucket - updated by every API call response
+let currentTokens = TOKEN_BUDGET.BUCKET_CAPACITY;
+let lastUpdate = Date.now();
 
 /**
- * Record token usage
+ * Update the token count based on Keepa API response headers
+ * MUST be called after every API request
  */
-export function recordTokenUsage(tokens: number): void {
-  const today = new Date().toDateString();
-
-  // Reset counter on new day
-  if (today !== lastResetDate) {
-    dailyTokensUsed = 0;
-    lastResetDate = today;
-  }
-
-  dailyTokensUsed += tokens;
-
-  // Log warnings
-  const percentUsed = dailyTokensUsed / TOKEN_BUDGET.TOKENS_PER_DAY;
-  if (percentUsed >= TOKEN_BUDGET.CRITICAL_THRESHOLD) {
-    console.error(
-      `[Keepa Token Tracker] CRITICAL: ${Math.round(percentUsed * 100)}% of daily budget used!`,
-    );
-  } else if (percentUsed >= TOKEN_BUDGET.WARNING_THRESHOLD) {
-    console.warn(
-      `[Keepa Token Tracker] WARNING: ${Math.round(percentUsed * 100)}% of daily budget used`,
-    );
-  }
+export function updateTokenStatus(tokensLeft: number): void {
+  currentTokens = tokensLeft;
+  lastUpdate = Date.now();
+  console.log(`[Keepa Tokens] Bucket Level: ${currentTokens}/1200`);
 }
 
 /**
- * Get current token usage status
+ * Estimate current tokens based on time since last update
+ * (Optimistic refill)
  */
-export function getTokenStatus(): {
-  tokensUsedToday: number;
-  tokensRemaining: number;
-  percentUsed: number;
-  canProceed: boolean;
-} {
-  const today = new Date().toDateString();
+export function estimateCurrentTokens(): number {
+  const now = Date.now();
+  const elapsedMs = now - lastUpdate;
+  const refilledTokens = Math.floor(
+    elapsedMs / TOKEN_BUDGET.REFILL_MS_PER_TOKEN,
+  );
+  return Math.min(TOKEN_BUDGET.BUCKET_CAPACITY, currentTokens + refilledTokens);
+}
 
-  // Reset counter on new day
-  if (today !== lastResetDate) {
-    dailyTokensUsed = 0;
-    lastResetDate = today;
+/**
+ * Check if we have enough budget for an operation.
+ * Returns estimated wait time in ms if not enough.
+ */
+export function checkBudget(cost: number): {
+  allowed: boolean;
+  waitTimeMs: number;
+} {
+  const tokens = estimateCurrentTokens();
+
+  if (tokens >= cost + TOKEN_BUDGET.SAFE_MINIMUM) {
+    return { allowed: true, waitTimeMs: 0 };
   }
 
-  const tokensRemaining = TOKEN_BUDGET.TOKENS_PER_DAY - dailyTokensUsed;
-  const percentUsed = dailyTokensUsed / TOKEN_BUDGET.TOKENS_PER_DAY;
+  // Calculate how long to wait to get enough tokens
+  const deficit = cost + TOKEN_BUDGET.SAFE_MINIMUM - tokens;
+  const waitTimeMs = deficit * TOKEN_BUDGET.REFILL_MS_PER_TOKEN;
 
+  return { allowed: false, waitTimeMs };
+}
+
+/**
+ * Helper: Just check if we can proceed (for boolean checks)
+ */
+export function hasTokenBudget(cost: number): boolean {
+  return checkBudget(cost).allowed;
+}
+
+// Legacy exports for compatibility (will be removed later)
+export function getTokenStatus() {
   return {
-    tokensUsedToday: dailyTokensUsed,
-    tokensRemaining: Math.max(0, tokensRemaining),
-    percentUsed,
-    canProceed: percentUsed < TOKEN_BUDGET.CRITICAL_THRESHOLD,
+    tokensRemaining: estimateCurrentTokens(),
+    tokensUsedToday: 0, // Not relevant in bucket model
+    canProceed: true,
   };
 }
 
-/**
- * Check if we have budget for a specific operation
- */
-export function hasTokenBudget(requiredTokens: number): boolean {
-  const { tokensRemaining, canProceed } = getTokenStatus();
-  return canProceed && tokensRemaining >= requiredTokens;
+export function recordTokenUsage(tokens: number) {
+  // No-op, we track via updateTokenStatus now
 }
 
-/**
- * Get recommended batch size based on remaining budget
- * For maximum products strategy, we process larger batches
- */
-export function getRecommendedBatchSize(): number {
-  const { tokensRemaining, canProceed } = getTokenStatus();
-
-  if (!canProceed) return 0;
-
-  // Process up to 100 products per batch to stay efficient
-  return Math.min(100, tokensRemaining);
+export function getMaxProductsToday() {
+  return 100000; // Unlimited, bound only by time
 }
 
-/**
- * Get maximum products we can update today
- */
-export function getMaxProductsToday(): number {
-  const { tokensRemaining } = getTokenStatus();
-  // Reserve some for discovery
-  return Math.max(0, tokensRemaining - TOKEN_BUDGET.DAILY_ALLOCATION.discovery);
+export function getRecommendedBatchSize() {
+  return 50; // Standard batch
 }

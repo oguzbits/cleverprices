@@ -7,7 +7,7 @@ import {
   type Price,
 } from "@/db/schema";
 import { calculateProductMetrics } from "./utils/products";
-import { eq, inArray } from "drizzle-orm";
+import { eq, like, or, inArray } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 
 /**
@@ -24,6 +24,11 @@ export interface Product {
   image?: string;
   affiliateUrl: string;
   prices: Record<string, number>;
+  /**
+   * Last updated timestamp per country price (ISO string)
+   * Essential for Amazon compliance
+   */
+  pricesLastUpdated?: Record<string, string>;
   capacity: number;
   capacityUnit: "GB" | "TB" | "W" | "core";
   normalizedCapacity?: number;
@@ -47,10 +52,19 @@ function mapDbProduct(
   historyList: { recordedAt: Date | null; price: number }[] = [],
 ): Product {
   const pricesObj: Record<string, number> = {};
+  const pricesLastUpdatedObj: Record<string, string> = {};
+
   if (pricesList) {
     pricesList.forEach((pr) => {
-      if (pr.productId === p.id && pr.amazonPrice) {
-        pricesObj[pr.country] = pr.amazonPrice;
+      if (pr.productId === p.id) {
+        // Use Amazon price, fallback to New price, then Used price
+        const price = pr.amazonPrice || pr.newPrice || pr.usedPrice;
+        if (price) {
+          pricesObj[pr.country] = price;
+          if (pr.lastUpdated) {
+            pricesLastUpdatedObj[pr.country] = pr.lastUpdated.toISOString();
+          }
+        }
       }
     });
   }
@@ -62,8 +76,9 @@ function mapDbProduct(
     title: p.title,
     category: p.category,
     image: p.imageUrl || "",
-    affiliateUrl: `https://www.amazon.de/dp/${p.asin}?tag=cleverprices-21`,
+    affiliateUrl: `https://www.amazon.de/dp/${p.asin}?tag=${process.env.PAAPI_PARTNER_TAG || "cleverprices-21"}`,
     prices: pricesObj,
+    pricesLastUpdated: pricesLastUpdatedObj,
     capacity: p.capacity || 0,
     capacityUnit: (p.capacityUnit as "TB" | "GB" | "W" | "core") || "TB",
     normalizedCapacity: p.normalizedCapacity || 0,
@@ -169,6 +184,45 @@ export async function getSimilarProducts(
   });
 
   return sorted.slice(0, limit);
+}
+
+export async function searchProducts(
+  query: string,
+  limit: number = 20,
+): Promise<Product[]> {
+  "use cache";
+  cacheLife("prices");
+
+  const searchTerms = query.trim().split(/\s+/);
+  if (searchTerms.length === 0) return [];
+
+  // Simple fuzzy search using LIKE
+  // For better results, we might want full-text search later
+  const whereClause = or(
+    ...searchTerms.map((term) => like(products.title, `%${term}%`)),
+    like(products.category, `%${query}%`),
+  );
+
+  const prods = await db
+    .select()
+    .from(products)
+    .where(whereClause)
+    .limit(limit);
+
+  if (prods.length === 0) return [];
+
+  const ids = prods.map((p) => p.id);
+  const prs = await db
+    .select()
+    .from(prices)
+    .where(inArray(prices.productId, ids));
+
+  return prods.map((p) =>
+    mapDbProduct(
+      p,
+      prs.filter((pr) => pr.productId === p.id),
+    ),
+  );
 }
 
 export async function getProductsByBrand(
