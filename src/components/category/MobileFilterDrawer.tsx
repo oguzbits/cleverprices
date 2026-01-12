@@ -77,7 +77,7 @@ export function MobileFilterDrawer({
           className="h-[90vh] w-full overflow-hidden rounded-t-xl p-0 sm:max-w-full"
           hideClose={true}
         >
-          <SheetHeader className="relative flex h-[56px] flex-row items-center justify-between border-b bg-white px-4">
+          <SheetHeader className="relative flex h-[56px] flex-row items-center justify-between border-b border-[#e0e0e0] bg-white px-4">
             <div className="flex items-center gap-3">
               <SheetTitle className="flex items-center gap-2 text-[18px] font-bold text-[#2d2d2d]">
                 Filter
