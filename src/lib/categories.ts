@@ -248,9 +248,9 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
 
     hidden: false, // Unhide when ready to launch
     isFeatured: true,
-    metaTitle: `Monitore - Preise vergleichen | ${BRAND_DOMAIN}`,
+    metaTitle: `Monitore Preisvergleich » 144Hz, 4K & Ultrawide | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Finden Sie die besten Monitor-Angebote. Vergleichen Sie 4K-, Ultrawide- und Gaming-Monitore von LG, Samsung, Dell und ASUS.",
+      "Gaming-Monitore & Office-Displays im Preisvergleich » 27 Zoll, 144Hz, 4K & OLED. Top-Modelle von LG, Samsung & Dell günstig kaufen.",
     popularFilters: [
       { label: "4K Monitore", params: "resolution=4K" },
       { label: "Gaming 144Hz+", params: "refresh_rate=144" },
@@ -669,9 +669,9 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `Mainboards - Preise vergleichen | ${BRAND_DOMAIN}`,
+    metaTitle: `Mainboards Preisvergleich » Z790, B650 & X670 Boards | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Vergleichen Sie Mainboards für Intel und AMD Prozessoren. Finden Sie die besten Angebote für Z790, B650 und X670 Boards.",
+      "Mainboard Preisvergleich für Intel & AMD Prozessoren » Top-Modelle von ASUS, MSI & Gigabyte. Z790, B650, Gaming-Mainboards günstig kaufen & sparen.",
     popularFilters: [
       { label: "Sockel 1700", params: "socket=lga1700" },
       { label: "AM5", params: "socket=am5" },
@@ -687,9 +687,9 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "electronics",
     categoryType: "standard",
     hidden: false,
-    metaTitle: `PC-Gehäuse - Preise vergleichen | ${BRAND_DOMAIN}`,
+    metaTitle: `PC-Gehäuse Preisvergleich » ATX, mATX & ITX Cases | ${BRAND_DOMAIN}`,
     metaDescription:
-      "Vergleichen Sie PC-Gehäuse von Fractal Design, NZXT, Corsair und mehr. Finden Sie Angebote für ATX-, mATX- und ITX-Gehäuse.",
+      "PC-Gehäuse für Gaming & Silent-PCs im Preisvergleich » Fractal Design, Corsair, NZXT & be quiet! günstig kaufen. Airflow & RGB Gehäuse Angebote.",
     popularFilters: [
       { label: "ATX", params: "form-factor=atx" },
       { label: "mATX", params: "form-factor=matx" },
