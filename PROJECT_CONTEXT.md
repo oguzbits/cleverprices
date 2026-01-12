@@ -29,6 +29,11 @@
 - **DEFAULT**: All components are Server Components by default.
 - **CONSTRAINT**: Only add `"use client"` if using `useState`, `useEffect`, or event handlers. Do NOT add it "just in case".
 
+### 4. Operational Rules (AI & User)
+
+- **NO IMAGE GENERATION**: Do NOT generate any images for this project using DALL-E or any other image generation tool. The user will provide all necessary images manually.
+- **Placeholder Images**: Do not overwrite existing images with placeholders unless explicitly instructed.
+
 ## Implementation Details
 
 ### 1. Data & Database Architecture
