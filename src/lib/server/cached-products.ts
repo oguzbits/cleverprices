@@ -1,4 +1,4 @@
-// "use cache";
+"use cache";
 
 import {
   getAllProducts as getAllProductsSync,

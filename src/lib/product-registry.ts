@@ -101,8 +101,8 @@ function mapDbProduct(
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  // "use cache";
-  // cacheLife("prices");
+  "use cache";
+  cacheLife("prices");
   const allProducts = await db.select().from(products);
   const allPrices = await db.select().from(prices);
 
