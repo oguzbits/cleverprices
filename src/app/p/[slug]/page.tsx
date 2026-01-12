@@ -93,9 +93,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// Revalidate every hour
-export const revalidate = 3600;
-
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const countryCode = DEFAULT_COUNTRY;
