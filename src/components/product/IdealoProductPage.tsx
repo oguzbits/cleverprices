@@ -787,19 +787,20 @@ export async function IdealoProductPage({
             {/* Footer Note */}
             <p className="mt-2 text-[10px] text-[#666]">
               * Alle Preise inkl. MwSt. Angaben ohne Gewähr.
-              <span className="mt-1 block">
-                Zuletzt aktualisiert:{" "}
-                {new Date(
-                  product.pricesLastUpdated?.[countryCode] ||
-                    new Date().toISOString(),
-                ).toLocaleString("de-DE", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
+              {product.pricesLastUpdated?.[countryCode] && (
+                <span className="mt-1 block">
+                  Zuletzt aktualisiert:{" "}
+                  {new Date(
+                    product.pricesLastUpdated[countryCode]!,
+                  ).toLocaleString("de-DE", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              )}
             </p>
           </div>
         </div>
