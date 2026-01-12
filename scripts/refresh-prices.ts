@@ -1,8 +1,8 @@
 import { db } from "../src/db";
 import { products } from "../src/db/schema";
+import { type CategorySlug } from "../src/lib/categories";
 import { getProducts } from "../src/lib/keepa/product-discovery";
 import { upsertProductFromKeepa } from "../src/lib/keepa/sync-service";
-import { eq } from "drizzle-orm";
 
 async function refreshPrices() {
   console.log("Fetching all products from DB...");
@@ -37,7 +37,7 @@ async function refreshPrices() {
       for (const kp of keepaProducts) {
         const p = allProducts.find((x) => x.asin === kp.asin);
         if (p) {
-          await upsertProductFromKeepa(kp, p.category);
+          await upsertProductFromKeepa(kp, p.category as CategorySlug);
         }
       }
     } catch (e) {

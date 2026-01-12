@@ -26,7 +26,7 @@ export const TOKEN_BUDGET = {
 } as const;
 
 // Global state to track bucket - updated by every API call response
-let currentTokens = TOKEN_BUDGET.BUCKET_CAPACITY;
+let currentTokens: number = TOKEN_BUDGET.BUCKET_CAPACITY;
 let lastUpdate = Date.now();
 
 /**
@@ -82,10 +82,18 @@ export function hasTokenBudget(cost: number): boolean {
 
 // Legacy exports for compatibility (will be removed later)
 export function getTokenStatus() {
+  const remaining = estimateCurrentTokens();
+  const capacity = TOKEN_BUDGET.BUCKET_CAPACITY;
+  const percentUsed = Math.max(
+    0,
+    Math.min(1, (capacity - remaining) / capacity),
+  );
+
   return {
-    tokensRemaining: estimateCurrentTokens(),
+    tokensRemaining: remaining,
     tokensUsedToday: 0, // Not relevant in bucket model
     canProceed: true,
+    percentUsed,
   };
 }
 

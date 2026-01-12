@@ -199,25 +199,32 @@ export class KeepaDataSource implements DataSourceProvider {
       offers: "0", // We don't need third-party offers for now
     });
 
-    const response = await fetch(`${this.baseUrl}/product?${params}`);
+    try {
+      const response = await fetch(`${this.baseUrl}/product?${params}`);
 
-    if (!response.ok) {
-      throw new Error(`Keepa API error: ${response.status}`);
-    }
+      if (!response.ok) {
+        console.warn(`Keepa API error: ${response.status}`);
+        return [];
+      }
 
-    const data: KeepaResponse = await response.json();
+      const data: KeepaResponse = await response.json();
 
-    if (data.error) {
-      throw new Error(`Keepa error: ${data.error.message}`);
-    }
+      if (data.error) {
+        console.warn(`Keepa error: ${data.error.message}`);
+        return [];
+      }
 
-    if (!data.products) {
+      if (!data.products) {
+        return [];
+      }
+
+      return data.products.map((product) =>
+        this.transformProduct(product, country),
+      );
+    } catch (error) {
+      console.warn("Keepa fetch failed:", error);
       return [];
     }
-
-    return data.products.map((product) =>
-      this.transformProduct(product, country),
-    );
   }
 
   /**

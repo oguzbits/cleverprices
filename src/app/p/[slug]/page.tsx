@@ -111,10 +111,10 @@ export default async function ProductPage({ params }: Props) {
   // Try to get unified product data with multi-source offers
   let unifiedProduct = null;
   try {
-    unifiedProduct = await dataAggregator.fetchProduct(
-      product.asin,
-      countryCode,
-    );
+    // unifiedProduct = await dataAggregator.fetchProduct(
+    //   product.asin,
+    //   countryCode,
+    // );
   } catch (error) {
     console.error("Error fetching unified product:", error);
   }

@@ -71,7 +71,8 @@ export async function getCategoryNewProducts(
 
   // Shuffle and take first N (pseudo-random for "new" without timestamps)
   // This provides variety on each page load
-  const shuffled = validProducts.sort(() => Math.random() - 0.5);
+  // Updated: Removed random sort to prevent build errors and non-determinism during SSG
+  const shuffled = validProducts;
 
   return shuffled.slice(0, limit);
 }

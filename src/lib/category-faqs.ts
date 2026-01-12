@@ -135,6 +135,11 @@ export const categoryFAQs: Record<CategorySlug, FAQItem[]> = {
   "game-controllers": [],
   "vr-headsets": [],
   "capture-cards": [],
+  motherboards: [],
+  smartphones: [],
+  tvs: [],
+  laptops: [],
+  consoles: [],
 };
 
 /**

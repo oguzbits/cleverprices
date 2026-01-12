@@ -251,6 +251,31 @@ export const categoryContent: Record<CategorySlug, CategoryContent> = {
     intro:
       "Compare capture cards from Elgato, AVerMedia, and more. USB and PCIe streaming options.",
   },
+  motherboards: {
+    title: "Best Motherboards (Compare Boards)",
+    intro:
+      "Compare motherboards for Intel and AMD builds. Find the best Z790, B650, and X670 boards for your gaming or productivity PC.",
+  },
+  smartphones: {
+    title: "Best Smartphones (Compare Prices)",
+    intro:
+      "Compare smartphone prices from top brands like Apple, Samsung, Google, and Xiaomi. Find the best deals on the latest iPhones and Android devices.",
+  },
+  tvs: {
+    title: "Best TVs (Compare Prices)",
+    intro:
+      "Compare 4K, OLED, and QLED TV prices. Find the best deals on televisions from LG, Samsung, Sony, and more for home theater and gaming.",
+  },
+  laptops: {
+    title: "Best Laptops (Compare Prices)",
+    intro:
+      "Compare laptop prices from Apple, Dell, Lenovo, HP, and more. Find the best deals on MacBooks, gaming laptops, and ultrabooks.",
+  },
+  consoles: {
+    title: "Best Consoles (Compare Prices)",
+    intro:
+      "Compare prices for PlayStation 5, Xbox Series X/S, and Nintendo Switch. Find the best deals on gaming consoles and bundles.",
+  },
 };
 
 export function getCategoryContent(
