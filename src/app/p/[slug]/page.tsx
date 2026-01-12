@@ -93,6 +93,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+// Revalidate every hour
+export const revalidate = 3600;
+
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const countryCode = DEFAULT_COUNTRY;
@@ -109,14 +112,22 @@ export default async function ProductPage({ params }: Props) {
   }
 
   // Try to get unified product data with multi-source offers
+  // Skip during build/CI to avoid external API dependencies and timeouts
+  const isBuild =
+    process.env.CI === "true" ||
+    process.env.CI === "1" ||
+    process.env.NEXT_PHASE === "phase-production-build";
+
   let unifiedProduct = null;
-  try {
-    unifiedProduct = await dataAggregator.fetchProduct(
-      product.asin,
-      countryCode,
-    );
-  } catch (error) {
-    console.error("Error fetching unified product:", error);
+  if (!isBuild) {
+    try {
+      unifiedProduct = await dataAggregator.fetchProduct(
+        product.asin,
+        countryCode,
+      );
+    } catch (error) {
+      console.error("Error fetching unified product:", error);
+    }
   }
 
   return (
