@@ -30,6 +30,9 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
     us: "1292116011", // Internal SSDs
     de: "430168031", // Interne Festplatten / SSDs
   },
+  "external-storage": {
+    de: "430129031", // Externe Festplatten
+  },
   ssd: {
     us: "1292116011",
     de: "430168031",
@@ -46,11 +49,11 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   // Power Supplies
   "power-supplies": {
     us: "1161760",
-    de: "430513031",
+    de: "430176031",
   },
   psu: {
     us: "1161760",
-    de: "430513031",
+    de: "430176031",
   },
   // CPUs (future)
   cpu: {
@@ -78,10 +81,15 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
     de: "429868031",
   },
   // Keyboards & Mice
-  keyboards: { de: "430485031" },
-  mice: { de: "430486031" },
+  keyboards: { de: "430221031" },
+  mice: { de: "430218031" },
   // Audio
-  headphones: { de: "570040" },
+  headphones: { de: "430254031" },
+  speakers: { de: "429871031" },
+  microphones: { de: "430209031" },
+  // Networking
+  routers: { de: "430154031" },
+  nas: { de: "430138031" },
   // Mobile
   tablets: { de: "427958031" },
   smartwatches: { de: "403290031" },
@@ -92,6 +100,11 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   "pc-cases": { de: "430174031" },
   // Motherboards
   motherboards: { de: "430172031" },
+  // PC Components
+  "cpu-coolers": { de: "430204031" },
+  "case-fans": { de: "430200031" },
+  "thermal-paste": { de: "22217638031" },
+  "gaming-chairs": { de: "52173584031" },
 };
 
 // ... (in getCategoryKeywords function)
@@ -470,7 +483,18 @@ export async function discoverProducts(
     console.error(`[Keepa] Bestsellers failed for ${categorySlug}:`, error);
   }
 
-  // 2. Supplement with keyword searches
+  // 2. Get Deals (highly token efficient: 5 tokens for 150 items)
+  if (allAsins.size < targetCount) {
+    try {
+      const deals = await getDeals(categorySlug, country, 40);
+      deals.forEach((asin) => allAsins.add(asin));
+      console.log(`[Keepa] Added ${deals.length} deals for ${categorySlug}`);
+    } catch (error) {
+      console.error(`[Keepa] Deals failed for ${categorySlug}:`, error);
+    }
+  }
+
+  // 3. Supplement with keyword searches
   const keywords = getCategoryKeywords(categorySlug);
   for (const keyword of keywords) {
     if (allAsins.size >= targetCount) break;

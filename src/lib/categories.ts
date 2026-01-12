@@ -1063,6 +1063,13 @@ export function getAnalyticalCategories(): Category[] {
 }
 
 /**
+ * Get all categories
+ */
+export function getAllCategories(): Category[] {
+  return Object.values(allCategories);
+}
+
+/**
  * Get all standard categories (regular price comparison)
  */
 export function getStandardCategories(): Category[] {

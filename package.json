@@ -16,7 +16,8 @@
     "db:studio": "drizzle-kit studio",
     "import": "bun run scripts/import-products.ts",
     "update-prices": "bun run scripts/update-prices.ts",
-    "collect-history": "bun run scripts/collect-price-history.ts"
+    "collect-history": "bun run scripts/collect-price-history.ts",
+    "db:deploy": "bun run scripts/deploy-data.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
@@ -70,6 +71,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "^1.0.0",
+    "bun-types": "^1.3.5",
     "drizzle-kit": "^0.31.8",
     "eslint": "^9",
     "eslint-config-next": "^16.0.10",

@@ -31,10 +31,18 @@ async function migrate() {
 
   // 1. WIPE
   console.log("🧹 Wiping cloud database (ordered)...");
-  await db.delete(priceHistory);
-  await db.delete(productOffers);
-  await db.delete(prices);
-  await db.delete(products);
+  try {
+    // Wrap deletions in try-catch to ignore errors if tables don't exist yet or are already empty
+    await db.delete(priceHistory).catch(() => {});
+    await db.delete(productOffers).catch(() => {});
+    await db.delete(prices).catch(() => {});
+    await db.delete(products).catch(() => {});
+  } catch (e) {
+    console.warn(
+      "⚠️ Warning during wipe phase (continuing):",
+      (e as any).message,
+    );
+  }
 
   // 2. LOAD LOCAL
   console.log("📦 Reading local data...");
@@ -48,8 +56,11 @@ async function migrate() {
 
   // 3. PUSH PRODUCTS
   console.log(`☁️  Pushing ${localProducts.length} products...`);
-  for (const p of localProducts) {
-    const record: any = {
+  // Process in batches of 50 to avoid request size limits
+  const productBatchSize = 50;
+  for (let i = 0; i < localProducts.length; i += productBatchSize) {
+    const batch = localProducts.slice(i, i + productBatchSize);
+    const records = batch.map((p) => ({
       asin: p.asin,
       gtin: p.gtin,
       mpn: p.mpn,
@@ -71,12 +82,15 @@ async function migrate() {
       salesRank: p.sales_rank,
       features: p.features,
       description: p.description,
-    };
+    }));
 
     try {
-      await db.insert(products).values(record);
+      await db.insert(products).values(records);
+      console.log(
+        `   Processed ${i + batch.length}/${localProducts.length} products...`,
+      );
     } catch (e: any) {
-      console.error(`Failed product ${p.slug}:`, e.message);
+      console.error(`❌ Batch failed at index ${i}:`, e.message);
     }
   }
 
@@ -90,44 +104,51 @@ async function migrate() {
   // 5. PUSH PRICES
   console.log(`💰 Pushing ${localPrices.length} prices...`);
   let priceSuccess = 0;
-  for (const pr of localPrices) {
-    // Bun return snake_case fields
-    const localProd = localProducts.find((p) => p.id === pr.product_id);
-    if (!localProd) continue;
+  const priceBatchSize = 100;
 
-    const cloudId = slugToCloudId.get(localProd.slug);
-    if (!cloudId) continue;
+  for (let i = 0; i < localPrices.length; i += priceBatchSize) {
+    const batch = localPrices.slice(i, i + priceBatchSize);
+    const records: any[] = [];
 
-    // Map snake_case to camelCase for Drizzle
-    const record: any = {
-      productId: cloudId,
-      country: pr.country,
-      amazonPrice: pr.amazon_price,
-      amazonPriceFormatted: pr.amazon_price_formatted,
-      newPrice: pr.new_price,
-      usedPrice: pr.used_price,
-      warehousePrice: pr.warehouse_price,
-      listPrice: pr.list_price,
-      priceMin: pr.price_min,
-      priceMax: pr.price_max,
-      priceAvg30: pr.price_avg_30,
-      pricePerUnit: pr.price_per_unit,
-      currency: pr.currency,
-      source: pr.source,
-      availability: pr.availability,
-      deliveryTime: pr.delivery_time,
-      deliveryCost: pr.delivery_cost,
-      deliveryFree: pr.delivery_free === 1,
-      lastUpdated: pr.last_updated
-        ? new Date(pr.last_updated * 1000)
-        : new Date(),
-    };
+    for (const pr of batch) {
+      const localProd = localProducts.find((p) => p.id === pr.product_id);
+      if (!localProd) continue;
 
-    try {
-      await db.insert(prices).values(record);
-      priceSuccess++;
-    } catch (e: any) {
-      console.error(`Failed price for ${localProd.slug}:`, e.message);
+      const cloudId = slugToCloudId.get(localProd.slug);
+      if (!cloudId) continue;
+
+      records.push({
+        productId: cloudId,
+        country: pr.country,
+        amazonPrice: pr.amazon_price,
+        amazonPriceFormatted: pr.amazon_price_formatted,
+        newPrice: pr.new_price,
+        usedPrice: pr.used_price,
+        warehousePrice: pr.warehouse_price,
+        listPrice: pr.list_price,
+        priceMin: pr.price_min,
+        priceMax: pr.price_max,
+        priceAvg30: pr.price_avg_30,
+        pricePerUnit: pr.price_per_unit,
+        currency: pr.currency,
+        source: pr.source,
+        availability: pr.availability,
+        deliveryTime: pr.delivery_time,
+        deliveryCost: pr.delivery_cost,
+        deliveryFree: pr.delivery_free === 1,
+        lastUpdated: pr.last_updated
+          ? new Date(pr.last_updated) // localDb might store ISO or unix
+          : new Date(),
+      });
+    }
+
+    if (records.length > 0) {
+      try {
+        await db.insert(prices).values(records);
+        priceSuccess += records.length;
+      } catch (e: any) {
+        console.error(`❌ Price batch failure:`, e.message);
+      }
     }
   }
   console.log(`✅ Prices: ${priceSuccess}/${localPrices.length}`);
@@ -135,39 +156,45 @@ async function migrate() {
   // 6. PUSH OFFERS
   console.log(`🏷️  Pushing ${localOffers.length} offers...`);
   let offerSuccess = 0;
-  for (const off of localOffers) {
-    // Bun return snake_case fields
-    const localProd = localProducts.find((p) => p.id === off.product_id);
-    if (!localProd) continue;
+  const offerBatchSize = 100;
 
-    const cloudId = slugToCloudId.get(localProd.slug);
-    if (!cloudId) continue;
+  for (let i = 0; i < localOffers.length; i += offerBatchSize) {
+    const batch = localOffers.slice(i, i + offerBatchSize);
+    const records: any[] = [];
 
-    const record: any = {
-      productId: cloudId,
-      source: off.source,
-      merchantName: off.merchant_name,
-      merchantLogo: off.merchant_logo,
-      price: off.price,
-      currency: off.currency,
-      shippingCost: off.shipping_cost,
-      totalPrice: off.total_price,
-      affiliateUrl: off.affiliate_url,
-      deepLink: off.deep_link,
-      availability: off.availability,
-      deliveryTime: off.delivery_time,
-      merchantRating: off.merchant_rating,
-      merchantReviewCount: off.merchant_review_count,
-      lastUpdated: off.last_updated
-        ? new Date(off.last_updated * 1000)
-        : new Date(),
-    };
+    for (const off of batch) {
+      const localProd = localProducts.find((p) => p.id === off.product_id);
+      if (!localProd) continue;
 
-    try {
-      await db.insert(productOffers).values(record);
-      offerSuccess++;
-    } catch (e: any) {
-      console.error(`Failed offer for ${localProd.slug}:`, e.message);
+      const cloudId = slugToCloudId.get(localProd.slug);
+      if (!cloudId) continue;
+
+      records.push({
+        productId: cloudId,
+        source: off.source,
+        merchantName: off.merchant_name,
+        merchantLogo: off.merchant_logo,
+        price: off.price,
+        currency: off.currency,
+        shippingCost: off.shipping_cost,
+        totalPrice: off.total_price,
+        affiliateUrl: off.affiliate_url,
+        deepLink: off.deep_link,
+        availability: off.availability,
+        deliveryTime: off.delivery_time,
+        merchantRating: off.merchant_rating,
+        merchantReviewCount: off.merchant_review_count,
+        lastUpdated: off.last_updated ? new Date(off.last_updated) : new Date(),
+      });
+    }
+
+    if (records.length > 0) {
+      try {
+        await db.insert(productOffers).values(records);
+        offerSuccess += records.length;
+      } catch (e: any) {
+        console.error(`❌ Offer batch failure:`, e.message);
+      }
     }
   }
   console.log(`✅ Offers: ${offerSuccess}/${localOffers.length}`);
