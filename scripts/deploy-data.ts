@@ -80,17 +80,41 @@ async function migrate() {
       rating: p.rating,
       reviewCount: p.review_count,
       salesRank: p.sales_rank,
+      salesRankReference: p.sales_rank_reference,
+      monthlySold: p.monthly_sold,
+      offerCountNew: p.offer_count_new,
+      offerCountUsed: p.offer_count_used,
+      primeEligible: p.prime_eligible ? Boolean(p.prime_eligible) : null,
       features: p.features,
       description: p.description,
+      variationCSV: p.variation_csv,
+      eanList: p.ean_list,
+      energyLabel: p.energy_label,
+      updatedAt: p.updated_at ? new Date(p.updated_at) : new Date(),
     }));
 
     try {
-      await db.insert(products).values(records);
+      await db
+        .insert(products)
+        .values(records)
+        .onConflictDoUpdate({
+          target: products.asin,
+          set: {
+            title: sql`excluded.title`,
+            salesRank: sql`excluded.sales_rank`,
+            monthlySold: sql`excluded.monthly_sold`,
+            updatedAt: sql`excluded.updated_at`,
+          },
+        });
       console.log(
         `   Processed ${i + batch.length}/${localProducts.length} products...`,
       );
     } catch (e: any) {
-      console.error(`❌ Batch failed at index ${i}:`, e.message);
+      console.error(
+        `❌ Batch failed at index ${i} (First ASIN: ${records[0]?.asin}):`,
+        e.message,
+        e.code,
+      );
     }
   }
 

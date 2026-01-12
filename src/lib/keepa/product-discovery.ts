@@ -374,9 +374,7 @@ export async function getDeals(
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        selection: dealQuery,
-      }),
+      body: JSON.stringify(dealQuery),
     });
 
     const data: KeepaDealResponse = await response.json();
@@ -474,7 +472,8 @@ export async function discoverProducts(
 
   // 1. Get bestsellers (most important)
   try {
-    const bestsellers = await getBestsellers(categorySlug, country, 50);
+    // Increased limit to 100 to maximize yield per request (efficient)
+    const bestsellers = await getBestsellers(categorySlug, country, 100);
     bestsellers.forEach((asin) => allAsins.add(asin));
     console.log(
       `[Keepa] Got ${bestsellers.length} bestsellers for ${categorySlug}`,
@@ -486,7 +485,8 @@ export async function discoverProducts(
   // 2. Get Deals (highly token efficient: 5 tokens for 150 items)
   if (allAsins.size < targetCount) {
     try {
-      const deals = await getDeals(categorySlug, country, 40);
+      // Increased limit to 100 to fill gaps
+      const deals = await getDeals(categorySlug, country, 100);
       deals.forEach((asin) => allAsins.add(asin));
       console.log(`[Keepa] Added ${deals.length} deals for ${categorySlug}`);
     } catch (error) {
@@ -494,26 +494,10 @@ export async function discoverProducts(
     }
   }
 
-  // 3. Supplement with keyword searches
-  const keywords = getCategoryKeywords(categorySlug);
-  for (const keyword of keywords) {
-    if (allAsins.size >= targetCount) break;
+  // 3. Keyword searches removed to save tokens (low yield, high cost)
+  // relying on Bestsellers + Deals is much more efficient.
 
-    try {
-      const results = await searchProducts(keyword, country, {
-        limit: 30,
-        sort: "sales",
-      });
-      results.forEach((asin) => allAsins.add(asin));
-    } catch (error) {
-      console.error(`[Keepa] Search failed for "${keyword}":`, error);
-    }
-
-    // Small delay to be nice to the API
-    await new Promise((r) => setTimeout(r, 200));
-  }
-
-  // 3. Fetch full product data
+  // 4. Fetch full product data
   const asinList = Array.from(allAsins).slice(0, targetCount);
   console.log(`[Keepa] Fetching details for ${asinList.length} products...`);
 
