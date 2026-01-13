@@ -119,9 +119,6 @@ export async function HomeContent({ country }: { country: CountryCode }) {
         isBestseller:
           (p.salesRank && p.salesRank > 0 && p.salesRank < 20000) ||
           (p.reviewCount && p.reviewCount > 100),
-        energyLabel: p.energyLabel,
-        pricePerUnit: enhanced.pricePerUnit,
-        capacityUnit: p.capacityUnit,
       });
     }
     return result;

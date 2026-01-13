@@ -19,9 +19,6 @@ interface IdealoProductCardProps {
   categoryName?: string;
   discountRate?: number;
   isBestseller?: boolean;
-  energyLabel?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
-  pricePerUnit?: number;
-  capacityUnit?: string;
 }
 
 export function IdealoProductCard({
@@ -38,9 +35,6 @@ export function IdealoProductCard({
   categoryName,
   discountRate,
   isBestseller,
-  energyLabel,
-  pricePerUnit,
-  capacityUnit,
 }: IdealoProductCardProps) {
   return (
     <Link
@@ -60,57 +54,16 @@ export function IdealoProductCard({
             {badgeText}
           </div>
         )}
-        {energyLabel && (
-          <div
-            className={cn(
-              "flex h-[18px] w-[32px] items-center justify-center rounded-sm text-[10px] font-bold text-white shadow-sm",
-              energyLabel === "A" && "bg-[#00a651]",
-              energyLabel === "B" && "bg-[#4cb749]",
-              energyLabel === "C" && "bg-[#c4d92e]",
-              energyLabel === "D" && "bg-[#ffed00]",
-              energyLabel === "E" && "bg-[#fbb034]",
-              energyLabel === "F" && "bg-[#f26522]",
-              energyLabel === "G" && "bg-[#ed1c24]",
-            )}
-            title={`Energieeffizienzklasse ${energyLabel}`}
-          >
-            {energyLabel}
-          </div>
-        )}
       </div>
 
-      {/* Wishlist heart - top right */}
-      <button
-        className="absolute top-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/80 text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-[#ff6600]"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        aria-label="Zur Merkliste hinzufügen"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />
-        </svg>
-      </button>
-
       {/* Image Container */}
-      <div className="relative mb-3 h-[140px] w-full">
+      <div className="relative mb-3 h-[140px] w-full overflow-hidden">
         {image ? (
           <Image
             src={image}
             alt={title}
             fill
-            className="object-contain"
+            className="object-contain transition-transform duration-300 group-hover:scale-105"
             sizes="224px"
           />
         ) : (
@@ -123,14 +76,14 @@ export function IdealoProductCard({
       {/* Category Info */}
       <div className="mb-1 flex items-center gap-1.5 overflow-hidden">
         {!!isBestseller && (
-          <div className="shrink-0 rounded-[2px] bg-[#0066cc] px-1 py-0.5 text-[9px] font-bold tracking-tighter text-white uppercase">
+          <div className="shrink-0 rounded-[2px] bg-[#0066cc] px-2 py-1 text-[14px] font-extrabold tracking-tight text-white">
             Bestseller
           </div>
         )}
         {categoryName && (
           <span
             className={cn(
-              "truncate text-[11px] text-gray-500",
+              "truncate text-[14px] text-gray-500",
               isBestseller && "font-medium",
             )}
           >
@@ -140,7 +93,7 @@ export function IdealoProductCard({
       </div>
 
       {/* Title */}
-      <h3 className="mb-2 line-clamp-3 min-h-[54px] text-[14px] leading-tight font-semibold text-gray-900 group-hover:text-[#0066cc]">
+      <h3 className="mb-2 line-clamp-3 min-h-[54px] text-[16px] leading-tight font-semibold text-gray-900">
         {title}
       </h3>
 

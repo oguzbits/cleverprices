@@ -11,7 +11,7 @@
 
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { IdealoProductCard } from "@/components/landing/IdealoProductCard";
 
 export interface CarouselProduct {
@@ -27,7 +27,6 @@ export interface CarouselProduct {
   categoryName?: string;
   discountRate?: number;
   isBestseller?: boolean;
-  energyLabel?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
 }
 
 interface IdealoProductCarouselProps {
@@ -43,11 +42,14 @@ export function IdealoProductCarousel({
 }: IdealoProductCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [needsScrolling, setNeedsScrolling] = useState(false);
 
   const checkScrollState = () => {
     const container = scrollContainerRef.current;
     if (container) {
+      const hasOverflow = container.scrollWidth > container.clientWidth;
+      setNeedsScrolling(hasOverflow);
       setCanScrollLeft(container.scrollLeft > 0);
       setCanScrollRight(
         container.scrollLeft <
@@ -56,11 +58,19 @@ export function IdealoProductCarousel({
     }
   };
 
+  // Check on mount and when products change
+  useEffect(() => {
+    checkScrollState();
+    // Also check after a short delay to ensure layout is complete
+    const timer = setTimeout(checkScrollState, 100);
+    return () => clearTimeout(timer);
+  }, [products]);
+
   const scroll = (direction: "left" | "right") => {
     const container = scrollContainerRef.current;
     if (container) {
       // Scroll by the visible width of the container (page-based scrolling)
-      const scrollAmount = container.clientWidth - 48; // Subtract padding
+      const scrollAmount = container.clientWidth;
       container.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -82,9 +92,6 @@ export function IdealoProductCarousel({
     );
   }
 
-  // Calculate if scrolling is needed (rough estimate: 5 cards fit on desktop)
-  const needsScrolling = products.length > 5;
-
   return (
     <div className={cn("cn-productCarousel", "mb-8", className)}>
       {/* Section Header */}
@@ -95,16 +102,14 @@ export function IdealoProductCarousel({
       {/* Product Carousel with Navigation */}
       <div className="group/carousel relative">
         {/* Left Navigation Button */}
-        {needsScrolling && (
+        {needsScrolling && canScrollLeft && (
           <button
             onClick={() => scroll("left")}
-            disabled={!canScrollLeft}
             className={cn(
               "absolute top-1/2 left-0 z-10 -translate-y-1/2",
               "flex h-10 w-10 items-center justify-center rounded-full",
               "bg-[#6b6b6b] text-white hover:bg-[#5a5a5a]",
               "opacity-0 transition-opacity duration-200 group-hover/carousel:opacity-100",
-              !canScrollLeft && "pointer-events-none opacity-0!",
             )}
             aria-label="Scroll left"
           >
@@ -113,16 +118,14 @@ export function IdealoProductCarousel({
         )}
 
         {/* Right Navigation Button */}
-        {needsScrolling && (
+        {needsScrolling && canScrollRight && (
           <button
             onClick={() => scroll("right")}
-            disabled={!canScrollRight}
             className={cn(
               "absolute top-1/2 right-0 z-10 -translate-y-1/2",
               "flex h-10 w-10 items-center justify-center rounded-full",
               "bg-[#6b6b6b] text-white hover:bg-[#5a5a5a]",
               "opacity-0 transition-opacity duration-200 group-hover/carousel:opacity-100",
-              !canScrollRight && "pointer-events-none opacity-0!",
             )}
             aria-label="Scroll right"
           >
@@ -138,7 +141,6 @@ export function IdealoProductCarousel({
             "cn-productCarousel__container",
             "scrollbar-hide flex gap-4 overflow-x-auto",
             "scroll-smooth",
-            "px-6", // Padding for buttons
           )}
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
@@ -157,7 +159,6 @@ export function IdealoProductCarousel({
               categoryName={product.categoryName}
               discountRate={product.discountRate}
               isBestseller={product.isBestseller}
-              energyLabel={product.energyLabel}
             />
           ))}
         </div>
