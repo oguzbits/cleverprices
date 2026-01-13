@@ -104,7 +104,6 @@ export type CategorySlug =
   | "telekommunikation"
   | "hifi-audio"
   | "tv-sat"
-  | "fotografie"
   | "drucker-scanner"
   | "staubsauger"
   | "gaming-elektrospielzeug"
@@ -251,19 +250,6 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
       { label: "Fernseher", href: "/tvs" },
       { label: "Soundbars", href: "/soundbars" },
       { label: "Receiver", href: "/receiver" },
-    ],
-  },
-
-  fotografie: {
-    name: "Fotografie",
-    description: "Kameras, Objektive und Zubehör",
-    icon: Camera,
-    parent: "elektroartikel",
-    categoryType: "standard",
-    imageUrl: "/images/category/camera.jpg",
-    popularFilters: [
-      { label: "Digitalkameras", href: "/cameras" },
-      { label: "Systemkameras", href: "/systemkameras" },
     ],
   },
 
@@ -916,7 +902,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Digitalkameras",
     description: "Kameras & Optik",
     icon: Camera,
-    parent: "fotografie",
+    parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/camera.jpg",
   },

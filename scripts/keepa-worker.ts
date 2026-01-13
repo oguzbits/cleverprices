@@ -24,12 +24,22 @@ const BATCH_IMPORT_TIMEOUT = 1000 * 60 * 10; // 10 minutes max per category
 
 async function main() {
   const args = process.argv.slice(2);
-  const country = (args[0] || "de") as CountryCode;
-  const isContinuous = process.argv.includes("--continuous");
+  let country: CountryCode = "de";
+  let isContinuous = false;
+
+  // Improved parsing to avoid crashes if arguments are malformed
+  for (const arg of args) {
+    if (arg === "--continuous" || arg === "-c" || arg.includes("continous")) {
+      isContinuous = true;
+    } else if (arg !== "-" && !arg.startsWith("--") && /^[a-z]{2}$/.test(arg)) {
+      country = arg as CountryCode;
+    }
+  }
 
   console.log("👷 Keepa Worker Started");
-  console.log(`🌍 Country: ${country.toUpperCase()}`);
-  console.log(`🔄 Mode: ${isContinuous ? "Continuous" : "Single Pass"}\n`);
+  console.log(`🌍 Default Country: ${country.toUpperCase()}`);
+  console.log(`🔄 Mode: ${isContinuous ? "Continuous" : "Single Pass"}`);
+  console.log("💡 Usage: bun run worker [country] [-c|--continuous]\n");
 
   const categories = getAllCategories().filter(
     (c) => !c.hidden && c.slug !== "electronics",

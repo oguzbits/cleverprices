@@ -76,6 +76,8 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   "cpu-coolers": { de: "430204031" },
   "gaming-chairs": { de: "52173584031" },
   webcams: { de: "430292031" },
+  microphones: { de: "412469031" },
+  "vr-headsets": { de: "22477299031" }, // Virtual Reality > Standalone > Headsets
 
   // --- Elektrowerkzeuge (Power Tools) ---
   akkuschrauber: { de: "2077432031" },
@@ -85,9 +87,13 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   "drucker-scanner": { de: "430113031" }, // Reuse Multifunction Printers
   "gaming-elektrospielzeug": { de: "12950651" }, // Generic Toys (Spielzeug)
 
-  // bohrmaschinen: { de: "0" }, // TODO: Find ID
-  // schleifmaschinen: { de: "0" }, // TODO: Find ID
-  // fraesmaschinen: { de: "0" }, // TODO: Find ID
+  bohrmaschinen: { de: "82512031" },
+  schleifmaschinen: { de: "82544031" },
+  fraesmaschinen: { de: "2077461031" },
+  stichsaegen: { de: "2077473031" },
+  kappsaegen: { de: "2077470031" },
+  tauchsaegen: { de: "2077470031" }, // Circular saws general
+  multitools: { de: "2077463031" },
 };
 
 // ... (in getCategoryKeywords function)
@@ -283,10 +289,11 @@ export async function getBestsellers(
   }
 
   const categoryId = CATEGORY_BROWSE_NODES[categorySlug]?.[country];
-  if (!categoryId) {
-    throw new Error(
-      `No Browse Node mapping found for category "${categorySlug}" in ${country}. Add it to product-discovery.ts.`,
+  if (!categoryId || categoryId === "0") {
+    console.warn(
+      `[Keepa] Skipping bestsellers: No Browse Node mapping found for category "${categorySlug}" in ${country}.`,
     );
+    return [];
   }
   const params = new URLSearchParams({
     key: KEEPA_API_KEY,

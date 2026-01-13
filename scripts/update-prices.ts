@@ -190,7 +190,7 @@ async function main() {
   const tokens = await getTokenStatus();
   console.log(`💰 Keepa tokens: ${tokens.tokensLeft} available`);
 
-  const country = (process.argv[2] || "us") as CountryCode;
+  const country = (process.argv[2] || "de") as CountryCode;
   await updatePrices(country);
 
   const finalTokens = await getTokenStatus();

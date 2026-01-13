@@ -316,7 +316,7 @@ async function main() {
   // Parse arguments
   const args = process.argv.slice(2);
   const categoryArg = args[0] || "all";
-  const countryArg = (args[1] || "us") as CountryCode;
+  const countryArg = (args[1] || "de") as CountryCode;
 
   // Categories to import
   const categories =
