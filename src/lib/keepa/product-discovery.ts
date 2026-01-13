@@ -26,6 +26,7 @@ export const KEEPA_DOMAINS: Record<string, number> = {
 // These are Amazon's category identifiers for bestseller queries
 export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   // --- Hub Leaf Categories (Idealo order) ---
+  elektroartikel: { de: "569604" }, // Generic Electronics node
   tvs: { de: "1197292" },
   staubsauger: { de: "3597097031" },
   headphones: { de: "430254031" },
@@ -79,6 +80,11 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   // --- Elektrowerkzeuge (Power Tools) ---
   akkuschrauber: { de: "2077432031" },
   kreissaegen: { de: "1939390031" },
+
+  // --- New / Combined Categories ---
+  "drucker-scanner": { de: "430113031" }, // Reuse Multifunction Printers
+  "gaming-elektrospielzeug": { de: "12950651" }, // Generic Toys (Spielzeug)
+
   // bohrmaschinen: { de: "0" }, // TODO: Find ID
   // schleifmaschinen: { de: "0" }, // TODO: Find ID
   // fraesmaschinen: { de: "0" }, // TODO: Find ID

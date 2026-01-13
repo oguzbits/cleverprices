@@ -37,6 +37,8 @@ const nextConfig: NextConfig = {
   },
   // Optimize images
   images: {
+    loader: "custom",
+    loaderFile: "./src/lib/image-loader.ts",
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60,
     qualities: [50, 75],
