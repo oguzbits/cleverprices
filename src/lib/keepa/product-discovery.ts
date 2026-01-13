@@ -34,32 +34,31 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   espressomaschinen: { de: "340798031" },
   monitors: { de: "429868031" },
   speakers: { de: "429871031" },
-  kühlschränke: { de: "16075771" },
-  "elektrische-zahnbürsten": { de: "309873031" },
+  kuehlschraenke: { de: "16075771" },
+  "elektrische-zahnbuersten": { de: "309873031" },
   waschmaschinen: { de: "16075751" },
   ssds: { de: "430168031" },
   multifunktionsdrucker: { de: "430113031" },
-  geschirrspüler: { de: "16075761" },
+  geschirrspueler: { de: "16075761" },
   routers: { de: "430154031" },
   systemkameras: { de: "430121031" },
-  druckerpatronen: { de: "430126031" },
-  backöfen: { de: "340801031" },
+  backoefen: { de: "340801031" },
   kochfelder: { de: "3340578031" },
   soundbars: { de: "1957268031" },
   radios: { de: "571816" },
-  wäschetrockner: { de: "16075781" },
-  küchenmaschinen: { de: "340799031" },
+  waeschetrockner: { de: "16075781" },
+  kuechenmaschinen: { de: "340799031" },
   "bartschneider-haarschneider": { de: "315488031" },
   receiver: { de: "571830" },
   mikrowellen: { de: "340795031" },
   dunstabzugshauben: { de: "340804031" },
   "hard-drives": { de: "430498031" },
-  gefrierschränke: { de: "16075791" },
+  gefrierschraenke: { de: "16075791" },
   herde: { de: "16075841" },
   drones: { de: "2603417031" },
   nas: { de: "430138031" },
   "external-storage": { de: "430129031" },
-  kompaktkameras: { de: "430116031" },
+  speicherkarten: { de: "562066" }, // Generic memory card node
 
   // --- PC Components & Additional ---
   smartphones: { de: "3468301" },
@@ -74,11 +73,15 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   mice: { de: "430218031" },
   smartwatches: { de: "403290031" },
   "cpu-coolers": { de: "430204031" },
-  "case-fans": { de: "430200031" },
-  "thermal-paste": { de: "22217638031" },
   "gaming-chairs": { de: "52173584031" },
   webcams: { de: "430292031" },
-  "usb-hubs": { de: "430146031" },
+
+  // --- Elektrowerkzeuge (Power Tools) ---
+  akkuschrauber: { de: "2077432031" },
+  kreissaegen: { de: "1939390031" },
+  bohrmaschinen: { de: "0" }, // TODO: Find ID
+  schleifmaschinen: { de: "0" }, // TODO: Find ID
+  fraesmaschinen: { de: "0" }, // TODO: Find ID
 };
 
 // ... (in getCategoryKeywords function)

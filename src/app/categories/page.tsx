@@ -1,6 +1,3 @@
-import { Breadcrumbs } from "@/components/breadcrumbs";
-import { IdealoCategoryOverview } from "@/components/categories/IdealoCategoryOverview";
-import { getCategoriesForDisplay } from "@/lib/data/categoryData";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { getSiteUrl } from "@/lib/site-config";
 import { Metadata } from "next";

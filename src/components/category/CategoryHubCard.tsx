@@ -37,20 +37,20 @@ export function CategoryHubCard({ category, Icon }: CategoryHubCardProps) {
             <img
               src={imagePath}
               alt={category.name}
-              className="h-full w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+              className="h-full w-auto object-contain transition-transform duration-300"
               onError={() => setImageError(true)}
             />
           ) : (
-            <Icon className="h-20 w-20 text-[#ccc]/40 transition-colors group-hover:text-[#0066cc]/40" />
+            <Icon className="h-20 w-20 text-[#ccc]/40 transition-colors" />
           )}
         </div>
 
         {/* 2. Headline Area */}
-        <div className="flex items-center justify-between border-b border-[#d2d2d2] pb-1.5 group-hover:border-[#0066cc]">
-          <h3 className="truncate py-1 text-[20px] leading-tight font-bold text-[#2d2d2d] transition-colors group-hover:text-[#0066cc]">
+        <div className="flex items-center justify-between border-b border-[#d2d2d2] pb-1.5">
+          <h3 className="truncate py-1 text-[20px] leading-tight font-bold text-[#2d2d2d] transition-colors">
             {category.name}
           </h3>
-          <ChevronRight className="h-5 w-5 shrink-0 text-[#2d2d2d] transition-colors group-hover:text-[#0066cc]" />
+          <ChevronRight className="h-5 w-5 shrink-0 text-[#2d2d2d] transition-colors" />
         </div>
       </Link>
 

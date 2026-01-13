@@ -63,8 +63,6 @@ export type CategorySlug =
   | "motherboards"
   | "pc-cases"
   | "cpu-coolers"
-  | "case-fans"
-  | "thermal-paste"
   | "monitors"
   | "keyboards"
   | "mice"
@@ -75,7 +73,6 @@ export type CategorySlug =
   | "webcams"
   | "routers"
   | "nas"
-  | "usb-hubs"
   | "docking-stations"
   | "network-switches"
   | "network-cards"
@@ -112,26 +109,30 @@ export type CategorySlug =
   | "staubsauger"
   | "gaming-elektrospielzeug"
   | "espressomaschinen"
-  | "kühlschränke"
-  | "elektrische-zahnbürsten"
+  | "kuehlschraenke"
+  | "elektrische-zahnbuersten"
   | "waschmaschinen"
   | "multifunktionsdrucker"
-  | "geschirrspüler"
+  | "geschirrspueler"
   | "systemkameras"
-  | "druckerpatronen"
-  | "backöfen"
+  | "backoefen"
   | "kochfelder"
   | "radios"
-  | "wäschetrockner"
-  | "küchenmaschinen"
+  | "waeschetrockner"
+  | "kuechenmaschinen"
   | "bartschneider-haarschneider"
   | "receiver"
   | "mikrowellen"
   | "dunstabzugshauben"
-  | "gefrierschränke"
+  | "gefrierschraenke"
   | "herde"
-  | "kompaktkameras"
-  | "medien";
+  | "speicherkarten"
+  | "elektrowerkzeuge"
+  | "akkuschrauber"
+  | "bohrmaschinen"
+  | "kreissaegen"
+  | "schleifmaschinen"
+  | "fraesmaschinen";
 
 export interface FilterGroup {
   label: string;
@@ -179,11 +180,11 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     categoryType: "standard",
     imageUrl: "/images/category/household-electronics.jpg",
     popularFilters: [
-      { label: "Elektro-Großgeräte", href: "/elektro-großgeräte" },
-      { label: "Haushaltsgeräte", href: "/haushaltsgeräte" },
-      { label: "Küchengeräte", href: "/küchengeräte" },
-      { label: "Kaffeezubereitung", href: "/kaffeezubereitung" },
-      { label: "Pflege- & Wellnessgeräte", href: "/pflege-wellness" },
+      { label: "Kühlschränke", href: "/kuehlschraenke" },
+      { label: "Waschmaschinen", href: "/waschmaschinen" },
+      { label: "Espressomaschinen", href: "/espressomaschinen" },
+      { label: "Staubsauger", href: "/staubsauger" },
+      { label: "Backöfen", href: "/backoefen" },
     ],
   },
 
@@ -198,7 +199,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
       { label: "PC-Komponenten", href: "/pc-komponenten" },
       { label: "Notebooks", href: "/notebooks" },
       { label: "Tablets", href: "/tablets" },
-      { label: "Eingabegeräte", href: "/eingabegeräte" },
+      { label: "Tastaturen", href: "/keyboards" },
       { label: "Grafikkarten", href: "/gpu" },
     ],
     metaTitle: `Computer & Zubehör Preisvergleich | ${BRAND_DOMAIN}`,
@@ -215,10 +216,11 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     imageUrl: "/images/category/smartphone.jpg",
     popularFilters: [
       { label: "Handys & Smartphones", href: "/smartphones" },
+      { label: "Apple iPhone", href: "/smartphones?brand=Apple" },
+      { label: "Samsung Galaxy", href: "/smartphones?brand=Samsung" },
+      { label: "Google Pixel", href: "/smartphones?brand=Google" },
+      { label: "Xiaomi", href: "/smartphones?brand=Xiaomi" },
       { label: "Smartwatches", href: "/smartwatches" },
-      { label: "Handy-Zubehör", href: "/phone-accessories" },
-      { label: "Telefone", href: "/telefone" },
-      { label: "Smartwatch-Zubehör", href: "/smartwatch-accessories" },
     ],
   },
 
@@ -230,10 +232,10 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     categoryType: "standard",
     imageUrl: "/images/category/headphone.jpg",
     popularFilters: [
-      { label: "HiFi-Komponenten", href: "/hifi-komponenten" },
+      { label: "Receiver", href: "/receiver" },
       { label: "Kopfhörer", href: "/headphones" },
-      { label: "Studio- & Event-Technik", href: "/studio-technik" },
-      { label: "Musikinstrumente", href: "/musikinstrumente" },
+      { label: "Lautsprecher", href: "/speakers" },
+      { label: "Soundbars", href: "/soundbars" },
       { label: "Radios", href: "/radios" },
     ],
   },
@@ -247,10 +249,8 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     imageUrl: "/images/category/tv.jpg",
     popularFilters: [
       { label: "Fernseher", href: "/tvs" },
-      { label: "Heimkino", href: "/heimkino" },
-      { label: "Netzwerkplayer", href: "/netzwerkplayer" },
-      { label: "TV-Zubehör", href: "/tv-zubehör" },
-      { label: "Blu-ray-Player", href: "/blu-ray-player" },
+      { label: "Soundbars", href: "/soundbars" },
+      { label: "Receiver", href: "/receiver" },
     ],
   },
 
@@ -262,11 +262,8 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     categoryType: "standard",
     imageUrl: "/images/category/camera.jpg",
     popularFilters: [
-      { label: "Kamera-Zubehör", href: "/kamera-zubehör" },
       { label: "Digitalkameras", href: "/cameras" },
       { label: "Systemkameras", href: "/systemkameras" },
-      { label: "Objektive", href: "/objektive" },
-      { label: "Action-Cams", href: "/action-cams" },
     ],
   },
 
@@ -278,11 +275,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     categoryType: "standard",
     imageUrl: "/images/category/printer.jpg",
     popularFilters: [
-      { label: "Druckerzubehör", href: "/druckerzubehör" },
       { label: "Multifunktionsdrucker", href: "/multifunktionsdrucker" },
-      { label: "3D-Drucker", href: "/3d-drucker" },
-      { label: "Laserdrucker", href: "/laserdrucker" },
-      { label: "Scanner", href: "/scanner" },
     ],
   },
 
@@ -296,9 +289,9 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     popularFilters: [
       { label: "Spielekonsolen", href: "/consoles" },
       { label: "Drohnen", href: "/drones" },
-      { label: "Drohnenzubehör", href: "/drones-accessories" },
-      { label: "Elektronische Spielzeuge", href: "/gaming-toys" },
-      { label: "Kinderkameras", href: "/kids-cameras" },
+      { label: "VR-Brillen", href: "/vr-headsets" },
+      { label: "Gaming-Stühle", href: "/gaming-chairs" },
+      { label: "Game-Controller", href: "/game-controllers" },
     ],
   },
 
@@ -441,7 +434,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     ],
   },
 
-  kühlschränke: {
+  kuehlschraenke: {
     name: "Kühlschränke",
     description: "Kühl-Gefrierkombinationen und Side-by-Side",
     icon: Thermometer,
@@ -456,7 +449,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     ],
   },
 
-  "elektrische-zahnbürsten": {
+  "elektrische-zahnbuersten": {
     name: "Elektrische Zahnbürsten",
     description: "Schall- und oszillierende Zahnbürsten",
     icon: Zap,
@@ -499,7 +492,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     ],
   },
 
-  geschirrspüler: {
+  geschirrspueler: {
     name: "Geschirrspüler",
     description: "Einbau- und Standgeschirrspüler",
     icon: HardDrive,
@@ -541,21 +534,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     ],
   },
 
-  druckerpatronen: {
-    name: "Druckerpatronen",
-    description: "Tinten und Toner für alle Drucker",
-    icon: Printer,
-    parent: "elektroartikel",
-    categoryType: "standard",
-    imageUrl: "/images/category/printer-cartrige.jpg",
-    popularFilters: [
-      { label: "HP", params: "brand=HP" },
-      { label: "Canon", params: "brand=Canon" },
-      { label: "Epson", params: "brand=Epson" },
-    ],
-  },
-
-  backöfen: {
+  backoefen: {
     name: "Backöfen",
     description: "Einbaubacköfen und Sets",
     icon: Zap,
@@ -611,12 +590,13 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     ],
   },
 
-  wäschetrockner: {
+  waeschetrockner: {
     name: "Wäschetrockner",
     description: "Wärmepumpen- und Kondenstrockner",
     icon: Fan,
     parent: "elektroartikel",
     categoryType: "standard",
+    imageUrl: "/images/category/clothes-dryer.jpg",
     popularFilters: [
       { label: "Wärmepumpentrockner", params: "type=heat-pump" },
       { label: "Miele", params: "brand=Miele" },
@@ -624,12 +604,13 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     ],
   },
 
-  küchenmaschinen: {
+  kuechenmaschinen: {
     name: "Küchenmaschinen",
     description: "Knet- und Multifunktionsmaschinen",
     icon: Zap,
     parent: "elektroartikel",
     categoryType: "standard",
+    imageUrl: "/images/category/kitchen-machine.jpg",
     popularFilters: [
       { label: "KitchenAid", params: "brand=KitchenAid" },
       { label: "Bosch MUM", params: "series=mum" },
@@ -643,6 +624,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     icon: Zap,
     parent: "elektroartikel",
     categoryType: "standard",
+    imageUrl: "/images/category/beard-trimmer.jpg",
     popularFilters: [
       { label: "Philips OneBlade", params: "model=oneblade" },
       { label: "Braun", params: "brand=Braun" },
@@ -658,8 +640,10 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     categoryType: "standard",
     popularFilters: [
       { label: "AV-Receiver", params: "type=av" },
-      { label: "Denon", params: "brand=Denon" },
       { label: "Yamaha", params: "brand=Yamaha" },
+      { label: "Denon", params: "brand=Denon" },
+      { label: "Marantz", params: "brand=Marantz" },
+      { label: "7.2 Kanal", params: "channels=7.2" },
     ],
   },
 
@@ -682,6 +666,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     icon: Fan,
     parent: "elektroartikel",
     categoryType: "standard",
+    imageUrl: "/images/category/cooker-hood.jpg",
     popularFilters: [
       { label: "Kopffreihaube", params: "type=angled" },
       { label: "60 cm breit", params: "width=60" },
@@ -703,12 +688,13 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     ],
   },
 
-  gefrierschränke: {
+  gefrierschraenke: {
     name: "Gefrierschränke",
     description: "Gefrierschränke und Truhen",
     icon: Thermometer,
     parent: "elektroartikel",
     categoryType: "standard",
+    imageUrl: "/images/category/freezer.jpg",
     popularFilters: [
       { label: "Liebherr", params: "brand=Liebherr" },
       { label: "NoFrost", params: "features=nofrost" },
@@ -721,6 +707,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     icon: Zap,
     parent: "elektroartikel",
     categoryType: "standard",
+    imageUrl: "/images/category/stove.jpg",
     popularFilters: [
       { label: "Induktionsherd", params: "type=induction" },
       { label: "Herd-Set", params: "type=set" },
@@ -731,8 +718,9 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Drohnen",
     description: "Kameradrohnen und Quadcopters",
     icon: Camera,
-    parent: "elektroartikel",
+    parent: "gaming-elektrospielzeug",
     categoryType: "standard",
+    imageUrl: "/images/category/drone.jpg",
     popularFilters: [
       { label: "DJI Mini", params: "series=mini" },
       { label: "4K Kamera", params: "resolution=4k" },
@@ -749,26 +737,6 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
       { label: "Synology", params: "brand=Synology" },
       { label: "4-Bay NAS", params: "bays=4" },
     ],
-  },
-
-  kompaktkameras: {
-    name: "Kompaktkameras",
-    description: "Handliche Digitalkameras",
-    icon: Camera,
-    parent: "elektroartikel",
-    categoryType: "standard",
-    popularFilters: [
-      { label: "Vlog-Kamera", params: "use=vlog" },
-      { label: "Sony RX100", params: "series=rx100" },
-    ],
-  },
-
-  medien: {
-    name: "Medien",
-    description: "Musik, Filme und Games",
-    icon: Search,
-    parent: "elektroartikel",
-    categoryType: "standard",
   },
 
   // --- PC-KOMPONENTEN (Hardware focus) ---
@@ -868,19 +836,6 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
       { label: "Wasserkühlung (AiO)", params: "type=aio" },
     ],
   },
-  "case-fans": {
-    name: "Gehäuselüfter",
-    description: "Kühlung für Ihren PC",
-    icon: Fan,
-    parent: "pc-komponenten",
-    categoryType: "standard",
-    imageUrl: "/images/category/case-fan.jpg",
-    popularFilters: [
-      { label: "120mm Lüfter", params: "size=120" },
-      { label: "140mm Lüfter", params: "size=140" },
-      { label: "RGB Lüfter", params: "features=rgb" },
-    ],
-  },
   storage: {
     name: "Laufwerke",
     description: "Interne & externe Speicherlösungen",
@@ -910,17 +865,6 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     ],
   },
 
-  "thermal-paste": {
-    name: "Wärmeleitpaste",
-    description: "Thermische Verbindung",
-    icon: Thermometer,
-    parent: "pc-komponenten",
-    categoryType: "standard",
-    popularFilters: [
-      { label: "Arctic MX-4", params: "brand=Arctic" },
-      { label: "Thermal Grizzly", params: "brand=Thermal+Grizzly" },
-    ],
-  },
   "smartwatch-accessories": {
     name: "Smartwatch-Zubehör",
     description: "Bänder & Ladestationen",
@@ -956,9 +900,16 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Spielekonsolen",
     description: "PS5, Xbox, Switch",
     icon: Gamepad2,
-    parent: "elektroartikel",
+    parent: "gaming-elektrospielzeug",
     categoryType: "standard",
     imageUrl: "/images/category/console.jpg",
+    popularFilters: [
+      { label: "Spielekonsolen", href: "/consoles" },
+      { label: "Drohnen", href: "/drones" },
+      { label: "VR-Brillen", href: "/vr-headsets" },
+      { label: "Gaming-Stühle", href: "/gaming-chairs" },
+      { label: "Game-Controller", href: "/game-controllers" },
+    ],
   },
 
   cameras: {
@@ -1008,13 +959,20 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     imageUrl: "/images/category/external-storage.jpg",
   },
 
-  "usb-hubs": {
-    name: "USB-Hubs",
-    description: "Port-Erweiterungen",
-    icon: Usb,
-    parent: "computer",
-    categoryType: "standard",
-    imageUrl: "/images/category/usb-hub.jpg",
+  speicherkarten: {
+    name: "Speicherkarten",
+    description: "SD, microSD & CFexpress",
+    icon: MemoryStick,
+    parent: "storage",
+    categoryType: "analytical",
+    imageUrl: "/images/category/sd-card.jpg",
+    unitType: "GB",
+    unitLabel: "pro GB",
+    popularFilters: [
+      { label: "microSDXC", params: "form=microSDXC" },
+      { label: "SanDisk", params: "brand=SanDisk" },
+      { label: "Samsung", params: "brand=Samsung" },
+    ],
   },
 
   "docking-stations": {
@@ -1127,16 +1085,22 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Game-Controller",
     description: "Gamepads",
     icon: Gamepad2,
-    parent: "elektroartikel",
+    parent: "gaming-elektrospielzeug",
     categoryType: "standard",
+    imageUrl: "/images/category/game-controller.jpg",
   },
 
   "vr-headsets": {
     name: "VR-Brillen",
     description: "Virtual Reality",
     icon: Glasses,
-    parent: "elektroartikel",
+    parent: "gaming-elektrospielzeug",
     categoryType: "standard",
+    imageUrl: "/images/category/vr-glasses.jpg",
+    popularFilters: [
+      { label: "Meta Quest", params: "series=quest" },
+      { label: "PlayStation VR2", params: "platform=ps5" },
+    ],
   },
 
   microphones: {
@@ -1151,8 +1115,14 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Gaming-Stühle",
     description: "Zocker-Sessel",
     icon: Armchair,
-    parent: "elektroartikel",
+    parent: "gaming-elektrospielzeug",
     categoryType: "standard",
+    imageUrl: "/images/category/gaming-chair.jpg",
+    popularFilters: [
+      { label: "Secretlab", params: "brand=Secretlab" },
+      { label: "Noblechairs", params: "brand=Noblechairs" },
+      { label: "Stoffbezug", params: "material=fabric" },
+    ],
   },
 
   webcams: {
@@ -1183,6 +1153,63 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
       { label: "Sockel AM5", params: "socket=AM5" },
       { label: "Sockel 1700", params: "socket=LGA1700" },
     ],
+  },
+
+  // --- Elektrowerkzeuge ---
+  elektrowerkzeuge: {
+    name: "Elektrowerkzeuge",
+    description: "Bohren, Sägen & Schleifen",
+    icon: Zap,
+    categoryType: "standard",
+    imageUrl: "/images/category/power-tools.jpg",
+  },
+  akkuschrauber: {
+    name: "Akkuschrauber",
+    description: "Kabelloses Schrauben",
+    icon: Zap,
+    parent: "elektrowerkzeuge",
+    categoryType: "standard",
+    imageUrl: "/images/category/drill.jpg",
+    popularFilters: [
+      { label: "Makita 18V", params: "series=18v" },
+      { label: "Bosch Professional", params: "brand=Bosch+Professional" },
+    ],
+  },
+  bohrmaschinen: {
+    name: "Bohrmaschinen",
+    description: "Schlag- & Hammerbohrer",
+    icon: Zap,
+    parent: "elektrowerkzeuge",
+    categoryType: "standard",
+    imageUrl: "/images/category/hammer-drill.jpg",
+  },
+  kreissaegen: {
+    name: "Kreissägen",
+    description: "Hand- & Tischkreissägen",
+    icon: Zap,
+    parent: "elektrowerkzeuge",
+    categoryType: "standard",
+    imageUrl: "/images/category/circular-saw.jpg",
+    popularFilters: [
+      { label: "Tauchsäge", params: "type=plunge" },
+      { label: "Festool", params: "brand=Festool" },
+    ],
+  },
+  schleifmaschinen: {
+    name: "Schleifmaschinen",
+    description: "Exzenter- & Winkelschleifer",
+    icon: Zap,
+    parent: "elektrowerkzeuge",
+    categoryType: "standard",
+    imageUrl: "/images/category/sander.jpg",
+  },
+  fraesmaschinen: {
+    name: "Fräsmaschinen",
+    description: "Oberfräsen & Kantenfräsen",
+    icon: Zap,
+    parent: "elektrowerkzeuge",
+    categoryType: "standard",
+    imageUrl: "/images/category/router-tool.jpg",
   },
 };
 

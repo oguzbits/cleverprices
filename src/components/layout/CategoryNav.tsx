@@ -21,7 +21,7 @@ const categories: {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
-  { slug: null, label: "Alle Kategorien", icon: Grid3X3 },
+  { slug: null, label: "Elektroartikel", icon: Grid3X3 },
   { slug: "cpu", label: "Prozessoren", icon: Cpu },
   { slug: "gpu", label: "Grafikkarten", icon: Video },
   { slug: "ram", label: "Arbeitsspeicher", icon: MemoryStick },
@@ -90,17 +90,17 @@ export function CategoryNav({ country }: { country: string }) {
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="scrollbar-hide flex items-center justify-center gap-6 overflow-x-auto py-4"
+          className="scrollbar-hide flex h-[80px] items-center justify-center gap-6 overflow-x-auto"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {/* All Categories Button */}
           <Link
             href="/elektroartikel"
-            className="flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
+            className="flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
             prefetch={true}
           >
-            <Grid3X3 className="h-8 w-8" />
-            <span>Alle Kategorien</span>
+            <Grid3X3 className="h-6 w-6" />
+            <span>Elektroartikel</span>
           </Link>
 
           {/* Category Pills - Icons on top */}
@@ -112,10 +112,10 @@ export function CategoryNav({ country }: { country: string }) {
                 <Link
                   key={cat.slug}
                   href={getCategoryPath(cat.slug!)}
-                  className="flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
+                  className="flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
                   prefetch={true}
                 >
-                  <Icon className="h-8 w-8" />
+                  <Icon className="h-6 w-6" />
                   <span className="whitespace-nowrap">{cat.label}</span>
                 </Link>
               );

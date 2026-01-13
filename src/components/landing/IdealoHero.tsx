@@ -52,7 +52,7 @@ export function IdealoHero({ products }: IdealoHeroProps) {
             href="/elektroartikel"
             className="rounded bg-white px-5 py-2 text-sm font-bold text-[#0066cc] no-underline transition-transform hover:scale-105"
           >
-            Alle Kategorien
+            Elektroartikel
           </Link>
         </div>
       </div>
