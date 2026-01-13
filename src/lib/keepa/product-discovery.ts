@@ -31,7 +31,7 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   headphones: { de: "430254031" },
   notebooks: { de: "427957031" },
   tablets: { de: "427958031" },
-  espressomaschinen: { de: "340798031" },
+  espressomaschinen: { de: "3340859031" },
   monitors: { de: "429868031" },
   speakers: { de: "429871031" },
   kuehlschraenke: { de: "16075771" },
@@ -79,9 +79,9 @@ export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   // --- Elektrowerkzeuge (Power Tools) ---
   akkuschrauber: { de: "2077432031" },
   kreissaegen: { de: "1939390031" },
-  bohrmaschinen: { de: "0" }, // TODO: Find ID
-  schleifmaschinen: { de: "0" }, // TODO: Find ID
-  fraesmaschinen: { de: "0" }, // TODO: Find ID
+  // bohrmaschinen: { de: "0" }, // TODO: Find ID
+  // schleifmaschinen: { de: "0" }, // TODO: Find ID
+  // fraesmaschinen: { de: "0" }, // TODO: Find ID
 };
 
 // ... (in getCategoryKeywords function)

@@ -853,7 +853,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "SSDs",
     description: "Schnelle Solid State Drives",
     icon: HardDrive,
-    parent: "storage",
+    parent: "elektroartikel",
     categoryType: "analytical",
     imageUrl: "/images/category/ssd.jpg",
     unitType: "TB",

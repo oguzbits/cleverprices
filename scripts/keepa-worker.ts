@@ -19,7 +19,7 @@ import { execSync } from "child_process";
 
 // Configuration
 const REFILL_WAIT_MS = 60 * 1000; // 1 minute
-const TOKEN_SAFE_THRESHOLD = 300; // Minimum tokens before starting a category
+const TOKEN_SAFE_THRESHOLD = 200; // Minimum tokens before starting a category (Optimized)
 const BATCH_IMPORT_TIMEOUT = 1000 * 60 * 10; // 10 minutes max per category
 
 async function main() {
