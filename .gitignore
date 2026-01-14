@@ -44,7 +44,11 @@ next-env.d.ts
 /data/*.db
 /data/*.db-wal
 /data/*.db-shm
+/data/backups/
 /drizzle/
+
+# worker logs
+/logs/
 
 # planning/documentation
 /.planning/

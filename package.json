@@ -17,7 +17,9 @@
     "update-prices": "DISABLE_TURSO_SYNC=1 DATABASE_PATH=file:./data/cleverprices.db bun run scripts/update-prices.ts",
     "collect-history": "bun run scripts/collect-price-history.ts",
     "db:deploy": "bun run scripts/deploy-data.ts",
-    "worker": "DISABLE_TURSO_SYNC=1 DATABASE_PATH=file:./data/cleverprices.db bun run scripts/keepa-worker.ts"
+    "worker": "./scripts/start-worker-sync.sh",
+    "worker:run": "DISABLE_TURSO_SYNC=1 DATABASE_PATH=file:./data/cleverprices.db bun run scripts/keepa-worker.ts",
+    "worker:live": "./scripts/worker-with-sync.sh"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",

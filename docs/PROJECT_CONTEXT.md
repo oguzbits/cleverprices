@@ -44,10 +44,11 @@
   - `prices`: Current prices per country (Amazon, New, Used).
   - `price_history`: Historical price points for charts.
 - **Sync Strategy**:
-  - **Discovery**: `bun run worker` (Keepa API) - Finds new products.
-  - **History**: `bun run collect-history` (Cron) - Daily price snapshots.
-  - **Reference**: See `docs/DATA_SYNC.md` for full details.
-  - **Token Management**: Auto-throttling in worker script.
+  - **Worker**: `bun run worker` (Keepa API) - Locally hosted on Mac, runs continuously with auto-restart.
+  - **Cloud Sync**: `bun run db:deploy` (Turso) - Pushes local SQLite state to production cloud.
+  - **Automation**: Managed via local `crontab` (4 AM/PM syncs, 3 AM backups).
+  - **Reference**: See `docs/WORKER.md` for full operational details.
+  - **Token Management**: 20 tokens/min bucket logic; managed by `TokenTracker`.
 
 ### 2. Localization & Routing
 
