@@ -8,7 +8,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { getBlogPostBySlug } from "@/lib/blog";
-import { getAllProducts } from "@/lib/server/cached-products";
+import { getProductsByCategory } from "@/lib/product-registry";
 import { Calendar, Clock, User } from "lucide-react";
 import { notFound } from "next/navigation";
 
@@ -53,9 +53,7 @@ export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
       category: string;
       limit?: number;
     }) => {
-      const products = (await getAllProducts()).filter(
-        (p) => p.category === category,
-      );
+      const products = await getProductsByCategory(category);
       return (
         <QuickPicks
           category={category}

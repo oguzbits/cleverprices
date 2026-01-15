@@ -120,6 +120,17 @@ function mapDbProduct(
   return calculateProductMetrics(item) as Product;
 }
 
+export async function getAllProductSlugs(): Promise<
+  { slug: string; updatedAt: Date }[]
+> {
+  return db
+    .select({
+      slug: products.slug,
+      updatedAt: products.updatedAt,
+    })
+    .from(products);
+}
+
 export async function getAllProducts(): Promise<Product[]> {
   const allProducts = await db.select().from(products);
   const allPrices = await db.select().from(prices);
@@ -248,14 +259,29 @@ export async function getProductsByBrand(
   brand: string,
   excludeSlug?: string,
 ): Promise<Product[]> {
-  // Naive implementation: fetch all is safe for 40 products.
-  // Ideally query DB filtering by brand.
-  // Using SQL like operator or simple equal if exact match.
-  // DB stores 'brand'.
-  const all = await getAllProducts(); // reuse mapped
-  return all.filter(
-    (p) =>
-      p.brand.toLowerCase() === brand.toLowerCase() && p.slug !== excludeSlug,
+  const prods = await db
+    .select()
+    .from(products)
+    .where(
+      and(
+        eq(sql`LOWER(${products.brand})`, brand.toLowerCase()),
+        excludeSlug ? sql`${products.slug} != ${excludeSlug}` : sql`1=1`,
+      ),
+    );
+
+  if (prods.length === 0) return [];
+
+  const ids = prods.map((p) => p.id);
+  const prs = await db
+    .select()
+    .from(prices)
+    .where(inArray(prices.productId, ids));
+
+  return prods.map((p) =>
+    mapDbProduct(
+      p,
+      prs.filter((pr) => pr.productId === p.id),
+    ),
   );
 }
 

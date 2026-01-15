@@ -3,7 +3,8 @@ import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getAllCountries } from "@/lib/countries";
 import { dataAggregator } from "@/lib/data-sources";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
-import { getAllProducts, getProductBySlug } from "@/lib/product-registry";
+import { getAllProductSlugs } from "@/lib/server/cached-products";
+import { getProductBySlug } from "@/lib/product-registry";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -13,10 +14,9 @@ interface Props {
     slug: string;
   }>;
 }
-
 // Generate static params for all products (Germany only)
 export async function generateStaticParams() {
-  const products = await getAllProducts();
+  const products = await getAllProductSlugs();
 
   // Cache Components requires at least one result
   // If no products in DB yet, return a placeholder that will 404

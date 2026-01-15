@@ -6,7 +6,7 @@ import {
 } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getAllCountries } from "@/lib/countries";
 import { getAlternateLanguages } from "@/lib/metadata";
-import { getAllProducts } from "@/lib/product-registry";
+import { getAllProductSlugs } from "@/lib/server/cached-products";
 import { SITE_URL } from "@/lib/site-config";
 import { MetadataRoute } from "next";
 
@@ -90,12 +90,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   // Product pages - high priority for SEO
-  const products = await getAllProducts();
+  const products = await getAllProductSlugs();
   const productRoutes: MetadataRoute.Sitemap = products.map((product) => {
     const productPath = `/p/${product.slug}`;
     return {
       url: `${baseUrl}${productPath}`,
-      lastModified: new Date(),
+      lastModified: product.updatedAt,
       changeFrequency: "daily" as const,
       priority: 0.9, // High priority - these are our main content
       alternates: {

@@ -1,4 +1,5 @@
 import {
+  getAllProductSlugs as getAllProductSlugsSync,
   getAllProducts as getAllProductsSync,
   getBestDeals as getBestDealsSync,
   getMostPopular as getMostPopularSync,
@@ -10,6 +11,12 @@ import {
  * Cached server-side wrappers for product registry functions
  * These are used in Server Components to benefit from Next.js caching
  */
+
+export async function getAllProductSlugs(): Promise<
+  { slug: string; updatedAt: Date }[]
+> {
+  return getAllProductSlugsSync();
+}
 
 // Bypass cache for large registry calls to avoid string limit issues during build
 export async function getAllProducts(): Promise<Product[]> {
