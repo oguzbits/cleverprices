@@ -67,6 +67,42 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
           cache: "Cache",
           tdp: "TDP",
           graphics: "Grafik",
+          // Monitors
+          resolution: "Auflösung",
+          brightness: "Helligkeit",
+          "contrast ratio": "Kontrastverhältnis",
+          "response time": "Reaktionszeit",
+          "refresh rate": "Bildwiederholfrequenz",
+          "panel type": "Panel-Typ",
+          "screen size": "Bildschirmdiagonale",
+          "aspect ratio": "Seitenverhältnis",
+          "display type": "Display-Typ",
+          connections: "Anschlüsse",
+          hdmi: "HDMI",
+          displayport: "DisplayPort",
+          curved: "Curved",
+          // Graphics Cards
+          chipset: "Grafikchipsatz",
+          "gpu clock": "Chiptakt",
+          "gpu boost clock": "Boost-Takt",
+          "video memory": "Grafikspeicher",
+          "memory type": "Speichertyp",
+          "memory clock": "Speichertakt",
+          "power consumption": "Stromverbrauch",
+          cooling: "Kühlung",
+          // RAM
+          "memory speed": "Speichertakt",
+          "cas latency": "CAS Latenz",
+          voltage: "Spannung",
+          modules: "Module",
+          // PSU
+          wattage: "Leistung",
+          efficiency: "Effizienz",
+          modular: "Modular",
+          certification: "Zertifizierung",
+          // Storage
+          "rotational speed": "Umdrehungsgeschwindigkeit",
+          "buffer size": "Cache-Größe",
         };
 
         const lowerKey = key.toLowerCase();

@@ -56,7 +56,7 @@ export function IdealoCategoryCard({
 
         {/* Title with chevron */}
         <div className="_categoryGridItem__title flex items-center justify-between gap-2">
-          <span className="text-[14px] font-semibold text-[#2d2d2d] group-hover:text-[#0066cc]">
+          <span className="text-[14px] font-semibold text-[#2d2d2d]">
             {title}
           </span>
           <ChevronRight className="h-5 w-5 shrink-0 text-[#2d2d2d]" />

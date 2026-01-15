@@ -35,7 +35,7 @@ export function ParentCategoryView({
 }: ParentCategoryViewProps) {
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-[1280px] px-4 py-8">
+      <div className="mx-auto max-w-[1280px] px-4 py-3">
         <Breadcrumbs items={breadcrumbItems} />
         {/* Subcategory Hub Cards Grid */}
         <section className="mb-20">
@@ -63,7 +63,7 @@ export function ParentCategoryView({
         )}
         {/* New Products Carousel - Internal Links to Products */}
         {newProducts.length > 0 && (
-          <section className="mb-10 rounded-lg bg-[#e8f4fd] p-6">
+          <section className="mb-10 rounded-lg bg-[#e8f4fd] px-6 py-3">
             <IdealoProductCarousel
               title={`Neu in ${parentCategory.name}`}
               products={newProducts.map((p) => ({
@@ -77,7 +77,7 @@ export function ParentCategoryView({
         )}
         {/* Deals Carousel - Internal Links to Products */}
         {deals.length > 0 && (
-          <section className="mb-10 rounded-lg bg-white p-6 shadow-sm">
+          <section className="mb-10 rounded-lg bg-white px-6 py-3 shadow-sm">
             <IdealoProductCarousel
               title={`Deals in "${parentCategory.name}"`}
               products={deals.map((p) => ({

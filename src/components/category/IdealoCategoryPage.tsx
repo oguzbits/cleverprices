@@ -139,7 +139,7 @@ export async function IdealoCategoryPage({
       {/* MAIN CONTAINER - max-width 1280px */}
       {/* ============================================ */}
       <div className="mx-auto max-w-[1280px]">
-        <div className="border-b border-[#dcdcdc] bg-white px-[15px]">
+        <div className="border-b border-[#dcdcdc] bg-white px-4">
           {/* ============================================ */}
           {/* BREADCRUMB - sr-breadcrumb */}
           {/* ============================================ */}
@@ -175,7 +175,7 @@ export async function IdealoCategoryPage({
         <div
           className={cn(
             "sr-searchResult__products",
-            "relative mt-[15px] mb-[45px] flex flex-row flex-wrap min-[840px]:mt-[20px]",
+            "relative mt-3 mb-[45px] flex flex-row flex-wrap",
           )}
         >
           {hasProducts ? (

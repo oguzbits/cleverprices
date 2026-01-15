@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -122,8 +122,8 @@ export function IdealoProductCard({
         </div>
 
         {/* Title */}
-        <h3 className="mb-1 line-clamp-2 max-h-[44px] text-[16px] leading-tight font-semibold text-gray-900 group-hover:text-[#0066cc]">
-          {title}
+        <h3 className="mb-1 line-clamp-2 max-h-[44px] text-[16px] leading-tight font-semibold text-gray-900">
+          {formatDisplayTitle(title)}
         </h3>
 
         {/* Professional Rating (Note) */}

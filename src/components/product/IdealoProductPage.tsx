@@ -27,7 +27,7 @@ import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import type { ProductOffer, UnifiedProduct } from "@/lib/data-sources";
 import { Product, getSimilarProducts } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
 import { Check, ChevronRight, Heart, Package, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -53,12 +53,11 @@ export async function IdealoProductPage({
   const category = getCategoryBySlug(product.category);
   const price = product.prices[countryCode];
 
-  // Extract short title/model from specifications
-  const modelName = product.specifications?.Model as string | undefined;
-  const shortTitle =
-    modelName ||
-    product.title.split(/[\(\-,]|Processor/i)[0].trim() ||
-    product.title;
+  // Use centralized title splitting logic
+  const shortTitle = formatDisplayTitle(
+    product.title,
+    product.specifications?.Model as string,
+  );
 
   // Build breadcrumbs
   const breadcrumbItems = [
@@ -437,9 +436,9 @@ export async function IdealoProductPage({
                   {similarProducts.slice(0, 5).map((p) => (
                     <li
                       key={p.slug}
-                      className="oopMarginal-wrapperListItem flex cursor-pointer items-start gap-3 rounded transition-colors"
+                      className="oopMarginal-wrapperListItem flex cursor-pointer items-start gap-3 rounded bg-white p-2 transition-colors hover:shadow-sm"
                     >
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded border border-[#e5e5e5] bg-white">
+                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded bg-white">
                         {p.image && (
                           <Image
                             src={p.image}
@@ -454,9 +453,9 @@ export async function IdealoProductPage({
                           href={`/p/${p.slug}`}
                           className="line-clamp-2 block text-[12px] leading-[1.3] font-bold text-[#2d2d2d]! underline! decoration-[#2d2d2d] underline-offset-1 hover:text-[#f97316]! hover:decoration-[#f97316]!"
                         >
-                          {p.title}
+                          {formatDisplayTitle(p.title)}
                         </Link>
-                        <div className="mt-1 text-[12px] font-bold text-[#2d2d2d]">
+                        <div className="mt-1 text-[12px] font-bold! text-[#2d2d2d]">
                           ab{" "}
                           {formatCurrency(p.prices[countryCode], countryCode)}
                         </div>
@@ -746,7 +745,7 @@ export async function IdealoProductPage({
                         </div>
 
                         {/* CTA Button */}
-                        <div className="flex min-w-0 shrink-0 justify-center min-[600px]:w-[22%] min-[600px]:px-[15px] min-[840px]:w-[18%]">
+                        <div className="flex min-w-0 shrink-0 items-center justify-center min-[600px]:w-[22%] min-[600px]:px-[15px] min-[840px]:w-[18%]">
                           <a
                             href={offer.affiliateLink}
                             target="_blank"
@@ -754,7 +753,7 @@ export async function IdealoProductPage({
                             className={cn(
                               "inline-flex items-center justify-center",
                               "rounded-[2px] bg-[#38bf84] px-[20px] font-bold text-white transition-colors hover:bg-[#2fa372]",
-                              "h-[30px] max-h-[30px] w-full text-[13px] min-[600px]:w-[110px] min-[600px]:px-[10px] min-[600px]:text-[13px]",
+                              "h-[30px] max-h-[30px] w-full text-[13px] min-[600px]:px-[10px] min-[600px]:text-[13px]",
                             )}
                           >
                             Zum Shop

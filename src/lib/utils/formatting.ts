@@ -83,3 +83,23 @@ export function formatRatingDE(rating: number): string {
     maximumFractionDigits: 1,
   });
 }
+
+/**
+ * Clean up long product titles for display (e.g., in cards and breadcrumbs)
+ * Preserves model identifiers while removing extra metadata.
+ */
+export function formatDisplayTitle(title: string, model?: string): string {
+  if (!title) return "";
+
+  // Refined title splitting logic
+  // We look for separators like " - ", "(", "|", or a comma followed by a space ", "
+  // This preserves internal dashes in model numbers like "i7-12700K"
+  const splitTitle = title.split(/ \- | \(| \||, /)[0].trim();
+
+  // Use the split title as the primary source, fallback to model if split result is too short
+  if (splitTitle.length > 3) {
+    return splitTitle;
+  }
+
+  return model || title;
+}

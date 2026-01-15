@@ -25,7 +25,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { type LeanProduct } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
 import { IdealoWishlistHeart } from "./IdealoWishlistHeart";
 
 interface IdealoListCardProps {
@@ -116,7 +116,7 @@ export function IdealoListCard({
                       "mb-1 text-[14px] leading-[18px] font-bold text-[#2d2d2d]",
                     )}
                   >
-                    {product.title}
+                    {formatDisplayTitle(product.title)}
                   </div>
                 </Link>
               </div>

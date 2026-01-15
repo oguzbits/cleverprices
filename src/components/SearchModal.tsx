@@ -21,7 +21,7 @@ import {
 } from "@/lib/countries";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
@@ -191,6 +191,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                 onSelect={() =>
                   handleSelect(country === "us" ? "/" : `/${country}`)
                 }
+                className="cursor-pointer"
               >
                 <Home className={cn("mr-2 h-4 w-4")} />
                 Startseite
@@ -199,6 +200,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                 onSelect={() =>
                   handleSelect(country === "us" ? "/blog" : `/${country}/blog`)
                 }
+                className="cursor-pointer"
               >
                 <BookOpen className={cn("mr-2 h-4 w-4")} />
                 Blog & Ratgeber
@@ -212,6 +214,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   <CommandItem
                     key={cat.slug}
                     onSelect={() => handleSelect(getCategoryPath(cat.slug))}
+                    className="cursor-pointer"
                   >
                     <LayoutGrid className={cn("mr-2 h-4 w-4")} />
                     {cat.name}
@@ -230,7 +233,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   <CommandItem
                     key={product.asin}
                     onSelect={() => handleSelect(`/p/${product.slug}`)}
-                    className="flex items-center gap-3 py-3"
+                    className="flex cursor-pointer items-center gap-3 py-3"
                   >
                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border bg-white p-1">
                       {product.image ? (
@@ -246,7 +249,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                     </div>
                     <div className="flex flex-1 flex-col justify-center overflow-hidden">
                       <span className="text-foreground truncate font-medium">
-                        {product.title}
+                        {formatDisplayTitle(product.title)}
                       </span>
                       <div className="text-muted-foreground flex items-center gap-2 text-xs">
                         <span className="font-bold text-[#ff6600]">
@@ -275,7 +278,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                       `${getCategoryPath(cat.slug)}?search=${encodeURIComponent(search)}`,
                     )
                   }
-                  className={cn("py-3")}
+                  className={cn("cursor-pointer py-3")}
                 >
                   <Search className={cn("mr-2 h-4 w-4")} />
                   <div className={cn("flex items-center gap-1.5")}>
@@ -293,6 +296,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   <CommandItem
                     key={`jump-${cat.slug}`}
                     onSelect={() => handleSelect(getCategoryPath(cat.slug))}
+                    className="cursor-pointer"
                   >
                     <LayoutGrid className={cn("mr-2 h-4 w-4")} />
                     {cat.name}

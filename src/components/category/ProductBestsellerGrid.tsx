@@ -8,7 +8,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/utils/formatting";
+import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -57,8 +57,8 @@ function BestsellerTile({ product }: { product: BestsellerProduct }) {
       </div>
 
       {/* Product Title */}
-      <h3 className="mb-2 line-clamp-2 min-h-10 text-[14px] leading-tight font-medium text-[#2d2d2d] group-hover:text-[#0066cc]">
-        {product.title}
+      <h3 className="mb-2 line-clamp-2 min-h-10 text-[14px] leading-tight font-medium text-[#2d2d2d]">
+        {formatDisplayTitle(product.title)}
       </h3>
 
       {/* Brand */}
@@ -96,7 +96,7 @@ export function ProductBestsellerGrid({
   }
 
   return (
-    <section className={cn("py-6", className)}>
+    <section className={cn("py-3", className)}>
       {/* Section Header */}
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-[20px] font-bold text-[#2d2d2d]">{title}</h2>

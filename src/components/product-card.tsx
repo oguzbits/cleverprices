@@ -90,7 +90,7 @@ export function ProductCard({
       {/* Content - matching Idealo layout */}
       <div className="flex flex-1 flex-col p-3 pt-0 text-left">
         {/* Title - bold, slightly larger */}
-        <h3 className="mb-1.5 line-clamp-2 text-[13px] leading-tight font-bold text-zinc-900 group-hover:text-[#0066cc]">
+        <h3 className="mb-1.5 line-clamp-2 text-[13px] leading-tight font-bold text-zinc-900">
           {title}
         </h3>
 
