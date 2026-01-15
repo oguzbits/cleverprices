@@ -33,6 +33,7 @@ async function main() {
   console.log("💡 Usage: bun run worker [country] [-c|--continuous]\n");
 
   let cycleCount = 1;
+  let lastSyncTime = 0; // Initialize to 0 to trigger sync on first run
 
   while (true) {
     console.log(`\n--- Starting Maintenance Cycle #${cycleCount} ---`);
@@ -70,6 +71,33 @@ async function main() {
     // Execute phases
     await runCompliancePhase();
     await runEnrichmentPhase();
+
+    // Phase 3: Cloud Sync (Periodically)
+    const now = Date.now();
+    const syncInterval = parseInt(
+      process.env.SYNC_INTERVAL_MS || String(12 * 60 * 60 * 1000),
+    );
+
+    // We tracks last sync in a simple way for this process
+    if (now - lastSyncTime >= syncInterval) {
+      console.log("\n☁️  Phase 3: Cloud Sync (Local -> Turso)");
+      try {
+        execSync(`bun run scripts/deploy-data.ts`, {
+          stdio: "inherit",
+        });
+        lastSyncTime = now;
+        console.log("✅ Cloud sync successful.");
+      } catch (e) {
+        console.error("❌ Cloud sync failed:", e);
+      }
+    } else {
+      const nextSyncIn = Math.round(
+        (syncInterval - (now - lastSyncTime)) / (60 * 1000),
+      );
+      console.log(
+        `\n⏭️  Skipping cloud sync (Next sync in ~${nextSyncIn} mins)`,
+      );
+    }
 
     if (!isContinuous) {
       console.log("\n✅ Single pass complete.");
