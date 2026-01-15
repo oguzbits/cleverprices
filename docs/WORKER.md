@@ -20,8 +20,18 @@ If you haven't already, run this command once to automate everything (Daily Sync
 | :-------------- | :------------------------------------------ | :-------------------------------------------------------------- |
 | **Growth**      | `bun run scripts/import-from-csv.ts <file>` | **Adding New Products:** Export CSV from Keepa and import here. |
 | **Maintenance** | `bun run worker`                            | **Daily Updates:** Updates prices/ranks and seeds history.      |
-| **Live Logs**   | `bun run worker:live`                       | **Development:** Seeing everything in real-time.                |
+| **Enrichment**  | `bun run scripts/enrich-products.ts`        | **Metadata:** Fetches features/descriptions for existing items. |
 | **Manual Sync** | `bun run db:deploy`                         | **On-demand:** Pushing local updates to the cloud immediately.  |
+
+---
+
+## 🔧 Utility Commands
+
+| Command                                    | Purpose                                                  |
+| :----------------------------------------- | :------------------------------------------------------- |
+| `bun run scripts/regenerate-slugs.ts`      | Fixes URL slugs if titles change or collisions occur.    |
+| `bun run scripts/find-browse-node.ts`      | Finds correct Amazon/Keepa node IDs for new categories.  |
+| `bun run scripts/collect-price-history.ts` | Manually triggers historical data collection for charts. |
 
 ---
 
