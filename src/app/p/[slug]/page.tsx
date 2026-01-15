@@ -3,12 +3,8 @@ import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getAllCountries } from "@/lib/countries";
 import { dataAggregator } from "@/lib/data-sources";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
+import { getProductBySlug, getSimilarProducts } from "@/lib/product-registry";
 import { getAllProductSlugs } from "@/lib/server/cached-products";
-import {
-  getProductBySlug,
-  getSimilarProducts,
-  type Product,
-} from "@/lib/product-registry";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -120,20 +116,20 @@ export default async function ProductPage({ params }: Props) {
     process.env.CI === "1" ||
     process.env.NEXT_PHASE === "phase-production-build";
 
-  let unifiedProduct = null;
-  if (!isBuild) {
-    try {
-      unifiedProduct = await dataAggregator.fetchProduct(
-        product.asin,
-        countryCode,
-      );
-    } catch (error) {
-      console.error("Error fetching unified product:", error);
-    }
-  }
+  // Fetch data in parallel to eliminate waterfalls (Vercel Best Practices: async-parallel)
+  const [unifiedProduct, similarProducts] = await Promise.all([
+    !isBuild
+      ? dataAggregator
+          .fetchProduct(product.asin, countryCode)
+          .catch((error) => {
+            console.error("Error fetching unified product:", error);
+            return null;
+          })
+      : Promise.resolve(null),
+    getSimilarProducts(product, 12, countryCode),
+  ]);
 
-  // Strip heavy data from similar products to keep RSC payload light
-  const similarProducts = await getSimilarProducts(product, 12, countryCode);
+  // Strip heavy data from similar products to keep RSC payload light (Vercel Best Practices: server-serialization)
   const liteSimilarProducts = similarProducts.map((p) => ({
     ...p,
     specifications: {},

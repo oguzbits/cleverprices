@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
 import Image from "next/image";
 import Link from "next/link";
+import React from "react";
 
 interface IdealoProductCardProps {
   title: string;
@@ -21,6 +22,27 @@ interface IdealoProductCardProps {
   isBestseller?: boolean;
   variationAttributes?: string;
 }
+
+const StarIcon = ({
+  className,
+  width,
+}: {
+  className: string;
+  width?: string;
+}) => (
+  <div className="relative h-3 w-3">
+    <svg className={cn("absolute inset-0", className)} viewBox="0 0 20 20">
+      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+    </svg>
+    {width && (
+      <div className="absolute inset-0 overflow-hidden" style={{ width }}>
+        <svg className="h-3 w-3 fill-[#ff6600]" viewBox="0 0 20 20">
+          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+        </svg>
+      </div>
+    )}
+  </div>
+);
 
 export function IdealoProductCard({
   title,
@@ -46,16 +68,16 @@ export function IdealoProductCard({
     >
       {/* Badges Area - top left */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
-        {discountRate && discountRate > 0 && (
+        {discountRate && discountRate > 0 ? (
           <div className="rounded-sm bg-[#ff6600] px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
             -{discountRate}%
           </div>
-        )}
-        {badgeText && (!discountRate || discountRate === 0) && (
+        ) : null}
+        {badgeText && (!discountRate || discountRate === 0) ? (
           <div className="rounded-sm bg-[#ff6600] px-1.5 py-0.5 text-[11px] font-bold text-white shadow-sm">
             {badgeText}
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* Image Container */}
@@ -68,6 +90,7 @@ export function IdealoProductCard({
               fill
               className="object-contain transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 600px) 164px, 240px"
+              priority={isBestseller}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gray-50 text-gray-300">
@@ -81,12 +104,12 @@ export function IdealoProductCard({
       <div className="flex flex-1 flex-col p-[4px_8px] sm:p-[8px_12px]">
         {/* Category Info */}
         <div className="mb-1 flex items-center gap-1.5 overflow-hidden">
-          {!!isBestseller && (
+          {isBestseller ? (
             <div className="shrink-0 rounded-[2px] bg-[#0066cc] px-2 py-1 text-[14px] font-extrabold tracking-tight text-white">
               Bestseller
             </div>
-          )}
-          {categoryName && (
+          ) : null}
+          {categoryName ? (
             <span
               className={cn(
                 "truncate text-[14px] text-gray-500",
@@ -95,7 +118,7 @@ export function IdealoProductCard({
             >
               in {categoryName}
             </span>
-          )}
+          ) : null}
         </div>
 
         {/* Title */}
@@ -104,19 +127,19 @@ export function IdealoProductCard({
         </h3>
 
         {/* Professional Rating (Note) */}
-        {typeof testRating === "number" && testRating > 0 && (
+        {typeof testRating === "number" && testRating > 0 ? (
           <div className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-[#00a651]">
             <span>Note Ø {testRating.toFixed(1).replace(".", ",")}</span>
-            {testCount && (
+            {testCount ? (
               <span className="text-[10px] font-normal text-gray-400">
                 ({testCount} Test{testCount === 1 ? "" : "s"})
               </span>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
 
         {/* Community Rating (Stars) */}
-        {typeof rating === "number" && rating > 0 && (
+        {typeof rating === "number" && rating > 0 ? (
           <div className="mb-3 flex items-center gap-1.5 text-[11px]">
             <div className="flex">
               {[1, 2, 3, 4, 5].map((i) => {
@@ -125,35 +148,19 @@ export function IdealoProductCard({
                   Math.min(100, (rating - (i - 1)) * 100),
                 );
                 return (
-                  <div key={i} className="relative h-3 w-3">
-                    {/* Background Star */}
-                    <svg
-                      className="absolute inset-0 fill-gray-200"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                    </svg>
-                    {/* Foreground Star */}
-                    <div
-                      className="absolute inset-0 overflow-hidden"
-                      style={{ width: `${fillPercent}%` }}
-                    >
-                      <svg
-                        className="h-3 w-3 fill-[#ff6600]"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                      </svg>
-                    </div>
-                  </div>
+                  <StarIcon
+                    key={i}
+                    className="fill-gray-200"
+                    width={fillPercent > 0 ? `${fillPercent}%` : undefined}
+                  />
                 );
               })}
             </div>
-            {ratingCount && (
+            {ratingCount ? (
               <span className="font-normal text-gray-400">({ratingCount})</span>
-            )}
+            ) : null}
           </div>
-        )}
+        ) : null}
 
         {/* Price section */}
         <div className="mt-auto flex items-baseline gap-1">

@@ -1,14 +1,14 @@
 import { db } from "@/db";
 import {
-  products,
-  prices,
   priceHistory,
+  prices,
+  products,
   type Product as DbProduct,
   type Price,
 } from "@/db/schema";
-import { calculateProductMetrics } from "./utils/products";
-import { eq, like, or, inArray, desc, and, gt, sql, asc } from "drizzle-orm";
+import { and, asc, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
 import { cacheLife } from "next/cache";
+import { calculateProductMetrics } from "./utils/products";
 
 /**
  * Product Registry - DB Adapter
@@ -149,7 +149,10 @@ export async function getAllProducts(): Promise<Product[]> {
   );
 }
 
-export async function getProductsByCategory(
+import { cache } from "react";
+
+// Use React.cache for per-request deduplication (Vercel Best Practices: server-cache-react)
+export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
 ): Promise<Product[]> {
   const prods = await db
@@ -170,9 +173,9 @@ export async function getProductsByCategory(
       prs.filter((pr) => pr.productId === p.id),
     ),
   );
-}
+});
 
-export async function getProductBySlug(
+export const getProductBySlug = cache(async function getProductBySlug(
   slug: string,
 ): Promise<Product | undefined> {
   const [p] = await db.select().from(products).where(eq(products.slug, slug));
@@ -188,9 +191,9 @@ export async function getProductBySlug(
     .orderBy(priceHistory.recordedAt);
 
   return mapDbProduct(p, prs, history);
-}
+});
 
-export async function getSimilarProducts(
+export const getSimilarProducts = cache(async function getSimilarProducts(
   product: Product,
   limit: number = 4,
   countryCode: string = "de",
@@ -214,7 +217,7 @@ export async function getSimilarProducts(
   });
 
   return sorted.slice(0, limit);
-}
+});
 
 export async function searchProducts(
   query: string,

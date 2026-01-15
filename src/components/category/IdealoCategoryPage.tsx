@@ -68,7 +68,15 @@ export async function IdealoCategoryPage({
   }));
   const viewMode = searchParams.view || "grid";
 
-  // Get filtered products
+  // Fetch filtered products and all products (for filter options) in parallel
+  // (Vercel Best Practices: async-parallel)
+  const [filteredData, allData] = await Promise.all([
+    getCategoryProducts(category.slug, countryCode, searchParams),
+    category.filterGroups
+      ? getCategoryProducts(category.slug, countryCode, {})
+      : Promise.resolve(null),
+  ]);
+
   const {
     products: rawFilteredProducts,
     filteredCount,
@@ -76,9 +84,10 @@ export async function IdealoCategoryPage({
     hasProducts,
     filters,
     lastUpdated,
-  } = await getCategoryProducts(category.slug, countryCode, searchParams);
+  } = filteredData;
 
   // Strip heavy data from products before passing to Client Components (especially features/specifications)
+  // (Vercel Best Practices: server-serialization)
   const products = rawFilteredProducts.map((p) => ({
     id: p.id,
     slug: p.slug,
@@ -98,13 +107,8 @@ export async function IdealoCategoryPage({
 
   // Pre-calculate filter options on the server to avoid passing all products twice/thrice
   const filterGroupOptions: Record<string, string[]> = {};
-  if (hasProducts && category.filterGroups) {
-    // We need the full list for filter calculation, not just current filtered list
-    const { products: allCategoryProducts } = await getCategoryProducts(
-      category.slug,
-      countryCode,
-      {},
-    );
+  if (hasProducts && category.filterGroups && allData) {
+    const { products: allCategoryProducts } = allData;
 
     category.filterGroups.forEach((group) => {
       if (group.options) {
@@ -150,7 +154,7 @@ export async function IdealoCategoryPage({
           {/* TOP BAR - sr-topBar_iwPzv */}
           {/* Title, Sort, View Switch */}
           {/* ============================================ */}
-          {hasProducts && (
+          {hasProducts ? (
             <IdealoTopBar
               categoryName={category.name}
               productCount={filteredCount}
@@ -161,7 +165,7 @@ export async function IdealoCategoryPage({
                   : "popular"
               }
             />
-          )}
+          ) : null}
         </div>
 
         {/* ============================================ */}
@@ -329,7 +333,7 @@ export async function IdealoCategoryPage({
                 <div className="mt-4 text-center text-[12px] text-[#767676]">
                   * Preise inkl. MwSt., ggf. zzgl. Versand. Preise und
                   Verfügbarkeit können sich ändern.
-                  {lastUpdated && (
+                  {lastUpdated ? (
                     <span className="mt-1 block">
                       Zuletzt aktualisiert:{" "}
                       {new Date(lastUpdated).toLocaleString("de-DE", {
@@ -340,7 +344,7 @@ export async function IdealoCategoryPage({
                         minute: "2-digit",
                       })}
                     </span>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* ============================================ */}
