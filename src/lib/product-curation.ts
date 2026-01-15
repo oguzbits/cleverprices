@@ -64,6 +64,8 @@ export function curateProductList(
     .map((p): CandidateItem | null => {
       // 1. Basic Data Integrity
       if (p.condition !== "New") return null;
+      if (!p.image) return null;
+      const imageUrl = p.image;
       if (excludeIds.has(p.slug)) return null;
       if (p.parentAsin && excludeParentIds.has(p.parentAsin)) return null;
 
@@ -124,7 +126,7 @@ export function curateProductList(
           title: title || p.title,
           price,
           slug: p.slug,
-          image: p.image,
+          image: imageUrl,
           rating: p.rating || 0,
           ratingCount: p.reviewCount || 0,
           testRating: undefined,
