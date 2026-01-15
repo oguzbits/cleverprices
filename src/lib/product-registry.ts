@@ -1,4 +1,4 @@
-import { db, client } from "@/db";
+import { client, db } from "@/db";
 import {
   priceHistory,
   prices,
@@ -7,7 +7,7 @@ import {
   type Price,
 } from "@/db/schema";
 import { and, asc, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
-import { cacheLife } from "next/cache";
+import { cacheLife, unstable_cache } from "next/cache";
 import { calculateProductMetrics } from "./utils/products";
 
 /**
@@ -163,27 +163,44 @@ export async function getAllProducts(): Promise<Product[]> {
 import { cache } from "react";
 
 // Use React.cache for per-request deduplication (Vercel Best Practices: server-cache-react)
+// Use React.cache for per-request deduplication (Vercel Best Practices: server-cache-react)
 export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
 ): Promise<Product[]> {
-  const prods = await db
-    .select()
-    .from(products)
-    .where(eq(products.category, category));
-  if (prods.length === 0) return [];
+  // Use Next.js Data Cache to persist results across requests/users
+  const getCachedProducts = unstable_cache(
+    async () => {
+      const prods = await db
+        .select()
+        .from(products)
+        .where(eq(products.category, category));
+      if (prods.length === 0) return [];
 
-  const ids = prods.map((p) => p.id);
-  const prs = await db
-    .select()
-    .from(prices)
-    .where(inArray(prices.productId, ids));
+      const ids = prods.map((p) => p.id);
+      const prs = await db
+        .select()
+        .from(prices)
+        .where(inArray(prices.productId, ids));
 
-  return prods.map((p) =>
-    mapDbProduct(
-      p,
-      prs.filter((pr) => pr.productId === p.id),
-    ),
+      return prods.map((p) => {
+        const mapped = mapDbProduct(
+          p,
+          prs.filter((pr) => pr.productId === p.id),
+        );
+        // OPTIMIZATION: Strip heavy data not needed for category listing
+        // This keeps the cache entry size low (<2MB) for Vercel Free Tier
+        mapped.features = [];
+        return mapped;
+      });
+    },
+    [`category-products-${category}`],
+    {
+      revalidate: 3600, // Cache for 1 hour
+      tags: [`category-${category}`],
+    },
   );
+
+  return getCachedProducts();
 });
 
 export const getProductBySlug = cache(async function getProductBySlug(

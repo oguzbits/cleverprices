@@ -59,15 +59,6 @@ export function IdealoListCard({
         )}
       >
         {/* ============================================ */}
-        {/* WISHLIST HEART - sr-resultItemTile__buttons--LIST */}
-        {/* ============================================ */}
-        <div className="sr-resultItemTile__buttons sr-resultItemTile__buttons--LIST absolute top-2 left-2 z-10">
-          <IdealoWishlistHeart
-            productId={product.id?.toString() || product.slug}
-          />
-        </div>
-
-        {/* ============================================ */}
         {/* IMAGE SECTION - sr-resultItemTile__imageSection--LIST */}
         {/* ============================================ */}
         <Link href={`/p/${product.slug}`} className="block shrink-0">

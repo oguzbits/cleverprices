@@ -66,15 +66,6 @@ export function IdealoGridCard({
         )}
       >
         {/* ============================================ */}
-        {/* WISHLIST HEART - sr-resultItemTile__buttons */}
-        {/* ============================================ */}
-        <div className="sr-resultItemTile__buttons absolute top-2 right-2 z-10">
-          <IdealoWishlistHeart
-            productId={product.id?.toString() || product.slug}
-          />
-        </div>
-
-        {/* ============================================ */}
         {/* IMAGE SECTION - sr-resultItemTile__imageSection */}
         {/* Idealo: height:140px, width:168px */}
         {/* ============================================ */}

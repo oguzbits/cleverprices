@@ -1,11 +1,10 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
-import { Product, getProductsByCategory } from "@/lib/product-registry";
+import { getProductsByCategory, Product } from "@/lib/product-registry";
 import { filterProducts, sortProducts } from "@/lib/utils/category-utils";
 import {
   calculateProductMetrics,
   getLocalizedProductData,
 } from "@/lib/utils/products";
-import { cacheLife } from "next/cache";
 
 export interface LocalizedProduct extends Omit<
   Product,
@@ -34,6 +33,8 @@ export interface FilterParams {
   sortOrder?: string;
   sort?: string; // Combined sort param from TopBar (e.g., "price", "price-desc", "popular")
   view?: string; // grid or list
+  page?: string;
+  fetchAll?: boolean;
 }
 
 /**
@@ -151,13 +152,19 @@ export async function getCategoryProducts(
         "maxCapacity",
         "socket",
         "cores",
+        "page",
+        "fetchAll",
       ].includes(key)
     ) {
       return;
     }
     const value = filterParams[key as keyof FilterParams];
+    if (value === true || value === false) return;
+
     if (value) {
-      filters[key] = Array.isArray(value) ? value : value.split(",");
+      filters[key] = Array.isArray(value)
+        ? value
+        : (value as string).split(",");
     } else {
       filters[key] = [];
     }
@@ -178,8 +185,29 @@ export async function getCategoryProducts(
     filters.sortOrder,
   ) as LocalizedProduct[];
 
+  // Apply pagination
+  let paginatedProducts = sorted;
+  let pagination = null;
+
+  if (!filterParams.fetchAll) {
+    const page = filterParams.page ? parseInt(filterParams.page) : 1;
+    const pageSize = 24;
+    const totalItems = sorted.length;
+    const totalPages = Math.ceil(totalItems / pageSize);
+    const start = (page - 1) * pageSize;
+    const end = start + pageSize;
+    paginatedProducts = sorted.slice(start, end);
+
+    pagination = {
+      currentPage: page,
+      totalPages,
+      pageSize,
+      totalItems,
+    };
+  }
+
   return {
-    products: sorted,
+    products: paginatedProducts,
     totalCount: rawProducts.length,
     filteredCount: sorted.length,
     unitLabel,
@@ -189,5 +217,6 @@ export async function getCategoryProducts(
       rawProducts.length > 0
         ? new Date().toISOString() // In a real app, you'd get the max(last_updated) from DB
         : null,
+    pagination,
   };
 }

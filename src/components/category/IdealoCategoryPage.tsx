@@ -43,6 +43,7 @@ import { IdealoTopBar } from "./IdealoTopBar";
 // FAQ components for SEO
 import { FAQSchema } from "@/components/category/FAQSchema";
 import { FAQSection } from "@/components/category/FAQSection";
+import { Pagination } from "@/components/ui/pagination";
 import { getUniqueFieldValues } from "@/lib/utils/category-utils";
 import { X } from "lucide-react";
 import { MobileFilterDrawer } from "./MobileFilterDrawer";
@@ -73,7 +74,7 @@ export async function IdealoCategoryPage({
   const [filteredData, allData] = await Promise.all([
     getCategoryProducts(category.slug, countryCode, searchParams),
     category.filterGroups
-      ? getCategoryProducts(category.slug, countryCode, {})
+      ? getCategoryProducts(category.slug, countryCode, { fetchAll: true })
       : Promise.resolve(null),
   ]);
 
@@ -84,6 +85,7 @@ export async function IdealoCategoryPage({
     hasProducts,
     filters,
     lastUpdated,
+    pagination,
   } = filteredData;
 
   // Strip heavy data from products before passing to Client Components (especially features/specifications)
@@ -326,6 +328,18 @@ export async function IdealoCategoryPage({
                   countryCode={countryCode}
                   viewMode={viewMode as "grid" | "list"}
                 />
+
+                {/* ============================================ */}
+                {/* PAGINATION */}
+                {/* ============================================ */}
+                {pagination && (
+                  <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    baseUrl={`/${categorySlug}`}
+                    searchParams={searchParams}
+                  />
+                )}
 
                 {/* ============================================ */}
                 {/* DISCLAIMER */}
