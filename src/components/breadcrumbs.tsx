@@ -20,7 +20,7 @@ export function Breadcrumbs({
 }: BreadcrumbsProps) {
   return (
     <nav className={cn("mb-4", className)} aria-label="Breadcrumb">
-      <ol className="flex flex-wrap items-center gap-1.5 gap-y-1 text-sm leading-normal text-[#767676] sm:gap-2">
+      <ol className="flex flex-wrap items-center gap-1.5 gap-y-1 text-[12px] leading-normal text-[#767676] sm:gap-2">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           const Icon = item.icon;
@@ -30,12 +30,17 @@ export function Breadcrumbs({
             <span
               className={cn(
                 "inline-flex items-center gap-1.5",
-                isLast && "font-bold text-[#2d2d2d]",
+                isLast
+                  ? "text-[#2d2d2d]"
+                  : "text-inherit underline! decoration-[#2d2d2d]! underline-offset-2 group-hover:decoration-[#f97316]!",
               )}
             >
               {isHome ? (
                 <>
-                  <Home className="h-4 w-4" aria-hidden="true" />
+                  <Home
+                    className="h-4 w-4 fill-[#2d2d2d] text-[#2d2d2d]"
+                    aria-hidden="true"
+                  />
                   <span className="sr-only">{item.name}</span>
                 </>
               ) : (
@@ -73,16 +78,16 @@ export function Breadcrumbs({
                 {item.href && !isLast ? (
                   <Link
                     href={item.href}
-                    className="font-bold text-[#767676] underline transition-colors hover:text-[#f97316]"
+                    className="group font-bold text-[#2d2d2d]! hover:text-[#f97316]! hover:decoration-[#f97316]!"
                     prefetch={true}
                   >
                     {content}
                   </Link>
                 ) : isLast ? (
                   renderLastAsH1 ? (
-                    <h1 className="inline">{content}</h1>
+                    <h1 className="inline font-normal">{content}</h1>
                   ) : (
-                    <span className="inline">{content}</span>
+                    <span className="inline font-normal">{content}</span>
                   )
                 ) : (
                   content
