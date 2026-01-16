@@ -143,17 +143,20 @@ The route automatically works at: `/{country}/{parent}/your-category`
 
 ### Keepa Integration
 
-The project uses a dual-strategy for handling product data:
+The project uses a script-based worker to manage product data, ensuring API limits are respected and data is consistently synchronized.
 
-1.  **Initial Import (Discovery)**:
-    - `GET /api/keepa/import?category=smartphones&limit=50`
-    - Uses expensive "Search" tokens. Run this manually to populate the database.
+1.  **Initial Import**:
+    - `bun run scripts/import-from-csv.ts`
+    - Parses Keepa export CSVs to add high-quality products to the database.
 
-2.  **Daily Sync (Maintenance)**:
-    - `GET /api/keepa/sync`
-    - Runs automatically via Vercel Cron (configured in `vercel.json`).
-    - Updates price/stock for existing products using cheap "Retrieval" tokens.
-    - **Resume Capability**: If tokens run out, it stops and resumes from where it left off the next day.
+2.  **Maintenance Worker**:
+    - `bun run worker:run -c`
+    - Runs continuously in the background.
+    - **Price Updates**: Every 15 mins.
+    - **Cloud Sync**: Every 12 hours (Local -> Turso).
+    - **Smart Scheduling**: Auto-sleeps and persists state to `logs/worker-state.json`.
+
+See **[docs/WORKER.md](docs/WORKER.md)** for the complete guide.
 
 ---
 
