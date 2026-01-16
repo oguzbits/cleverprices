@@ -26,6 +26,7 @@ import Link from "next/link";
 
 import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
+import { LegalPrice } from "@/components/ui/LegalPrice";
 import { IdealoWishlistHeart } from "./IdealoWishlistHeart";
 
 interface IdealoGridCardProps {
@@ -169,16 +170,11 @@ export function IdealoGridCard({
           {/* PRICE INFO - sr-detailedPriceInfo */}
           {/* ============================================ */}
           <div className="sr-detailedPriceInfo detailedPriceInfo--GRID mt-auto">
-            {/* Offer count - placeholder, LocalizedProduct doesn't have offerCount */}
-            {/* Price */}
-            <div className="sr-detailedPriceInfo__price flex items-baseline gap-1">
-              <span className="sr-detailedPriceInfo__pricePrefix text-[14px] text-[#767676]">
-                ab
-              </span>
-              <span className="text-[20px] font-bold text-[#f97316]">
-                {formatCurrency(product.price, countryCode)} *
-              </span>
-            </div>
+            <LegalPrice
+              price={product.price}
+              showAb
+              priceClassName="text-[20px] text-[#f97316]"
+            />
             {product.pricePerUnit && (
               <div className="mt-1 text-right text-[12px] text-[#767676]">
                 ({formatCurrency(product.pricePerUnit, countryCode)} /{" "}

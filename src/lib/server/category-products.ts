@@ -229,9 +229,8 @@ export async function getCategoryProducts(
       localizedProducts.length > 0
         ? localizedProducts
             .map((p) => p.pricesLastUpdated?.[countryCode])
-            .filter(Boolean)
-            .sort()
-            .reverse()[0] || new Date().toISOString()
+            .filter((d): d is string => !!d)
+            .sort()[0] || new Date().toISOString()
         : null,
     pagination,
   };

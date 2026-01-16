@@ -34,6 +34,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React from "react";
 import { IdealoPriceChart } from "./IdealoPriceChart";
+import { LegalPrice } from "@/components/ui/LegalPrice";
 import { SpecificationsTable } from "./SpecificationsTable";
 
 interface IdealoProductPageProps {
@@ -167,9 +168,7 @@ export async function IdealoProductPage({
                     href="#offerList"
                     className="flex items-center justify-between"
                   >
-                    <p className="text-lg font-bold text-[#333]">
-                      {formatCurrency(bestPrice, countryCode)}
-                    </p>
+                    <LegalPrice price={bestPrice} priceClassName="text-lg" />
                     <span className="text-sm font-semibold text-[#0066cc]">
                       {offers.length} Angebote vergleichen
                     </span>
@@ -345,7 +344,7 @@ export async function IdealoProductPage({
                       Neu ab
                     </div>
                     <div className="text-[15px] font-extrabold text-[#2d2d2d]">
-                      {formatCurrency(bestPrice, countryCode)}
+                      <LegalPrice price={bestPrice} />
                     </div>
                   </button>
 
@@ -359,14 +358,13 @@ export async function IdealoProductPage({
                         Gebraucht ab
                       </div>
                       <div className="text-[15px] font-extrabold text-[#2d2d2d]">
-                        {formatCurrency(
-                          Math.min(
+                        <LegalPrice
+                          price={Math.min(
                             ...offers
                               .filter((o) => o.condition !== "new")
                               .map((o) => o.price),
-                          ),
-                          countryCode,
-                        )}
+                          )}
+                        />
                       </div>
                     </Link>
                   )}
@@ -451,8 +449,7 @@ export async function IdealoProductPage({
                           {formatDisplayTitle(p.title)}
                         </Link>
                         <div className="mt-1 text-[12px] font-bold! text-[#2d2d2d]">
-                          ab{" "}
-                          {formatCurrency(p.prices[countryCode], countryCode)}
+                          <LegalPrice price={p.prices[countryCode]} showAb />
                         </div>
                       </div>
                     </li>
@@ -572,12 +569,14 @@ export async function IdealoProductPage({
                               rel="noopener nofollow"
                               className={cn(
                                 "productOffers-listItemOfferPrice",
-                                "relative z-1 font-bold text-[#2d2d2d] no-underline min-[600px]:text-[20px] lg:text-2xl",
-                                "cursor-pointer",
+                                "relative z-1 cursor-pointer no-underline",
                               )}
                             >
-                              {offer.displayPrice ||
-                                formatCurrency(offer.price, countryCode)}
+                              <LegalPrice
+                                price={offer.price}
+                                displayPrice={offer.displayPrice}
+                                priceClassName="min-[600px]:text-[20px] lg:text-2xl text-[#2d2d2d]"
+                              />
                             </a>
                             {index === 0 && (
                               <div className="amazon-prime__wrapper mt-[2px] min-[600px]:mt-[3px]">
@@ -586,24 +585,47 @@ export async function IdealoProductPage({
                                     Günstigster Gesamtpreis
                                   </div>
                                   <div className="productOffers-listItemOfferShippingDetails relative z-1 mt-0.5 border-spacing-[0_4px] text-[9px] leading-[12px] text-[#2d2d2d] sm:text-[10px]">
-                                    {offer.freeShipping
-                                      ? `${offer.displayPrice || formatCurrency(offer.price, countryCode)} inkl. Versand`
-                                      : offer.shippingCost !== undefined &&
-                                          offer.shippingCost !== null
-                                        ? `+ ${formatCurrency(offer.shippingCost, countryCode)} Versand`
-                                        : "zzgl. Versand"}
+                                    {offer.freeShipping ? (
+                                      <>
+                                        <LegalPrice
+                                          price={offer.price}
+                                          displayPrice={offer.displayPrice}
+                                          priceClassName="font-bold"
+                                        />{" "}
+                                        inkl. Versand
+                                      </>
+                                    ) : offer.shippingCost !== undefined &&
+                                      offer.shippingCost !== null ? (
+                                      <>
+                                        <LegalPrice
+                                          price={offer.shippingCost}
+                                          priceClassName="font-normal"
+                                        />{" "}
+                                        Versand
+                                      </>
+                                    ) : (
+                                      "zzgl. Versand"
+                                    )}
                                   </div>
                                 </div>
                               </div>
                             )}
                             {index !== 0 && (
                               <div className="productOffers-listItemOfferShippingDetails mt-1 text-[11px] text-[#666]">
-                                {offer.freeShipping
-                                  ? "inkl. Versand"
-                                  : offer.shippingCost !== undefined &&
-                                      offer.shippingCost !== null
-                                    ? `+ ${formatCurrency(offer.shippingCost, countryCode)} Versand`
-                                    : "zzgl. Versand"}
+                                {offer.freeShipping ? (
+                                  "inkl. Versand"
+                                ) : offer.shippingCost !== undefined &&
+                                  offer.shippingCost !== null ? (
+                                  <>
+                                    <LegalPrice
+                                      price={offer.shippingCost}
+                                      priceClassName="font-normal"
+                                    />{" "}
+                                    Versand
+                                  </>
+                                ) : (
+                                  "zzgl. Versand"
+                                )}
                               </div>
                             )}
                           </div>
@@ -736,6 +758,9 @@ export async function IdealoProductPage({
                             )}
                           >
                             Zum Shop
+                            <sup className="ml-px text-[12px] font-bold text-white">
+                              *
+                            </sup>
                           </a>
                         </div>
                       </div>
@@ -781,7 +806,7 @@ export async function IdealoProductPage({
 
               {/* Footer Note */}
               <p className="mt-2 text-[10px] text-[#666]">
-                * Alle Preise inkl. MwSt. Angaben ohne Gewähr.
+                * Affiliate-Link. Alle Preise inkl. MwSt. Angaben ohne Gewähr.
                 {product.pricesLastUpdated?.[countryCode] && (
                   <span className="mt-1 block">
                     Zuletzt aktualisiert:{" "}

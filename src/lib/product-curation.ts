@@ -22,6 +22,7 @@ export interface DashboardProduct {
   badgeText?: string;
   parentAsin?: string;
   brand: string;
+  pricesLastUpdated?: Record<string, string>;
 }
 
 interface CurationOptions {
@@ -126,6 +127,7 @@ export function curateProductList(
           brand: p.brand || "Generic",
           variationAttributes: p.variationAttributes,
           parentAsin: p.parentAsin,
+          pricesLastUpdated: p.pricesLastUpdated,
         },
         score,
         revenue,

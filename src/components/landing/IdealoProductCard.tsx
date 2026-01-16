@@ -1,5 +1,6 @@
 "use client";
 
+import { LegalPrice } from "@/components/ui/LegalPrice";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
 import Image from "next/image";
@@ -162,12 +163,12 @@ export function IdealoProductCard({
           </div>
         ) : null}
 
-        {/* Price section */}
-        <div className="mt-auto flex items-baseline gap-1">
-          <span className="text-[12px] font-medium text-gray-500">ab</span>
-          <span className="text-[20px] font-bold text-[#ff6600]">
-            {formatCurrency(price, "de")}
-          </span>
+        <div className="mt-auto">
+          <LegalPrice
+            price={price}
+            showAb
+            priceClassName="text-[20px] text-[#ff6600]"
+          />
         </div>
       </div>
     </Link>
