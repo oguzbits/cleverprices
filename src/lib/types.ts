@@ -16,4 +16,6 @@ export interface LeanProduct {
   salesRank?: number;
   variationAttributes?: string;
   category?: string;
+  listPrice?: number;
+  savings?: number;
 }

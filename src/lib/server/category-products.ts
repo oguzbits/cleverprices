@@ -16,6 +16,7 @@ export interface LocalizedProduct extends Omit<
   price: number;
   pricePerUnit: number;
   popularityScore: number;
+  savings: number;
 }
 
 export interface FilterParams {
@@ -44,17 +45,19 @@ export interface FilterParams {
  */
 function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
   switch (sort) {
-    case "price":
+    case "price_asc":
       return { sortBy: "price", sortOrder: "asc" };
-    case "price-desc":
+    case "price_desc":
       return { sortBy: "price", sortOrder: "desc" };
+    case "pricePerUnit":
     case "price-per-unit":
       return { sortBy: "pricePerUnit", sortOrder: "asc" };
     case "newest":
       return { sortBy: "createdAt", sortOrder: "desc" };
+    case "deal":
     case "savings":
-      // Sort by highest discount/savings - using pricePerUnit as proxy
-      return { sortBy: "pricePerUnit", sortOrder: "asc" };
+      // Sort by highest discount/savings
+      return { sortBy: "savings", sortOrder: "desc" };
     case "popular":
     default:
       // Default: sort by popularity score
@@ -71,6 +74,10 @@ export async function getCategoryProducts(
   countryCode: string,
   filterParams: FilterParams,
 ) {
+  console.log(
+    `[DEBUG] getCategoryProducts: slug=${categorySlug}, sort=${filterParams.sort}`,
+  );
+
   // Load raw products for this category
   const rawProducts = await getProductsByCategory(categorySlug);
   const category = allCategories[categorySlug as CategorySlug];
@@ -113,6 +120,23 @@ export async function getCategoryProducts(
         "category",
       );
 
+      // --- Savings Calculation ---
+      // Prioritize real market history (avg90, avg30) over MSRP (listPrice)
+      // because listPrice can often be placeholder data (e.g., 1000€)
+      const listPrice = p.listPrice?.[countryCode] || 0;
+      const avg90 = p.priceAvg90?.[countryCode] || 0;
+      const avg30 = p.priceAvg30?.[countryCode] || 0;
+
+      // Realistic Reference Price Logic:
+      // 1. Prefer 90-day market average
+      // 2. Fallback to 30-day market average
+      let refPrice = avg90 || avg30;
+
+      const savings =
+        refPrice && refPrice > price ? (refPrice - price) / refPrice : 0;
+      const displayListPrice =
+        refPrice && refPrice > price ? refPrice : undefined;
+
       return {
         ...p,
         socket,
@@ -122,6 +146,8 @@ export async function getCategoryProducts(
         asin,
         pricePerUnit: enhanced.pricePerUnit,
         popularityScore,
+        savings,
+        listPrice: displayListPrice, // Override with what we used for comparison
       } as LocalizedProduct;
     })
     .filter((p): p is LocalizedProduct => p !== null);
@@ -230,7 +256,7 @@ export async function getCategoryProducts(
         ? localizedProducts
             .map((p) => p.pricesLastUpdated?.[countryCode])
             .filter((d): d is string => !!d)
-            .sort()[0] || new Date().toISOString()
+            .sort()[0] || null
         : null,
     pagination,
   };

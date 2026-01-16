@@ -135,11 +135,11 @@ async function main() {
         const capacityUnit = row["Unit Details: Unit Type"] || null;
 
         const priceAvg30 =
-          parseCSVPrice(row["Amazon: 30 days avg"]) ||
-          parseCSVPrice(row["New: 30 days avg"]);
+          parseCSVPrice(row["Amazon: 30 days avg."]) ||
+          parseCSVPrice(row["New: 30 days avg."]);
         const priceAvg90 =
-          parseCSVPrice(row["Amazon: 90 days avg"]) ||
-          parseCSVPrice(row["New: 90 days avg"]);
+          parseCSVPrice(row["Amazon: 90 days avg."]) ||
+          parseCSVPrice(row["New: 90 days avg."]);
 
         // 3. Upsert Product
         const productData: NewProduct = {
@@ -220,22 +220,22 @@ async function main() {
               .set({
                 ...priceData,
                 priceAvg30:
-                  parseCSVPrice(row["Amazon: 30 days avg"]) ||
-                  parseCSVPrice(row["New: 30 days avg"]),
+                  parseCSVPrice(row["Amazon: 30 days avg."]) ||
+                  parseCSVPrice(row["New: 30 days avg."]),
                 priceAvg90:
-                  parseCSVPrice(row["Amazon: 90 days avg"]) ||
-                  parseCSVPrice(row["New: 90 days avg"]),
+                  parseCSVPrice(row["Amazon: 90 days avg."]) ||
+                  parseCSVPrice(row["New: 90 days avg."]),
               })
               .where(eq(prices.id, existingPrice.id));
           } else {
             await db.insert(prices).values({
               ...priceData,
               priceAvg30:
-                parseCSVPrice(row["Amazon: 30 days avg"]) ||
-                parseCSVPrice(row["New: 30 days avg"]),
+                parseCSVPrice(row["Amazon: 30 days avg."]) ||
+                parseCSVPrice(row["New: 30 days avg."]),
               priceAvg90:
-                parseCSVPrice(row["Amazon: 90 days avg"]) ||
-                parseCSVPrice(row["New: 90 days avg"]),
+                parseCSVPrice(row["Amazon: 90 days avg."]) ||
+                parseCSVPrice(row["New: 90 days avg."]),
             });
           }
         }

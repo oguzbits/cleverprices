@@ -56,6 +56,7 @@ export interface Product {
   priceAvg90?: Record<string, number>;
   listPrice?: Record<string, number>;
   monthlySold?: number;
+  createdAt?: string; // ISO string
 }
 
 // Helper to map DB to Interface
@@ -130,9 +131,10 @@ function mapDbProduct(
     energyLabel: stripHeavyData ? undefined : (p.energyLabel as any),
     salesRank: p.salesRank || undefined,
     monthlySold: p.monthlySold || 0,
-    priceAvg30: stripHeavyData ? {} : avg30Obj,
-    priceAvg90: stripHeavyData ? {} : avg90Obj,
-    listPrice: stripHeavyData ? {} : listPricesObj,
+    priceAvg30: avg30Obj,
+    priceAvg90: avg90Obj,
+    listPrice: listPricesObj,
+    createdAt: p.createdAt ? p.createdAt.toISOString() : undefined,
   };
 
   return calculateProductMetrics(item) as Product;
@@ -210,10 +212,10 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   const getCachedProducts = unstable_cache(
     fetchProducts,
-    [`category-products-${category}`],
+    [`category-products-v12-${category}`],
     {
       revalidate: PRICE_REVALIDATE_SECONDS,
-      tags: [`category-${category}`],
+      tags: [`category-v12-${category}`],
     },
   );
 
@@ -372,11 +374,7 @@ const getCachedDeals = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
     const whereConditions = [
       eq(prices.country, countryCode),
-      or(
-        gt(prices.priceAvg90, 0),
-        gt(prices.priceAvg30, 0),
-        gt(prices.listPrice, 0),
-      ),
+      or(gt(prices.priceAvg90, 0), gt(prices.priceAvg30, 0)),
       or(gt(prices.amazonPrice, 0), gt(prices.newPrice, 0)),
     ];
 
@@ -401,17 +399,17 @@ const getCachedDeals = unstable_cache(
       .where(and(...whereConditions))
       .orderBy(
         desc(
-          sql`(COALESCE(${prices.priceAvg90}, ${prices.priceAvg30}, ${prices.listPrice}) - COALESCE(${prices.amazonPrice}, ${prices.newPrice})) / COALESCE(${prices.priceAvg90}, ${prices.priceAvg30}, ${prices.listPrice})`,
+          sql`(COALESCE(${prices.priceAvg90}, ${prices.priceAvg30}) - COALESCE(${prices.amazonPrice}, ${prices.newPrice})) / COALESCE(${prices.priceAvg90}, ${prices.priceAvg30})`,
         ),
       )
       .limit(limit);
 
     return results.map((r) => mapDbProduct(r.product, [r.price], [], true));
   },
-  ["best-deals-v8"],
+  ["best-deals-v9"],
   {
     revalidate: PRICE_REVALIDATE_SECONDS,
-    tags: ["products", "deals", "v8"],
+    tags: ["products", "deals", "v9"],
   },
 );
 

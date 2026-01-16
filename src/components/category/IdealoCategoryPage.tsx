@@ -105,6 +105,8 @@ export async function IdealoCategoryPage({
     reviewCount: p.reviewCount,
     salesRank: p.salesRank,
     variationAttributes: p.variationAttributes,
+    listPrice: p.listPrice?.[countryCode],
+    savings: p.savings,
   }));
 
   // Pre-calculate filter options on the server to avoid passing all products twice/thrice

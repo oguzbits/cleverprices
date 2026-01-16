@@ -170,6 +170,11 @@ export function IdealoGridCard({
           {/* PRICE INFO - sr-detailedPriceInfo */}
           {/* ============================================ */}
           <div className="sr-detailedPriceInfo detailedPriceInfo--GRID mt-auto">
+            {product.listPrice && product.listPrice > product.price && (
+              <div className="mb-0.5 text-[14px] text-[#767676] line-through">
+                {formatCurrency(product.listPrice, countryCode)}
+              </div>
+            )}
             <LegalPrice
               price={product.price}
               showAb
@@ -205,13 +210,18 @@ export function IdealoGridCard({
           </Link>
 
           {/* BADGES */}
-          {product.salesRank && product.salesRank < 10000 && (
-            <div className="sr-resultItemTile__badges mt-2">
+          <div className="sr-resultItemTile__badges mt-2 flex flex-wrap gap-1">
+            {(product.salesRank ?? 0) > 0 && product.salesRank! < 10000 && (
               <span className="rounded-[2px] bg-[#0066cc] px-2 py-0.5 text-[11px] font-bold text-white">
                 Bestseller
               </span>
-            </div>
-          )}
+            )}
+            {(product.savings ?? 0) > 0.05 && (
+              <span className="rounded-[2px] bg-[#e10316] px-2 py-0.5 text-[11px] font-bold text-white">
+                -{Math.round(product.savings! * 100)}%
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
