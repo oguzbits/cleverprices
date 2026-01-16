@@ -222,9 +222,9 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   return getCachedProducts();
 });
 
-export const getProductBySlug = cache(async function getProductBySlug(
+const fetchProductBySlug = async (
   slug: string,
-): Promise<Product | undefined> {
+): Promise<Product | undefined> => {
   const [p] = await db.select().from(products).where(eq(products.slug, slug));
   if (!p) return undefined;
 
@@ -238,32 +238,82 @@ export const getProductBySlug = cache(async function getProductBySlug(
     .orderBy(priceHistory.recordedAt);
 
   return mapDbProduct(p, prs, history);
+};
+
+export const getProductBySlug = cache(async function getProductBySlug(
+  slug: string,
+): Promise<Product | undefined> {
+  const isScript =
+    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
+
+  if (isScript) {
+    return fetchProductBySlug(slug);
+  }
+
+  return unstable_cache(
+    fetchProductBySlug,
+    [`product-slug-v1-${slug}`], // Include slug in key for uniqueness
+    {
+      revalidate: PRICE_REVALIDATE_SECONDS,
+      tags: [`product-${slug}`],
+    },
+  )(slug);
 });
+
+const fetchSimilarProducts = async (
+  category: string,
+  excludedSlug: string,
+  targetPrice: number,
+  limit: number,
+  countryCode: string,
+) => {
+  // Fetch category products (already cached via getProductsByCategory)
+  const categoryProducts = await getProductsByCategory(category);
+
+  const valid = categoryProducts.filter(
+    (p) =>
+      p.slug !== excludedSlug &&
+      p.prices[countryCode] !== undefined &&
+      p.prices[countryCode] > 0,
+  );
+
+  const sorted = valid.sort((a, b) => {
+    const priceA = a.prices[countryCode] || 0;
+    const priceB = b.prices[countryCode] || 0;
+    return Math.abs(priceA - targetPrice) - Math.abs(priceB - targetPrice);
+  });
+
+  return sorted.slice(0, limit);
+};
 
 export const getSimilarProducts = cache(async function getSimilarProducts(
   product: Product,
   limit: number = 4,
   countryCode: string = "de",
 ): Promise<Product[]> {
-  // Fetch category products
-  const categoryProducts = await getProductsByCategory(product.category);
-
-  const valid = categoryProducts.filter(
-    (p) =>
-      p.slug !== product.slug &&
-      p.prices[countryCode] !== undefined &&
-      p.prices[countryCode] > 0,
-  );
+  const isScript =
+    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
 
   const currentPrice = product.prices[countryCode] || 0;
 
-  const sorted = valid.sort((a, b) => {
-    const priceA = a.prices[countryCode] || 0;
-    const priceB = b.prices[countryCode] || 0;
-    return Math.abs(priceA - currentPrice) - Math.abs(priceB - currentPrice);
-  });
+  if (isScript) {
+    return fetchSimilarProducts(
+      product.category,
+      product.slug,
+      currentPrice,
+      limit,
+      countryCode,
+    );
+  }
 
-  return sorted.slice(0, limit);
+  return unstable_cache(
+    fetchSimilarProducts,
+    [`similar-products-v3`], // Key parts (args are hashed automatically)
+    {
+      revalidate: PRICE_REVALIDATE_SECONDS,
+      tags: [`similar-${product.category}`],
+    },
+  )(product.category, product.slug, currentPrice, limit, countryCode);
 });
 
 export async function searchProducts(
