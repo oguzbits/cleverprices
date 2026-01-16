@@ -212,7 +212,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   const getCachedProducts = unstable_cache(
     fetchProducts,
-    [`category-products-v12-${category}`],
+    [`category-products-v13-${category}`],
     {
       revalidate: PRICE_REVALIDATE_SECONDS,
       tags: [`category-v12-${category}`],
@@ -456,7 +456,7 @@ const getCachedDeals = unstable_cache(
 
     return results.map((r) => mapDbProduct(r.product, [r.price], [], true));
   },
-  ["best-deals-v9"],
+  ["best-deals-v10"],
   {
     revalidate: PRICE_REVALIDATE_SECONDS,
     tags: ["products", "deals", "v9"],
@@ -532,7 +532,7 @@ const getCachedPopular = unstable_cache(
       ),
     );
   },
-  ["popular-deals-v8"],
+  ["popular-deals-v9"],
   {
     revalidate: PRICE_REVALIDATE_SECONDS,
     tags: ["products", "popular", "v8"],
@@ -615,7 +615,7 @@ const getCachedNew = unstable_cache(
       ),
     );
   },
-  ["new-arrivals-v8"],
+  ["new-arrivals-v9"],
   {
     revalidate: PRICE_REVALIDATE_SECONDS,
     tags: ["products", "new", "v8"],

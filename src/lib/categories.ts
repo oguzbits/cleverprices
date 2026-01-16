@@ -133,7 +133,11 @@ export type CategorySlug =
   | "schleifmaschinen"
   | "apple-iphone"
   | "samsung-galaxy"
-  | "fraesmaschinen";
+  | "fraesmaschinen"
+  | "3d-drucker"
+  | "laserdrucker"
+  | "fotografie"
+  | "kompaktkameras";
 
 export interface FilterGroup {
   label: string;
@@ -280,6 +284,20 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
       { label: "Receiver", href: "/receiver" },
     ],
   },
+  fotografie: {
+    name: "Fotografie",
+    description: "Kameras, Objektive und Zubehör",
+    icon: Camera,
+    parent: "elektroartikel",
+    categoryType: "standard",
+    imageUrl: "/images/category/camera.jpg",
+    popularFilters: [
+      { label: "Systemkameras", href: "/systemkameras" },
+      { label: "Digitalkameras", href: "/cameras" },
+      { label: "Kompaktkameras", href: "/kompaktkameras" },
+      { label: "Speicherkarten", href: "/speicherkarten" },
+    ],
+  },
 
   "drucker-scanner": {
     name: "Drucker & Scanner",
@@ -290,6 +308,8 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     imageUrl: "/images/category/printer.jpg",
     popularFilters: [
       { label: "Multifunktionsdrucker", href: "/multifunktionsdrucker" },
+      { label: "Laserdrucker", href: "/laserdrucker" },
+      { label: "3D-Drucker", href: "/3d-drucker" },
     ],
   },
 
@@ -496,7 +516,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Multifunktionsdrucker",
     description: "Drucken, Scannen und Kopieren",
     icon: Printer,
-    parent: "elektroartikel",
+    parent: "drucker-scanner",
     categoryType: "standard",
     imageUrl: "/images/category/printer.jpg",
     popularFilters: [
@@ -538,13 +558,16 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Systemkameras",
     description: "Spiegellose Profikameras",
     icon: Camera,
-    parent: "elektroartikel",
+    parent: "fotografie",
     categoryType: "standard",
     imageUrl: "/images/category/camera.jpg",
     popularFilters: [
-      { label: "Sony Alpha", params: "series=alpha" },
-      { label: "Canon EOS R", params: "series=eos-r" },
-      { label: "Fuji X", params: "series=x" },
+      { label: "Nikon", params: "brand=Nikon" },
+      { label: "Sony", params: "brand=Sony" },
+      { label: "Panasonic", params: "brand=Panasonic" },
+      { label: "Fujifilm", params: "brand=Fujifilm" },
+      { label: "Vollformat", params: "sensor=Full+Frame" },
+      { label: "APS-C", params: "sensor=APS-C" },
     ],
   },
 
@@ -930,9 +953,16 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Digitalkameras",
     description: "Kameras & Optik",
     icon: Camera,
-    parent: "elektroartikel",
+    parent: "fotografie",
     categoryType: "standard",
     imageUrl: "/images/category/camera.jpg",
+    popularFilters: [
+      { label: "Canon", params: "brand=Canon" },
+      { label: "Fujifilm", params: "brand=Fujifilm" },
+      { label: "Sony", params: "brand=Sony" },
+      { label: "Nikon", params: "brand=Nikon" },
+      { label: "Vollformat", params: "sensor=Full+Frame" },
+    ],
   },
 
   keyboards: {
@@ -977,7 +1007,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     name: "Speicherkarten",
     description: "SD, microSD & CFexpress",
     icon: MemoryStick,
-    parent: "storage",
+    parent: "fotografie",
     categoryType: "analytical",
     imageUrl: "/images/category/sd-card.jpg",
     unitType: "GB",
@@ -1224,6 +1254,48 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektrowerkzeuge",
     categoryType: "standard",
     imageUrl: "/images/category/router-tool.jpg",
+  },
+  "3d-drucker": {
+    name: "3D-Drucker",
+    description: "3D-Drucker für Hobby und Industrie",
+    icon: Printer,
+    parent: "drucker-scanner",
+    categoryType: "standard",
+    imageUrl: "/images/category/3d-printer.jpg",
+    popularFilters: [
+      { label: "Bambu Lab", params: "brand=Bambu+Lab" },
+      { label: "Anycubic", params: "brand=Anycubic" },
+      { label: "Creality", params: "brand=Creality" },
+      { label: "Mehrfarbdruck", params: "features=multicolor" },
+    ],
+  },
+  laserdrucker: {
+    name: "Laserdrucker",
+    description: "Schnelle und effiziente Laserdrucker",
+    icon: Printer,
+    parent: "drucker-scanner",
+    categoryType: "standard",
+    imageUrl: "/images/category/laser-printer.jpg",
+    popularFilters: [
+      { label: "HP LaserJet", params: "brand=HP" },
+      { label: "Brother", params: "brand=Brother" },
+      { label: "Farblaserdrucker", params: "features=color" },
+      { label: "WLAN", params: "features=wifi" },
+    ],
+  },
+  kompaktkameras: {
+    name: "Kompaktkameras",
+    description: "Kleine Kameras für unterwegs",
+    icon: Camera,
+    parent: "fotografie",
+    categoryType: "standard",
+    imageUrl: "/images/category/compact-camera.jpg",
+    popularFilters: [
+      { label: "Sony", params: "brand=Sony" },
+      { label: "Canon", params: "brand=Canon" },
+      { label: "Panasonic", params: "brand=Panasonic" },
+      { label: "Vlogging", params: "type=vlogging" },
+    ],
   },
 };
 

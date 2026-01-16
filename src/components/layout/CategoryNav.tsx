@@ -2,13 +2,16 @@
 
 import { getCategoryPath, type CategorySlug } from "@/lib/categories";
 import {
+  Camera,
   ChevronLeft,
   Cpu,
   Grid3X3,
   HardDrive,
   MemoryStick,
   Monitor,
+  Printer,
   Video,
+  Wifi,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -28,6 +31,9 @@ const categories: {
   { slug: "hard-drives", label: "Festplatten", icon: HardDrive },
   { slug: "power-supplies", label: "Netzteile", icon: Zap },
   { slug: "monitors", label: "Monitore", icon: Monitor },
+  { slug: "3d-drucker", label: "3D-Drucker", icon: Printer },
+  { slug: "cameras", label: "Kameras", icon: Camera },
+  { slug: "routers", label: "Router", icon: Wifi },
 ];
 
 export function CategoryNav({ country }: { country: string }) {

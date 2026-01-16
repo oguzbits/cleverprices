@@ -269,7 +269,21 @@ function mapCategory(root: string, sub: string): CategorySlug | null {
   if (s.includes("mäuse") || s.includes("mice")) return "mice";
   if (s.includes("tablets")) return "tablets";
   if (s.includes("router")) return "routers";
-  if (s.includes("drucker")) return "multifunktionsdrucker";
+  if (s.includes("3d-drucker") || s.includes("3d-druck")) return "3d-drucker";
+  if (s.includes("laser")) return "laserdrucker";
+  if (
+    s.includes("drucker") ||
+    s.includes("inkjet") ||
+    s.includes("tintenstrahl") ||
+    s.includes("multifunktions") ||
+    s.includes("all-in-one")
+  )
+    return "multifunktionsdrucker";
+  if (s.includes("systemkamera")) return "systemkameras";
+  if (s.includes("kompaktkamera")) return "kompaktkameras";
+  if (s.includes("spiegelreflex")) return "cameras";
+  if (s.includes("kamera") || s.includes("camera") || s.includes("photo"))
+    return "cameras";
   if (s.includes("handy") || s.includes("smartphone")) return "smartphones";
   if (s.includes("watch") || s.includes("uhr")) return "smartwatches";
   if (s.includes("solid state drives") && !s.includes("extern")) return "ssds";
@@ -305,6 +319,20 @@ function mapCategory(root: string, sub: string): CategorySlug | null {
     return "cpu-coolers";
   if (s.includes("staubsauger")) return "staubsauger";
   if (s.includes("küchenmaschinen")) return "kuechenmaschinen";
+  if (
+    s.includes("speicherkarten") ||
+    s.includes("micro sd") ||
+    s.includes("sdhc") ||
+    s.includes("sdxc") ||
+    s.includes("memory card") ||
+    s.includes("cfexpress") ||
+    s.includes("compactflash") ||
+    s.includes("compact flash") ||
+    s.includes("securedigital") ||
+    s.includes("sd card") ||
+    s.includes("sd-karte")
+  )
+    return "speicherkarten";
   if (root.includes("Computer") || s.includes("computer")) return "computer";
   return null;
 }
