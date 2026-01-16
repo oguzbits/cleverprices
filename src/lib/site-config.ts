@@ -101,6 +101,19 @@ export const LOGO = {
 } as const;
 
 // =============================================================================
+// COMPLIANCE & CACHING
+// =============================================================================
+
+/**
+ * Amazon PA API Terms of Service: Prices must be refreshed every 24 hours.
+ * We use 23 hours (82800 seconds) to ensure we always stay within the limit
+ * while accounting for build/caching delays.
+ */
+export const AMAZON_TOS_LIMIT_SECONDS = 86400; // 24 hours
+export const PRICE_REVALIDATE_SECONDS = 82800; // 23 hours
+export const PRICE_CACHE_STALE_SECONDS = 82800; // 23 hours
+
+// =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
 

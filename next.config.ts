@@ -1,5 +1,9 @@
 import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
+import {
+  PRICE_CACHE_STALE_SECONDS,
+  PRICE_REVALIDATE_SECONDS,
+} from "./src/lib/site-config";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
@@ -30,9 +34,9 @@ const nextConfig: NextConfig = {
   // Cache Life Profiles for Next.js 16 "use cache"
   cacheLife: {
     prices: {
-      stale: 3600, // 1 hour
-      revalidate: 7200, // 2 hours
-      expire: 86400, // 24 hours
+      stale: PRICE_CACHE_STALE_SECONDS, // Amazon ToS compliance
+      revalidate: PRICE_REVALIDATE_SECONDS,
+      expire: 604800, // 7 days (unchanged)
     },
   },
   // Optimize images

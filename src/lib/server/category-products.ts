@@ -226,8 +226,12 @@ export async function getCategoryProducts(
     hasProducts: rawProducts.length > 0,
     filters, // Return parsed filters for UI
     lastUpdated:
-      rawProducts.length > 0
-        ? new Date().toISOString() // In a real app, you'd get the max(last_updated) from DB
+      localizedProducts.length > 0
+        ? localizedProducts
+            .map((p) => p.pricesLastUpdated?.[countryCode])
+            .filter(Boolean)
+            .sort()
+            .reverse()[0] || new Date().toISOString()
         : null,
     pagination,
   };

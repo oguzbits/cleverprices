@@ -24,8 +24,9 @@ export async function generateStaticParams() {
     return [{ slug: "[slug]" }];
   }
 
-  // Limit to top 1000 products by updatedAt to keep deployment size manageable
-  return products.slice(0, 1000).map((product) => ({
+  // Limit to top 100 products by updatedAt to keep deployment size manageable
+  // Modern Next.js will generate the rest on-demand and cache them
+  return products.slice(0, 100).map((product) => ({
     slug: product.slug,
   }));
 }

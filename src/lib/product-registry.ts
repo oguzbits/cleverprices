@@ -7,7 +7,8 @@ import {
   type Price,
 } from "@/db/schema";
 import { and, asc, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
-import { cacheLife, unstable_cache } from "next/cache";
+import { unstable_cache } from "next/cache";
+import { PRICE_REVALIDATE_SECONDS } from "./site-config";
 import { calculateProductMetrics } from "./utils/products";
 
 /**
@@ -211,7 +212,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
     fetchProducts,
     [`category-products-${category}`],
     {
-      revalidate: 3600, // Cache for 1 hour
+      revalidate: PRICE_REVALIDATE_SECONDS,
       tags: [`category-${category}`],
     },
   );
@@ -409,7 +410,7 @@ const getCachedDeals = unstable_cache(
   },
   ["best-deals-v8"],
   {
-    revalidate: 3600,
+    revalidate: PRICE_REVALIDATE_SECONDS,
     tags: ["products", "deals", "v8"],
   },
 );
@@ -485,7 +486,7 @@ const getCachedPopular = unstable_cache(
   },
   ["popular-deals-v8"],
   {
-    revalidate: 3600,
+    revalidate: PRICE_REVALIDATE_SECONDS,
     tags: ["products", "popular", "v8"],
   },
 );
@@ -568,7 +569,7 @@ const getCachedNew = unstable_cache(
   },
   ["new-arrivals-v8"],
   {
-    revalidate: 3600,
+    revalidate: PRICE_REVALIDATE_SECONDS,
     tags: ["products", "new", "v8"],
   },
 );
