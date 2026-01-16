@@ -93,7 +93,7 @@ export default async function DedicatedCategoryPage({
       getCategoryDeals(categorySlug as CategorySlug, 8, DEFAULT_COUNTRY),
     ]);
 
-    // Transform products for the component
+    // Transform products to LeanProduct format for consistent card styling
     const transformProduct = (p: {
       title: string;
       slug: string;
@@ -101,14 +101,33 @@ export default async function DedicatedCategoryPage({
       brand: string;
       category: string;
       prices: Record<string, number>;
+      rating?: number;
+      reviewCount?: number;
+      salesRank?: number;
+      capacity?: number;
+      capacityUnit?: string;
+      formFactor?: string;
+      listPrice?: Record<string, number>;
+      savings?: number;
+      pricePerUnit?: number;
+      variationAttributes?: string;
     }) => ({
-      title: p.title,
-      price: p.prices[DEFAULT_COUNTRY] || 0,
       slug: p.slug,
+      title: p.title,
       image: p.image,
+      price: p.prices[DEFAULT_COUNTRY] || 0,
+      pricePerUnit: p.pricePerUnit,
+      capacity: p.capacity,
+      capacityUnit: p.capacityUnit,
+      formFactor: p.formFactor,
       brand: p.brand,
+      rating: p.rating,
+      reviewCount: p.reviewCount,
+      salesRank: p.salesRank,
+      variationAttributes: p.variationAttributes,
       category: p.category,
-      offerCount: Object.keys(p.prices).length,
+      listPrice: p.listPrice?.[DEFAULT_COUNTRY],
+      savings: p.savings,
     });
 
     // Build breadcrumbs for the parent view

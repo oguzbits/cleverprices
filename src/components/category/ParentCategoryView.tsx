@@ -6,11 +6,9 @@ import * as React from "react";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryHubCard } from "@/components/category/CategoryHubCard";
-import {
-  ProductBestsellerGrid,
-  type BestsellerProduct,
-} from "@/components/category/ProductBestsellerGrid";
+import { ProductBestsellerGrid } from "@/components/category/ProductBestsellerGrid";
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
+import { type LeanProduct } from "@/lib/types";
 
 interface ParentCategoryViewProps {
   parentCategory: Omit<Category, "icon">;
@@ -18,10 +16,10 @@ interface ParentCategoryViewProps {
     popularFilters?: { label: string; params?: string; href?: string }[];
   })[];
   /** Bestseller products for the grid section */
-  bestsellers?: BestsellerProduct[];
+  bestsellers?: LeanProduct[];
   /** New products for the carousel section */
-  newProducts?: BestsellerProduct[];
-  deals?: BestsellerProduct[];
+  newProducts?: LeanProduct[];
+  deals?: LeanProduct[];
   breadcrumbItems?: { name: string; href?: string }[];
 }
 
@@ -71,6 +69,14 @@ export function ParentCategoryView({
                 price: p.price,
                 slug: p.slug,
                 image: p.image,
+                rating: p.rating,
+                ratingCount: p.reviewCount,
+                categoryName: p.category,
+                discountRate: p.savings
+                  ? Math.round(p.savings * 100)
+                  : undefined,
+                isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
+                variationAttributes: p.variationAttributes,
               }))}
             />
           </section>
@@ -85,7 +91,15 @@ export function ParentCategoryView({
                 price: p.price,
                 slug: p.slug,
                 image: p.image,
-                badgeText: "Deal",
+                rating: p.rating,
+                ratingCount: p.reviewCount,
+                categoryName: p.category,
+                discountRate: p.savings
+                  ? Math.round(p.savings * 100)
+                  : undefined,
+                isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
+                variationAttributes: p.variationAttributes,
+                badgeText: p.savings && p.savings > 0.05 ? undefined : "Deal", // Only show "Deal" if no discount badge
               }))}
             />
           </section>
