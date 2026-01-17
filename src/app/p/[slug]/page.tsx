@@ -108,40 +108,34 @@ export default async function ProductPage({ params }: Props) {
     return null;
   }
 
+  // 1. Fetch essential DB data (Lightning Fast)
   const product = await getProductBySlug(slug);
 
   if (!product) {
-    // Try to find product by ASIN suffix for old URL redirects
-    // Old slugs contained ASIN like "samsung-990-pro-...-b0cbyz6dd1"
     const newSlug = await findProductSlugByAsinSuffix(slug);
     if (newSlug && newSlug !== slug) {
-      // 301 permanent redirect to preserve SEO
       redirect(`/p/${newSlug}`);
     }
     notFound();
   }
 
-  // Try to get unified product data with multi-source offers
-  // Skip during build/CI to avoid external API dependencies and timeouts
+  // 2. Prepare slow live data as a Promise (Non-blocking)
   const isBuild =
     process.env.CI === "true" ||
     process.env.CI === "1" ||
     process.env.NEXT_PHASE === "phase-production-build";
 
-  // Fetch data in parallel to eliminate waterfalls (Vercel Best Practices: async-parallel)
-  const [unifiedProduct, similarProducts] = await Promise.all([
-    !isBuild
-      ? dataAggregator
-          .fetchProduct(product.asin, countryCode)
-          .catch((error) => {
-            console.error("Error fetching unified product:", error);
-            return null;
-          })
-      : Promise.resolve(null),
-    getSimilarProducts(product, 12, countryCode),
-  ]);
+  const unifiedProductPromise = !isBuild
+    ? dataAggregator.fetchProduct(product.asin, countryCode).catch((error) => {
+        console.error("Error fetching unified product:", error);
+        return null;
+      })
+    : Promise.resolve(null);
 
-  // Strip heavy data from similar products to keep RSC payload light (Vercel Best Practices: server-serialization)
+  // 3. Fetch similar products (Cached/Fast)
+  const similarProducts = await getSimilarProducts(product, 12, countryCode);
+
+  // Strip heavy data for cleaner RSC payload
   const liteSimilarProducts = similarProducts.map((p) => ({
     ...p,
     specifications: {},
@@ -149,11 +143,12 @@ export default async function ProductPage({ params }: Props) {
     priceHistory: [],
   }));
 
+  // 4. Render immediately!
   return (
     <IdealoProductPage
       product={product}
       countryCode={countryCode}
-      unifiedProduct={unifiedProduct}
+      unifiedProductPromise={unifiedProductPromise}
       similarProducts={liteSimilarProducts}
     />
   );

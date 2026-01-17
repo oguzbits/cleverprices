@@ -22,6 +22,7 @@ interface IdealoProductCardProps {
   discountRate?: number;
   isBestseller?: boolean;
   variationAttributes?: string;
+  countryCode?: string;
 }
 
 const StarIcon = ({
@@ -60,6 +61,7 @@ export function IdealoProductCard({
   discountRate,
   isBestseller,
   variationAttributes,
+  countryCode = "de",
 }: IdealoProductCardProps) {
   return (
     <PrefetchLink
@@ -165,6 +167,7 @@ export function IdealoProductCard({
         <div className="mt-auto">
           <LegalPrice
             price={price}
+            countryCode={countryCode}
             showAb
             priceClassName="text-[20px] text-[#ff6600]"
           />

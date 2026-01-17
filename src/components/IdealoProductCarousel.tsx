@@ -9,6 +9,7 @@
 
 "use client";
 
+import { type CountryCode } from "@/lib/countries";
 import { IdealoProductCard } from "@/components/landing/IdealoProductCard";
 import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -31,9 +32,10 @@ export interface CarouselProduct {
 }
 
 interface IdealoProductCarouselProps {
-  title: string;
+  title?: string;
   products: CarouselProduct[];
   className?: string;
+  countryCode?: CountryCode;
   /** Enable priority loading for first 4 images (for above-the-fold carousels) */
   priorityImages?: boolean;
 }
@@ -42,6 +44,7 @@ export function IdealoProductCarousel({
   title,
   products,
   className,
+  countryCode,
   priorityImages = false,
 }: IdealoProductCarouselProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -86,9 +89,11 @@ export function IdealoProductCarousel({
   if (products.length === 0) {
     return (
       <div className={cn("cn-productCarousel", "mb-8", className)}>
-        <div className="cn-productCarousel__header mb-4">
-          <h2 className="text-[20px] font-bold text-[#2d2d2d]">{title}</h2>
-        </div>
+        {title && (
+          <div className="cn-productCarousel__header mb-4">
+            <h2 className="text-[20px] font-bold text-[#2d2d2d]">{title}</h2>
+          </div>
+        )}
         <div className="flex items-center justify-center rounded bg-[#f9f9f9] py-12 text-center">
           <p className="text-sm text-[#999]">Keine Produkte verfügbar</p>
         </div>
@@ -99,9 +104,11 @@ export function IdealoProductCarousel({
   return (
     <div className={cn("cn-productCarousel", "mb-8", className)}>
       {/* Section Header */}
-      <div className="cn-productCarousel__header mb-4">
-        <h2 className="text-[20px] font-bold text-[#2d2d2d]">{title}</h2>
-      </div>
+      {title && (
+        <div className="cn-productCarousel__header mb-4">
+          <h2 className="text-[20px] font-bold text-[#2d2d2d]">{title}</h2>
+        </div>
+      )}
 
       {/* Product Carousel with Navigation */}
       <div className="group/carousel relative">
@@ -170,6 +177,7 @@ export function IdealoProductCarousel({
                 product.isBestseller || (priorityImages && index < 4)
               }
               variationAttributes={product.variationAttributes}
+              countryCode={countryCode}
             />
           ))}
         </div>
