@@ -212,10 +212,10 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   const getCachedProducts = unstable_cache(
     fetchProducts,
-    [`category-products-v13-${category}`],
+    [`category-products-v14-${category}`],
     {
       revalidate: PRICE_REVALIDATE_SECONDS,
-      tags: [`category-v12-${category}`],
+      tags: [`category-v14-${category}`],
     },
   );
 
@@ -252,10 +252,10 @@ export const getProductBySlug = cache(async function getProductBySlug(
 
   return unstable_cache(
     fetchProductBySlug,
-    [`product-slug-v1-${slug}`], // Include slug in key for uniqueness
+    [`product-slug-v2-${slug}`], // Include slug in key for uniqueness
     {
       revalidate: PRICE_REVALIDATE_SECONDS,
-      tags: [`product-${slug}`],
+      tags: [`product-v2-${slug}`],
     },
   )(slug);
 });
@@ -335,10 +335,10 @@ export const getSimilarProducts = cache(async function getSimilarProducts(
 
   return unstable_cache(
     fetchSimilarProducts,
-    [`similar-products-v3`], // Key parts (args are hashed automatically)
+    [`similar-products-v4`], // Key parts (args are hashed automatically)
     {
       revalidate: PRICE_REVALIDATE_SECONDS,
-      tags: [`similar-${product.category}`],
+      tags: [`similar-v4-${product.category}`],
     },
   )(product.category, product.slug, currentPrice, limit, countryCode);
 });
@@ -483,10 +483,10 @@ const getCachedDeals = unstable_cache(
 
     return results.map((r) => mapDbProduct(r.product, [r.price], [], true));
   },
-  ["best-deals-v10"],
+  ["best-deals-v11"],
   {
     revalidate: PRICE_REVALIDATE_SECONDS,
-    tags: ["products", "deals", "v9"],
+    tags: ["products", "deals", "v11"],
   },
 );
 
@@ -559,10 +559,10 @@ const getCachedPopular = unstable_cache(
       ),
     );
   },
-  ["popular-deals-v9"],
+  ["popular-deals-v10"],
   {
     revalidate: PRICE_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "v8"],
+    tags: ["products", "popular", "v10"],
   },
 );
 
@@ -642,10 +642,10 @@ const getCachedNew = unstable_cache(
       ),
     );
   },
-  ["new-arrivals-v9"],
+  ["new-arrivals-v10"],
   {
     revalidate: PRICE_REVALIDATE_SECONDS,
-    tags: ["products", "new", "v8"],
+    tags: ["products", "new", "v10"],
   },
 );
 
