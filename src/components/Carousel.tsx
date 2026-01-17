@@ -96,6 +96,8 @@ export const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
             scrollPaddingLeft: "1rem",
             scrollPaddingRight: "1rem",
             touchAction: "pan-x",
+            overscrollBehaviorY: "contain",
+            overscrollBehaviorX: "auto",
           }}
         >
           {React.Children.map(children, (child) => (
