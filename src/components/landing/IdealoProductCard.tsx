@@ -1,11 +1,8 @@
-"use client";
-
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import Image from "next/image";
-import React from "react";
 
 interface IdealoProductCardProps {
   title: string;
@@ -66,7 +63,7 @@ export function IdealoProductCard({
   return (
     <PrefetchLink
       href={`/p/${slug}`}
-      className="group relative flex h-[272px] w-[164px] shrink-0 flex-col border border-[#b4b4b4] bg-white no-underline transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[240px]"
+      className="group relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col border border-[#b4b4b4] bg-white no-underline transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[240px]"
     >
       {/* Badges Area - top left */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">

@@ -8,10 +8,10 @@
  * for consistent styling across the application.
  */
 
+import { type CountryCode } from "@/lib/countries";
+import { type LeanProduct } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { type LeanProduct } from "@/lib/types";
-import { type CountryCode } from "@/lib/countries";
 import { IdealoGridCard } from "./IdealoGridCard";
 
 interface ProductBestsellerGridProps {
@@ -50,11 +50,12 @@ export function ProductBestsellerGrid({
 
       {/* Product Grid - Using IdealoGridCard for consistent styling */}
       <div className="grid grid-cols-2 gap-0 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-        {products.map((product) => (
+        {products.slice(0, 4).map((product, index) => (
           <IdealoGridCard
             key={product.slug}
             product={product}
             countryCode={countryCode}
+            priority={index < 4}
           />
         ))}
       </div>

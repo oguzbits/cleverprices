@@ -17,25 +17,27 @@
  * └── sr-resultItemTile__badges_eYrH1
  */
 
+import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { PrefetchLink } from "@/components/ui/PrefetchLink";
 
+import { LegalPrice } from "@/components/ui/LegalPrice";
 import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
-import { LegalPrice } from "@/components/ui/LegalPrice";
 
 interface IdealoListCardProps {
   product: LeanProduct;
   countryCode: CountryCode;
   className?: string;
+  priority?: boolean;
 }
 
 export function IdealoListCard({
   product,
   countryCode,
   className,
+  priority = false,
 }: IdealoListCardProps) {
   const countryConfig = getCountryByCode(countryCode);
 
@@ -71,6 +73,7 @@ export function IdealoListCard({
               src={product.image}
               alt={product.title}
               fill
+              priority={priority}
               className="object-contain p-2"
               sizes="168px"
               style={{ objectFit: "contain" }}

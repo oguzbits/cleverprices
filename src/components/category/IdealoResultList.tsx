@@ -2,24 +2,13 @@
  * Idealo Result List Component
  *
  * Wrapper for product grid/list that matches Idealo's exact HTML structure.
- *
- * Grid mode:
- * <div class="sr-resultList_NAJkZ resultList--GRID">
- *   <div class="sr-resultList__item_m6xdA">...</div>
- * </div>
- *
- * List mode:
- * <div class="sr-resultList_NAJkZ sr-resultList--LIST_MXZb5">
- *   <div class="sr-resultList__item_m6xdA">...</div>
- * </div>
  */
 import { type CountryCode } from "@/lib/countries";
-import { cn } from "@/lib/utils";
 import { type LeanProduct } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 import { IdealoGridCard } from "./IdealoGridCard";
 import { IdealoListCard } from "./IdealoListCard";
-import { type LocalizedProduct } from "@/lib/server/category-products";
 
 interface IdealoResultListProps {
   products: LeanProduct[];
@@ -53,11 +42,12 @@ export function IdealoResultList({
           className,
         )}
       >
-        {products.map((product) => (
+        {products.map((product, index) => (
           <IdealoListCard
             key={product.id || product.slug}
             product={product}
             countryCode={countryCode}
+            priority={index < 8}
           />
         ))}
       </div>
@@ -77,11 +67,12 @@ export function IdealoResultList({
         className,
       )}
     >
-      {products.map((product) => (
+      {products.map((product, index) => (
         <IdealoGridCard
           key={product.id || product.slug}
           product={product}
           countryCode={countryCode}
+          priority={index < 8}
         />
       ))}
     </div>

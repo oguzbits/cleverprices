@@ -17,25 +17,27 @@
  * │   └── sr-resultItemTile__badges_eYrH1 (Bestseller)
  */
 
+import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { PrefetchLink } from "@/components/ui/PrefetchLink";
 
+import { LegalPrice } from "@/components/ui/LegalPrice";
 import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
-import { LegalPrice } from "@/components/ui/LegalPrice";
 
 interface IdealoGridCardProps {
   product: LeanProduct;
   countryCode: CountryCode;
   className?: string;
+  priority?: boolean;
 }
 
 export function IdealoGridCard({
   product,
   countryCode,
   className,
+  priority = false,
 }: IdealoGridCardProps) {
   const countryConfig = getCountryByCode(countryCode);
 
@@ -79,6 +81,7 @@ export function IdealoGridCard({
               src={product.image}
               alt={product.title}
               fill
+              priority={priority}
               className="object-contain p-2"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 168px"
               style={{ objectFit: "contain" }}
