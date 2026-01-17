@@ -97,7 +97,12 @@ export function CategoryNav({ country }: { country: string }) {
           ref={scrollRef}
           onScroll={checkScroll}
           className="scrollbar-hide flex h-[80px] items-center justify-center gap-6 overflow-x-auto"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          style={{
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            touchAction: "pan-x",
+            overscrollBehavior: "none",
+          }}
         >
           {/* All Categories Button */}
           <Link
