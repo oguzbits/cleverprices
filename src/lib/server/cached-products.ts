@@ -2,6 +2,7 @@ import {
   getAllProductSlugs as getAllProductSlugsSync,
   getAllProducts as getAllProductsSync,
   getBestDeals as getBestDealsSync,
+  getDiverseMostPopular as getDiverseMostPopularSync,
   getMostPopular as getMostPopularSync,
   getNewArrivals as getNewArrivalsSync,
   type Product,
@@ -45,4 +46,11 @@ export async function getNewArrivals(
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
   return getNewArrivalsSync(limit, countryCode, condition);
+}
+
+export async function getDiverseMostPopular(
+  itemsPerCategory: number = 10,
+  countryCode: string = "de",
+): Promise<Product[]> {
+  return getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }

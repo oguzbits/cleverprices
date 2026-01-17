@@ -6,6 +6,7 @@ import {
   getBestDeals,
   getMostPopular,
   getNewArrivals,
+  getDiverseMostPopular,
 } from "@/lib/server/cached-products";
 import Script from "next/script";
 
@@ -14,11 +15,10 @@ export async function HomeContent({ country }: { country: CountryCode }) {
   const countryCode = countryConfig?.code || country;
 
   // Fetch enough data for curation with margin for filtering
-  // Reduced from 2000/200/250 to 100/50/50 - curation only uses 5-12 items per section (Vercel Best Practices: server-serialization)
   const [rawDeals, rawPopular, rawNew] = await Promise.all([
-    getBestDeals(50, countryCode, "New"),
-    getMostPopular(100, countryCode, "New"),
-    getNewArrivals(50, countryCode, "New"),
+    getBestDeals(80, countryCode, "New"),
+    getDiverseMostPopular(15, countryCode), // Top 15 products FROM EVERY category (diverse candidates)
+    getNewArrivals(60, countryCode, "New"),
   ]);
 
   // Global duplicate tracker across ALL sections

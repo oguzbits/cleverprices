@@ -175,6 +175,7 @@ import { cache } from "react";
 // Use React.cache for per-request deduplication (Vercel Best Practices: server-cache-react)
 export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
+  stripHeavyData: boolean = false,
 ): Promise<Product[]> {
   const fetchProducts = async () => {
     const prods = await db
@@ -193,9 +194,11 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
       const mapped = mapDbProduct(
         p,
         prs.filter((pr) => pr.productId === p.id),
+        [],
+        stripHeavyData,
       );
-      // OPTIMIZATION: Strip heavy data not needed for category listing
-      mapped.features = [];
+      // Explicitly clear features if not already stripped by mapDbProduct
+      if (!stripHeavyData) mapped.features = [];
       return mapped;
     });
   };
@@ -389,6 +392,8 @@ export async function searchProducts(
       mapDbProduct(
         p,
         prs.filter((pr) => pr.productId === p.id),
+        [],
+        true, // Strip heavy data for search results
       ),
     );
   } catch (error) {
@@ -412,6 +417,8 @@ export async function searchProducts(
       mapDbProduct(
         p,
         fallbackPrs.filter((pr) => pr.productId === p.id),
+        [],
+        true, // Strip heavy data for search results (fallback)
       ),
     );
   }
@@ -600,6 +607,59 @@ export async function getMostPopular(
     );
   }
   return getCachedPopular(limit, countryCode, condition);
+}
+
+/**
+ * FETCHING OPTIMIZATION: Get a diverse set of popular products (Top N per category)
+ * This uses a SQL Window Function to ensure we get candidates from all categories
+ * instead of just 200 items from the most popular category.
+ */
+export async function getDiverseMostPopular(
+  itemsPerCategory: number = 10,
+  countryCode: string = "de",
+): Promise<Product[]> {
+  const result = await client.execute({
+    sql: `
+    WITH RankedProducts AS (
+      SELECT 
+        id,
+        category,
+        ROW_NUMBER() OVER (
+          PARTITION BY category 
+          ORDER BY COALESCE(sales_rank, 10000000) ASC, review_count DESC
+        ) as rank
+      FROM products
+      WHERE condition = 'New'
+    )
+    SELECT id FROM RankedProducts WHERE rank <= ?
+  `,
+    args: [itemsPerCategory],
+  });
+  const ids = result.rows.map((r: any) => Number(r.id));
+
+  if (ids.length === 0) return [];
+
+  // 2. Fetch full (lite) data for these specific IDs
+  const prods = await db
+    .select()
+    .from(products)
+    .where(inArray(products.id, ids));
+
+  const prs = await db
+    .select()
+    .from(prices)
+    .where(
+      and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+    );
+
+  return prods.map((p) =>
+    mapDbProduct(
+      p,
+      prs.filter((pr) => pr.productId === p.id),
+      [],
+      true, // Strip heavy data (Home curation doesn't need specs)
+    ),
+  );
 }
 
 const getCachedNew = unstable_cache(

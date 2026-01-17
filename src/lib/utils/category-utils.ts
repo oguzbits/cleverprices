@@ -1,5 +1,5 @@
-import { Product } from "@/lib/product-registry";
 import { allCategories, CategorySlug } from "@/lib/categories";
+import type { LocalizedProduct } from "../server/category-products";
 
 export interface FilterState {
   search: string;
@@ -18,11 +18,11 @@ export interface FilterState {
  * Utility to filter products based on the current filter state
  */
 export function filterProducts(
-  products: Product[],
+  products: LocalizedProduct[],
   filters: FilterState,
   categorySlug: string,
   unitLabel: string,
-): Product[] {
+): LocalizedProduct[] {
   let filtered = [...products];
 
   // 1. Search Filter
@@ -62,19 +62,19 @@ export function filterProducts(
     // Capacity (as exact choice, e.g. for GPU)
     if (
       filters.capacity?.length > 0 &&
-      !filters.capacity.includes(((p as any).capacity || "").toString())
+      !filters.capacity.includes((p.capacity || "").toString())
     ) {
       return false;
     }
 
     // Price
-    const price = (p as any).price || 0;
+    const price = p.price || 0;
     if (filters.minPrice !== null && price < filters.minPrice) return false;
     if (filters.maxPrice !== null && (price === 0 || price > filters.maxPrice))
       return false;
 
     // Capacity Range (Storage/PSU)
-    const cap = p.normalizedCapacity ?? p.capacity;
+    const cap = p.capacity || 0;
     if (filters.minCapacity !== null) {
       const minValReal =
         unitLabel === "TB" ? filters.minCapacity * 1000 : filters.minCapacity;
@@ -95,9 +95,7 @@ export function filterProducts(
 
         const selected = filters[group.field];
         if (Array.isArray(selected) && selected.length > 0) {
-          const pVal = String(
-            (p as any)[group.field] || p.specifications?.[group.field] || "",
-          );
+          const pVal = String((p as any)[group.field] || "");
           if (!selected.includes(pVal)) return false;
         }
       }
@@ -159,16 +157,13 @@ export function sortProducts(
  * Utility to discover all unique values for a field in a list of products
  */
 export function getUniqueFieldValues(
-  products: Product[],
+  products: LocalizedProduct[],
   field: string,
 ): string[] {
   const values = new Set<string>();
 
   products.forEach((p) => {
     let val = (p as any)[field];
-    if (val === undefined || val === null || val === "") {
-      val = p.specifications?.[field];
-    }
     if (val === undefined || val === null || val === "") return;
 
     if (Array.isArray(val)) {

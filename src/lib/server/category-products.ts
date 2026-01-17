@@ -6,17 +6,34 @@ import {
   getLocalizedProductData,
 } from "@/lib/utils/products";
 import { calculateDesirabilityScore } from "./scoring";
+import { unstable_cache } from "next/cache";
+import { PRICE_REVALIDATE_SECONDS } from "../site-config";
 
-export interface LocalizedProduct extends Omit<
-  Product,
-  "asin" | "title" | "price"
-> {
+export interface LocalizedProduct {
+  id: number;
+  slug: string;
   asin: string;
   title: string;
   price: number;
   pricePerUnit: number;
   popularityScore: number;
   savings: number;
+  listPrice?: number;
+  category: string;
+  image: string;
+  brand: string;
+  rating: number;
+  reviewCount: number;
+  salesRank?: number;
+  condition: string;
+  capacity: number;
+  capacityUnit: string;
+  formFactor: string;
+  technology: string;
+  socket?: string;
+  cores?: string;
+  pricesLastUpdated?: Record<string, string>;
+  variationAttributes?: string;
 }
 
 export interface FilterParams {
@@ -66,6 +83,100 @@ function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
 }
 
 /**
+ * RE-USABLE CACHED LAYER: Localizes and scores all products in a category.
+ * This is expensive (scoring, JSON parsing, mapping), so we cache it for 11h.
+ */
+const getCachedLocalizedCategoryProducts = unstable_cache(
+  async (
+    categorySlug: string,
+    countryCode: string,
+  ): Promise<LocalizedProduct[]> => {
+    const rawProducts = await getProductsByCategory(categorySlug);
+
+    const mapped = rawProducts
+      .map((p) => {
+        const { price, title, asin } = getLocalizedProductData(p, countryCode);
+        if (price === null || price === 0) return null;
+
+        // Extract socket and cores from specifications or title fallback
+        let socket =
+          p.specifications?.Socket || p.specifications?.["Socket-Typ"];
+        let cores = p.specifications?.Cores || p.specifications?.Kerne;
+
+        if (categorySlug === "cpu") {
+          if (!socket) {
+            const socketMatch = title.match(
+              /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i,
+            );
+            if (socketMatch) {
+              socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
+            }
+          }
+          if (!cores) {
+            const coreMatch = title.match(/(\d+)\s?-?\s?(Core|Kerne)/i);
+            if (coreMatch) {
+              cores = parseInt(coreMatch[1]).toString();
+            }
+          }
+        }
+
+        const enhanced = calculateProductMetrics(p, price || 0);
+        const { popularityScore } = calculateDesirabilityScore(
+          p,
+          price,
+          title,
+          "category",
+        );
+
+        const avg90 = p.priceAvg90?.[countryCode] || 0;
+        const avg30 = p.priceAvg30?.[countryCode] || 0;
+        const refPrice = avg90 || avg30;
+
+        const savings =
+          refPrice && refPrice > price ? (refPrice - price) / refPrice : 0;
+        const displayListPrice =
+          refPrice && refPrice > price ? refPrice : undefined;
+
+        // Stripping heavy DB data here to save cache size
+        return {
+          id: p.id || 0,
+          slug: p.slug,
+          asin,
+          title,
+          price,
+          pricePerUnit: enhanced.pricePerUnit || 0,
+          popularityScore,
+          savings,
+          listPrice: displayListPrice,
+          category: p.category,
+          image: p.image || "",
+          brand: p.brand,
+          rating: p.rating || 0,
+          reviewCount: p.reviewCount || 0,
+          salesRank: p.salesRank,
+          condition: p.condition,
+          capacity: p.capacity,
+          capacityUnit: p.capacityUnit,
+          formFactor: p.formFactor,
+          technology: p.technology || "",
+          socket,
+          cores,
+          pricesLastUpdated: p.pricesLastUpdated,
+          variationAttributes: p.variationAttributes,
+        } as LocalizedProduct;
+      })
+      .filter((p): p is LocalizedProduct => p !== null);
+
+    return mapped;
+  },
+  ["localized-category-v3"],
+  {
+    revalidate: PRICE_REVALIDATE_SECONDS,
+    tags: ["category-products"],
+  },
+);
+
+/**
  * Server-side function to get and filter products for a category
  * This replaces the client-side useCategoryProducts hook
  */
@@ -74,83 +185,13 @@ export async function getCategoryProducts(
   countryCode: string,
   filterParams: FilterParams,
 ) {
-  console.log(
-    `[DEBUG] getCategoryProducts: slug=${categorySlug}, sort=${filterParams.sort}`,
+  // Load pre-localized and scored products from CACHE (Super Fast)
+  const localizedProducts = await getCachedLocalizedCategoryProducts(
+    categorySlug,
+    countryCode,
   );
-
-  // Load raw products for this category
-  const rawProducts = await getProductsByCategory(categorySlug);
   const category = allCategories[categorySlug as CategorySlug];
   const unitLabel = category?.unitType || "TB";
-
-  // Localize products for this country
-  const localizedProducts = rawProducts
-    .map((p) => {
-      const { price, title, asin } = getLocalizedProductData(p, countryCode);
-      if (price === null || price === 0) return null;
-
-      // Extract socket and cores from specifications or title fallback
-      let socket = p.specifications?.Socket || p.specifications?.["Socket-Typ"];
-      let cores = p.specifications?.Cores || p.specifications?.Kerne;
-
-      if (categorySlug === "cpu") {
-        if (!socket) {
-          const socketMatch = title.match(
-            /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i,
-          );
-          if (socketMatch) {
-            socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
-          }
-        }
-        if (!cores) {
-          const coreMatch = title.match(/(\d+)\s?-?\s?(Core|Kerne)/i);
-          if (coreMatch) {
-            cores = parseInt(coreMatch[1]).toString();
-          }
-        }
-      }
-
-      const enhanced = calculateProductMetrics(p, price || 0);
-
-      // --- Popularity Scoring (Shared Logic) ---
-      const { popularityScore } = calculateDesirabilityScore(
-        p,
-        price,
-        title,
-        "category",
-      );
-
-      // --- Savings Calculation ---
-      // Prioritize real market history (avg90, avg30) over MSRP (listPrice)
-      // because listPrice can often be placeholder data (e.g., 1000€)
-      const listPrice = p.listPrice?.[countryCode] || 0;
-      const avg90 = p.priceAvg90?.[countryCode] || 0;
-      const avg30 = p.priceAvg30?.[countryCode] || 0;
-
-      // Realistic Reference Price Logic:
-      // 1. Prefer 90-day market average
-      // 2. Fallback to 30-day market average
-      let refPrice = avg90 || avg30;
-
-      const savings =
-        refPrice && refPrice > price ? (refPrice - price) / refPrice : 0;
-      const displayListPrice =
-        refPrice && refPrice > price ? refPrice : undefined;
-
-      return {
-        ...p,
-        socket,
-        cores,
-        price,
-        title,
-        asin,
-        pricePerUnit: enhanced.pricePerUnit,
-        popularityScore,
-        savings,
-        listPrice: displayListPrice, // Override with what we used for comparison
-      } as LocalizedProduct;
-    })
-    .filter((p): p is LocalizedProduct => p !== null);
 
   // Map the sort parameter from TopBar to sortBy/sortOrder
   const mappedSort = filterParams.sort
@@ -218,7 +259,7 @@ export async function getCategoryProducts(
 
   // Apply sorting
   const sorted = sortProducts(
-    filtered as LocalizedProduct[],
+    filtered,
     filters.sortBy,
     filters.sortOrder,
   ) as LocalizedProduct[];
@@ -246,10 +287,11 @@ export async function getCategoryProducts(
 
   return {
     products: paginatedProducts,
-    totalCount: rawProducts.length,
+    allSortedProducts: sorted, // Return the full sorted list for filter calculation
+    totalCount: localizedProducts.length,
     filteredCount: sorted.length,
     unitLabel,
-    hasProducts: rawProducts.length > 0,
+    hasProducts: localizedProducts.length > 0,
     filters, // Return parsed filters for UI
     lastUpdated:
       localizedProducts.length > 0

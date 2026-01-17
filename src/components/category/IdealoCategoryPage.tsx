@@ -88,26 +88,8 @@ export async function IdealoCategoryPage({
     pagination,
   } = filteredData;
 
-  // Strip heavy data from products before passing to Client Components (especially features/specifications)
-  // (Vercel Best Practices: server-serialization)
-  const products = rawFilteredProducts.map((p) => ({
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    image: p.image,
-    price: p.price,
-    pricePerUnit: p.pricePerUnit,
-    capacity: p.capacity,
-    capacityUnit: p.capacityUnit,
-    formFactor: p.formFactor,
-    brand: p.brand,
-    rating: p.rating,
-    reviewCount: p.reviewCount,
-    salesRank: p.salesRank,
-    variationAttributes: p.variationAttributes,
-    listPrice: p.listPrice?.[countryCode],
-    savings: p.savings,
-  }));
+  // Products are already localized and stripped in the server function layer
+  const products = rawFilteredProducts;
 
   // Pre-calculate filter options on the server to avoid passing all products twice/thrice
   const filterGroupOptions: Record<string, string[]> = {};
