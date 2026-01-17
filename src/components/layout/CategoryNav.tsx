@@ -102,6 +102,9 @@ export function CategoryNav({ country }: { country: string }) {
             msOverflowStyle: "none",
             touchAction: "pan-x",
             overscrollBehavior: "none",
+            overflowY: "hidden",
+            WebkitOverflowScrolling: "touch",
+            height: "100%",
           }}
         >
           {/* All Categories Button */}

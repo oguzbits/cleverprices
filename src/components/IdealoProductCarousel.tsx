@@ -157,6 +157,8 @@ export function IdealoProductCarousel({
             msOverflowStyle: "none",
             touchAction: "pan-x",
             overscrollBehavior: "none",
+            overflowY: "hidden",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {products.map((product, index) => (

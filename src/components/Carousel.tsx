@@ -87,7 +87,7 @@ export const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
         <div
           ref={scrollContainerRef}
           className={cn(
-            "scrollbar-hide -mb-4 flex items-stretch gap-2 overflow-x-auto px-4 pb-8 sm:px-0",
+            "scrollbar-hide -mb-4 flex items-start gap-2 overflow-x-auto px-4 pb-8 sm:px-0",
             className,
           )}
           style={{
@@ -97,6 +97,8 @@ export const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
             scrollPaddingRight: "1rem",
             touchAction: "pan-x",
             overscrollBehavior: "none",
+            overflowY: "hidden",
+            WebkitOverflowScrolling: "touch",
           }}
         >
           {React.Children.map(children, (child) => (
