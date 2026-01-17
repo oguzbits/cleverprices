@@ -142,7 +142,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       // US child category pages (product listing pages)
       Object.values(allCategories)
-        .filter((cat) => cat.parent) // Only categories with parents
+        .filter((cat) => cat.parent && !cat.hidden) // Only categories with parents and not hidden
         .forEach((category) => {
           const fullPath = getCategoryPath(category.slug);
           const alternatesPath = `/${category.parent}/${category.slug}`;
@@ -196,7 +196,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       // Non-US child category pages (product listing pages)
       Object.values(allCategories)
-        .filter((cat) => cat.parent) // Only categories with parents
+        .filter((cat) => cat.parent && !cat.hidden) // Only categories with parents and not hidden
         .forEach((category) => {
           const fullPath = getCategoryPath(category.slug);
           const alternatesPath = `/${category.parent}/${category.slug}`;

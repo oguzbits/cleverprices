@@ -184,6 +184,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/household-electronics.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Kühlschränke", href: "/kuehlschraenke" },
       { label: "Waschmaschinen", href: "/waschmaschinen" },
@@ -370,6 +371,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/vacuum-cleaner.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Dyson", params: "brand=Dyson" },
       { label: "Saugroboter", params: "type=robot" },
@@ -430,6 +432,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/espresso-machine.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Kaffeevollautomat", params: "type=fully-automatic" },
       { label: "Siebträgermaschine", params: "type=portafilter" },
@@ -475,6 +478,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/refrigerator.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Bosch", params: "brand=bosch" },
       { label: "Liebherr", params: "brand=liebherr" },
@@ -490,6 +494,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/electric-toothbrush.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Oral-B iO", params: "model=io" },
       { label: "Philips Sonicare", params: "model=sonicare" },
@@ -504,6 +509,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/washing-machine.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Miele", params: "brand=miele" },
       { label: "Bosch", params: "brand=bosch" },
@@ -533,6 +539,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/dishwasher.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Bosch", params: "brand=Bosch" },
       { label: "Miele", params: "brand=Miele" },
@@ -578,6 +585,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/oven.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Bosch", params: "brand=Bosch" },
       { label: "Siemens", params: "brand=Siemens" },
@@ -592,6 +600,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/cooktop.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Induktion", params: "type=induction" },
       { label: "Kochfeldabzug", params: "features=extractor" },
@@ -634,6 +643,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/clothes-dryer.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Wärmepumpentrockner", params: "type=heat-pump" },
       { label: "Miele", params: "brand=Miele" },
@@ -648,6 +658,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/kitchen-machine.jpg",
+    hidden: true,
     popularFilters: [
       { label: "KitchenAid", params: "brand=KitchenAid" },
       { label: "Bosch MUM", params: "series=mum" },
@@ -662,6 +673,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/beard-trimmer.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Philips OneBlade", params: "model=oneblade" },
       { label: "Braun", params: "brand=Braun" },
@@ -691,6 +703,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/microwave.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Einbau-Mikrowelle", params: "type=built-in" },
       { label: "Samsung", params: "brand=Samsung" },
@@ -704,6 +717,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/cooker-hood.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Kopffreihaube", params: "type=angled" },
       { label: "60 cm breit", params: "width=60" },
@@ -732,6 +746,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/freezer.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Liebherr", params: "brand=Liebherr" },
       { label: "NoFrost", params: "features=nofrost" },
@@ -745,6 +760,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/stove.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Induktionsherd", params: "type=induction" },
       { label: "Herd-Set", params: "type=set" },
@@ -1206,6 +1222,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     icon: Zap,
     categoryType: "standard",
     imageUrl: "/images/category/power-tools.jpg",
+    hidden: true,
   },
   akkuschrauber: {
     name: "Akkuschrauber",
@@ -1214,6 +1231,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektrowerkzeuge",
     categoryType: "standard",
     imageUrl: "/images/category/drill.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Makita 18V", params: "series=18v" },
       { label: "Bosch Professional", params: "brand=Bosch+Professional" },
@@ -1226,6 +1244,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektrowerkzeuge",
     categoryType: "standard",
     imageUrl: "/images/category/hammer-drill.jpg",
+    hidden: true,
   },
   kreissaegen: {
     name: "Kreissägen",
@@ -1234,6 +1253,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektrowerkzeuge",
     categoryType: "standard",
     imageUrl: "/images/category/circular-saw.jpg",
+    hidden: true,
     popularFilters: [
       { label: "Tauchsäge", params: "type=plunge" },
       { label: "Festool", params: "brand=Festool" },
@@ -1246,6 +1266,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektrowerkzeuge",
     categoryType: "standard",
     imageUrl: "/images/category/sander.jpg",
+    hidden: true,
   },
   fraesmaschinen: {
     name: "Fräsmaschinen",
@@ -1254,6 +1275,7 @@ const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektrowerkzeuge",
     categoryType: "standard",
     imageUrl: "/images/category/router-tool.jpg",
+    hidden: true,
   },
   "3d-drucker": {
     name: "3D-Drucker",
