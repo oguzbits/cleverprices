@@ -85,11 +85,11 @@ export async function IdealoProductOffers({
       <div className="rounded-b-md border border-[#b4b4b4] border-t-[#dcdcdc]">
         {/* Column Headers */}
         <div className="productOffers-listHeadline hidden border-b border-[#dcdcdc] bg-white text-[11px] font-bold text-[#2d2d2d] min-[960px]:flex">
-          <div className="w-[18%] px-[15px] py-2">Angebotsbezeichnung</div>
-          <div className="w-[14%] px-[15px] py-2">Preis & Versand</div>
-          <div className="w-[14%] px-[15px] py-2">Zahlungsarten*</div>
-          <div className="w-[16%] px-[15px] py-2 text-center">Lieferung</div>
-          <div className="w-[20%] px-[15px] py-2">Shop</div>
+          <div className="w-[18%] px-[12px] py-2">Angebotsbezeichnung</div>
+          <div className="w-[18%] px-[12px] py-2">Preis & Versand</div>
+          <div className="w-[12%] px-[12px] py-2">Zahlungsarten*</div>
+          <div className="w-[14%] px-[12px] py-2 text-center">Lieferung</div>
+          <div className="w-[20%] px-[12px] py-2">Shop</div>
           <div className="w-[18%] py-2"></div>
         </div>
 
@@ -112,7 +112,7 @@ export async function IdealoProductOffers({
               </div>
 
               {/* Desktop Title */}
-              <div className="hidden min-[600px]:block min-[600px]:w-full min-[600px]:min-w-0 min-[600px]:self-start min-[600px]:px-[15px] min-[600px]:pt-[7px] min-[840px]:w-[18%]">
+              <div className="hidden min-[600px]:block min-[600px]:w-full min-[600px]:min-w-0 min-[600px]:self-start min-[600px]:px-[12px] min-[600px]:pt-[7px] min-[840px]:w-[18%]">
                 <a
                   href={offer.affiliateLink}
                   target="_blank"
@@ -125,7 +125,7 @@ export async function IdealoProductOffers({
 
               <div className="flex w-full items-center justify-between min-[600px]:contents">
                 {/* Price Column */}
-                <div className="w-auto min-w-0 p-0 min-[600px]:w-[18%] min-[600px]:shrink-0 min-[600px]:self-start min-[600px]:px-[15px] min-[840px]:w-[14%]">
+                <div className="w-auto min-w-0 p-0 min-[600px]:w-[18%] min-[600px]:shrink-0 min-[600px]:self-start min-[600px]:px-[12px] min-[840px]:w-[18%]">
                   <div className="flex flex-col">
                     <a
                       href={offer.affiliateLink}
@@ -145,7 +145,7 @@ export async function IdealoProductOffers({
                 </div>
 
                 {/* Payment Methods */}
-                <div className="hidden min-[600px]:flex min-[600px]:w-[18%] min-[600px]:px-[15px] min-[600px]:pt-4 min-[840px]:w-[14%]">
+                <div className="hidden min-[600px]:flex min-[600px]:w-[18%] min-[600px]:px-[12px] min-[600px]:pt-4 min-[840px]:w-[12%]">
                   <div className="flex flex-wrap gap-[2px]">
                     {["Visa", "PayPal", "Rechnung"].map((m) => (
                       <PaymentMethodIcon key={m} method={m} />
@@ -154,7 +154,7 @@ export async function IdealoProductOffers({
                 </div>
 
                 {/* Delivery */}
-                <div className="hidden min-[600px]:block min-[600px]:w-[18%] min-[600px]:px-[15px] min-[840px]:w-[16%]">
+                <div className="hidden min-[600px]:block min-[600px]:w-[18%] min-[600px]:px-[12px] min-[840px]:w-[14%]">
                   <div className="text-xs leading-[1.2] text-[#2d2d2d]">
                     <span className="font-bold">
                       {offer.availability === "in_stock"
@@ -168,7 +168,7 @@ export async function IdealoProductOffers({
                 </div>
 
                 {/* Shop */}
-                <div className="flex flex-col items-center gap-1.5 text-center min-[600px]:w-[24%] min-[600px]:px-[15px] min-[840px]:w-[20%]">
+                <div className="flex flex-col items-center gap-1.5 text-center min-[600px]:w-[24%] min-[600px]:px-[12px] min-[840px]:w-[20%]">
                   <div className="flex h-[22px] w-[60px] items-center justify-center overflow-hidden rounded border border-[#eee] bg-[#f5f5f5] text-[9px] min-[600px]:h-[30px] min-[600px]:w-[80px] min-[600px]:text-[10px]">
                     {offer.seller || "Shop"}
                   </div>
@@ -181,7 +181,7 @@ export async function IdealoProductOffers({
                 </div>
 
                 {/* Button */}
-                <div className="min-[600px]:w-[22%] min-[600px]:px-[15px] min-[840px]:w-[18%]">
+                <div className="min-[600px]:w-[22%] min-[600px]:px-[12px] min-[840px]:w-[18%]">
                   <a
                     href={offer.affiliateLink}
                     target="_blank"
