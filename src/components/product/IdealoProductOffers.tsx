@@ -8,6 +8,7 @@ import type { Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Star } from "lucide-react";
+import { ClientDate } from "@/components/ui/ClientDate";
 
 interface OffersListProps {
   product: Product;
@@ -195,6 +196,25 @@ export async function IdealoProductOffers({
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* DISCLAIMER */}
+      <div className="mt-4 text-left text-[12px] text-[#767676]">
+        * Preise inkl. MwSt., ggf. zzgl. Versand. Preise und Verfügbarkeit
+        können sich ändern.
+        {(unifiedProduct?.lastUpdated ||
+          product.pricesLastUpdated?.[countryCode]) && (
+          <span className="mt-1 block">
+            Zuletzt aktualisiert:{" "}
+            <ClientDate
+              date={
+                unifiedProduct?.lastUpdated ||
+                product.pricesLastUpdated?.[countryCode] ||
+                new Date()
+              }
+            />
+          </span>
+        )}
       </div>
     </div>
   );
