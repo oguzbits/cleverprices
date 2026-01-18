@@ -72,10 +72,21 @@ Next.js will calculate the `width` based on the `sizes` prop or the explicit `wi
 
 - **Non-Amazon Images**: The loader passes non-Amazon images through untouched. If you use local images, they will be served as-is (unless you have a separate optimization pipeline).
 - **Amazon URL Changes**: If Amazon changes their URL structure for modifiers (currently `._[Mod]_`), the regex in `src/lib/image-loader.ts` might need updating.
-- **Quality Prop**: Currently, the loader ignores the `quality` prop (Amazon doesn't expose a simple URL param for compression quality in the same way).
+- **Quality Prop**: The loader now fully supports the `quality` prop by mapping it to Amazon's `QL` parameter.
+
+## Component Quality Standards
+
+To maintain a balance between visual quality and performance, we use the following standard quality levels across the application:
+
+| Component Type       | Usage Example                     | Recommended Quality |
+| :------------------- | :-------------------------------- | :------------------ |
+| **Hero Images**      | Product Detail main image         | `quality={75}`      |
+| **Grid/List Cards**  | Category pages, Bestsellers       | `quality={50}`      |
+| **Thumbnails**       | Search Modal results, Sidebar     | `quality={50}`      |
+| **Background/Small** | Gallery thumbnails, History items | `quality={30}`      |
 
 ## Benefits
 
 - **Vercel Usage**: **0%** (for product images).
-- **Performance**: Fast (Amazon CloudFront CDN).
-- **Cost**: Free.
+- **Performance**: Instant delivery through Amazon's CloudFront CDN with optimized file sizes.
+- **Cost**: 100% Free (zero Vercel optimization credits consumed).

@@ -65,7 +65,7 @@ CleverPrices is architected for maximum performance and efficiency, specifically
 - **Aggressive Field Pruning** - Heavy database fields (JSON specs, full price histories) are stripped before caching. This ensures category lists stay under the 2MB Vercel cache limit.
 - **Tiered ISR (Revalidation)** - Distinct revalidation cycles for different data (e.g., 6h for Products, 11h for Categories, 24h for Static pages) balance data freshness with build/compute costs.
 - **Native CSS Carousels** - No heavy JS libraries for sliders. Uses native browser `scroll-snap` for smooth 60fps scrolling with zero initial delay.
-- **Amazon CDN Offloading** - Uses a custom Image Loader to request exact-sized images directly from Amazon. Zero server-side resizing costs or latency.
+- **Amazon CDN Offloading** - Uses a custom Image Loader to request exact-sized images and custom quality levels directly from Amazon. Zero server-side resizing costs or latency.
 - **Edge Proxy Routing** - SEO redirects and legacy country enforcement happen at the network edge in ~10-20ms, bypassing the Node.js runtime entirely.
 
 ---
@@ -75,6 +75,7 @@ CleverPrices is architected for maximum performance and efficiency, specifically
 - **German Market Focus** - Optimized for DE hardware pricing with support for unit price analysis (e.g., € per TB).
 - **SEO & Redirects** - Automatic Edge-level redirects for legacy country URLs (US, UK, CA, FR, ES, IT).
 - **High Performance Caching** - Utilizes Next.js 16 "use cache" directive and Cache Components for extreme speed.
+- **Image Optimization** - Custom URL-based transformation (Size & Quality) to bypass Vercel limits.
 - **React Compiler** - Fully optimized with React 19 Compiler for minimal re-renders.
 - **URL-Based Filter State** - Shareable, bookmarkable filtered views using [nuqs](https://nuqs.47ng.com/).
 - **Modern MDX Blog** - Content-driven blog system using MDX with frontmatter support.
@@ -124,6 +125,7 @@ src/
 
 - **[PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)** - Key features, architecture, and edge cases.
 - **[WORKER.md](docs/WORKER.md)** - Maintainance, price updates, and cloud sync.
+- **[image-optimization.md](docs/image-optimization.md)** - Custom Amazon CDN optimization strategy.
 
 ---
 

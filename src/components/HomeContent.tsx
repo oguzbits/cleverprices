@@ -28,7 +28,7 @@ export default async function HomeContent({
   const [rawDeals, rawPopular, rawNew] = await Promise.all([
     getBestDeals(80, countryCode, "New"),
     getDiverseMostPopular(15, countryCode), // Top 15 products FROM EVERY category (diverse candidates)
-    getNewArrivals(500, countryCode, "New"),
+    getNewArrivals(100, countryCode, "New"),
   ]);
 
   // Global duplicate tracker across ALL sections

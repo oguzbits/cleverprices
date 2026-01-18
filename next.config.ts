@@ -56,8 +56,12 @@ const nextConfig: NextConfig = {
     loader: "custom",
     loaderFile: "./src/lib/image-loader.ts",
     formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
+    imageSizes: [
+      16, 32, 48, 64, 96, 128, 160, 200, 224, 256, 320, 350, 384, 400, 512,
+    ],
     minimumCacheTTL: 60,
-    qualities: [50, 75],
+    qualities: [30, 50, 75],
     remotePatterns: [
       {
         protocol: "https",
@@ -345,6 +349,20 @@ const nextConfig: NextConfig = {
         source: "/out/seagate-ironwolf-pro-16tb",
         destination: "/hard-drives?brand=Seagate&capacity=16",
         permanent: true,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Link",
+            value:
+              "<https://m.media-amazon.com>; rel=preconnect, <https://images-na.ssl-images-amazon.com>; rel=preconnect",
+          },
+        ],
       },
     ];
   },
