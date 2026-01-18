@@ -14,6 +14,8 @@ async function migrate() {
   const isDelta = process.argv.includes("--delta");
   const state = loadWorkerState();
   const lastSyncTime = isDelta ? state.lastCloudSync : 0;
+  // Convert MS to Seconds for SQLite query because Drizzle/LibSQL stores seconds by default
+  const queryTime = Math.floor(lastSyncTime / 1000);
   const lastSyncDate = new Date(lastSyncTime);
 
   console.log(
@@ -39,6 +41,16 @@ async function migrate() {
   console.log("📂 Opening local database...");
   const localDb = new Database("./data/cleverprices.db");
 
+  const ensureDate = (val: number | string | Date): Date => {
+    if (val instanceof Date) return val;
+    if (typeof val === "string") return new Date(val);
+    // If small number, assume seconds
+    if (typeof val === "number" && val < 10000000000) {
+      return new Date(val * 1000);
+    }
+    return new Date(val);
+  };
+
   // 1. DATA EXTRACTION
   console.log("📊 Reading local data...");
 
@@ -48,7 +60,7 @@ async function migrate() {
         ? "SELECT * FROM products WHERE updated_at > ?"
         : "SELECT * FROM products",
     )
-    .all(lastSyncTime) as any[];
+    .all(queryTime) as any[];
 
   const localPrices = localDb
     .prepare(
@@ -56,7 +68,7 @@ async function migrate() {
         ? "SELECT * FROM prices WHERE last_updated > ?"
         : "SELECT * FROM prices",
     )
-    .all(lastSyncTime) as any[];
+    .all(queryTime) as any[];
 
   const localOffers = localDb
     .prepare(
@@ -64,12 +76,12 @@ async function migrate() {
         ? "SELECT * FROM product_offers WHERE last_updated > ?"
         : "SELECT * FROM product_offers",
     )
-    .all(lastSyncTime) as any[];
+    .all(queryTime) as any[];
 
   const localHistory = isDelta
     ? (localDb
         .prepare("SELECT * FROM price_history WHERE recorded_at > ?")
-        .all(lastSyncTime) as any[])
+        .all(queryTime) as any[])
     : [];
 
   console.log(`\n📈 Sync Plan (Local -> Cloud):`);
@@ -125,7 +137,7 @@ async function migrate() {
         description: p.description,
         energyLabel: p.energy_label,
         historySeeded: p.history_seeded === 1,
-        updatedAt: p.updated_at ? new Date(p.updated_at) : new Date(),
+        updatedAt: ensureDate(p.updated_at || new Date()),
       }));
 
       try {
@@ -191,14 +203,7 @@ async function migrate() {
         const cloudId = asin ? asinToCloudId.get(asin) : null;
         if (!cloudId) continue;
 
-        let lastUpdatedDate: Date;
-        if (typeof pr.last_updated === "number") {
-          lastUpdatedDate = new Date(pr.last_updated);
-        } else if (typeof pr.last_updated === "string") {
-          lastUpdatedDate = new Date(pr.last_updated);
-        } else {
-          lastUpdatedDate = new Date();
-        }
+        const lastUpdatedDate = ensureDate(pr.last_updated || new Date());
 
         records.push({
           productId: cloudId,
@@ -285,9 +290,7 @@ async function migrate() {
           deliveryTime: off.delivery_time,
           merchantRating: off.merchant_rating,
           merchantReviewCount: off.merchant_review_count,
-          lastUpdated: off.last_updated
-            ? new Date(off.last_updated)
-            : new Date(),
+          lastUpdated: ensureDate(off.last_updated || new Date()),
         });
       }
 
@@ -338,7 +341,7 @@ async function migrate() {
             price: h.price,
             currency: h.currency,
             priceType: h.price_type,
-            recordedAt: new Date(h.recorded_at),
+            recordedAt: ensureDate(h.recorded_at),
           };
         })
         .filter(Boolean) as any[];
