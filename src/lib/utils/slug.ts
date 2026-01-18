@@ -24,7 +24,12 @@ export function generateProductSlug(
   capacityUnit?: string | null,
 ): string {
   // 1. Clean the title - remove common filler words and specs noise
-  let cleanTitle = title.toLowerCase();
+  let cleanTitle = title
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss");
 
   // Remove brand prefix if duplicated (e.g., "Samsung Samsung 990 PRO")
   if (brand) {
@@ -92,7 +97,7 @@ export function generateProductSlug(
     /\bgrafikkarte\b/gi,
     /\bgraphics\s*card\b/gi,
     /\bgpu\b/gi,
-    /\b\(?generalüberholt\)?\b/gi,
+    /\b\(?generalueberholt\)?\b/gi,
     /\b\(?renewed\)?\b/gi,
     /\b\(?refurbished\)?\b/gi,
     /\b\d+\s*gb\b/gi, // Remove inline capacity (we add it back correctly)
@@ -111,9 +116,9 @@ export function generateProductSlug(
     /\bpower\s*supply\b/gi,
     /\bpsu\b/gi,
     // German marketing phrases
-    /\bfür\s+gaming\b/gi,
+    /\bfuer\s+gaming\b/gi,
     /\bund\s+videobearbeitung\b/gi,
-    /\bfür\s+\w+\b/gi, // "Für X" patterns
+    /\bfuer\s+\w+\b/gi, // "Für X" patterns
     // Part numbers (typically end of title)
     /\b[a-z]{2,3}-[a-z0-9]+\b/gi, // Part numbers like "MZ-V9P4T0BW"
   ];

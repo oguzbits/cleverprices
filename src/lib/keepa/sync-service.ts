@@ -485,6 +485,7 @@ export async function upsertProductFromKeepa(
     .onConflictDoUpdate({
       target: products.asin,
       set: {
+        slug, // Update slug if title/logic changed
         title: keepaProduct.title || keepaProduct.asin,
         brand,
         gtin,

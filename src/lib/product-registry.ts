@@ -329,21 +329,32 @@ export const getProductBySlug = cache(async function getProductBySlug(
 export async function findProductSlugByAsinSuffix(
   oldSlug: string,
 ): Promise<string | undefined> {
-  // Extract potential ASIN from old slug (typically at the end like "...-b0cbyz6dd1")
-  // ASINs are 10 characters, alphanumeric
-  const asinMatch = oldSlug.match(/([a-z0-9]{10})$/i);
-  if (!asinMatch) return undefined;
+  // Extract potential ASIN from old slug
+  // 1. Try full 10-char ASIN (standard Amazon)
+  const fullAsinMatch = oldSlug.match(/([a-z0-9]{10})$/i);
+  if (fullAsinMatch) {
+    const [p] = await db
+      .select({ slug: products.slug })
+      .from(products)
+      .where(eq(products.asin, fullAsinMatch[1].toUpperCase()))
+      .limit(1);
+    if (p) return p.slug;
+  }
 
-  const potentialAsin = asinMatch[1].toUpperCase();
+  // 2. Try short 4-char suffix (common in our generated slugs)
+  const shortSuffixMatch = oldSlug.match(/-([a-z0-9]{4})$/i);
+  if (shortSuffixMatch) {
+    const suffix = shortSuffixMatch[1].toUpperCase();
+    // Search for products where ASIN ends with this suffix
+    const [p] = await db
+      .select({ slug: products.slug })
+      .from(products)
+      .where(sql`${products.asin} LIKE ${"%" + suffix}`)
+      .limit(1);
+    return p?.slug;
+  }
 
-  // Try to find product by ASIN
-  const [p] = await db
-    .select({ slug: products.slug })
-    .from(products)
-    .where(eq(products.asin, potentialAsin))
-    .limit(1);
-
-  return p?.slug;
+  return undefined;
 }
 
 const fetchSimilarProducts = async (
