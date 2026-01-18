@@ -68,9 +68,11 @@ export function IdealoProductCard({
               alt={title}
               fill
               className="object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 600px) 164px, 240px"
+              sizes="(max-width: 600px) 174px, 240px"
               quality={50}
               priority={isBestseller}
+              // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
+              fetchPriority={isBestseller ? "high" : "auto"}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gray-50 text-gray-300">

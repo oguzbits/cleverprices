@@ -132,7 +132,11 @@
   }
   body {
     @apply bg-background text-foreground font-sans text-sm antialiased;
-    font-family: var(--font-sans);
+    font-family:
+      var(--font-inter),
+      system-ui,
+      -apple-system,
+      sans-serif;
     overflow-x: clip;
   }
 
