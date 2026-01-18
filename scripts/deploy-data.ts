@@ -80,8 +80,14 @@ async function migrate() {
 
   const localHistory = isDelta
     ? (localDb
-        .prepare("SELECT * FROM price_history WHERE recorded_at > ?")
-        .all(queryTime) as any[])
+        .prepare(
+          `
+          SELECT * FROM price_history 
+          WHERE recorded_at > ? 
+          OR product_id IN (SELECT id FROM products WHERE updated_at > ?)
+        `,
+        )
+        .all(queryTime, queryTime) as any[])
     : [];
 
   console.log(`\n📈 Sync Plan (Local -> Cloud):`);
