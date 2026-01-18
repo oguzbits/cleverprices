@@ -6,14 +6,15 @@ This document tracks our progress in populating the product database with curate
 
 _Goal: Build the essential hardware and electronics foundation._
 
-| Category               | Keepa Search Target               | Status          | Est. Count |
-| :--------------------- | :-------------------------------- | :-------------- | :--------- |
-| **Computer & Zubehör** | Master Filter (Sales Rank < 10k)  | ✅ Completed    | 293        |
-| **CPUs**               | Processors (Sales Rank < 20k)     | 🕒 Planned Next | ~200       |
-| **GPUs**               | Graphics Cards (Sales Rank < 20k) | 🕒 Planned      | ~300       |
-| **SSDs / Storage**     | SSDs & External Drives            | 🕒 Planned      | ~300       |
-| **Mainboards**         | AM5 / LGA1700 Bestsellers         | 🕒 Planned      | ~150       |
-| **Notebooks**          | Focused Laptop Selection          | 🕒 Planned      | ~250       |
+| Category               | Keepa Search Target               | Status       | Est. Count |
+| :--------------------- | :-------------------------------- | :----------- | :--------- |
+| **Computer & Zubehör** | Master Filter (Sales Rank < 10k)  | ✅ Completed | ~500       |
+| **CPUs**               | Processors (Sales Rank < 20k)     | ✅ Completed | ~350       |
+| **GPUs**               | Graphics Cards (Sales Rank < 20k) | ✅ Completed | ~450       |
+| **SSDs / Storage**     | SSDs & External Drives            | ✅ Completed | ~800       |
+| **Smartphones**        | Apple, Samsung, Google            | 🧪 Active    | ~250       |
+| **Mainboards**         | AM5 / LGA1700 Bestsellers         | 🕒 Planned   | ~200       |
+| **Notebooks**          | Focused Laptop Selection          | 🕒 Planned   | ~400       |
 
 ## 🏠 Phase 2: Home & Lifestyle (Target: ~1,000 Products)
 

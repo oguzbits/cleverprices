@@ -145,21 +145,23 @@
 
 ## Implementation Priority Queue
 
-### This Week
+### Recently Completed (Jan 13-18)
 
-1. ✅ FAQ Schema (done)
-2. ✅ PS5 SSD Article (done)
-3. ✅ PA API Scaffold (done)
-4. ✅ Add "Best Value" badge to top products (done)
+1.  ✅ **Maintenance Engine**: Migrated from local Mac-worker to automated **GitHub Actions** running hourly.
+2.  ✅ **SEO Schema Overhaul**: Added Breadcrumb, Organization, WebSite, and UnitPriceSpecification (Price per TB).
+3.  ✅ **Indexing Fixes**: Sanitized sitemap, implemented `noindex` for empty cats, and hardened `robots.txt`.
+4.  ✅ **Performance Tuning**: Implemented tiered ISR and removed heavy fields from edge-cached components.
+5.  ✅ **Search Optimization**: SQLite FTS5 integration for sub-50ms search matching.
 
-### Next Week
+### High Priority (Jan 19-25)
 
-1. 🔲 DDR4 vs DDR5 article
-2. 🔲 Price alert email signup (simple form)
-3. 🔲 Best Value hero card on category pages
+1.  🔴 **Revenue Kickstart**: Route personal purchases through links to unlock PA API (need 3 sales).
+2.  🔴 **Social Presence**: Share the new "Deals" page for Hard Drives and SSDs on relevant subreddits.
+3.  🟡 **Price Alert MVP**: Add a simple "Notify me" button on product pages (email capture).
+4.  🟡 **Enhanced Filters**: Add "Manufacturer" and "Technology" filters to all remaining hardware categories.
 
-### Week 3-4
+### Future Roadmap
 
-1. 🔲 PSU buying guide
-2. 🔲 Reddit outreach (organic)
-3. 🔲 Activate PA API (if approved)
+1.  🔲 **Multi-Store Strategy**: Integrate eBay or Alternate.de prices (Long term).
+2.  🔲 **User Reviews**: Allow users to leave comments/ratings directly on-site.
+3.  🔲 **Price Trend Charts**: Expose the 90-day price history as interactive charts.

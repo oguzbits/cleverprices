@@ -44,11 +44,12 @@
   - `prices`: Current prices per country (Amazon, New, Used).
   - `price_history`: Historical price points for charts.
 - **Sync Strategy**:
-  - **Worker**: `bun run worker` (Keepa API) - Locally hosted on Mac, runs continuously with auto-restart.
-  - **Cloud Sync**: `bun run db:deploy` (Turso) - Pushes local SQLite state to production cloud.
-  - **Automation**: Managed via local `crontab` (4 AM/PM syncs, 3 AM backups).
-  - **Reference**: See `docs/WORKER.md` for full operational details.
-  - **Token Management**: 20 tokens/min bucket logic; managed by `TokenTracker`.
+  - **Automated Engine**: GitHub Action (`daily-maintenance.yml`) runs **hourly**.
+  - **Price Refresh**: Batches of 500 products (stale-first) per hour.
+  - **Enrichment**: 100 products per hour (History, Stats, Sales Rank).
+  - **Cache Warming**: Automated warm-up of Next.js "use cache" layers after every sync.
+  - **Direct Cloud Access**: Scripts connect directly to Turso (Cloud) via `DATABASE_PATH` environment variable.
+  - **Reference**: See `.github/workflows/daily-maintenance.yml`.
 
 ### 2. Localization & Routing
 

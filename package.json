@@ -19,6 +19,7 @@
     "update-prices": "bun run scripts/update-prices.ts",
     "collect-history": "bun run scripts/collect-price-history.ts",
     "db:deploy": "bun run scripts/deploy-data.ts",
+    "db:pull": "bun run scripts/pull-data.ts",
     "worker": "./scripts/start-worker-sync.sh",
     "worker:run": "bun run scripts/keepa-worker.ts",
     "worker:live": "./scripts/worker-with-sync.sh",

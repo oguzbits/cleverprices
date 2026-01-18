@@ -16,20 +16,30 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the site.
 
-### Maintenance
+### Maintenance & Automation
+
+CleverPrices is powered by an automated **Maintenance Engine** (GitHub Actions) that ensures data is always fresh:
+
+- **Hourly Updates**: Every hour on the hour (`0 * * * *`), the maintenance workflow runs.
+- **Price Updates**: Updates up to 500 products per run based on staleness.
+- **Product Enrichment**: Enriches 100 products per run with historical data and sales ranks.
+- **Cache Warming**: Automatically triggers a `warm-cache` script after updates to ensure 100ms response times for users.
+- **Cloud-Native**: All maintenance scripts connect directly to the **Turso Cloud** via environment variables.
+
+To run maintenance tasks manually:
 
 ```bash
-# Price update & database maintenance
-bun run worker:run -c
+# Update prices (Hourly batch)
+bun run update-prices
 
-# Apply schema changes (Local)
-bun run db:migrate
+# Pull latest data from Turso Cloud to Local
+bun run db:pull
 
-# Delta sync to Turso Cloud (Efficient)
-bun run db:deploy --delta
+# Warm the Next.js cache manually
+bun run warm-cache
 
-# Full re-sync to Turso Cloud (Slow)
-bun run db:deploy
+# Local Worker (Optional/Debug)
+bun run worker:run
 ```
 
 ---
