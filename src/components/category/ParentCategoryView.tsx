@@ -20,6 +20,8 @@ interface ParentCategoryViewProps {
   breadcrumbItems?: { name: string; href?: string }[];
 }
 
+import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
+
 export function ParentCategoryView({
   parentCategory,
   childCategories,
@@ -30,6 +32,7 @@ export function ParentCategoryView({
 }: ParentCategoryViewProps) {
   return (
     <div className="min-h-screen bg-white">
+      <BreadcrumbSchema items={breadcrumbItems} />
       <div className="mx-auto max-w-[1280px] px-4 py-3">
         <Breadcrumbs items={breadcrumbItems} />
         {/* Subcategory Hub Cards Grid */}

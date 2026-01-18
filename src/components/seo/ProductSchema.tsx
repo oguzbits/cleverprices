@@ -8,9 +8,9 @@
  * @see https://developers.google.com/search/docs/appearance/structured-data/product
  */
 
-import type { Product } from "@/lib/product-registry";
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
+import type { Product } from "@/lib/product-registry";
 import { BRAND_DOMAIN, BRAND_NAME } from "@/lib/site-config";
 
 interface ProductSchemaProps {
@@ -75,33 +75,70 @@ export function ProductSchema({
   if (currentPrice || allPrices.length > 0) {
     if (allPrices.length > 1 && lowestPrice && highestPrice) {
       // Multiple prices available - use AggregateOffer
-      schema.offers = {
+      const aggregateOffer: Record<string, unknown> = {
         "@type": "AggregateOffer",
         priceCurrency: currency,
         lowPrice: lowestPrice.toFixed(2),
         highPrice: highestPrice.toFixed(2),
         offerCount: allPrices.length,
         availability: "https://schema.org/InStock",
+        itemCondition: "https://schema.org/NewCondition",
         url: `https://${BRAND_DOMAIN}/p/${product.slug}`,
+        priceValidUntil: "2027-12-31",
         seller: {
           "@type": "Organization",
           name: "Amazon",
         },
       };
+
+      // Add unit price if available
+      if (pricePerUnit && product.capacityUnit) {
+        aggregateOffer.priceSpecification = {
+          "@type": "UnitPriceSpecification",
+          price: pricePerUnit.toFixed(2),
+          priceCurrency: currency,
+          unitText: product.capacityUnit,
+          referenceQuantity: {
+            "@type": "QuantitativeValue",
+            value: "1",
+            unitText: product.capacityUnit,
+          },
+        };
+      }
+
+      schema.offers = aggregateOffer;
     } else if (currentPrice) {
       // Single price - use Offer
-      schema.offers = {
+      const offer: Record<string, unknown> = {
         "@type": "Offer",
         priceCurrency: currency,
         price: currentPrice.toFixed(2),
         availability: "https://schema.org/InStock",
+        itemCondition: "https://schema.org/NewCondition",
         url: `https://${BRAND_DOMAIN}/p/${product.slug}`,
         seller: {
           "@type": "Organization",
           name: "Amazon",
         },
-        priceValidUntil: "2027-12-31", // Static date - Cache Components don't allow Date.now()
+        priceValidUntil: "2027-12-31",
       };
+
+      // Add unit price if available
+      if (pricePerUnit && product.capacityUnit) {
+        offer.priceSpecification = {
+          "@type": "UnitPriceSpecification",
+          price: pricePerUnit.toFixed(2),
+          priceCurrency: currency,
+          unitText: product.capacityUnit,
+          referenceQuantity: {
+            "@type": "QuantitativeValue",
+            value: "1",
+            unitText: product.capacityUnit,
+          },
+        };
+      }
+
+      schema.offers = offer;
     } else if (lowestPrice !== null && highestPrice !== null) {
       // No current price but we have others - use AggregateOffer with available prices
       schema.offers = {
@@ -111,7 +148,9 @@ export function ProductSchema({
         highPrice: highestPrice.toFixed(2),
         offerCount: allPrices.length,
         availability: "https://schema.org/InStock",
+        itemCondition: "https://schema.org/NewCondition",
         url: `https://${BRAND_DOMAIN}/p/${product.slug}`,
+        priceValidUntil: "2027-12-31",
       };
     }
   }

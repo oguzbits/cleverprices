@@ -36,8 +36,8 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 // Sub-components
-import { IdealoFilterPanel } from "./IdealoFilterPanel";
 import { ClientDate } from "@/components/ui/ClientDate";
+import { IdealoFilterPanel } from "./IdealoFilterPanel";
 import { IdealoResultList } from "./IdealoResultList";
 import { IdealoTopBar } from "./IdealoTopBar";
 
@@ -48,6 +48,8 @@ import { Pagination } from "@/components/ui/pagination";
 import { getUniqueFieldValues } from "@/lib/utils/category-utils";
 import { X } from "lucide-react";
 import { MobileFilterDrawer } from "./MobileFilterDrawer";
+
+import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 
 interface Props {
   category: Omit<Category, "icon">;
@@ -124,6 +126,7 @@ export async function IdealoCategoryPage({
 
   return (
     <div className="sr-searchResult min-h-screen bg-[#f6f6f6]">
+      <BreadcrumbSchema items={breadcrumbItems} />
       {/* ============================================ */}
       {/* MAIN CONTAINER - max-width 1280px */}
       {/* ============================================ */}

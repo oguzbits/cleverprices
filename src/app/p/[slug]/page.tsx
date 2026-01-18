@@ -86,6 +86,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description,
       url: canonicalUrl,
       locale: "de_DE",
+      type: "article",
+      images: product.image
+        ? [
+            {
+              url: product.image,
+              width: 800,
+              height: 800,
+              alt: product.title,
+            },
+          ]
+        : undefined,
     }),
     keywords: [
       product.brand,

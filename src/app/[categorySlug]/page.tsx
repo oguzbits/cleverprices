@@ -1,24 +1,25 @@
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
 import { ParentCategoryView } from "@/components/category/ParentCategoryView";
 import {
+  allCategories,
+  getBreadcrumbs,
   getCategoryBySlug,
   getChildCategories,
-  getBreadcrumbs,
   stripCategoryIcon,
-  allCategories,
   type CategorySlug,
 } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import {
   getCategoryBestsellers,
-  getCategoryNewProducts,
   getCategoryDeals,
+  getCategoryNewProducts,
 } from "@/lib/data/parentCategoryData";
 import {
   generateKeywords,
   getAlternateLanguages,
   getOpenGraph,
 } from "@/lib/metadata";
+import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
@@ -37,11 +38,10 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug } = await params;
-  const validCountry = DEFAULT_COUNTRY;
   const category = getCategoryBySlug(categorySlug);
   if (!category) return { title: "Kategorie nicht gefunden" };
 
-  const canonicalUrl = `https://cleverprices.com/${category.slug}`;
+  const canonicalUrl = `https://${BRAND_DOMAIN}/${category.slug}`;
 
   // German SEO-optimized title with low-competition keywords
   const unitSuffix = category.unitType
@@ -68,6 +68,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       locale: "de_DE",
     }),
     keywords: generateKeywords(category),
+    // Prevent indexing of empty/hidden categories to avoid "Thin Content" marks from Google
+    robots: category.hidden ? { index: false, follow: false } : undefined,
   };
 }
 

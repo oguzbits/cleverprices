@@ -110,49 +110,30 @@ export const siteMetadata: Metadata = {
   },
 };
 
-import { DEFAULT_COUNTRY, getAllCountries } from "./countries";
-
 export function getAlternateLanguages(
   path: string = "",
   customTranslations: Record<string, string> = {},
-  includeRegions: boolean = true,
 ) {
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   const cleanPath = normalizedPath === "/" ? "" : normalizedPath;
 
-  const liveCountries = getAllCountries().filter((c) => c.isLive);
   const alternates: Record<string, string> = {
-    // x-default should point to our primary/landing version (US)
+    // x-default should point to our primary version (DE)
     "x-default": `${SITE_URL}${cleanPath}`,
   };
 
-  // Add custom translations first
+  // Add custom translations (useful for mapping /privacy to /datenschutz)
   Object.entries(customTranslations).forEach(([lang, url]) => {
     alternates[lang] = url.startsWith("http") ? url : `${SITE_URL}${url}`;
   });
 
-  if (includeRegions) {
-    liveCountries.forEach((country) => {
-      // Skip the default country - it's already represented by the root version (en/x-default)
-      if (country.code === DEFAULT_COUNTRY) return;
-
-      // Correct ISO 3166-1 alpha-2 for United Kingdom is GB
-      let region = country.code.toUpperCase();
-      if (region === "UK") region = "GB";
-
-      // For our site, we use English UI across all markets: 'en-REGION'
-      const hreflang = `en-${region}`;
-
-      // Non-default countries are served from /[countryCode] which would need src/app/[country]
-      // Currently, since we don't have [country] root folder, we should skip this to avoid 404s
-      // alternates[hreflang] = `${SITE_URL}/${country.code}${cleanPath}`;
-    });
+  // Primary market is Germany
+  if (!alternates["de"]) {
+    alternates["de"] = `${SITE_URL}${cleanPath}`;
   }
 
-  // Root domain serves as the general version for the default language
-  const defaultLang = DEFAULT_COUNTRY === "de" ? "de" : "en";
-  if (!alternates[defaultLang]) {
-    alternates[defaultLang] = `${SITE_URL}${cleanPath}`;
+  if (!alternates["de-DE"]) {
+    alternates["de-DE"] = `${SITE_URL}${cleanPath}`;
   }
 
   return alternates;
@@ -198,16 +179,7 @@ export function generateKeywords(
 /**
  * Returns a complete Open Graph object with sane defaults and overrides.
  */
-export function getOpenGraph(
-  overrides: {
-    title?: string;
-    description?: string;
-    url?: string;
-    type?: "website" | "article";
-    locale?: string;
-    [key: string]: string | boolean | undefined | number | string[];
-  } = {},
-) {
+export function getOpenGraph(overrides: Metadata["openGraph"] = {}) {
   // If no title/description provided, Next.js will use the page's top-level title/description
   // but it's better to be explicit to ensure they are present in the OG tags.
   return {

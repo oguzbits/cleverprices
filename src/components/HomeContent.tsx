@@ -1,6 +1,10 @@
 "use cache";
 
 import { IdealoHomePage } from "@/components/landing/IdealoHomePage";
+import {
+  OrganizationSchema,
+  WebSiteSchema,
+} from "@/components/seo/ProductSchema";
 import { type CountryCode } from "@/lib/countries";
 import { curateProductList } from "@/lib/product-curation";
 import { getCountryByCode } from "@/lib/server/cached-countries";
@@ -10,7 +14,6 @@ import {
   getNewArrivals,
 } from "@/lib/server/cached-products";
 import { cacheLife } from "next/cache";
-import Script from "next/script";
 
 export default async function HomeContent({
   country,
@@ -82,27 +85,10 @@ export default async function HomeContent({
     excludeParentIds: globalSeenParents,
   });
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: "cleverprices.com",
-    url: "https://cleverprices.com",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: "https://cleverprices.com/search?q={search_term_string}",
-      "query-input": "required name=search_term_string",
-    },
-  };
-
   return (
     <>
-      <Script
-        id="json-ld"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c"),
-        }}
-      />
+      <OrganizationSchema />
+      <WebSiteSchema />
       <IdealoHomePage
         popular={heroProducts}
         deals={deals}
