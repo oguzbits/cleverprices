@@ -1,18 +1,20 @@
-name: Daily Maintenance (Update & Warm)
+name: Price Synchronization
 
 on:
   schedule:
-    # Runs every hour (at the start of the hour)
-    - cron: "0 * * * *"
+    # Runs every 75 minutes (roughly 19 times/day) to stay under 2,000 mins/month
+    - cron: "0 0,5,10,15,20 * * *" # 12:00 AM, 5:00 AM, etc. (Wait, let's do a simpler offset)
+    - cron: "15 1,6,11,16,21 * * *"
+    - cron: "30 2,7,12,17,22 * * *"
+    - cron: "45 3,8,13,18,23 * * *"
+
   workflow_dispatch:
-    # Allows manual triggering from the GitHub Actions tab
 
 jobs:
-  maintenance:
-    name: Update Prices & Warm Cache
+  sync:
+    name: Update Prices & Enrich
     runs-on: ubuntu-latest
 
-    # job-level ENV to keep individual steps DRY
     env:
       KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
       TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
@@ -30,18 +32,14 @@ jobs:
           bun-version: latest
 
       - name: Install Dependencies
-        run: bun install
+        run: bun install --frozen-lockfile
 
       - name: 💰 Update Prices
         run: bun run update-prices
 
-      - name: 💎 Enrich Products (History & Stats)
-        # Continue on error so that minor Keepa API issues don't block the cache warming
+      - name: 💎 Enrich Products
         continue-on-error: true
         run: bun run scripts/enrich-products.ts
 
-      - name: 🔥 Warm Vercel Cache
-        run: bun run warm-cache
-
       - name: ✨ Done
-        run: echo "Maintenance cycle complete! Cloud Database updated and Vercel cache warmed."
+        run: echo "Price synchronization complete!"
