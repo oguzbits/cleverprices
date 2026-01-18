@@ -36,7 +36,7 @@ export async function getAllDeals(
   // Fetch products from all these categories
   // We prioritize featured/popular categories via manual selection if this becomes too slow
   const productPromises = Array.from(allSubCats).map((slug) =>
-    getProductsByCategory(slug),
+    getProductsByCategory(slug, true),
   );
 
   const productArrays = await Promise.all(productPromises);

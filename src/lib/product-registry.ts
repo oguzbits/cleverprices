@@ -134,7 +134,7 @@ function mapDbProduct(
     energyLabel: stripHeavyData ? undefined : (p.energyLabel as any),
     salesRank: p.salesRank || undefined,
     monthlySold: p.monthlySold || 0,
-    description: p.description || undefined,
+    description: stripHeavyData ? undefined : p.description || undefined,
     mpn: p.mpn || undefined,
     priceAvg30: avg30Obj,
     priceAvg90: avg90Obj,
@@ -209,8 +209,13 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
         [],
         stripHeavyData,
       );
+
+      // ALWAYS strip extremely heavy fields for category lists to stay under 2MB cache limit.
+      // These are only needed on the single product page fetched via getProductBySlug.
+      mapped.features = [];
+      mapped.description = undefined;
+
       if (stripHeavyData) {
-        mapped.features = [];
         mapped.specifications = {};
       }
       return mapped;
