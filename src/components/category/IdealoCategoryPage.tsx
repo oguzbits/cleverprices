@@ -18,14 +18,7 @@
  */
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import {
-  Category,
-  getBreadcrumbs,
-  getChildCategories,
-  stripCategoryIcon,
-  type CategorySlug,
-} from "@/lib/categories";
-import { getCategoryFAQs } from "@/lib/category-faqs";
+import { Category, getBreadcrumbs, stripCategoryIcon } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { type CountryCode } from "@/lib/countries";
 import {
@@ -33,21 +26,16 @@ import {
   getCategoryProducts,
 } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 
 // Sub-components
-import { ClientDate } from "@/components/ui/ClientDate";
-import { IdealoFilterPanel } from "./IdealoFilterPanel";
-import { IdealoResultList } from "./IdealoResultList";
-import { IdealoTopBar } from "./IdealoTopBar";
+import { Suspense } from "react";
+import {
+  AsyncFilterPanel,
+  AsyncProductList,
+  AsyncTopBar,
+} from "./AsyncComponents";
 
 // FAQ components for SEO
-import { FAQSchema } from "@/components/category/FAQSchema";
-import { FAQSection } from "@/components/category/FAQSection";
-import { Pagination } from "@/components/ui/pagination";
-import { getUniqueFieldValues } from "@/lib/utils/category-utils";
-import { X } from "lucide-react";
-import { MobileFilterDrawer } from "./MobileFilterDrawer";
 
 import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 
@@ -57,6 +45,9 @@ interface Props {
   searchParams: FilterParams;
 }
 
+/**
+ * Main Category Page - Server Component
+ */
 /**
  * Main Category Page - Server Component
  */
@@ -70,48 +61,19 @@ export async function IdealoCategoryPage({
     ...stripCategoryIcon(crumb),
     Icon: getCategoryIcon(crumb.slug),
   }));
-  const viewMode = searchParams.view || "grid";
 
-  // Fetch filtered products and all products (for filter options) in parallel
-  // (Vercel Best Practices: async-parallel)
-  const [filteredData, allData] = await Promise.all([
-    getCategoryProducts(category.slug, countryCode, searchParams),
-    category.filterGroups
-      ? getCategoryProducts(category.slug, countryCode, { fetchAll: true })
-      : Promise.resolve(null),
-  ]);
+  // 1. Start fetching immediately (Waterfall elimination)
+  // This Promise is passed to children to unwrap
+  const productDataPromise = getCategoryProducts(
+    category.slug,
+    countryCode,
+    searchParams,
+  );
 
-  const {
-    products: rawFilteredProducts,
-    filteredCount,
-    unitLabel,
-    hasProducts,
-    filters,
-    filterCounts,
-    maxPriceInCategory,
-    lastUpdated,
-    pagination,
-  } = filteredData;
-
-  // Products are already localized and stripped in the server function layer
-  const products = rawFilteredProducts;
-
-  // Pre-calculate filter options on the server to avoid passing all products twice/thrice
-  const filterGroupOptions: Record<string, string[]> = {};
-  if (hasProducts && category.filterGroups && allData) {
-    const { products: allCategoryProducts } = allData;
-
-    category.filterGroups.forEach((group) => {
-      if (group.options) {
-        filterGroupOptions[group.field] = group.options;
-      } else {
-        filterGroupOptions[group.field] = getUniqueFieldValues(
-          allCategoryProducts,
-          group.field,
-        );
-      }
-    });
-  }
+  // 2. Fetch "all data" for filters (only if needed)
+  const allDataPromise = category.filterGroups
+    ? getCategoryProducts(category.slug, countryCode, { fetchAll: true })
+    : Promise.resolve(null);
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -119,17 +81,11 @@ export async function IdealoCategoryPage({
     ...breadcrumbs.map((b) => ({ name: b.name, href: `/${b.slug}` })),
   ];
 
-  // Related categories
-  const relatedCategories = getChildCategories(
-    (category.parent as CategorySlug) || ("elektroartikel" as CategorySlug),
-  ).filter((c) => c.slug !== categorySlug);
-
   return (
     <div className="sr-searchResult min-h-screen bg-[#f6f6f6]">
       <BreadcrumbSchema items={breadcrumbItems} />
       {/* ============================================ */}
       {/* MAIN CONTAINER - max-width 1280px */}
-      {/* ============================================ */}
       <div className="mx-auto max-w-[1280px]">
         <div className="border-b border-[#dcdcdc] bg-white px-4">
           {/* ============================================ */}
@@ -143,21 +99,19 @@ export async function IdealoCategoryPage({
           </div>
 
           {/* ============================================ */}
-          {/* TOP BAR - sr-topBar_iwPzv */}
-          {/* Title, Sort, View Switch */}
+          {/* TOP BAR - Suspense Wrapper */}
           {/* ============================================ */}
-          {hasProducts ? (
-            <IdealoTopBar
+          <Suspense
+            fallback={
+              <div className="mb-4 flex h-[60px] animate-pulse items-center justify-between rounded bg-gray-100" />
+            }
+          >
+            <AsyncTopBar
               categoryName={category.name}
-              productCount={filteredCount}
-              currentView={viewMode}
-              currentSort={
-                typeof searchParams === "object" && "sort" in searchParams
-                  ? (searchParams.sort as string)
-                  : "popular"
-              }
+              searchParams={searchParams}
+              productDataPromise={productDataPromise}
             />
-          ) : null}
+          </Suspense>
         </div>
 
         {/* ============================================ */}
@@ -170,268 +124,44 @@ export async function IdealoCategoryPage({
             "relative mt-3 mb-[45px] flex flex-row flex-wrap",
           )}
         >
-          {hasProducts ? (
-            <>
-              {/* ============================================ */}
-              {/* FILTER SIDEBAR - sr-filterBar_t26b_ */}
-              {/* Hidden < 840px, 33.33% at 840px, 25% at 960px */}
-              {/* ============================================ */}
-              <aside
-                className={cn(
-                  "sr-filterBar",
-                  "w-full bg-transparent pl-0",
-                  // Hidden below 840px
-                  "hidden min-[840px]:block",
-                  // 33.33% at 840px
-                  "min-[840px]:max-w-[33.33333%] min-[840px]:basis-[33.33333%]",
-                  // 25% at 960px
-                  "min-[960px]:max-w-[25%] min-[960px]:basis-[25%]",
-                )}
-              >
-                <IdealoFilterPanel
-                  categorySlug={categorySlug}
-                  unitLabel={unitLabel}
-                  filterOptions={filterGroupOptions}
-                  filterCounts={filterCounts}
-                  maxPriceInCategory={maxPriceInCategory}
-                />
+          {/* FILTERS (Sidebar) */}
+          <Suspense
+            fallback={
+              <aside className="sr-filterBar hidden w-full min-[840px]:block min-[840px]:max-w-[33.33333%] min-[840px]:basis-[33.33333%] min-[960px]:max-w-[25%] min-[960px]:basis-[25%]">
+                <div className="h-[600px] animate-pulse rounded bg-gray-200" />
               </aside>
+            }
+          >
+            <AsyncFilterPanel
+              category={category}
+              productDataPromise={productDataPromise}
+              allDataPromise={allDataPromise}
+            />
+          </Suspense>
 
-              {/* ============================================ */}
-              {/* PRODUCT LIST CONTAINER */}
-              {/* 100% mobile, 66.66% at 840px, 75% at 960px */}
-              {/* ============================================ */}
-              <div
-                className={cn(
-                  "sr-searchResult__resultPanel",
-                  "relative w-full pr-0 pl-0 min-[840px]:pl-[15px]",
-                  // Width at breakpoints
-                  "min-[840px]:max-w-[66.66667%] min-[840px]:basis-[66.66667%]",
-                  "min-[960px]:max-w-[75%] min-[960px]:basis-[75%]",
-                )}
-              >
-                {/* Mobile Filter Button */}
-                <div className="px-4 min-[840px]:px-0">
-                  <MobileFilterDrawer
-                    categorySlug={categorySlug}
-                    unitLabel={unitLabel}
-                    categoryName={category.name}
-                    productCount={filteredCount}
-                    filterOptions={filterGroupOptions}
-                    filterCounts={filterCounts}
-                    maxPriceInCategory={maxPriceInCategory}
-                  />
-                </div>
-
-                {/* ============================================ */}
-                {/* PRODUCT GRID/LIST - sr-resultList */}
-                {/* Uses new isolated Idealo components */}
-                {/* ============================================ */}
-                {/* ============================================ */}
-                {/* ACTIVE FILTER TAGS */}
-                {/* ============================================ */}
-                {filteredCount < products.length && (
-                  <div className="mb-4 flex flex-wrap items-center gap-2 px-4 min-[840px]:px-0">
-                    {Object.entries(filters).map(([field, value]) => {
-                      if (
-                        !value ||
-                        (Array.isArray(value) && value.length === 0)
-                      )
-                        return null;
-                      if (
-                        [
-                          "sortBy",
-                          "sortOrder",
-                          "search",
-                          "minCapacity",
-                          "maxCapacity",
-                        ].includes(field)
-                      )
-                        return null;
-
-                      // Display tags for array filters (brand, socket, etc.)
-                      if (Array.isArray(value)) {
-                        return value.map((v) => (
-                          <Link
-                            key={`${field}-${v}`}
-                            href={{
-                              pathname: `/${category.slug}`,
-                              query: {
-                                ...searchParams,
-                                [field]: (
-                                  searchParams[
-                                    field as keyof FilterParams
-                                  ] as string[]
-                                )?.filter((val) => val !== v),
-                              },
-                            }}
-                            className="flex items-center gap-1 rounded-[4px] border border-[#B4B4B4] bg-white px-3 py-1 text-[13px] text-[#2d2d2d] no-underline hover:bg-gray-50"
-                          >
-                            <span>{v}</span>
-                            <X className="h-3 w-3 text-[#767676]" />
-                          </Link>
-                        ));
-                      }
-
-                      // Price range tags
-                      if (
-                        (field === "minPrice" || field === "maxPrice") &&
-                        value !== null
-                      ) {
-                        // Only show one tag for price range
-                        if (field === "maxPrice" && filters.minPrice !== null)
-                          return null;
-                        const label =
-                          filters.minPrice !== null && filters.maxPrice !== null
-                            ? `${filters.minPrice}€ - ${filters.maxPrice}€`
-                            : filters.minPrice !== null
-                              ? `ab ${filters.minPrice}€`
-                              : `bis ${filters.maxPrice}€`;
-
-                        return (
-                          <Link
-                            key="price-range"
-                            href={{
-                              pathname: `/${category.slug}`,
-                              query: {
-                                ...searchParams,
-                                minPrice: undefined,
-                                maxPrice: undefined,
-                              },
-                            }}
-                            className="flex items-center gap-1 rounded-[4px] border border-[#B4B4B4] bg-white px-3 py-1 text-[13px] text-[#2d2d2d] no-underline hover:bg-gray-50"
-                          >
-                            <span>{label}</span>
-                            <X className="h-3 w-3 text-[#767676]" />
-                          </Link>
-                        );
-                      }
-
-                      return null;
-                    })}
-
-                    <Link
-                      href={`/${category.slug}`}
-                      className="ml-2 text-[13px] font-bold text-[#0771D0] hover:underline"
-                    >
-                      Alle zurücksetzen
-                    </Link>
-                  </div>
-                )}
-
-                <IdealoResultList
-                  products={products}
-                  countryCode={countryCode}
-                  viewMode={viewMode as "grid" | "list"}
-                />
-
-                {/* ============================================ */}
-                {/* PAGINATION */}
-                {/* ============================================ */}
-                {/* ============================================ */}
-                {/* PAGINATION */}
-                {/* ============================================ */}
-                {pagination && (
-                  <Pagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    baseUrl={`/${categorySlug}`}
-                    searchParams={searchParams}
-                  />
-                )}
-
-                <div className="px-4 min-[840px]:px-0">
-                  {/* ============================================ */}
-                  {/* DISCLAIMER */}
-                  {/* ============================================ */}
-                  <div className="mt-4 text-center text-[12px] text-[#767676]">
-                    * Preise inkl. MwSt., ggf. zzgl. Versand. Preise und
-                    Verfügbarkeit können sich ändern.
-                    {lastUpdated ? (
-                      <span className="mt-1 block">
-                        Zuletzt aktualisiert: <ClientDate date={lastUpdated} />
-                      </span>
-                    ) : null}
-                  </div>
-
-                  {/* ============================================ */}
-                  {/* RELATED CATEGORIES - sr-relatedCategories */}
-                  {/* ============================================ */}
-                  <div className="sr-relatedCategories mt-8 border-t border-[#b4b4b4] pt-4">
-                    <h3 className="mb-3 text-[16px] font-bold text-[#2d2d2d]">
-                      Ähnliche Kategorien
-                    </h3>
-                    <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-                      {relatedCategories.map((related) => {
-                        const Icon = getCategoryIcon(related.slug);
-                        return (
-                          <Link
-                            key={related.slug}
-                            href={`/${related.slug}`}
-                            className="flex items-center gap-2 py-1.5 text-[14px] text-[#0771d0] hover:underline"
-                          >
-                            <Icon className="h-4 w-4 text-[#767676]" />
-                            <span>{related.name}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* FAQ Section */}
-                  {getCategoryFAQs(categorySlug).length > 0 && (
-                    <div className="mt-8">
-                      <FAQSchema faqs={getCategoryFAQs(categorySlug)} />
-                      <FAQSection
-                        faqs={getCategoryFAQs(categorySlug)}
-                        categoryName={category.name}
-                      />
-                    </div>
-                  )}
+          {/* PRODUCT LIST */}
+          <Suspense
+            fallback={
+              <div className="relative w-full pr-0 pl-0 min-[840px]:max-w-[66.66667%] min-[840px]:basis-[66.66667%] min-[840px]:pl-[15px] min-[960px]:max-w-[75%] min-[960px]:basis-[75%]">
+                <div className="grid grid-cols-2 gap-4 min-[640px]:grid-cols-3 min-[1024px]:grid-cols-4">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="h-[380px] animate-pulse rounded bg-white"
+                    />
+                  ))}
                 </div>
               </div>
-            </>
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center py-24 text-center">
-              {filters.search ? (
-                <>
-                  <h2 className="mb-3 text-2xl font-bold text-[#2d2d2d]">
-                    Keine Treffer in dieser Kategorie
-                  </h2>
-                  <p className="mb-6 text-[14px] text-[#767676]">
-                    Wir konnten in{" "}
-                    <span className="font-medium">{category.name}</span> keine
-                    Ergebnisse für
-                    <span className="mx-1 font-bold">
-                      &quot;{filters.search}&quot;
-                    </span>{" "}
-                    finden.
-                  </p>
-                  <button
-                    onClick={() => {
-                      // Trigger the global search modal
-                      if (typeof window !== "undefined") {
-                        window.triggerSearch?.();
-                      }
-                    }}
-                    className="flex items-center gap-2 rounded-[4px] bg-[#0771D0] px-6 py-2.5 text-[15px] font-bold text-white hover:bg-[#0050a0]"
-                  >
-                    Global suchen
-                  </button>
-                </>
-              ) : (
-                <>
-                  <h2 className="mb-3 text-2xl font-bold text-[#2d2d2d]">
-                    Daten folgen
-                  </h2>
-                  <p className="text-[14px] text-[#767676]">
-                    Wir aggregieren derzeit Preisdaten für{" "}
-                    <span className="font-medium">{category.name}</span>.
-                  </p>
-                </>
-              )}
-            </div>
-          )}
+            }
+          >
+            <AsyncProductList
+              category={category}
+              countryCode={countryCode}
+              searchParams={searchParams}
+              productDataPromise={productDataPromise}
+              allDataPromise={allDataPromise}
+            />
+          </Suspense>
         </div>
       </div>
     </div>
