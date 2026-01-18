@@ -411,6 +411,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/notebook.jpg",
+    aliases: ["laptops"],
     popularFilters: [
       { label: "Apple MacBook", params: "brand=Apple" },
       { label: "Gaming Laptops", params: "type=gaming" },
@@ -457,6 +458,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/monitor.jpg",
+    aliases: ["bildschirme", "screens"],
     popularFilters: [
       { label: "27 Zoll", params: "size=27" },
       { label: "144 Hz", params: "refresh=144" },
@@ -740,6 +742,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "analytical",
     imageUrl: "/images/category/hdd.jpg",
+    aliases: ["festplatten", "hdd"],
     unitType: "TB",
     unitLabel: "pro TB",
     popularFilters: [
@@ -830,6 +833,8 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     icon: Video,
     parent: "pc-komponenten",
     categoryType: "analytical",
+    imageUrl: "/images/category/gpu.jpg",
+    aliases: ["grafikkarten", "graphics-cards"],
     unitType: "GB",
     unitLabel: "pro GB VRAM",
     popularFilters: [
@@ -850,6 +855,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/mainboard.jpg",
+    aliases: ["mainboards"],
     popularFilters: [
       { label: "AM5 Mainboards", params: "socket=AM5" },
       { label: "LGA 1700", params: "socket=LGA1700" },
@@ -862,6 +868,8 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     icon: MemoryStick,
     parent: "pc-komponenten",
     categoryType: "analytical",
+    imageUrl: "/images/category/ram.jpg",
+    aliases: ["arbeitsspeicher", "memory"],
     unitType: "GB",
     unitLabel: "pro GB",
     popularFilters: [
@@ -877,6 +885,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/pc-case.jpg",
+    aliases: ["gehaeuse", "pc-gehaeuse", "cases"],
     popularFilters: [
       { label: "Midi-Tower", params: "type=midi-tower" },
       { label: "Big-Tower", params: "type=big-tower" },
@@ -890,6 +899,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "pc-komponenten",
     categoryType: "analytical",
     imageUrl: "/images/category/power-supply.jpg",
+    aliases: ["netzteile", "psu"],
     unitType: "W",
     unitLabel: "pro Watt",
     popularFilters: [
@@ -905,6 +915,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/cpu-cooler.jpg",
+    aliases: ["kuehler", "cpu-kuehler", "coolers"],
     popularFilters: [
       { label: "Luftkühler", params: "type=air" },
       { label: "Wasserkühlung (AiO)", params: "type=aio" },
@@ -930,6 +941,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "elektroartikel",
     categoryType: "analytical",
     imageUrl: "/images/category/ssd.jpg",
+    aliases: ["ssd", "solid-state-drives"],
     unitType: "TB",
     unitLabel: "pro TB",
     popularFilters: [
@@ -1016,6 +1028,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "computer",
     categoryType: "standard",
     imageUrl: "/images/category/keyboard.jpg",
+    aliases: ["tastaturen"],
   },
 
   mice: {
@@ -1025,6 +1038,7 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     parent: "computer",
     categoryType: "standard",
     imageUrl: "/images/category/mouse.jpg",
+    aliases: ["maus", "maeuse"],
   },
 
   "mouse-pads": {
@@ -1235,6 +1249,8 @@ export const CATEGORY_MAP: Record<CategorySlug, Omit<Category, "slug">> = {
     icon: Cpu,
     parent: "pc-komponenten",
     categoryType: "analytical",
+    imageUrl: "/images/category/cpu.jpg",
+    aliases: ["prozessoren", "processors"],
     unitType: "core",
     unitLabel: "pro Kern",
     popularFilters: [
