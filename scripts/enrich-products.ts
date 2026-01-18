@@ -1,4 +1,4 @@
-import { db, products, prices } from "../src/db";
+import { db, products, prices, priceHistory } from "../src/db";
 import { eq, isNull, and, or, asc } from "drizzle-orm";
 import { withRetry } from "../src/db/utils";
 import type { CountryCode } from "../src/lib/countries";
@@ -6,7 +6,11 @@ import {
   getProducts,
   getTokenStatus,
 } from "../src/lib/keepa/product-discovery";
-import { extractSalesRank, keepaPriceToDecimal } from "../src/lib/keepa/utils";
+import {
+  extractSalesRank,
+  keepaPriceToDecimal,
+  parseKeepaHistory,
+} from "../src/lib/keepa/utils";
 
 async function enrich() {
   const country = (process.argv[2] || "de") as CountryCode;
@@ -91,7 +95,7 @@ async function enrich() {
 
               try {
                 await withRetry(async () => {
-                  // Update avg90 in prices table
+                  // 1. Update avg90 in prices table
                   const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
                   const priceAvg90 = keepaPriceToDecimal(avg90Raw);
 
@@ -107,7 +111,53 @@ async function enrich() {
                       );
                   }
 
-                  // Mark as seeded
+                  // 2. Back-fill Price History from Keepa CSV
+                  if (ep.csv) {
+                    const amazonHistory = parseKeepaHistory(ep.csv[0]);
+                    const newHistory = parseKeepaHistory(ep.csv[1]);
+
+                    const historyToInsert = [
+                      ...amazonHistory.map((h) => ({
+                        productId: localProduct.id,
+                        country,
+                        price: h.price,
+                        currency: "EUR", // Defaulting for DE, ideally should be dynamic from price record
+                        priceType: "amazon",
+                        recordedAt: new Date(h.timestamp),
+                      })),
+                      ...newHistory.map((h) => ({
+                        productId: localProduct.id,
+                        country,
+                        price: h.price,
+                        currency: "EUR",
+                        priceType: "new",
+                        recordedAt: new Date(h.timestamp),
+                      })),
+                    ];
+
+                    if (historyToInsert.length > 0) {
+                      // Delete older records if any (idempotency)
+                      await db
+                        .delete(priceHistory)
+                        .where(
+                          and(
+                            eq(priceHistory.productId, localProduct.id),
+                            eq(priceHistory.country, country),
+                          ),
+                        );
+
+                      // Bulk insert in chunks of 500 to stay within SQLite limits
+                      for (let j = 0; j < historyToInsert.length; j += 500) {
+                        const chunk = historyToInsert.slice(j, j + 500);
+                        await db.insert(priceHistory).values(chunk);
+                      }
+                      console.log(
+                        `    📉 Seeded ${historyToInsert.length} history points for ${ep.asin}`,
+                      );
+                    }
+                  }
+
+                  // 3. Mark as seeded
                   await db
                     .update(products)
                     .set({

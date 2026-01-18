@@ -228,6 +228,12 @@ async function updatePrices(country: CountryCode): Promise<void> {
                         await db.insert(priceHistory).values(historyRecord);
                       }
 
+                      // Update statistical averages (Free with the daily product fetch)
+                      const avg30Raw = kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW];
+                      const avg90Raw = kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW];
+                      const priceAvg30 = keepaPriceToDecimal(avg30Raw);
+                      const priceAvg90 = keepaPriceToDecimal(avg90Raw);
+
                       // Update or insert current price
                       if (existingPrice) {
                         await db
@@ -238,6 +244,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
                             usedPrice,
                             warehousePrice,
                             pricePerUnit,
+                            priceAvg30: priceAvg30 ?? existingPrice.priceAvg30,
+                            priceAvg90: priceAvg90 ?? existingPrice.priceAvg90,
                             lastUpdated: now,
                           })
                           .where(eq(prices.id, existingPrice.id));
@@ -250,6 +258,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
                           usedPrice,
                           warehousePrice,
                           pricePerUnit,
+                          priceAvg30,
+                          priceAvg90,
                           currency,
                           source: "keepa",
                           lastUpdated: now,

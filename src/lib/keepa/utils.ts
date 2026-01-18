@@ -36,3 +36,38 @@ export function normalizeRating(
   if (rating === null || rating === undefined || rating <= 0) return null;
   return rating / 10;
 }
+
+/**
+ * Converts Keepa minute time to a Unix timestamp.
+ * Keepa time 0 is 2011-01-01 00:00:00 UTC.
+ */
+export function keepaTimeToUnix(keepaMinutes: number): number {
+  return (keepaMinutes + 21552000) * 60000;
+}
+
+/**
+ * Parses Keepa CSV history arrays into a clean list of timestamped prices.
+ * Format: [timestamp1, price1, timestamp2, price2, ...]
+ */
+export function parseKeepaHistory(
+  csvArray: (number | null)[] | undefined,
+): { timestamp: number; price: number }[] {
+  if (!csvArray || csvArray.length < 2) return [];
+
+  const results: { timestamp: number; price: number }[] = [];
+
+  // Arrays are alternating: [time, price, time, price...]
+  for (let i = 0; i < csvArray.length; i += 2) {
+    const kTime = csvArray[i];
+    const kPrice = csvArray[i + 1];
+
+    if (kTime !== null && kPrice !== null && kPrice > 0) {
+      results.push({
+        timestamp: keepaTimeToUnix(kTime),
+        price: kPrice / 100,
+      });
+    }
+  }
+
+  return results;
+}

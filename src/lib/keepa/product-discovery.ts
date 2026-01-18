@@ -146,6 +146,7 @@ export interface KeepaProductRaw {
   categoryTree?: { catId: number; name: string }[];
   rating?: number; // Keepa 10-50 format
   reviewsLastSeenStatus?: number; // Total review count
+  csv?: (number | null)[][]; // Price and rank history arrays
 }
 
 // Search results type
