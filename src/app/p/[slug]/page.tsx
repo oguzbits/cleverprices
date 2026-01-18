@@ -63,14 +63,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       ? ` - ${pricePerUnit}€ pro ${category.unitType}`
       : "";
 
-  // German SEO-optimized title with low-competition keywords
-  const title = `${product.title} günstig kaufen${unitPriceText}`;
+  // German SEO-optimized title (Max ~60 chars ideal)
+  const shortTitle =
+    product.title.length > 50
+      ? product.title.substring(0, 50) + "..."
+      : product.title;
 
-  // German description with price and value proposition
+  const title = `${shortTitle} ${unitPriceText} - CleverPrices`.trim();
+
+  // German description with Action Verb + value proposition (Max ~160 chars)
   const description =
     pricePerUnit && category?.unitType
-      ? `${product.title} Preisvergleich: Aktueller Preis ${price?.toFixed(2)}€, nur ${pricePerUnit}€ pro ${category.unitType}. Vergleichen Sie ${category?.name || product.category} und sparen Sie!`
-      : `${product.title} Preisvergleich: Aktueller Preis ${countryConfig?.currency || "EUR"} ${price?.toFixed(2)}. Finden Sie das beste Angebot für ${category?.name || product.category}.`;
+      ? `Vergleichen Sie ${product.title}. Bester Preis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Jetzt Top-Angebot finden!`
+      : `Vergleichen Sie ${product.title}. Aktueller Bestpreis: ${countryConfig?.currency || "EUR"} ${price?.toFixed(2)}. Finden Sie jetzt das günstigste Angebot bei CleverPrices.`;
 
   const canonicalUrl = `https://${BRAND_DOMAIN}/p/${slug}`;
 
