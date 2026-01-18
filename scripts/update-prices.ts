@@ -128,6 +128,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
         // Update Product Meta (Sales Rank & Ratings)
         const salesRank = extractSalesRank(kp.salesRanks) ?? product.salesRank;
         const rating = normalizeRating(kp.rating) ?? product.rating;
+        const now = new Date(); // Consistent timestamp for all updates
 
         try {
           await withRetry(async () => {
@@ -141,17 +142,9 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   kp.reviewsLastSeenStatus !== undefined
                     ? kp.reviewsLastSeenStatus
                     : product.reviewCount,
-                updatedAt: new Date(),
+                updatedAt: now,
               })
               .where(eq(products.id, product.id));
-
-            if (!bestPrice) return;
-
-            // Calculate price per unit
-            let pricePerUnit: number | null = null;
-            if (product.normalizedCapacity && product.normalizedCapacity > 0) {
-              pricePerUnit = bestPrice / product.normalizedCapacity;
-            }
 
             // Get existing price record
             const existingPrice = await db.query.prices.findFirst({
@@ -159,46 +152,77 @@ async function updatePrices(country: CountryCode): Promise<void> {
                 and(eq(p.productId, product.id), eq(p.country, country)),
             });
 
-            // Save to history if best price changed
-            const oldBestPrice =
-              existingPrice?.amazonPrice ?? existingPrice?.newPrice;
-            if (existingPrice && oldBestPrice !== bestPrice) {
-              const historyRecord: NewPriceHistoryRecord = {
-                productId: product.id,
-                country,
-                price: bestPrice,
-                currency,
-                priceType: amazonPrice ? "amazon" : "new",
-                recordedAt: new Date(),
-              };
-              await db.insert(priceHistory).values(historyRecord);
-            }
+            if (bestPrice) {
+              // Calculate price per unit
+              let pricePerUnit: number | null = null;
+              if (
+                product.normalizedCapacity &&
+                product.normalizedCapacity > 0
+              ) {
+                pricePerUnit = bestPrice / product.normalizedCapacity;
+              }
 
-            // Update or insert current price
-            if (existingPrice) {
-              await db
-                .update(prices)
-                .set({
+              // Save to history if best price changed
+              const oldBestPrice =
+                existingPrice?.amazonPrice ?? existingPrice?.newPrice;
+              if (existingPrice && oldBestPrice !== bestPrice) {
+                const historyRecord: NewPriceHistoryRecord = {
+                  productId: product.id,
+                  country,
+                  price: bestPrice,
+                  currency,
+                  priceType: amazonPrice ? "amazon" : "new",
+                  recordedAt: now,
+                };
+                await db.insert(priceHistory).values(historyRecord);
+              }
+
+              // Update or insert current price
+              if (existingPrice) {
+                await db
+                  .update(prices)
+                  .set({
+                    amazonPrice,
+                    newPrice,
+                    usedPrice,
+                    warehousePrice,
+                    pricePerUnit,
+                    lastUpdated: now,
+                  })
+                  .where(eq(prices.id, existingPrice.id));
+              } else {
+                await db.insert(prices).values({
+                  productId: product.id,
+                  country,
                   amazonPrice,
                   newPrice,
                   usedPrice,
                   warehousePrice,
                   pricePerUnit,
-                  lastUpdated: new Date(),
+                  currency,
+                  source: "keepa",
+                  lastUpdated: now,
+                });
+              }
+            } else if (existingPrice) {
+              // EVEN if no price found today, update lastUpdated so it's no longer "stale"
+              // but keep old prices if they were there? Or set them to null?
+              // Amazon API strategy: Keep last known price but bump lastUpdated.
+              await db
+                .update(prices)
+                .set({
+                  lastUpdated: now,
                 })
                 .where(eq(prices.id, existingPrice.id));
             } else {
+              // No existing price record and no price found today
+              // Create a skeleton record to mark as checked
               await db.insert(prices).values({
                 productId: product.id,
                 country,
-                amazonPrice,
-                newPrice,
-                usedPrice,
-                warehousePrice,
-                pricePerUnit,
                 currency,
                 source: "keepa",
-                lastUpdated: new Date(),
+                lastUpdated: now,
               });
             }
           });

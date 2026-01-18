@@ -104,7 +104,7 @@ async function main() {
     }
 
     const now = Date.now();
-    const WORK_COOLDOWN = 15 * 60 * 1000; // 15 minutes
+    const WORK_COOLDOWN = 20 * 60 * 1000; // 20 minutes
 
     let workPerformed = false;
 
