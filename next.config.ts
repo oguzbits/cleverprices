@@ -140,6 +140,212 @@ const nextConfig: NextConfig = {
         destination: "/p/intel-core-i9-12900k-12-generation-desktop-128gb-b4j6",
         permanent: true,
       },
+
+      // --- Category Coverage Fixes (Flattened Hierarchy) ---
+      {
+        source: "/computer/tablet-accessories",
+        destination: "/tablet-accessories",
+        permanent: true,
+      },
+      {
+        source: "/drucker-scanner/3d-drucker",
+        destination: "/3d-drucker",
+        permanent: true,
+      },
+      {
+        source: "/telekommunikation/samsung-galaxy",
+        destination: "/samsung-galaxy",
+        permanent: true,
+      },
+      {
+        source: "/fotografie/systemkameras",
+        destination: "/systemkameras",
+        permanent: true,
+      },
+      {
+        source: "/drucker-scanner/multifunktionsdrucker",
+        destination: "/multifunktionsdrucker",
+        permanent: true,
+      },
+      {
+        source: "/fotografie/kompaktkameras",
+        destination: "/kompaktkameras",
+        permanent: true,
+      },
+      {
+        source: "/drucker-scanner/laserdrucker",
+        destination: "/laserdrucker",
+        permanent: true,
+      },
+      {
+        source: "/fotografie/speicherkarten",
+        destination: "/speicherkarten",
+        permanent: true,
+      },
+      {
+        source: "/telekommunikation/apple-iphone",
+        destination: "/apple-iphone",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/radios",
+        destination: "/radios",
+        permanent: true,
+      },
+      { source: "/pc-komponenten/ram", destination: "/ram", permanent: true },
+      {
+        source: "/pc-komponenten/pc-cases",
+        destination: "/pc-cases",
+        permanent: true,
+      },
+      {
+        source: "/computer/mouse-pads",
+        destination: "/mouse-pads",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/soundbars",
+        destination: "/soundbars",
+        permanent: true,
+      },
+      {
+        source: "/computer/pc-komponenten",
+        destination: "/pc-komponenten",
+        permanent: true,
+      },
+      {
+        source: "/pc-komponenten/storage",
+        destination: "/storage",
+        permanent: true,
+      },
+      {
+        source: "/computer/keyboards",
+        destination: "/keyboards",
+        permanent: true,
+      },
+      { source: "/pc-komponenten/cpu", destination: "/cpu", permanent: true },
+      {
+        source: "/elektroartikel/elektrische-zahnb%C3%BCrsten",
+        destination: "/elektrische-zahnbuersten",
+        permanent: true,
+      }, // Encoding check
+      {
+        source: "/elektroartikel/elektrische-zahnbürsten",
+        destination: "/elektrische-zahnbuersten",
+        permanent: true,
+      }, // Literal check
+      {
+        source: "/elektroartikel/staubsauger",
+        destination: "/staubsauger",
+        permanent: true,
+      },
+      {
+        source: "/computer/capture-cards",
+        destination: "/capture-cards",
+        permanent: true,
+      },
+      {
+        source: "/computer/network-switches",
+        destination: "/network-switches",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/fotografie",
+        destination: "/fotografie",
+        permanent: true,
+      },
+
+      // --- Legacy English/V1 Path Corrections ---
+      { source: "/electronics/ram", destination: "/ram", permanent: true },
+      {
+        source: "/electronics/webcams",
+        destination: "/webcams",
+        permanent: true,
+      },
+      {
+        source: "/electronics/hard-drives",
+        destination: "/hard-drives",
+        permanent: true,
+      },
+      {
+        source: "/electronics/monitors",
+        destination: "/monitors",
+        permanent: true,
+      },
+      {
+        source: "/electronics/routers",
+        destination: "/routers",
+        permanent: true,
+      },
+      {
+        source: "/electronics/pc-cases",
+        destination: "/pc-cases",
+        permanent: true,
+      },
+      {
+        source: "/electronics/game-controllers",
+        destination: "/game-controllers",
+        permanent: true,
+      },
+      {
+        source: "/electronics/cable-management",
+        destination: "/cable-management",
+        permanent: true,
+      },
+      { source: "/electronics/gpu", destination: "/gpu", permanent: true },
+
+      // --- Country Prefix Removal (Consolidate traffic to root) ---
+      // Specific commonly hit paths first
+      {
+        source: "/de/drucker-scanner/laserdrucker",
+        destination: "/laserdrucker",
+        permanent: true,
+      },
+      {
+        source: "/de/computer/mouse-pads",
+        destination: "/mouse-pads",
+        permanent: true,
+      },
+      {
+        source: "/de/elektroartikel/soundbars",
+        destination: "/soundbars",
+        permanent: true,
+      },
+      {
+        source: "/de/elektroartikel/drones",
+        destination: "/drones",
+        permanent: true,
+      },
+      {
+        source: "/de/computer/network-switches",
+        destination: "/network-switches",
+        permanent: true,
+      },
+      {
+        source: "/de/electronics/:path*",
+        destination: "/:path*",
+        permanent: true,
+      },
+
+      // Generic country Prefix Stripping (Catch-all for de/ca/fr/uk/it)
+      { source: "/de/:path*", destination: "/:path*", permanent: true },
+      { source: "/ca/:path*", destination: "/:path*", permanent: true },
+      { source: "/fr/:path*", destination: "/:path*", permanent: true },
+      { source: "/uk/:path*", destination: "/:path*", permanent: true },
+      { source: "/it/:path*", destination: "/:path*", permanent: true },
+
+      // --- Outbound Link Fixes ---
+      {
+        source:
+          "/out/tecknet-wireless-vertikale-ergonomische-maus-4800-dpi-5-tasten-kabellose-optisch-b0dh1mg23d",
+        destination: "/mice?brand=TeckNet", // Safe fallback to category+brand filter
+        permanent: true,
+      },
+      {
+        source: "/out/seagate-ironwolf-pro-16tb",
+        destination: "/hard-drives?brand=Seagate&capacity=16",
+        permanent: true,
+      },
     ];
   },
 };

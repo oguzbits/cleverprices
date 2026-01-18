@@ -149,9 +149,10 @@ export function getAlternateLanguages(
     });
   }
 
-  // Root domain also serves as the general 'en' version if not already set
-  if (!alternates["en"]) {
-    alternates["en"] = `${SITE_URL}${cleanPath}`;
+  // Root domain serves as the general version for the default language
+  const defaultLang = DEFAULT_COUNTRY === "de" ? "de" : "en";
+  if (!alternates[defaultLang]) {
+    alternates[defaultLang] = `${SITE_URL}${cleanPath}`;
   }
 
   return alternates;
