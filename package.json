@@ -13,6 +13,8 @@
     "check": "prettier --check .",
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
+    "db:migrate": "drizzle-kit push --config=drizzle.config.ts",
+    "db:migrate:cloud": "TURSO_DATABASE_URL=$TURSO_DATABASE_URL TURSO_AUTH_TOKEN=$TURSO_AUTH_TOKEN drizzle-kit push --config=drizzle.config.ts",
     "import": "DISABLE_TURSO_SYNC=1 DATABASE_PATH=file:./data/cleverprices.db bun run scripts/import-products.ts",
     "update-prices": "DISABLE_TURSO_SYNC=1 DATABASE_PATH=file:./data/cleverprices.db bun run scripts/update-prices.ts",
     "collect-history": "bun run scripts/collect-price-history.ts",

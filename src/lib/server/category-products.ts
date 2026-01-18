@@ -375,15 +375,23 @@ export async function getCategoryProducts(
       : {},
     maxPriceInCategory:
       localizedProducts.length > 0
-        ? Math.ceil(Math.max(...localizedProducts.map((p) => p.price)))
+        ? Math.ceil(
+            localizedProducts.reduce(
+              (max, p) => (p.price > max ? p.price : max),
+              0,
+            ),
+          )
         : 1000,
     lastUpdated:
       localizedProducts.length > 0
-        ? localizedProducts
-            .map((p) => p.lastUpdated)
-            .filter((d): d is string => !!d)
-            .sort()
-            .reverse()[0] || null
+        ? localizedProducts.reduce(
+            (latest, p) => {
+              if (p.lastUpdated && (!latest || p.lastUpdated > latest))
+                return p.lastUpdated;
+              return latest;
+            },
+            null as string | null,
+          )
         : null,
     pagination,
   };

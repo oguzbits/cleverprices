@@ -79,18 +79,16 @@ function mapDbProduct(
 
   if (pricesList) {
     pricesList.forEach((pr) => {
-      if (pr.productId === p.id) {
-        // Use Amazon price, fallback to New price, then Used price
-        const price = pr.amazonPrice || pr.newPrice || pr.usedPrice;
-        if (price) {
-          pricesObj[pr.country] = price;
-          if (pr.lastUpdated) {
-            pricesLastUpdatedObj[pr.country] = pr.lastUpdated.toISOString();
-          }
-          if (pr.priceAvg30) avg30Obj[pr.country] = pr.priceAvg30;
-          if (pr.priceAvg90) avg90Obj[pr.country] = pr.priceAvg90;
-          if (pr.listPrice) listPricesObj[pr.country] = pr.listPrice;
+      // Use Amazon price, fallback to New price, then Used price
+      const price = pr.amazonPrice || pr.newPrice || pr.usedPrice;
+      if (price) {
+        pricesObj[pr.country] = price;
+        if (pr.lastUpdated) {
+          pricesLastUpdatedObj[pr.country] = pr.lastUpdated.toISOString();
         }
+        if (pr.priceAvg30) avg30Obj[pr.country] = pr.priceAvg30;
+        if (pr.priceAvg90) avg90Obj[pr.country] = pr.priceAvg90;
+        if (pr.listPrice) listPricesObj[pr.country] = pr.listPrice;
       }
     });
   }
@@ -162,18 +160,23 @@ export async function getAllProducts(): Promise<Product[]> {
   const allProducts = await db.select().from(products);
   const allPrices = await db.select().from(prices);
 
-  // Group prices by productId for O(1) lookup
-  const pricesByProduct = new Map<number, Price[]>();
-  for (const pr of allPrices) {
-    if (!pricesByProduct.has(pr.productId)) {
-      pricesByProduct.set(pr.productId, []);
-    }
-    pricesByProduct.get(pr.productId)!.push(pr);
-  }
+  const pricesByProduct = indexPricesById(allPrices);
 
   return allProducts.map((p) =>
     mapDbProduct(p, pricesByProduct.get(p.id!) || []),
   );
+}
+
+/**
+ * Helper: Index an array of prices by productId for O(1) lookups.
+ */
+function indexPricesById(pricesList: Price[]): Map<number, Price[]> {
+  const map = new Map<number, Price[]>();
+  for (const pr of pricesList) {
+    if (!map.has(pr.productId)) map.set(pr.productId, []);
+    map.get(pr.productId)!.push(pr);
+  }
+  return map;
 }
 
 import { cache } from "react";
@@ -197,10 +200,12 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
       .from(prices)
       .where(inArray(prices.productId, ids));
 
+    const pricesByProduct = indexPricesById(prs);
+
     return prods.map((p) => {
       const mapped = mapDbProduct(
         p,
-        prs.filter((pr) => pr.productId === p.id),
+        pricesByProduct.get(p.id!) || [],
         [],
         stripHeavyData,
       );
@@ -389,6 +394,8 @@ export async function searchProducts(
       .from(prices)
       .where(inArray(prices.productId, ids));
 
+    const pricesByProduct = indexPricesById(prs);
+
     // Sort prods back into the order returned by FTS (relevance)
     const idOrder = new Map<number, number>(
       ids.map((id: number, index: number) => [id, index]),
@@ -400,7 +407,7 @@ export async function searchProducts(
     return sortedProds.map((p) =>
       mapDbProduct(
         p,
-        prs.filter((pr) => pr.productId === p.id),
+        pricesByProduct.get(p.id!) || [],
         [],
         true, // Strip heavy data for search results
       ),
@@ -422,10 +429,12 @@ export async function searchProducts(
       .from(prices)
       .where(inArray(prices.productId, fallbackIds));
 
+    const fallbackPricesByProduct = indexPricesById(fallbackPrs);
+
     return fallbackProds.map((p) =>
       mapDbProduct(
         p,
-        fallbackPrs.filter((pr) => pr.productId === p.id),
+        fallbackPricesByProduct.get(p.id!) || [],
         [],
         true, // Strip heavy data for search results (fallback)
       ),
@@ -455,12 +464,9 @@ export async function getProductsByBrand(
     .from(prices)
     .where(inArray(prices.productId, ids));
 
-  return prods.map((p) =>
-    mapDbProduct(
-      p,
-      prs.filter((pr) => pr.productId === p.id),
-    ),
-  );
+  const pricesByProduct = indexPricesById(prs);
+
+  return prods.map((p) => mapDbProduct(p, pricesByProduct.get(p.id!) || []));
 }
 
 const getCachedDeals = unstable_cache(
@@ -566,13 +572,10 @@ const getCachedPopular = unstable_cache(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
       );
 
+    const pricesByProduct = indexPricesById(prs);
+
     return prods.map((p) =>
-      mapDbProduct(
-        p,
-        prs.filter((pr) => pr.productId === p.id),
-        [],
-        true,
-      ),
+      mapDbProduct(p, pricesByProduct.get(p.id!) || [], [], true),
     );
   },
   ["popular-deals-v10"],
@@ -606,13 +609,10 @@ export async function getMostPopular(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
       );
 
+    const pricesByProduct = indexPricesById(prs);
+
     return prods.map((p) =>
-      mapDbProduct(
-        p,
-        prs.filter((pr) => pr.productId === p.id),
-        [],
-        true,
-      ),
+      mapDbProduct(p, pricesByProduct.get(p.id!) || [], [], true),
     );
   }
   return getCachedPopular(limit, countryCode, condition);
@@ -661,10 +661,12 @@ export async function getDiverseMostPopular(
       and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
     );
 
+  const pricesByProduct = indexPricesById(prs);
+
   return prods.map((p) =>
     mapDbProduct(
       p,
-      prs.filter((pr) => pr.productId === p.id),
+      pricesByProduct.get(p.id!) || [],
       [],
       true, // Strip heavy data (Home curation doesn't need specs)
     ),
@@ -702,13 +704,10 @@ const getCachedNew = unstable_cache(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
       );
 
+    const pricesByProduct = indexPricesById(prs);
+
     return prods.map((p) =>
-      mapDbProduct(
-        p,
-        prs.filter((pr) => pr.productId === p.id),
-        [],
-        true,
-      ),
+      mapDbProduct(p, pricesByProduct.get(p.id!) || [], [], true),
     );
   },
   ["new-arrivals-v10"],
@@ -742,13 +741,10 @@ export async function getNewArrivals(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
       );
 
+    const pricesByProduct = indexPricesById(prs);
+
     return prods.map((p) =>
-      mapDbProduct(
-        p,
-        prs.filter((pr) => pr.productId === p.id),
-        [],
-        true,
-      ),
+      mapDbProduct(p, pricesByProduct.get(p.id!) || [], [], true),
     );
   }
   return getCachedNew(limit, countryCode, condition);

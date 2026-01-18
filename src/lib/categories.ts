@@ -1365,22 +1365,7 @@ export const allCategories: Record<CategorySlug, Category> = Object.entries(
 
 // Get category hierarchy (parent with children)
 export function getCategoryHierarchy(): CategoryHierarchy[] {
-  const hierarchies: CategoryHierarchy[] = [];
-  const parents = Object.values(allCategories).filter(
-    (cat) => !cat.parent && !cat.hidden,
-  );
-
-  parents.forEach((parent) => {
-    const children = Object.values(allCategories).filter(
-      (cat) => cat.parent === parent.slug && !cat.hidden,
-    );
-    hierarchies.push({
-      parent: stripCategoryIcon(parent) as Category,
-      children: children.map(stripCategoryIcon) as Category[],
-    });
-  });
-
-  return hierarchies;
+  return _cachedHierarchy;
 }
 
 // Get category by slug
@@ -1397,11 +1382,9 @@ export function getParentCategory(
   return allCategories[category.parent];
 }
 
-// Get children of a parent category
+// Get children of a parent category - O(1) via pre-computed Map
 export function getChildCategories(parentSlug: CategorySlug): Category[] {
-  return Object.values(allCategories).filter(
-    (cat) => cat.parent === parentSlug && !cat.hidden,
-  );
+  return _childrenByParent.get(parentSlug) || [];
 }
 
 // Get breadcrumb trail for a category
@@ -1443,26 +1426,63 @@ export function isAnalyticalCategory(category: Category): boolean {
 }
 
 /**
- * Get all analytical categories (price-per-unit categories)
+ * Get all analytical categories (price-per-unit categories) - O(1) via cache
  */
 export function getAnalyticalCategories(): Category[] {
-  return Object.values(allCategories).filter(
-    (cat) => cat.categoryType === "analytical" && !cat.hidden,
-  );
+  return _cachedAnalyticalCategories;
 }
 
 /**
  * Get all categories
  */
 export function getAllCategories(): Category[] {
-  return Object.values(allCategories);
+  return _cachedAllCategories;
 }
 
 /**
- * Get all standard categories (regular price comparison)
+ * Get all standard categories (regular price comparison) - O(1) via cache
  */
 export function getStandardCategories(): Category[] {
-  return Object.values(allCategories).filter(
-    (cat) => cat.categoryType === "standard" && !cat.hidden,
-  );
+  return _cachedStandardCategories;
 }
+
+// =====================================================
+// PRE-COMPUTED CACHES (Module-level initialization)
+// These are computed once at module load for O(1) access
+// =====================================================
+
+// Cache: All categories as array
+const _cachedAllCategories = Object.values(allCategories);
+
+// Cache: Children by parent slug for O(1) lookup
+const _childrenByParent = new Map<CategorySlug, Category[]>();
+for (const cat of _cachedAllCategories) {
+  if (cat.parent && !cat.hidden) {
+    const existing = _childrenByParent.get(cat.parent) || [];
+    existing.push(cat);
+    _childrenByParent.set(cat.parent, existing);
+  }
+}
+
+// Cache: Full hierarchy
+const _cachedHierarchy: CategoryHierarchy[] = [];
+for (const cat of _cachedAllCategories) {
+  if (!cat.parent && !cat.hidden) {
+    _cachedHierarchy.push({
+      parent: stripCategoryIcon(cat) as Category,
+      children: (_childrenByParent.get(cat.slug) || []).map(
+        stripCategoryIcon,
+      ) as Category[],
+    });
+  }
+}
+
+// Cache: Analytical categories
+const _cachedAnalyticalCategories = _cachedAllCategories.filter(
+  (cat) => cat.categoryType === "analytical" && !cat.hidden,
+);
+
+// Cache: Standard categories
+const _cachedStandardCategories = _cachedAllCategories.filter(
+  (cat) => cat.categoryType === "standard" && !cat.hidden,
+);

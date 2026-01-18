@@ -62,27 +62,21 @@ export function filterProducts(
   categorySlug: string,
   unitLabel: string,
 ): LocalizedProduct[] {
-  let filtered = [...products];
-
-  // 1. Search Filter
-  if (filters.search && typeof filters.search === "string") {
-    const searchLower = filters.search.toLowerCase();
-    filtered = filtered.filter((p) => {
-      const title = p.title;
-      return title.toLowerCase().includes(searchLower);
-    });
-  }
-
   const category = allCategories[categorySlug as CategorySlug];
+  const searchLower = filters.search?.toLowerCase() || "";
 
-  // 2. Main Filters
-  filtered = filtered.filter((p) => {
-    // Brand
+  return products.filter((p) => {
+    // 1. Search Filter (integrated into main loop)
+    if (searchLower && !p.title.toLowerCase().includes(searchLower)) {
+      return false;
+    }
+
+    // 2. Brand
     if (filters.brand?.length > 0 && !filters.brand.includes(p.brand || "")) {
       return false;
     }
 
-    // Socket
+    // 3. Socket
     if (
       filters.socket?.length > 0 &&
       !filters.socket.includes((p as any).socket || "")
@@ -90,7 +84,7 @@ export function filterProducts(
       return false;
     }
 
-    // Cores
+    // 4. Cores
     if (
       filters.cores?.length > 0 &&
       !filters.cores.includes(((p as any).cores || "").toString())
@@ -98,7 +92,7 @@ export function filterProducts(
       return false;
     }
 
-    // Capacity (as exact choice, e.g. for GPU, or SSDs now)
+    // 5. Capacity (as exact choice)
     if (
       filters.capacity?.length > 0 &&
       !filters.capacity.includes(
@@ -108,13 +102,13 @@ export function filterProducts(
       return false;
     }
 
-    // Price
+    // 6. Price
     const price = p.price || 0;
     if (filters.minPrice !== null && price < filters.minPrice) return false;
     if (filters.maxPrice !== null && (price === 0 || price > filters.maxPrice))
       return false;
 
-    // Capacity Range (Storage/PSU)
+    // 7. Capacity Range (Storage/PSU)
     const cap = p.capacity || 0;
     if (filters.minCapacity !== null) {
       const minValReal =
@@ -127,10 +121,9 @@ export function filterProducts(
       if (cap > maxValReal) return false;
     }
 
-    // Dynamic filters (Technology, Form Factor, Condition, etc.)
+    // 8. Dynamic filters (Technology, Form Factor, Condition, etc.)
     if (category?.filterGroups) {
       for (const group of category.filterGroups) {
-        // Skip already handled main filters
         if (["brand", "socket", "cores", "capacity"].includes(group.field))
           continue;
 
@@ -144,8 +137,6 @@ export function filterProducts(
 
     return true;
   });
-
-  return filtered;
 }
 
 /**

@@ -20,12 +20,30 @@ Open [http://localhost:3000](http://localhost:3000) to view the site.
 
 ```bash
 # Price update & database maintenance
-bun run worker:run
+bun run worker:run -c
 
-# Build for Production
-bun run build
-bun run start
+# Apply schema changes (Local)
+bun run db:migrate
+
+# Delta sync to Turso Cloud (Efficient)
+bun run db:deploy --delta
+
+# Full re-sync to Turso Cloud (Slow)
+bun run db:deploy
 ```
+
+---
+
+## 🏎️ Database & Algorithm Performance
+
+CleverPrices uses a highly optimized data layer to ensure sub-100ms response times even on the Vercel Free Tier:
+
+- **O(1) Data Lookups** - Statically pre-computes category hierarchies and country metadata at module load.
+- **Efficient Indexing** - Custom SQL indexes on `sales_rank`, `created_at`, `country`, and `productId` ensure instantaneous sorting and filtering.
+- **Map-Based Joins (O(N))** - Avoids O(N²) nested loops in JS by pre-indexing prices into hash maps before mapping products.
+- **SQLite Resilience** - Implements a `withRetry` logic with exponential backoff and `PRAGMA busy_timeout = 5000` to handle concurrent write locks gracefully.
+- **FTS5 Full-Text Search** - Uses SQLite's native virtual tables for ultra-fast product prefix matching.
+- **Atomic Migrations** - Dedicated `db:migrate` scripts ensure schema consistency between local and cloud databases.
 
 ---
 

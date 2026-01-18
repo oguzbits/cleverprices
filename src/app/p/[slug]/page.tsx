@@ -1,6 +1,6 @@
 import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { allCategories, type CategorySlug } from "@/lib/categories";
-import { DEFAULT_COUNTRY, getAllCountries } from "@/lib/countries";
+import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { dataAggregator } from "@/lib/data-sources";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { findProductSlugByAsinSuffix } from "@/lib/product-registry";
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const countryCode = DEFAULT_COUNTRY;
-  const countryConfig = getAllCountries().find((c) => c.code === countryCode);
+  const countryConfig = getCountryByCode(countryCode);
   const category = allCategories[product.category as CategorySlug];
   const price = product.prices[countryCode] || Object.values(product.prices)[0];
 

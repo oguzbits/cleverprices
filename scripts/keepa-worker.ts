@@ -105,9 +105,6 @@ async function main() {
 
     const now = Date.now();
     const WORK_COOLDOWN = 15 * 60 * 1000; // 15 minutes
-    const syncInterval = parseInt(
-      process.env.SYNC_INTERVAL_MS || String(12 * 60 * 60 * 1000),
-    );
 
     let workPerformed = false;
 
@@ -147,45 +144,35 @@ async function main() {
         }
       };
 
+      const runCloudSyncPhase = async () => {
+        console.log("\n☁️  Phase 3: Cloud Sync (Incremental)");
+        try {
+          // Use --delta for incremental sync
+          execSync(`bun run scripts/deploy-data.ts --delta`, {
+            stdio: "inherit",
+          });
+          console.log("✅ Cloud sync successful.");
+        } catch (e) {
+          console.error("❌ Cloud sync failed:", e);
+        }
+      };
+
       // Execute phases
       try {
         await runCompliancePhase();
         await runEnrichmentPhase();
+        await runCloudSyncPhase();
 
         // Update Memory & Persist
         state.lastRun = Date.now();
-        saveWorkerState({ lastRun: state.lastRun });
+        state.lastCloudSync = state.lastRun;
+        saveWorkerState({
+          lastRun: state.lastRun,
+          lastCloudSync: state.lastRun,
+        });
         workPerformed = true;
       } catch (e) {
         console.error("❌ Phase execution failed:", e);
-      }
-    }
-
-    // Phase 3: Cloud Sync (Periodically)
-    if (now - state.lastCloudSync >= syncInterval) {
-      console.log("\n☁️  Phase 3: Cloud Sync (Local -> Turso)");
-      try {
-        execSync(`bun run scripts/deploy-data.ts`, {
-          stdio: "inherit",
-        });
-
-        // Update Memory & Persist
-        state.lastCloudSync = Date.now();
-        saveWorkerState({ lastCloudSync: state.lastCloudSync });
-
-        console.log("✅ Cloud sync successful.");
-      } catch (e) {
-        console.error("❌ Cloud sync failed:", e);
-      }
-    } else {
-      const nextSyncIn = Math.round(
-        (syncInterval - (now - state.lastCloudSync)) / (60 * 1000),
-      );
-      if (workPerformed) {
-        // Only log skip if we actually did something else, otherwise it's spammy
-        console.log(
-          `\n⏭️  Skipping cloud sync (Next sync in ~${nextSyncIn} mins)`,
-        );
       }
     }
 
@@ -196,39 +183,15 @@ async function main() {
 
     cycleCount++;
 
-    // Smart Sleep Implementation
-    // We want to wake up for whichever event comes first:
-    // 1. Next Standard Work Cycle (Price/Enrichment)
-    // 2. Next Cloud Sync (Database Deploy)
-
+    // Sleep Implementation
     const nowLocal = Date.now();
-
-    // 1. Next Work calculation
     const nextWorkTime = state.lastRun + WORK_COOLDOWN;
-    const msUntilWork = Math.max(0, nextWorkTime - nowLocal);
-
-    // 2. Next Sync calculation
-    const nextSyncTime = state.lastCloudSync + syncInterval;
-    const msUntilSync = Math.max(0, nextSyncTime - nowLocal);
-
-    // Determine winner
-    const sleepTime = Math.max(10000, Math.min(msUntilWork, msUntilSync));
-    const nextEventName =
-      msUntilSync < msUntilWork ? "Cloud Sync" : "Standard Cycle";
+    const sleepTime = Math.max(10000, nextWorkTime - nowLocal);
     const nextEventTime = new Date(nowLocal + sleepTime).toLocaleTimeString();
     const minsToSleep = Math.round(sleepTime / 60000);
 
-    console.log(`\n📅 Schedule:`);
-    console.log(
-      `   • Standard Cycle: ${new Date(nextWorkTime).toLocaleTimeString()}`,
-    );
-    console.log(
-      `   • Cloud Sync:     ${new Date(nextSyncTime).toLocaleString()}`,
-    );
-
-    console.log(
-      `\n💤 Cycle complete. Sleeping ${minsToSleep}m until next ${nextEventName} at ${nextEventTime}...`,
-    );
+    console.log(`\n📅 Next Cycle: ${nextEventTime}`);
+    console.log(`💤 Sleeping ${minsToSleep}m...`);
     await new Promise((r) => setTimeout(r, sleepTime));
   }
 

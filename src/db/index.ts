@@ -61,7 +61,16 @@ function createDbClient(): Client {
 
   // Local development: Plain local SQLite (no sync)
   console.log("[DB] Using plain local SQLite (no Turso sync)");
-  return createClient({ url });
+  const client = createClient({ url });
+
+  // Set busy timeout for local SQLite to reduce locking issues
+  if (url.startsWith("file:")) {
+    client.execute("PRAGMA busy_timeout = 5000").catch((e) => {
+      console.warn("[DB] Failed to set busy_timeout:", e.message);
+    });
+  }
+
+  return client;
 }
 
 // Create client and Drizzle instance

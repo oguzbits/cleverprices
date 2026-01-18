@@ -1,18 +1,3 @@
-#!/usr/bin/env bun
-/**
- * Price Update Script
- *
- * Updates prices for existing products in the database.
- * Run this daily to keep prices fresh.
- *
- * Usage:
- *   bun run scripts/update-prices.ts [country]
- *
- * Examples:
- *   bun run scripts/update-prices.ts us
- *   bun run scripts/update-prices.ts de
- */
-
 import { and, asc, eq, isNull, lt, or } from "drizzle-orm";
 import {
   db,
@@ -21,6 +6,7 @@ import {
   prices,
   products,
 } from "../src/db";
+import { withRetry } from "../src/db/utils";
 import type { CountryCode } from "../src/lib/countries";
 import {
   getProducts,
@@ -28,6 +14,11 @@ import {
   isKeepaConfigured,
   KEEPA_DOMAINS,
 } from "../src/lib/keepa/product-discovery";
+import {
+  extractSalesRank,
+  keepaPriceToDecimal,
+  normalizeRating,
+} from "../src/lib/keepa/utils";
 import { updateLastRun } from "../src/lib/worker-state";
 
 // Constants
@@ -48,43 +39,6 @@ const DOMAIN_CURRENCIES: Record<number, string> = {
   9: "EUR",
 };
 
-function keepaPriceToDecimal(price: number | null | undefined): number | null {
-  if (price === null || price === undefined || price < 0) return null;
-  return price / 100;
-}
-
-/**
- * Retry wrapper for database operations.
- * Handles SQLITE_BUSY errors with exponential backoff.
- */
-async function withRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries = 3,
-  baseDelayMs = 100,
-): Promise<T> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error: unknown) {
-      lastError = error;
-      const isSqliteBusy =
-        error instanceof Error &&
-        (error.message.includes("SQLITE_BUSY") ||
-          (error as any).code === "SQLITE_BUSY");
-      if (!isSqliteBusy || attempt === maxRetries - 1) {
-        throw error;
-      }
-      const delay = baseDelayMs * Math.pow(2, attempt);
-      console.log(
-        `  ⏳ Retry ${attempt + 1}/${maxRetries} after ${delay}ms (SQLITE_BUSY)`,
-      );
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
-  throw lastError;
-}
-
 /**
  * Update prices for all products
  */
@@ -94,10 +48,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
   const isStaleOnly = process.argv.includes("--stale");
   const elevenHoursAgo = new Date(Date.now() - 11 * 60 * 60 * 1000);
 
-  // Strict Rotation Logic:
-  // We select products and their price metadata for the target country,
-  // ordering by the LATEST price update (oldest first).
-  // This ensures a "FIFO" queue where every product eventually gets updated.
+  // Strict Rotation Logic
   const targetProducts = await db
     .select({
       id: products.id,
@@ -127,10 +78,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
   console.log(`  Queue size: ${targetProducts.length} products.`);
 
-  // Use a map for O(1) lookups during processing
   const productMap = new Map(targetProducts.map((p) => [p.asin, p]));
-
-  // Batch ASINs (100 at a time for Keepa)
   const asins = targetProducts.map((p) => p.asin);
   const domain = KEEPA_DOMAINS[country];
   const currency = DOMAIN_CURRENCIES[domain] || "USD";
@@ -140,8 +88,6 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
   for (let i = 0; i < asins.length; i += 100) {
     const batch = asins.slice(i, i + 100);
-
-    // Check tokens before batch
     const status = await getTokenStatus();
     if (status.tokensLeft < 20) {
       console.log(
@@ -179,18 +125,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
         const bestPrice = amazonPrice ?? newPrice;
 
-        // 1. Update Product Meta (Sales Rank & Ratings)
-        // Keepa salesRanks is an object mapping category ID to rank history.
-        // We take the latest rank from the primary category.
-        let salesRank = product.salesRank;
-        if (kp.salesRanks) {
-          const ranks = Object.values(kp.salesRanks)[0];
-          if (ranks && ranks.length > 0) {
-            salesRank = ranks[ranks.length - 1][1];
-          }
-        }
+        // Update Product Meta (Sales Rank & Ratings)
+        const salesRank = extractSalesRank(kp.salesRanks) ?? product.salesRank;
+        const rating = normalizeRating(kp.rating) ?? product.rating;
 
-        // Wrap all DB operations in a transaction with retry for SQLITE_BUSY
         try {
           await withRetry(async () => {
             // Update product meta
@@ -198,8 +136,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
               .update(products)
               .set({
                 salesRank,
-                rating:
-                  kp.rating && kp.rating > 0 ? kp.rating / 10 : product.rating,
+                rating,
                 reviewCount:
                   kp.reviewsLastSeenStatus !== undefined
                     ? kp.reviewsLastSeenStatus
@@ -280,7 +217,6 @@ async function updatePrices(country: CountryCode): Promise<void> {
       failed += batch.length;
     }
 
-    // Small delay between batches
     if (i + 100 < asins.length) {
       await new Promise((r) => setTimeout(r, 500));
     }
@@ -311,7 +247,6 @@ async function main() {
     `\n✅ Update complete! Tokens remaining: ${finalTokens.tokensLeft}`,
   );
 
-  // Update worker state so the orchestrator knows a price update just ran
   updateLastRun();
 }
 

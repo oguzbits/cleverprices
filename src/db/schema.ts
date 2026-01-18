@@ -77,6 +77,8 @@ export const products = sqliteTable(
     index("idx_products_brand").on(table.brand),
     index("idx_products_asin").on(table.asin),
     index("idx_products_gtin").on(table.gtin),
+    index("idx_products_sales_rank").on(table.salesRank),
+    index("idx_products_created_at").on(table.createdAt),
   ],
 );
 
@@ -134,6 +136,8 @@ export const prices = sqliteTable(
       table.productId,
       table.country,
     ),
+    index("idx_prices_country").on(table.country),
+    index("idx_prices_product_id").on(table.productId),
   ],
 );
 
@@ -282,6 +286,11 @@ export const productOffers = sqliteTable(
     index("idx_offers_source").on(table.source),
     index("idx_offers_price").on(table.price),
     index("idx_offers_total_price").on(table.totalPrice),
+    uniqueIndex("unique_offer_composite").on(
+      table.productId,
+      table.source,
+      table.merchantName,
+    ),
   ],
 );
 

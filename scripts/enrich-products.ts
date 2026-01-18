@@ -1,45 +1,17 @@
 import { db, products, prices } from "../src/db";
 import { eq, isNull, and, or, asc } from "drizzle-orm";
+import { withRetry } from "../src/db/utils";
+import type { CountryCode } from "../src/lib/countries";
 import {
   getProducts,
   getTokenStatus,
 } from "../src/lib/keepa/product-discovery";
-
-/**
- * Retry wrapper for database operations.
- * Handles SQLITE_BUSY errors with exponential backoff.
- */
-async function withRetry<T>(
-  operation: () => Promise<T>,
-  maxRetries = 3,
-  baseDelayMs = 100,
-): Promise<T> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      return await operation();
-    } catch (error: unknown) {
-      lastError = error;
-      const isSqliteBusy =
-        error instanceof Error &&
-        (error.message.includes("SQLITE_BUSY") ||
-          (error as any).code === "SQLITE_BUSY");
-      if (!isSqliteBusy || attempt === maxRetries - 1) {
-        throw error;
-      }
-      const delay = baseDelayMs * Math.pow(2, attempt);
-      console.log(
-        `  ⏳ Retry ${attempt + 1}/${maxRetries} after ${delay}ms (SQLITE_BUSY)`,
-      );
-      await new Promise((r) => setTimeout(r, delay));
-    }
-  }
-  throw lastError;
-}
+import { extractSalesRank, keepaPriceToDecimal } from "../src/lib/keepa/utils";
 
 async function enrich() {
+  const country = (process.argv[2] || "de") as CountryCode;
   console.log("💎 CleverPrices Product Enrichment");
-  console.log("Seeding historical data for existing products...\n");
+  console.log(`🌍 Seeding historical data for ${country.toUpperCase()}...\n`);
 
   // 1. Get products that haven't been seeded yet
   // We prioritize by sales rank (lowest rank = most popular)
@@ -64,7 +36,6 @@ async function enrich() {
 
   // 2. Fetch from Keepa with history enabled (costs ~1-5 tokens per product)
   for (let i = 0; i < asins.length; i += 20) {
-    // Small batches to manage tokens
     const batch = asins.slice(i, i + 20);
     const tokens = await getTokenStatus();
 
@@ -78,7 +49,7 @@ async function enrich() {
     );
 
     try {
-      const enrichedProducts = await getProducts(batch, "de", {
+      const enrichedProducts = await getProducts(batch, country, {
         includeHistory: true,
       });
 
@@ -86,12 +57,11 @@ async function enrich() {
         const localProduct = candidates.find((p) => p.asin === ep.asin);
         if (!localProduct) continue;
 
-        // Wrap all DB operations in retry for SQLITE_BUSY
         try {
           await withRetry(async () => {
             // Update avg90 in prices table
             const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
-            const priceAvg90 = avg90Raw && avg90Raw > 0 ? avg90Raw / 100 : null;
+            const priceAvg90 = keepaPriceToDecimal(avg90Raw);
 
             if (priceAvg90) {
               await db
@@ -100,7 +70,7 @@ async function enrich() {
                 .where(
                   and(
                     eq(prices.productId, localProduct.id),
-                    eq(prices.country, "de"),
+                    eq(prices.country, country),
                   ),
                 );
             }
@@ -110,12 +80,8 @@ async function enrich() {
               .update(products)
               .set({
                 historySeeded: true,
-                // Update sales rank while we are at it
-                salesRank: ep.salesRanks
-                  ? Object.values(ep.salesRanks)[0]?.[
-                      Object.values(ep.salesRanks)[0]?.length - 1
-                    ]?.[1]
-                  : localProduct.salesRank,
+                salesRank:
+                  extractSalesRank(ep.salesRanks) ?? localProduct.salesRank,
                 updatedAt: new Date(),
               })
               .where(eq(products.id, localProduct.id));
