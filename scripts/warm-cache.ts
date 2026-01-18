@@ -52,15 +52,23 @@ async function main() {
       urlsToWarm.push(`${SITE_URL}/${cat.slug}`);
     });
 
-  // 2. Warm Top 500 Products (by Sales Rank / Recency)
-  console.log("🏷️ Collecting Top Products...");
-  const topProducts = await db
-    .select({
-      slug: products.slug,
-    })
-    .from(products)
-    .orderBy(products.salesRank)
-    .limit(500);
+  // 2. Warm Top 500 Products (by Sales Rank / Recency) - SKIPPED IN LITE MODE
+  const isLite = process.argv.includes("--lite");
+
+  let topProducts: { slug: string }[] = [];
+
+  if (!isLite) {
+    console.log("🏷️ Collecting Top Products...");
+    topProducts = await db
+      .select({
+        slug: products.slug,
+      })
+      .from(products)
+      .orderBy(products.salesRank)
+      .limit(500);
+  } else {
+    console.log("⚡ Lite Mode: Skipping 500 product pages to save time.");
+  }
 
   topProducts.forEach((p) => {
     urlsToWarm.push(`${SITE_URL}/p/${p.slug}`);

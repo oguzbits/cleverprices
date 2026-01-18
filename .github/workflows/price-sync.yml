@@ -3,10 +3,7 @@ name: Price Synchronization
 on:
   schedule:
     # Runs every 75 minutes (roughly 19 times/day) to stay under 2,000 mins/month
-    - cron: "0 0,5,10,15,20 * * *" # 12:00 AM, 5:00 AM, etc. (Wait, let's do a simpler offset)
-    - cron: "15 1,6,11,16,21 * * *"
-    - cron: "30 2,7,12,17,22 * * *"
-    - cron: "45 3,8,13,18,23 * * *"
+    - cron: "*/30 * * * *" # Run every 30 minutes (approx. 48 runs/day)
 
   workflow_dispatch:
 
