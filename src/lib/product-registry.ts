@@ -15,7 +15,7 @@ import {
 import { calculateProductMetrics } from "./utils/products";
 
 // Define lightweight columns for list views to avoid fetching huge JSON/text blobs
-const liteProductColumns = {
+export const liteProductColumns = {
   id: products.id,
   asin: products.asin,
   gtin: products.gtin,
@@ -100,7 +100,7 @@ export interface Product {
 }
 
 // Helper to map DB to Interface
-function mapDbProduct(
+export function mapDbProduct(
   p: DbProduct,
   pricesList: Price[],
   historyList: { recordedAt: Date | null; price: number }[] = [],
