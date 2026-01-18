@@ -288,18 +288,35 @@ const fetchProductBySlug = async (
   slug: string,
   includeHistory: boolean = false,
 ): Promise<Product | undefined> => {
-  // Try exact match first
-  let [p] = await db.select().from(products).where(eq(products.slug, slug));
+  // Try exact match first using Relational Query Builder
+  let p = await db.query.products.findFirst({
+    where: eq(products.slug, slug),
+    with: {
+      prices: true,
+      priceHistory: includeHistory
+        ? {
+            orderBy: (history, { asc }) => [asc(history.recordedAt)],
+          }
+        : undefined,
+    },
+  });
 
-  // If not found, try decoding the slug (Next.js usually decodes, but just to be safe for manual calls or edge cases)
+  // If not found, try decoding the slug
   if (!p) {
     try {
       const decoded = decodeURIComponent(slug);
       if (decoded !== slug) {
-        [p] = await db
-          .select()
-          .from(products)
-          .where(eq(products.slug, decoded));
+        p = await db.query.products.findFirst({
+          where: eq(products.slug, decoded),
+          with: {
+            prices: true,
+            priceHistory: includeHistory
+              ? {
+                  orderBy: (history, { asc }) => [asc(history.recordedAt)],
+                }
+              : undefined,
+          },
+        });
       }
     } catch (e) {
       // Ignore decoding errors
@@ -308,19 +325,22 @@ const fetchProductBySlug = async (
 
   if (!p) return undefined;
 
-  const prs = await db.select().from(prices).where(eq(prices.productId, p.id));
+  // Map the result (prices and history are now attached to p)
+  // We need to cast p because db.query returns the inferred type with relations,
+  // but mapDbProduct expects the raw DbProduct + separate arrays.
+  // leveraging the existing mapper by splitting them back out is easiest for now
+  // to maintain calculation logic in mapDbProduct.
+  const {
+    prices: productPrices,
+    priceHistory: productHistory,
+    ...productData
+  } = p;
 
-  // Only fetch history if explicitly requested to save time/memory
-  let history: any[] = [];
-  if (includeHistory) {
-    history = await db
-      .select()
-      .from(priceHistory)
-      .where(eq(priceHistory.productId, p.id))
-      .orderBy(priceHistory.recordedAt);
-  }
-
-  return mapDbProduct(p, prs, history);
+  return mapDbProduct(
+    productData as DbProduct,
+    productPrices,
+    productHistory || [],
+  );
 };
 
 export const getProductPriceHistory = unstable_cache(

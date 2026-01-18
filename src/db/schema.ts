@@ -301,6 +301,7 @@ import { relations } from "drizzle-orm";
 
 export const productsRelations = relations(products, ({ many }) => ({
   prices: many(prices),
+  priceHistory: many(priceHistory),
 }));
 
 export const pricesRelations = relations(prices, ({ one }) => ({
