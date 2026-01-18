@@ -17,6 +17,23 @@ import {
 } from "./site-config";
 import { calculateProductMetrics } from "./utils/products";
 
+// Lightweight price columns - excludes rarely-used fields (Drizzle ORM skill: query-select-columns)
+export const litePriceColumns = {
+  id: prices.id,
+  productId: prices.productId,
+  country: prices.country,
+  amazonPrice: prices.amazonPrice,
+  newPrice: prices.newPrice,
+  usedPrice: prices.usedPrice,
+  listPrice: prices.listPrice,
+  priceAvg30: prices.priceAvg30,
+  priceAvg90: prices.priceAvg90,
+  currency: prices.currency,
+  lastUpdated: prices.lastUpdated,
+  // EXCLUDED: amazonPriceFormatted, warehousePrice, priceMin, priceMax,
+  //           pricePerUnit, availability, deliveryTime, deliveryCost, deliveryFree, source
+};
+
 // Define lightweight columns for list views to avoid fetching huge JSON/text blobs
 export const liteProductColumns = {
   id: products.id,
@@ -102,10 +119,24 @@ export interface Product {
   savings?: number; // Calculated savings percentage (0-1)
 }
 
+// Lite price type for optimized queries
+type LitePrice = Pick<
+  Price,
+  | "productId"
+  | "country"
+  | "amazonPrice"
+  | "newPrice"
+  | "usedPrice"
+  | "listPrice"
+  | "priceAvg30"
+  | "priceAvg90"
+  | "lastUpdated"
+>;
+
 // Helper to map DB to Interface
 export function mapDbProduct(
   p: DbProduct,
-  pricesList: Price[],
+  pricesList: LitePrice[] | Price[],
   historyList: { recordedAt: Date | null; price: number }[] = [],
   stripHeavyData: boolean = false,
 ): Product {
@@ -119,7 +150,7 @@ export function mapDbProduct(
     pricesList.forEach((pr) => {
       // Use Amazon price, fallback to New price, then Used price
       const price = pr.amazonPrice || pr.newPrice || pr.usedPrice;
-      if (price) {
+      if (price && pr.country) {
         pricesObj[pr.country] = price;
         if (pr.lastUpdated) {
           pricesLastUpdatedObj[pr.country] = pr.lastUpdated.toISOString();
@@ -195,8 +226,8 @@ export async function getAllProductSlugs(): Promise<
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  const allProducts = await db.select(liteProductColumns).from(products); // Changed to use liteProductColumns
-  const allPrices = await db.select().from(prices);
+  const allProducts = await db.select(liteProductColumns).from(products);
+  const allPrices = await db.select(litePriceColumns).from(prices); // Drizzle ORM skill: query-select-columns
 
   const pricesByProduct = indexPricesById(allPrices);
 
@@ -209,9 +240,13 @@ export async function getAllProducts(): Promise<Product[]> {
 
 /**
  * Helper: Index an array of prices by productId for O(1) lookups.
+ * Accepts any object with productId (supports both full Price and litePriceColumns result).
  */
-function indexPricesById(pricesList: Price[]): Map<number, Price[]> {
-  const map = new Map<number, Price[]>();
+type PriceWithProductId = { productId: number } & Partial<Price>;
+function indexPricesById<T extends PriceWithProductId>(
+  pricesList: T[],
+): Map<number, T[]> {
+  const map = new Map<number, T[]>();
   for (const pr of pricesList) {
     if (!map.has(pr.productId)) map.set(pr.productId, []);
     map.get(pr.productId)!.push(pr);
