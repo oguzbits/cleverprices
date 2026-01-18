@@ -14,6 +14,40 @@ import {
 } from "./site-config";
 import { calculateProductMetrics } from "./utils/products";
 
+// Define lightweight columns for list views to avoid fetching huge JSON/text blobs
+const liteProductColumns = {
+  id: products.id,
+  asin: products.asin,
+  gtin: products.gtin,
+  mpn: products.mpn,
+  sku: products.sku,
+  slug: products.slug,
+  title: products.title,
+  brand: products.brand,
+  category: products.category,
+  imageUrl: products.imageUrl,
+  manufacturer: products.manufacturer,
+  capacity: products.capacity,
+  capacityUnit: products.capacityUnit,
+  normalizedCapacity: products.normalizedCapacity,
+  formFactor: products.formFactor,
+  technology: products.technology,
+  condition: products.condition,
+  rating: products.rating,
+  reviewCount: products.reviewCount,
+  salesRank: products.salesRank,
+  salesRankReference: products.salesRankReference,
+  monthlySold: products.monthlySold,
+  parentAsin: products.parentAsin,
+  variationAttributes: products.variationAttributes,
+  specifications: products.specifications, // Keep for filtering logic
+  energyLabel: products.energyLabel,
+  historySeeded: products.historySeeded,
+  createdAt: products.createdAt,
+  updatedAt: products.updatedAt,
+  // EXCLUDED: rawData, features, description
+};
+
 /**
  * Product Registry - DB Adapter
  * Fetches data from SQLite database seeded with realistic data.
@@ -158,13 +192,15 @@ export async function getAllProductSlugs(): Promise<
 }
 
 export async function getAllProducts(): Promise<Product[]> {
-  const allProducts = await db.select().from(products);
+  const allProducts = await db.select(liteProductColumns).from(products); // Changed to use liteProductColumns
   const allPrices = await db.select().from(prices);
 
   const pricesByProduct = indexPricesById(allPrices);
 
-  return allProducts.map((p) =>
-    mapDbProduct(p, pricesByProduct.get(p.id!) || []),
+  return allProducts.map(
+    (
+      p, // Kept allProducts.map as 'prods' was undefined
+    ) => mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || []),
   );
 }
 
@@ -190,7 +226,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 ): Promise<Product[]> {
   const fetchProducts = async () => {
     const prods = await db
-      .select()
+      .select(liteProductColumns)
       .from(products)
       .where(eq(products.category, category));
     if (prods.length === 0) return [];
@@ -205,7 +241,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 
     return prods.map((p) => {
       const mapped = mapDbProduct(
-        p,
+        p as DbProduct,
         pricesByProduct.get(p.id!) || [],
         [],
         stripHeavyData,
@@ -391,7 +427,7 @@ export async function searchProducts(
 
     // 2. Fetch full product data and prices for those specific IDs
     const prods = await db
-      .select()
+      .select(liteProductColumns)
       .from(products)
       .where(inArray(products.id, ids));
 
@@ -412,7 +448,7 @@ export async function searchProducts(
 
     return sortedProds.map((p) =>
       mapDbProduct(
-        p,
+        p as DbProduct,
         pricesByProduct.get(p.id!) || [],
         [],
         true, // Strip heavy data for search results
@@ -423,7 +459,7 @@ export async function searchProducts(
     // Fallback to basic search if FTS fails for some reason
     const terms = query.trim().split(/\s+/);
     const fallbackProds = await db
-      .select()
+      .select(liteProductColumns)
       .from(products)
       .where(or(...terms.map((t) => like(products.title, `%${t}%`))))
       .limit(limit);
@@ -439,7 +475,7 @@ export async function searchProducts(
 
     return fallbackProds.map((p) =>
       mapDbProduct(
-        p,
+        p as DbProduct,
         fallbackPricesByProduct.get(p.id!) || [],
         [],
         true, // Strip heavy data for search results (fallback)
@@ -453,7 +489,7 @@ export async function getProductsByBrand(
   excludeSlug?: string,
 ): Promise<Product[]> {
   const prods = await db
-    .select()
+    .select(liteProductColumns)
     .from(products)
     .where(
       and(
@@ -472,7 +508,9 @@ export async function getProductsByBrand(
 
   const pricesByProduct = indexPricesById(prs);
 
-  return prods.map((p) => mapDbProduct(p, pricesByProduct.get(p.id!) || []));
+  return prods.map((p) =>
+    mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || []),
+  );
 }
 
 const getCachedDeals = unstable_cache(
@@ -496,7 +534,7 @@ const getCachedDeals = unstable_cache(
 
     const results = await db
       .select({
-        product: products,
+        product: liteProductColumns,
         price: prices,
       })
       .from(products)
@@ -509,7 +547,9 @@ const getCachedDeals = unstable_cache(
       )
       .limit(limit);
 
-    return results.map((r) => mapDbProduct(r.product, [r.price], [], true));
+    return results.map((r) =>
+      mapDbProduct(r.product as DbProduct, [r.price], [], true),
+    );
   },
   ["best-deals-v11"],
   {
@@ -528,7 +568,7 @@ export async function getBestDeals(
   if (isScript) {
     // Fallback for scripts where unstable_cache might not be available or needed
     const results = await db
-      .select({ product: products, price: prices })
+      .select({ product: liteProductColumns, price: prices })
       .from(products)
       .innerJoin(prices, eq(products.id, prices.productId))
       .where(
@@ -538,7 +578,9 @@ export async function getBestDeals(
         ),
       )
       .limit(limit);
-    return results.map((r) => mapDbProduct(r.product, [r.price], [], true));
+    return results.map((r) =>
+      mapDbProduct(r.product as DbProduct, [r.price], [], true),
+    );
   }
   return getCachedDeals(limit, countryCode, condition);
 }
@@ -558,7 +600,7 @@ const getCachedPopular = unstable_cache(
     }
 
     const prods = await db
-      .select()
+      .select(liteProductColumns)
       .from(products)
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .orderBy(
@@ -581,7 +623,7 @@ const getCachedPopular = unstable_cache(
     const pricesByProduct = indexPricesById(prs);
 
     return prods.map((p) =>
-      mapDbProduct(p, pricesByProduct.get(p.id!) || [], [], true),
+      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
     );
   },
   ["popular-deals-v10"],
@@ -600,7 +642,7 @@ export async function getMostPopular(
     typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
   if (isScript) {
     const prods = await db
-      .select()
+      .select(liteProductColumns)
       .from(products)
       .where(condition ? eq(products.condition, condition) : undefined)
       .orderBy(asc(sql`COALESCE(${products.salesRank}, 10000000)`))
@@ -618,7 +660,7 @@ export async function getMostPopular(
     const pricesByProduct = indexPricesById(prs);
 
     return prods.map((p) =>
-      mapDbProduct(p, pricesByProduct.get(p.id!) || [], [], true),
+      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
     );
   }
   return getCachedPopular(limit, countryCode, condition);
@@ -656,7 +698,7 @@ export async function getDiverseMostPopular(
 
   // 2. Fetch full (lite) data for these specific IDs
   const prods = await db
-    .select()
+    .select(liteProductColumns)
     .from(products)
     .where(inArray(products.id, ids));
 
@@ -671,7 +713,7 @@ export async function getDiverseMostPopular(
 
   return prods.map((p) =>
     mapDbProduct(
-      p,
+      p as DbProduct,
       pricesByProduct.get(p.id!) || [],
       [],
       true, // Strip heavy data (Home curation doesn't need specs)
@@ -694,7 +736,7 @@ const getCachedNew = unstable_cache(
     }
 
     const prods = await db
-      .select()
+      .select(liteProductColumns)
       .from(products)
       .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .orderBy(desc(products.createdAt))
@@ -713,7 +755,7 @@ const getCachedNew = unstable_cache(
     const pricesByProduct = indexPricesById(prs);
 
     return prods.map((p) =>
-      mapDbProduct(p, pricesByProduct.get(p.id!) || [], [], true),
+      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
     );
   },
   ["new-arrivals-v10"],
@@ -732,7 +774,7 @@ export async function getNewArrivals(
     typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
   if (isScript) {
     const prods = await db
-      .select()
+      .select(liteProductColumns)
       .from(products)
       .where(condition ? eq(products.condition, condition) : undefined)
       .orderBy(desc(products.createdAt))
@@ -750,7 +792,7 @@ export async function getNewArrivals(
     const pricesByProduct = indexPricesById(prs);
 
     return prods.map((p) =>
-      mapDbProduct(p, pricesByProduct.get(p.id!) || [], [], true),
+      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
     );
   }
   return getCachedNew(limit, countryCode, condition);
