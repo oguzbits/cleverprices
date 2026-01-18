@@ -50,6 +50,7 @@ export function IdealoCategoryCard({
               height={120}
               className="object-contain"
               loading="lazy"
+              quality={50}
             />
           </div>
         )}

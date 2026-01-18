@@ -77,6 +77,7 @@ export function IdealoListCard({
               priority={priority}
               className="object-contain p-2"
               sizes="168px"
+              quality={50}
               style={{ objectFit: "contain" }}
             />
           ) : (

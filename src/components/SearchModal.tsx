@@ -282,6 +282,8 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                           alt={product.title}
                           fill
                           className="object-contain"
+                          sizes="48px"
+                          quality={50}
                         />
                       ) : (
                         <Package className="text-muted-foreground/20 h-full w-full" />

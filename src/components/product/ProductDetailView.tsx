@@ -127,6 +127,7 @@ export async function ProductDetailView({
                           alt={`${product.title} - view ${i}`}
                           fill
                           className="object-contain opacity-60 hover:opacity-100"
+                          quality={30}
                         />
                       </div>
                     )}
@@ -143,6 +144,7 @@ export async function ProductDetailView({
                     fill
                     className="object-contain"
                     sizes="(max-width: 1024px) 100vw, 35vw"
+                    quality={75}
                     priority
                   />
                 ) : (

@@ -85,6 +85,7 @@ export function IdealoGridCard({
               priority={priority}
               className="object-contain p-2"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 168px"
+              quality={50}
               style={{ objectFit: "contain" }}
             />
           ) : (

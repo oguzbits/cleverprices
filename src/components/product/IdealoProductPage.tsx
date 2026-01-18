@@ -103,6 +103,7 @@ export function IdealoProductPage({
                       fill
                       className="object-contain p-4"
                       sizes="(max-width: 1024px) 100vw, 33vw"
+                      quality={75}
                       priority
                     />
                   ) : (
@@ -328,6 +329,7 @@ async function CachedSidebarSimilarProducts({
                   alt={p.title}
                   fill
                   className="object-contain p-1.5"
+                  quality={30}
                 />
               )}
             </div>

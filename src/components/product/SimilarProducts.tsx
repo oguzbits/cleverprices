@@ -53,6 +53,7 @@ export function SimilarProducts({
                       fill
                       sizes="(max-width: 768px) 50vw, 25vw"
                       className="object-contain p-2"
+                      quality={50}
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center text-gray-400">
@@ -134,6 +135,7 @@ export function SimilarProductsCompact({
                     fill
                     sizes="40px"
                     className="object-contain p-1"
+                    quality={30}
                   />
                 )}
               </div>
