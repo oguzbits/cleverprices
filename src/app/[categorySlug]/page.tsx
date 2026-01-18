@@ -43,16 +43,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const canonicalUrl = `https://${BRAND_DOMAIN}/${category.slug}`;
 
-  // German SEO-optimized title with low-competition keywords
+  // SEO-optimized title: [Category] + [Value Prop] + Brand (Modern SEO skill: seo-02-title-tags)
   const unitSuffix = category.unitType
     ? ` - Preis pro ${category.unitType}`
     : "";
-  const title = `${category.name} günstig kaufen${unitSuffix}`;
+  const title = `${category.name}${unitSuffix} - CleverPrices`;
 
-  // German description highlighting value proposition
+  // Action-oriented description (Modern SEO skill: seo-03-meta-descriptions)
   const description = category.unitType
-    ? `${category.name} Preisvergleich: Finden Sie die günstigste ${category.name} nach Preis pro ${category.unitType}. Vergleichen Sie Top-Marken und sparen Sie bis zu 50%.`
-    : `${category.name} Preisvergleich: Vergleichen Sie Preise von Top-Marken und finden Sie die besten Angebote in Deutschland.`;
+    ? `Vergleichen Sie ${category.name} nach Preis pro ${category.unitType}. Finden Sie die günstigsten Angebote von Top-Marken und sparen Sie bis zu 50%.`
+    : `Vergleichen Sie ${category.name} Preise von Top-Marken. Finden Sie die besten Angebote in Deutschland bei CleverPrices.`;
 
   return {
     title,

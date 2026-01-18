@@ -43,17 +43,17 @@ export function IdealoProductCard({
   return (
     <PrefetchLink
       href={`/p/${slug}`}
-      className="group relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border border-[#b4b4b4] bg-white no-underline transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[224px]"
+      className="group border-idealo-border relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border bg-white no-underline transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[224px]"
     >
       {/* Badges Area - top left */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
         {discountRate && discountRate > 0 ? (
-          <div className="rounded-sm bg-[#ff6600] px-2 py-1 text-[14px] font-extrabold tracking-tight text-white shadow-sm">
+          <div className="bg-primary rounded-sm px-2 py-1 text-[14px] font-extrabold tracking-tight text-white shadow-sm">
             -{discountRate}%
           </div>
         ) : null}
         {badgeText && (!discountRate || discountRate === 0) ? (
-          <div className="rounded-sm bg-[#ff6600] px-2 py-1 text-[14px] font-extrabold tracking-tight text-white shadow-sm">
+          <div className="bg-primary rounded-sm px-2 py-1 text-[14px] font-extrabold tracking-tight text-white shadow-sm">
             {badgeText}
           </div>
         ) : null}
@@ -84,7 +84,7 @@ export function IdealoProductCard({
         {/* Category Info */}
         <div className="mb-1 flex items-center gap-1.5 overflow-hidden">
           {isBestseller ? (
-            <div className="shrink-0 rounded-[2px] bg-[#0066cc] px-2 py-1 text-[14px] font-extrabold tracking-tight text-white">
+            <div className="bg-idealo-blue shrink-0 rounded-[2px] px-2 py-1 text-[14px] font-extrabold tracking-tight text-white">
               Bestseller
             </div>
           ) : null}
@@ -131,7 +131,7 @@ export function IdealoProductCard({
             price={price}
             countryCode={countryCode}
             showAb
-            priceClassName="text-[20px] text-[#ff6600]"
+            priceClassName="text-[20px] text-primary"
           />
         </div>
       </div>

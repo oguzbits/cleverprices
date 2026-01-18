@@ -2,12 +2,10 @@ import { client, db } from "@/db";
 import {
   priceHistory,
   prices,
-  productIdentifiers,
-  productOffers,
   products,
+  type Product as DbProduct,
   type Price,
   type PriceHistoryRecord,
-  type Product as DbProduct,
 } from "@/db/schema";
 import { and, asc, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
