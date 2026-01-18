@@ -20,6 +20,7 @@ import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import React, { Suspense } from "react";
+import { getProductPriceHistory } from "@/lib/server/cached-products";
 import { IdealoStarRating } from "../category/IdealoStarRating";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import {
@@ -50,9 +51,6 @@ export function IdealoProductPage({
     product.title,
     product.specifications?.Model as string,
   );
-
-  const hasPriceHistory =
-    product.priceHistory && product.priceHistory.length > 0;
 
   // Build breadcrumbs
   const breadcrumbItems = [
@@ -206,15 +204,13 @@ export function IdealoProductPage({
 
             {/* Price Chart Column */}
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
-              {hasPriceHistory && (
-                <Suspense
-                  fallback={
-                    <div className="h-[200px] w-full animate-pulse rounded bg-gray-50" />
-                  }
-                >
-                  <CachedPriceChart product={product} />
-                </Suspense>
-              )}
+              <Suspense
+                fallback={
+                  <div className="h-[200px] w-full animate-pulse rounded bg-gray-50" />
+                }
+              >
+                <CachedPriceChart productId={product.id || 0} />
+              </Suspense>
             </div>
           </div>
 
@@ -280,12 +276,20 @@ export function IdealoProductPage({
  * Each of these is rendered once and stored as static Rsc in the Vercel Data Cache.
  */
 
-async function CachedPriceChart({ product }: { product: Product }) {
+async function CachedPriceChart({ productId }: { productId: number }) {
   "use cache";
   cacheLife("product");
+  const history = await getProductPriceHistory(productId);
+  if (!history || history.length === 0) return null;
+
+  const chartHistory = history.map((h) => ({
+    date: h.recordedAt.toISOString(),
+    price: h.price,
+  }));
+
   return (
     <div id="price-chart-wrapper" className="sticky top-4">
-      <IdealoPriceChart history={product.priceHistory!} />
+      <IdealoPriceChart history={chartHistory} />
     </div>
   );
 }

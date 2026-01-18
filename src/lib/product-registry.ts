@@ -2,9 +2,12 @@ import { client, db } from "@/db";
 import {
   priceHistory,
   prices,
+  productIdentifiers,
+  productOffers,
   products,
-  type Product as DbProduct,
   type Price,
+  type PriceHistoryRecord,
+  type Product as DbProduct,
 } from "@/db/schema";
 import { and, asc, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
@@ -283,40 +286,59 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 
 const fetchProductBySlug = async (
   slug: string,
+  includeHistory: boolean = false,
 ): Promise<Product | undefined> => {
   const [p] = await db.select().from(products).where(eq(products.slug, slug));
   if (!p) return undefined;
 
   const prs = await db.select().from(prices).where(eq(prices.productId, p.id));
 
-  // Fetch price history (limit to last 90 days or 100 points to keep it light)
-  const history = await db
-    .select()
-    .from(priceHistory)
-    .where(eq(priceHistory.productId, p.id))
-    .orderBy(priceHistory.recordedAt);
+  // Only fetch history if explicitly requested to save time/memory
+  let history: any[] = [];
+  if (includeHistory) {
+    history = await db
+      .select()
+      .from(priceHistory)
+      .where(eq(priceHistory.productId, p.id))
+      .orderBy(priceHistory.recordedAt);
+  }
 
   return mapDbProduct(p, prs, history);
 };
 
+export const getProductPriceHistory = unstable_cache(
+  async (productId: number): Promise<PriceHistoryRecord[]> => {
+    return db
+      .select()
+      .from(priceHistory)
+      .where(eq(priceHistory.productId, productId))
+      .orderBy(priceHistory.recordedAt);
+  },
+  ["product-history-v2"],
+  {
+    revalidate: PRODUCT_REVALIDATE_SECONDS,
+  },
+);
+
 export const getProductBySlug = cache(async function getProductBySlug(
   slug: string,
+  includeHistory: boolean = false,
 ): Promise<Product | undefined> {
   const isScript =
     typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
 
   if (isScript) {
-    return fetchProductBySlug(slug);
+    return fetchProductBySlug(slug, includeHistory);
   }
 
   return unstable_cache(
     fetchProductBySlug,
-    [`product-slug-v2-${slug}`], // Include slug in key for uniqueness
+    [`product-slug-v3-${slug}-${includeHistory}`],
     {
       revalidate: PRODUCT_REVALIDATE_SECONDS,
-      tags: [`product-v2-${slug}`],
+      tags: [`product-v3-${slug}`],
     },
-  )(slug);
+  )(slug, includeHistory);
 });
 
 /**

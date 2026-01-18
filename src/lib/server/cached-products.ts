@@ -6,11 +6,13 @@ import {
   getBestDeals as getBestDealsSync,
   getDiverseMostPopular as getDiverseMostPopularSync,
   getProductBySlug as getProductBySlugSync,
+  getProductPriceHistory as getProductPriceHistorySync,
   getMostPopular as getMostPopularSync,
   getNewArrivals as getNewArrivalsSync,
   getSimilarProducts as getSimilarProductsSync,
   type Product,
 } from "../product-registry";
+import { type PriceHistoryRecord } from "@/db/schema";
 import { cacheLife } from "next/cache";
 
 /**
@@ -66,9 +68,17 @@ export async function getDiverseMostPopular(
 
 export async function getProductBySlug(
   slug: string,
+  includeHistory: boolean = false,
 ): Promise<Product | undefined> {
   cacheLife("product" as any);
-  return getProductBySlugSync(slug);
+  return getProductBySlugSync(slug, includeHistory);
+}
+
+export async function getProductPriceHistory(
+  productId: number,
+): Promise<PriceHistoryRecord[]> {
+  cacheLife("product" as any);
+  return getProductPriceHistorySync(productId);
 }
 
 export async function getSimilarProducts(

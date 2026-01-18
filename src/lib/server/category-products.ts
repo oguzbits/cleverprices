@@ -109,7 +109,7 @@ async function getCachedLocalizedCategoryProducts(
         p,
         countryCode,
       );
-      if (price === null || price === 0) return null;
+      if (!price) return null;
 
       // 1. Extract static attributes (pruning raw specifications)
       let socket = p.specifications?.Socket || p.specifications?.["Socket-Typ"];
@@ -336,6 +336,18 @@ export async function getCategoryProducts(
     categorySlug,
     unitLabel,
   );
+
+  // If we only need the products for filter options, skip sorting and pagination
+  if (filterParams.fetchAll) {
+    return {
+      products: filtered,
+      filteredCount: filtered.length,
+      unitLabel,
+      hasProducts: localizedProducts.length > 0,
+      filters,
+    } as any;
+  }
+
   const sorted = sortProducts(
     filtered,
     filters.sortBy,
@@ -345,22 +357,20 @@ export async function getCategoryProducts(
   let paginatedProducts = sorted;
   let pagination = null;
 
-  if (!filterParams.fetchAll) {
-    const page = filterParams.page ? parseInt(filterParams.page) : 1;
-    const pageSize = 24;
-    const totalItems = sorted.length;
-    const totalPages = Math.ceil(totalItems / pageSize);
-    const start = (page - 1) * pageSize;
-    const end = start + pageSize;
-    paginatedProducts = sorted.slice(start, end);
+  const page = filterParams.page ? parseInt(filterParams.page) : 1;
+  const pageSize = 24;
+  const totalItems = sorted.length;
+  const totalPages = Math.ceil(totalItems / pageSize);
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  paginatedProducts = sorted.slice(start, end);
 
-    pagination = {
-      currentPage: page,
-      totalPages,
-      pageSize,
-      totalItems,
-    };
-  }
+  pagination = {
+    currentPage: page,
+    totalPages,
+    pageSize,
+    totalItems,
+  };
 
   return {
     products: paginatedProducts,
