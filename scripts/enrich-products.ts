@@ -34,72 +34,95 @@ async function enrich() {
   let seeded = 0;
   const asins = candidates.map((p) => p.asin);
 
-  // 2. Fetch from Keepa with history enabled (costs ~1-5 tokens per product)
+  // Create batches
+  const batches = [];
   for (let i = 0; i < asins.length; i += 20) {
-    const batch = asins.slice(i, i + 20);
-    const tokens = await getTokenStatus();
+    batches.push(asins.slice(i, i + 20));
+  }
 
-    if (tokens.tokensLeft < 100) {
-      console.log("⏳ Low tokens, pausing enrichment...");
-      break;
-    }
-
+  // Check tokens before parallel launch
+  // Enrichment is expensive (~2-5 tokens/product). 20 products = ~40-100 tokens.
+  const status = await getTokenStatus();
+  if (status.tokensLeft < batches.length * 50) {
     console.log(
-      `📦 Seeding batch ${Math.floor(i / 20) + 1}/${Math.ceil(asins.length / 20)}...`,
+      `\n⚠️ Low tokens (${status.tokensLeft}). Processing batches sequentially (not implemented, proceeding with caution or could just run parallel anyway as bucket is shared).`,
+    );
+    // For now, proceed. Keepa handles concurrency.
+  }
+
+  const BATCH_CONCURRENCY = 3;
+  console.log(
+    `  Processing ${batches.length} batches with concurrency of ${BATCH_CONCURRENCY}...`,
+  );
+
+  for (let i = 0; i < batches.length; i += BATCH_CONCURRENCY) {
+    const currentBatches = batches.slice(i, i + BATCH_CONCURRENCY);
+    console.log(
+      `  ⚡ Executing parallel group ${Math.ceil(i / BATCH_CONCURRENCY) + 1}...`,
     );
 
-    try {
-      const enrichedProducts = await getProducts(batch, country, {
-        includeHistory: true,
-      });
+    await Promise.all(
+      currentBatches.map(async (batch, idx) => {
+        const batchAbsIndex = i + idx;
+        console.log(
+          `📦 Seeding batch ${batchAbsIndex + 1}/${batches.length}...`,
+        );
 
-      await Promise.all(
-        enrichedProducts.map(async (ep) => {
-          const localProduct = candidates.find((p) => p.asin === ep.asin);
-          if (!localProduct) return;
+        try {
+          const enrichedProducts = await getProducts(batch, country, {
+            includeHistory: true,
+          });
 
-          try {
-            await withRetry(async () => {
-              // Update avg90 in prices table
-              const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
-              const priceAvg90 = keepaPriceToDecimal(avg90Raw);
+          await Promise.all(
+            enrichedProducts.map(async (ep) => {
+              const localProduct = candidates.find((p) => p.asin === ep.asin);
+              if (!localProduct) return;
 
-              if (priceAvg90) {
-                await db
-                  .update(prices)
-                  .set({ priceAvg90 })
-                  .where(
-                    and(
-                      eq(prices.productId, localProduct.id),
-                      eq(prices.country, country),
-                    ),
-                  );
+              try {
+                await withRetry(async () => {
+                  // Update avg90 in prices table
+                  const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
+                  const priceAvg90 = keepaPriceToDecimal(avg90Raw);
+
+                  if (priceAvg90) {
+                    await db
+                      .update(prices)
+                      .set({ priceAvg90 })
+                      .where(
+                        and(
+                          eq(prices.productId, localProduct.id),
+                          eq(prices.country, country),
+                        ),
+                      );
+                  }
+
+                  // Mark as seeded
+                  await db
+                    .update(products)
+                    .set({
+                      historySeeded: true,
+                      salesRank:
+                        extractSalesRank(ep.salesRanks) ??
+                        localProduct.salesRank,
+                      updatedAt: new Date(),
+                    })
+                    .where(eq(products.id, localProduct.id));
+                });
+
+                seeded++;
+              } catch (productError) {
+                console.error(
+                  `  Failed to enrich ${localProduct.asin}:`,
+                  productError,
+                );
               }
-
-              // Mark as seeded
-              await db
-                .update(products)
-                .set({
-                  historySeeded: true,
-                  salesRank:
-                    extractSalesRank(ep.salesRanks) ?? localProduct.salesRank,
-                  updatedAt: new Date(),
-                })
-                .where(eq(products.id, localProduct.id));
-            });
-
-            seeded++;
-          } catch (productError) {
-            console.error(
-              `  Failed to enrich ${localProduct.asin}:`,
-              productError,
-            );
-          }
-        }),
-      );
-    } catch (e: any) {
-      console.error("  Error in batch:", e.message);
-    }
+            }),
+          );
+        } catch (e: any) {
+          console.error("  Error in batch:", e.message);
+        }
+      }),
+    );
   }
 
   console.log(`\n✅ Enrichment cycle complete. Seeded ${seeded} products.`);

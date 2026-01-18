@@ -2,8 +2,10 @@ name: Price Synchronization
 
 on:
   schedule:
-    # Runs every 75 minutes (roughly 19 times/day) to stay under 2,000 mins/month
-    - cron: "*/30 * * * *" # Run every 30 minutes (approx. 48 runs/day)
+    # Run hourly to prevent token cap (drains in 1h).
+    # Cost: 24 runs/day * 2 mins (rounded) = 48 mins/day.
+    # Total: 48m + WarmCache(6m) = 54m/day * 31 ≈ 1674 mins/month (Safe)
+    - cron: "0 * * * *"
 
   workflow_dispatch:
 
