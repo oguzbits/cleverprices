@@ -49,8 +49,9 @@ export function ProductBestsellerGrid({
       </div>
 
       {/* Product Grid - Using IdealoGridCard for consistent styling */}
-      <div className="grid grid-cols-2 gap-0 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-        {products.slice(0, 4).map((product, index) => (
+      {/* Grid matches IdealoResultList: 2 cols mobile, 3 at 640px, 4 at 1024px */}
+      <div className="grid grid-cols-2 gap-0 min-[640px]:grid-cols-3 min-[1024px]:grid-cols-4">
+        {products.slice(0, 24).map((product, index) => (
           <IdealoGridCard
             key={product.slug}
             product={product}

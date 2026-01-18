@@ -88,7 +88,7 @@ export default async function DedicatedCategoryPage({
 
     // Fetch products for internal linking sections (in parallel)
     const [bestsellers, newProducts, deals] = await Promise.all([
-      getCategoryBestsellers(categorySlug as CategorySlug, 12, DEFAULT_COUNTRY),
+      getCategoryBestsellers(categorySlug as CategorySlug, 24, DEFAULT_COUNTRY),
       getCategoryNewProducts(categorySlug as CategorySlug, 8, DEFAULT_COUNTRY),
       getCategoryDeals(categorySlug as CategorySlug, 8, DEFAULT_COUNTRY),
     ]);
