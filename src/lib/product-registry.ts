@@ -62,6 +62,7 @@ export interface Product {
   description?: string;
   mpn?: string;
   createdAt?: string; // ISO string
+  savings?: number; // Calculated savings percentage (0-1)
 }
 
 // Helper to map DB to Interface

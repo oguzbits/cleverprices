@@ -1,6 +1,5 @@
 import { Category } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
-import * as React from "react";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryHubCard } from "@/components/category/CategoryHubCard";
@@ -97,7 +96,7 @@ export function ParentCategoryView({
                   : undefined,
                 isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
                 variationAttributes: p.variationAttributes,
-                badgeText: p.savings && p.savings > 0.05 ? undefined : "Deal", // Only show "Deal" if no discount badge
+                badgeText: p.savings && p.savings > 0 ? undefined : "Deal", // Only show "Deal" if no discount badge
               }))}
             />
           </section>

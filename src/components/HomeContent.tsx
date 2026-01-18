@@ -25,7 +25,7 @@ export default async function HomeContent({
   const [rawDeals, rawPopular, rawNew] = await Promise.all([
     getBestDeals(80, countryCode, "New"),
     getDiverseMostPopular(15, countryCode), // Top 15 products FROM EVERY category (diverse candidates)
-    getNewArrivals(60, countryCode, "New"),
+    getNewArrivals(500, countryCode, "New"),
   ]);
 
   // Global duplicate tracker across ALL sections
@@ -76,8 +76,8 @@ export default async function HomeContent({
   // 4. New Arrivals
   const newArrivals = curateProductList(rawNew, countryCode, {
     maxItems: 12,
-    sortBy: "quality",
-    categoryLimit: 2,
+    sortBy: "date",
+    categoryLimit: 4, // Higher limit for new arrivals to fill the carousel better
     excludeIds: globalSeen,
     excludeParentIds: globalSeenParents,
   });

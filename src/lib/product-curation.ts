@@ -1,10 +1,10 @@
-import { type Product } from "./product-registry";
-import {
-  getLocalizedProductData,
-  calculateProductMetrics,
-} from "./utils/products";
 import { allCategories, type CategorySlug } from "./categories";
+import { type Product } from "./product-registry";
 import { calculateDesirabilityScore } from "./server/scoring";
+import {
+  calculateProductDiscount,
+  getLocalizedProductData,
+} from "./utils/products";
 
 export interface DashboardProduct {
   title: string;
@@ -29,7 +29,7 @@ interface CurationOptions {
   maxItems?: number;
   categoryLimit?: number; // Strict limit per category
   minPrice?: number; // Filter out cheap items (e.g. for Hero section)
-  sortBy?: "revenue" | "quality" | "discount"; // Sorting strategy
+  sortBy?: "revenue" | "quality" | "discount" | "date"; // Sorting strategy
   requireDiscount?: boolean;
   excludeIds?: Set<string>;
   excludeParentIds?: Set<string>;
@@ -76,15 +76,7 @@ export function curateProductList(
       if (!price || price <= 0) return null;
       if (price < minPrice) return null;
 
-      // 2. Discount Calculation (Safe)
-      // No fallback to listPrice to avoid fake discounts
-      const avg90 = p.priceAvg90?.[countryCode];
-      let discountRate = 0;
-      if (avg90 && avg90 > price) {
-        discountRate = Math.round(((avg90 - price) / avg90) * 100);
-      }
-      // Sanity check for bad data
-      if (discountRate > 80) discountRate = 0;
+      const discountRate = calculateProductDiscount(p, countryCode);
 
       if (requireDiscount && discountRate <= 0) return null;
 
@@ -102,8 +94,9 @@ export function curateProductList(
 
       // 4. Quality Gates
       // Filter out low-effort junk unless requested
-      // RELAXED: If it's a deal, we're more lenient
-      if (!requireDiscount && price < 50 && score < 100) return null;
+      // RELAXED: If it's a deal or we're looking for new arrivals (sortBy: date), we're more lenient
+      if (!requireDiscount && sortBy !== "date" && price < 50 && score < 100)
+        return null;
 
       return {
         original: p,
@@ -141,6 +134,15 @@ export function curateProductList(
   validCandidates.sort((a, b) => {
     if (sortBy === "revenue") return b.revenue - a.revenue;
     if (sortBy === "discount") return b.discountRate - a.discountRate;
+    if (sortBy === "date") {
+      const dateA = a.original.createdAt
+        ? new Date(a.original.createdAt).getTime()
+        : 0;
+      const dateB = b.original.createdAt
+        ? new Date(b.original.createdAt).getTime()
+        : 0;
+      return dateB - dateA;
+    }
     return b.score - a.score; // Default "quality"
   });
 

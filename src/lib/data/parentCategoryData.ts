@@ -8,6 +8,7 @@
 
 import { getChildCategories, type CategorySlug } from "@/lib/categories";
 import { getProductsByCategory, type Product } from "@/lib/product-registry";
+import { calculateProductDiscount } from "@/lib/utils/products";
 
 /**
  * Get bestselling products across all child categories of a parent category.
@@ -170,34 +171,19 @@ export async function getCategoryDeals(
   const productArrays = await Promise.all(productPromises);
   const allProducts = productArrays.flat();
 
-  // Helper: Calculate savings percentage from list price or avg90 price
-  const getSavings = (p: Product): number => {
-    const price = p.prices[countryCode];
-    if (!price || price <= 0) return 0;
-    // Use list price if available
-    const listPrice = p.listPrice?.[countryCode];
-    if (listPrice && listPrice > price) {
-      return (listPrice - price) / listPrice;
-    }
-    // Fallback to avg90 price comparison
-    const avgPrice = p.priceAvg90?.[countryCode];
-    if (avgPrice && avgPrice > price) {
-      return (avgPrice - price) / avgPrice;
-    }
-    return 0;
-  };
-
   // Filter for quality deal products:
   // 1. Valid price in country
   // 2. Minimum price threshold (filter out cheap accessories)
-  // 3. Has some indicator of being a "deal" (savings, list price, or good rating)
+  // 3. Has some indicator of being a "deal" (actual savings vs 90-day avg, or high quality)
   const MIN_PRICE = 30; // Filter out cheap accessories
   const validProducts = allProducts.filter((p) => {
     const price = p.prices[countryCode];
     if (price === undefined || price < MIN_PRICE) return false;
 
-    // Prefer products with actual savings data or good ratings
-    const hasSavings = getSavings(p) > 0.05; // At least 5% discount
+    // Standardized discount calculation (comparing current price vs 90-day avg)
+    const discountRate = calculateProductDiscount(p, countryCode);
+    const hasSavings = discountRate > 5; // At least 5% discount vs 90-day avg
+
     const hasGoodRating = (p.rating ?? 0) >= 4;
     const hasReviews = (p.reviewCount ?? 0) > 10;
 
@@ -205,13 +191,13 @@ export async function getCategoryDeals(
     return hasSavings || hasGoodRating || hasReviews;
   });
 
-  // Sort by deal quality: savings %, then rating, then price
+  // Sort by deal quality: discount %, then rating, then price
   const sorted = validProducts.sort((a, b) => {
-    // First: actual savings percentage (higher = better deal)
-    const savingsA = getSavings(a);
-    const savingsB = getSavings(b);
-    if (savingsB !== savingsA) {
-      return savingsB - savingsA;
+    // First: actual discount rate vs 90-day avg
+    const discountA = calculateProductDiscount(a, countryCode);
+    const discountB = calculateProductDiscount(b, countryCode);
+    if (discountB !== discountA) {
+      return discountB - discountA;
     }
 
     // Second: prefer products with ratings
@@ -243,6 +229,9 @@ export async function getCategoryDeals(
     const currentCount = brandCounts.get(brand) || 0;
 
     if (currentCount < maxPerBrand) {
+      // Attach calculated savings to the product for UI display (fraction 0-1)
+      product.savings = calculateProductDiscount(product, countryCode) / 100;
+
       diverseProducts.push(product);
       brandCounts.set(brand, currentCount + 1);
 

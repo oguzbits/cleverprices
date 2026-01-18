@@ -1,8 +1,7 @@
-import { Product as UIProduct } from "@/types";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
 import { Product } from "@/lib/product-registry";
-import { type Currency } from "@/types";
+import { Product as UIProduct, type Currency } from "@/types";
 
 /**
  * Parses numeric value from strings like "0.03€/GB" or "1.25$/TB"
@@ -172,4 +171,27 @@ export function adaptToUIModel(
       ? `${enhancedProduct.pricePerUnit} ${symbol}/${displayUnit}`
       : undefined,
   };
+}
+
+/**
+ * Calculates discount percentage based on 90-day average price.
+ * Standardized across the application to avoid "fake" list-price discounts.
+ */
+export function calculateProductDiscount(
+  p: Partial<Product>,
+  countryCode: string,
+): number {
+  const code = countryCode.toLowerCase();
+  const currentPrice = p.prices?.[code];
+  if (!currentPrice || currentPrice <= 0) return 0;
+
+  const avg90 = p.priceAvg90?.[code];
+  if (!avg90 || avg90 <= currentPrice) return 0;
+
+  let discountRate = Math.round(((avg90 - currentPrice) / avg90) * 100);
+
+  // Sanity check for bad data (e.g. outlier price drops > 80% are likely errors)
+  if (discountRate > 80) return 0;
+
+  return discountRate;
 }
