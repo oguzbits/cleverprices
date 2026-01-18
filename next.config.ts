@@ -8,7 +8,6 @@ const nextConfig: NextConfig = {
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   // Enable experimental features for better performance
   experimental: {
-    ppr: true,
     optimizePackageImports: [
       "lucide-react",
       "@radix-ui/react-accordion",
