@@ -53,48 +53,50 @@ async function enrich() {
         includeHistory: true,
       });
 
-      for (const ep of enrichedProducts) {
-        const localProduct = candidates.find((p) => p.asin === ep.asin);
-        if (!localProduct) continue;
+      await Promise.all(
+        enrichedProducts.map(async (ep) => {
+          const localProduct = candidates.find((p) => p.asin === ep.asin);
+          if (!localProduct) return;
 
-        try {
-          await withRetry(async () => {
-            // Update avg90 in prices table
-            const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
-            const priceAvg90 = keepaPriceToDecimal(avg90Raw);
+          try {
+            await withRetry(async () => {
+              // Update avg90 in prices table
+              const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
+              const priceAvg90 = keepaPriceToDecimal(avg90Raw);
 
-            if (priceAvg90) {
+              if (priceAvg90) {
+                await db
+                  .update(prices)
+                  .set({ priceAvg90 })
+                  .where(
+                    and(
+                      eq(prices.productId, localProduct.id),
+                      eq(prices.country, country),
+                    ),
+                  );
+              }
+
+              // Mark as seeded
               await db
-                .update(prices)
-                .set({ priceAvg90 })
-                .where(
-                  and(
-                    eq(prices.productId, localProduct.id),
-                    eq(prices.country, country),
-                  ),
-                );
-            }
+                .update(products)
+                .set({
+                  historySeeded: true,
+                  salesRank:
+                    extractSalesRank(ep.salesRanks) ?? localProduct.salesRank,
+                  updatedAt: new Date(),
+                })
+                .where(eq(products.id, localProduct.id));
+            });
 
-            // Mark as seeded
-            await db
-              .update(products)
-              .set({
-                historySeeded: true,
-                salesRank:
-                  extractSalesRank(ep.salesRanks) ?? localProduct.salesRank,
-                updatedAt: new Date(),
-              })
-              .where(eq(products.id, localProduct.id));
-          });
-
-          seeded++;
-        } catch (productError) {
-          console.error(
-            `  Failed to enrich ${localProduct.asin}:`,
-            productError,
-          );
-        }
-      }
+            seeded++;
+          } catch (productError) {
+            console.error(
+              `  Failed to enrich ${localProduct.asin}:`,
+              productError,
+            );
+          }
+        }),
+      );
     } catch (e: any) {
       console.error("  Error in batch:", e.message);
     }

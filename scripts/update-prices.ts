@@ -107,137 +107,144 @@ async function updatePrices(country: CountryCode): Promise<void> {
         includeHistory: false,
       });
 
-      for (const kp of keepaProducts) {
-        const product = productMap.get(kp.asin);
-        if (!product) continue;
+      // Process in parallel chunks to speed up DB writes
+      const CONCURRENCY = 10;
+      for (let j = 0; j < keepaProducts.length; j += CONCURRENCY) {
+        const chunk = keepaProducts.slice(j, j + CONCURRENCY);
 
-        const currentPrices = kp.stats?.current || [];
-        const amazonPrice = keepaPriceToDecimal(
-          currentPrices[KEEPA_PRICE_TYPES.AMAZON],
-        );
-        const newPrice = keepaPriceToDecimal(
-          currentPrices[KEEPA_PRICE_TYPES.NEW],
-        );
-        const usedPrice = keepaPriceToDecimal(
-          currentPrices[KEEPA_PRICE_TYPES.USED],
-        );
-        const warehousePrice = keepaPriceToDecimal(
-          currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
-        );
+        await Promise.all(
+          chunk.map(async (kp) => {
+            const product = productMap.get(kp.asin);
+            if (!product) return;
 
-        const bestPrice = amazonPrice ?? newPrice;
+            const currentPrices = kp.stats?.current || [];
+            const amazonPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.AMAZON],
+            );
+            const newPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.NEW],
+            );
+            const usedPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.USED],
+            );
+            const warehousePrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
+            );
 
-        // Update Product Meta (Sales Rank & Ratings)
-        const salesRank = extractSalesRank(kp.salesRanks) ?? product.salesRank;
-        const rating = normalizeRating(kp.rating) ?? product.rating;
-        const now = new Date(); // Consistent timestamp for all updates
+            const bestPrice = amazonPrice ?? newPrice;
 
-        try {
-          await withRetry(async () => {
-            // Update product meta
-            await db
-              .update(products)
-              .set({
-                salesRank,
-                rating,
-                reviewCount:
-                  kp.reviewsLastSeenStatus !== undefined
-                    ? kp.reviewsLastSeenStatus
-                    : product.reviewCount,
-                updatedAt: now,
-              })
-              .where(eq(products.id, product.id));
+            // Update Product Meta (Sales Rank & Ratings)
+            const salesRank =
+              extractSalesRank(kp.salesRanks) ?? product.salesRank;
+            const rating = normalizeRating(kp.rating) ?? product.rating;
+            const now = new Date(); // Consistent timestamp for all updates
 
-            // Get existing price record
-            const existingPrice = await db.query.prices.findFirst({
-              where: (p, { and, eq }) =>
-                and(eq(p.productId, product.id), eq(p.country, country)),
-            });
-
-            if (bestPrice) {
-              // Calculate price per unit
-              let pricePerUnit: number | null = null;
-              if (
-                product.normalizedCapacity &&
-                product.normalizedCapacity > 0
-              ) {
-                pricePerUnit = bestPrice / product.normalizedCapacity;
-              }
-
-              // Save to history if best price changed
-              const oldBestPrice =
-                existingPrice?.amazonPrice ?? existingPrice?.newPrice;
-              if (existingPrice && oldBestPrice !== bestPrice) {
-                const historyRecord: NewPriceHistoryRecord = {
-                  productId: product.id,
-                  country,
-                  price: bestPrice,
-                  currency,
-                  priceType: amazonPrice ? "amazon" : "new",
-                  recordedAt: now,
-                };
-                await db.insert(priceHistory).values(historyRecord);
-              }
-
-              // Update or insert current price
-              if (existingPrice) {
+            try {
+              await withRetry(async () => {
+                // Update product meta
                 await db
-                  .update(prices)
+                  .update(products)
                   .set({
-                    amazonPrice,
-                    newPrice,
-                    usedPrice,
-                    warehousePrice,
-                    pricePerUnit,
-                    lastUpdated: now,
+                    salesRank,
+                    rating,
+                    reviewCount:
+                      kp.reviewsLastSeenStatus !== undefined
+                        ? kp.reviewsLastSeenStatus
+                        : product.reviewCount,
+                    updatedAt: now,
                   })
-                  .where(eq(prices.id, existingPrice.id));
-              } else {
-                await db.insert(prices).values({
-                  productId: product.id,
-                  country,
-                  amazonPrice,
-                  newPrice,
-                  usedPrice,
-                  warehousePrice,
-                  pricePerUnit,
-                  currency,
-                  source: "keepa",
-                  lastUpdated: now,
-                });
-              }
-            } else if (existingPrice) {
-              // EVEN if no price found today, update lastUpdated so it's no longer "stale"
-              // but keep old prices if they were there? Or set them to null?
-              // Amazon API strategy: Keep last known price but bump lastUpdated.
-              await db
-                .update(prices)
-                .set({
-                  lastUpdated: now,
-                })
-                .where(eq(prices.id, existingPrice.id));
-            } else {
-              // No existing price record and no price found today
-              // Create a skeleton record to mark as checked
-              await db.insert(prices).values({
-                productId: product.id,
-                country,
-                currency,
-                source: "keepa",
-                lastUpdated: now,
-              });
-            }
-          });
+                  .where(eq(products.id, product.id));
 
-          updated++;
-        } catch (productError) {
-          console.error(
-            `  Failed to update product ${product.asin}:`,
-            productError,
-          );
-          failed++;
-        }
-      }
+                // Get existing price record
+                const existingPrice = await db.query.prices.findFirst({
+                  where: (p, { and, eq }) =>
+                    and(eq(p.productId, product.id), eq(p.country, country)),
+                });
+
+                if (bestPrice) {
+                  // Calculate price per unit
+                  let pricePerUnit: number | null = null;
+                  if (
+                    product.normalizedCapacity &&
+                    product.normalizedCapacity > 0
+                  ) {
+                    pricePerUnit = bestPrice / product.normalizedCapacity;
+                  }
+
+                  // Save to history if best price changed
+                  const oldBestPrice =
+                    existingPrice?.amazonPrice ?? existingPrice?.newPrice;
+                  if (existingPrice && oldBestPrice !== bestPrice) {
+                    const historyRecord: NewPriceHistoryRecord = {
+                      productId: product.id,
+                      country,
+                      price: bestPrice,
+                      currency,
+                      priceType: amazonPrice ? "amazon" : "new",
+                      recordedAt: now,
+                    };
+                    await db.insert(priceHistory).values(historyRecord);
+                  }
+
+                  // Update or insert current price
+                  if (existingPrice) {
+                    await db
+                      .update(prices)
+                      .set({
+                        amazonPrice,
+                        newPrice,
+                        usedPrice,
+                        warehousePrice,
+                        pricePerUnit,
+                        lastUpdated: now,
+                      })
+                      .where(eq(prices.id, existingPrice.id));
+                  } else {
+                    await db.insert(prices).values({
+                      productId: product.id,
+                      country,
+                      amazonPrice,
+                      newPrice,
+                      usedPrice,
+                      warehousePrice,
+                      pricePerUnit,
+                      currency,
+                      source: "keepa",
+                      lastUpdated: now,
+                    });
+                  }
+                } else if (existingPrice) {
+                  // EVEN if no price found today, update lastUpdated so it's no longer "stale"
+                  await db
+                    .update(prices)
+                    .set({
+                      lastUpdated: now,
+                    })
+                    .where(eq(prices.id, existingPrice.id));
+                } else {
+                  // No existing price record and no price found today
+                  // Create a skeleton record to mark as checked
+                  await db.insert(prices).values({
+                    productId: product.id,
+                    country,
+                    currency,
+                    source: "keepa",
+                    lastUpdated: now,
+                  });
+                }
+              });
+
+              updated++;
+            } catch (productError) {
+              console.error(
+                `  Failed to update product ${product.asin}:`,
+                productError,
+              );
+              failed++;
+            }
+          }),
+        );
+      } // End of chunk loop
     } catch (error) {
       console.error(`  Error fetching batch:`, error);
       failed += batch.length;
