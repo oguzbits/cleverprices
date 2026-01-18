@@ -26,9 +26,9 @@ export default async function HomeContent({
 
   // Fetch enough data for curation with margin for filtering
   const [rawDeals, rawPopular, rawNew] = await Promise.all([
-    getBestDeals(80, countryCode, "New"),
-    getDiverseMostPopular(15, countryCode), // Top 15 products FROM EVERY category (diverse candidates)
-    getNewArrivals(100, countryCode, "New"),
+    getBestDeals(40, countryCode, "New"),
+    getDiverseMostPopular(8, countryCode), // Candidates from every category
+    getNewArrivals(50, countryCode, "New"),
   ]);
 
   // Global duplicate tracker across ALL sections

@@ -33,9 +33,17 @@ export default function RootLayoutWrapper({
   return (
     <html lang={lang} suppressHydrationWarning>
       <head>
-        <link rel="preconnect" href="https://m.media-amazon.com" />
+        <link
+          rel="preconnect"
+          href="https://m.media-amazon.com"
+          crossOrigin=""
+        />
         <link rel="dns-prefetch" href="https://m.media-amazon.com" />
-        <link rel="preconnect" href="https://images-na.ssl-images-amazon.com" />
+        <link
+          rel="preconnect"
+          href="https://images-na.ssl-images-amazon.com"
+          crossOrigin=""
+        />
         <link
           rel="dns-prefetch"
           href="https://images-na.ssl-images-amazon.com"

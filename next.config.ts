@@ -27,6 +27,7 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-tooltip",
     ],
   },
+  poweredByHeader: false,
   // Cache Life Profiles for Next.js 16 "use cache"
   cacheLife: {
     category: {
@@ -58,7 +59,8 @@ const nextConfig: NextConfig = {
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [
-      16, 32, 48, 64, 96, 128, 160, 200, 224, 256, 320, 350, 384, 400, 512,
+      16, 32, 48, 64, 96, 128, 160, 174, 192, 200, 224, 240, 256, 320, 350, 384,
+      400, 512,
     ],
     minimumCacheTTL: 60,
     qualities: [30, 50, 75],
@@ -360,7 +362,7 @@ const nextConfig: NextConfig = {
           {
             key: "Link",
             value:
-              "<https://m.media-amazon.com>; rel=preconnect, <https://images-na.ssl-images-amazon.com>; rel=preconnect",
+              "<https://m.media-amazon.com>; rel=preconnect; crossorigin, <https://images-na.ssl-images-amazon.com>; rel=preconnect; crossorigin",
           },
         ],
       },
