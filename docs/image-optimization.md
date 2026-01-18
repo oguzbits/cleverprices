@@ -21,20 +21,32 @@ We implemented a **Custom Loader** (`src/lib/image-loader.ts`) that intercepts N
 1.  **Intercept**: The app is configured in `next.config.ts` to use `loader: "custom"`.
 2.  **Check**: The loader checks if the image source is an Amazon URL.
 3.  **Rewrite**:
-    - **Input**: `https://m.media-amazon.com/images/I/71Wj+Zc7cZL._AC_.jpg` requesting `width=300`
-    - **Logic**: It strips existing Amazon modifiers (like `._AC_`) and appends the requested width modifier (`._SX300_`).
-    - **Output**: `https://m.media-amazon.com/images/I/71Wj+Zc7cZL._SX300_.jpg`
+    - **Input**: `https://m.media-amazon.com/images/I/71Wj+Zc7cZL._AC_.jpg` requesting `width=300` and `quality=75`
+    - **Logic**: It strips existing Amazon modifiers (like `._AC_`) and appends the requested parameters.
+    - **Output**: `https://m.media-amazon.com/images/I/71Wj+Zc7cZL._SX300_QL75_.jpg`
 4.  **Serve**: The browser loads this resized image directly from Amazon's CDN. No traffic goes through Vercel's optimization servers.
+
+## Amazon URL Parameters
+
+Amazon uses specifically formatted strings in the URL to transform images on their CDN:
+
+- **`SX[width]` (e.g., `SX400`)**: **Scale X (Width)**. This tells Amazon to resize the image to exactly a specific width in pixels. It automatically maintains the aspect ratio.
+  - `SX400` = 400 pixels wide.
+  - `SX200` = 200 pixels wide (half the size of SX400).
+- **`QL[quality]` (e.g., `QL75`)**: **Quality Level**. This controls the JPEG compression.
+  - `QL100` = Maximum quality, large file size.
+  - `QL10` = Very low quality, extremely small file size.
+  - `QL75` = Balanced compression (default).
 
 ## Implementation Details
 
 ### 1. The Loader (`src/lib/image-loader.ts`)
 
 This function receives `src`, `width`, and `quality` from Next.js.
-It parses the Amazon URL and injects the `._SX[width]_` parameter.
+It parses the Amazon URL and injects the `._SX[width]_QL[quality]_` parameter.
 
-- `SX` = Scale X (Width) - maintains aspect ratio.
-- `SY` = Scale Y (Height) - maintains aspect ratio (not used currently).
+- **Resizing**: We use `SX` to match the `width` prop passed by Next.js.
+- **Optimization**: We pass the `quality` prop (from `75` down to `10` for maximum savings) to the `QL` parameter.
 
 ### 2. Configuration (`next.config.ts`)
 

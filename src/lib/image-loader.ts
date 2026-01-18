@@ -9,10 +9,9 @@ interface ImageLoaderParams {
 export default function amazonImageLoader({
   src,
   width,
+  quality = 75,
 }: ImageLoaderParams): string {
-  // If it's not an Amazon image, return as is (Next.js will handle it or serve as-is if unoptimized isn't working for local?)
-  // Note: With "loader: custom" in next.config.ts, this runs for ALL images.
-  // For local images, we just return the path. Browsers will load the original file.
+  // If it's not an Amazon image, return as is
   if (
     !src.includes("m.media-amazon.com") &&
     !src.includes("images-na.ssl-images-amazon.com")
@@ -22,7 +21,8 @@ export default function amazonImageLoader({
 
   // Handle Amazon URLs
   // Pattern: https://m.media-amazon.com/images/I/71Wj+Zc7cZL._AC_SL1500_.jpg
-  // We want to replace/inject the size param: ._SX{width}_
+  // SX{width} sets the width in pixels.
+  // QL{quality} sets the compression level (1-100).
 
   try {
     const url = new URL(src);
@@ -33,42 +33,21 @@ export default function amazonImageLoader({
     if (lastDotIndex === -1) return src;
 
     const extension = pathname.substring(lastDotIndex);
-    let basePart = pathname.substring(0, lastDotIndex);
+    const basePart = pathname.substring(0, lastDotIndex);
 
-    // Check if basePart already has a modifier (ends with _)
-    // Regex for Amazon modifiers: \._[A-Z]{2}.*_$ (e.g. ._AC_SL1500_)
-    // or simply look for the last dot in the basePart if it exists.
-    // Amazon ID usually doesn't contain dots, but modifiers start with dot.
-    // Base: /images/I/ID
-    // Full: /images/I/ID.modifier
-
-    // Let's look for the dot before the unique ID. The ID is the last path segment.
-    // simpler approach:
-    // Regex to match the ID and optional existing modifiers.
-    // We want to strip existing modifier "._XY..." and append "._SX..."
-
-    // Common pattern: [ID].[modifier]
-    // We want: [ID]._SX{width}_
-
-    // Find the ID. It's usually the part after /images/I/
-    // But let's be more generic.
-
-    // We can detect if there's a modifier by checking for `._` followed by characters and ending with `_` before the extension
-    // But safer is just to strip anything after the first dot in the filename?
-    // No, filenames might have dots? Amazon IDs usually don't.
-
-    // Let's use a robust regex for Amazon URL replacement
-    // Strips existing sizing params like ._AC_... or ._SX... or ._SY...
+    // Strip existing modifiers like ._AC_... or ._SX...
+    // Amazon modifiers are usually between the first dot and the extension dot
+    // but the URL might already have them in the path.
     const cleanBase = basePart.replace(/\._[a-zA-Z0-9_]+_$/, "");
 
-    // Construct new path
-    // We use SX (width) to limit width. Amazon preserves aspect ratio.
-    const newPathname = `${cleanBase}._SX${width}_${extension}`;
+    // Construct new path with:
+    // SX = Scale X (Width)
+    // QL = Quality Level
+    const newPathname = `${cleanBase}._SX${width}_QL${quality}_${extension}`;
 
     url.pathname = newPathname;
     return url.toString();
   } catch (e) {
-    // If URL parsing fails, return original
     return src;
   }
 }

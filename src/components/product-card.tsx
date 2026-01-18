@@ -82,7 +82,7 @@ export function ProductCard({
             fill
             className="object-contain p-4"
             sizes="224px"
-            quality={85}
+            quality={50}
             priority={priority}
           />
         ) : (
