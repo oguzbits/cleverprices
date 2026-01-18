@@ -14,6 +14,7 @@ import {
   isKeepaConfigured,
   KEEPA_DOMAINS,
 } from "../src/lib/keepa/product-discovery";
+import { execSync } from "child_process";
 import {
   extractSalesRank,
   keepaPriceToDecimal,
@@ -69,7 +70,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
         ? or(isNull(prices.lastUpdated), lt(prices.lastUpdated, elevenHoursAgo))
         : undefined,
     )
-    .orderBy(asc(prices.lastUpdated));
+    .orderBy(asc(prices.lastUpdated))
+    .limit(500);
 
   if (targetProducts.length === 0) {
     console.log("  No products in database or all products are fresh.");
@@ -247,6 +249,16 @@ async function updatePrices(country: CountryCode): Promise<void> {
   }
 
   console.log(`  ✓ Updated: ${updated}, Failed: ${failed}`);
+
+  // Auto-warm cache after updating prices (Explicit trigger only)
+  if (process.env.WARM_CACHE === "true") {
+    try {
+      console.log("\n🔥 Triggering Cache Warmer...");
+      execSync(`bun run scripts/warm-cache.ts`, { stdio: "inherit" });
+    } catch (e) {
+      console.warn("⚠️ Cache warming failed, but prices were updated.");
+    }
+  }
 }
 
 /**

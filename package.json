@@ -21,7 +21,8 @@
     "db:deploy": "bun run scripts/deploy-data.ts",
     "worker": "./scripts/start-worker-sync.sh",
     "worker:run": "DISABLE_TURSO_SYNC=1 DATABASE_PATH=file:./data/cleverprices.db bun run scripts/keepa-worker.ts",
-    "worker:live": "./scripts/worker-with-sync.sh"
+    "worker:live": "./scripts/worker-with-sync.sh",
+    "warm-cache": "bun run scripts/warm-cache.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",

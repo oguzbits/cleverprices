@@ -1,0 +1,47 @@
+name: Daily Maintenance (Update & Warm)
+
+on:
+  schedule:
+    # Runs every hour (at the start of the hour)
+    - cron: "0 * * * *"
+  workflow_dispatch:
+    # Allows manual triggering from the GitHub Actions tab
+
+jobs:
+  maintenance:
+    name: Update Prices & Warm Cache
+    runs-on: ubuntu-latest
+
+    # job-level ENV to keep individual steps DRY
+    env:
+      KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
+      TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+      TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+      DATABASE_PATH: ${{ secrets.TURSO_DATABASE_URL }}
+      NODE_ENV: "production"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: 💰 Update Prices
+        run: bun run update-prices
+
+      - name: 💎 Enrich Products (History & Stats)
+        # Continue on error so that minor Keepa API issues don't block the cache warming
+        continue-on-error: true
+        run: bun run scripts/enrich-products.ts
+
+      - name: 🔥 Warm Vercel Cache
+        run: bun run warm-cache
+
+      - name: ✨ Done
+        run: echo "Maintenance cycle complete! Cloud Database updated and Vercel cache warmed."

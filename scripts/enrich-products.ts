@@ -21,7 +21,7 @@ async function enrich() {
       isNull(products.historySeeded),
     ),
     orderBy: [asc(products.salesRank)],
-    limit: 500, // Process in chunks
+    limit: 100, // Process in smaller chunks to save tokens for price updates
   });
 
   if (candidates.length === 0) {

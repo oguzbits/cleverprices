@@ -16,6 +16,7 @@ import { Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { Package } from "lucide-react";
+import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import React, { Suspense } from "react";
@@ -78,6 +79,10 @@ export function IdealoProductPage({
         reviewCount={product.reviewCount ?? 0}
       />
       <BreadcrumbSchema items={breadcrumbItems} />
+
+      {/* Performance Hints: Preconnect to Amazon Image domains */}
+      <link rel="preconnect" href="https://m.media-amazon.com" />
+      <link rel="dns-prefetch" href="https://m.media-amazon.com" />
 
       <div className="mx-auto max-w-[1280px] px-4">
         <Breadcrumbs items={breadcrumbItems} className="mb-[10px] py-0 pt-3" />
@@ -202,9 +207,13 @@ export function IdealoProductPage({
             {/* Price Chart Column */}
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
               {hasPriceHistory && (
-                <div id="price-chart-wrapper" className="sticky top-4">
-                  <IdealoPriceChart history={product.priceHistory!} />
-                </div>
+                <Suspense
+                  fallback={
+                    <div className="h-[200px] w-full animate-pulse rounded bg-gray-50" />
+                  }
+                >
+                  <CachedPriceChart product={product} />
+                </Suspense>
               )}
             </div>
           </div>
@@ -214,44 +223,17 @@ export function IdealoProductPage({
               id="sidebar"
               className="order-1 mb-[45px] hidden min-w-0 text-[14px] leading-[16px] text-[#2d2d2d] xl:block xl:w-1/4 xl:pr-[15px]"
             >
-              <section
-                id="recommendedProducts"
-                className="mb-0.5 rounded-md bg-[#f0f4f8] p-4"
+              <Suspense
+                fallback={
+                  <div className="h-[400px] w-full animate-pulse rounded bg-gray-50" />
+                }
               >
-                <h2 className="oopMarginal-wrapperTitle mb-4 text-[16px] font-bold text-[#2d2d2d]">
-                  Ähnliche Produkte
-                </h2>
-                <ul className="space-y-3">
-                  {similarProducts.slice(0, 5).map((p) => (
-                    <li
-                      key={p.slug}
-                      className="flex cursor-pointer items-start gap-3 rounded bg-white p-2 transition-colors hover:shadow-sm"
-                    >
-                      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded bg-white">
-                        {p.image && (
-                          <Image
-                            src={p.image}
-                            alt={p.title}
-                            fill
-                            className="object-contain p-1.5"
-                          />
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <Link
-                          href={`/p/${p.slug}`}
-                          className="line-clamp-2 block text-[12px] font-bold text-[#2d2d2d]! underline! hover:text-[#f97316]!"
-                        >
-                          {formatDisplayTitle(p.title)}
-                        </Link>
-                        <div className="mt-1 text-[12px] font-bold! text-[#2d2d2d]">
-                          <LegalPrice price={p.prices[countryCode]} showAb />
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              </section>
+                <CachedSidebarSimilarProducts
+                  product={product}
+                  similarProducts={similarProducts.slice(0, 5)}
+                  countryCode={countryCode}
+                />
+              </Suspense>
             </aside>
 
             {/* Streaming Offers Section */}
@@ -266,25 +248,131 @@ export function IdealoProductPage({
 
           {/* Specifications Table (Bottom) */}
           <div id="datasheet" className="scroll-mt-[10vh]">
-            <SpecificationsTable product={product} />
+            <Suspense
+              fallback={
+                <div className="h-[300px] w-full animate-pulse rounded bg-gray-50" />
+              }
+            >
+              <CachedSpecifications product={product} />
+            </Suspense>
           </div>
 
           {/* Similar Products Carousel */}
-          <div className="-mx-4 mt-12 bg-[#f0f4f8] px-4 py-8">
-            <div className="mx-auto max-w-[1280px]">
-              <h2 className="mb-6 text-xl font-bold text-[#2d2d2d]">
-                Auch interessant
-              </h2>
-              <IdealoProductCarousel
-                products={similarProducts.map((p) => ({
-                  ...p,
-                  price: p.prices[countryCode],
-                }))}
-                countryCode={countryCode}
-              />
-            </div>
-          </div>
+          <Suspense
+            fallback={
+              <div className="h-[400px] w-full animate-pulse rounded bg-gray-50" />
+            }
+          >
+            <CachedSimilarCarousel
+              product={product}
+              similarProducts={similarProducts}
+              countryCode={countryCode}
+            />
+          </Suspense>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * --- CACHED COMPONENTS (Next.js 16 Granular Caching) ---
+ * Each of these is rendered once and stored as static Rsc in the Vercel Data Cache.
+ */
+
+async function CachedPriceChart({ product }: { product: Product }) {
+  "use cache";
+  cacheLife("product");
+  return (
+    <div id="price-chart-wrapper" className="sticky top-4">
+      <IdealoPriceChart history={product.priceHistory!} />
+    </div>
+  );
+}
+
+async function CachedSidebarSimilarProducts({
+  product,
+  similarProducts,
+  countryCode,
+}: {
+  product: Product;
+  similarProducts: Product[];
+  countryCode: CountryCode;
+}) {
+  "use cache";
+  cacheLife("product");
+  return (
+    <section
+      id="recommendedProducts"
+      className="mb-0.5 rounded-md bg-[#f0f4f8] p-4"
+    >
+      <h2 className="oopMarginal-wrapperTitle mb-4 text-[16px] font-bold text-[#2d2d2d]">
+        Ähnliche Produkte
+      </h2>
+      <ul className="space-y-3">
+        {similarProducts.map((p) => (
+          <li
+            key={p.slug}
+            className="flex cursor-pointer items-start gap-3 rounded bg-white p-2 transition-colors hover:shadow-sm"
+          >
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded bg-white">
+              {p.image && (
+                <Image
+                  src={p.image}
+                  alt={p.title}
+                  fill
+                  className="object-contain p-1.5"
+                />
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <Link
+                href={`/p/${p.slug}`}
+                className="line-clamp-2 block text-[12px] font-bold text-[#2d2d2d]! underline! hover:text-[#f97316]!"
+              >
+                {formatDisplayTitle(p.title)}
+              </Link>
+              <div className="mt-1 text-[12px] font-bold! text-[#2d2d2d]">
+                <LegalPrice price={p.prices[countryCode]} showAb />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+async function CachedSpecifications({ product }: { product: Product }) {
+  "use cache";
+  cacheLife("product");
+  return <SpecificationsTable product={product} />;
+}
+
+async function CachedSimilarCarousel({
+  product,
+  similarProducts,
+  countryCode,
+}: {
+  product: Product;
+  similarProducts: Product[];
+  countryCode: CountryCode;
+}) {
+  "use cache";
+  cacheLife("product");
+  return (
+    <div className="-mx-4 mt-12 bg-[#f0f4f8] px-4 py-8">
+      <div className="mx-auto max-w-[1280px]">
+        <h2 className="mb-6 text-xl font-bold text-[#2d2d2d]">
+          Auch interessant
+        </h2>
+        <IdealoProductCarousel
+          products={similarProducts.map((p) => ({
+            ...p,
+            price: p.prices[countryCode],
+          }))}
+          countryCode={countryCode}
+        />
       </div>
     </div>
   );
