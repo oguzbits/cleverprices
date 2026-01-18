@@ -12,16 +12,18 @@ The maintenance engine runs on a recurring schedule and performs three critical 
 
 Every hour, the `daily-maintenance.yml` workflow triggers `scripts/update-prices.ts`.
 
-- **Batch Size**: 500 products per run.
+- **Dynamic Scaling**: Automatically adjusts batch size (300-1000) based on available Keepa tokens.
 - **Priority**: Stale-first (products that haven't been updated in 11+ hours).
-- **Target**: Updates the `currentPrice`, `lowestPrice`, and `highestPrice` in the Turso Cloud database.
+- **Daily Minimums**: Implements "Idealo-style" tracking—instead of multiple points per day, it records only the absolute lowest price detected each day to the `price_history` table.
+- **Target**: Updates the `currentPrice`, `priceAvg30`, and `priceAvg90` in the database.
 
 ### Phase 2: Product Enrichment
 
 Immediately following the price updates, `scripts/enrich-products.ts` runs.
 
-- **Batch Size**: 100 products per run.
-- **Data**: Fetches 90-day averages, sales ranks, and long-term price history.
+- **Dynamic Scaling**: Uses remaining tokens (up to 200 products) to fetch rich metadata.
+- **History Seeding**: Fetches the full historical curve from Keepa and back-fills the `price_history` table.
+- **Idealo Optimization**: Aggregates high-resolution Keepa data into "one lowest point per day" to ensure clean charts and minimal storage costs.
 - **Resilience**: This step uses `continue-on-error: true` so that minor Keepa API issues don't block the next phase.
 
 ### Phase 3: Cache Warming
