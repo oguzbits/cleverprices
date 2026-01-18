@@ -43,7 +43,7 @@ export function IdealoProductCard({
   return (
     <PrefetchLink
       href={`/p/${slug}`}
-      className="group relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border border-[#b4b4b4] bg-white no-underline transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[240px]"
+      className="group relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border border-[#b4b4b4] bg-white no-underline transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[224px]"
     >
       {/* Badges Area - top left */}
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
