@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "organization": "Prowler Cloud / CleverPrices",
+  "date": "January 2026",
+  "abstract": "Tailwind CSS 4 patterns and best practices for building maintainable, performant UIs. Contains 9 rules across 3 categories: Critical (no var() in className, no hex colors), High (cn() utility, container queries), and Medium (spacing, responsive patterns). Optimized for AI-assisted code generation and refactoring.",
+  "references": [
+    "https://tailwindcss.com/docs",
+    "https://tailwindcss.com/blog/tailwindcss-v4",
+    "https://github.com/shadcn-ui/ui"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "version": "1.0.0",
+  "organization": "Prowler Cloud / CleverPrices",
+  "date": "January 2026",
+  "abstract": "Best practices for Drizzle ORM with SQLite (Turso/LibSQL). Contains 11 rules across 4 categories: Schema Definition (tables, indexes, relations), Query Optimization (select columns, RQB, filters), Common Patterns (upsert, batch, transactions), and Configuration (migrations). Optimized for AI-assisted code generation.",
+  "references": [
+    "https://orm.drizzle.team/docs/overview",
+    "https://orm.drizzle.team/docs/rqb",
+    "https://orm.drizzle.team/kit-docs/overview",
+    "https://turso.tech/docs"
+  ]
+}
