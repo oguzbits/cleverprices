@@ -1,9 +1,3 @@
-/**
- * Idealo Product Stage
- *
- * Faithful recreation of Idealo's product page layout.
- */
-
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
 import {
@@ -21,10 +15,11 @@ import type { UnifiedProduct } from "@/lib/data-sources";
 import { Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
-import { Package, Star } from "lucide-react";
+import { Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import React, { Suspense } from "react";
+import { IdealoStarRating } from "../category/IdealoStarRating";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import {
   IdealoLivePrice,
@@ -149,26 +144,10 @@ export function IdealoProductPage({
                 {displayTitle}
               </h1>
               <div className="oopStage-metaInfo mb-4 flex flex-wrap items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="flex">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <div key={s} className="relative h-3.5 w-3.5">
-                        <Star className="absolute inset-0 h-3.5 w-3.5 text-[#e5e5e5]" />
-                        <div
-                          className="absolute inset-0 overflow-hidden"
-                          style={{
-                            width: `${Math.max(0, Math.min(100, ((product.rating ?? 4.5) - (s - 1)) * 100))}%`,
-                          }}
-                        >
-                          <Star className="h-3.5 w-3.5 fill-black text-black" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <span className="text-[12px] text-[#2d2d2d]">
-                    ({product.reviewCount || 0})
-                  </span>
-                </div>
+                <IdealoStarRating
+                  rating={product.rating || 4.5}
+                  reviewCount={product.reviewCount || 0}
+                />
               </div>
             </div>
 

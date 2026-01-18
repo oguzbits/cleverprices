@@ -3,6 +3,7 @@ import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import Image from "next/image";
+import { IdealoStarRating } from "../category/IdealoStarRating";
 
 interface IdealoProductCardProps {
   title: string;
@@ -21,27 +22,6 @@ interface IdealoProductCardProps {
   variationAttributes?: string;
   countryCode?: string;
 }
-
-const StarIcon = ({
-  className,
-  width,
-}: {
-  className: string;
-  width?: string;
-}) => (
-  <div className="relative h-3 w-3">
-    <svg className={cn("absolute inset-0", className)} viewBox="0 0 20 20">
-      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-    </svg>
-    {width && (
-      <div className="absolute inset-0 overflow-hidden" style={{ width }}>
-        <svg className="h-3 w-3 fill-[#ff6600]" viewBox="0 0 20 20">
-          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-        </svg>
-      </div>
-    )}
-  </div>
-);
 
 export function IdealoProductCard({
   title,
@@ -137,31 +117,16 @@ export function IdealoProductCard({
           </div>
         ) : null}
 
-        {/* Community Rating (Stars) */}
-        {typeof rating === "number" && rating > 0 ? (
-          <div className="mb-3 flex items-center gap-1.5 text-[11px]">
-            <div className="flex">
-              {[1, 2, 3, 4, 5].map((i) => {
-                const fillPercent = Math.max(
-                  0,
-                  Math.min(100, (rating - (i - 1)) * 100),
-                );
-                return (
-                  <StarIcon
-                    key={i}
-                    className="fill-gray-200"
-                    width={fillPercent > 0 ? `${fillPercent}%` : undefined}
-                  />
-                );
-              })}
-            </div>
-            {ratingCount ? (
-              <span className="font-normal text-gray-400">({ratingCount})</span>
-            ) : null}
-          </div>
-        ) : null}
+        <div className="mt-auto flex flex-col items-start gap-1">
+          {/* Community Rating (Stars) - Even Smaller Pill Style */}
+          {typeof rating === "number" && rating > 0 ? (
+            <IdealoStarRating
+              rating={rating}
+              reviewCount={ratingCount}
+              className="mb-1.5"
+            />
+          ) : null}
 
-        <div className="mt-auto">
           <LegalPrice
             price={price}
             countryCode={countryCode}

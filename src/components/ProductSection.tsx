@@ -102,6 +102,8 @@ export function ProductSection({
               countryCode={country}
               badgeText={product.badgeText}
               priority={priorityIndices?.includes(index)}
+              rating={product.rating}
+              reviewCount={product.reviewCount}
               {...productCardProps}
             />
           ))}

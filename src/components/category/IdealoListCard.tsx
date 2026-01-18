@@ -25,6 +25,7 @@ import Image from "next/image";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
+import { IdealoStarRating } from "./IdealoStarRating";
 
 interface IdealoListCardProps {
   product: LeanProduct;
@@ -127,29 +128,6 @@ export function IdealoListCard({
                 </span>
               </div>
             </div>
-
-            {/* RATING */}
-            <div className="sr-productRating mb-2 flex items-center gap-1">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <svg
-                    key={s}
-                    className={cn(
-                      "h-3.5 w-3.5",
-                      (product.rating || 4.5) >= s
-                        ? "fill-[#ff9900] text-[#ff9900]"
-                        : "fill-[#e5e5e5] text-[#e5e5e5]",
-                    )}
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                  </svg>
-                ))}
-              </div>
-              <span className="text-[12px] text-[#767676]">
-                ({product.reviewCount || 0})
-              </span>
-            </div>
           </div>
 
           {/* ============================================ */}
@@ -178,6 +156,12 @@ export function IdealoListCard({
         {/* Positioned on the right side for list view */}
         {/* ============================================ */}
         <div className="sr-detailedPriceInfo sr-detailedPriceInfo--LIST flex shrink-0 flex-col items-end justify-center p-[15px]">
+          {/* RATING */}
+          <IdealoStarRating
+            rating={product.rating || 4.5}
+            reviewCount={product.reviewCount || 0}
+            className="mb-2"
+          />
           {product.listPrice && product.listPrice > product.price && (
             <div className="mb-0.5 text-[14px] text-[#767676] line-through">
               {formatCurrency(product.listPrice, countryCode)}

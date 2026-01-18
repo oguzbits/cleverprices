@@ -1,9 +1,10 @@
 import { getCountryByCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
-import { Heart, Star } from "lucide-react";
+import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { IdealoStarRating } from "./category/IdealoStarRating";
 
 export interface ProductCardProps {
   title: string;
@@ -18,6 +19,8 @@ export interface ProductCardProps {
   badgeText?: string;
   brand?: string;
   specs?: string;
+  rating?: number;
+  reviewCount?: number;
 }
 
 export function ProductCard({
@@ -33,6 +36,8 @@ export function ProductCard({
   badgeText,
   brand,
   specs,
+  rating,
+  reviewCount,
 }: ProductCardProps) {
   const countryConfig = getCountryByCode(countryCode);
 
@@ -101,18 +106,16 @@ export function ProductCard({
           </p>
         )}
 
-        {/* Rating row like Idealo - Note score + stars + count */}
-        <div className="mb-3 flex items-center gap-1.5 text-[11px]">
-          <span className="font-semibold text-zinc-600">Note ∅ 1,5</span>
-          <div className="flex">
-            {[1, 2, 3, 4, 5].map((s) => (
-              <Star key={s} className="h-3 w-3 fill-[#f97316] text-[#f97316]" />
-            ))}
-          </div>
-          <span className="text-zinc-400">8</span>
-        </div>
+        <div className="mt-auto flex flex-col items-start">
+          {/* Rating row - Even smaller black stars in a light grey pill */}
+          {(rating || reviewCount) && (
+            <IdealoStarRating
+              rating={rating}
+              reviewCount={reviewCount}
+              className="mb-2"
+            />
+          )}
 
-        <div className="mt-auto">
           {/* Price - "ab" prefix with ORANGE price like Idealo */}
           <div className="flex items-baseline gap-1">
             <span className="text-[12px] font-semibold text-zinc-500">ab</span>
@@ -120,11 +123,10 @@ export function ProductCard({
               {formatCurrency(price, countryCode)}
             </span>
           </div>
-
-          {/* Produktdetails link at bottom - blue link like Idealo */}
-          <div className="mt-2 flex items-center gap-0.5 text-[11px] font-semibold text-[#0066cc]">
-            <span>Produktdetails</span>
-          </div>
+        </div>
+        {/* Produktdetails link at bottom - blue link like Idealo */}
+        <div className="mt-2 flex items-center gap-0.5 text-[11px] font-semibold text-[#0066cc]">
+          <span>Produktdetails</span>
         </div>
       </div>
     </Link>

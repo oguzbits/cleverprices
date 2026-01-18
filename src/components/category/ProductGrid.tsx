@@ -1,12 +1,10 @@
-"use client";
-
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { LocalizedProduct } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
-import { Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { IdealoStarRating } from "./IdealoStarRating";
 
 interface ProductGridProps {
   products: LocalizedProduct[];
@@ -55,25 +53,22 @@ export function ProductGrid({ products, countryCode }: ProductGridProps) {
               {product.capacity} {product.capacityUnit} • {product.formFactor}
             </p>
 
-            {/* Rating - 12px */}
-            <div className="mb-3 flex items-center gap-1.5 text-[12px]">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star
-                    key={s}
-                    className="h-3 w-3 fill-[#f97316] text-[#f97316]"
-                  />
-                ))}
-              </div>
-              <span className="text-zinc-500">∅ 1,5</span>
-            </div>
+            {/* Price section - pushed to bottom with mt-auto */}
+            <div className="mt-auto flex flex-col items-start">
+              {/* Rating */}
+              <IdealoStarRating
+                rating={product.rating || 4.5}
+                reviewCount={product.reviewCount || 0}
+                className="mb-1.5"
+              />
 
-            {/* Price - pushed to bottom with mt-auto */}
-            <div className="mt-auto flex items-baseline gap-1">
-              <span className="text-[13px] text-zinc-400">ab</span>
-              <span className="text-[18px] font-bold text-[#f97316]">
-                {formatCurrency(product.price, countryCode)}
-              </span>
+              {/* Price */}
+              <div className="flex items-baseline gap-1">
+                <span className="text-[13px] text-zinc-400">ab</span>
+                <span className="text-[18px] font-bold text-[#f97316]">
+                  {formatCurrency(product.price, countryCode)}
+                </span>
+              </div>
             </div>
 
             {/* Produktdetails link - 13px */}

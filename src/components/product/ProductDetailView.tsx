@@ -14,7 +14,6 @@ import {
   Info,
   Package,
   ShieldCheck,
-  Star,
   Truck,
 } from "lucide-react";
 import Image from "next/image";
@@ -27,6 +26,7 @@ import {
 } from "@/components/seo/ProductSchema";
 import { getSimilarProducts } from "@/lib/product-registry";
 import { formatCurrency } from "@/lib/utils/formatting";
+import { IdealoStarRating } from "../category/IdealoStarRating";
 import { OfferComparisonTable } from "./OfferComparisonTable";
 import { SpecificationsTable } from "./SpecificationsTable";
 
@@ -166,19 +166,12 @@ export async function ProductDetailView({
                   </span>
 
                   <div className="flex items-center gap-1.5 border-l border-zinc-200 pl-4">
-                    <div className="flex">
-                      {[1, 2, 3, 4, 5].map((s) => (
-                        <Star
-                          key={s}
-                          className="h-3.5 w-3.5 fill-[#ff6000] text-[#ff6000]"
-                        />
-                      ))}
-                    </div>
-                    <span className="font-bold text-zinc-900">
-                      {product.rating || "4.8"}
-                    </span>
+                    <IdealoStarRating
+                      rating={product.rating || 4.8}
+                      reviewCount={product.reviewCount || 12}
+                    />
                     <span className="cursor-pointer text-blue-600 hover:underline">
-                      ({product.reviewCount || "12"} Bewertungen)
+                      Bewertungen
                     </span>
                   </div>
                 </div>

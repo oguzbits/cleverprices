@@ -36,31 +36,29 @@ export function IdealoStarRating({
   const formattedRating = rating ? formatRatingDE(rating) : null;
 
   return (
-    <div className={cn("sr-productRating flex items-center gap-1", className)}>
-      {/* Note average */}
-      {formattedRating && (
-        <span className="sr-productRating__avg text-[12px] leading-[14px] text-[#767676]">
-          Note ∅ {formattedRating}
-        </span>
+    <div
+      className={cn(
+        "sr-productRating inline-flex w-fit items-center justify-center gap-1 rounded-full bg-gray-100 px-1.5 py-0.5",
+        className,
       )}
-
+    >
       {/* Star rating wrapper */}
-      <div className="sr-starRating__wrapper flex items-center gap-0.5">
+      <div className="sr-starRating__wrapper flex items-center justify-center gap-1">
         {/* Stars container with fill percentage */}
         <div
-          className="sr-starRating__stars relative flex items-center"
-          style={{ gap: "1px" }}
+          className="sr-starRating__stars relative flex items-center justify-center"
+          style={{ gap: "0.5px" }}
         >
           {/* Background (empty) stars */}
           {[1, 2, 3, 4, 5].map((i) => (
             <svg
               key={`empty-${i}`}
               xmlns="http://www.w3.org/2000/svg"
-              width="12"
-              height="12"
+              width="8"
+              height="8"
               viewBox="0 0 24 24"
               fill="#dcdcdc"
-              className="h-3 w-3"
+              className="h-2 w-2"
             >
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
@@ -71,18 +69,18 @@ export function IdealoStarRating({
             className="absolute inset-0 flex items-center overflow-hidden"
             style={{
               width: `${percentage}%`,
-              gap: "1px",
+              gap: "0.5px",
             }}
           >
             {[1, 2, 3, 4, 5].map((i) => (
               <svg
                 key={`filled-${i}`}
                 xmlns="http://www.w3.org/2000/svg"
-                width="12"
-                height="12"
+                width="8"
+                height="8"
                 viewBox="0 0 24 24"
-                fill="#f97316"
-                className="h-3 w-3 shrink-0"
+                fill="black"
+                className="h-2 w-2 shrink-0"
               >
                 <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
               </svg>
@@ -92,7 +90,7 @@ export function IdealoStarRating({
 
         {/* Review count */}
         {reviewCount !== undefined && reviewCount > 0 && (
-          <span className="sr-starRating__count text-[12px] leading-[14px] text-[#767676]">
+          <span className="sr-starRating__count text-[9px] leading-none font-bold text-black">
             {reviewCount}
           </span>
         )}
