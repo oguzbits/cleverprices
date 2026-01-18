@@ -16,7 +16,7 @@ export function BlogCard({ post, country = "us", className }: BlogCardProps) {
     <Link
       href={blogUrl}
       className={cn(
-        "group border-border/60 bg-card flex flex-col rounded-2xl border p-6 no-underline transition-all duration-300 hover:shadow-lg",
+        "group border-border/60 bg-card focus-visible:ring-ring flex flex-col rounded-2xl border p-6 no-underline transition-all duration-300 outline-none hover:shadow-lg focus-visible:ring-2 focus-visible:ring-offset-2",
         className,
       )}
     >

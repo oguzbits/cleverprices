@@ -47,11 +47,15 @@ export function IdealoProductCarousel({
       <div className={cn("cn-productCarousel", className)}>
         {title && (
           <div className="cn-productCarousel__header mb-4">
-            <h2 className="text-[20px] font-bold text-[#2d2d2d]">{title}</h2>
+            <h2 className="text-idealo-text-primary text-[20px] font-bold">
+              {title}
+            </h2>
           </div>
         )}
-        <div className="flex items-center justify-center rounded border border-[#e5e5e5] bg-[#f9f9f9] py-12 text-center">
-          <p className="text-sm text-[#999]">Keine Produkte verfügbar</p>
+        <div className="border-border bg-secondary flex items-center justify-center rounded border py-12 text-center">
+          <p className="text-muted-foreground text-sm">
+            Keine Produkte verfügbar
+          </p>
         </div>
       </div>
     );
@@ -62,7 +66,9 @@ export function IdealoProductCarousel({
       {/* Section Header */}
       {title && (
         <div className="cn-productCarousel__header mb-4">
-          <h2 className="text-[20px] font-bold text-[#2d2d2d]">{title}</h2>
+          <h2 className="text-idealo-text-primary text-[20px] font-bold">
+            {title}
+          </h2>
         </div>
       )}
 

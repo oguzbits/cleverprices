@@ -29,8 +29,8 @@ export function IdealoHero({ products }: IdealoHeroProps) {
           />
         </div>
       ) : (
-        <div className="flex min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[6px] bg-white p-8">
-          <div className="text-center text-[#666]">
+        <div className="bg-card flex min-w-0 flex-1 items-center justify-center overflow-hidden rounded-[6px] p-8">
+          <div className="text-muted-foreground text-center">
             <p className="text-lg font-semibold">Produkte werden geladen...</p>
             <p className="text-sm">Entdecken Sie bald unsere besten Angebote</p>
           </div>
@@ -38,7 +38,7 @@ export function IdealoHero({ products }: IdealoHeroProps) {
       )}
 
       {/* Right side - Promo banner */}
-      <div className="hidden w-[280px] shrink-0 overflow-hidden rounded-[6px] bg-linear-to-br from-[#0066cc] to-[#004499] lg:block">
+      <div className="from-idealo-blue to-idealo-blue-hover hidden w-[280px] shrink-0 overflow-hidden rounded-[6px] bg-linear-to-br lg:block">
         <div className="flex h-full flex-col items-center justify-center p-6 text-center text-white">
           <div className="mb-3 text-sm font-bold tracking-wide uppercase opacity-80">
             Top Angebote
@@ -49,7 +49,7 @@ export function IdealoHero({ products }: IdealoHeroProps) {
           </p>
           <PrefetchLink
             href="/deals"
-            className="rounded bg-white px-5 py-2 text-sm font-bold text-[#0066cc] no-underline transition-transform hover:scale-105"
+            className="text-idealo-blue focus-visible:ring-offset-idealo-blue rounded bg-white px-5 py-2 text-sm font-bold no-underline transition-transform outline-none hover:scale-105 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
           >
             Zu den Deals
           </PrefetchLink>

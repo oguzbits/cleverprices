@@ -12,7 +12,7 @@ const DynamicProductCarousel = dynamic(
     ),
   {
     loading: () => (
-      <div className="h-[400px] w-full animate-pulse rounded-md bg-gray-100" />
+      <div className="bg-muted h-[400px] w-full animate-pulse rounded-md" />
     ),
     ssr: true, // Keep SSR for SEO and initial HTML
   },
@@ -47,7 +47,7 @@ export function IdealoHomePage({
     newArrivals.length === 0
   ) {
     return (
-      <div className="bg-[#f5f5f5]">
+      <div className="bg-background">
         <IdealoSection variant="white" className="py-12">
           <EmptyState
             title="Willkommen bei cleverprices!"
@@ -63,7 +63,7 @@ export function IdealoHomePage({
   }
 
   return (
-    <div className="bg-[#f5f5f5]">
+    <div className="bg-background">
       {/* Hero Section - light blue bg - Critical, so we keep regular import or direct usage */}
       {popular.length > 0 ? (
         <IdealoSection variant="lightBlue">
