@@ -288,7 +288,24 @@ const fetchProductBySlug = async (
   slug: string,
   includeHistory: boolean = false,
 ): Promise<Product | undefined> => {
-  const [p] = await db.select().from(products).where(eq(products.slug, slug));
+  // Try exact match first
+  let [p] = await db.select().from(products).where(eq(products.slug, slug));
+
+  // If not found, try decoding the slug (Next.js usually decodes, but just to be safe for manual calls or edge cases)
+  if (!p) {
+    try {
+      const decoded = decodeURIComponent(slug);
+      if (decoded !== slug) {
+        [p] = await db
+          .select()
+          .from(products)
+          .where(eq(products.slug, decoded));
+      }
+    } catch (e) {
+      // Ignore decoding errors
+    }
+  }
+
   if (!p) return undefined;
 
   const prs = await db.select().from(prices).where(eq(prices.productId, p.id));
