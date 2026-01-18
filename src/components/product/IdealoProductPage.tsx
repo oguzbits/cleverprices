@@ -69,7 +69,7 @@ export function IdealoProductPage({
   const displayTitle = shortTitle;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="bg-background min-h-screen">
       <ProductSchema
         product={product}
         countryCode={countryCode}
@@ -95,7 +95,7 @@ export function IdealoProductPage({
             {/* Gallery */}
             <div className="min-w-0 flex-1 px-2.5 sm:px-0 lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:-row-end-1">
               <div className="oopStage-gallery">
-                <div className="relative mx-auto aspect-square w-full max-w-[400px] bg-white">
+                <div className="bg-card relative mx-auto aspect-square w-full max-w-[400px]">
                   {product.image ? (
                     <Image
                       src={product.image}
@@ -106,7 +106,7 @@ export function IdealoProductPage({
                       priority
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center bg-gray-100 text-gray-400">
+                    <div className="bg-muted text-muted-foreground flex h-full items-center justify-center">
                       <Package className="h-24 w-24 stroke-1" />
                     </div>
                   )}
@@ -116,7 +116,7 @@ export function IdealoProductPage({
                 <div className="mt-4 rounded border border-gray-200 p-4 lg:hidden">
                   <a
                     href="#offerList"
-                    className="flex items-center justify-between"
+                    className="focus-visible:ring-idealo-blue flex items-center justify-between outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
                   >
                     <Suspense
                       fallback={
@@ -175,14 +175,14 @@ export function IdealoProductPage({
                     ))}
                   <a
                     href="#datasheet"
-                    className="text-idealo-blue ml-1 hover:no-underline"
+                    className="text-idealo-blue focus-visible:ring-idealo-blue ml-1 outline-none hover:no-underline focus-visible:ring-2 focus-visible:ring-offset-1"
                   >
                     Produktdetails
                   </a>
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-2.5">
-                  <button className="border-idealo-blue flex min-w-[140px] flex-col items-center justify-center rounded-[2px] border bg-blue-50 px-4 py-2 hover:bg-blue-100">
+                  <button className="border-idealo-blue focus-visible:ring-idealo-blue flex min-w-[140px] flex-col items-center justify-center rounded-[2px] border bg-blue-50 px-4 py-2 outline-none hover:bg-blue-100 focus-visible:ring-2 focus-visible:ring-offset-1">
                     <div className="text-idealo-text-primary text-[13px] font-bold">
                       Neu ab
                     </div>
@@ -208,7 +208,7 @@ export function IdealoProductPage({
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
               <Suspense
                 fallback={
-                  <div className="h-[200px] w-full animate-pulse rounded bg-gray-50" />
+                  <div className="bg-muted h-[200px] w-full animate-pulse rounded" />
                 }
               >
                 <CachedPriceChart productId={product.id || 0} />
@@ -223,7 +223,7 @@ export function IdealoProductPage({
             >
               <Suspense
                 fallback={
-                  <div className="h-[400px] w-full animate-pulse rounded bg-gray-50" />
+                  <div className="bg-muted h-[400px] w-full animate-pulse rounded" />
                 }
               >
                 <CachedSidebarSimilarProducts
@@ -248,7 +248,7 @@ export function IdealoProductPage({
           <div id="datasheet" className="scroll-mt-[10vh]">
             <Suspense
               fallback={
-                <div className="h-[300px] w-full animate-pulse rounded bg-gray-50" />
+                <div className="bg-muted h-[300px] w-full animate-pulse rounded" />
               }
             >
               <CachedSpecifications product={product} />
@@ -310,7 +310,7 @@ async function CachedSidebarSimilarProducts({
   return (
     <section
       id="recommendedProducts"
-      className="mb-0.5 rounded-md bg-slate-100 p-4"
+      className="bg-secondary mb-0.5 rounded-md p-4"
     >
       <h2 className="oopMarginal-wrapperTitle text-idealo-text-primary mb-4 text-[16px] font-bold">
         Ähnliche Produkte
@@ -319,9 +319,9 @@ async function CachedSidebarSimilarProducts({
         {similarProducts.map((p) => (
           <li
             key={p.slug}
-            className="flex cursor-pointer items-start gap-3 rounded bg-white p-2 transition-colors hover:shadow-sm"
+            className="bg-card flex cursor-pointer items-start gap-3 rounded p-2 transition-colors hover:shadow-sm"
           >
-            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded bg-white">
+            <div className="bg-card relative h-14 w-14 shrink-0 overflow-hidden rounded">
               {p.image && (
                 <Image
                   src={p.image}
@@ -334,7 +334,7 @@ async function CachedSidebarSimilarProducts({
             <div className="min-w-0 flex-1">
               <Link
                 href={`/p/${p.slug}`}
-                className="!text-idealo-text-primary hover:!text-primary line-clamp-2 block text-[12px] font-bold !underline"
+                className="!text-idealo-text-primary hover:!text-primary focus-visible:ring-idealo-blue line-clamp-2 block text-[12px] font-bold !underline outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
               >
                 {formatDisplayTitle(p.title)}
               </Link>
@@ -367,7 +367,7 @@ async function CachedSimilarCarousel({
   "use cache";
   cacheLife("product");
   return (
-    <div className="-mx-4 mt-12 bg-slate-100 px-4 py-8">
+    <div className="bg-secondary -mx-4 mt-12 px-4 py-8">
       <div className="mx-auto max-w-[1280px]">
         <h2 className="text-idealo-text-primary mb-6 text-xl font-bold">
           Auch interessant
