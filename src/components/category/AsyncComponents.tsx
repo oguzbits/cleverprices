@@ -169,10 +169,10 @@ export async function AsyncProductList({
         <div className="flex flex-1 flex-col items-center justify-center py-24 text-center">
           {filters.search ? (
             <>
-              <h2 className="mb-3 text-2xl font-bold text-[#2d2d2d]">
+              <h2 className="text-idealo-text-primary mb-3 text-2xl font-bold">
                 Keine Treffer in dieser Kategorie
               </h2>
-              <p className="mb-6 text-[14px] text-[#767676]">
+              <p className="text-idealo-text-secondary mb-6 text-[14px]">
                 Wir konnten in{" "}
                 <span className="font-medium">{category.name}</span> keine
                 Ergebnisse für
@@ -186,17 +186,17 @@ export async function AsyncProductList({
                   // @ts-ignore
                   if (typeof window !== "undefined") window.triggerSearch?.();
                 }}
-                className="flex items-center gap-2 rounded-[4px] bg-[#0771D0] px-6 py-2.5 text-[15px] font-bold text-white hover:bg-[#0050a0]"
+                className="bg-idealo-blue hover:bg-idealo-blue-hover focus-visible:ring-idealo-blue flex items-center gap-2 rounded-[4px] px-6 py-2.5 text-[15px] font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               >
                 Global suchen
               </button>
             </>
           ) : (
             <>
-              <h2 className="mb-3 text-2xl font-bold text-[#2d2d2d]">
+              <h2 className="text-idealo-text-primary mb-3 text-2xl font-bold">
                 Daten folgen
               </h2>
-              <p className="text-[14px] text-[#767676]">
+              <p className="text-idealo-text-secondary text-[14px]">
                 Wir aggregieren derzeit Preisdaten für{" "}
                 <span className="font-medium">{category.name}</span>.
               </p>
@@ -252,10 +252,10 @@ export async function AsyncProductList({
                       )?.filter((val) => val !== v),
                     },
                   }}
-                  className="flex items-center gap-1 rounded-[4px] border border-[#B4B4B4] bg-white px-3 py-1 text-[13px] text-[#2d2d2d] no-underline hover:bg-gray-50"
+                  className="border-idealo-border text-idealo-text-primary focus-visible:ring-idealo-blue flex items-center gap-1 rounded-[4px] border bg-white px-3 py-1 text-[13px] no-underline outline-none hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-offset-1"
                 >
                   <span>{v as string}</span>
-                  <X className="h-3 w-3 text-[#767676]" />
+                  <X className="text-idealo-text-secondary h-3 w-3" />
                 </Link>
               ));
             }
@@ -265,7 +265,7 @@ export async function AsyncProductList({
           })}
           <Link
             href={`/${category.slug}`}
-            className="ml-2 text-[13px] font-bold text-[#0771D0] hover:underline"
+            className="text-idealo-blue focus-visible:ring-idealo-blue ml-2 rounded-[2px] text-[13px] font-bold outline-none hover:underline focus-visible:ring-2 focus-visible:ring-offset-1"
           >
             Alle zurücksetzen
           </Link>
@@ -288,7 +288,7 @@ export async function AsyncProductList({
       )}
 
       <div className="px-4 min-[840px]:px-0">
-        <div className="mt-4 text-center text-[12px] text-[#767676]">
+        <div className="text-idealo-text-secondary mt-4 text-center text-[12px]">
           * Preise inkl. MwSt., ggf. zzgl. Versand. Preise und Verfügbarkeit
           können sich ändern.
           {lastUpdated ? (
@@ -298,8 +298,8 @@ export async function AsyncProductList({
           ) : null}
         </div>
 
-        <div className="sr-relatedCategories mt-8 border-t border-[#b4b4b4] pt-4">
-          <h3 className="mb-3 text-[16px] font-bold text-[#2d2d2d]">
+        <div className="sr-relatedCategories border-idealo-border mt-8 border-t pt-4">
+          <h3 className="text-idealo-text-primary mb-3 text-[16px] font-bold">
             Ähnliche Kategorien
           </h3>
           <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
@@ -309,9 +309,9 @@ export async function AsyncProductList({
                 <Link
                   key={related.slug}
                   href={`/${related.slug}`}
-                  className="flex items-center gap-2 py-1.5 text-[14px] text-[#0771d0] hover:underline"
+                  className="text-idealo-blue focus-visible:ring-idealo-blue flex items-center gap-2 rounded-[2px] py-1.5 text-[14px] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-offset-1"
                 >
-                  <Icon className="h-4 w-4 text-[#767676]" />
+                  <Icon className="text-idealo-text-secondary h-4 w-4" />
                   <span>{related.name}</span>
                 </Link>
               );

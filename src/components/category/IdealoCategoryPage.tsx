@@ -48,9 +48,7 @@ interface Props {
 /**
  * Main Category Page - Server Component
  */
-/**
- * Main Category Page - Server Component
- */
+
 export async function IdealoCategoryPage({
   category,
   countryCode,
@@ -82,19 +80,19 @@ export async function IdealoCategoryPage({
   ];
 
   return (
-    <div className="sr-searchResult min-h-screen bg-[#f6f6f6]">
+    <div className="sr-searchResult bg-secondary min-h-screen">
       <BreadcrumbSchema items={breadcrumbItems} />
       {/* ============================================ */}
       {/* MAIN CONTAINER - max-width 1280px */}
       <div className="mx-auto max-w-[1280px]">
-        <div className="border-b border-[#dcdcdc] bg-white px-4">
+        <div className="border-border bg-card border-b px-4">
           {/* ============================================ */}
           {/* BREADCRUMB - sr-breadcrumb */}
           {/* ============================================ */}
           <div className="sr-breadcrumb py-3">
             <Breadcrumbs
               items={breadcrumbItems}
-              className="mb-0 text-[14px] text-[#767676]"
+              className="text-idealo-text-secondary mb-0 text-[14px]"
             />
           </div>
 
@@ -103,7 +101,7 @@ export async function IdealoCategoryPage({
           {/* ============================================ */}
           <Suspense
             fallback={
-              <div className="mb-4 flex h-[60px] animate-pulse items-center justify-between rounded bg-gray-100" />
+              <div className="bg-secondary mb-4 flex h-[60px] animate-pulse items-center justify-between rounded" />
             }
           >
             <AsyncTopBar
@@ -128,7 +126,7 @@ export async function IdealoCategoryPage({
           <Suspense
             fallback={
               <aside className="sr-filterBar hidden w-full min-[840px]:block min-[840px]:max-w-[33.33333%] min-[840px]:basis-[33.33333%] min-[960px]:max-w-[25%] min-[960px]:basis-[25%]">
-                <div className="h-[600px] animate-pulse rounded bg-gray-200" />
+                <div className="bg-muted h-[600px] animate-pulse rounded" />
               </aside>
             }
           >
@@ -147,7 +145,7 @@ export async function IdealoCategoryPage({
                   {[...Array(8)].map((_, i) => (
                     <div
                       key={i}
-                      className="h-[380px] animate-pulse rounded bg-white"
+                      className="bg-card h-[380px] animate-pulse rounded"
                     />
                   ))}
                 </div>
