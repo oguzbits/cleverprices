@@ -106,14 +106,14 @@ export function IdealoProductPage({
                       priority
                     />
                   ) : (
-                    <div className="flex h-full items-center justify-center bg-[#f5f5f5] text-[#999]">
+                    <div className="flex h-full items-center justify-center bg-gray-100 text-gray-400">
                       <Package className="h-24 w-24 stroke-1" />
                     </div>
                   )}
                 </div>
 
                 {/* Mobile Price CTA - Now Live/Skeleton */}
-                <div className="mt-4 rounded border border-[#e5e5e5] p-4 lg:hidden">
+                <div className="mt-4 rounded border border-gray-200 p-4 lg:hidden">
                   <a
                     href="#offerList"
                     className="flex items-center justify-between"
@@ -127,10 +127,10 @@ export function IdealoProductPage({
                         product={product}
                         countryCode={countryCode}
                         unifiedProductPromise={unifiedProductPromise}
-                        className="text-lg font-extrabold text-[#2d2d2d]"
+                        className="text-idealo-text-primary text-lg font-extrabold"
                       />
                     </Suspense>
-                    <span className="text-sm font-semibold text-[#0066cc]">
+                    <span className="text-idealo-blue text-sm font-semibold">
                       Zum Preisvergleich
                     </span>
                   </a>
@@ -142,7 +142,7 @@ export function IdealoProductPage({
             <div className="col-start-1 row-start-1 min-w-0 flex-1 px-2.5 sm:px-[15px] lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-2 lg:pl-[25px]">
               <h1
                 id="oopStage-title"
-                className="mb-1 text-[20px] leading-tight font-bold text-[#2d2d2d]"
+                className="text-idealo-text-primary mb-1 text-[20px] leading-tight font-bold"
               >
                 {displayTitle}
               </h1>
@@ -167,24 +167,26 @@ export function IdealoProductPage({
                           {String(value)}
                         </span>
                         {i < 4 && (
-                          <span className="mx-0.5 text-[#2d2d2d]">·</span>
+                          <span className="text-idealo-text-primary mx-0.5">
+                            ·
+                          </span>
                         )}
                       </React.Fragment>
                     ))}
                   <a
                     href="#datasheet"
-                    className="ml-1 text-[#0066cc] hover:no-underline"
+                    className="text-idealo-blue ml-1 hover:no-underline"
                   >
                     Produktdetails
                   </a>
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-2.5">
-                  <button className="flex min-w-[140px] flex-col items-center justify-center rounded-[2px] border border-[#0066cc] bg-[#f5f9ff] px-4 py-2 hover:bg-[#e6f0ff]">
-                    <div className="text-[13px] font-bold text-[#2d2d2d]">
+                  <button className="border-idealo-blue flex min-w-[140px] flex-col items-center justify-center rounded-[2px] border bg-blue-50 px-4 py-2 hover:bg-blue-100">
+                    <div className="text-idealo-text-primary text-[13px] font-bold">
                       Neu ab
                     </div>
-                    <div className="text-[15px] font-extrabold text-[#2d2d2d]">
+                    <div className="text-idealo-text-primary text-[15px] font-extrabold">
                       <Suspense
                         fallback={
                           <IdealoLivePriceSkeleton className="h-5 w-16" />
@@ -217,7 +219,7 @@ export function IdealoProductPage({
           <div className="oop-mainWrapper flex w-full flex-wrap">
             <aside
               id="sidebar"
-              className="order-1 mb-[45px] hidden min-w-0 text-[14px] leading-[16px] text-[#2d2d2d] xl:block xl:w-1/4 xl:pr-[15px]"
+              className="text-idealo-text-primary order-1 mb-[45px] hidden min-w-0 text-[14px] leading-[16px] xl:block xl:w-1/4 xl:pr-[15px]"
             >
               <Suspense
                 fallback={
@@ -308,9 +310,9 @@ async function CachedSidebarSimilarProducts({
   return (
     <section
       id="recommendedProducts"
-      className="mb-0.5 rounded-md bg-[#f0f4f8] p-4"
+      className="mb-0.5 rounded-md bg-slate-100 p-4"
     >
-      <h2 className="oopMarginal-wrapperTitle mb-4 text-[16px] font-bold text-[#2d2d2d]">
+      <h2 className="oopMarginal-wrapperTitle text-idealo-text-primary mb-4 text-[16px] font-bold">
         Ähnliche Produkte
       </h2>
       <ul className="space-y-3">
@@ -332,11 +334,11 @@ async function CachedSidebarSimilarProducts({
             <div className="min-w-0 flex-1">
               <Link
                 href={`/p/${p.slug}`}
-                className="line-clamp-2 block text-[12px] font-bold text-[#2d2d2d]! underline! hover:text-[#f97316]!"
+                className="!text-idealo-text-primary hover:!text-primary line-clamp-2 block text-[12px] font-bold !underline"
               >
                 {formatDisplayTitle(p.title)}
               </Link>
-              <div className="mt-1 text-[12px] font-bold! text-[#2d2d2d]">
+              <div className="text-idealo-text-primary mt-1 text-[12px] !font-bold">
                 <LegalPrice price={p.prices[countryCode]} showAb />
               </div>
             </div>
@@ -365,9 +367,9 @@ async function CachedSimilarCarousel({
   "use cache";
   cacheLife("product");
   return (
-    <div className="-mx-4 mt-12 bg-[#f0f4f8] px-4 py-8">
+    <div className="-mx-4 mt-12 bg-slate-100 px-4 py-8">
       <div className="mx-auto max-w-[1280px]">
-        <h2 className="mb-6 text-xl font-bold text-[#2d2d2d]">
+        <h2 className="text-idealo-text-primary mb-6 text-xl font-bold">
           Auch interessant
         </h2>
         <IdealoProductCarousel

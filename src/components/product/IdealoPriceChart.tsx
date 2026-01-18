@@ -88,7 +88,9 @@ export function IdealoPriceChart({ history = [] }: IdealoPriceChartProps) {
       <div className="embedded-chart-container relative mb-4 h-[195px] w-full">
         {/* Header matching .styled-price-chart-embedded-header */}
         <div className="styled-price-chart-embedded-header mb-2 flex items-center justify-between pr-1">
-          <h3 className="text-sm font-bold text-[#2d2d2d]">Preisentwicklung</h3>
+          <h3 className="text-idealo-text-primary text-sm font-bold">
+            Preisentwicklung
+          </h3>
           <div className="flex gap-1">
             {["1M", "3M", "6M", "1J"].map((label) => (
               <button
@@ -96,8 +98,8 @@ export function IdealoPriceChart({ history = [] }: IdealoPriceChartProps) {
                 className={cn(
                   "rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors",
                   label === "3M"
-                    ? "bg-[#e1eff9] text-[#0771d0]"
-                    : "text-[#767676] hover:bg-gray-100",
+                    ? "text-idealo-blue bg-blue-100"
+                    : "text-idealo-text-secondary hover:bg-gray-100",
                 )}
               >
                 {label}
@@ -107,7 +109,7 @@ export function IdealoPriceChart({ history = [] }: IdealoPriceChartProps) {
         </div>
 
         {/* Chart Area */}
-        <div className="relative h-[150px] w-full bg-white">
+        <div className="text-primary relative h-[150px] w-full bg-white">
           <svg
             className="h-full w-full"
             viewBox={`0 0 ${width} ${height}`}
@@ -121,8 +123,8 @@ export function IdealoPriceChart({ history = [] }: IdealoPriceChartProps) {
                 x2="0%"
                 y2="100%"
               >
-                <stop offset="0%" stopColor="#ff6600" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="#ff6600" stopOpacity="0" />
+                <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
               </linearGradient>
             </defs>
             {/* Fill */}
@@ -131,7 +133,7 @@ export function IdealoPriceChart({ history = [] }: IdealoPriceChartProps) {
             <path
               d={linePath}
               fill="none"
-              stroke="#ff6600"
+              stroke="currentColor"
               strokeWidth="2"
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -148,7 +150,7 @@ export function IdealoPriceChart({ history = [] }: IdealoPriceChartProps) {
         </div>
 
         {/* Date Axis */}
-        <div className="mt-1 flex justify-between px-1 text-[10px] text-[#767676]">
+        <div className="text-idealo-text-secondary mt-1 flex justify-between px-1 text-[10px]">
           {dateLabels.map((label, i) => (
             <span key={i}>{label}</span>
           ))}
@@ -156,8 +158,8 @@ export function IdealoPriceChart({ history = [] }: IdealoPriceChartProps) {
       </div>
 
       {/* Price Alert Button matching .styled-price-alert-button */}
-      <div className="border-t border-[#e5e5e5] pt-4">
-        <button className="styled-price-alert-button flex w-full items-center justify-center gap-2 rounded border border-[#0771d0] bg-white px-4 py-2.5 text-sm font-semibold text-[#0771d0] transition-colors hover:bg-[#f5f9ff]">
+      <div className="border-t border-gray-200 pt-4">
+        <button className="styled-price-alert-button border-idealo-blue text-idealo-blue flex w-full items-center justify-center gap-2 rounded border bg-white px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-blue-50">
           <Bell className="h-4 w-4" />
           Preiswecker stellen
         </button>

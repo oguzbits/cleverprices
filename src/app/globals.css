@@ -27,6 +27,16 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Idealo Theme Tokens */
+  --color-idealo-blue: var(--idealo-blue);
+  --color-idealo-blue-hover: var(--idealo-blue-hover);
+  --color-idealo-text-primary: var(--idealo-text-primary);
+  --color-idealo-text-secondary: var(--idealo-text-secondary);
+  --color-idealo-border: var(--idealo-border);
+  --color-idealo-filter-bg: var(--idealo-filter-bg);
+  --color-idealo-shop-green: var(--idealo-shop-green);
+  --color-idealo-shop-green-hover: var(--idealo-shop-green-hover);
 }
 
 :root {
