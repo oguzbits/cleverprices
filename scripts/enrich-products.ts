@@ -10,6 +10,7 @@ import {
   extractSalesRank,
   keepaPriceToDecimal,
   parseKeepaHistory,
+  getDailyLow,
 } from "../src/lib/keepa/utils";
 
 async function enrich() {
@@ -113,8 +114,12 @@ async function enrich() {
 
                   // 2. Back-fill Price History from Keepa CSV
                   if (ep.csv) {
-                    const amazonHistory = parseKeepaHistory(ep.csv[0]);
-                    const newHistory = parseKeepaHistory(ep.csv[1]);
+                    const amazonHistory = getDailyLow(
+                      parseKeepaHistory(ep.csv[0]),
+                    );
+                    const newHistory = getDailyLow(
+                      parseKeepaHistory(ep.csv[1]),
+                    );
 
                     const historyToInsert = [
                       ...amazonHistory.map((h) => ({

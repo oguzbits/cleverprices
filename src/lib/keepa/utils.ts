@@ -71,3 +71,19 @@ export function parseKeepaHistory(
 
   return results;
 }
+
+/**
+ * Aggregates high-resolution history points into daily minimums.
+ * Idealo-style: only shows one price point per day.
+ */
+export function getDailyLow(history: { timestamp: number; price: number }[]) {
+  const dailyLows: Record<string, { timestamp: number; price: number }> = {};
+  for (const point of history) {
+    const d = new Date(point.timestamp);
+    const dateKey = d.toISOString().split("T")[0]; // YYYY-MM-DD
+    if (!dailyLows[dateKey] || point.price < dailyLows[dateKey].price) {
+      dailyLows[dateKey] = point;
+    }
+  }
+  return Object.values(dailyLows);
+}

@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, lt, or } from "drizzle-orm";
+import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
 import {
   db,
   NewPriceHistoryRecord,
@@ -213,19 +213,44 @@ async function updatePrices(country: CountryCode): Promise<void> {
                         pricePerUnit = bestPrice / product.normalizedCapacity;
                       }
 
-                      // Save to history if best price changed
-                      const oldBestPrice =
-                        existingPrice?.amazonPrice ?? existingPrice?.newPrice;
-                      if (existingPrice && oldBestPrice !== bestPrice) {
-                        const historyRecord: NewPriceHistoryRecord = {
-                          productId: product.id,
-                          country,
-                          price: bestPrice,
-                          currency,
-                          priceType: amazonPrice ? "amazon" : "new",
-                          recordedAt: now,
-                        };
-                        await db.insert(priceHistory).values(historyRecord);
+                      // Daily Minimum Logic (Idealo style)
+                      const startOfDay = new Date(now);
+                      startOfDay.setHours(0, 0, 0, 0);
+
+                      const existingHistoryToday =
+                        await db.query.priceHistory.findFirst({
+                          where: and(
+                            eq(priceHistory.productId, product.id),
+                            eq(priceHistory.country, country),
+                            sql`${priceHistory.recordedAt} >= ${startOfDay.getTime()}`,
+                          ),
+                        });
+
+                      if (bestPrice) {
+                        if (existingHistoryToday) {
+                          // Update only if this is a better price than the one we already saw today
+                          if (bestPrice < existingHistoryToday.price) {
+                            await db
+                              .update(priceHistory)
+                              .set({
+                                price: bestPrice,
+                                recordedAt: now, // Update timestamp to show when the low occurred
+                              })
+                              .where(
+                                eq(priceHistory.id, existingHistoryToday.id),
+                              );
+                          }
+                        } else {
+                          // No record for today yet, insert current as baseline
+                          await db.insert(priceHistory).values({
+                            productId: product.id,
+                            country,
+                            price: bestPrice,
+                            currency,
+                            priceType: amazonPrice ? "amazon" : "new",
+                            recordedAt: now,
+                          });
+                        }
                       }
 
                       // Update statistical averages (Free with the daily product fetch)
