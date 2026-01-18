@@ -49,6 +49,19 @@ async function updatePrices(country: CountryCode): Promise<void> {
   const isStaleOnly = process.argv.includes("--stale");
   const elevenHoursAgo = new Date(Date.now() - 11 * 60 * 60 * 1000);
 
+  // Robust argument parsing for --limit
+  const limitArgIndex = process.argv.findIndex((a) => a.startsWith("--limit"));
+  let customLimit = 1000;
+  if (limitArgIndex !== -1) {
+    const arg = process.argv[limitArgIndex];
+    if (arg.includes("=")) {
+      customLimit = parseInt(arg.split("=")[1]);
+    } else if (process.argv[limitArgIndex + 1]) {
+      customLimit = parseInt(process.argv[limitArgIndex + 1]);
+    }
+  }
+  if (isNaN(customLimit)) customLimit = 1000;
+
   // Strict Rotation Logic
   const targetProducts = await db
     .select({
@@ -71,7 +84,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
         : undefined,
     )
     .orderBy(asc(prices.lastUpdated))
-    .limit(500);
+    .limit(customLimit);
 
   if (targetProducts.length === 0) {
     console.log("  No products in database or all products are fresh.");

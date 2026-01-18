@@ -104,7 +104,7 @@ async function main() {
     }
 
     const now = Date.now();
-    const WORK_COOLDOWN = 20 * 60 * 1000; // 20 minutes
+    const WORK_COOLDOWN = 15 * 60 * 1000; // Reduced to 15 minutes to increase throughput
 
     let workPerformed = false;
 
@@ -113,34 +113,55 @@ async function main() {
       const minsAgo = Math.round((now - state.lastRun) / 60000);
       console.log(`⏳ Recently ran (${minsAgo}m ago). Skipping work phase.`);
     } else {
+      let tokensLeft = 0;
+      try {
+        const status = await getTokenStatus();
+        tokensLeft = status.tokensLeft;
+      } catch (e) {
+        console.warn("⚠️ Could not fetch token status, assuming safe minimum.");
+        tokensLeft = 400;
+      }
+
+      // Dynamic Token Allocation
+      // We aim to use about 70-80% of our current burst capacity
+      // leaving room for multiple runs if refill is slow.
+      const priceLimit = Math.max(300, Math.min(tokensLeft - 200, 1000));
+      const enrichmentLimit =
+        tokensLeft > 500
+          ? Math.min(50, Math.floor((tokensLeft - priceLimit) / 5))
+          : 0;
+
       const runCompliancePhase = async () => {
-        console.log("\n⚖️ Phase 1: Compliance Sync (Daily Price Updates)");
-        execSync(`bun run scripts/update-prices.ts ${country} --stale`, {
-          stdio: "inherit",
-        });
+        console.log(
+          `\n⚖️ Phase 1: Compliance Sync (Daily Price Updates - Target: ${priceLimit})`,
+        );
+        execSync(
+          `bun run scripts/update-prices.ts ${country} --stale --limit=${priceLimit}`,
+          {
+            stdio: "inherit",
+          },
+        );
       };
 
       const runEnrichmentPhase = async () => {
-        try {
-          const tokens = await getTokenStatus();
-          if (tokens.tokensLeft > 400) {
-            console.log(
-              "\n🧪 Phase 2: Metadata Enrichment (Features & History)",
-            );
-            try {
-              execSync(`bun run scripts/enrich-products.ts`, {
+        if (enrichmentLimit > 0) {
+          console.log(
+            `\n🧪 Phase 2: Metadata Enrichment (Target: ${enrichmentLimit} products)`,
+          );
+          try {
+            execSync(
+              `bun run scripts/enrich-products.ts ${country} --limit=${enrichmentLimit}`,
+              {
                 stdio: "inherit",
-              });
-            } catch (e) {
-              console.error("❌ Enrichment failed:", e);
-            }
-          } else {
-            console.log(
-              `\n⏭️ Skipping enrichment (Low tokens: ${tokens.tokensLeft})`,
+              },
             );
+          } catch (e) {
+            console.error("❌ Enrichment failed:", e);
           }
-        } catch (tokenError) {
-          console.error("❌ Failed to check tokens:", tokenError);
+        } else {
+          console.log(
+            `\n⏭️ Skipping enrichment (Tokens: ${tokensLeft}, Price Limit: ${priceLimit})`,
+          );
         }
       };
 

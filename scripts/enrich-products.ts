@@ -13,15 +13,26 @@ async function enrich() {
   console.log("💎 CleverPrices Product Enrichment");
   console.log(`🌍 Seeding historical data for ${country.toUpperCase()}...\n`);
 
-  // 1. Get products that haven't been seeded yet
-  // We prioritize by sales rank (lowest rank = most popular)
+  // Robust argument parsing for --limit
+  const limitArgIndex = process.argv.findIndex((a) => a.startsWith("--limit"));
+  let customLimit = 200;
+  if (limitArgIndex !== -1) {
+    const arg = process.argv[limitArgIndex];
+    if (arg.includes("=")) {
+      customLimit = parseInt(arg.split("=")[1]);
+    } else if (process.argv[limitArgIndex + 1]) {
+      customLimit = parseInt(process.argv[limitArgIndex + 1]);
+    }
+  }
+  if (isNaN(customLimit)) customLimit = 200;
+
   const candidates = await db.query.products.findMany({
     where: or(
       eq(products.historySeeded, false),
       isNull(products.historySeeded),
     ),
     orderBy: [asc(products.salesRank)],
-    limit: 100, // Process in smaller chunks to save tokens for price updates
+    limit: customLimit,
   });
 
   if (candidates.length === 0) {
