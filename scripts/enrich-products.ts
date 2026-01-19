@@ -14,12 +14,17 @@ import {
 } from "../src/lib/keepa/utils";
 
 async function enrich() {
+  const isDryRun = process.argv.includes("--dry-run");
   // Robust country detection: search for a 2-letter alphabetical code that doesn't start with -
   const countryArg =
     process.argv.slice(2).find((a) => /^[a-zA-Z]{2}$/.test(a)) || "de";
   const country = countryArg as CountryCode;
+
   console.log("💎 CleverPrices Product Enrichment");
-  console.log(`🌍 Seeding historical data for ${country.toUpperCase()}...\n`);
+  console.log(`🌍 Seeding historical data for ${country.toUpperCase()}...`);
+  if (isDryRun)
+    console.log("🧪 DRY RUN MODE: Database commits will be skipped.");
+  console.log("");
 
   // Robust argument parsing for --limit
   const limitArgIndex = process.argv.findIndex((a) => a.startsWith("--limit"));
@@ -70,27 +75,21 @@ async function enrich() {
   }
 
   const BATCH_CONCURRENCY = 3;
-  console.log(
-    `  Processing ${batches.length} batches with concurrency of ${BATCH_CONCURRENCY}...`,
-  );
-
   const allMetadataQueries: any[] = [];
   const globalHistoryInsertions: any[] = [];
   const now = new Date();
 
+  // PHASE 1: Data Acquisition
+  console.log(
+    `📡 Phase 1: Fetching data from Keepa (${batches.length} batches)...`,
+  );
+  const fetchStart = performance.now();
+
   for (let i = 0; i < batches.length; i += BATCH_CONCURRENCY) {
     const currentBatches = batches.slice(i, i + BATCH_CONCURRENCY);
-    console.log(
-      `  ⚡ Executing parallel group ${Math.ceil(i / BATCH_CONCURRENCY) + 1}...`,
-    );
-
     await Promise.all(
       currentBatches.map(async (batch, idx) => {
         const batchAbsIndex = i + idx;
-        console.log(
-          `📦 Processing batch ${batchAbsIndex + 1}/${batches.length}...`,
-        );
-
         try {
           const enrichedProducts = await getProducts(batch, country, {
             includeHistory: true,
@@ -100,10 +99,8 @@ async function enrich() {
             const localProduct = candidates.find((p) => p.asin === ep.asin);
             if (!localProduct) continue;
 
-            // 1. Prepare avg90 in prices table
-            const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
-            const priceAvg90 = keepaPriceToDecimal(avg90Raw);
-
+            // 1. Prepare metadata
+            const priceAvg90 = keepaPriceToDecimal(ep.stats?.avg90?.[1]);
             if (priceAvg90) {
               allMetadataQueries.push(
                 db
@@ -118,7 +115,7 @@ async function enrich() {
               );
             }
 
-            // 2. Prepare Price History
+            // 2. Prepare History
             if (ep.csv) {
               const amazonHistory = getDailyLow(parseKeepaHistory(ep.csv[0]));
               const newHistory = getDailyLow(parseKeepaHistory(ep.csv[1]));
@@ -143,7 +140,6 @@ async function enrich() {
               ];
 
               if (historyToInsert.length > 0) {
-                // Delete older records
                 allMetadataQueries.push(
                   db
                     .delete(priceHistory)
@@ -154,12 +150,10 @@ async function enrich() {
                       ),
                     ),
                 );
-                // Collect history points for mega-insert
                 globalHistoryInsertions.push(...historyToInsert);
               }
             }
 
-            // 3. Prepare Metadata Mark
             allMetadataQueries.push(
               db
                 .update(products)
@@ -173,76 +167,104 @@ async function enrich() {
             );
             seeded++;
           }
+          console.log(
+            `  ✓ Batch ${batchAbsIndex + 1}/${batches.length} complete`,
+          );
         } catch (e: any) {
-          console.error(`  Error in batch ${batchAbsIndex + 1}:`, e.message);
+          console.error(`  ❌ Error in batch ${batchAbsIndex + 1}:`, e.message);
         }
       }),
     );
   }
+  const fetchTime = ((performance.now() - fetchStart) / 1000).toFixed(2);
+  console.log(`🛰️ Acquisition complete in ${fetchTime}s\n`);
 
-  // FINAL EXECUTION STEP: Parallelized Batch Commit (Ultra fast pattern)
+  // PHASE 2: Database Sync
   console.log(
-    `🚀 Committing all changes to DB (${allMetadataQueries.length} updates, ${globalHistoryInsertions.length} history points)...`,
+    `🚀 Phase 2: Committing to DB (${allMetadataQueries.length} updates, ${globalHistoryInsertions.length} history points)...`,
   );
+  const syncStart = performance.now();
 
   try {
-    // 1. Run all metadata updates and deletions in parallel batches
-    if (allMetadataQueries.length > 0) {
-      const BATCH_LIMIT = 500;
-      const metadataChunks = [];
-      for (let j = 0; j < allMetadataQueries.length; j += BATCH_LIMIT) {
-        metadataChunks.push(allMetadataQueries.slice(j, j + BATCH_LIMIT));
-      }
+    if (isDryRun) {
+      console.log("  🧪 [DRY RUN] Skipping database commits.");
+    } else {
+      // 1. Run all metadata updates and deletions in parallel batches
+      if (allMetadataQueries.length > 0) {
+        const BATCH_LIMIT = 500;
+        const metadataChunks = [];
+        for (let j = 0; j < allMetadataQueries.length; j += BATCH_LIMIT) {
+          metadataChunks.push(allMetadataQueries.slice(j, j + BATCH_LIMIT));
+        }
 
-      console.log(
-        `  📦 Executing ${metadataChunks.length} metadata batches...`,
-      );
-      await Promise.all(
-        metadataChunks.map((chunk) =>
-          withRetry(async () => {
-            await (db as any).batch(chunk as any);
-          }),
-        ),
-      );
-    }
-
-    // 2. Run the mega-insert for all history points in parallel chunks
-    if (globalHistoryInsertions.length > 0) {
-      const CHUNK_SIZE = 3000; // Increased chunk size (still safe for LibSQL 32k param limit)
-      const historyChunks = [];
-      for (let j = 0; j < globalHistoryInsertions.length; j += CHUNK_SIZE) {
-        historyChunks.push(globalHistoryInsertions.slice(j, j + CHUNK_SIZE));
-      }
-
-      const CONCURRENCY = 5;
-      console.log(
-        `  📦 Executing ${historyChunks.length} history chunks with concurrency of ${CONCURRENCY}...`,
-      );
-
-      for (let j = 0; j < historyChunks.length; j += CONCURRENCY) {
-        const group = historyChunks.slice(j, j + CONCURRENCY);
+        console.log(
+          `  📦 Executing ${metadataChunks.length} metadata batches...`,
+        );
         await Promise.all(
-          group.map((chunk) =>
+          metadataChunks.map((chunk) =>
             withRetry(async () => {
-              await db.insert(priceHistory).values(chunk);
+              await (db as any).batch(chunk as any);
             }),
           ),
         );
-        const progress = Math.min(
-          globalHistoryInsertions.length,
-          (j + group.length) * CHUNK_SIZE,
-        );
+      }
+
+      // 2. Run the mega-insert for all history points in parallel chunks
+      if (globalHistoryInsertions.length > 0) {
+        const CHUNK_SIZE = 3000;
+        const historyChunks = [];
+        for (let j = 0; j < globalHistoryInsertions.length; j += CHUNK_SIZE) {
+          historyChunks.push(globalHistoryInsertions.slice(j, j + CHUNK_SIZE));
+        }
+
+        const CONCURRENCY = 5;
         console.log(
-          `  ... progress: ${progress}/${globalHistoryInsertions.length} history points`,
+          `  📦 Executing ${historyChunks.length} history chunks (concurrency: ${CONCURRENCY})...`,
         );
+
+        for (let j = 0; j < historyChunks.length; j += CONCURRENCY) {
+          const group = historyChunks.slice(j, j + CONCURRENCY);
+          await Promise.all(
+            group.map((chunk, groupIdx) =>
+              withRetry(async () => {
+                await db.insert(priceHistory).values(chunk);
+              }).catch((err) => {
+                console.error(
+                  `    ❌ Chunk failed in wave ${Math.floor(j / CONCURRENCY) + 1}, index ${groupIdx}:`,
+                  err.message,
+                );
+                throw err;
+              }),
+            ),
+          );
+          const progress = Math.min(
+            globalHistoryInsertions.length,
+            (j + group.length) * CHUNK_SIZE,
+          );
+          console.log(
+            `    ... progress: ${progress}/${globalHistoryInsertions.length}`,
+          );
+        }
       }
     }
-    console.log(`✅ Database sync complete.`);
   } catch (err: any) {
-    console.error(`❌ Failed to commit data to database:`, err.message);
+    console.error(`❌ Database sync failed:`, err.message);
+    process.exit(1);
   }
 
-  console.log(`\n✅ Enrichment cycle complete. Seeded ${seeded} products.`);
+  const syncTime = ((performance.now() - syncStart) / 1000).toFixed(2);
+  const totalTime = ((performance.now() - fetchStart) / 1000).toFixed(2);
+
+  console.log("\n📊 Performance Report:");
+  console.log(`------------------------------`);
+  console.log(`🌍 Data Fetch:  ${fetchTime}s`);
+  console.log(`💾 DB Sync:    ${syncTime}s`);
+  console.log(`🏁 Total:      ${totalTime}s`);
+  console.log(`------------------------------`);
+  console.log(`✅ Enrichment cycle complete. Seeded ${seeded} products.`);
 }
 
-enrich().catch(console.error);
+enrich().catch((err) => {
+  console.error("💥 Fatal Enrichment Error:", err);
+  process.exit(1);
+});

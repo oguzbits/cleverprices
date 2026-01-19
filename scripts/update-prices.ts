@@ -38,7 +38,10 @@ const DOMAIN_CURRENCIES: Record<number, string> = {
  * Update prices for all products
  */
 async function updatePrices(country: CountryCode): Promise<void> {
+  const isDryRun = process.argv.includes("--dry-run");
   console.log(`\n💰 Updating prices for ${country.toUpperCase()}...`);
+  if (isDryRun)
+    console.log("🧪 DRY RUN MODE: Database commits will be skipped.");
 
   const isStaleOnly = process.argv.includes("--stale");
   const elevenHoursAgo = new Date(Date.now() - 11 * 60 * 60 * 1000);
@@ -57,6 +60,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
   if (isNaN(customLimit)) customLimit = 1000;
 
   // Strict Rotation Logic
+  const queryStart = performance.now();
   const targetProducts = await db
     .select({
       id: products.id,
@@ -85,7 +89,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
     return;
   }
 
-  console.log(`  Queue size: ${targetProducts.length} products.`);
+  const queryTime = ((performance.now() - queryStart) / 1000).toFixed(2);
+  console.log(
+    `  Queue size: ${targetProducts.length} products (fetched in ${queryTime}s).`,
+  );
 
   const productMap = new Map(targetProducts.map((p) => [p.asin, p]));
   const asins = targetProducts.map((p) => p.asin);
@@ -95,17 +102,14 @@ async function updatePrices(country: CountryCode): Promise<void> {
   let updated = 0;
   let failed = 0;
 
-  // Create batches (50 products per batch = ~150 statements. Very safe for Turso)
+  // Create batches
   const batches = [];
   for (let i = 0; i < asins.length; i += 50) {
     batches.push(asins.slice(i, i + 50));
   }
 
-  // Check if we have enough tokens to attempt parallel execution
-  // conservatively assuming 1 token per product + overhead
+  // Check tokens
   const status = await getTokenStatus();
-
-  // RESERVE tokens for Enrichment (at least 200-300)
   const MIN_RESERVE_FOR_ENRICHMENT = 250;
   const availableForUpdate = Math.max(
     0,
@@ -115,47 +119,28 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
   if (maxProductsToFetch < asins.length) {
     console.log(
-      `\n⚠️ Token management: Limiting update to ${maxProductsToFetch} products to reserve ${MIN_RESERVE_FOR_ENRICHMENT} tokens for enrichment.`,
+      `  ⚠️ Limiting update to ${maxProductsToFetch} to reserve enrichment tokens.`,
     );
-    // Truncate batches to fit within available tokens
     const truncatedAsins = asins.slice(0, maxProductsToFetch);
-    const truncatedBatches = [];
-    for (let i = 0; i < truncatedAsins.length; i += 100) {
-      truncatedBatches.push(truncatedAsins.slice(i, i + 100));
-    }
     batches.length = 0;
-    batches.push(...truncatedBatches);
+    for (let i = 0; i < truncatedAsins.length; i += 100) {
+      batches.push(truncatedAsins.slice(i, i + 100));
+    }
   }
 
   if (batches.length === 0) {
-    console.log(
-      "  No tokens available for price update. Skipping to enrichment.",
-    );
+    console.log("  No tokens available for price update.");
     return;
   }
 
-  console.log(`  Processing ${batches.length} batches in parallel...`);
-
-  // Bounded Parallelism: Process batches in groups to balance speed vs stability
+  const fetchStart = performance.now();
   const BATCH_CONCURRENCY = 3;
-
-  console.log(
-    `  Processing ${batches.length} batches with concurrency of ${BATCH_CONCURRENCY}...`,
-  );
 
   for (let i = 0; i < batches.length; i += BATCH_CONCURRENCY) {
     const currentBatches = batches.slice(i, i + BATCH_CONCURRENCY);
-    console.log(
-      `  ⚡ Executing parallel group ${Math.ceil(i / BATCH_CONCURRENCY) + 1}...`,
-    );
-
     await Promise.all(
       currentBatches.map(async (batch, idx) => {
         const batchAbsIndex = i + idx;
-        console.log(
-          `  🚀 Fetching batch ${batchAbsIndex + 1}/${batches.length}...`,
-        );
-
         try {
           const keepaProducts = await getProducts(batch, country, {
             includeHistory: false,
@@ -163,7 +148,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
           if (keepaProducts.length === 0) return;
 
-          // Optimization: Batch fetch today's history for all products in this batch
+          // History check
           const startOfDay = new Date();
           startOfDay.setHours(0, 0, 0, 0);
 
@@ -179,7 +164,6 @@ async function updatePrices(country: CountryCode): Promise<void> {
             ),
           });
 
-          // PREPARE BATCH QUERIES
           const sqlQueries: any[] = [];
           const now = new Date();
 
@@ -194,36 +178,26 @@ async function updatePrices(country: CountryCode): Promise<void> {
             const newPrice = keepaPriceToDecimal(
               currentPrices[KEEPA_PRICE_TYPES.NEW],
             );
-            const usedPrice = keepaPriceToDecimal(
-              currentPrices[KEEPA_PRICE_TYPES.USED],
-            );
-            const warehousePrice = keepaPriceToDecimal(
-              currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
-            );
             const bestPrice = amazonPrice ?? newPrice;
 
-            // Update Product Meta (Sales Rank & Ratings)
             const salesRank =
               extractSalesRank(kp.salesRanks) ?? product.salesRank;
             const rating = normalizeRating(kp.rating) ?? product.rating;
 
-            // 1. Product Meta Update
+            // 1. Meta Update
             sqlQueries.push(
               db
                 .update(products)
                 .set({
                   salesRank,
                   rating,
-                  reviewCount:
-                    kp.reviewsLastSeenStatus !== undefined
-                      ? kp.reviewsLastSeenStatus
-                      : product.reviewCount,
+                  reviewCount: kp.reviewsLastSeenStatus ?? product.reviewCount,
                   updatedAt: now,
                 })
                 .where(eq(products.id, product.id)),
             );
 
-            // 2. Price History Logic
+            // 2. History
             if (bestPrice) {
               const todayRecord = existingHistoryToday.find(
                 (h) => h.productId === product.id,
@@ -251,20 +225,13 @@ async function updatePrices(country: CountryCode): Promise<void> {
               }
             }
 
-            // 3. Current Price Upsert
+            // 3. Price Upsert
             const pricePerUnit =
               product.normalizedCapacity &&
               product.normalizedCapacity > 0 &&
               bestPrice
                 ? bestPrice / product.normalizedCapacity
                 : null;
-
-            const priceAvg30 = keepaPriceToDecimal(
-              kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
-            );
-            const priceAvg90 = keepaPriceToDecimal(
-              kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
-            );
 
             sqlQueries.push(
               db
@@ -274,11 +241,19 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   country,
                   amazonPrice,
                   newPrice,
-                  usedPrice,
-                  warehousePrice,
+                  usedPrice: keepaPriceToDecimal(
+                    currentPrices[KEEPA_PRICE_TYPES.USED],
+                  ),
+                  warehousePrice: keepaPriceToDecimal(
+                    currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
+                  ),
                   pricePerUnit,
-                  priceAvg30,
-                  priceAvg90,
+                  priceAvg30: keepaPriceToDecimal(
+                    kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
+                  ),
+                  priceAvg90: keepaPriceToDecimal(
+                    kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
+                  ),
                   currency,
                   source: "keepa",
                   lastUpdated: now,
@@ -288,47 +263,61 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   set: {
                     amazonPrice,
                     newPrice,
-                    usedPrice,
-                    warehousePrice,
+                    usedPrice: keepaPriceToDecimal(
+                      currentPrices[KEEPA_PRICE_TYPES.USED],
+                    ),
+                    warehousePrice: keepaPriceToDecimal(
+                      currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
+                    ),
                     pricePerUnit,
-                    priceAvg30: priceAvg30 ?? sql`${prices.priceAvg30}`,
-                    priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
+                    priceAvg30:
+                      keepaPriceToDecimal(
+                        kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
+                      ) ?? sql`${prices.priceAvg30}`,
+                    priceAvg90:
+                      keepaPriceToDecimal(
+                        kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
+                      ) ?? sql`${prices.priceAvg90}`,
                     lastUpdated: now,
                   },
                 }),
             );
           }
 
-          // EXECUTE ALL IN ONE BATCH (One HTTP round-trip per 100 products)
-          if (sqlQueries.length > 0) {
-            try {
-              await withRetry(async () => {
-                // Cast to any to bypass strict tuple length requirements for arbitrary batches
-                await (db as any).batch(sqlQueries);
-              });
-              updated += keepaProducts.length;
-            } catch (err) {
-              console.error(`  Batch failed for ${batchAbsIndex + 1}:`, err);
-              failed += keepaProducts.length;
-            }
+          if (sqlQueries.length > 0 && !isDryRun) {
+            await withRetry(async () => {
+              await (db as any).batch(sqlQueries);
+            });
           }
-        } catch (error) {
-          console.error(`  Error fetching batch:`, error);
+          updated += keepaProducts.length;
+          console.log(
+            `    ✓ Batch ${batchAbsIndex + 1}/${batches.length} synced (${keepaProducts.length} items)`,
+          );
+        } catch (err: any) {
+          console.error(
+            `    ❌ Batch ${batchAbsIndex + 1} failed:`,
+            err.message,
+          );
           failed += batch.length;
         }
       }),
     );
-  } // End of wave loop
+  }
 
-  console.log(`  ✓ Updated: ${updated}, Failed: ${failed}`);
+  const fetchTime = ((performance.now() - fetchStart) / 1000).toFixed(2);
+  console.log(`\n📊 Update Summary:`);
+  console.log(`------------------------------`);
+  console.log(`🌍 Network: ${fetchTime}s`);
+  console.log(`✅ Updated: ${updated}`);
+  console.log(`❌ Failed:  ${failed}`);
+  console.log(`------------------------------`);
 
-  // Auto-warm cache after updating prices (Explicit trigger only)
-  if (process.env.WARM_CACHE === "true") {
+  if (process.env.WARM_CACHE === "true" && !isDryRun) {
     try {
       console.log("\n🔥 Triggering Cache Warmer...");
       execSync(`bun run scripts/warm-cache.ts`, { stdio: "inherit" });
     } catch (e) {
-      console.warn("⚠️ Cache warming failed, but prices were updated.");
+      console.warn("⚠️ Cache warming failed.");
     }
   }
 }
@@ -337,10 +326,11 @@ async function updatePrices(country: CountryCode): Promise<void> {
  * Main entry point
  */
 async function main() {
+  const start = performance.now();
   console.log("🔄 CleverPrices Price Update\n");
 
   if (!isKeepaConfigured()) {
-    console.error("❌ KEEPA_API_KEY not configured");
+    console.error("❌ KEEPA_API_KEY missing");
     process.exit(1);
   }
 
@@ -351,11 +341,17 @@ async function main() {
   await updatePrices(country);
 
   const finalTokens = await getTokenStatus();
+  const totalDuration = ((performance.now() - start) / 1000).toFixed(2);
+
+  console.log(`\n🏁 Total execution time: ${totalDuration}s`);
   console.log(
-    `\n✅ Update complete! Tokens remaining: ${finalTokens.tokensLeft}`,
+    `✅ Update complete! Tokens remaining: ${finalTokens.tokensLeft}`,
   );
 
   updateLastRun();
 }
 
-main().catch(console.error);
+main().catch((err) => {
+  console.error("💥 Fatal Price Update Error:", err);
+  process.exit(1);
+});
