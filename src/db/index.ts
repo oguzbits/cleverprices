@@ -77,17 +77,19 @@ function createDbClient(): Client {
 const client = createDbClient();
 export const db: LibSQLDatabase<typeof schema> = drizzle(client, { schema });
 
-// Debug log
-(async () => {
-  try {
-    const url = getDatabaseUrl();
-    console.log(`[DB DEBUG] Initialized with URL: ${url}`);
-    const result = await client.execute("SELECT count(*) as C FROM products");
-    console.log(`[DB DEBUG] Products count on startup: ${result.rows[0].C}`);
-  } catch (e) {
-    console.error("[DB DEBUG] Failed to check DB:", e);
-  }
-})();
+// Debug log (Development only)
+if (process.env.NODE_ENV === "development") {
+  (async () => {
+    try {
+      const url = getDatabaseUrl();
+      console.log(`[DB DEBUG] Initialized with URL: ${url}`);
+      const result = await client.execute("SELECT count(*) as C FROM products");
+      console.log(`[DB DEBUG] Products count on startup: ${result.rows[0].C}`);
+    } catch (e) {
+      console.error("[DB DEBUG] Failed to check DB:", e);
+    }
+  })();
+}
 
 // Export schema for convenience
 export * from "./schema";

@@ -18,8 +18,15 @@ async function migrate() {
   const queryTime = Math.floor(lastSyncTime / 1000);
   const lastSyncDate = new Date(lastSyncTime);
 
+  if (isDelta && state.lastCloudSync === 0) {
+    console.warn(
+      "⚠️  Warning: Incremental sync requested but no previous sync record found.",
+    );
+    console.warn("   Performing a full sync instead.");
+  }
+
   console.log(
-    isDelta
+    isDelta && state.lastCloudSync > 0
       ? `🔄 Starting incremental sync (since ${lastSyncDate.toLocaleString()})...`
       : "🚀 Starting full fresh migration...",
   );
