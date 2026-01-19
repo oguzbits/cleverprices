@@ -95,10 +95,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
   let updated = 0;
   let failed = 0;
 
-  // Create batches
+  // Create batches (50 products per batch = ~150 statements. Very safe for Turso)
   const batches = [];
-  for (let i = 0; i < asins.length; i += 100) {
-    batches.push(asins.slice(i, i + 100));
+  for (let i = 0; i < asins.length; i += 50) {
+    batches.push(asins.slice(i, i + 50));
   }
 
   // Check if we have enough tokens to attempt parallel execution

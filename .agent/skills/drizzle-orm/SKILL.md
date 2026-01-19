@@ -29,6 +29,7 @@ Comprehensive guide with 11 rules across 4 categories.
 
 - **Upsert**: ON CONFLICT DO UPDATE ([Rule](rules/patterns-upsert.md))
 - **Batch Inserts**: Bulk data ([Rule](rules/patterns-batch.md))
+- **Turso Latency**: Parallel batch optimization ([Rule](rules/patterns-turso-latency.md))
 - **Transactions**: Atomic operations ([Rule](rules/patterns-transactions.md))
 
 ### Configuration
