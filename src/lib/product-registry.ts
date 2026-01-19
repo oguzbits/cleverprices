@@ -513,16 +513,19 @@ export async function searchProducts(
   const sanitized = query.trim().replace(/[^\w\s]/g, "");
   if (!sanitized) return [];
 
-  // Transform "Samsung Galaxy" into "Samsung* Galaxy*" for prefix matching
-  const matchQuery = sanitized
+  // Transform "Samsung Galaxy" into prefix matching targeted at brand and title
+  const terms = sanitized
     .split(/\s+/)
     .map((term) => `${term}*`)
     .join(" ");
+  // Prioritize brand match, then title match
+  const matchQuery = `(brand : ${terms}) OR (title : ${terms})`;
 
   try {
     // 1. Get matching IDs from the FTS5 virtual table (Super Fast)
+    // We use ORDER BY rank to ensure the most relevant items (brand matches) come first
     const result = await client.execute({
-      sql: "SELECT id FROM products_search WHERE products_search MATCH ? LIMIT ?",
+      sql: "SELECT id FROM products_search WHERE products_search MATCH ? ORDER BY rank LIMIT ?",
       args: [matchQuery, limit],
     });
 

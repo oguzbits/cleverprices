@@ -9,11 +9,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { performSearch } from "@/lib/actions/search";
-import {
-  allCategories,
-  getCategoryPath,
-  type CategorySlug,
-} from "@/lib/categories";
+import { allCategories, getCategoryPath } from "@/lib/categories";
 import {
   CountryCode,
   DEFAULT_COUNTRY,
@@ -21,18 +17,9 @@ import {
 } from "@/lib/countries";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { cn } from "@/lib/utils";
-import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
+import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { useQuery } from "@tanstack/react-query";
-import {
-  BookOpen,
-  Home,
-  LayoutGrid,
-  Loader2,
-  Package,
-  Search,
-  TrendingUp,
-} from "lucide-react";
-import Image from "next/image";
+import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
 
@@ -84,6 +71,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [search, setSearch] = React.useState("");
+  const [limit, setLimit] = React.useState(10);
   const debouncedSearch = useDebounce(search, 300);
 
   const pathSegments = pathname.split("/").filter(Boolean);
@@ -91,13 +79,25 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
     ? (pathSegments[0] as CountryCode)
     : DEFAULT_COUNTRY;
 
-  // Live product search using TanStack Query + Server Action
-  const { data: products, isFetching } = useQuery({
-    queryKey: ["product-search", debouncedSearch],
-    queryFn: () => performSearch(debouncedSearch),
+  React.useEffect(() => {
+    const handleResize = () => {
+      setLimit(window.innerWidth < 640 ? 6 : 10);
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Live search using TanStack Query + Server Action
+  const { data, isFetching } = useQuery({
+    queryKey: ["product-search", debouncedSearch, limit],
+    queryFn: () => performSearch(debouncedSearch, limit),
     enabled: debouncedSearch.length >= 2,
     staleTime: 60 * 1000,
   });
+
+  const categories = data?.categories || [];
+  const products = data?.products || [];
 
   // Reset search when modal closes
   React.useEffect(() => {
@@ -125,18 +125,6 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
     handleSelect(url);
   };
 
-  // Filter categories based on search
-  const filteredCategories = React.useMemo(() => {
-    if (!search) return Object.values(allCategories).filter((c) => !c.hidden);
-    const s = search.toLowerCase();
-    return Object.values(allCategories).filter(
-      (c) =>
-        !c.hidden &&
-        (c.name.toLowerCase().includes(s) ||
-          c.description.toLowerCase().includes(s)),
-    );
-  }, [search]);
-
   return (
     <CommandDialog
       open={open}
@@ -157,7 +145,12 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
         )}
       </div>
 
-      <CommandList className={cn("min-h-[300px] scroll-smooth")}>
+      <CommandList
+        className={cn(
+          "h-[300px] overflow-y-auto scroll-smooth [scrollbar-width:none] sm:h-[500px] [&::-webkit-scrollbar]:hidden",
+          !search && "h-auto min-h-[300px]",
+        )}
+      >
         <CommandEmpty>Keine Ergebnisse für &quot;{search}&quot;.</CommandEmpty>
 
         {!search && (
@@ -168,7 +161,6 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   "text-muted-foreground mb-3 flex items-center gap-2 px-1 text-base font-semibold tracking-wider uppercase",
                 )}
               >
-                <TrendingUp className={cn("h-5 w-5")} />
                 Beliebte Suchen
               </h4>
               <div className={cn("flex flex-wrap gap-2")}>
@@ -186,14 +178,13 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
               </div>
             </div>
 
-            <CommandGroup heading="Schnellzugriff">
+            <CommandGroup>
               <CommandItem
                 onSelect={() =>
                   handleSelect(country === "us" ? "/" : `/${country}`)
                 }
                 className="cursor-pointer"
               >
-                <Home className={cn("mr-2 h-4 w-4")} />
                 Startseite
               </CommandItem>
               <CommandItem
@@ -202,12 +193,11 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                 }
                 className="cursor-pointer"
               >
-                <BookOpen className={cn("mr-2 h-4 w-4")} />
                 Blog & Ratgeber
               </CommandItem>
             </CommandGroup>
 
-            <CommandGroup heading="Kategorien">
+            <CommandGroup>
               {Object.values(allCategories)
                 .filter((c) => !c.hidden)
                 .map((cat) => (
@@ -216,7 +206,6 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                     onSelect={() => handleSelect(getCategoryPath(cat.slug))}
                     className="cursor-pointer"
                   >
-                    <LayoutGrid className={cn("mr-2 h-4 w-4")} />
                     {cat.name}
                   </CommandItem>
                 ))}
@@ -226,85 +215,56 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
         {search && (
           <>
-            {/* Category Filters - shown first */}
-            <CommandGroup heading="Kategorie-Filter">
-              {filteredCategories.slice(0, 5).map((cat) => (
-                <CommandItem
-                  key={cat.slug}
-                  value={`filter-${cat.slug}`}
-                  onSelect={() =>
-                    handleSelect(
-                      `${getCategoryPath(cat.slug)}?search=${encodeURIComponent(search)}`,
-                    )
-                  }
-                  className={cn("cursor-pointer py-3")}
-                >
-                  <Search className={cn("mr-2 h-4 w-4")} />
-                  <div className={cn("flex items-center gap-1.5")}>
-                    <span className={cn("font-semibold")}>{search}</span>
-                    <span className={cn("text-muted-foreground")}>in</span>
-                    <span>{cat.name}</span>
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-
-            {filteredCategories.length > 0 && (
-              <CommandGroup heading="Zur Kategorie wechseln">
-                {filteredCategories.slice(0, 3).map((cat) => (
+            {/* 1. Category Suggestions (Text-Only) */}
+            {categories.length > 0 && (
+              <CommandGroup>
+                {categories.map((cat) => (
                   <CommandItem
                     key={`jump-${cat.slug}`}
                     value={`jump-${cat.slug}`}
-                    onSelect={() => handleSelect(getCategoryPath(cat.slug))}
-                    className="cursor-pointer"
+                    onSelect={() =>
+                      handleSelect(
+                        cat.searchTerm
+                          ? `${getCategoryPath(cat.slug as any)}?search=${cat.searchTerm}`
+                          : getCategoryPath(cat.slug as any),
+                      )
+                    }
+                    className="cursor-pointer py-3"
                   >
-                    <LayoutGrid className={cn("mr-2 h-4 w-4")} />
-                    {cat.name}
+                    <div className="flex w-full items-center justify-between">
+                      <div className="flex items-baseline gap-2">
+                        <span className="font-bold text-[#2d2d2d]">
+                          {cat.name}
+                        </span>
+                        {cat.path && (
+                          <span className="text-muted-foreground text-[13px]">
+                            - in {cat.path}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
             )}
 
-            {/* Product Results - shown below categories */}
-            {products && products.length > 0 && (
-              <CommandGroup heading="Produkte">
+            {/* 2. Product Results (Text-Only) */}
+            {products.length > 0 && (
+              <CommandGroup>
                 {products.map((product) => (
                   <CommandItem
-                    key={product.asin}
-                    value={`product-${product.asin}`}
+                    key={product.slug}
+                    value={`product-${product.slug}`}
                     onSelect={() => handleSelect(`/p/${product.slug}`)}
-                    className="flex cursor-pointer items-center gap-3 py-3"
+                    className="cursor-pointer py-2.5"
                   >
-                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-[6px] border bg-white p-1">
-                      {product.image ? (
-                        <Image
-                          src={product.image}
-                          alt={product.title}
-                          fill
-                          className="object-contain"
-                          sizes="48px"
-                          quality={50}
-                        />
-                      ) : (
-                        <Package className="text-muted-foreground/20 h-full w-full" />
-                      )}
-                    </div>
-                    <div className="flex flex-1 flex-col justify-center overflow-hidden">
-                      <span className="text-foreground truncate font-medium">
+                    <div className="flex w-full items-baseline gap-2 truncate">
+                      <span className="truncate font-semibold text-[#2d2d2d]">
                         {formatDisplayTitle(product.title)}
                       </span>
-                      <div className="text-muted-foreground flex items-center gap-2 text-xs">
-                        <span className="font-bold text-[#ff6600]">
-                          ab{" "}
-                          {formatCurrency(product.prices[country] || 0, "de")}
-                        </span>
-                        <span>•</span>
-                        <span className="truncate">
-                          in{" "}
-                          {allCategories[product.category as CategorySlug]
-                            ?.name || product.category}
-                        </span>
-                      </div>
+                      <span className="text-muted-foreground shrink-0 text-[12px]">
+                        - in {product.categoryName}
+                      </span>
                     </div>
                   </CommandItem>
                 ))}
