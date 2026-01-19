@@ -129,7 +129,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
     <CommandDialog
       open={open}
       onOpenChange={onOpenChange}
-      className={cn("max-w-[650px]")}
+      className={cn("max-w-[650px] overflow-hidden rounded-2xl")}
       shouldFilter={false}
     >
       <div className="relative">
@@ -147,8 +147,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
       <CommandList
         className={cn(
-          "h-[300px] overflow-y-auto scroll-smooth [scrollbar-width:none] sm:h-[500px] [&::-webkit-scrollbar]:hidden",
-          !search && "h-auto min-h-[300px]",
+          "h-[400px] overflow-hidden scroll-smooth [scrollbar-width:none] sm:h-[500px] [&::-webkit-scrollbar]:hidden",
         )}
       >
         <CommandEmpty>Keine Ergebnisse für &quot;{search}&quot;.</CommandEmpty>
@@ -200,6 +199,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             <CommandGroup>
               {Object.values(allCategories)
                 .filter((c) => !c.hidden)
+                .slice(0, limit === 6 ? 2 : 5)
                 .map((cat) => (
                   <CommandItem
                     key={cat.slug}
