@@ -1,43 +1,72 @@
 ---
 name: drizzle-orm
 description: >
-  Best practices for Drizzle ORM with SQLite (Turso/LibSQL).
-  Includes schema definition, optimized queries, and relationship handling.
-  Use when: defining schemas, writing complex queries, or managing migrations.
+  Drizzle ORM patterns for SQLite with Turso/LibSQL.
+  TRIGGERS: Any database query, schema change, or data sync operation.
+  CRITICAL: This project uses Turso with strict read/write quotas.
+version: "2.0.0"
 ---
 
 # Drizzle ORM Best Practices
 
-Comprehensive guide with 11 rules across 4 categories.
-
 ## Quick Reference
+
+### 🚫 BANNED (Never Use)
+
+| Pattern                              | Why                               | Use Instead                              |
+| ------------------------------------ | --------------------------------- | ---------------------------------------- |
+| `SELECT *` / `.findMany()`           | Wastes reads on heavy JSON fields | `liteProductColumns`, `litePriceColumns` |
+| `OFFSET` pagination                  | O(N²) read costs                  | Keyset pagination                        |
+| Unbounded `Promise.all()`            | Resource exhaustion               | Bounded parallelism (max 5-10)           |
+| `db.delete(table)` without `--force` | Accidental data loss              | CLI safety flag                          |
+| Writes without diffing               | Wastes write quota                | Value-based diffing                      |
+
+### ✅ REQUIRED
+
+| Pattern                 | When                       | Example                                     |
+| ----------------------- | -------------------------- | ------------------------------------------- |
+| **Lite Columns**        | List views, search results | [Rule](rules/query-lite-columns.md)         |
+| **Keyset Pagination**   | Large table iteration      | [Rule](rules/patterns-keyset-pagination.md) |
+| **Bounded Parallelism** | Batch operations           | [Rule](rules/patterns-batch.md)             |
+| **Value Diffing**       | Before any write           | [Rule](rules/patterns-resource-safety.md)   |
+
+---
+
+## Rules Index
 
 ### Schema Definition
 
-- **Basic Table**: sqliteTable patterns ([Rule](rules/schema-basic-table.md))
-- **Indexes**: CRITICAL for performance ([Rule](rules/schema-indexes.md))
-- **Relations**: Enable RQB ([Rule](rules/schema-relations.md))
+- [Basic Table](rules/schema-basic-table.md)
+- [Indexes](rules/schema-indexes.md) - CRITICAL for performance
+- [Relations](rules/schema-relations.md)
 
 ### Query Optimization
 
-- **Select Columns**: CRITICAL - avoid SELECT \* ([Rule](rules/query-select-columns.md))
-- **Lite Columns**: Use liteProductColumns/litePriceColumns for lists ([Rule](rules/query-lite-columns.md))
-- **Relational Query Builder**: Cleaner joins ([Rule](rules/query-rqb.md))
-- **Filters**: Type-safe WHERE ([Rule](rules/query-filters.md))
-- **Aggregations**: COUNT, AVG, MIN/MAX ([Rule](rules/query-aggregations.md))
+- [Select Columns](rules/query-select-columns.md) - CRITICAL
+- [Lite Columns](rules/query-lite-columns.md) - Project-specific optimization
+- [Relational Query Builder](rules/query-rqb.md)
+- [Filters](rules/query-filters.md)
+- [Aggregations](rules/query-aggregations.md)
 
 ### Common Patterns
 
-- **Upsert**: ON CONFLICT DO UPDATE ([Rule](rules/patterns-upsert.md))
-- **Batch Inserts**: Bulk data ([Rule](rules/patterns-batch.md))
-- **Turso Latency**: Parallel batch optimization ([Rule](rules/patterns-turso-latency.md))
-- **Transactions**: Atomic operations ([Rule](rules/patterns-transactions.md))
-- **Resource Safety**: Protection & Economy ([Rule](rules/patterns-resource-safety.md))
+- [Upsert](rules/patterns-upsert.md)
+- [Batch Inserts](rules/patterns-batch.md)
+- [Turso Latency](rules/patterns-turso-latency.md)
+- [Transactions](rules/patterns-transactions.md)
+- [Resource Safety](rules/patterns-resource-safety.md) - CRITICAL
 
 ### Configuration
 
-- **Migrations**: drizzle-kit workflow ([Rule](rules/config-migrations.md))
+- [Migrations](rules/config-migrations.md)
 
-## Full Compiled Document
+---
 
-For the complete guide with all rules expanded: `AGENTS.md`
+## Examples
+
+See `examples/` for real code from this codebase:
+
+- `examples/lite-columns.ts` - liteProductColumns/litePriceColumns
+- `examples/keyset-pagination.ts` - Efficient large table iteration
+- `examples/bounded-parallelism.ts` - Safe batch processing
+- `examples/value-diffing.ts` - Only write when data changes

@@ -1,121 +1,121 @@
 # CleverPrices Agent Guidelines
 
-**This is the Single Source of Truth.** Read this FIRST before writing any code.
+**This is the Single Source of Truth.** Read this file FIRST before writing any code.
 
 ---
 
 ## 🏗️ Technology Stack
 
-| Technology         | Version | Key Notes                                                    |
-| ------------------ | ------- | ------------------------------------------------------------ |
-| **Next.js**        | 16.0.10 | App Router, `cacheComponents: true`                          |
-| **React**          | 19.2.3  | Server Components, `'use cache'` directive                   |
-| **React Compiler** | Enabled | Handles `useMemo`, `useCallback`, `React.memo` automatically |
-| **Tailwind CSS**   | 4.x     | See `.agent/skills/tailwind-v4/`                             |
-| **Drizzle ORM**    | 0.45.x  | See `.agent/skills/drizzle-orm/`                             |
+| Technology         | Version | Key Notes                                      |
+| ------------------ | ------- | ---------------------------------------------- |
+| **Next.js**        | 16.0.10 | App Router, `cacheComponents: true`            |
+| **React**          | 19.2.3  | Server Components, `'use cache'` directive     |
+| **React Compiler** | Enabled | Handles `useMemo`, `useCallback`, `React.memo` |
+| **Tailwind CSS**   | 4.x     | No `var()` in className                        |
+| **Drizzle ORM**    | 0.45.x  | SQLite with Turso/LibSQL                       |
+| **Bun**            | Latest  | Runtime and package manager                    |
 
 ---
 
-## 🚫 BANNED PATTERNS (Never Use)
+## 🚫 BANNED PATTERNS
 
-### Next.js 16 Deprecated
+### Next.js 16
 
-| ❌ Banned           | ✅ Use Instead                        |
-| ------------------- | ------------------------------------- |
-| `middleware.ts`     | Route handlers, server actions        |
-| `useMemo()`         | React Compiler handles this           |
-| `useCallback()`     | React Compiler handles this           |
-| `React.memo()`      | React Compiler handles this           |
-| `fetchCache` export | `'use cache'` at file/component level |
+| ❌ Never Use        | ✅ Use Instead                 |
+| ------------------- | ------------------------------ |
+| `middleware.ts`     | Route handlers, server actions |
+| `useMemo()`         | React Compiler handles         |
+| `useCallback()`     | React Compiler handles         |
+| `React.memo()`      | React Compiler handles         |
+| `fetchCache` export | `'use cache'` directive        |
 
-### Caching Notes
+### Database
 
-| Pattern                 | Status     | Notes                                                                        |
-| ----------------------- | ---------- | ---------------------------------------------------------------------------- |
-| `'use cache'` directive | ✅ Primary | Use with `cacheLife('profile')`                                              |
-| `unstable_cache()`      | ⚠️ Legacy  | Still used for function-level caching, but prefer `'use cache'` for new code |
-| `React.cache()`         | ✅ OK      | For per-request deduplication                                                |
+| ❌ Never Use                         | ✅ Use Instead                           |
+| ------------------------------------ | ---------------------------------------- |
+| `OFFSET` pagination                  | Keyset pagination                        |
+| `SELECT *`                           | `liteProductColumns`, `litePriceColumns` |
+| `db.delete(table)` without `--force` | CLI safety flag                          |
+| Unbounded `Promise.all()`            | Bounded parallelism (max 5-10)           |
+| Writes without diffing               | Value-based diffing                      |
 
-### Database Anti-Patterns
+### Styling
 
-| ❌ Banned                                   | ✅ Use Instead                           |
-| ------------------------------------------- | ---------------------------------------- |
-| `OFFSET` pagination                         | Keyset pagination (`WHERE id > lastId`)  |
-| `SELECT *` or `.findMany()` without columns | `liteProductColumns`, `litePriceColumns` |
-| `db.delete(table)` without `--force`        | Require CLI safety flag                  |
-| Unbounded `Promise.all()`                   | Bounded parallelism (max 5-10)           |
-| Writes without value-diffing                | Fetch current state, compare, then write |
+| ❌ Never Use         | ✅ Use Instead  |
+| -------------------- | --------------- |
+| `var()` in className | `style` prop    |
+| Hex colors           | Semantic tokens |
 
 ---
 
 ## ✅ REQUIRED PATTERNS
 
-### Caching (Next.js 16)
+### Caching
 
 ```typescript
 "use cache";
 import { cacheLife } from "next/cache";
 
-export async function getCategoryProducts() {
-  cacheLife("category"); // Uses profile from next.config.ts
-  // ... data fetching
+export async function getData() {
+  cacheLife("category");
+  // ...
 }
 ```
 
 ### Database Queries
 
-Use **liteColumns** for list views (see `.agent/skills/drizzle-orm/rules/query-lite-columns.md`):
-
 ```typescript
-// ✅ Good: Lite columns for category/search pages
+// Use lite columns for list views
 const prods = await db.select(liteProductColumns).from(products);
-const prs = await db.select(litePriceColumns).from(prices);
-
-// ❌ Bad: Full select (wastes reads on heavy JSON fields)
-const prods = await db.query.products.findMany();
 ```
 
 ### CLI Scripts
 
-All destructive scripts MUST support:
+```typescript
+const isDryRun = process.argv.includes("--dry-run");
+const isForce = process.argv.includes("--force");
 
-- `--dry-run`: Preview without executing
-- `--force`: Required for deletions/overwrites
+if (!isForce && !isDryRun) {
+  console.error("❌ Requires --force");
+  process.exit(1);
+}
+```
 
 ---
 
 ## 🔒 RESOURCE LIMITS
 
-| Resource             | Free Tier Limit        | Safety Rule                        |
-| -------------------- | ---------------------- | ---------------------------------- |
-| **Turso Reads**      | 500M rows/month        | Use liteColumns, keyset pagination |
-| **Turso Writes**     | 10M rows/month         | Value-diff before writes           |
-| **Keepa Tokens**     | 20/min, 1,200/hour cap | Reserve 100 for enrichment         |
-| **Vercel Execution** | 60s (Hobby)            | Use streaming + Suspense           |
+| Resource     | Limit                | Safety                         |
+| ------------ | -------------------- | ------------------------------ |
+| Turso Reads  | 500M/month           | liteColumns, keyset pagination |
+| Turso Writes | 10M/month            | Value-diff before writes       |
+| Keepa Tokens | 20/min, 1,200/hr cap | Reserve 100 for enrichment     |
+| Vercel Exec  | 60s                  | Streaming + Suspense           |
 
 ---
 
 ## 📋 PRE-IMPLEMENTATION CHECKLIST
 
-Before writing code, verify:
+Before writing code:
 
-- [ ] Read the relevant skill file?
-- [ ] Using `'use cache'` + `cacheLife()` for new caching code?
-- [ ] Not using deprecated patterns (middleware, useMemo, etc.)?
-- [ ] Using `liteColumns` for list views, full columns only for detail pages?
-- [ ] Algorithm is O(N) or better? (No OFFSET, no N+1 queries)
-- [ ] Script has `--dry-run` and `--force` flags?
-- [ ] Parallelism bounded to max 5-10?
+- [ ] Read the relevant skill?
+- [ ] Using `'use cache'` + `cacheLife()`?
+- [ ] Not using deprecated patterns?
+- [ ] Using `liteColumns` for lists?
+- [ ] Algorithm O(N) or better?
+- [ ] Script has `--dry-run` and `--force`?
+- [ ] Parallelism bounded?
 
 ---
 
-## 📚 SKILL REFERENCES
+## 📚 SKILLS
 
-| Domain          | Skill Location                                       |
-| --------------- | ---------------------------------------------------- |
-| Database        | `.agent/skills/drizzle-orm/SKILL.md`                 |
-| React/Next.js   | `.agent/skills/vercel-react-best-practices/SKILL.md` |
-| Tailwind CSS    | `.agent/skills/tailwind-v4/SKILL.md`                 |
-| SEO             | `.agent/skills/modern-seo/SKILL.md`                  |
-| Web Design      | `.agent/skills/web-design-guidelines/SKILL.md`       |
-| Turso Economics | `docs/TURSO_OPTIMIZATION.md`                         |
+| Domain        | Skill                                                                                    | Examples                                       |
+| ------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Database      | [drizzle-orm](file://.agent/skills/drizzle-orm/SKILL.md)                                 | lite-columns, keyset-pagination, value-diffing |
+| React/Next.js | [vercel-react-best-practices](file://.agent/skills/vercel-react-best-practices/SKILL.md) | Cache components                               |
+| Styling       | [tailwind-v4](file://.agent/skills/tailwind-v4/SKILL.md)                                 | No var() in class                              |
+| SEO           | [modern-seo](file://.agent/skills/modern-seo/SKILL.md)                                   | Titles, descriptions                           |
+| UX            | [web-design-guidelines](file://.agent/skills/web-design-guidelines/SKILL.md)             | Accessibility                                  |
+
+**Turso Economics:** [docs/TURSO_OPTIMIZATION.md](file://docs/TURSO_OPTIMIZATION.md)

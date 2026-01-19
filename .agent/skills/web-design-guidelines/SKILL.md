@@ -1,39 +1,65 @@
 ---
 name: web-design-guidelines
-description: Review UI code for Web Interface Guidelines compliance. Use when asked to "review my UI", "check accessibility", "audit design", "review UX", or "check my site against best practices".
+description: >
+  Review UI code for Web Interface Guidelines compliance.
+  TRIGGERS: "review my UI", "check accessibility", "audit design", "review UX", or "check my site against best practices".
+version: "2.0.0"
 metadata:
   author: vercel
-  version: "1.0.0"
   argument-hint: <file-or-pattern>
 ---
 
 # Web Interface Guidelines
 
-Review files for compliance with Web Interface Guidelines.
+Review files for compliance with Vercel's Web Interface Guidelines.
 
-## How It Works
+## 🚫 BANNED (Never Use)
 
-1. Fetch the latest guidelines from the source URL below
-2. Read the specified files (or prompt user for files/pattern)
-3. Check against all rules in the fetched guidelines
-4. Output findings in the terse `file:line` format
+| Pattern                       | Why                     | Use Instead                |
+| ----------------------------- | ----------------------- | -------------------------- |
+| Missing alt text              | Accessibility violation | Descriptive alt for images |
+| Low contrast text             | WCAG failure            | 4.5:1 ratio minimum        |
+| No focus indicators           | Keyboard nav broken     | Visible focus rings        |
+| Click handlers on non-buttons | Accessibility issue     | Use `<button>` or `<a>`    |
 
-## Guidelines Source
+## ✅ REQUIRED
 
-Fetch fresh guidelines before each review:
+| Element             | Target                   | Notes                                     |
+| ------------------- | ------------------------ | ----------------------------------------- |
+| Semantic HTML       | Always                   | Use correct elements (nav, main, section) |
+| Keyboard navigation | All interactive elements | Tab order, focus management               |
+| Color contrast      | 4.5:1 minimum            | Use accessible color pairs                |
+| Loading states      | Async content            | Skeletons, spinners                       |
 
-```
-https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md
-```
+---
 
-Use WebFetch to retrieve the latest rules. The fetched content contains all the rules and output format instructions.
+## How to Audit
 
-## Usage
+1. Fetch the latest guidelines:
 
-When a user provides a file or pattern argument:
-1. Fetch guidelines from the source URL above
+   ```
+   https://raw.githubusercontent.com/vercel-labs/web-interface-guidelines/main/command.md
+   ```
+
 2. Read the specified files
-3. Apply all rules from the fetched guidelines
-4. Output findings using the format specified in the guidelines
 
-If no files specified, ask the user which files to review.
+3. Check against all rules
+
+4. Output findings in `file:line` format
+
+---
+
+## CleverPrices-Specific Checks
+
+### Product Cards
+
+- [ ] Image alt includes product title
+- [ ] Price has aria-label for screen readers
+- [ ] Link wraps entire card for click target
+- [ ] Savings badge has sufficient contrast
+
+### Filters
+
+- [ ] All inputs have labels
+- [ ] Checkboxes are keyboard accessible
+- [ ] Clear filters button is discoverable

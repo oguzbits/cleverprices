@@ -1,29 +1,74 @@
 ---
 name: modern-seo
-description: Comprehensive SEO audit and optimization guidelines. Contains rules for keywords, on-page elements, and technical performance.
+description: >
+  Comprehensive SEO audit and optimization guidelines.
+  TRIGGERS: Creating pages, writing meta tags, URL structures, or content optimization.
+  Contains rules for keywords, on-page elements, and technical performance.
+version: "2.0.0"
 ---
 
 # Modern SEO Audit Guidelines
 
 A modular set of rules to maximize search visibility and organic traffic.
 
-## Quick Reference
+## 🚫 BANNED (Never Use)
+
+| Pattern                          | Why                   | Use Instead                 |
+| -------------------------------- | --------------------- | --------------------------- |
+| Duplicate titles                 | Cannibalizes rankings | Unique title per page       |
+| Missing meta descriptions        | Poor CTR              | Action + UVP + CTA          |
+| Generic H1s                      | Low relevance         | Keyword-rich, unique H1     |
+| Orphan pages (no internal links) | Not crawled           | Link from 3-5 related pages |
+
+## ✅ REQUIRED
+
+| Element     | Target        | Example                                                                    |
+| ----------- | ------------- | -------------------------------------------------------------------------- | ------------- |
+| Title       | 50-60 chars   | `Samsung 990 Pro 2TB SSD - Best Price                                      | CleverPrices` |
+| Description | 150-160 chars | `Compare prices for Samsung 990 Pro 2TB. Save up to 30% across Amazon DE.` |
+| H1          | One per page  | `Samsung 990 Pro 2TB SSD Preisvergleich`                                   |
+| LCP         | < 2.5s        | Use Next/Image, preload fonts                                              |
+
+---
+
+## Rules
 
 ### 1. Strategy
 
-- **Keywords**: Define Primary, Transactional, and Long-tail terms first. ([Rule 01](rules/seo-01-keywords.md))
+- [Keywords](rules/seo-01-keywords.md) - Define Primary, Transactional, Long-tail
 
 ### 2. On-Page
 
-- **Titles**: 50-60 chars, Keyword + Hook + Brand. ([Rule 02](rules/seo-02-title-tags.md))
-- **Descriptions**: Action Verb + UVP + CTA. 150-160 chars. ([Rule 03](rules/seo-03-meta-descriptions.md))
-- **Structure**: One H1, logical H2/H3s. Keyword in first 100 words. ([Rule 04](rules/seo-04-structure.md))
+- [Titles](rules/seo-02-title-tags.md) - 50-60 chars, Keyword + Hook + Brand
+- [Descriptions](rules/seo-03-meta-descriptions.md) - Action Verb + UVP + CTA
+- [Structure](rules/seo-04-structure.md) - One H1, logical H2/H3s
 
 ### 3. Technical
 
-- **Linking**: Link to 3-5 related internal pages. ([Rule 05](rules/seo-05-internal-linking.md))
-- **Performance**: LCP < 2.5s. ([Rule 06](rules/seo-06-perf-ux.md))
+- [Internal Linking](rules/seo-05-internal-linking.md) - Link to 3-5 related pages
+- [Performance](rules/seo-06-perf-ux.md) - LCP < 2.5s
 
-## Full Compiled Document
+---
 
-For the complete guide with all rules expanded: `AGENTS.md`
+## CleverPrices-Specific
+
+### Product Pages
+
+```tsx
+// Required meta structure
+export function generateMetadata({ params }) {
+  return {
+    title: `${product.title} - Preisvergleich | CleverPrices`,
+    description: `${product.title} ab ${price}€. Vergleiche Preise und spare bis zu ${savings}%.`,
+    openGraph: {
+      type: 'product',
+      ...
+    }
+  }
+}
+```
+
+### Category Pages
+
+- Include brand + capacity in title where relevant
+- Add structured data for product lists
