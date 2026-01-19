@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { Database } from "bun:sqlite";
-import { sql, inArray } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import {
   priceHistory,
@@ -12,11 +12,26 @@ import { loadWorkerState, updateLastCloudSync } from "../src/lib/worker-state";
 
 async function migrate() {
   const isDelta = process.argv.includes("--delta");
+  const isDryRun = process.argv.includes("--dry-run");
+  const isForce = process.argv.includes("--force");
+
+  // New: Limit history days to save writes (e.g. --history-days 90)
+  const historyDaysFlag = process.argv.find((a) =>
+    a.startsWith("--history-days="),
+  );
+  const historyDays = historyDaysFlag
+    ? parseInt(historyDaysFlag.split("=")[1])
+    : null;
+
   const state = loadWorkerState();
   const lastSyncTime = isDelta ? state.lastCloudSync : 0;
   // Convert MS to Seconds for SQLite query because Drizzle/LibSQL stores seconds by default
   const queryTime = Math.floor(lastSyncTime / 1000);
   const lastSyncDate = new Date(lastSyncTime);
+
+  if (isDryRun) {
+    console.log("🔍 DRY RUN MODE: No changes will be written to the cloud.");
+  }
 
   if (isDelta && state.lastCloudSync === 0) {
     console.warn(
@@ -85,17 +100,26 @@ async function migrate() {
     )
     .all(queryTime) as any[];
 
-  const localHistory = isDelta
-    ? (localDb
-        .prepare(
-          `
-          SELECT * FROM price_history 
-          WHERE recorded_at > ? 
-          OR product_id IN (SELECT id FROM products WHERE updated_at > ?)
-        `,
-        )
-        .all(queryTime, queryTime) as any[])
-    : [];
+  let historyQuery = `SELECT * FROM price_history WHERE 1=1`;
+  const historyParams: any[] = [];
+
+  if (isDelta) {
+    historyQuery += ` AND (recorded_at > ? OR product_id IN (SELECT id FROM products WHERE updated_at > ?))`;
+    historyParams.push(queryTime, queryTime);
+  }
+
+  if (historyDays) {
+    const cutoffDate = Math.floor(
+      (Date.now() - historyDays * 24 * 60 * 60 * 1000) / 1000,
+    );
+    historyQuery += ` AND recorded_at > ?`;
+    historyParams.push(cutoffDate);
+    console.log(`⏳ Filtering history to last ${historyDays} days...`);
+  }
+
+  const localHistory = localDb
+    .prepare(historyQuery)
+    .all(...historyParams) as any[];
 
   console.log(`\n📈 Sync Plan (Local -> Cloud):`);
   console.log(`   📦 Products:    ${localProducts.length}`);
@@ -104,13 +128,27 @@ async function migrate() {
   if (isDelta) console.log(`   📉 History:     ${localHistory.length}`);
 
   if (!isDelta) {
+    if (!isForce && !isDryRun) {
+      console.error(
+        "❌ ERROR: Full sync requires --force because it DELETES existing cloud data.",
+      );
+      console.log(
+        "   Use --delta for incremental sync, or add --force if you are sure.",
+      );
+      process.exit(1);
+    }
+
     console.log("\n🧹 Cleaning transient tables for full sync...");
-    try {
-      await db.delete(priceHistory).catch(() => {});
-      await db.delete(productOffers).catch(() => {});
-      await db.delete(prices).catch(() => {});
-    } catch (e) {
-      console.warn("⚠️ Warning during cleanup:", (e as any).message);
+    if (!isDryRun) {
+      try {
+        await db.delete(priceHistory).catch(() => {});
+        await db.delete(productOffers).catch(() => {});
+        await db.delete(prices).catch(() => {});
+      } catch (e) {
+        console.warn("⚠️ Warning during cleanup:", (e as any).message);
+      }
+    } else {
+      console.log("   [DRY RUN] Would delete history, offers, and prices.");
     }
   }
 
@@ -153,34 +191,38 @@ async function migrate() {
         updatedAt: ensureDate(p.updated_at || new Date()),
       }));
 
-      try {
-        await db
-          .insert(products)
-          .values(records)
-          .onConflictDoUpdate({
-            target: products.asin,
-            set: {
-              slug: sql`excluded.slug`,
-              title: sql`excluded.title`,
-              category: sql`excluded.category`,
-              imageUrl: sql`excluded.image_url`,
-              manufacturer: sql`excluded.manufacturer`,
-              parentAsin: sql`excluded.parent_asin`,
-              variationAttributes: sql`excluded.variation_attributes`,
-              specifications: sql`excluded.specifications`,
-              rawData: sql`excluded.raw_data`,
-              features: sql`excluded.features`,
-              rating: sql`excluded.rating`,
-              reviewCount: sql`excluded.review_count`,
-              salesRank: sql`excluded.sales_rank`,
-              salesRankReference: sql`excluded.sales_rank_reference`,
-              monthlySold: sql`excluded.monthly_sold`,
-              historySeeded: sql`excluded.history_seeded`,
-              updatedAt: sql`excluded.updated_at`,
-            },
-          });
-      } catch (e: any) {
-        console.error(`❌ Product batch failed at index ${i}:`, e.message);
+      if (!isDryRun) {
+        try {
+          await db
+            .insert(products)
+            .values(records)
+            .onConflictDoUpdate({
+              target: products.asin,
+              set: {
+                slug: sql`excluded.slug`,
+                title: sql`excluded.title`,
+                category: sql`excluded.category`,
+                imageUrl: sql`excluded.image_url`,
+                manufacturer: sql`excluded.manufacturer`,
+                parentAsin: sql`excluded.parent_asin`,
+                variationAttributes: sql`excluded.variation_attributes`,
+                specifications: sql`excluded.specifications`,
+                rawData: sql`excluded.raw_data`,
+                features: sql`excluded.features`,
+                rating: sql`excluded.rating`,
+                reviewCount: sql`excluded.review_count`,
+                salesRank: sql`excluded.sales_rank`,
+                salesRankReference: sql`excluded.sales_rank_reference`,
+                monthlySold: sql`excluded.monthly_sold`,
+                historySeeded: sql`excluded.history_seeded`,
+                updatedAt: sql`excluded.updated_at`,
+              },
+            });
+        } catch (e: any) {
+          console.error(`❌ Product batch failed at index ${i}:`, e.message);
+        }
+      } else {
+        console.log(`   [DRY RUN] Would upsert ${records.length} products.`);
       }
     }
   }
@@ -196,6 +238,7 @@ async function migrate() {
   // Optimization: Instead of fetching ALL products from cloud, we only fetch what we need for the prices/offers/history
   console.log("🗺️  Mapping Cloud IDs by ASIN (batched)...");
   const asinToCloudId = new Map<string, number>();
+  const asinsAlreadySeeded = new Set<string>();
 
   // Collect all unique ASINs from local data that we need to map
   const localAsinSet = new Set<string>();
@@ -219,13 +262,23 @@ async function migrate() {
   for (let i = 0; i < allAsinsToMap.length; i += mappingBatchSize) {
     const batch = allAsinsToMap.slice(i, i + mappingBatchSize);
     const cloudBatch = await db
-      .select({ id: products.id, asin: products.asin })
+      .select({
+        id: products.id,
+        asin: products.asin,
+        historySeeded: products.historySeeded,
+      })
       .from(products)
       .where(inArray(products.asin, batch));
 
-    cloudBatch.forEach((p) => asinToCloudId.set(p.asin, p.id));
+    cloudBatch.forEach((p) => {
+      asinToCloudId.set(p.asin, p.id);
+      if (p.historySeeded) {
+        asinsAlreadySeeded.add(p.asin);
+      }
+    });
+
     console.log(
-      `    ... mapped ${asinToCloudId.size}/${allAsinsToMap.length} ASINs`,
+      `    ... mapped ${asinToCloudId.size}/${allAsinsToMap.length} ASINs (${asinsAlreadySeeded.size} already seeded)`,
     );
   }
 
@@ -274,30 +327,35 @@ async function migrate() {
       }
 
       if (records.length > 0) {
-        try {
-          await db
-            .insert(prices)
-            .values(records)
-            .onConflictDoUpdate({
-              target: [prices.productId, prices.country],
-              set: {
-                amazonPrice: sql`excluded.amazon_price`,
-                amazonPriceFormatted: sql`excluded.amazon_price_formatted`,
-                newPrice: sql`excluded.new_price`,
-                usedPrice: sql`excluded.used_price`,
-                warehousePrice: sql`excluded.warehouse_price`,
-                listPrice: sql`excluded.list_price`,
-                priceMin: sql`excluded.price_min`,
-                priceMax: sql`excluded.price_max`,
-                priceAvg30: sql`excluded.price_avg_30`,
-                priceAvg90: sql`excluded.price_avg_90`,
-                pricePerUnit: sql`excluded.price_per_unit`,
-                lastUpdated: sql`excluded.last_updated`,
-              },
-            });
+        if (!isDryRun) {
+          try {
+            await db
+              .insert(prices)
+              .values(records)
+              .onConflictDoUpdate({
+                target: [prices.productId, prices.country],
+                set: {
+                  amazonPrice: sql`excluded.amazon_price`,
+                  amazonPriceFormatted: sql`excluded.amazon_price_formatted`,
+                  newPrice: sql`excluded.new_price`,
+                  usedPrice: sql`excluded.used_price`,
+                  warehousePrice: sql`excluded.warehouse_price`,
+                  listPrice: sql`excluded.list_price`,
+                  priceMin: sql`excluded.price_min`,
+                  priceMax: sql`excluded.price_max`,
+                  priceAvg30: sql`excluded.price_avg_30`,
+                  priceAvg90: sql`excluded.price_avg_90`,
+                  pricePerUnit: sql`excluded.price_per_unit`,
+                  lastUpdated: sql`excluded.last_updated`,
+                },
+              });
+            priceSuccess += records.length;
+          } catch (e: any) {
+            console.error(`\n❌ Price batch failure:`, e.message);
+          }
+        } else {
+          console.log(`   [DRY RUN] Would push ${records.length} prices.`);
           priceSuccess += records.length;
-        } catch (e: any) {
-          console.error(`\n❌ Price batch failure:`, e.message);
         }
       }
     }
@@ -372,13 +430,24 @@ async function migrate() {
   if (localHistory.length > 0) {
     console.log(`📉 Pushing price history...`);
     let historySuccess = 0;
+    let skippedProducts = new Set<string>();
+
     for (let i = 0; i < localHistory.length; i += 100) {
       const batch = localHistory.slice(i, i + 100);
       const records = batch
         .map((h) => {
           const asin = getLocalAsin(h.product_id);
-          const cloudId = asin ? asinToCloudId.get(asin) : null;
+          if (!asin) return null;
+
+          // Skip if already seeded in cloud
+          if (asinsAlreadySeeded.has(asin)) {
+            skippedProducts.add(asin);
+            return null;
+          }
+
+          const cloudId = asinToCloudId.get(asin);
           if (!cloudId) return null;
+
           return {
             productId: cloudId,
             country: h.country,
@@ -391,15 +460,23 @@ async function migrate() {
         .filter(Boolean) as any[];
 
       if (records.length > 0) {
-        await db.insert(priceHistory).values(records);
+        if (!isDryRun) {
+          await db.insert(priceHistory).values(records);
+        }
         historySuccess += records.length;
       }
     }
-    console.log(`✅ History: ${historySuccess}/${localHistory.length}`);
+    console.log(
+      `✅ History: ${historySuccess} records ${isDryRun ? "would be " : ""}pushed. (Skipped ${skippedProducts.size} products already seeded in cloud)`,
+    );
   }
 
-  updateLastCloudSync();
-  console.log("🏁 Sync completed successfully.");
+  if (!isDryRun) {
+    updateLastCloudSync();
+    console.log("🏁 Sync completed successfully.");
+  } else {
+    console.log("🏁 Dry run finished. No data was changed.");
+  }
   process.exit(0);
 }
 
