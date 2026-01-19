@@ -4,6 +4,7 @@ import {
   BreadcrumbSchema,
   ProductSchema,
 } from "@/components/seo/ProductSchema";
+import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import {
   getCategoryBySlug,
@@ -13,6 +14,7 @@ import {
 import { type CountryCode } from "@/lib/countries";
 import type { UnifiedProduct } from "@/lib/data-sources";
 import { Product } from "@/lib/product-registry";
+import { getProductPriceHistory } from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { Package } from "lucide-react";
@@ -20,7 +22,6 @@ import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import React, { Suspense } from "react";
-import { getProductPriceHistory } from "@/lib/server/cached-products";
 import { IdealoStarRating } from "../category/IdealoStarRating";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import {
@@ -207,13 +208,15 @@ export function IdealoProductPage({
 
             {/* Price Chart Column */}
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
-              <Suspense
-                fallback={
-                  <div className="bg-muted h-[200px] w-full animate-pulse rounded" />
-                }
-              >
-                <CachedPriceChart productId={product.id || 0} />
-              </Suspense>
+              <ComponentErrorBoundary name="PriceChart">
+                <Suspense
+                  fallback={
+                    <div className="bg-muted h-[200px] w-full animate-pulse rounded" />
+                  }
+                >
+                  <CachedPriceChart productId={product.id || 0} />
+                </Suspense>
+              </ComponentErrorBoundary>
             </div>
           </div>
 
@@ -222,17 +225,19 @@ export function IdealoProductPage({
               id="sidebar"
               className="text-idealo-text-primary order-1 mb-[45px] hidden min-w-0 text-[14px] leading-[16px] xl:block xl:w-1/4 xl:pr-[15px]"
             >
-              <Suspense
-                fallback={
-                  <div className="bg-muted h-[400px] w-full animate-pulse rounded" />
-                }
-              >
-                <CachedSidebarSimilarProducts
-                  product={product}
-                  similarProducts={similarProducts.slice(0, 5)}
-                  countryCode={countryCode}
-                />
-              </Suspense>
+              <ComponentErrorBoundary name="SidebarSimilarProducts">
+                <Suspense
+                  fallback={
+                    <div className="bg-muted h-[400px] w-full animate-pulse rounded" />
+                  }
+                >
+                  <CachedSidebarSimilarProducts
+                    product={product}
+                    similarProducts={similarProducts.slice(0, 5)}
+                    countryCode={countryCode}
+                  />
+                </Suspense>
+              </ComponentErrorBoundary>
             </aside>
 
             {/* Streaming Offers Section */}
@@ -247,27 +252,31 @@ export function IdealoProductPage({
 
           {/* Specifications Table (Bottom) */}
           <div id="datasheet" className="scroll-mt-[10vh]">
-            <Suspense
-              fallback={
-                <div className="bg-muted h-[300px] w-full animate-pulse rounded" />
-              }
-            >
-              <CachedSpecifications product={product} />
-            </Suspense>
+            <ComponentErrorBoundary name="Specifications">
+              <Suspense
+                fallback={
+                  <div className="bg-muted h-[300px] w-full animate-pulse rounded" />
+                }
+              >
+                <CachedSpecifications product={product} />
+              </Suspense>
+            </ComponentErrorBoundary>
           </div>
 
           {/* Similar Products Carousel */}
-          <Suspense
-            fallback={
-              <div className="h-[400px] w-full animate-pulse rounded bg-gray-50" />
-            }
-          >
-            <CachedSimilarCarousel
-              product={product}
-              similarProducts={similarProducts}
-              countryCode={countryCode}
-            />
-          </Suspense>
+          <ComponentErrorBoundary name="SimilarCarousel">
+            <Suspense
+              fallback={
+                <div className="h-[400px] w-full animate-pulse rounded bg-gray-50" />
+              }
+            >
+              <CachedSimilarCarousel
+                product={product}
+                similarProducts={similarProducts}
+                countryCode={countryCode}
+              />
+            </Suspense>
+          </ComponentErrorBoundary>
         </div>
       </div>
     </div>
@@ -358,11 +367,9 @@ async function CachedSpecifications({ product }: { product: Product }) {
 }
 
 async function CachedSimilarCarousel({
-  product,
   similarProducts,
   countryCode,
 }: {
-  product: Product;
   similarProducts: Product[];
   countryCode: CountryCode;
 }) {
