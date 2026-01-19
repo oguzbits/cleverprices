@@ -74,10 +74,15 @@
 
 ### 4. Search Functionality (`SearchModal.tsx`)
 
-- **Type**: Real-time live search using TanStack Query and Server Actions.
-- **Engine**: SQLite FTS5 (Full-Text Search) with BM25 ranking for O(1) matching performance at scale.
-- **Behavior**: Prefix matching (typing "Sams" finds "Samsung"), product result previews with live prices, and category deep-links.
-- **Optimization**: Debounced input (300ms) and automated SQL triggers to keep the search index in sync with the `products` table.
+- **Type**: Ultra-fast, minimalist live search using TanStack Query and Server Actions.
+- **Engine**: SQLite FTS5 for product search + `TOP_BRANDS` Fast Path for categories.
+- **Optimizations**:
+  - **Fast Path**: Hardcoded mapping for 30+ top brands (Samsung, Apple, ASUS, etc.) to skip DB reads for common category browsing.
+  - **Server-Side Caching**: Uses Next.js `unstable_cache` (1-hour TTL) to share search results across users, making repeated searches free.
+  - **Smart Read Management**: Skips dynamic brand mapping for multi-word queries; prioritizes indexed category lookups.
+  - **Strict Limits**: Hard-capped at 10 results (desktop) and 6 results (mobile) to ensure O(1) rendering time and no scrolling.
+- **UI Design**: Text-only, high-hierarchy layout (bold titles + light breadcrumbs). No icons or prices to minimize visual noise and payload size.
+- **State**: Debounced input (300ms) with client-side caching (60s).
 
 ### 5. Blog System
 

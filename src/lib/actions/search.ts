@@ -3,6 +3,7 @@
 import { client } from "@/db";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { searchProducts } from "@/lib/product-registry";
+import { unstable_cache } from "next/cache";
 
 export interface SearchCategory {
   name: string;
@@ -26,46 +27,80 @@ export interface SearchResults {
 const TOP_BRANDS: Record<string, { name: string; categories: string[] }> = {
   apple: {
     name: "Apple",
-    categories: ["smartphones", "notebooks", "tablets", "smartwatches"],
+    categories: ["smartphones", "tablets", "smartwatches", "notebooks"],
   },
   samsung: {
     name: "Samsung",
     categories: [
       "smartphones",
+      "tvs",
       "ssds",
-      "speicherkarten",
       "monitors",
       "smartwatches",
-      "tvs",
+      "speicherkarten",
     ],
   },
-  sony: {
-    name: "Sony",
-    categories: ["consoles", "cameras", "headphones", "tvs"],
+  xiaomi: { name: "Xiaomi", categories: ["smartphones"] },
+  asus: {
+    name: "ASUS",
+    categories: ["gpu", "monitors", "notebooks", "motherboards", "routers"],
   },
-  bose: { name: "Bose", categories: ["headphones", "speakers"] },
-  nintendo: { name: "Nintendo", categories: ["consoles"] },
-  western: {
-    name: "Western Digital",
-    categories: ["ssds", "external-storage"],
-  },
-  wd: { name: "Western Digital", categories: ["ssds", "external-storage"] },
+  intel: { name: "Intel", categories: ["cpu", "ssds"] },
+  lenovo: { name: "Lenovo", categories: ["notebooks"] },
   sandisk: {
     name: "SanDisk",
-    categories: ["speicherkarten", "external-storage", "ssds"],
+    categories: ["speicherkarten", "ssds", "external-storage"],
   },
-  crucial: { name: "Crucial", categories: ["ssds", "ram"] },
-  intel: { name: "Intel", categories: ["cpu", "ssds"] },
+  gigabyte: { name: "Gigabyte", categories: ["gpu", "motherboards"] },
+  msi: {
+    name: "MSI",
+    categories: ["gpu", "motherboards", "monitors", "notebooks"],
+  },
+  western: { name: "Western Digital", categories: ["hard-drives", "ssds"] },
+  wd: {
+    name: "Western Digital",
+    categories: ["hard-drives", "ssds", "external-storage"],
+  },
+  crucial: { name: "Crucial", categories: ["ram", "ssds", "external-storage"] },
+  seagate: { name: "Seagate", categories: ["hard-drives", "external-storage"] },
+  hp: { name: "HP", categories: ["notebooks", "computer", "laserdrucker"] },
+  lexar: { name: "Lexar", categories: ["speicherkarten", "ssds", "ram"] },
+  lg: { name: "LG", categories: ["tvs", "monitors"] },
+  jbl: { name: "JBL", categories: ["headphones", "speakers"] },
+  google: { name: "Google", categories: ["smartphones"] },
+  acer: { name: "Acer", categories: ["notebooks", "monitors"] },
+  nintendo: { name: "Nintendo", categories: ["consoles"] },
+  playstation: { name: "Playstation", categories: ["consoles"] },
+  sony: {
+    name: "Sony",
+    categories: ["tvs", "systemkameras", "headphones", "consoles"],
+  },
+  corsair: {
+    name: "Corsair",
+    categories: ["ram", "power-supplies", "pc-cases"],
+  },
+  kingston: { name: "Kingston", categories: ["ram", "ssds"] },
+  logitech: {
+    name: "Logitech",
+    categories: ["mice", "keyboards", "headphones"],
+  },
+  amd: { name: "AMD", categories: ["cpu", "gpu"] },
+  philips: { name: "Philips", categories: ["monitors", "tvs"] },
+  motorola: { name: "Motorola", categories: ["smartphones"] },
+  tp: { name: "TP-Link", categories: ["routers"] },
 };
 
-export async function performSearch(
+/**
+ * Internal search function that hits the database.
+ * Wrapped by unstable_cache for cross-user performance.
+ */
+const getInternalSearchResults = async (
   query: string,
-  limit: number = 10,
-): Promise<SearchResults> {
-  if (!query || query.length < 2) return { categories: [], products: [] };
-
+  limit: number,
+): Promise<SearchResults> => {
   const s = query.toLowerCase().trim();
   const topBrand = TOP_BRANDS[s];
+  const isMultiWord = s.includes(" ");
 
   try {
     let brandMatchedCategories: SearchCategory[] = [];
@@ -90,8 +125,8 @@ export async function performSearch(
           };
         })
         .filter((c): c is SearchCategory => c !== null);
-    } else {
-      // 2. Dynamic Brand-Category Mapping (Proactive mapping like Idealo)
+    } else if (!isMultiWord && s.length > 2) {
+      // 2. Dynamic Brand-Category Mapping (Only for single words to save reads)
       const brandCategoriesResult = await client.execute({
         sql: `
           SELECT brand, category, COUNT(*) as count 
@@ -154,7 +189,6 @@ export async function performSearch(
     const categorySuggestions: SearchCategory[] = [];
 
     // A. Brand-in-Category matches (Highest Priority)
-    // We allow categories to take up to 70% of the limit
     const maxCategories = Math.ceil(limit * 0.7);
 
     brandMatchedCategories.forEach((c) => {
@@ -179,7 +213,6 @@ export async function performSearch(
     const seenFamilies = new Set<string>();
     const matchedProducts: SearchProduct[] = [];
 
-    // Calculate how many products we can show (limit - categories, but at least 2 if they exist)
     const categoryCount = categorySuggestions.length;
     const maxProducts = Math.max(2, limit - categoryCount);
 
@@ -211,4 +244,27 @@ export async function performSearch(
     console.error("Search Action Error:", error);
     return { categories: [], products: [] };
   }
+};
+
+/**
+ * Cached version of search results.
+ * Shared across users, revalidates every hour.
+ */
+const getCachedSearchResults = unstable_cache(
+  async (query: string, limit: number) =>
+    getInternalSearchResults(query, limit),
+  ["search-results-v1"],
+  { revalidate: 3600 },
+);
+
+export async function performSearch(
+  query: string,
+  limit: number = 10,
+): Promise<SearchResults> {
+  const normalizedQuery = query.toLowerCase().trim();
+  if (!normalizedQuery || normalizedQuery.length < 2) {
+    return { categories: [], products: [] };
+  }
+
+  return getCachedSearchResults(normalizedQuery, limit);
 }

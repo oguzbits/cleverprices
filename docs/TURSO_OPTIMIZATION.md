@@ -85,6 +85,28 @@ while (true) {
 }
 ```
 
+## High-Frequency Search Optimization
+
+Search is the most frequent user action. Without optimization, every character typed could cost 2 DB reads. We mitigate this with three layers:
+
+### 1. The "Fast Path" (Memory-First)
+
+We maintain a static `TOP_BRANDS` map (30+ brands like Apple, Samsung). If the query matches exactly, we generate category suggestions in-memory.
+
+- **Cost Savings**: **-1 Read** per stroke for common brands.
+
+### 2. Implementation-Level Caching (`unstable_cache`)
+
+We wrap the search action in `unstable_cache` with a 1-hour TTL. Results are shared across all users (not just per-session).
+
+- **Cost Savings**: **0 Rows Read** for any repeated queries (e.g., "iphone", "rtx", "ssd").
+
+### 3. Intent-Based Query Skipping
+
+For multi-word queries (e.g., "Samsung S24 Ultra"), the user is looking for a product, not browsing categories. We automatically skip the brand-category mapping query.
+
+- **Cost Savings**: **-1 Read** per stroke for specific product searches.
+
 ## Strategy Selection Matrix
 
 | Strategy               | When to Use                                   | Read Cost (per sync)           | Performance                      |
@@ -95,6 +117,7 @@ while (true) {
 | **Keyset Pagination**  | Scraping, Pulsing, Syncing Entire Tables      | ✅ Optimal ($O(N)$)            | 🚀 Fast & Scalable               |
 | **Flat Bulk**          | High-volume data (History, Logs, 1,000+ rows) | Low                            | 🚀 Very Fast (Zero congestion)   |
 | **Parallel Flat Bulk** | Extreme data (50,000+ rows)                   | Low                            | 🔥 Ultra Fast (Latency-Critical) |
+| **Search FastPath**    | High-traffic live search                      | 🔥 **ZERO** (In-Memory/Cache)  | ⚡ Instant                       |
 
 ## Practical Limits
 
