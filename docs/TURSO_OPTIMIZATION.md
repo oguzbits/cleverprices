@@ -4,40 +4,26 @@ This document outlines the optimization strategy for high-volume database operat
 
 ## The Problem: The Latency/Throughput Trap
 
-When performing thousands of operations (e.g., updating prices for 7,000+ products), developers often fall into two traps:
+When performing thousands of operations (e.g., updating prices for 7,000+ products), developers often fall into three traps:
 
-1.  **Sequential Round-Trips (Latency Bottleneck)**: Sending queries one by one (`await db.update(...)`). Even with a fast 50ms round-trip, 1,000 updates take 50 seconds. This is what caused our initial scripts to take 2-4 minutes.
-2.  **Giant Batches (Payload Bottleneck)**: Bundling 1,000 products into a single `db.batch([])` call. This creates a massive HTTP request with thousands of SQL statements. Turso may time out, reject the request size, or hang while processing. This caused the "3-minute hang" in our enrichment script.
+1.  **Sequential Round-Trips (Latency Bottleneck)**: Sending queries one by one (`await db.update(...)`). Even with a fast 50ms round-trip, 1,000 updates take 50 seconds.
+2.  **Giant Batches (Payload Bottleneck)**: Bundling 1,000 products into a single `db.batch([])` call. This creates a massive HTTP request that Turso may time out or reject.
+3.  **Parallel Congestion**: Firing 100+ parallel heavy batches at once. While parallel, the sheer volume of concurrent heavy transactions saturates the DB engine or network pipeline, leading to hangs.
 
-## The Solution: Bounded Parallel Batches
+## The Solution: Strategy Tiers
 
-The most performant pattern for Turso is to use **Parallelism at the Product/Entity level**.
+### 1. Bounded Parallel Batches (Best for Metadata)
 
-### Implementation Pattern
-
-Instead of one giant batch or sequential awaits, we group operations for a single entity into a batch and execute multiple entity-batches in parallel.
+Group operations for a single entity into a batch and execute multiple entity-batches in parallel using `Promise.all`.
 
 ```typescript
-// ❌ SEQUENTIAL (Slow: 1 round-trip per product)
-for (const item of items) {
-  await db.update(...);
-}
-
-// ❌ MEGA BATCH (Unreliable: Too many statements in one HTTP call)
-const allQueries = items.flatMap(item => [...]);
-await db.batch(allQueries);
-
-// ✅ BOUNDED PARALLELISM (Fastest & Most Reliable)
+// ✅ BOUNDED PARALLELISM (Fast & Reliable for Metadata)
 await Promise.all(
   items.map(async (item) => {
     const productQueries = [
       db.update(products).set(...).where(...),
-      db.delete(history).where(...),
-      db.insert(history).values(...),
+      db.insert(prices).values(...),
     ];
-
-    // Each product gets its own small batch HTTP request
-    // fired in parallel.
     if (productQueries.length > 0) {
       await db.batch(productQueries);
     }
@@ -45,11 +31,38 @@ await Promise.all(
 );
 ```
 
-### Why this works:
+### 2. Flat Bulk Processing (Ultimate for High-Volume Data)
 
-1.  **Network Efficiency**: `Promise.all` fires all requests simultaneously. Total network wait time ≈ 1 round-trip (e.g., 50ms) rather than (Items \* 50ms).
-2.  **Stability**: Each HTTP request only contains 3-10 SQL statements. This is well within Turso's safety limits and will never time out.
-3.  **Concurrency**: Turso/libSQL handles many incoming HTTP connections efficiently.
+For operations involving thousands of rows (like price history), flatten the operations to minimize the total number of HTTP requests:
+
+1.  **Collect all metadata** (updates/deletes) for the entire batch into one array.
+2.  **Collect all large data points** (e.g., thousands of history rows) into a second array.
+3.  **Execute exactly two calls**:
+    - One `db.batch()` for metadata/cleanup.
+    - One `db.insert().values()` for the bulk data.
+
+```typescript
+// ✅ FLAT BULK (Fastest for 10,000+ rows)
+const metadataQueries = [];
+const allHistory = [];
+
+for (const product of products) {
+  metadataQueries.push(db.delete(priceHistory).where(...));
+  allHistory.push(...product.history);
+}
+
+// Exactly two round-trips for the entire batch of 50 products
+await db.batch(metadataQueries);
+await db.insert(priceHistory).values(allHistory);
+```
+
+## Strategy Selection Matrix
+
+| Strategy             | When to Use                                   | Performance                  |
+| :------------------- | :-------------------------------------------- | :--------------------------- |
+| **Sequential**       | Low volume (1-5 items), simple scripts        | ❌ Slow (O(N) latency)       |
+| **Parallel Batches** | Metadata updates, per-entity logic            | ✅ Fast (O(1) latency)       |
+| **Flat Bulk**        | High-volume data (History, Logs, 1,000+ rows) | 🚀 Fastest (Zero congestion) |
 
 ## Practical Limits
 

@@ -89,110 +89,112 @@ async function enrich() {
             includeHistory: true,
           });
 
+          const metadataQueries: any[] = [];
+          const allHistoryInsertions: any[] = [];
+
           const now = new Date();
-          await Promise.all(
-            enrichedProducts.map(async (ep) => {
-              const localProduct = candidates.find((p) => p.asin === ep.asin);
-              if (!localProduct) return;
+          for (const ep of enrichedProducts) {
+            const localProduct = candidates.find((p) => p.asin === ep.asin);
+            if (!localProduct) continue;
 
-              const productQueries: any[] = [];
+            // 1. Prepare avg90 in prices table
+            const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
+            const priceAvg90 = keepaPriceToDecimal(avg90Raw);
 
-              // 1. Update avg90 in prices table
-              const avg90Raw = ep.stats?.avg90?.[1]; // 1 = New price
-              const priceAvg90 = keepaPriceToDecimal(avg90Raw);
+            if (priceAvg90) {
+              metadataQueries.push(
+                db
+                  .update(prices)
+                  .set({ priceAvg90 })
+                  .where(
+                    and(
+                      eq(prices.productId, localProduct.id),
+                      eq(prices.country, country),
+                    ),
+                  ),
+              );
+            }
 
-              if (priceAvg90) {
-                productQueries.push(
+            // 2. Prepare Price History
+            if (ep.csv) {
+              const amazonHistory = getDailyLow(parseKeepaHistory(ep.csv[0]));
+              const newHistory = getDailyLow(parseKeepaHistory(ep.csv[1]));
+
+              const historyToInsert = [
+                ...amazonHistory.map((h) => ({
+                  productId: localProduct.id,
+                  country,
+                  price: h.price,
+                  currency: "EUR",
+                  priceType: "amazon",
+                  recordedAt: new Date(h.timestamp),
+                })),
+                ...newHistory.map((h) => ({
+                  productId: localProduct.id,
+                  country,
+                  price: h.price,
+                  currency: "EUR",
+                  priceType: "new",
+                  recordedAt: new Date(h.timestamp),
+                })),
+              ];
+
+              if (historyToInsert.length > 0) {
+                // Delete older records
+                metadataQueries.push(
                   db
-                    .update(prices)
-                    .set({ priceAvg90 })
+                    .delete(priceHistory)
                     .where(
                       and(
-                        eq(prices.productId, localProduct.id),
-                        eq(prices.country, country),
+                        eq(priceHistory.productId, localProduct.id),
+                        eq(priceHistory.country, country),
                       ),
                     ),
                 );
+                // Collect history points for mega-insert
+                allHistoryInsertions.push(...historyToInsert);
+              }
+            }
+
+            // 3. Prepare Metadata Mark
+            metadataQueries.push(
+              db
+                .update(products)
+                .set({
+                  historySeeded: true,
+                  salesRank:
+                    extractSalesRank(ep.salesRanks) ?? localProduct.salesRank,
+                  updatedAt: now,
+                })
+                .where(eq(products.id, localProduct.id)),
+            );
+          }
+
+          // EXECUTION STEP: One batch + One bulk insert (Ultra fast)
+          try {
+            await withRetry(async () => {
+              // 1. Run all deletions and metadata updates in one atomic batch
+              if (metadataQueries.length > 0) {
+                await (db as any).batch(metadataQueries);
               }
 
-              // 2. Back-fill Price History from Keepa CSV
-              if (ep.csv) {
-                const amazonHistory = getDailyLow(parseKeepaHistory(ep.csv[0]));
-                const newHistory = getDailyLow(parseKeepaHistory(ep.csv[1]));
-
-                const historyToInsert = [
-                  ...amazonHistory.map((h) => ({
-                    productId: localProduct.id,
-                    country,
-                    price: h.price,
-                    currency: "EUR",
-                    priceType: "amazon",
-                    recordedAt: new Date(h.timestamp),
-                  })),
-                  ...newHistory.map((h) => ({
-                    productId: localProduct.id,
-                    country,
-                    price: h.price,
-                    currency: "EUR",
-                    priceType: "new",
-                    recordedAt: new Date(h.timestamp),
-                  })),
-                ];
-
-                if (historyToInsert.length > 0) {
-                  // Delete older records if any (idempotency)
-                  productQueries.push(
-                    db
-                      .delete(priceHistory)
-                      .where(
-                        and(
-                          eq(priceHistory.productId, localProduct.id),
-                          eq(priceHistory.country, country),
-                        ),
-                      ),
-                  );
-
-                  // Bulk insert in chunks of 500
-                  for (let j = 0; j < historyToInsert.length; j += 500) {
-                    const chunk = historyToInsert.slice(j, j + 500);
-                    productQueries.push(db.insert(priceHistory).values(chunk));
-                  }
-                }
+              // 2. Run the mega-insert for all history points at once
+              // Drizzle will automatically chunk this for us to stay within SQL limits
+              if (allHistoryInsertions.length > 0) {
+                await db.insert(priceHistory).values(allHistoryInsertions);
               }
+            });
 
-              // 3. Mark as seeded
-              productQueries.push(
-                db
-                  .update(products)
-                  .set({
-                    historySeeded: true,
-                    salesRank:
-                      extractSalesRank(ep.salesRanks) ?? localProduct.salesRank,
-                    updatedAt: now,
-                  })
-                  .where(eq(products.id, localProduct.id)),
-              );
-
-              // Execute the batch for THIS product (Ensures we don't hit Turso statement limits)
-              if (productQueries.length > 0) {
-                try {
-                  await withRetry(async () => {
-                    await (db as any).batch(productQueries);
-                  });
-                  seeded++;
-                } catch (err: any) {
-                  console.error(
-                    `  Failed to seed ${localProduct.asin}:`,
-                    err.message,
-                  );
-                }
-              }
-            }),
-          );
-
-          console.log(
-            `    ✅ Batch ${batchAbsIndex + 1} complete (${enrichedProducts.length} products)`,
-          );
+            seeded += enrichedProducts.length;
+            console.log(
+              `    ✅ Batch ${batchAbsIndex + 1} complete (${enrichedProducts.length} products)`,
+            );
+          } catch (err: any) {
+            console.error(
+              `  Failed to commit batch ${batchAbsIndex + 1}:`,
+              err.message,
+            );
+          }
         } catch (e: any) {
           console.error(`  Error in batch ${batchAbsIndex + 1}:`, e.message);
         }

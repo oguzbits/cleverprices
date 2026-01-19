@@ -1,47 +1,63 @@
 # Turso Latency & Batch Optimization
 
-When working with Turso (remote libSQL), network latency is the primary performance killer. You must balance the number of HTTP requests against the payload size.
+When working with Turso (remote libSQL), network latency and transaction congestion are the primary performance killers. You must balance the number of HTTP requests against the payload size and concurrency.
 
 ## The Rule
 
-Do not use sequential awaits in loops, and do not create massive batch payloads that exceed Turso HTTP limits. Instead, use **Bounded Parallel Batches**.
+Use **Bounded Parallel Batches** for metadata updates and **Flat Bulk Processing** for high-volume data points (like history/logs).
 
-## Bad Pattern: Sequential Await
+## ❌ Bad Pattern: Sequential Await
 
-Each `await` is a separate HTTP round-trip (50ms+). 100 products = 5 seconds.
+Each `await` is a separate HTTP round-trip (50ms+).
 
 ```typescript
 for (const product of products) {
-  await db.update(products).set(...).where(eq(products.id, product.id));
+  await db.update(products).set(...).where(...);
 }
 ```
 
-## Bad Pattern: Huge Single Batch
+## ❌ Bad Pattern: Parallel Congestion
 
-A giant payload can time out or be rejected.
+Fining too many heavy requests at once can saturate the engine.
 
 ```typescript
-const allQueries = products.flatMap((p) => [q1, q2, q3, q4, q5]); // 1000+ statements
-await db.batch(allQueries); // High risk of timeout/failure
+await Promise.all(
+  products.map(async (p) => {
+    await db.insert(history).values(p.history); // 50 parallel requests of 500 rows each
+  }),
+);
 ```
 
-## Good Pattern: Bounded Parallel Batches
+## ✅ Good Pattern: Bounded Parallel Batches
 
-Fire multiple small batches in parallel. This occupies the network pipeline without overwhelming the server.
+Fires multiple small batches in parallel. Best for metadata and per-entity logic.
 
 ```typescript
 await Promise.all(
   products.map(async (product) => {
-    const batch = [
-      db.update(products).set(...).where(...),
-      db.insert(history).values(...),
-    ];
-    await db.batch(batch); // Small HTTP request, fired in parallel
+    const batch = [db.update(products).set(...), db.insert(prices).values(...)];
+    await db.batch(batch);
   })
 );
 ```
 
-## Best Practices
+## ✅ Best Pattern: Flat Bulk Processing
 
-1. **Parallel limit**: If processing thousands, use a chunking mechanism to limit parallel requests to ~50 at a time to avoid local socket exhaustion.
-2. **Entity Consistency**: Keep all related queries for a single entity (Product + Prices + History) within the same `db.batch()` call to ensure they succeed or fail together as a unit.
+Flatten operations to exactly two round-trips: one for metadata/cleanup and one for bulk data. Best for 1,000+ rows.
+
+```typescript
+const metadata = [];
+const data = [];
+for (const p of products) {
+  metadata.push(db.delete(priceHistory).where(...));
+  data.push(...p.history);
+}
+await db.batch(metadata);
+await db.insert(priceHistory).values(data);
+```
+
+## Practical Limits
+
+1. **ASIN Batching**: Fetch data from APIs in batches of 50-100.
+2. **DB Parallelism**: Process ~50 parallel entity batches at most.
+3. **Flat Bulk**: Use for any data where the row count exceeds 500 per Request.
