@@ -1,5 +1,5 @@
-import { db, products, prices, priceHistory } from "../src/db";
-import { eq, isNull, and, or, asc } from "drizzle-orm";
+import { and, asc, eq, isNull, or } from "drizzle-orm";
+import { db, priceHistory, prices, products } from "../src/db";
 import { withRetry } from "../src/db/utils";
 import type { CountryCode } from "../src/lib/countries";
 import {
@@ -8,9 +8,9 @@ import {
 } from "../src/lib/keepa/product-discovery";
 import {
   extractSalesRank,
+  getDailyLow,
   keepaPriceToDecimal,
   parseKeepaHistory,
-  getDailyLow,
 } from "../src/lib/keepa/utils";
 
 async function enrich() {
@@ -180,32 +180,63 @@ async function enrich() {
     );
   }
 
-  // FINAL EXECUTION STEP: One batch + One mega-insert (Ultra fast "Flat Bulk" pattern)
+  // FINAL EXECUTION STEP: Parallelized Batch Commit (Ultra fast pattern)
   console.log(
     `🚀 Committing all changes to DB (${allMetadataQueries.length} updates, ${globalHistoryInsertions.length} history points)...`,
   );
+
   try {
-    await withRetry(async () => {
-      // 1. Run all deletions and metadata updates in one atomic batch
-      if (allMetadataQueries.length > 0) {
-        // Turso has a 10MB or 10k statements limit on batches.
-        // For safety, we chunk the batch if it's very large.
-        const BATCH_LIMIT = 500;
-        for (let j = 0; j < allMetadataQueries.length; j += BATCH_LIMIT) {
-          const chunk = allMetadataQueries.slice(j, j + BATCH_LIMIT);
-          await (db as any).batch(chunk as any);
-        }
+    // 1. Run all metadata updates and deletions in parallel batches
+    if (allMetadataQueries.length > 0) {
+      const BATCH_LIMIT = 500;
+      const metadataChunks = [];
+      for (let j = 0; j < allMetadataQueries.length; j += BATCH_LIMIT) {
+        metadataChunks.push(allMetadataQueries.slice(j, j + BATCH_LIMIT));
       }
 
-      // 2. Run the mega-insert for all history points at once
-      if (globalHistoryInsertions.length > 0) {
-        const CHUNK_SIZE = 1000;
-        for (let j = 0; j < globalHistoryInsertions.length; j += CHUNK_SIZE) {
-          const chunk = globalHistoryInsertions.slice(j, j + CHUNK_SIZE);
-          await db.insert(priceHistory).values(chunk);
-        }
+      console.log(
+        `  📦 Executing ${metadataChunks.length} metadata batches...`,
+      );
+      await Promise.all(
+        metadataChunks.map((chunk) =>
+          withRetry(async () => {
+            await (db as any).batch(chunk as any);
+          }),
+        ),
+      );
+    }
+
+    // 2. Run the mega-insert for all history points in parallel chunks
+    if (globalHistoryInsertions.length > 0) {
+      const CHUNK_SIZE = 3000; // Increased chunk size (still safe for LibSQL 32k param limit)
+      const historyChunks = [];
+      for (let j = 0; j < globalHistoryInsertions.length; j += CHUNK_SIZE) {
+        historyChunks.push(globalHistoryInsertions.slice(j, j + CHUNK_SIZE));
       }
-    });
+
+      const CONCURRENCY = 5;
+      console.log(
+        `  📦 Executing ${historyChunks.length} history chunks with concurrency of ${CONCURRENCY}...`,
+      );
+
+      for (let j = 0; j < historyChunks.length; j += CONCURRENCY) {
+        const group = historyChunks.slice(j, j + CONCURRENCY);
+        await Promise.all(
+          group.map((chunk) =>
+            withRetry(async () => {
+              await db.insert(priceHistory).values(chunk);
+            }),
+          ),
+        );
+        const progress = Math.min(
+          globalHistoryInsertions.length,
+          (j + group.length) * CHUNK_SIZE,
+        );
+        console.log(
+          `  ... progress: ${progress}/${globalHistoryInsertions.length} history points`,
+        );
+      }
+    }
     console.log(`✅ Database sync complete.`);
   } catch (err: any) {
     console.error(`❌ Failed to commit data to database:`, err.message);

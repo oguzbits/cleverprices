@@ -46,7 +46,7 @@
 - **Sync Strategy**:
   - **Automated Engine**: GitHub Action (`daily-maintenance.yml`) runs **hourly**.
   - **Price Refresh**: Batches of 500 products (stale-first) per hour.
-  - **Enrichment**: 200-500 products per hour (History, Stats, Sales Rank). Uses the **Flat Bulk** pattern for O(1) database overhead.
+  - **Enrichment**: 200-500 products per hour (History, Stats, Sales Rank). Uses the **Parallel Flat Bulk** pattern for O(1) database overhead and minimal sync latency.
   - **Bulk Data Safety**: Implements manual chunking for large inserts to stay within SQLite/Turso parameter limits.
   - **Cache Warming**: Automated warm-up of Next.js "use cache" layers after every sync.
   - **Direct Cloud Access**: Scripts connect directly to Turso (Cloud) via `DATABASE_PATH` environment variable.

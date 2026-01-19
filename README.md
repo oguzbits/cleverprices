@@ -51,7 +51,7 @@ CleverPrices uses a highly optimized data layer to ensure sub-100ms response tim
 - **O(1) Data Lookups** - Statically pre-computes category hierarchies and country metadata at module load.
 - **Efficient Indexing** - Custom SQL indexes on `sales_rank`, `created_at`, `country`, and `productId` ensure instantaneous sorting and filtering.
 - **Map-Based Joins (O(N))** - Avoids O(N²) nested loops in JS by pre-indexing prices into hash maps before mapping products.
-- **Flat Bulk Processing** - Collapses thousands of individual history updates into two final, efficient round-trips to the DB. This bypasses the "Parallel Congestion" trap on remote databases.
+- **Parallel Flat Bulk** - Collapses thousands of individual history updates into parallelized waves. This maximizes bandwidth while staying under LibSQL's 32k parameter limit, reducing sync time from minutes to seconds.
 - **SQLite Resilience** - Implements a `withRetry` logic with exponential backoff and `PRAGMA busy_timeout = 5000` to handle concurrent write locks gracefully.
 - **FTS5 Full-Text Search** - Uses SQLite's native virtual tables for ultra-fast product prefix matching.
 - **Atomic Migrations** - Dedicated `db:migrate` scripts ensure schema consistency between local and cloud databases.

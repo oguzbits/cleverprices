@@ -31,38 +31,38 @@ await Promise.all(
 );
 ```
 
-### 2. Flat Bulk Processing (Ultimate for High-Volume Data)
+### 2. Parallelized Flat Bulk (Evolution for Ultra-High Volume)
 
-For operations involving thousands of rows (like price history), flatten the operations to minimize the total number of HTTP requests:
+For operations involving massive row counts (like 50,000+ price history points), a single sequential sync phase becomes a latency bottleneck. We evolve the "Flat Bulk" strategy into a parallelized one:
 
-1.  **Collect all metadata** (updates/deletes) for the entire batch into one array.
-2.  **Collect all large data points** (e.g., thousands of history rows) into a second array.
-3.  **Execute exactly two calls**:
-    - One `db.batch()` for metadata/cleanup.
-    - One `db.insert().values()` for the bulk data.
+1.  **Collect all operations** into in-memory arrays.
+2.  **Parallel Metadata Batches**: Execute multiple `db.batch()` calls in parallel for updates/deletes.
+3.  **Parallel Data Chunks**: Insert bulk data using `Promise.all` with bounded concurrency (e.g., 5-10 parallel requests).
+4.  **Optimized Payload**: Use larger chunks (e.g., 3,000 records) to stay under LibSQL's 32k parameter limit while minimizing round-trips.
 
 ```typescript
-// ✅ FLAT BULK (Fastest for 10,000+ rows)
-const metadataQueries = [];
-const allHistory = [];
+// ✅ PARALLELIZED FLAT BULK (Fastest for 50,000+ rows)
+const metadataChunks = chunk(allMetadataQueries, 500);
+const historyChunks = chunk(globalHistoryInsertions, 3000);
 
-for (const product of products) {
-  metadataQueries.push(db.delete(priceHistory).where(...));
-  allHistory.push(...product.history);
+// Execute metadata in parallel
+await Promise.all(metadataChunks.map((c) => db.batch(c)));
+
+// Execute history in parallel waves (bounded concurrency)
+for (let i = 0; i < historyChunks.length; i += 5) {
+  const wave = historyChunks.slice(i, i + 5);
+  await Promise.all(wave.map((c) => db.insert(priceHistory).values(c)));
 }
-
-// Exactly two round-trips for the entire batch of 50 products
-await db.batch(metadataQueries);
-await db.insert(priceHistory).values(allHistory);
 ```
 
 ## Strategy Selection Matrix
 
-| Strategy             | When to Use                                   | Performance                  |
-| :------------------- | :-------------------------------------------- | :--------------------------- |
-| **Sequential**       | Low volume (1-5 items), simple scripts        | ❌ Slow (O(N) latency)       |
-| **Parallel Batches** | Metadata updates, per-entity logic            | ✅ Fast (O(1) latency)       |
-| **Flat Bulk**        | High-volume data (History, Logs, 1,000+ rows) | 🚀 Fastest (Zero congestion) |
+| Strategy               | When to Use                                   | Performance                      |
+| :--------------------- | :-------------------------------------------- | :------------------------------- |
+| **Sequential**         | Low volume (1-5 items), simple scripts        | ❌ Slow (O(N) latency)           |
+| **Parallel Batches**   | Metadata updates, per-entity logic            | ✅ Fast (O(1) latency)           |
+| **Flat Bulk**          | High-volume data (History, Logs, 1,000+ rows) | 🚀 Very Fast (Zero congestion)   |
+| **Parallel Flat Bulk** | Extreme data (50,000+ rows)                   | 🔥 Ultra Fast (Latency-Critical) |
 
 ## Practical Limits
 
