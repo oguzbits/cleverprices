@@ -271,7 +271,6 @@ export function IdealoProductPage({
               }
             >
               <CachedSimilarCarousel
-                product={product}
                 similarProducts={similarProducts}
                 countryCode={countryCode}
               />
