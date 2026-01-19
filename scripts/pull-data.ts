@@ -62,18 +62,35 @@ async function pullData() {
 
       // Intersection of columns: only pull what exists locally
       const cloudCols = result.columns;
-      const validCols = cloudCols.filter((col) =>
-        localCols.includes(col.toLowerCase()),
+      const localColsSet = new Set(
+        localCols.map((c) => c.trim().toLowerCase()),
       );
+
+      const validCols = cloudCols.filter((col) =>
+        localColsSet.has(col.trim().toLowerCase()),
+      );
+
+      if (offset === 0) {
+        console.log(`🔍 Table ${table}:`);
+        console.log(`   - Local columns: ${localCols.length}`);
+        console.log(`   - Cloud columns: ${cloudCols.length}`);
+        console.log(`   - Valid (intersection): ${validCols.join(", ")}`);
+      }
 
       const placeholders = validCols.map(() => "?").join(",");
       const insertStmt = localDb.prepare(
-        `INSERT INTO ${table} (${validCols.join(",")}) VALUES (${placeholders})`,
+        `INSERT OR REPLACE INTO ${table} (${validCols.join(",")}) VALUES (${placeholders})`,
       );
 
       localDb.transaction(() => {
         for (const row of result.rows) {
           try {
+            // Basic sanity check: if the table expects product_id, ensure we have it
+            if (localColsSet.has("product_id") && !row["product_id"]) {
+              // Only skip if it's actually missing from the source data
+              continue;
+            }
+
             const values = validCols.map((col) => row[col]);
             // @ts-ignore - Row data types from libsql are compatible with bun:sqlite
             insertStmt.run(...(values as any[]));
