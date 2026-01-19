@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { getCategoryPath, type CategorySlug } from "@/lib/categories";
 import { ChevronRight } from "lucide-react";
+import Link from "next/link";
 import * as React from "react";
 
 interface CategoryHubCardProps {
@@ -13,6 +13,8 @@ interface CategoryHubCardProps {
   };
   Icon: React.ComponentType<{ className?: string }>;
 }
+
+import { formatTechText } from "@/lib/utils/formatting";
 
 /**
  * CategoryHubCard - Pixel-perfect Idealo-style category block.
@@ -42,7 +44,7 @@ export function CategoryHubCard({ category, Icon }: CategoryHubCardProps) {
         {/* 2. Headline Area */}
         <div className="flex items-center justify-between border-b border-[#d2d2d2] pb-1.5">
           <h3 className="truncate py-1 text-[20px] leading-tight font-bold text-[#2d2d2d] transition-colors">
-            {category.name}
+            {formatTechText(category.name)}
           </h3>
           <ChevronRight className="h-5 w-5 shrink-0 text-[#2d2d2d] transition-colors" />
         </div>
@@ -61,7 +63,7 @@ export function CategoryHubCard({ category, Icon }: CategoryHubCardProps) {
             }
             className="text-[14px] leading-snug text-[#2d2d2d] no-underline hover:text-[#0066cc] hover:underline"
           >
-            {filter.label}
+            {formatTechText(filter.label)}
           </Link>
         ))}
       </div>

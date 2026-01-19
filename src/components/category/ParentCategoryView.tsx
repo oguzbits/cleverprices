@@ -6,6 +6,7 @@ import { CategoryHubCard } from "@/components/category/CategoryHubCard";
 import { ProductBestsellerGrid } from "@/components/category/ProductBestsellerGrid";
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
 import { type LeanProduct } from "@/lib/types";
+import { formatTechText } from "@/lib/utils/formatting";
 
 interface ParentCategoryViewProps {
   parentCategory: Omit<Category, "icon">;
@@ -38,7 +39,7 @@ export function ParentCategoryView({
         {/* Subcategory Hub Cards Grid */}
         <section className="mb-20">
           <h2 className="mb-10 text-[28px] font-bold text-[#2d2d2d]">
-            {parentCategory.name}
+            {formatTechText(parentCategory.name)}
           </h2>
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 sm:grid-cols-2 lg:grid-cols-4">
             {childCategories.map((category) => (
@@ -54,7 +55,7 @@ export function ParentCategoryView({
         {/* Bestseller Section - Internal Links to Products */}
         {bestsellers.length > 0 && (
           <ProductBestsellerGrid
-            title={`Bestseller in "${parentCategory.name}"`}
+            title={`Bestseller in "${formatTechText(parentCategory.name)}"`}
             products={bestsellers}
             className="mb-10"
           />
@@ -63,7 +64,7 @@ export function ParentCategoryView({
         {newProducts.length > 0 && (
           <section className="mb-10 rounded-lg bg-[#e8f4fd] px-6 py-6">
             <IdealoProductCarousel
-              title={`Neu in ${parentCategory.name}`}
+              title={`Neu in ${formatTechText(parentCategory.name)}`}
               products={newProducts.map((p) => ({
                 title: p.title,
                 price: p.price,
@@ -85,7 +86,7 @@ export function ParentCategoryView({
         {deals.length > 0 && (
           <section className="mb-10 rounded-lg bg-white px-6 py-6 shadow-sm">
             <IdealoProductCarousel
-              title={`Deals in "${parentCategory.name}"`}
+              title={`Deals in "${formatTechText(parentCategory.name)}"`}
               products={deals.map((p) => ({
                 title: p.title,
                 price: p.price,

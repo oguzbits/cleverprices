@@ -26,10 +26,11 @@ import {
   getCategoryProducts,
 } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
+import { formatTechText } from "@/lib/utils/formatting";
 
 // Sub-components
-import { Suspense } from "react";
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
+import { Suspense } from "react";
 import {
   AsyncFilterPanel,
   AsyncProductList,
@@ -77,7 +78,10 @@ export async function IdealoCategoryPage({
   // Breadcrumb items
   const breadcrumbItems = [
     { name: "Home", href: "/" },
-    ...breadcrumbs.map((b) => ({ name: b.name, href: `/${b.slug}` })),
+    ...breadcrumbs.map((b) => ({
+      name: formatTechText(b.name),
+      href: `/${b.slug}`,
+    })),
   ];
 
   return (
@@ -107,7 +111,7 @@ export async function IdealoCategoryPage({
               }
             >
               <AsyncTopBar
-                categoryName={category.name}
+                categoryName={formatTechText(category.name)}
                 searchParams={searchParams}
                 productDataPromise={productDataPromise}
               />

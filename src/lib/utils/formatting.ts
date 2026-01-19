@@ -85,21 +85,92 @@ export function formatRatingDE(rating: number): string {
 }
 
 /**
+ * Casing map for specific tech terms that should have fixed casing.
+ */
+const TECH_TERMS_MAP: Record<string, string> = {
+  ssd: "SSD",
+  ssds: "SSDs",
+  hdd: "HDD",
+  hdds: "HDDs",
+  tv: "TV",
+  tvs: "TVs",
+  gpu: "GPU",
+  gpus: "GPUs",
+  cpu: "CPU",
+  cpus: "CPUs",
+  ram: "RAM",
+  psu: "PSU",
+  psus: "PSUs",
+  nvme: "NVMe",
+  sata: "SATA",
+  oled: "OLED",
+  qled: "QLED",
+  led: "LED",
+  usb: "USB",
+  hdmi: "HDMI",
+  pci: "PCI",
+  pcie: "PCIe",
+  atx: "ATX",
+  itx: "ITX",
+  ddr4: "DDR4",
+  ddr5: "DDR5",
+  wlan: "WLAN",
+  lan: "LAN",
+  ups: "UPS",
+  usv: "USV",
+  ips: "IPS",
+  va: "VA",
+  tn: "TN",
+};
+
+/**
+ * Regex components for units and abbreviations
+ */
+const TECH_REGEX = new RegExp(
+  `\\b(${Object.keys(TECH_TERMS_MAP).join("|")})\\b`,
+  "gi",
+);
+const UNIT_REGEX =
+  /\b(\d+)\s*(gb|tb|mb|kb|mhz|ghz|wh|w|core|cores|bits|bit)\b/gi;
+
+/**
+ * Smartly format tech-heavy text (fixing abbreviations and units)
+ */
+export function formatTechText(text: string): string {
+  if (!text) return text;
+
+  let formatted = text;
+
+  // 1. Fix known abbreviations using the mapping
+  formatted = formatted.replace(TECH_REGEX, (match) => {
+    return TECH_TERMS_MAP[match.toLowerCase()] || match;
+  });
+
+  // 2. Fix Units (e.g., "2tb" -> "2 TB", "6000mhz" -> "6000 MHz")
+  formatted = formatted.replace(UNIT_REGEX, (_, val, unit) => {
+    const uppercaseUnit =
+      unit.toLowerCase() === "core" || unit.toLowerCase() === "cores"
+        ? unit.toLowerCase()
+        : unit.toUpperCase();
+    return `${val} ${uppercaseUnit}`;
+  });
+
+  return formatted;
+}
+
+/**
  * Clean up long product titles for display (e.g., in cards and breadcrumbs)
  * Preserves model identifiers while removing extra metadata.
  */
 export function formatDisplayTitle(title: string, model?: string): string {
   if (!title) return "";
 
-  // Refined title splitting logic
-  // We look for separators like " - ", "(", "|", or a comma followed by a space ", "
-  // This preserves internal dashes in model numbers like "i7-12700K"
+  // 1. Initial split to remove noise (everything after separators)
   const splitTitle = title.split(/ \- | \(| \||, /)[0].trim();
 
-  // Use the split title as the primary source, fallback to model if split result is too short
-  if (splitTitle.length > 3) {
-    return splitTitle;
-  }
+  // 2. Use refined source
+  let result = splitTitle.length > 3 ? splitTitle : model || title;
 
-  return model || title;
+  // 3. Apply smart tech formatting (SSD, 2 TB, etc.)
+  return formatTechText(result);
 }

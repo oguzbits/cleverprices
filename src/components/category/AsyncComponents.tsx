@@ -7,6 +7,7 @@ import { getCategoryFAQs } from "@/lib/category-faqs";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { FilterParams } from "@/lib/server/category-products";
 import { getUniqueFieldValues } from "@/lib/utils/category-utils";
+import { formatTechText } from "@/lib/utils/formatting";
 import { X } from "lucide-react";
 import Link from "next/link";
 import { IdealoFilterPanel } from "./IdealoFilterPanel";
@@ -180,8 +181,10 @@ export async function AsyncProductList({
               </h2>
               <p className="text-idealo-text-secondary mb-6 text-[14px]">
                 Wir konnten in{" "}
-                <span className="font-medium">{category.name}</span> keine
-                Ergebnisse für
+                <span className="font-medium">
+                  {formatTechText(category.name)}
+                </span>{" "}
+                keine Ergebnisse für
                 <span className="mx-1 font-bold">
                   &quot;{filters.search}&quot;
                 </span>{" "}
@@ -204,7 +207,10 @@ export async function AsyncProductList({
               </h2>
               <p className="text-idealo-text-secondary text-[14px]">
                 Wir aggregieren derzeit Preisdaten für{" "}
-                <span className="font-medium">{category.name}</span>.
+                <span className="font-medium">
+                  {formatTechText(category.name)}
+                </span>
+                .
               </p>
             </>
           )}
@@ -220,7 +226,7 @@ export async function AsyncProductList({
         <MobileFilterDrawer
           categorySlug={category.slug}
           unitLabel={unitLabel}
-          categoryName={category.name}
+          categoryName={formatTechText(category.name)}
           productCount={filteredCount}
           filterOptions={filterGroupOptions}
           filterCounts={filterCounts}
@@ -262,7 +268,7 @@ export async function AsyncProductList({
                   }}
                   className="border-idealo-border text-idealo-text-primary focus-visible:ring-idealo-blue flex items-center gap-1 rounded-[4px] border bg-white px-3 py-1 text-[13px] no-underline outline-none hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-offset-1"
                 >
-                  <span>{v as string}</span>
+                  <span>{formatTechText(v as string)}</span>
                   <X className="text-idealo-text-secondary h-3 w-3" />
                 </Link>
               ));
@@ -320,7 +326,7 @@ export async function AsyncProductList({
                   className="text-idealo-blue focus-visible:ring-idealo-blue flex items-center gap-2 rounded-[2px] py-1.5 text-[14px] outline-none hover:underline focus-visible:ring-2 focus-visible:ring-offset-1"
                 >
                   <Icon className="text-idealo-text-secondary h-4 w-4" />
-                  <span>{related.name}</span>
+                  <span>{formatTechText(related.name)}</span>
                 </Link>
               );
             })}
@@ -332,7 +338,7 @@ export async function AsyncProductList({
             <FAQSchema faqs={getCategoryFAQs(category.slug)} />
             <FAQSection
               faqs={getCategoryFAQs(category.slug)}
-              categoryName={category.name}
+              categoryName={formatTechText(category.name)}
             />
           </div>
         )}

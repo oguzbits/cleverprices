@@ -17,7 +17,7 @@ import {
 } from "@/lib/countries";
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { cn } from "@/lib/utils";
-import { formatDisplayTitle } from "@/lib/utils/formatting";
+import { formatDisplayTitle, formatTechText } from "@/lib/utils/formatting";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -206,7 +206,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                     onSelect={() => handleSelect(getCategoryPath(cat.slug))}
                     className="cursor-pointer"
                   >
-                    {cat.name}
+                    {formatTechText(cat.name)}
                   </CommandItem>
                 ))}
             </CommandGroup>
@@ -234,11 +234,11 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                     <div className="flex w-full items-center justify-between">
                       <div className="flex items-baseline gap-2">
                         <span className="font-bold text-[#2d2d2d]">
-                          {cat.name}
+                          {formatTechText(cat.name)}
                         </span>
                         {cat.path && (
                           <span className="text-muted-foreground text-[13px]">
-                            - in {cat.path}
+                            - in {formatTechText(cat.path)}
                           </span>
                         )}
                       </div>
@@ -263,7 +263,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                         {formatDisplayTitle(product.title)}
                       </span>
                       <span className="text-muted-foreground shrink-0 text-[12px]">
-                        - in {product.categoryName}
+                        - in {formatTechText(product.categoryName)}
                       </span>
                     </div>
                   </CommandItem>

@@ -24,7 +24,11 @@ import Image from "next/image";
 
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { type LeanProduct } from "@/lib/types";
-import { formatCurrency, formatDisplayTitle } from "@/lib/utils/formatting";
+import {
+  formatCurrency,
+  formatDisplayTitle,
+  formatTechText,
+} from "@/lib/utils/formatting";
 import { IdealoStarRating } from "./IdealoStarRating";
 
 interface IdealoGridCardProps {
@@ -127,11 +131,11 @@ export function IdealoGridCard({
               >
                 <span>
                   <p className="sr-productSummary__mainDetails productSummary__mainDetails--categoryPage">
-                    <span>{descriptionParts.join(", ")}</span>
+                    <span>{formatTechText(descriptionParts.join(", "))}</span>
                   </p>
                   {product.variationAttributes && (
                     <p className="mt-1 text-[11px] font-medium text-orange-600">
-                      Version: {product.variationAttributes}
+                      Version: {formatTechText(product.variationAttributes)}
                     </p>
                   )}
                 </span>
