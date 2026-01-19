@@ -1,14 +1,15 @@
 import { db } from "@/db";
 import { prices, products } from "@/db/schema";
-import { and, desc, eq, gt, or, sql } from "drizzle-orm";
-import { unstable_cache } from "next/cache";
-import { CATEGORY_REVALIDATE_SECONDS } from "@/lib/site-config";
+import { DEFAULT_COUNTRY } from "@/lib/countries";
 import {
   Product,
+  litePriceColumns,
   liteProductColumns,
   mapDbProduct,
 } from "@/lib/product-registry";
-import { DEFAULT_COUNTRY } from "@/lib/countries";
+import { CATEGORY_REVALIDATE_SECONDS } from "@/lib/site-config";
+import { and, desc, eq, gt, or, sql } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 
 /**
  * Get all deal products across all categories using a highly optimized single query.
@@ -24,7 +25,7 @@ export const getAllDeals = unstable_cache(
     const results = await db
       .select({
         product: liteProductColumns,
-        price: prices,
+        price: litePriceColumns,
       })
       .from(products)
       .innerJoin(prices, eq(products.id, prices.productId))

@@ -31,13 +31,13 @@ const nextConfig: NextConfig = {
   // Cache Life Profiles for Next.js 16 "use cache"
   cacheLife: {
     category: {
-      stale: 3600, // 1 hour (Accuracy vs Vercel Free Plan balance)
-      revalidate: 3600,
+      stale: 14400, // 4 hours
+      revalidate: 14400,
       expire: 86400, // 24 hours
     },
     product: {
-      stale: 7200, // 2 hours
-      revalidate: 7200,
+      stale: 21600, // 6 hours
+      revalidate: 21600,
       expire: 604800,
     },
     static: {

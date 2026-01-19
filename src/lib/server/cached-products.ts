@@ -1,19 +1,21 @@
 "use cache";
 
+import { type PriceHistoryRecord } from "@/db/schema";
+import { cacheLife } from "next/cache";
+import { type CountryCode } from "../countries";
+import { dataAggregator } from "../data-sources";
 import {
   getAllProductSlugs as getAllProductSlugsSync,
   getAllProducts as getAllProductsSync,
   getBestDeals as getBestDealsSync,
   getDiverseMostPopular as getDiverseMostPopularSync,
-  getProductBySlug as getProductBySlugSync,
-  getProductPriceHistory as getProductPriceHistorySync,
   getMostPopular as getMostPopularSync,
   getNewArrivals as getNewArrivalsSync,
+  getProductBySlug as getProductBySlugSync,
+  getProductPriceHistory as getProductPriceHistorySync,
   getSimilarProducts as getSimilarProductsSync,
   type Product,
 } from "../product-registry";
-import { type PriceHistoryRecord } from "@/db/schema";
-import { cacheLife } from "next/cache";
 
 /**
  * Cached server-side wrappers for product registry functions
@@ -79,6 +81,14 @@ export async function getProductPriceHistory(
 ): Promise<PriceHistoryRecord[]> {
   cacheLife("product" as any);
   return getProductPriceHistorySync(productId);
+}
+
+export async function getUnifiedProduct(
+  asin: string,
+  countryCode: CountryCode,
+) {
+  cacheLife("product" as any); // Use the same 6h cache life
+  return dataAggregator.fetchProduct(asin, countryCode);
 }
 
 export async function getSimilarProducts(

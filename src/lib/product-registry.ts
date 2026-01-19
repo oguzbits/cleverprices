@@ -257,7 +257,6 @@ function indexPricesById<T extends PriceWithProductId>(
 import { cache } from "react";
 
 // Use React.cache for per-request deduplication (Vercel Best Practices: server-cache-react)
-// Use React.cache for per-request deduplication (Vercel Best Practices: server-cache-react)
 export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
   stripHeavyData: boolean = false,
@@ -271,7 +270,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 
     const ids = prods.map((p) => p.id);
     const prs = await db
-      .select()
+      .select(litePriceColumns)
       .from(prices)
       .where(inArray(prices.productId, ids));
 
@@ -537,7 +536,7 @@ export async function searchProducts(
       .where(inArray(products.id, ids));
 
     const prs = await db
-      .select()
+      .select(litePriceColumns)
       .from(prices)
       .where(inArray(prices.productId, ids));
 
@@ -572,7 +571,7 @@ export async function searchProducts(
     if (fallbackProds.length === 0) return [];
     const fallbackIds = fallbackProds.map((p) => p.id);
     const fallbackPrs = await db
-      .select()
+      .select(litePriceColumns)
       .from(prices)
       .where(inArray(prices.productId, fallbackIds));
 
@@ -607,7 +606,7 @@ export async function getProductsByBrand(
 
   const ids = prods.map((p) => p.id);
   const prs = await db
-    .select()
+    .select(litePriceColumns)
     .from(prices)
     .where(inArray(prices.productId, ids));
 
@@ -640,7 +639,7 @@ const getCachedDeals = unstable_cache(
     const results = await db
       .select({
         product: liteProductColumns,
-        price: prices,
+        price: litePriceColumns,
       })
       .from(products)
       .innerJoin(prices, eq(products.id, prices.productId))
@@ -673,7 +672,7 @@ export async function getBestDeals(
   if (isScript) {
     // Fallback for scripts where unstable_cache might not be available or needed
     const results = await db
-      .select({ product: liteProductColumns, price: prices })
+      .select({ product: liteProductColumns, price: litePriceColumns })
       .from(products)
       .innerJoin(prices, eq(products.id, prices.productId))
       .where(
@@ -719,7 +718,7 @@ const getCachedPopular = unstable_cache(
 
     const ids = prods.map((p) => p.id);
     const prs = await db
-      .select()
+      .select(litePriceColumns)
       .from(prices)
       .where(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
@@ -756,7 +755,7 @@ export async function getMostPopular(
 
     const ids = prods.map((p) => p.id);
     const prs = await db
-      .select()
+      .select(litePriceColumns)
       .from(prices)
       .where(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
@@ -808,7 +807,7 @@ export async function getDiverseMostPopular(
     .where(inArray(products.id, ids));
 
   const prs = await db
-    .select()
+    .select(litePriceColumns)
     .from(prices)
     .where(
       and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
@@ -851,7 +850,7 @@ const getCachedNew = unstable_cache(
 
     const ids = prods.map((p) => p.id);
     const prs = await db
-      .select()
+      .select(litePriceColumns)
       .from(prices)
       .where(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
@@ -888,7 +887,7 @@ export async function getNewArrivals(
 
     const ids = prods.map((p) => p.id);
     const prs = await db
-      .select()
+      .select(litePriceColumns)
       .from(prices)
       .where(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
