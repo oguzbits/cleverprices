@@ -1,104 +1,121 @@
 # CleverPrices Agent Guidelines
 
-This file contains project-specific rules for AI code generation. These rules are **mandatory** and must be followed for all code changes.
+**This is the Single Source of Truth.** Read this FIRST before writing any code.
 
 ---
 
-## 🚫 Banned Patterns
+## 🏗️ Technology Stack
 
-These patterns are **CRITICAL VIOLATIONS** and must never be used:
-
-### Database Operations
-
-| Pattern                                 | Why It's Banned                            | Use Instead                             |
-| --------------------------------------- | ------------------------------------------ | --------------------------------------- |
-| `OFFSET` pagination on large tables     | Causes $O(N^2)$ read costs                 | Keyset pagination (`WHERE id > lastId`) |
-| `SELECT *`                              | Transfers unnecessary data, wastes reads   | Select explicit columns                 |
-| `db.delete(table)` without `--force`    | Accidental data loss                       | Require `--force` CLI flag              |
-| Unbounded `Promise.all(array.map(...))` | Can spawn thousands of concurrent requests | Bounded parallelism (max 5-10)          |
-
-### Script Safety
-
-| Pattern                           | Why It's Banned                 | Use Instead                     |
-| --------------------------------- | ------------------------------- | ------------------------------- |
-| Destructive ops without `--force` | Accidental deletions            | Require explicit `--force` flag |
-| No `--dry-run` support            | Can't preview impact            | Always implement `--dry-run`    |
-| Blind upserts                     | Wastes writes on unchanged data | Value-based diffing first       |
+| Technology         | Version | Key Notes                                                    |
+| ------------------ | ------- | ------------------------------------------------------------ |
+| **Next.js**        | 16.0.10 | App Router, `cacheComponents: true`                          |
+| **React**          | 19.2.3  | Server Components, `'use cache'` directive                   |
+| **React Compiler** | Enabled | Handles `useMemo`, `useCallback`, `React.memo` automatically |
+| **Tailwind CSS**   | 4.x     | See `.agent/skills/tailwind-v4/`                             |
+| **Drizzle ORM**    | 0.45.x  | See `.agent/skills/drizzle-orm/`                             |
 
 ---
 
-## ✅ Required Patterns
+## 🚫 BANNED PATTERNS (Never Use)
 
-### 1. Keyset Pagination (Seek Method)
+### Next.js 16 Deprecated
 
-Always use for iterating over large datasets:
+| ❌ Banned           | ✅ Use Instead                        |
+| ------------------- | ------------------------------------- |
+| `middleware.ts`     | Route handlers, server actions        |
+| `useMemo()`         | React Compiler handles this           |
+| `useCallback()`     | React Compiler handles this           |
+| `React.memo()`      | React Compiler handles this           |
+| `fetchCache` export | `'use cache'` at file/component level |
 
-```typescript
-let lastId = 0;
-while (true) {
-  const batch = await db
-    .select()
-    .from(table)
-    .where(gt(table.id, lastId))
-    .orderBy(asc(table.id))
-    .limit(1000);
-  if (batch.length === 0) break;
-  lastId = batch[batch.length - 1].id;
-}
-```
+### Caching Notes
 
-### 2. Bounded Parallelism
+| Pattern                 | Status     | Notes                                                                        |
+| ----------------------- | ---------- | ---------------------------------------------------------------------------- |
+| `'use cache'` directive | ✅ Primary | Use with `cacheLife('profile')`                                              |
+| `unstable_cache()`      | ⚠️ Legacy  | Still used for function-level caching, but prefer `'use cache'` for new code |
+| `React.cache()`         | ✅ OK      | For per-request deduplication                                                |
 
-Limit concurrent operations to prevent resource exhaustion:
+### Database Anti-Patterns
 
-```typescript
-const CONCURRENCY = 5;
-for (let i = 0; i < batches.length; i += CONCURRENCY) {
-  const wave = batches.slice(i, i + CONCURRENCY);
-  await Promise.all(wave.map(processBatch));
-}
-```
-
-### 3. Value-Based Diffing
-
-Only write if data has changed:
-
-```typescript
-const current = await db.select().from(prices).where(eq(prices.id, id));
-if (newPrice !== current.price) {
-  await db.update(prices).set({ price: newPrice });
-}
-```
-
-### 4. CLI Safety Flags
-
-All data-modifying scripts must support:
-
-```typescript
-const isDryRun = process.argv.includes("--dry-run");
-const isForce = process.argv.includes("--force");
-
-if (!isForce && !isDryRun) {
-  console.error("❌ Destructive operation requires --force.");
-  process.exit(1);
-}
-```
+| ❌ Banned                                   | ✅ Use Instead                           |
+| ------------------------------------------- | ---------------------------------------- |
+| `OFFSET` pagination                         | Keyset pagination (`WHERE id > lastId`)  |
+| `SELECT *` or `.findMany()` without columns | `liteProductColumns`, `litePriceColumns` |
+| `db.delete(table)` without `--force`        | Require CLI safety flag                  |
+| Unbounded `Promise.all()`                   | Bounded parallelism (max 5-10)           |
+| Writes without value-diffing                | Fetch current state, compare, then write |
 
 ---
 
-## 📚 Reference Documentation
+## ✅ REQUIRED PATTERNS
 
-- **Database Economics:** See `docs/TURSO_OPTIMIZATION.md`
-- **Maintenance Engine:** See `docs/WORKER.md`
-- **Drizzle Patterns:** See `.agent/skills/drizzle-orm/SKILL.md`
+### Caching (Next.js 16)
+
+```typescript
+"use cache";
+import { cacheLife } from "next/cache";
+
+export async function getCategoryProducts() {
+  cacheLife("category"); // Uses profile from next.config.ts
+  // ... data fetching
+}
+```
+
+### Database Queries
+
+Use **liteColumns** for list views (see `.agent/skills/drizzle-orm/rules/query-lite-columns.md`):
+
+```typescript
+// ✅ Good: Lite columns for category/search pages
+const prods = await db.select(liteProductColumns).from(products);
+const prs = await db.select(litePriceColumns).from(prices);
+
+// ❌ Bad: Full select (wastes reads on heavy JSON fields)
+const prods = await db.query.products.findMany();
+```
+
+### CLI Scripts
+
+All destructive scripts MUST support:
+
+- `--dry-run`: Preview without executing
+- `--force`: Required for deletions/overwrites
 
 ---
 
-## 🔒 Resource Limits
+## 🔒 RESOURCE LIMITS
 
-| Resource         | Free Tier Limit | Safety Threshold                        |
-| ---------------- | --------------- | --------------------------------------- |
-| Turso Writes     | 10M rows/month  | Abort if > 500K in single run           |
-| Turso Reads      | 1B rows/month   | Use keyset pagination                   |
-| Keepa Tokens     | ~1,000/hour     | Reserve 100 for enrichment              |
-| Vercel Execution | 60s (Hobby)     | Set `timeout-minutes: 10` in GH Actions |
+| Resource             | Free Tier Limit        | Safety Rule                        |
+| -------------------- | ---------------------- | ---------------------------------- |
+| **Turso Reads**      | 500M rows/month        | Use liteColumns, keyset pagination |
+| **Turso Writes**     | 10M rows/month         | Value-diff before writes           |
+| **Keepa Tokens**     | 20/min, 1,200/hour cap | Reserve 100 for enrichment         |
+| **Vercel Execution** | 60s (Hobby)            | Use streaming + Suspense           |
+
+---
+
+## 📋 PRE-IMPLEMENTATION CHECKLIST
+
+Before writing code, verify:
+
+- [ ] Read the relevant skill file?
+- [ ] Using `'use cache'` + `cacheLife()` for new caching code?
+- [ ] Not using deprecated patterns (middleware, useMemo, etc.)?
+- [ ] Using `liteColumns` for list views, full columns only for detail pages?
+- [ ] Algorithm is O(N) or better? (No OFFSET, no N+1 queries)
+- [ ] Script has `--dry-run` and `--force` flags?
+- [ ] Parallelism bounded to max 5-10?
+
+---
+
+## 📚 SKILL REFERENCES
+
+| Domain          | Skill Location                                       |
+| --------------- | ---------------------------------------------------- |
+| Database        | `.agent/skills/drizzle-orm/SKILL.md`                 |
+| React/Next.js   | `.agent/skills/vercel-react-best-practices/SKILL.md` |
+| Tailwind CSS    | `.agent/skills/tailwind-v4/SKILL.md`                 |
+| SEO             | `.agent/skills/modern-seo/SKILL.md`                  |
+| Web Design      | `.agent/skills/web-design-guidelines/SKILL.md`       |
+| Turso Economics | `docs/TURSO_OPTIMIZATION.md`                         |

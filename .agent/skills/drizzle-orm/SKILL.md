@@ -21,6 +21,7 @@ Comprehensive guide with 11 rules across 4 categories.
 ### Query Optimization
 
 - **Select Columns**: CRITICAL - avoid SELECT \* ([Rule](rules/query-select-columns.md))
+- **Lite Columns**: Use liteProductColumns/litePriceColumns for lists ([Rule](rules/query-lite-columns.md))
 - **Relational Query Builder**: Cleaner joins ([Rule](rules/query-rqb.md))
 - **Filters**: Type-safe WHERE ([Rule](rules/query-filters.md))
 - **Aggregations**: COUNT, AVG, MIN/MAX ([Rule](rules/query-aggregations.md))
