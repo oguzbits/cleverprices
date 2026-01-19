@@ -143,18 +143,44 @@ async function getCachedLocalizedCategoryProducts(
       const displayListPrice =
         refPrice && refPrice > price ? refPrice : undefined;
 
-      // 3. Price per Unit (MB for calculation, normalized back to GB/TB in UI)
-      const capacityMB =
-        p.capacityUnit === "TB"
-          ? p.capacity * 1024 * 1024
-          : p.capacityUnit === "GB"
-            ? p.capacity * 1024
-            : p.capacity;
-      const pricePerUnit = capacityMB > 0 ? (price / capacityMB) * 1024 : 0;
-
-      // --- CAPACITY NORMALIZATION & SNAP ---
+      // 3. Storage Capacity Extraction (fallback for incorrect data like '1 stück')
+      let capacity = p.capacity;
+      let capacityUnit = p.capacityUnit || "";
       let normCap = p.normalizedCapacity || 0;
 
+      if (
+        ["hard-drives", "ssds", "external-storage", "storage", "nas"].includes(
+          categorySlug,
+        ) &&
+        (capacity === 1 || !normCap || normCap === 0)
+      ) {
+        // Try to parse title for capacity: "16TB", "16 TB", "500GB", etc.
+        const capMatch = (title || "").match(/(\d+(?:\.\d+)?)\s?(TB|GB)/i);
+        if (capMatch) {
+          const val = parseFloat(capMatch[1]);
+          const unit = capMatch[2].toUpperCase();
+          if (unit === "TB") {
+            normCap = val * 1000;
+            capacity = val;
+            capacityUnit = "TB";
+          } else {
+            normCap = val;
+            capacity = val;
+            capacityUnit = "GB";
+          }
+        }
+      }
+
+      // 4. Price per Unit (MB for calculation, normalized back to GB/TB in UI)
+      const capacityMB =
+        capacityUnit === "TB"
+          ? capacity * 1024 * 1024
+          : capacityUnit === "GB"
+            ? capacity * 1024
+            : capacity;
+      const pricePerUnit = capacityMB > 0 ? (price / capacityMB) * 1024 : 0;
+
+      // --- SNAP NORMALIZATION ---
       // 1. Thresholding: Filter out low-capacity trash/accessories from SSDs/HDDs
       if (
         (categorySlug === "ssds" || categorySlug === "hard-drives") &&
@@ -174,7 +200,7 @@ async function getCachedLocalizedCategoryProducts(
         }
       }
 
-      // 4. Return PRUNED object
+      // 5. Return PRUNED object
       return {
         id: p.id || 0,
         slug: p.slug,
@@ -192,8 +218,8 @@ async function getCachedLocalizedCategoryProducts(
         reviewCount: p.reviewCount || 0,
         salesRank: p.salesRank,
         condition: p.condition,
-        capacity: p.capacity,
-        capacityUnit: p.capacityUnit,
+        capacity,
+        capacityUnit,
         normalizedCapacity: normCap,
         formFactor: p.formFactor,
         technology: p.technology || "",
@@ -213,38 +239,25 @@ export type FilterCounts = Record<string, Record<string, number>>;
 
 /**
  * Calculate how many products match each filter option value.
- * This enables showing counts like "(213)" next to each filter checkbox.
  */
 function calculateFilterCounts(
   products: LocalizedProduct[],
   filterGroups: { field: string }[],
 ): FilterCounts {
   const counts: FilterCounts = {};
-
-  // Initialize all filter fields
   filterGroups.forEach((group) => {
     counts[group.field] = {};
   });
-
-  // Also count brands always (common filter)
   counts["brand"] = {};
-
-  // Count occurrences for each product
   products.forEach((p) => {
-    // Brand counts
     if (p.brand) {
       counts["brand"][p.brand] = (counts["brand"][p.brand] || 0) + 1;
     }
-
-    // Dynamic filter group counts
     filterGroups.forEach((group) => {
-      let value;
-      if (group.field === "capacity") {
-        value = p.normalizedCapacity;
-      } else {
-        value = (p as any)[group.field];
-      }
-
+      let value =
+        group.field === "capacity"
+          ? p.normalizedCapacity
+          : (p as any)[group.field];
       if (
         value !== undefined &&
         value !== null &&
@@ -257,8 +270,75 @@ function calculateFilterCounts(
       }
     });
   });
-
   return counts;
+}
+
+/**
+ * Calculate smart price range buckets based on current product distribution
+ */
+function calculatePriceRangeBuckets(products: LocalizedProduct[]) {
+  if (products.length === 0) return [];
+  const prices = products
+    .map((p) => p.price)
+    .filter((p) => p > 0)
+    .sort((a, b) => a - b);
+  if (prices.length === 0) return [];
+
+  const min = Math.floor(prices[0]);
+  const max = Math.ceil(prices[prices.length - 1]);
+
+  if (prices.length < 10) {
+    if (min === max) return [{ label: `${min} €`, min, max }];
+    return [{ label: `${min} € bis ${max} €`, min, max }];
+  }
+
+  // Calculate quantiles for 4 buckets
+  const q1 = prices[Math.floor(prices.length * 0.25)];
+  const q2 = prices[Math.floor(prices.length * 0.5)];
+  const q3 = prices[Math.floor(prices.length * 0.75)];
+
+  // Round to nearest 5 or 10 for cleaner UI
+  const roundPrice = (p: number) => {
+    if (p > 500) return Math.round(p / 50) * 50;
+    if (p > 100) return Math.round(p / 10) * 10;
+    return Math.round(p / 5) * 5;
+  };
+
+  const r1 = roundPrice(q1);
+  const r2 = roundPrice(q2);
+  const r3 = roundPrice(q3);
+
+  // Filter out duplicates if ranges are too tight
+  const uniquePoints = Array.from(new Set([r1, r2, r3])).sort((a, b) => a - b);
+
+  if (uniquePoints.length === 0)
+    return [{ label: `${min} € bis ${max} €`, min, max }];
+
+  const buckets = [];
+  // First bucket
+  buckets.push({
+    label: `bis ${uniquePoints[0]} €`,
+    min: null,
+    max: uniquePoints[0],
+  });
+
+  // Middle buckets
+  for (let i = 0; i < uniquePoints.length - 1; i++) {
+    buckets.push({
+      label: `${uniquePoints[i]} € bis ${uniquePoints[i + 1]} €`,
+      min: uniquePoints[i],
+      max: uniquePoints[i + 1],
+    });
+  }
+
+  // Last bucket
+  buckets.push({
+    label: `ab ${uniquePoints[uniquePoints.length - 1]} €`,
+    min: uniquePoints[uniquePoints.length - 1],
+    max: null,
+  });
+
+  return buckets;
 }
 
 /**
@@ -273,11 +353,13 @@ export async function getCategoryProducts(
   const localizedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v24",
+    "v25",
   );
 
   const category = allCategories[categorySlug as CategorySlug];
   const unitLabel = category?.unitType || "TB";
+  // ... (mappedSort and filters parsing unchanged)
+
   const mappedSort = filterParams.sort
     ? mapSortParam(filterParams.sort)
     : { sortBy: filterParams.sortBy, sortOrder: filterParams.sortOrder };
@@ -354,6 +436,81 @@ export async function getCategoryProducts(
     filters.sortOrder,
   ) as LocalizedProduct[];
 
+  // Calculate dynamic filter counts based on the CURRENT context
+  const dynamicFilterCounts: FilterCounts = {};
+  if (category?.filterGroups) {
+    category.filterGroups.forEach((group) => {
+      // For capacity, we must use the 'capacity' field from the filter state
+      const otherFilters = { ...filters };
+      delete (otherFilters as any)[group.field];
+
+      const productsForThisGroup = filterProducts(
+        localizedProducts,
+        otherFilters,
+        categorySlug,
+        unitLabel,
+      );
+
+      dynamicFilterCounts[group.field] = {};
+
+      productsForThisGroup.forEach((p) => {
+        let value =
+          group.field === "capacity"
+            ? p.normalizedCapacity
+            : (p as any)[group.field];
+        if (
+          value !== undefined &&
+          value !== null &&
+          value !== "" &&
+          value !== 0
+        ) {
+          const strValue = String(value);
+          dynamicFilterCounts[group.field][strValue] =
+            (dynamicFilterCounts[group.field][strValue] || 0) + 1;
+        }
+      });
+    });
+
+    // Ensure brand is always handled if not in filterGroups
+    if (!dynamicFilterCounts["brand"]) {
+      const otherFilters = { ...filters };
+      delete (otherFilters as any)["brand"];
+      const productsForBrand = filterProducts(
+        localizedProducts,
+        otherFilters,
+        categorySlug,
+        unitLabel,
+      );
+      dynamicFilterCounts["brand"] = {};
+      productsForBrand.forEach((p) => {
+        if (p.brand)
+          dynamicFilterCounts["brand"][p.brand] =
+            (dynamicFilterCounts["brand"][p.brand] || 0) + 1;
+      });
+    }
+  }
+
+  // Calculate context-aware max price (matching all filters EXCEPT price)
+  const productsMatchingNonPrice = filterProducts(
+    localizedProducts,
+    { ...filters, minPrice: null, maxPrice: null },
+    categorySlug,
+    unitLabel,
+  );
+
+  const contextMinPrice =
+    productsMatchingNonPrice.length > 0
+      ? Math.floor(Math.min(...productsMatchingNonPrice.map((p) => p.price)))
+      : 0;
+
+  const contextMaxPrice =
+    productsMatchingNonPrice.length > 0
+      ? Math.ceil(Math.max(...productsMatchingNonPrice.map((p) => p.price)))
+      : 1000;
+
+  // Calculate dynamic price ranges
+  const priceRanges = calculatePriceRangeBuckets(productsMatchingNonPrice);
+
   let paginatedProducts = sorted;
   let pagination = null;
 
@@ -365,12 +522,7 @@ export async function getCategoryProducts(
   const end = start + pageSize;
   paginatedProducts = sorted.slice(start, end);
 
-  pagination = {
-    currentPage: page,
-    totalPages,
-    pageSize,
-    totalItems,
-  };
+  pagination = { currentPage: page, totalPages, pageSize, totalItems };
 
   return {
     products: paginatedProducts,
@@ -380,26 +532,17 @@ export async function getCategoryProducts(
     unitLabel,
     hasProducts: localizedProducts.length > 0,
     filters,
-    filterCounts: category?.filterGroups
-      ? calculateFilterCounts(localizedProducts, category.filterGroups)
-      : {},
-    maxPriceInCategory:
-      localizedProducts.length > 0
-        ? Math.ceil(
-            localizedProducts.reduce(
-              (max, p) => (p.price > max ? p.price : max),
-              0,
-            ),
-          )
-        : 1000,
+    filterCounts: dynamicFilterCounts,
+    minPriceInCategory: contextMinPrice,
+    maxPriceInCategory: contextMaxPrice,
+    priceRanges,
     lastUpdated:
       localizedProducts.length > 0
         ? localizedProducts.reduce(
-            (latest, p) => {
-              if (p.lastUpdated && (!latest || p.lastUpdated > latest))
-                return p.lastUpdated;
-              return latest;
-            },
+            (latest, p) =>
+              p.lastUpdated && (!latest || p.lastUpdated > latest)
+                ? p.lastUpdated
+                : latest,
             null as string | null,
           )
         : null,

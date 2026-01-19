@@ -20,6 +20,8 @@ interface MobileFilterDrawerProps {
   productCount: number;
   filterOptions?: Record<string, string[]>;
   filterCounts?: FilterCounts;
+  priceRanges?: { label: string; min: number | null; max: number | null }[];
+  minPriceInCategory?: number;
   maxPriceInCategory?: number;
 }
 
@@ -30,6 +32,8 @@ export function MobileFilterDrawer({
   productCount,
   filterOptions = {},
   filterCounts = {},
+  priceRanges = [],
+  minPriceInCategory = 0,
   maxPriceInCategory = 1000,
 }: MobileFilterDrawerProps) {
   const [open, setOpen] = React.useState(false);
@@ -123,6 +127,8 @@ export function MobileFilterDrawer({
               isMobile={true}
               filterOptions={filterOptions}
               filterCounts={filterCounts}
+              priceRanges={priceRanges}
+              minPriceInCategory={minPriceInCategory}
               maxPriceInCategory={maxPriceInCategory}
             />
           </div>

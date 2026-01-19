@@ -21,6 +21,8 @@ interface IdealoFilterBarProps {
   onFilterChange?: () => void;
   filterOptions?: Record<string, string[]>;
   filterCounts?: FilterCounts;
+  priceRanges?: { label: string; min: number | null; max: number | null }[];
+  minPriceInCategory?: number;
   maxPriceInCategory?: number;
 }
 
@@ -233,6 +235,8 @@ export function IdealoFilterPanel({
   onFilterChange,
   filterOptions = {},
   filterCounts = {},
+  priceRanges = [],
+  minPriceInCategory = 0,
   maxPriceInCategory = 1000,
 }: IdealoFilterBarProps) {
   const [filters, setFilters] = useFilters();
@@ -261,15 +265,8 @@ export function IdealoFilterPanel({
         return a.localeCompare(b, undefined, { numeric: true });
       });
 
-      // Filter out options with 0 count (unless selected)
-      options[group.field] = sorted.filter((opt) => {
-        const count = filterCounts[group.field]?.[opt] || 0;
-        // Keep if count > 0 OR if currently selected
-        const currentSelected = (filters as any)[group.field] || [];
-        const isSelected =
-          Array.isArray(currentSelected) && currentSelected.includes(opt);
-        return count > 0 || isSelected;
-      });
+      // DO NOT filter out options with 0 count to avoid "jumping" UI
+      options[group.field] = sorted;
     });
     return options;
   }, [category, filterOptions, filterCounts, filters]);
@@ -319,7 +316,7 @@ export function IdealoFilterPanel({
                 <input
                   type="number"
                   inputMode="decimal"
-                  placeholder="von"
+                  placeholder={minPriceInCategory.toString()}
                   value={filters.minPrice?.toString() || ""}
                   onChange={(e) =>
                     setFilters({
@@ -341,7 +338,7 @@ export function IdealoFilterPanel({
                 <input
                   type="number"
                   inputMode="decimal"
-                  placeholder="bis"
+                  placeholder={maxPriceInCategory.toString()}
                   value={filters.maxPrice?.toString() || ""}
                   onChange={(e) =>
                     setFilters({
@@ -372,15 +369,15 @@ export function IdealoFilterPanel({
             {/* Price Slider */}
             <div className="px-1 py-2">
               <PriceRangeSlider
-                min={0}
+                min={minPriceInCategory}
                 max={maxPriceInCategory}
                 value={[
-                  filters.minPrice ?? 0,
+                  filters.minPrice ?? minPriceInCategory,
                   filters.maxPrice ?? maxPriceInCategory,
                 ]}
                 onChange={([min, max]) => {
                   setFilters({
-                    minPrice: min === 0 ? null : min,
+                    minPrice: min === minPriceInCategory ? null : min,
                     maxPrice: max === maxPriceInCategory ? null : max,
                   });
                   if (onFilterChange) onFilterChange();
@@ -390,12 +387,15 @@ export function IdealoFilterPanel({
 
             {/* Price Ranges Wrapper */}
             <div className="sr-priceBox__rangesWrapper_fhTcS mt-3 space-y-1">
-              {[
-                { label: "bis 130 €", min: null, max: 130 },
-                { label: "130 € bis 330 €", min: 130, max: 330 },
-                { label: "330 € bis 940 €", min: 330, max: 940 },
-                { label: "ab 940 €", min: 940, max: null },
-              ].map((range, idx) => {
+              {(priceRanges.length > 0
+                ? priceRanges
+                : [
+                    { label: "bis 130 €", min: null, max: 130 },
+                    { label: "130 € bis 330 €", min: 130, max: 330 },
+                    { label: "330 € bis 940 €", min: 330, max: 940 },
+                    { label: "ab 940 €", min: 940, max: null },
+                  ]
+              ).map((range, idx) => {
                 const isSelected =
                   filters.minPrice === range.min &&
                   filters.maxPrice === range.max;
@@ -515,22 +515,40 @@ export function IdealoFilterPanel({
                   {filteredOptions
                     .slice(0, isExpanded ? undefined : 6)
                     .map((option) => {
-                      const count = filterCounts?.[group.field]?.[option];
+                      const count = filterCounts?.[group.field]?.[option] || 0;
+                      const isSelected = currentValues.includes(option);
+                      const isNoResults = count === 0 && !isSelected;
+
                       return (
                         <label
                           key={option}
-                          className="group/item flex cursor-pointer items-center justify-between py-1"
+                          className={cn(
+                            "group/item flex items-center justify-between py-1",
+                            isNoResults
+                              ? "cursor-not-allowed opacity-50"
+                              : "cursor-pointer",
+                          )}
                         >
                           <div className="flex items-center gap-3">
                             <Checkbox
                               id={`${group.field}-${option}`}
-                              checked={currentValues.includes(option)}
+                              checked={isSelected}
+                              disabled={isNoResults}
                               onCheckedChange={() =>
                                 toggleCheckbox(group.field, option)
                               }
                               className="h-[18px] w-[18px] rounded-[3px] border-[#B4B4B4] bg-white data-[state=checked]:border-[#0771D0] data-[state=checked]:bg-[#0771D0]"
                             />
-                            <span className="text-[13px] text-[#2d2d2d] group-hover/item:text-[#0771D0]">
+                            <span
+                              className={cn(
+                                "text-[13px]",
+                                isSelected
+                                  ? "font-bold text-[#0771D0]"
+                                  : "text-[#2d2d2d]",
+                                !isNoResults &&
+                                  "group-hover/item:text-[#0771D0]",
+                              )}
+                            >
                               {formatOptionLabel(
                                 option,
                                 group.field,
@@ -538,11 +556,9 @@ export function IdealoFilterPanel({
                               )}
                             </span>
                           </div>
-                          {count !== undefined && count > 0 && (
-                            <span className="text-[13px] text-[#767676]">
-                              {count}
-                            </span>
-                          )}
+                          <span className="text-[13px] text-[#767676]">
+                            {count}
+                          </span>
                         </label>
                       );
                     })}

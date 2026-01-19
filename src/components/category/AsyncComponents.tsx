@@ -62,8 +62,10 @@ export async function AsyncFilterPanel({
     filteredCount,
     unitLabel,
     hasProducts,
-    filterCounts: filteredCounts, // counts from current filtered set (if we wanted restrictive filters)
+    filterCounts,
+    minPriceInCategory,
     maxPriceInCategory,
+    priceRanges,
   } = filteredData;
 
   // Pre-calculate filter options using ALL data (to show all available options)
@@ -85,7 +87,7 @@ export async function AsyncFilterPanel({
 
   // Use filter counts from filteredData to show how many items match current filters?
   // Or from allData to show global counts? Idealo usually shows counts for current context.
-  // category-products.ts returns `filterCounts` calculated from `localizedProducts` (the result of getCachedLocalizedCategoryProducts).
+  // category-products.ts returns `filterCounts` calculated from `localizedProducts` (the result of getCached localizedCategoryProducts).
 
   // Actually, `getCategoryProducts` returns `filterCounts` based on the *result set* if it was just returning filtered prods?
   // No, `getCategoryProducts` calculates counts from `localizedProducts` (which is ALL products in category) then filters.
@@ -103,7 +105,9 @@ export async function AsyncFilterPanel({
         unitLabel={unitLabel}
         filterOptions={filterGroupOptions}
         filterCounts={filteredData.filterCounts}
+        minPriceInCategory={minPriceInCategory}
         maxPriceInCategory={maxPriceInCategory}
+        priceRanges={priceRanges}
       />
     </aside>
   );
@@ -135,7 +139,9 @@ export async function AsyncProductList({
     hasProducts,
     filters,
     filterCounts,
+    minPriceInCategory,
     maxPriceInCategory,
+    priceRanges,
     lastUpdated,
     pagination,
   } = data;
@@ -218,7 +224,9 @@ export async function AsyncProductList({
           productCount={filteredCount}
           filterOptions={filterGroupOptions}
           filterCounts={filterCounts}
+          minPriceInCategory={minPriceInCategory}
           maxPriceInCategory={maxPriceInCategory}
+          priceRanges={priceRanges}
         />
       </div>
 
