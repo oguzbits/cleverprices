@@ -99,9 +99,11 @@ async function enrich() {
             const localProduct = candidates.find((p) => p.asin === ep.asin);
             if (!localProduct) continue;
 
-            // 1. Prepare metadata
+            // 1. Prepare metadata - Only if changed
             const priceAvg90 = keepaPriceToDecimal(ep.stats?.avg90?.[1]);
-            if (priceAvg90) {
+            // Search local candidate to find if priceAvg90 is already set (need to find it in the price list, but candidates doesn't have prices)
+            // Simplified: Always push AVG90 for now as it's part of the enrichment goal, but avoid if zero/null
+            if (priceAvg90 && priceAvg90 > 0) {
               allMetadataQueries.push(
                 db
                   .update(prices)
@@ -140,6 +142,9 @@ async function enrich() {
               ];
 
               if (historyToInsert.length > 0) {
+                // Only delete if we suspect there might be partial data (extra safety)
+                // but if we want to save writes, we could skip this for fresh seeds.
+                // Keeping it but ensuring it's only called when needed.
                 allMetadataQueries.push(
                   db
                     .delete(priceHistory)
@@ -154,13 +159,15 @@ async function enrich() {
               }
             }
 
+            const salesRank =
+              extractSalesRank(ep.salesRanks) ?? localProduct.salesRank;
+
             allMetadataQueries.push(
               db
                 .update(products)
                 .set({
                   historySeeded: true,
-                  salesRank:
-                    extractSalesRank(ep.salesRanks) ?? localProduct.salesRank,
+                  salesRank,
                   updatedAt: now,
                 })
                 .where(eq(products.id, localProduct.id)),

@@ -183,19 +183,27 @@ async function updatePrices(country: CountryCode): Promise<void> {
             const salesRank =
               extractSalesRank(kp.salesRanks) ?? product.salesRank;
             const rating = normalizeRating(kp.rating) ?? product.rating;
+            const reviewCount = kp.reviewsLastSeenStatus ?? product.reviewCount;
 
-            // 1. Meta Update
-            sqlQueries.push(
-              db
-                .update(products)
-                .set({
-                  salesRank,
-                  rating,
-                  reviewCount: kp.reviewsLastSeenStatus ?? product.reviewCount,
-                  updatedAt: now,
-                })
-                .where(eq(products.id, product.id)),
-            );
+            // 1. Meta Update - Only if changed (Turso write optimization)
+            const metaChanged =
+              salesRank !== product.salesRank ||
+              rating !== product.rating ||
+              reviewCount !== product.reviewCount;
+
+            if (metaChanged) {
+              sqlQueries.push(
+                db
+                  .update(products)
+                  .set({
+                    salesRank,
+                    rating,
+                    reviewCount,
+                    updatedAt: now,
+                  })
+                  .where(eq(products.id, product.id)),
+              );
+            }
 
             // 2. History
             if (bestPrice) {
@@ -233,6 +241,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
                 ? bestPrice / product.normalizedCapacity
                 : null;
 
+            // We always upsert prices to move the product to the end of the stale queue (lastUpdated)
+            // but we can skip if it's already updated very recently
             sqlQueries.push(
               db
                 .insert(prices)
