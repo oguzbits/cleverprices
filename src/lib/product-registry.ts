@@ -151,7 +151,9 @@ export function mapDbProduct(
       if (price && pr.country) {
         pricesObj[pr.country] = price;
         if (pr.lastUpdated) {
-          pricesLastUpdatedObj[pr.country] = pr.lastUpdated.toISOString();
+          pricesLastUpdatedObj[pr.country] = new Date(
+            pr.lastUpdated,
+          ).toISOString();
         }
         if (pr.priceAvg30) avg30Obj[pr.country] = pr.priceAvg30;
         if (pr.priceAvg90) avg90Obj[pr.country] = pr.priceAvg90;
@@ -193,7 +195,7 @@ export function mapDbProduct(
     priceHistory: stripHeavyData
       ? []
       : historyList.map((h) => ({
-          date: (h.recordedAt || new Date()).toISOString(),
+          date: new Date(h.recordedAt || new Date()).toISOString(),
           price: h.price,
         })),
     rating: p.rating || 0,
@@ -206,7 +208,7 @@ export function mapDbProduct(
     priceAvg30: avg30Obj,
     priceAvg90: avg90Obj,
     listPrice: listPricesObj,
-    createdAt: p.createdAt ? p.createdAt.toISOString() : undefined,
+    createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
   };
 
   return calculateProductMetrics(item) as Product;

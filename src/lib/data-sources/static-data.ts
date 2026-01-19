@@ -78,16 +78,6 @@ export class StaticDataSource implements DataSourceProvider {
     }
   }
 
-  async fetchProduct(
-    productId: string,
-    country: CountryCode,
-  ): Promise<UnifiedProduct | null> {
-    // For static data, we'd need to know the category or search all categories
-    // This is a limitation of the static approach
-    console.warn("fetchProduct not efficiently supported for static data");
-    return null;
-  }
-
   /**
    * Load category data from JSON files
    */

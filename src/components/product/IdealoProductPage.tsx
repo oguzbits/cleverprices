@@ -286,7 +286,7 @@ async function CachedPriceChart({ productId }: { productId: number }) {
   if (!history || history.length === 0) return null;
 
   const chartHistory = history.map((h) => ({
-    date: h.recordedAt.toISOString(),
+    date: new Date(h.recordedAt).toISOString(),
     price: h.price,
   }));
 
