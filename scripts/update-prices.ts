@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
 import {
   db,
   NewPriceHistoryRecord,
@@ -110,18 +110,39 @@ async function updatePrices(country: CountryCode): Promise<void> {
   // Check if we have enough tokens to attempt parallel execution
   // conservatively assuming 1 token per product + overhead
   const status = await getTokenStatus();
-  if (status.tokensLeft < batches.length * 20) {
+
+  // RESERVE tokens for Enrichment (at least 200-300)
+  const MIN_RESERVE_FOR_ENRICHMENT = 250;
+  const availableForUpdate = Math.max(
+    0,
+    status.tokensLeft - MIN_RESERVE_FOR_ENRICHMENT,
+  );
+  const maxProductsToFetch = Math.min(asins.length, availableForUpdate);
+
+  if (maxProductsToFetch < asins.length) {
     console.log(
-      `\n⚠️ Low tokens (${status.tokensLeft}). Switching to sequential processing.`,
+      `\n⚠️ Token management: Limiting update to ${maxProductsToFetch} products to reserve ${MIN_RESERVE_FOR_ENRICHMENT} tokens for enrichment.`,
     );
-    // Fallback to sequential if critical (implementation omitted for brevity, logic remains similar but keeping parallel for now as aggressive optimization)
-    // Actually, let's just proceed. The token bucket is shared. Parallization just drains it faster.
+    // Truncate batches to fit within available tokens
+    const truncatedAsins = asins.slice(0, maxProductsToFetch);
+    const truncatedBatches = [];
+    for (let i = 0; i < truncatedAsins.length; i += 100) {
+      truncatedBatches.push(truncatedAsins.slice(i, i + 100));
+    }
+    batches.length = 0;
+    batches.push(...truncatedBatches);
+  }
+
+  if (batches.length === 0) {
+    console.log(
+      "  No tokens available for price update. Skipping to enrichment.",
+    );
+    return;
   }
 
   console.log(`  Processing ${batches.length} batches in parallel...`);
 
   // Bounded Parallelism: Process batches in groups to balance speed vs stability
-  // 3 parallel batches = ~300 products/time. Safe for tokens & DB, fast enough for <1min avg.
   const BATCH_CONCURRENCY = 3;
 
   console.log(
@@ -146,8 +167,27 @@ async function updatePrices(country: CountryCode): Promise<void> {
             includeHistory: false,
           });
 
+          if (keepaProducts.length === 0) return;
+
+          // Optimization: Batch fetch today's history for all products in this batch
+          const startOfDay = new Date();
+          startOfDay.setHours(0, 0, 0, 0);
+
+          const batchProductIds = keepaProducts
+            .map((kp) => productMap.get(kp.asin)?.id)
+            .filter((id): id is number => id !== undefined);
+
+          const existingHistoryToday = await db.query.priceHistory.findMany({
+            where: and(
+              inArray(priceHistory.productId, batchProductIds),
+              eq(priceHistory.country, country),
+              sql`${priceHistory.recordedAt} >= ${startOfDay.getTime()}`,
+            ),
+          });
+
           // Process in parallel chunks to speed up DB writes
-          const WRITER_CONCURRENCY = 5;
+          // Increased concurrency as Turso/SQLite can handle it fine for single updates
+          const WRITER_CONCURRENCY = 50;
           for (let j = 0; j < keepaProducts.length; j += WRITER_CONCURRENCY) {
             const chunk = keepaProducts.slice(j, j + WRITER_CONCURRENCY);
 
@@ -176,11 +216,11 @@ async function updatePrices(country: CountryCode): Promise<void> {
                 const salesRank =
                   extractSalesRank(kp.salesRanks) ?? product.salesRank;
                 const rating = normalizeRating(kp.rating) ?? product.rating;
-                const now = new Date(); // Consistent timestamp for all updates
+                const now = new Date();
 
                 try {
                   await withRetry(async () => {
-                    // Update product meta
+                    // 1. Update product meta
                     await db
                       .update(products)
                       .set({
@@ -194,121 +234,78 @@ async function updatePrices(country: CountryCode): Promise<void> {
                       })
                       .where(eq(products.id, product.id));
 
-                    // Get existing price record
-                    const existingPrice = await db.query.prices.findFirst({
-                      where: (p, { and, eq }) =>
-                        and(
-                          eq(p.productId, product.id),
-                          eq(p.country, country),
-                        ),
-                    });
-
+                    // 2. Price History Logic (Optimized using batch-fetched history)
                     if (bestPrice) {
-                      // Calculate price per unit
-                      let pricePerUnit: number | null = null;
-                      if (
-                        product.normalizedCapacity &&
-                        product.normalizedCapacity > 0
-                      ) {
-                        pricePerUnit = bestPrice / product.normalizedCapacity;
-                      }
+                      const todayRecord = existingHistoryToday.find(
+                        (h) => h.productId === product.id,
+                      );
 
-                      // Daily Minimum Logic (Idealo style)
-                      const startOfDay = new Date(now);
-                      startOfDay.setHours(0, 0, 0, 0);
-
-                      const existingHistoryToday =
-                        await db.query.priceHistory.findFirst({
-                          where: and(
-                            eq(priceHistory.productId, product.id),
-                            eq(priceHistory.country, country),
-                            sql`${priceHistory.recordedAt} >= ${startOfDay.getTime()}`,
-                          ),
-                        });
-
-                      if (bestPrice) {
-                        if (existingHistoryToday) {
-                          // Update only if this is a better price than the one we already saw today
-                          if (bestPrice < existingHistoryToday.price) {
-                            await db
-                              .update(priceHistory)
-                              .set({
-                                price: bestPrice,
-                                recordedAt: now, // Update timestamp to show when the low occurred
-                              })
-                              .where(
-                                eq(priceHistory.id, existingHistoryToday.id),
-                              );
-                          }
-                        } else {
-                          // No record for today yet, insert current as baseline
-                          await db.insert(priceHistory).values({
-                            productId: product.id,
-                            country,
-                            price: bestPrice,
-                            currency,
-                            priceType: amazonPrice ? "amazon" : "new",
-                            recordedAt: now,
-                          });
+                      if (todayRecord) {
+                        if (bestPrice < todayRecord.price) {
+                          await db
+                            .update(priceHistory)
+                            .set({
+                              price: bestPrice,
+                              recordedAt: now,
+                            })
+                            .where(eq(priceHistory.id, todayRecord.id));
                         }
-                      }
-
-                      // Update statistical averages (Free with the daily product fetch)
-                      const avg30Raw = kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW];
-                      const avg90Raw = kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW];
-                      const priceAvg30 = keepaPriceToDecimal(avg30Raw);
-                      const priceAvg90 = keepaPriceToDecimal(avg90Raw);
-
-                      // Update or insert current price
-                      if (existingPrice) {
-                        await db
-                          .update(prices)
-                          .set({
-                            amazonPrice,
-                            newPrice,
-                            usedPrice,
-                            warehousePrice,
-                            pricePerUnit,
-                            priceAvg30: priceAvg30 ?? existingPrice.priceAvg30,
-                            priceAvg90: priceAvg90 ?? existingPrice.priceAvg90,
-                            lastUpdated: now,
-                          })
-                          .where(eq(prices.id, existingPrice.id));
                       } else {
-                        await db.insert(prices).values({
+                        await db.insert(priceHistory).values({
                           productId: product.id,
                           country,
+                          price: bestPrice,
+                          currency,
+                          priceType: amazonPrice ? "amazon" : "new",
+                          recordedAt: now,
+                        });
+                      }
+                    }
+
+                    // 3. Upsert Price Record (DRY & Fast)
+                    const pricePerUnit =
+                      product.normalizedCapacity &&
+                      product.normalizedCapacity > 0 &&
+                      bestPrice
+                        ? bestPrice / product.normalizedCapacity
+                        : null;
+
+                    const priceAvg30 = keepaPriceToDecimal(
+                      kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
+                    );
+                    const priceAvg90 = keepaPriceToDecimal(
+                      kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
+                    );
+
+                    await db
+                      .insert(prices)
+                      .values({
+                        productId: product.id,
+                        country,
+                        amazonPrice,
+                        newPrice,
+                        usedPrice,
+                        warehousePrice,
+                        pricePerUnit,
+                        priceAvg30,
+                        priceAvg90,
+                        currency,
+                        source: "keepa",
+                        lastUpdated: now,
+                      })
+                      .onConflictDoUpdate({
+                        target: [prices.productId, prices.country],
+                        set: {
                           amazonPrice,
                           newPrice,
                           usedPrice,
                           warehousePrice,
                           pricePerUnit,
-                          priceAvg30,
-                          priceAvg90,
-                          currency,
-                          source: "keepa",
+                          priceAvg30: priceAvg30 ?? sql`${prices.priceAvg30}`,
+                          priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
                           lastUpdated: now,
-                        });
-                      }
-                    } else if (existingPrice) {
-                      // EVEN if no price found today, update lastUpdated so it's no longer "stale"
-                      await db
-                        .update(prices)
-                        .set({
-                          lastUpdated: now,
-                        })
-                        .where(eq(prices.id, existingPrice.id));
-                    } else {
-                      // No existing price record and no price found today
-                      // Create a skeleton record to mark as checked
-                      await db.insert(prices).values({
-                        productId: product.id,
-                        country,
-                        currency,
-                        source: "keepa",
-                        lastUpdated: now,
+                        },
                       });
-                    }
                   });
 
                   updated++;
