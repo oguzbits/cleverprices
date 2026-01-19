@@ -1,11 +1,6 @@
+import { execSync } from "child_process";
 import { and, asc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
-import {
-  db,
-  NewPriceHistoryRecord,
-  priceHistory,
-  prices,
-  products,
-} from "../src/db";
+import { db, priceHistory, prices, products } from "../src/db";
 import { withRetry } from "../src/db/utils";
 import type { CountryCode } from "../src/lib/countries";
 import {
@@ -14,7 +9,6 @@ import {
   isKeepaConfigured,
   KEEPA_DOMAINS,
 } from "../src/lib/keepa/product-discovery";
-import { execSync } from "child_process";
 import {
   extractSalesRank,
   keepaPriceToDecimal,
@@ -185,147 +179,146 @@ async function updatePrices(country: CountryCode): Promise<void> {
             ),
           });
 
-          // Process in parallel chunks to speed up DB writes
-          // Increased concurrency as Turso/SQLite can handle it fine for single updates
-          const WRITER_CONCURRENCY = 50;
-          for (let j = 0; j < keepaProducts.length; j += WRITER_CONCURRENCY) {
-            const chunk = keepaProducts.slice(j, j + WRITER_CONCURRENCY);
+          // PREPARE BATCH QUERIES
+          const sqlQueries: any[] = [];
+          const now = new Date();
 
-            await Promise.all(
-              chunk.map(async (kp) => {
-                const product = productMap.get(kp.asin);
-                if (!product) return;
+          for (const kp of keepaProducts) {
+            const product = productMap.get(kp.asin);
+            if (!product) continue;
 
-                const currentPrices = kp.stats?.current || [];
-                const amazonPrice = keepaPriceToDecimal(
-                  currentPrices[KEEPA_PRICE_TYPES.AMAZON],
-                );
-                const newPrice = keepaPriceToDecimal(
-                  currentPrices[KEEPA_PRICE_TYPES.NEW],
-                );
-                const usedPrice = keepaPriceToDecimal(
-                  currentPrices[KEEPA_PRICE_TYPES.USED],
-                );
-                const warehousePrice = keepaPriceToDecimal(
-                  currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
-                );
-
-                const bestPrice = amazonPrice ?? newPrice;
-
-                // Update Product Meta (Sales Rank & Ratings)
-                const salesRank =
-                  extractSalesRank(kp.salesRanks) ?? product.salesRank;
-                const rating = normalizeRating(kp.rating) ?? product.rating;
-                const now = new Date();
-
-                try {
-                  await withRetry(async () => {
-                    // 1. Update product meta
-                    await db
-                      .update(products)
-                      .set({
-                        salesRank,
-                        rating,
-                        reviewCount:
-                          kp.reviewsLastSeenStatus !== undefined
-                            ? kp.reviewsLastSeenStatus
-                            : product.reviewCount,
-                        updatedAt: now,
-                      })
-                      .where(eq(products.id, product.id));
-
-                    // 2. Price History Logic (Optimized using batch-fetched history)
-                    if (bestPrice) {
-                      const todayRecord = existingHistoryToday.find(
-                        (h) => h.productId === product.id,
-                      );
-
-                      if (todayRecord) {
-                        if (bestPrice < todayRecord.price) {
-                          await db
-                            .update(priceHistory)
-                            .set({
-                              price: bestPrice,
-                              recordedAt: now,
-                            })
-                            .where(eq(priceHistory.id, todayRecord.id));
-                        }
-                      } else {
-                        await db.insert(priceHistory).values({
-                          productId: product.id,
-                          country,
-                          price: bestPrice,
-                          currency,
-                          priceType: amazonPrice ? "amazon" : "new",
-                          recordedAt: now,
-                        });
-                      }
-                    }
-
-                    // 3. Upsert Price Record (DRY & Fast)
-                    const pricePerUnit =
-                      product.normalizedCapacity &&
-                      product.normalizedCapacity > 0 &&
-                      bestPrice
-                        ? bestPrice / product.normalizedCapacity
-                        : null;
-
-                    const priceAvg30 = keepaPriceToDecimal(
-                      kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
-                    );
-                    const priceAvg90 = keepaPriceToDecimal(
-                      kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
-                    );
-
-                    await db
-                      .insert(prices)
-                      .values({
-                        productId: product.id,
-                        country,
-                        amazonPrice,
-                        newPrice,
-                        usedPrice,
-                        warehousePrice,
-                        pricePerUnit,
-                        priceAvg30,
-                        priceAvg90,
-                        currency,
-                        source: "keepa",
-                        lastUpdated: now,
-                      })
-                      .onConflictDoUpdate({
-                        target: [prices.productId, prices.country],
-                        set: {
-                          amazonPrice,
-                          newPrice,
-                          usedPrice,
-                          warehousePrice,
-                          pricePerUnit,
-                          priceAvg30: priceAvg30 ?? sql`${prices.priceAvg30}`,
-                          priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
-                          lastUpdated: now,
-                        },
-                      });
-                  });
-
-                  updated++;
-                } catch (productError) {
-                  console.error(
-                    `  Failed to update product ${product.asin}:`,
-                    productError,
-                  );
-                  failed++;
-                }
-              }),
+            const currentPrices = kp.stats?.current || [];
+            const amazonPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.AMAZON],
             );
-          } // End of chunk loop
+            const newPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.NEW],
+            );
+            const usedPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.USED],
+            );
+            const warehousePrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
+            );
+            const bestPrice = amazonPrice ?? newPrice;
+
+            // Update Product Meta (Sales Rank & Ratings)
+            const salesRank =
+              extractSalesRank(kp.salesRanks) ?? product.salesRank;
+            const rating = normalizeRating(kp.rating) ?? product.rating;
+
+            // 1. Product Meta Update
+            sqlQueries.push(
+              db
+                .update(products)
+                .set({
+                  salesRank,
+                  rating,
+                  reviewCount:
+                    kp.reviewsLastSeenStatus !== undefined
+                      ? kp.reviewsLastSeenStatus
+                      : product.reviewCount,
+                  updatedAt: now,
+                })
+                .where(eq(products.id, product.id)),
+            );
+
+            // 2. Price History Logic
+            if (bestPrice) {
+              const todayRecord = existingHistoryToday.find(
+                (h) => h.productId === product.id,
+              );
+              if (todayRecord) {
+                if (bestPrice < todayRecord.price) {
+                  sqlQueries.push(
+                    db
+                      .update(priceHistory)
+                      .set({ price: bestPrice, recordedAt: now })
+                      .where(eq(priceHistory.id, todayRecord.id)),
+                  );
+                }
+              } else {
+                sqlQueries.push(
+                  db.insert(priceHistory).values({
+                    productId: product.id,
+                    country,
+                    price: bestPrice,
+                    currency,
+                    priceType: amazonPrice ? "amazon" : "new",
+                    recordedAt: now,
+                  }),
+                );
+              }
+            }
+
+            // 3. Current Price Upsert
+            const pricePerUnit =
+              product.normalizedCapacity &&
+              product.normalizedCapacity > 0 &&
+              bestPrice
+                ? bestPrice / product.normalizedCapacity
+                : null;
+
+            const priceAvg30 = keepaPriceToDecimal(
+              kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
+            );
+            const priceAvg90 = keepaPriceToDecimal(
+              kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
+            );
+
+            sqlQueries.push(
+              db
+                .insert(prices)
+                .values({
+                  productId: product.id,
+                  country,
+                  amazonPrice,
+                  newPrice,
+                  usedPrice,
+                  warehousePrice,
+                  pricePerUnit,
+                  priceAvg30,
+                  priceAvg90,
+                  currency,
+                  source: "keepa",
+                  lastUpdated: now,
+                })
+                .onConflictDoUpdate({
+                  target: [prices.productId, prices.country],
+                  set: {
+                    amazonPrice,
+                    newPrice,
+                    usedPrice,
+                    warehousePrice,
+                    pricePerUnit,
+                    priceAvg30: priceAvg30 ?? sql`${prices.priceAvg30}`,
+                    priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
+                    lastUpdated: now,
+                  },
+                }),
+            );
+          }
+
+          // EXECUTE ALL IN ONE BATCH (One HTTP round-trip per 100 products)
+          if (sqlQueries.length > 0) {
+            try {
+              await withRetry(async () => {
+                // Cast to any to bypass strict tuple length requirements for arbitrary batches
+                await (db as any).batch(sqlQueries);
+              });
+              updated += keepaProducts.length;
+            } catch (err) {
+              console.error(`  Batch failed for ${batchAbsIndex + 1}:`, err);
+              failed += keepaProducts.length;
+            }
+          }
         } catch (error) {
           console.error(`  Error fetching batch:`, error);
           failed += batch.length;
         }
       }),
     );
-  }
+  } // End of wave loop
 
   console.log(`  ✓ Updated: ${updated}, Failed: ${failed}`);
 
