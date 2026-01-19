@@ -16,7 +16,7 @@
  *   bun run scripts/collect-price-history.ts all
  */
 
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import {
   db,
   products,
@@ -44,16 +44,7 @@ async function collectHistoryForCountry(
 ): Promise<{ recorded: number; skipped: number }> {
   console.log(`\n📊 Collecting price history for ${country.toUpperCase()}...`);
 
-  // Get all products with prices for this country
-  const allPrices = await db.query.prices.findMany({
-    where: eq(prices.country, country),
-    with: {
-      // We need the product relation - but since we haven't set up relations,
-      // we'll do a manual join approach
-    },
-  });
-
-  // For now, get prices directly
+  // 1. Get all current prices for this country from local DB
   const pricesWithProducts = await db
     .select({
       productId: prices.productId,
@@ -67,11 +58,39 @@ async function collectHistoryForCountry(
     .from(prices)
     .where(eq(prices.country, country));
 
+  if (pricesWithProducts.length === 0) {
+    console.log("  No prices found for this country.");
+    return { recorded: 0, skipped: 0 };
+  }
+
+  // 2. Fetch all history recorded today to avoid N+1 checks
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayMs = today.getTime();
+
+  console.log(`  🔍 Checking existing records for today...`);
+  const existingRecords = await db
+    .select({
+      productId: priceHistory.productId,
+      priceType: priceHistory.priceType,
+    })
+    .from(priceHistory)
+    .where(
+      and(
+        eq(priceHistory.country, country),
+        sql`${priceHistory.recordedAt} >= ${todayMs}`,
+      ),
+    );
+
+  const existingMap = new Set(
+    existingRecords.map((r) => `${r.productId}-${r.priceType}`),
+  );
+
   let recorded = 0;
   let skipped = 0;
+  const historyBatch: NewPriceHistoryRecord[] = [];
 
   for (const priceRecord of pricesWithProducts) {
-    // Get the best available price
     const bestPrice = priceRecord.amazonPrice ?? priceRecord.newPrice;
 
     if (!bestPrice) {
@@ -79,60 +98,66 @@ async function collectHistoryForCountry(
       continue;
     }
 
-    // Check if we already have a record for today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const priceType = priceRecord.amazonPrice ? "amazon" : "new";
+    const key = `${priceRecord.productId}-${priceType}`;
 
-    const existingToday = await db.query.priceHistory.findFirst({
-      where: and(
-        eq(priceHistory.productId, priceRecord.productId),
-        eq(priceHistory.country, country),
-        eq(priceHistory.priceType, "amazon"),
-      ),
-      orderBy: (ph, { desc }) => [desc(ph.recordedAt)],
-    });
-
-    // Skip if we already recorded today (within 23 hours)
-    if (existingToday) {
-      const lastRecorded = new Date(existingToday.recordedAt);
-      const hoursSinceLastRecord =
-        (Date.now() - lastRecorded.getTime()) / (1000 * 60 * 60);
-
-      if (hoursSinceLastRecord < 23) {
-        skipped++;
-        continue;
-      }
+    // Skip if we already recorded this type today
+    if (existingMap.has(key)) {
+      skipped++;
+      continue;
     }
 
-    // Record Amazon/New price
-    const historyRecord: NewPriceHistoryRecord = {
+    // Prepare Amazon/New price
+    historyBatch.push({
       productId: priceRecord.productId,
       country,
       price: bestPrice,
       currency: priceRecord.currency,
-      priceType: priceRecord.amazonPrice ? "amazon" : "new",
+      priceType: priceType as any,
       recordedAt: new Date(),
-    };
+    });
 
-    await db.insert(priceHistory).values(historyRecord);
-    recorded++;
-
-    // Also record used price if available
-    if (priceRecord.usedPrice) {
-      await db.insert(priceHistory).values({
-        ...historyRecord,
+    // Also record used price if available and missing
+    if (
+      priceRecord.usedPrice &&
+      !existingMap.has(`${priceRecord.productId}-used`)
+    ) {
+      historyBatch.push({
+        productId: priceRecord.productId,
+        country,
         price: priceRecord.usedPrice,
+        currency: priceRecord.currency,
         priceType: "used",
+        recordedAt: new Date(),
       });
     }
 
-    // Also record warehouse price if available
-    if (priceRecord.warehousePrice) {
-      await db.insert(priceHistory).values({
-        ...historyRecord,
+    // Also record warehouse price if available and missing
+    if (
+      priceRecord.warehousePrice &&
+      !existingMap.has(`${priceRecord.productId}-warehouse`)
+    ) {
+      historyBatch.push({
+        productId: priceRecord.productId,
+        country,
         price: priceRecord.warehousePrice,
+        currency: priceRecord.currency,
         priceType: "warehouse",
+        recordedAt: new Date(),
       });
+    }
+
+    recorded++;
+  }
+
+  // 3. Batch Insert history records
+  if (historyBatch.length > 0) {
+    console.log(`  💾 Saving ${historyBatch.length} history points...`);
+    const BATCH_SIZE = 500;
+    for (let i = 0; i < historyBatch.length; i += BATCH_SIZE) {
+      await db
+        .insert(priceHistory)
+        .values(historyBatch.slice(i, i + BATCH_SIZE));
     }
   }
 
@@ -144,10 +169,15 @@ async function collectHistoryForCountry(
  * Get price history statistics
  */
 async function getHistoryStats(): Promise<void> {
-  const totalRecords = await db.select().from(priceHistory);
-  const totalProducts = await db.select().from(products);
+  // Use COUNT(*) for efficiency instead of fetching all rows
+  const [historyRes] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(priceHistory);
+  const [productRes] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(products);
 
-  // Get date range
+  // Get date range using efficient findFirst (which uses indexes)
   const oldest = await db.query.priceHistory.findFirst({
     orderBy: (ph, { asc }) => [asc(ph.recordedAt)],
   });
@@ -157,8 +187,8 @@ async function getHistoryStats(): Promise<void> {
   });
 
   console.log(`\n📈 Price History Statistics:`);
-  console.log(`   Total records:  ${totalRecords.length}`);
-  console.log(`   Total products: ${totalProducts.length}`);
+  console.log(`   Total records:  ${historyRes.count}`);
+  console.log(`   Total products: ${productRes.count}`);
 
   if (oldest && newest) {
     const oldestDate = new Date(oldest.recordedAt).toLocaleDateString();

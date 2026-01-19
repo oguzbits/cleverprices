@@ -1,6 +1,6 @@
 import { createClient } from "@libsql/client";
 import { Database } from "bun:sqlite";
-import { sql } from "drizzle-orm";
+import { sql, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
 import {
   priceHistory,
@@ -178,18 +178,49 @@ async function migrate() {
     }
   }
 
-  // 4. MAP IDS by ASIN
-  console.log("🗺️  Mapping Cloud IDs by ASIN...");
-  const cloudProducts = await db
-    .select({ id: products.id, asin: products.asin })
-    .from(products);
-  const asinToCloudId = new Map(cloudProducts.map((p) => [p.asin, p.id]));
-
   // Pre-fetch LOCAL ASINs to avoid N queries
+  console.log("🗺️  Pre-fetching local ASINs...");
   const allLocalProducts = localDb
     .prepare("SELECT id, asin FROM products")
     .all() as any[];
   const localIdToAsin = new Map(allLocalProducts.map((p) => [p.id, p.asin]));
+
+  // 4. MAP IDS by ASIN
+  // Optimization: Instead of fetching ALL products from cloud, we only fetch what we need for the prices/offers/history
+  console.log("🗺️  Mapping Cloud IDs by ASIN (batched)...");
+  const asinToCloudId = new Map<string, number>();
+
+  // Collect all unique ASINs from local data that we need to map
+  const localAsinSet = new Set<string>();
+  localProducts.forEach((p) => localAsinSet.add(p.asin));
+  localPrices.forEach((pr) => {
+    const asin = localIdToAsin.get(pr.product_id);
+    if (asin) localAsinSet.add(asin);
+  });
+  localOffers.forEach((off) => {
+    const asin = localIdToAsin.get(off.product_id);
+    if (asin) localAsinSet.add(asin);
+  });
+  localHistory.forEach((h) => {
+    const asin = localIdToAsin.get(h.product_id);
+    if (asin) localAsinSet.add(asin);
+  });
+
+  const allAsinsToMap = Array.from(localAsinSet);
+  const mappingBatchSize = 1000;
+
+  for (let i = 0; i < allAsinsToMap.length; i += mappingBatchSize) {
+    const batch = allAsinsToMap.slice(i, i + mappingBatchSize);
+    const cloudBatch = await db
+      .select({ id: products.id, asin: products.asin })
+      .from(products)
+      .where(inArray(products.asin, batch));
+
+    cloudBatch.forEach((p) => asinToCloudId.set(p.asin, p.id));
+    console.log(
+      `    ... mapped ${asinToCloudId.size}/${allAsinsToMap.length} ASINs`,
+    );
+  }
 
   const getLocalAsin = (localProductId: number) =>
     localIdToAsin.get(localProductId);

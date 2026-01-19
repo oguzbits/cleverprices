@@ -55,14 +55,46 @@ for (let i = 0; i < historyChunks.length; i += 5) {
 }
 ```
 
+## Read Economics: Avoiding the Read Spike
+
+LibSQL/Turso counts every row touched as a "read." Inefficient pagination can cause your usage to explode exponentially.
+
+### 🚫 The Trap: `OFFSET` Pagination ($O(N^2)$ reads)
+
+When you use `LIMIT 500 OFFSET 900,000`, the database must read and discard 900,000 rows just to give you the 500 you want. If you loop through a table of 1 Million rows using this method, you will perform **~500 Billion reads**.
+
+### ✅ The Solution: Keyset Pagination (Seek Method)
+
+Always use a unique, indexed key (like `id` or `recorded_at`) to "seek" the next batch.
+
+```typescript
+// ✅ SEEK METHOD (Cheap & Scalable)
+let lastId = 0;
+while (true) {
+  const batch = await db
+    .select()
+    .from(table)
+    .where(gt(table.id, lastId))
+    .orderBy(asc(table.id))
+    .limit(limit);
+
+  if (batch.length === 0) break;
+
+  lastId = batch[batch.length - 1].id;
+  // ... process batch
+}
+```
+
 ## Strategy Selection Matrix
 
-| Strategy               | When to Use                                   | Performance                      |
-| :--------------------- | :-------------------------------------------- | :------------------------------- |
-| **Sequential**         | Low volume (1-5 items), simple scripts        | ❌ Slow (O(N) latency)           |
-| **Parallel Batches**   | Metadata updates, per-entity logic            | ✅ Fast (O(1) latency)           |
-| **Flat Bulk**          | High-volume data (History, Logs, 1,000+ rows) | 🚀 Very Fast (Zero congestion)   |
-| **Parallel Flat Bulk** | Extreme data (50,000+ rows)                   | 🔥 Ultra Fast (Latency-Critical) |
+| Strategy               | When to Use                                   | Read Cost (per sync)           | Performance                      |
+| :--------------------- | :-------------------------------------------- | :----------------------------- | :------------------------------- |
+| **Sequential**         | Low volume (1-5 items), simple scripts        | Low                            | ❌ Slow (O(N) latency)           |
+| **Parallel Batches**   | Metadata updates, per-entity logic            | Low                            | ✅ Fast (O(1) latency)           |
+| **OFFSET Pagination**  | **NEVER ON LARGE DATA**                       | 💀 **CATASTROPHIC** ($O(N^2)$) | ❌ Extremely Slow                |
+| **Keyset Pagination**  | Scraping, Pulsing, Syncing Entire Tables      | ✅ Optimal ($O(N)$)            | 🚀 Fast & Scalable               |
+| **Flat Bulk**          | High-volume data (History, Logs, 1,000+ rows) | Low                            | 🚀 Very Fast (Zero congestion)   |
+| **Parallel Flat Bulk** | Extreme data (50,000+ rows)                   | Low                            | 🔥 Ultra Fast (Latency-Critical) |
 
 ## Practical Limits
 
