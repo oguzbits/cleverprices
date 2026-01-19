@@ -1,10 +1,11 @@
 name: Cache Warming
 
+# on:
+#   schedule:
+#     # Runs every 12 hours (at 04:00 and 16:00 UTC)
+#     # Reduced frequency to save GitHub Action minutes
+#     - cron: "0 */4 * * *" # Runs every 4 hours (6 times/day)
 on:
-  schedule:
-    # Runs every 12 hours (at 04:00 and 16:00 UTC)
-    # Reduced frequency to save GitHub Action minutes
-    - cron: "0 */4 * * *" # Runs every 4 hours (6 times/day)
   workflow_dispatch:
 
 jobs:
