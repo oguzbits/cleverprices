@@ -43,16 +43,17 @@ async function pullData() {
       .all() as any[];
     const localCols = localInfo.map((c) => c.name.toLowerCase());
 
-    // Fetch from cloud in batches
-    let offset = 0;
-    const limit = 500;
+    // Fetch from cloud in batches using Keyset Pagination (Seek Method)
+    // This prevents N^2 reads caused by OFFSET on large tables (like price_history with 900k+ rows)
+    let lastId = 0;
+    const limit = 1000;
     let hasMore = true;
     let totalPulled = 0;
 
     while (hasMore) {
       const result = await cloudClient.execute({
-        sql: `SELECT * FROM ${table} LIMIT ? OFFSET ?`,
-        args: [limit, offset],
+        sql: `SELECT * FROM ${table} WHERE id > ? ORDER BY id ASC LIMIT ?`,
+        args: [lastId, limit],
       });
 
       if (result.rows.length === 0) {
@@ -70,7 +71,7 @@ async function pullData() {
         localColsSet.has(col.trim().toLowerCase()),
       );
 
-      if (offset === 0) {
+      if (totalPulled === 0) {
         console.log(`🔍 Table ${table}:`);
         console.log(`   - Local columns: ${localCols.length}`);
         console.log(`   - Cloud columns: ${cloudCols.length}`);
@@ -105,7 +106,14 @@ async function pullData() {
       totalPulled += result.rows.length;
       console.log(`   Fetched ${totalPulled} rows...`);
 
-      offset += limit;
+      // Update lastId for the next batch
+      const lastRow = result.rows[result.rows.length - 1];
+      if (lastRow && typeof lastRow.id === "number") {
+        lastId = lastRow.id;
+      } else if (lastRow && typeof lastRow.id === "bigint") {
+        lastId = Number(lastRow.id);
+      }
+
       if (result.rows.length < limit) {
         hasMore = false;
       }
