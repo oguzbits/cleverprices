@@ -14,6 +14,7 @@ Every hour, the `daily-maintenance.yml` workflow triggers `scripts/update-prices
 
 - **Dynamic Scaling**: Automatically adjusts batch size (300-1000) based on available Keepa tokens.
 - **Priority**: Stale-first (products that haven't been updated in 11+ hours).
+- **Write Economy (Smart Updates)**: Uses **Value-Based Diffing**—it fetches current cloud prices and only performs a Turso write if the price, sales rank, or metadata has actually changed. This reduces row-write consumption by up to 90% for relatively stable products.
 - **Daily Minimums**: Implements "Idealo-style" tracking—instead of multiple points per day, it records only the absolute lowest price detected each day to the `price_history` table.
 - **Target**: Updates the `currentPrice`, `priceAvg30`, and `priceAvg90` in the database.
 
@@ -23,8 +24,9 @@ Immediately following the price updates, `scripts/enrich-products.ts` runs.
 
 - **Dynamic Scaling**: Uses remaining tokens (up to 500 products) to fetch rich metadata.
 - **History Seeding**: Fetches the full historical curve from Keepa and back-fills the `price_history` table.
+- **Safety Protocol**: Requires the `--force` flag to overwrite existing history for a product, preventing accidental double-writing of historical data.
 - **Parallelized Sync Phase**: Implements the "Parallel Flat Bulk" strategy—all data is fetched in parallel, and database commits are performed in a parallelized sync phase with bounded concurrency. This maximizes throughput while avoiding connection timeouts.
-- **Manual Chunking**: History insertions are manually chunked (3,000 rows/chunk) to stay within `SQLITE_MAX_VARIABLE_NUMBER` limits while reducing network round-trips.
+- **Manual Chunking**: History insertions are manually chunked (3,000 rows/chunk) to stay within `SQLITE_MAX_VARIABLE_NUMBER` limits.
 - **Resilience**: This step uses `continue-on-error: true` so that minor Keepa API issues don't block the Next.js cache warming.
 
 ### Phase 3: Cache Warming

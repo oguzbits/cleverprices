@@ -107,23 +107,64 @@ For multi-word queries (e.g., "Samsung S24 Ultra"), the user is looking for a pr
 
 - **Cost Savings**: **-1 Read** per stroke for specific product searches.
 
-## Strategy Selection Matrix
+## Write Economics: Minimizing Rows Written
 
-| Strategy               | When to Use                                   | Read Cost (per sync)           | Performance                      |
-| :--------------------- | :-------------------------------------------- | :----------------------------- | :------------------------------- |
-| **Sequential**         | Low volume (1-5 items), simple scripts        | Low                            | ❌ Slow (O(N) latency)           |
-| **Parallel Batches**   | Metadata updates, per-entity logic            | Low                            | ✅ Fast (O(1) latency)           |
-| **OFFSET Pagination**  | **NEVER ON LARGE DATA**                       | 💀 **CATASTROPHIC** ($O(N^2)$) | ❌ Extremely Slow                |
-| **Keyset Pagination**  | Scraping, Pulsing, Syncing Entire Tables      | ✅ Optimal ($O(N)$)            | 🚀 Fast & Scalable               |
-| **Flat Bulk**          | High-volume data (History, Logs, 1,000+ rows) | Low                            | 🚀 Very Fast (Zero congestion)   |
-| **Parallel Flat Bulk** | Extreme data (50,000+ rows)                   | Low                            | 🔥 Ultra Fast (Latency-Critical) |
-| **Search FastPath**    | High-traffic live search                      | 🔥 **ZERO** (In-Memory/Cache)  | ⚡ Instant                       |
+Every write to Turso costs resources and counts against your monthly quota. We use three strategies to minimize these costs:
 
-## Practical Limits
+### 1. Value-Based Diffing
 
-- **Keepa Batching**: Always fetch data from Keepa in batches of **50-100 ASINs** (API limit).
-- **DB Parallelism**: For the database, processing **50 products in parallel** is the "sweet spot" for performance without saturating the local machine's connection pool.
+Never write if the data hasn't changed. Before performing an `UPDATE` or `UPSERT`, fetch the current state and compare the values.
+
+```typescript
+// ✅ SMART UPDATE (Minimal writes)
+const current = await db.select(...).from(prices).where(...);
+
+if (newPrice !== current.price || statusChanged) {
+  await db.update(prices).set({ price: newPrice, lastUpdated: new Date() }).where(...);
+} else if (isStale(current.lastUpdated)) {
+  // Only update the timestamp if price is same but record is old (>24h)
+  await db.update(prices).set({ lastUpdated: new Date() }).where(...);
+}
+```
+
+### 2. History Suppression
+
+Price history can generate millions of rows. We only record a new history point if:
+
+1.  The price has actually changed from the last known value.
+2.  The new price is significantly lower (new "daily low").
+
+### 3. Smart Seed Skipping
+
+When performing massive migrations (like `deploy-data.ts`), we check the cloud's `history_seeded` status first. If a product is already seeded, we skip the 300+ history inserts for that specific item.
 
 ---
 
-_Last updated: 2026-01-19 by Antigravity_
+## Resource Safety Guardrails
+
+To prevent accidental resource exhaustion or data loss, all management scripts follow the "Safe CLI" protocol:
+
+1.  **Mandatory `--dry-run`**: Every script must support a dry-run mode that logs expected changes without executing them.
+2.  **Explicit `--force`**: Destructive operations (Full Syncs, Deletions, Local Overwrites) require a `--force` flag.
+3.  **Horizontal Cutoffs**: Use `--history-days=X` or `--limit=Y` to test with small batches before committing to a multi-million-row sync.
+
+---
+
+## Strategy Selection Matrix
+
+| Strategy                | When to Use                              | Read Cost                      | Write Cost     | Performance                      |
+| :---------------------- | :--------------------------------------- | :----------------------------- | :------------- | :------------------------------- |
+| **Sequential**          | Low volume (1-5 items), simple scripts   | Low                            | Low            | ❌ Slow (O(N) latency)           |
+| **Parallel Batches**    | Metadata updates, per-entity logic       | Low                            | Medium         | ✅ Fast (O(1) latency)           |
+| **OFFSET Pagination**   | **NEVER ON LARGE DATA**                  | 💀 **CATASTROPHIC** ($O(N^2)$) | Low            | ❌ Extremely Slow                |
+| **Keyset Pagination**   | Scraping, Pulsing, Syncing Entire Tables | ✅ Optimal ($O(N)$)            | Low            | 🚀 Fast & Scalable               |
+| **Value-Based Diffing** | Daily price/sync updates                 | Low (+1 read)                  | 🔥 **MINIMAL** | 🚀 Fast & Safe                   |
+| **Parallel Flat Bulk**  | Extreme data (50,000+ rows)              | Low                            | High           | 🔥 Ultra Fast (Latency-Critical) |
+| **PITR Recovery**       | Restoring accidental deletions           | 🔥 **ZERO**                    | 🔥 **ZERO**    | ⚡ Instant                       |
+
+---
+
+_Last updated: 2026-01-20 by Antigravity_
+
+- **Keepa Batching**: Always fetch data from Keepa in batches of **50-100 ASINs** (API limit).
+  _Last updated: 2026-01-19 by Antigravity_

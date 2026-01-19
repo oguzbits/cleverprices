@@ -31,6 +31,7 @@ Comprehensive guide with 11 rules across 4 categories.
 - **Batch Inserts**: Bulk data ([Rule](rules/patterns-batch.md))
 - **Turso Latency**: Parallel batch optimization ([Rule](rules/patterns-turso-latency.md))
 - **Transactions**: Atomic operations ([Rule](rules/patterns-transactions.md))
+- **Resource Safety**: Protection & Economy ([Rule](rules/patterns-resource-safety.md))
 
 ### Configuration
 

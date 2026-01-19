@@ -15,6 +15,7 @@ import {
 
 async function enrich() {
   const isDryRun = process.argv.includes("--dry-run");
+  const isForce = process.argv.includes("--force");
   // Robust country detection: search for a 2-letter alphabetical code that doesn't start with -
   const countryArg =
     process.argv.slice(2).find((a) => /^[a-zA-Z]{2}$/.test(a)) || "de";
@@ -22,9 +23,16 @@ async function enrich() {
 
   console.log("💎 CleverPrices Product Enrichment");
   console.log(`🌍 Seeding historical data for ${country.toUpperCase()}...`);
-  if (isDryRun)
+
+  if (isDryRun) {
     console.log("🧪 DRY RUN MODE: Database commits will be skipped.");
-  console.log("");
+  }
+
+  if (!isForce && !isDryRun) {
+    console.log(
+      "⚠️  SAFE MODE: History deletion is disabled. Use --force to allow overwriting existing history.",
+    );
+  }
 
   // Robust argument parsing for --limit
   const limitArgIndex = process.argv.findIndex((a) => a.startsWith("--limit"));
@@ -143,18 +151,22 @@ async function enrich() {
 
               if (historyToInsert.length > 0) {
                 // Only delete if we suspect there might be partial data (extra safety)
-                // but if we want to save writes, we could skip this for fresh seeds.
-                // Keeping it but ensuring it's only called when needed.
-                allMetadataQueries.push(
-                  db
-                    .delete(priceHistory)
-                    .where(
-                      and(
-                        eq(priceHistory.productId, localProduct.id),
-                        eq(priceHistory.country, country),
+                if (isForce) {
+                  allMetadataQueries.push(
+                    db
+                      .delete(priceHistory)
+                      .where(
+                        and(
+                          eq(priceHistory.productId, localProduct.id),
+                          eq(priceHistory.country, country),
+                        ),
                       ),
-                    ),
-                );
+                  );
+                } else {
+                  console.log(
+                    `    ⚠️ Skipping history deletion for ${localProduct.asin} (Use --force to overwrite)`,
+                  );
+                }
                 globalHistoryInsertions.push(...historyToInsert);
               }
             }

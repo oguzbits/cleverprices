@@ -13,6 +13,7 @@ jobs:
   sync:
     name: Update Prices & Enrich
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     env:
       KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}

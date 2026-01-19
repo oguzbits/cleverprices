@@ -69,7 +69,11 @@ async function updatePrices(country: CountryCode): Promise<void> {
       salesRank: products.salesRank,
       rating: products.rating,
       reviewCount: products.reviewCount,
-      lastUpdated: prices.lastUpdated,
+      // Current price state for diffing
+      currentAmazonPrice: prices.amazonPrice,
+      currentNewPrice: prices.newPrice,
+      currentUsedPrice: prices.usedPrice,
+      currentLastUpdated: prices.lastUpdated,
     })
     .from(products)
     .leftJoin(
@@ -205,12 +209,24 @@ async function updatePrices(country: CountryCode): Promise<void> {
               );
             }
 
-            // 2. History
+            // 2. Price Diff Checking
+            const usedPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.USED],
+            );
+
+            const priceChanged =
+              amazonPrice !== product.currentAmazonPrice ||
+              newPrice !== product.currentNewPrice ||
+              usedPrice !== product.currentUsedPrice;
+
+            // 3. History (Only if price changed or no record today)
             if (bestPrice) {
               const todayRecord = existingHistoryToday.find(
                 (h) => h.productId === product.id,
               );
+
               if (todayRecord) {
+                // Only update history if the new price is LOWER than today's recorded low
                 if (bestPrice < todayRecord.price) {
                   sqlQueries.push(
                     db
@@ -219,7 +235,9 @@ async function updatePrices(country: CountryCode): Promise<void> {
                       .where(eq(priceHistory.id, todayRecord.id)),
                   );
                 }
-              } else {
+              } else if (priceChanged || !product.currentLastUpdated) {
+                // Only insert new history if the price is different from the last known price
+                // or if we have no price record at all
                 sqlQueries.push(
                   db.insert(priceHistory).values({
                     productId: product.id,
@@ -233,65 +251,68 @@ async function updatePrices(country: CountryCode): Promise<void> {
               }
             }
 
-            // 3. Price Upsert
-            const pricePerUnit =
-              product.normalizedCapacity &&
-              product.normalizedCapacity > 0 &&
-              bestPrice
-                ? bestPrice / product.normalizedCapacity
-                : null;
+            // 4. Price Upsert - Smart Rotation
+            // We always want to update lastUpdated to keep the rotation going,
+            // but we can skip the write if prices haven't changed AND it was updated recently (< 24h)
+            const isVeryFresh =
+              product.currentLastUpdated &&
+              now.getTime() - new Date(product.currentLastUpdated).getTime() <
+                24 * 60 * 60 * 1000;
 
-            // We always upsert prices to move the product to the end of the stale queue (lastUpdated)
-            // but we can skip if it's already updated very recently
-            sqlQueries.push(
-              db
-                .insert(prices)
-                .values({
-                  productId: product.id,
-                  country,
-                  amazonPrice,
-                  newPrice,
-                  usedPrice: keepaPriceToDecimal(
-                    currentPrices[KEEPA_PRICE_TYPES.USED],
-                  ),
-                  warehousePrice: keepaPriceToDecimal(
-                    currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
-                  ),
-                  pricePerUnit,
-                  priceAvg30: keepaPriceToDecimal(
-                    kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
-                  ),
-                  priceAvg90: keepaPriceToDecimal(
-                    kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
-                  ),
-                  currency,
-                  source: "keepa",
-                  lastUpdated: now,
-                })
-                .onConflictDoUpdate({
-                  target: [prices.productId, prices.country],
-                  set: {
+            if (priceChanged || !isVeryFresh) {
+              const pricePerUnit =
+                product.normalizedCapacity &&
+                product.normalizedCapacity > 0 &&
+                bestPrice
+                  ? bestPrice / product.normalizedCapacity
+                  : null;
+
+              sqlQueries.push(
+                db
+                  .insert(prices)
+                  .values({
+                    productId: product.id,
+                    country,
                     amazonPrice,
                     newPrice,
-                    usedPrice: keepaPriceToDecimal(
-                      currentPrices[KEEPA_PRICE_TYPES.USED],
-                    ),
+                    usedPrice,
                     warehousePrice: keepaPriceToDecimal(
                       currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
                     ),
                     pricePerUnit,
-                    priceAvg30:
-                      keepaPriceToDecimal(
-                        kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
-                      ) ?? sql`${prices.priceAvg30}`,
-                    priceAvg90:
-                      keepaPriceToDecimal(
-                        kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
-                      ) ?? sql`${prices.priceAvg90}`,
+                    priceAvg30: keepaPriceToDecimal(
+                      kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
+                    ),
+                    priceAvg90: keepaPriceToDecimal(
+                      kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
+                    ),
+                    currency,
+                    source: "keepa",
                     lastUpdated: now,
-                  },
-                }),
-            );
+                  })
+                  .onConflictDoUpdate({
+                    target: [prices.productId, prices.country],
+                    set: {
+                      amazonPrice,
+                      newPrice,
+                      usedPrice,
+                      warehousePrice: keepaPriceToDecimal(
+                        currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
+                      ),
+                      pricePerUnit,
+                      priceAvg30:
+                        keepaPriceToDecimal(
+                          kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
+                        ) ?? sql`${prices.priceAvg30}`,
+                      priceAvg90:
+                        keepaPriceToDecimal(
+                          kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
+                        ) ?? sql`${prices.priceAvg90}`,
+                      lastUpdated: now,
+                    },
+                  }),
+              );
+            }
           }
 
           if (sqlQueries.length > 0 && !isDryRun) {

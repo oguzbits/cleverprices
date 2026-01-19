@@ -8,7 +8,20 @@ import { Database } from "bun:sqlite";
  */
 
 async function pullData() {
+  const isForce = process.argv.includes("--force");
+  const isDryRun = process.argv.includes("--dry-run");
+
   console.log("🚀 Starting data pull from Turso Cloud to Local SQLite...");
+
+  if (isDryRun) {
+    console.log(
+      "🔍 DRY RUN MODE: No data will be written to the local database.",
+    );
+  } else if (!isForce) {
+    console.error("❌ ERROR: Data pull will overwrite your local database.");
+    console.log("   Please use --force to confirm, or --dry-run to test.");
+    process.exit(1);
+  }
 
   const dbUrl =
     process.env.TURSO_DATABASE_URL?.replace("libsql://", "https://") || "";
@@ -35,7 +48,11 @@ async function pullData() {
     console.log(`\n📦 Processing table: ${table}...`);
 
     // Clear local table
-    localDb.run(`DELETE FROM ${table}`);
+    if (!isDryRun) {
+      localDb.run(`DELETE FROM ${table}`);
+    } else {
+      console.log(`   [DRY RUN] Would delete local rows in ${table}`);
+    }
 
     // Get local columns to avoid "column doesn't exist" errors
     const localInfo = localDb
@@ -83,25 +100,31 @@ async function pullData() {
         `INSERT OR REPLACE INTO ${table} (${validCols.join(",")}) VALUES (${placeholders})`,
       );
 
-      localDb.transaction(() => {
-        for (const row of result.rows) {
-          try {
-            // Basic sanity check: if the table expects product_id, ensure we have it
-            if (localColsSet.has("product_id") && !row["product_id"]) {
-              // Only skip if it's actually missing from the source data
-              continue;
-            }
+      if (!isDryRun) {
+        localDb.transaction(() => {
+          for (const row of result.rows) {
+            try {
+              // Basic sanity check: if the table expects product_id, ensure we have it
+              if (localColsSet.has("product_id") && !row["product_id"]) {
+                // Only skip if it's actually missing from the source data
+                continue;
+              }
 
-            const values = validCols.map((col) => row[col]);
-            // @ts-ignore - Row data types from libsql are compatible with bun:sqlite
-            insertStmt.run(...(values as any[]));
-          } catch (e: any) {
-            console.error(`❌ Insert failed for row:`, JSON.stringify(row));
-            console.error(`Valid columns:`, validCols);
-            throw e; // Re-throw to abort transaction and script
+              const values = validCols.map((col) => row[col]);
+              // @ts-ignore - Row data types from libsql are compatible with bun:sqlite
+              insertStmt.run(...(values as any[]));
+            } catch (e: any) {
+              console.error(`❌ Insert failed for row:`, JSON.stringify(row));
+              console.error(`Valid columns:`, validCols);
+              throw e; // Re-throw to abort transaction and script
+            }
           }
-        }
-      })();
+        })();
+      } else {
+        console.log(
+          `   [DRY RUN] Would pull ${result.rows.length} rows into local DB.`,
+        );
+      }
 
       totalPulled += result.rows.length;
       console.log(`   Fetched ${totalPulled} rows...`);
