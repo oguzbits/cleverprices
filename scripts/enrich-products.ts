@@ -14,7 +14,10 @@ import {
 } from "../src/lib/keepa/utils";
 
 async function enrich() {
-  const country = (process.argv[2] || "de") as CountryCode;
+  // Robust country detection: search for a 2-letter alphabetical code that doesn't start with -
+  const countryArg =
+    process.argv.slice(2).find((a) => /^[a-zA-Z]{2}$/.test(a)) || "de";
+  const country = countryArg as CountryCode;
   console.log("💎 CleverPrices Product Enrichment");
   console.log(`🌍 Seeding historical data for ${country.toUpperCase()}...\n`);
 
@@ -71,6 +74,10 @@ async function enrich() {
     `  Processing ${batches.length} batches with concurrency of ${BATCH_CONCURRENCY}...`,
   );
 
+  const allMetadataQueries: any[] = [];
+  const globalHistoryInsertions: any[] = [];
+  const now = new Date();
+
   for (let i = 0; i < batches.length; i += BATCH_CONCURRENCY) {
     const currentBatches = batches.slice(i, i + BATCH_CONCURRENCY);
     console.log(
@@ -81,7 +88,7 @@ async function enrich() {
       currentBatches.map(async (batch, idx) => {
         const batchAbsIndex = i + idx;
         console.log(
-          `📦 Seeding batch ${batchAbsIndex + 1}/${batches.length}...`,
+          `📦 Processing batch ${batchAbsIndex + 1}/${batches.length}...`,
         );
 
         try {
@@ -89,10 +96,6 @@ async function enrich() {
             includeHistory: true,
           });
 
-          const metadataQueries: any[] = [];
-          const allHistoryInsertions: any[] = [];
-
-          const now = new Date();
           for (const ep of enrichedProducts) {
             const localProduct = candidates.find((p) => p.asin === ep.asin);
             if (!localProduct) continue;
@@ -102,7 +105,7 @@ async function enrich() {
             const priceAvg90 = keepaPriceToDecimal(avg90Raw);
 
             if (priceAvg90) {
-              metadataQueries.push(
+              allMetadataQueries.push(
                 db
                   .update(prices)
                   .set({ priceAvg90 })
@@ -141,7 +144,7 @@ async function enrich() {
 
               if (historyToInsert.length > 0) {
                 // Delete older records
-                metadataQueries.push(
+                allMetadataQueries.push(
                   db
                     .delete(priceHistory)
                     .where(
@@ -152,12 +155,12 @@ async function enrich() {
                     ),
                 );
                 // Collect history points for mega-insert
-                allHistoryInsertions.push(...historyToInsert);
+                globalHistoryInsertions.push(...historyToInsert);
               }
             }
 
             // 3. Prepare Metadata Mark
-            metadataQueries.push(
+            allMetadataQueries.push(
               db
                 .update(products)
                 .set({
@@ -168,38 +171,44 @@ async function enrich() {
                 })
                 .where(eq(products.id, localProduct.id)),
             );
-          }
-
-          // EXECUTION STEP: One batch + One bulk insert (Ultra fast)
-          try {
-            await withRetry(async () => {
-              // 1. Run all deletions and metadata updates in one atomic batch
-              if (metadataQueries.length > 0) {
-                await (db as any).batch(metadataQueries);
-              }
-
-              // 2. Run the mega-insert for all history points at once
-              // Drizzle will automatically chunk this for us to stay within SQL limits
-              if (allHistoryInsertions.length > 0) {
-                await db.insert(priceHistory).values(allHistoryInsertions);
-              }
-            });
-
-            seeded += enrichedProducts.length;
-            console.log(
-              `    ✅ Batch ${batchAbsIndex + 1} complete (${enrichedProducts.length} products)`,
-            );
-          } catch (err: any) {
-            console.error(
-              `  Failed to commit batch ${batchAbsIndex + 1}:`,
-              err.message,
-            );
+            seeded++;
           }
         } catch (e: any) {
           console.error(`  Error in batch ${batchAbsIndex + 1}:`, e.message);
         }
       }),
     );
+  }
+
+  // FINAL EXECUTION STEP: One batch + One mega-insert (Ultra fast "Flat Bulk" pattern)
+  console.log(
+    `🚀 Committing all changes to DB (${allMetadataQueries.length} updates, ${globalHistoryInsertions.length} history points)...`,
+  );
+  try {
+    await withRetry(async () => {
+      // 1. Run all deletions and metadata updates in one atomic batch
+      if (allMetadataQueries.length > 0) {
+        // Turso has a 10MB or 10k statements limit on batches.
+        // For safety, we chunk the batch if it's very large.
+        const BATCH_LIMIT = 500;
+        for (let j = 0; j < allMetadataQueries.length; j += BATCH_LIMIT) {
+          const chunk = allMetadataQueries.slice(j, j + BATCH_LIMIT);
+          await (db as any).batch(chunk as any);
+        }
+      }
+
+      // 2. Run the mega-insert for all history points at once
+      if (globalHistoryInsertions.length > 0) {
+        const CHUNK_SIZE = 1000;
+        for (let j = 0; j < globalHistoryInsertions.length; j += CHUNK_SIZE) {
+          const chunk = globalHistoryInsertions.slice(j, j + CHUNK_SIZE);
+          await db.insert(priceHistory).values(chunk);
+        }
+      }
+    });
+    console.log(`✅ Database sync complete.`);
+  } catch (err: any) {
+    console.error(`❌ Failed to commit data to database:`, err.message);
   }
 
   console.log(`\n✅ Enrichment cycle complete. Seeded ${seeded} products.`);

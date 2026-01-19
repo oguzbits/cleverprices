@@ -21,10 +21,11 @@ Every hour, the `daily-maintenance.yml` workflow triggers `scripts/update-prices
 
 Immediately following the price updates, `scripts/enrich-products.ts` runs.
 
-- **Dynamic Scaling**: Uses remaining tokens (up to 200 products) to fetch rich metadata.
+- **Dynamic Scaling**: Uses remaining tokens (up to 500 products) to fetch rich metadata.
 - **History Seeding**: Fetches the full historical curve from Keepa and back-fills the `price_history` table.
-- **Idealo Optimization**: Aggregates high-resolution Keepa data into "one lowest point per day" to ensure clean charts and minimal storage costs.
-- **Resilience**: This step uses `continue-on-error: true` so that minor Keepa API issues don't block the next phase.
+- **Flat Bulk Pattern**: Implements the "Flat Bulk" processing strategy—all data is fetched in parallel, but database commits are deferred until the end and performed in a single, sequential sync phase. This avoids parallel congestion on Turso.
+- **Manual Chunking**: History insertions are manually chunked (1,000 rows/chunk) to stay within `SQLITE_MAX_VARIABLE_NUMBER` limits.
+- **Resilience**: This step uses `continue-on-error: true` so that minor Keepa API issues don't block the Next.js cache warming.
 
 ### Phase 3: Cache Warming
 
