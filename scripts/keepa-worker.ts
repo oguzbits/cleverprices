@@ -21,12 +21,15 @@ async function main() {
   const args = process.argv.slice(2);
   let country: CountryCode = "de";
   let isContinuous = false;
+  let shouldSync = true;
 
   // Parsing arguments
   let silent = false;
   for (const arg of args) {
     if (arg === "--continuous" || arg === "-c") {
       isContinuous = true;
+    } else if (arg === "--no-sync") {
+      shouldSync = false;
     } else if (arg === "--silent" || arg === "-s") {
       silent = true;
     } else if (arg !== "-" && !arg.startsWith("--") && /^[a-z]{2}$/.test(arg)) {
@@ -182,7 +185,13 @@ async function main() {
       try {
         await runCompliancePhase();
         await runEnrichmentPhase();
-        await runCloudSyncPhase();
+        if (shouldSync) {
+          await runCloudSyncPhase();
+        } else {
+          console.log(
+            "\n⏭️  Skipping Phase 3: Cloud Sync (requested via --no-sync)",
+          );
+        }
 
         // Update Memory & Persist
         state.lastRun = Date.now();
