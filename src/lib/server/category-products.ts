@@ -143,16 +143,18 @@ async function getCachedLocalizedCategoryProducts(
       // 2. Metrics & Desirability
       const { popularityScore } = calculateDesirabilityScore(
         p,
-        price,
+        price || 0,
         title,
         "category",
       );
 
       const refPrice = p.priceAvg90?.[countryCode] || 0;
       const savings =
-        refPrice && refPrice > price ? (refPrice - price) / refPrice : 0;
+        refPrice && price && refPrice > price
+          ? (refPrice - price) / refPrice
+          : 0;
       const displayListPrice =
-        refPrice && refPrice > price ? refPrice : undefined;
+        refPrice && price && refPrice > price ? refPrice : undefined;
 
       // 3. Storage Capacity Extraction (fallback for incorrect data like '1 stück')
       let capacity = p.capacity;
@@ -189,7 +191,8 @@ async function getCachedLocalizedCategoryProducts(
           : capacityUnit === "GB"
             ? capacity * 1024
             : capacity;
-      const pricePerUnit = capacityMB > 0 ? (price / capacityMB) * 1024 : 0;
+      const pricePerUnit =
+        capacityMB > 0 ? ((price || 0) / capacityMB) * 1024 : 0;
 
       // --- SNAP NORMALIZATION ---
       // 1. Thresholding: Filter out low-capacity trash/accessories from SSDs/HDDs
@@ -217,7 +220,7 @@ async function getCachedLocalizedCategoryProducts(
         slug: p.slug,
         asin,
         title,
-        price,
+        price: price || 0,
         pricePerUnit,
         popularityScore,
         savings,
