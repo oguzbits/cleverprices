@@ -3,7 +3,6 @@ import "@/app/globals.css";
 import { DeferredAnalytics } from "@/components/DeferredAnalytics";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
-import { ThemeProvider } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { NuqsProvider } from "@/providers/nuqs-provider";
 import { Inter } from "next/font/google";
@@ -55,22 +54,15 @@ export default function RootLayoutWrapper({
           "bg-background min-h-screen antialiased",
         )}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <NuqsProvider>
-            <div className="flex min-h-screen flex-col">
-              {!hideNavbar && <Navbar />}
-              <main className="flex-1">{children}</main>
-              {!hideFooter && <Footer />}
-            </div>
-            {/* Analytics deferred until after hydration (Vercel Best Practices: bundle-defer-third-party) */}
-            <DeferredAnalytics />
-          </NuqsProvider>
-        </ThemeProvider>
+        <NuqsProvider>
+          <div className="flex min-h-screen flex-col">
+            {!hideNavbar && <Navbar />}
+            <main className="flex-1">{children}</main>
+            {!hideFooter && <Footer />}
+          </div>
+          {/* Analytics deferred until after hydration (Vercel Best Practices: bundle-defer-third-party) */}
+          <DeferredAnalytics />
+        </NuqsProvider>
       </body>
     </html>
   );
