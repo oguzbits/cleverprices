@@ -222,9 +222,6 @@ async function getCachedLocalizedCategoryProducts(
         title,
         price: price || 0,
         pricePerUnit,
-        popularityScore,
-        savings,
-        listPrice: displayListPrice,
         category: p.category,
         image: p.image || "",
         brand: normalizeBrand(p.brand || ""),
@@ -367,7 +364,7 @@ export async function getCategoryProducts(
   const localizedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v26",
+    "v27",
   );
 
   const category = allCategories[categorySlug as CategorySlug];

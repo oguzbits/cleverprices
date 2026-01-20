@@ -309,10 +309,10 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   const getCachedProducts = unstable_cache(
     fetchProducts,
-    [`category-products-v25-${category}`],
+    [`category-products-v26-${category}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: [`category-v25-${category}`],
+      tags: [`category-v26-${category}`],
     },
   );
 
