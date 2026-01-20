@@ -19,6 +19,7 @@ This project uses **Next.js 16.0.10** with special features:
 | React Compiler          | **ENABLED**    | No manual useMemo/useCallback/React.memo |
 | `'use cache'` directive | **PRIMARY**    | Use with `cacheLife()`                   |
 | `cacheComponents: true` | **ENABLED**    | In next.config.ts                        |
+| Runtime / PKG Mgr       | **BUN**        | Use `bun run`, NOT `npm` or `pnpm`       |
 
 ---
 

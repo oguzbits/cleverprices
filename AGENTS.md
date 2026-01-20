@@ -6,14 +6,15 @@
 
 ## 🏗️ Technology Stack
 
-| Technology         | Version | Key Notes                                      |
-| ------------------ | ------- | ---------------------------------------------- |
-| **Next.js**        | 16.0.10 | App Router, `cacheComponents: true`            |
-| **React**          | 19.2.3  | Server Components, `'use cache'` directive     |
-| **React Compiler** | Enabled | Handles `useMemo`, `useCallback`, `React.memo` |
-| **Tailwind CSS**   | 4.x     | No `var()` in className                        |
-| **Drizzle ORM**    | 0.45.x  | SQLite with Turso/LibSQL                       |
-| **Bun**            | Latest  | Runtime and package manager                    |
+| Technology         | Version | Key Notes                                                         |
+| ------------------ | ------- | ----------------------------------------------------------------- |
+| **Next.js**        | 16.0.10 | App Router, `cacheComponents: true` **ENABLED** In next.config.ts |
+| Runtime / PKG Mgr  | **BUN** | Use `bun run`, NOT `npm` or `pnpm`                                |
+| **React**          | 19.2.3  | Server Components, `'use cache'` directive                        |
+| **React Compiler** | Enabled | Handles `useMemo`, `useCallback`, `React.memo`                    |
+| **Tailwind CSS**   | 4.x     | No `var()` in className                                           |
+| **Drizzle ORM**    | 0.45.x  | SQLite with Turso/LibSQL                                          |
+| **Bun**            | Latest  | Primary Runtime and Package Manager (MANDATORY)                   |
 
 ---
 
