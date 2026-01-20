@@ -48,6 +48,36 @@
 
 ---
 
+## ⚡ ALGORITHM COMPLEXITY REQUIREMENTS
+
+All data operations MUST meet these complexity requirements:
+
+| Operation        | Max Complexity         | Example             |
+| ---------------- | ---------------------- | ------------------- |
+| Table iteration  | O(N)                   | Keyset pagination   |
+| Index lookups    | O(log N)               | Indexed columns     |
+| Batch processing | O(N)                   | Bounded parallelism |
+| Writes           | O(K) where K = changes | Value-diffing       |
+
+### ❌ BANNED Algorithms
+
+| Complexity | Example                      | Why Banned             |
+| ---------- | ---------------------------- | ---------------------- |
+| O(N²)      | OFFSET pagination            | Exponential read costs |
+| O(N\*M)    | Nested loops without index   | Cartesian explosion    |
+| Unbounded  | `while (true)` without limit | Resource exhaustion    |
+
+### ✅ REQUIRED Checks
+
+Before implementing any loop or batch operation:
+
+1. **What's the Big-O?** If > O(N log N), refactor.
+2. **Is there a limit?** Every loop needs an exit condition.
+3. **Is there parallelism?** Cap at 5-10 concurrent.
+4. **Is there a dry-run?** Test without side effects.
+
+---
+
 ## ✅ REQUIRED PATTERNS
 
 ### Caching
@@ -85,12 +115,12 @@ if (!isForce && !isDryRun) {
 
 ## 🔒 RESOURCE LIMITS
 
-| Resource     | Limit                | Safety                         |
-| ------------ | -------------------- | ------------------------------ |
-| Turso Reads  | 500M/month           | liteColumns, keyset pagination |
-| Turso Writes | 10M/month            | Value-diff before writes       |
-| Keepa Tokens | 20/min, 1,200/hr cap | Reserve 100 for enrichment     |
-| Vercel Exec  | 60s                  | Streaming + Suspense           |
+| Resource     | Limit                 | Safety                         |
+| ------------ | --------------------- | ------------------------------ |
+| Turso Reads  | 500M/month            | liteColumns, keyset pagination |
+| Turso Writes | 10M/month             | Value-diff before writes       |
+| Keepa Tokens | 20/min, 1,200/hr cap  | Reserve 100 for enrichment     |
+| Vercel Exec  | 10s (def) / 60s (max) | Streaming + Suspense           |
 
 ---
 
