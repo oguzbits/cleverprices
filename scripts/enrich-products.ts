@@ -47,6 +47,9 @@ async function enrich() {
   }
   if (isNaN(customLimit)) customLimit = 200;
 
+  // SMART CANDIDATE DISCOVERY:
+  // We look for products marked as not seeded, OR products that are marked as seeded
+  // but exist in a database where we know history is missing (as verified by the user).
   const candidates = await db.query.products.findMany({
     where: or(
       eq(products.historySeeded, false),

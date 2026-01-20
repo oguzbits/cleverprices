@@ -160,7 +160,7 @@ async function main() {
           ),
           capacity: capacityValue,
           capacityUnit,
-          historySeeded: !!(priceAvg30 || priceAvg90), // Mark as seeded if we got averages from CSV
+          historySeeded: false, // CSV averages are not full granular history, always enrich via Keepa
           updatedAt: new Date(),
         };
 
