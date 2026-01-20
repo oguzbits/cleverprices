@@ -1,14 +1,14 @@
+import { CATEGORY_MANIFEST } from "./category-manifest";
 import { CategoryData, CategorySlug } from "./category-types";
 import { BRAND_DOMAIN } from "./site-config";
 
 export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
   haushaltselektronik: {
-    name: "Haushaltselektronik",
+    ...CATEGORY_MANIFEST.haushaltselektronik,
     description: "Kühlschränke, Waschmaschinen und Küchengeräte",
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/household-electronics.jpg",
-    hidden: true,
     popularFilters: [
       { label: "Kühlschränke", href: "/kuehlschraenke" },
       { label: "Waschmaschinen", href: "/waschmaschinen" },
@@ -18,7 +18,7 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     ],
   },
   computer: {
-    name: "Computer",
+    ...CATEGORY_MANIFEST.computer,
     description: "Notebooks, Monitore, Tablets und Zubehör",
     parent: "elektroartikel",
     categoryType: "standard",
@@ -35,7 +35,7 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       "Vergleichen Sie Preise für Laptops, Monitore und Computer-Zubehör.",
   },
   telekommunikation: {
-    name: "Telekommunikation",
+    ...CATEGORY_MANIFEST.telekommunikation,
     description: "Smartphones, Smartwatches und Zubehör",
     parent: "elektroartikel",
     categoryType: "standard",

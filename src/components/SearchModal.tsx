@@ -9,7 +9,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { performSearch } from "@/lib/actions/search";
-import { CATEGORY_MAP } from "@/lib/category-definitions";
+import { CATEGORY_MANIFEST } from "@/lib/category-manifest";
 import { CategorySlug } from "@/lib/category-types";
 import { getCategoryPath } from "@/lib/category-utils";
 import {
@@ -199,7 +199,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             </CommandGroup>
 
             <CommandGroup>
-              {Object.entries(CATEGORY_MAP)
+              {(Object.entries(CATEGORY_MANIFEST) as [CategorySlug, any][])
                 .filter(([_, c]) => !c.hidden)
                 .slice(0, limit === 6 ? 2 : 5)
                 .map(([slug, cat]) => (

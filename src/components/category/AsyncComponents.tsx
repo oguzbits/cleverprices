@@ -109,6 +109,7 @@ export async function AsyncFilterPanel({
         minPriceInCategory={minPriceInCategory}
         maxPriceInCategory={maxPriceInCategory}
         priceRanges={priceRanges}
+        filterGroups={category.filterGroups}
       />
     </aside>
   );
@@ -233,6 +234,7 @@ export async function AsyncProductList({
           minPriceInCategory={minPriceInCategory}
           maxPriceInCategory={maxPriceInCategory}
           priceRanges={priceRanges}
+          filterGroups={category.filterGroups}
         />
       </div>
 

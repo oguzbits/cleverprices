@@ -7,6 +7,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { FilterGroup } from "@/lib/category-types";
 import { useFilters } from "@/lib/hooks/use-filters";
 import type { FilterCounts } from "@/lib/server/category-products";
 import { Filter, X } from "lucide-react";
@@ -23,6 +24,7 @@ interface MobileFilterDrawerProps {
   priceRanges?: { label: string; min: number | null; max: number | null }[];
   minPriceInCategory?: number;
   maxPriceInCategory?: number;
+  filterGroups?: FilterGroup[];
 }
 
 export function MobileFilterDrawer({
@@ -35,6 +37,7 @@ export function MobileFilterDrawer({
   priceRanges = [],
   minPriceInCategory = 0,
   maxPriceInCategory = 1000,
+  filterGroups = [],
 }: MobileFilterDrawerProps) {
   const [open, setOpen] = React.useState(false);
   const [filters, setFilters] = useFilters();
@@ -130,6 +133,7 @@ export function MobileFilterDrawer({
               priceRanges={priceRanges}
               minPriceInCategory={minPriceInCategory}
               maxPriceInCategory={maxPriceInCategory}
+              filterGroups={filterGroups}
             />
           </div>
 

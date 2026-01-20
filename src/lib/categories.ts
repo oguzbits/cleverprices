@@ -1,6 +1,5 @@
 import { LucideIcon } from "lucide-react";
 import { CATEGORY_MAP } from "./category-definitions";
-import { CATEGORY_ICONS } from "./category-icons";
 import {
   CategoryData as BaseCategoryData,
   CategorySlug,
@@ -15,7 +14,7 @@ export type { CategorySlug, CategoryType, FilterGroup, UnitType };
 
 export interface Category extends BaseCategoryData {
   slug: CategorySlug;
-  icon: LucideIcon;
+  icon?: LucideIcon;
 }
 
 export interface CategoryHierarchy {
@@ -26,7 +25,7 @@ export interface CategoryHierarchy {
 // Re-export constants for backward compatibility
 export { CATEGORY_MAP };
 
-// All categories in a flat structure with slug and icon added
+// All categories in a flat structure with slug added (Icon removed to prevent client bloating)
 export const allCategories: Record<CategorySlug, Category> = Object.entries(
   CATEGORY_MAP,
 ).reduce(
@@ -34,7 +33,6 @@ export const allCategories: Record<CategorySlug, Category> = Object.entries(
     acc[slug as CategorySlug] = {
       ...(data as BaseCategoryData),
       slug: slug as CategorySlug,
-      icon: CATEGORY_ICONS[slug as CategorySlug],
     } as Category;
     return acc;
   },

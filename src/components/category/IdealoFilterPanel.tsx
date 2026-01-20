@@ -8,7 +8,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { PriceRangeSlider } from "@/components/ui/PriceRangeSlider";
-import { allCategories, CategorySlug } from "@/lib/categories";
+import { FilterGroup } from "@/lib/category-types";
 import { useFilters } from "@/lib/hooks/use-filters";
 import type { FilterCounts } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ interface IdealoFilterBarProps {
   priceRanges?: { label: string; min: number | null; max: number | null }[];
   minPriceInCategory?: number;
   maxPriceInCategory?: number;
+  filterGroups?: FilterGroup[];
 }
 
 // ============================================
@@ -101,7 +102,6 @@ function formatCapacity(value: string, unitLabel: string): string {
     // < 1000 GB -> Display as GB
     return `${Math.round(numValue)} GB`;
   }
-  // (Logic handled in main block now)
 }
 
 /**
@@ -238,9 +238,9 @@ export function IdealoFilterPanel({
   priceRanges = [],
   minPriceInCategory = 0,
   maxPriceInCategory = 1000,
+  filterGroups = [],
 }: IdealoFilterBarProps) {
   const [filters, setFilters] = useFilters();
-  const category = allCategories[categorySlug as CategorySlug];
 
   // Group search states
   const [groupSearch, setGroupSearch] = useState<Record<string, string>>({});
@@ -248,9 +248,9 @@ export function IdealoFilterPanel({
 
   // Derive options for filter groups
   const optionsMap = useMemo(() => {
-    if (!category?.filterGroups) return {};
+    if (!filterGroups) return {};
     const options: Record<string, string[]> = {};
-    category.filterGroups.forEach((group) => {
+    filterGroups.forEach((group) => {
       const rawOptions = group.options || filterOptions[group.field] || [];
 
       // Sort options by count descending
@@ -269,7 +269,7 @@ export function IdealoFilterPanel({
       options[group.field] = sorted;
     });
     return options;
-  }, [category, filterOptions, filterCounts, filters]);
+  }, [filterGroups, filterOptions, filterCounts, filters]);
 
   // Handle price update
   const handlePriceUpdate = (min: string, max: string) => {
@@ -431,7 +431,7 @@ export function IdealoFilterPanel({
         </FilterBox>
 
         {/* DYNAMIC FILTER GROUPS */}
-        {category?.filterGroups?.map((group) => {
+        {filterGroups?.map((group) => {
           let options = optionsMap[group.field] || [];
 
           // SPECIAL SORTING FOR BRANDS

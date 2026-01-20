@@ -1,6 +1,8 @@
 "use client";
 
-import { getCategoryPath, type CategorySlug } from "@/lib/categories";
+import { PrefetchLink } from "@/components/ui/PrefetchLink";
+import { type CategorySlug } from "@/lib/category-types";
+import { getCategoryPath } from "@/lib/category-utils";
 import {
   Camera,
   ChevronLeft,
@@ -15,7 +17,6 @@ import {
   Wifi,
   Zap,
 } from "lucide-react";
-import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
