@@ -22,6 +22,8 @@ const isVercelProduction = process.env.VERCEL === "1";
  * Without these, it falls back to local SQLite file.
  */
 
+import path from "path";
+
 // Determine database URL
 function getDatabaseUrl(): string {
   // 1. Force local file if requested (useful for scripts)
@@ -38,7 +40,9 @@ function getDatabaseUrl(): string {
   // 3. Production (Vercel): Default to bundled LITE database
   // This saves Turso quota and avoids read-only filesystem errors.
   if (isVercelProduction) {
-    return `file:${process.cwd()}/data/cleverprices-lite.db`;
+    // robust path resolution for Vercel
+    const dbPath = path.join(process.cwd(), "data", "cleverprices-lite.db");
+    return `file:${dbPath}?mode=ro`;
   }
 
   // 4. Local Development Fallback
@@ -73,13 +77,15 @@ function createDbClient(): Client {
   console.log("[DB] Using local SQLite:", url);
   const client = createClient({ url });
 
-  // Set performance PRAGMAs for local SQLite
-  if (url.startsWith("file:")) {
+  // Set performance PRAGMAs for local SQLite (Development only)
+  // Skip on Vercel because the filesystem is read-only
+  if (url.startsWith("file:") && !isVercelProduction) {
     try {
-      client.execute("PRAGMA journal_mode = WAL");
-      client.execute("PRAGMA synchronous = NORMAL");
-      client.execute("PRAGMA busy_timeout = 5000");
-      client.execute("PRAGMA cache_size = -10000"); // 10MB cache
+      // Use fire-and-forget but with proper error handling to avoid unhandled rejections
+      client.execute("PRAGMA journal_mode = WAL").catch(() => {});
+      client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
+      client.execute("PRAGMA busy_timeout = 5000").catch(() => {});
+      client.execute("PRAGMA cache_size = -10000").catch(() => {});
     } catch (e: any) {
       console.warn("[DB] Failed to set performance PRAGMAs:", e.message);
     }

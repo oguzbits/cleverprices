@@ -241,7 +241,10 @@ const getInternalSearchResults = async (
       products: matchedProducts,
     };
   } catch (error: any) {
-    console.error(`Search Action Error for query "${query}":`, error.message);
+    console.error(
+      `Search Action Error [query="${query}", cwd=${process.cwd()}]:`,
+      error.message,
+    );
     // Return empty results instead of throwing to maintain UI stability
     return { categories: [], products: [] };
   }
