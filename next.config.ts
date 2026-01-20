@@ -72,7 +72,7 @@ const nextConfig: NextConfig = {
       400, 512,
     ],
     minimumCacheTTL: 60,
-    qualities: [30, 50, 75],
+    qualities: [30, 40, 50, 75],
     remotePatterns: [
       {
         protocol: "https",
