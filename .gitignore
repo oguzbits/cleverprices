@@ -43,9 +43,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# database
+# database (lite.db is now fetched from Vercel Blob during build)
 *.db
-!/data/cleverprices-lite.db
 *.db-wal
 *.db-shm
 *.backup

@@ -1,12 +1,9 @@
 name: Price Synchronization
 
 on:
-  #   schedule:
-  #     # Run hourly to prevent token cap (drains in 1h).
-  #     # Cost: 24 runs/day * 2 mins (rounded) = 48 mins/day.
-  #     # Total: 48m + WarmCache(6m) = 54m/day * 31 ≈ 1674 mins/month (Safe)
-  #     - cron: "0 * * * *"
-
+  # DISABLED UNTIL TURSO QUOTA RESET (01.02.2026)
+  # schedule:
+  #   - cron: "0 * * * *" # Hourly
   workflow_dispatch:
 
 jobs:
@@ -19,7 +16,8 @@ jobs:
       KEEPA_API_KEY: ${{ secrets.KEEPA_API_KEY }}
       TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
       TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-      DATABASE_PATH: ${{ secrets.TURSO_DATABASE_URL }}
+      # Writes go directly to Turso Cloud (Source of Truth)
+      DB_REMOTE: "1"
       NODE_ENV: "production"
 
     steps:

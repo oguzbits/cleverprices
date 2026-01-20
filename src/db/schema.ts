@@ -73,12 +73,21 @@ export const products = sqliteTable(
       .default(sql`(unixepoch() * 1000)`),
   },
   (table) => [
+    // Core lookups
     index("idx_products_category").on(table.category),
     index("idx_products_brand").on(table.brand),
     index("idx_products_asin").on(table.asin),
     index("idx_products_gtin").on(table.gtin),
-    index("idx_products_sales_rank").on(table.salesRank),
     index("idx_products_created_at").on(table.createdAt),
+
+    // Popularity & Ranking
+    index("idx_products_sales_rank").on(table.salesRank),
+    index("idx_products_rating").on(table.rating),
+    index("idx_products_category_rank").on(table.category, table.salesRank), // Composite for "Popular in Category"
+
+    // Filtering & Sorting
+    index("idx_products_technology").on(table.technology), // Sidebar filter (SSD, HDD, DDR5)
+    index("idx_products_capacity").on(table.normalizedCapacity), // "Price per GB" sorting
   ],
 );
 

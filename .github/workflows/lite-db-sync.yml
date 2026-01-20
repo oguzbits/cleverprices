@@ -1,0 +1,46 @@
+name: Lite DB Production Sync
+
+on:
+  # DISABLED UNTIL TURSO QUOTA RESET (01.02.2026)
+  # schedule:
+  #   - cron: '0 4,16 * * *' # Twice daily (4 AM and 4 PM)
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  sync:
+    name: Sync Lite DB to Blob & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        run: bun install
+
+      - name: Pull Fresh Data from Turso Cloud
+        run: bun run db:pull
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+
+      - name: Generate Lite DB
+        run: bun run db:lite
+
+      # Upload to Vercel Blob instead of committing to Git
+      - name: Upload Lite DB to Vercel Blob
+        run: |
+          curl -X PUT "${{ secrets.LITE_DB_BLOB_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.BLOB_READ_WRITE_TOKEN }}" \
+            -H "Content-Type: application/octet-stream" \
+            -H "x-vercel-blob-content-type: application/x-sqlite3" \
+            --data-binary @data/cleverprices-lite.db
+          echo "✅ Uploaded lite.db to Vercel Blob"
+
+      # Note: Vercel's scheduled deployment (Cron Jobs) will trigger the build.
+      # Configure this in Vercel Project Settings → Cron Jobs.

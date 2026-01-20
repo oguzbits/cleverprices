@@ -70,3 +70,41 @@ See `examples/` for real code from this codebase:
 - `examples/keyset-pagination.ts` - Efficient large table iteration
 - `examples/bounded-parallelism.ts` - Safe batch processing
 - `examples/value-diffing.ts` - Only write when data changes
+
+---
+
+## Performance Tuning (Production)
+
+### PRAGMA Settings
+
+For bundled SQLite files, configure these in `src/db/index.ts`:
+
+```typescript
+client.execute("PRAGMA cache_size = -20000"); // 20MB cache
+client.execute("PRAGMA mmap_size = 20000000"); // Memory-map for speed
+client.execute("PRAGMA busy_timeout = 5000"); // Prevent lock errors
+```
+
+### Index Design Principles
+
+1.  **Index filter columns**: `WHERE category = ?` → index on `category`.
+2.  **Index sort columns**: `ORDER BY salesRank` → index on `salesRank`.
+3.  **Use composite indexes for common patterns**: `(category, salesRank)` for "Popular in Category".
+4.  **Avoid over-indexing**: Each index increases DB size and slows writes.
+
+### Prepared Statements (Advanced)
+
+For hot paths (e.g., search), use Drizzle's prepared statements:
+
+```typescript
+const searchStmt = db
+  .select()
+  .from(products)
+  .where(eq(products.category, sql.placeholder("cat")))
+  .prepare();
+
+// Usage:
+const results = await searchStmt.execute({ cat: "ssd" });
+```
+
+This avoids regenerating the SQL string on every call, saving ~5-10ms of CPU time.

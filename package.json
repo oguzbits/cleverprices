@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "bun run scripts/fetch-lite-db.ts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -17,6 +18,7 @@
     "worker:local": "DB_LOCAL=1 bun run scripts/keepa-worker.ts de -c --no-sync",
     "worker:enrich": "DB_LOCAL=1 bun run scripts/enrich-products.ts de",
     "db:lite": "./scripts/prepare-deploy.sh",
+    "db:upload-blob": "bun run scripts/upload-lite-db.ts",
     "deploy": "bun run db:lite && git commit -am 'Update product data' && git push",
     "import": "bun run scripts/import-products.ts",
     "db:deploy": "bun run scripts/deploy-data.ts",
@@ -49,6 +51,7 @@
     "@tailwindcss/typography": "^0.5.19",
     "@types/mdx": "^2.0.13",
     "@vercel/analytics": "^1.6.1",
+    "@vercel/blob": "^2.0.0",
     "@vercel/speed-insights": "^1.3.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

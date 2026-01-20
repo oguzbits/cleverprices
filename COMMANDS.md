@@ -11,23 +11,19 @@ This guide explains the most important commands for your workflow.
 | `bun run worker:enrich` | Fetches 1-year history for products that don't have charts yet.                                        |
 | `bun run db:studio`     | Opens a GUI to view and edit your local database.                                                      |
 
-## 🚀 2. Deployment & Cloud
+## 🤖 2. Autonomous Workflows (GitHub Actions)
 
-| Command                    | Description                                                                                                           |
-| :------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
-| `bun run db:lite`          | **Step 1.** Creates `cleverprices-lite.db`. Strips heavy columns & sets `DELETE` journal mode (mandatory for Vercel). |
-| `bun run deploy`           | **Step 2.** Runs the lite preparation, commits everything, and pushes to Production.                                  |
-| `bun run db:migrate:cloud` | Pushes your latest schema changes to the Turso production database.                                                   |
+These workflows run automatically in GitHub to keep the site fresh without manual effort.
 
-## 📥 3. Data Ingestion
-
-| Command           | Description                                                    |
-| :---------------- | :------------------------------------------------------------- |
-| `bun run import`  | Imports new products from `data/keepa_export.csv`.             |
-| `bun run db:pull` | Downloads the Production Turso database to your local machine. |
+| Workflow         | Frequency | Description                                                                       |
+| :--------------- | :-------- | :-------------------------------------------------------------------------------- |
+| **Price Sync**   | Hourly    | Fetches Keepa prices, enriches products, and writes to Turso Cloud.               |
+| **Lite DB Sync** | 2x Daily  | Builds `lite.db`, uploads to Vercel Blob, and triggers a fresh Vercel deployment. |
 
 ## 💡 Troubleshooting
 
-- **Search fails in Production but works locally?** This is usually because `cleverprices-lite.db` was not prepared correctly. Run `bun run deploy` instead of just a raw `git push`.
-- **Database "Locked"?** If local, restart the worker. If production, ensure `journal_mode=DELETE` was applied by `db:lite`.
-- **Charts Empty?** Run `bun run worker:enrich`. Note: it takes tokens, so use it sparingly.
+- **Search fails in Production?** Ensure `cleverprices-lite.db` was prepared with `DELETE` journal mode (run `bun run db:lite`).
+- **Data out of date?** Check: 1) GitHub Actions tab (is `Lite DB Sync` running?), 2) Vercel Cron Jobs (is it deploying?), 3) Vercel Blob (is the file there?).
+- **Database "Locked"?** If local, restart the worker. If production, ensure `journal_mode=DELETE` was applied.
+- **Charts Empty?** Ensure the `price-updater` action is running and writing to Turso Cloud.
+- **Blob 404?** The `LITE_DB_BLOB_URL` or `BLOB_READ_WRITE_TOKEN` might be missing or incorrect.

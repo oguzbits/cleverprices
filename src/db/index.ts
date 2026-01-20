@@ -57,13 +57,46 @@ function createDbClient(): Client {
   const url = getDatabaseUrl();
   const isRemote = url.startsWith("libsql://") || url.startsWith("https://");
 
-  // Production (Vercel) with bundled file: Use plain local SQLite (READ-ONLY)
+  // 1. ADVANCED: Autonomous Hybrid Mode (Embedded Replica)
+  // Activated only when DB_SYNC=1 is set.
+  // Uses bundled lite.db as base, syncs to /tmp, and reads are free/instant.
+  if (
+    isVercelProduction &&
+    process.env.DB_SYNC === "1" &&
+    process.env.TURSO_DATABASE_URL &&
+    process.env.TURSO_AUTH_TOKEN
+  ) {
+    console.log(
+      "[DB] 🚀 INITIALIZING AUTONOMOUS HYBRID MODE (Embedded Replica)",
+    );
+
+    const dbPath = path.join(process.cwd(), "data", "cleverprices-lite.db");
+    const replicaPath = path.join("/tmp", "cleverprices-replica.db");
+
+    // Copy base if it doesn't exist in tmp to avoid full sync
+    if (!fs.existsSync(replicaPath) && fs.existsSync(dbPath)) {
+      try {
+        fs.copyFileSync(dbPath, replicaPath);
+        console.log("[DB] Seeded replica from bundled lite.db");
+      } catch (e: any) {
+        console.warn("[DB] Failed to seed replica:", e.message);
+      }
+    }
+
+    return createClient({
+      url: `file:${replicaPath}`,
+      syncUrl: process.env.TURSO_DATABASE_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+  }
+
+  // 2. Production (Vercel) with bundled file: Use plain local SQLite (READ-ONLY)
   if (isVercelProduction && url.startsWith("file:")) {
     console.log("[DB] Using bundled LITE database (quota-safe)");
     return createClient({ url });
   }
 
-  // Remote connection to Turso (Cloud)
+  // 3. Remote connection to Turso (Cloud)
   // Enabled if URL is remote OR explicitly requested via TURSO_AUTH_TOKEN with non-file URL
   if (isRemote || (process.env.TURSO_AUTH_TOKEN && !url.startsWith("file:"))) {
     if (!process.env.TURSO_AUTH_TOKEN) {
@@ -76,19 +109,26 @@ function createDbClient(): Client {
     });
   }
 
-  // Local development: Plain local SQLite
+  // 4. Local development & Production-File: Plain local SQLite
   console.log("[DB] Using local SQLite:", url);
   const client = createClient({ url });
 
-  // Set performance PRAGMAs for local SQLite (Development only)
-  // Skip on Vercel because the filesystem is read-only
-  if (url.startsWith("file:") && !isVercelProduction) {
+  // 🚀 PERFORMANCE BOOSTERS (In-Memory Speed)
+  // For local files, we force SQLite to cache as much as possible in RAM.
+  if (url.startsWith("file:")) {
     try {
-      // Use fire-and-forget but with proper error handling to avoid unhandled rejections
-      client.execute("PRAGMA journal_mode = WAL").catch(() => {});
-      client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
+      // Shared Boosters
       client.execute("PRAGMA busy_timeout = 5000").catch(() => {});
-      client.execute("PRAGMA cache_size = -10000").catch(() => {});
+      client.execute("PRAGMA cache_size = -20000").catch(() => {}); // 20MB cache (entire DB fits!)
+
+      if (!isVercelProduction) {
+        // Dev-only: WAL mode is safe for local disk
+        client.execute("PRAGMA journal_mode = WAL").catch(() => {});
+        client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
+      } else {
+        // Production-only: MMap allows the OS to treat the file like RAM
+        client.execute("PRAGMA mmap_size = 20000000").catch(() => {});
+      }
     } catch (e: any) {
       console.warn("[DB] Failed to set performance PRAGMAs:", e.message);
     }
@@ -101,19 +141,42 @@ function createDbClient(): Client {
 const client = createDbClient();
 export const db: LibSQLDatabase<typeof schema> = drizzle(client, { schema });
 
-// Debug log (Development only)
-if (process.env.NODE_ENV === "development") {
-  (async () => {
-    try {
-      const url = getDatabaseUrl();
-      console.log(`[DB DEBUG] Initialized with URL: ${url}`);
+/**
+ * dbReady Promise
+ *
+ * In Autonomous/Sync mode, this promise resolves once the initial background sync
+ * is complete. Use this in Server Components or Actions to ensure data freshness
+ * while allowing the rest of the page layout to stream immediately.
+ *
+ * Usage: await dbReady;
+ */
+export const dbReady: Promise<void> = (async () => {
+  try {
+    const isSync = isVercelProduction && process.env.DB_SYNC === "1";
+
+    if (isSync) {
+      console.log("[DB] Initializing autonomous sync (500ms cutoff)...");
+
+      // 🛡️ Web Vitals Guard:
+      // We race the sync against a 500ms timer. If sync takes longer than 500ms,
+      // we resolve anyway and use the bundled Lite DB to avoid killing LCP/TTFB.
+      const syncPromise = client.sync();
+      const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 500));
+
+      await Promise.race([syncPromise, timeoutPromise]);
+      console.log("[DB] Ready (Fresh or Fallback-to-Lite reached)");
+    }
+
+    if (process.env.NODE_ENV === "development") {
       const result = await client.execute("SELECT count(*) as C FROM products");
       console.log(`[DB DEBUG] Products count on startup: ${result.rows[0].C}`);
-    } catch (e) {
-      console.error("[DB DEBUG] Failed to check DB:", e);
     }
-  })();
-}
+  } catch (e: any) {
+    if (isVercelProduction) {
+      console.error("[DB ERROR] Client initialization failure:", e.message);
+    }
+  }
+})();
 
 // Export schema for convenience
 export * from "./schema";

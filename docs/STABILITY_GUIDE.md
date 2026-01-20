@@ -62,10 +62,91 @@ The `unstable_cache` function is key-based. When the logic inside the cached fun
 
 ---
 
-## 5. Deployment Verification Workflow
+## 6. Two-Tier Autonomous Architecture (The Ultimate Setup)
 
-Never assume a "git push" fixed a production error without verification.
+For maximum autonomy and performance, the project uses a tiered data flow that separates "Freshness" from "Availability."
 
-1.  **Force-Ping**: Create a tiny API route `api/force-ping` that returns a hardcoded string or the current commit SHA.
-2.  **Verify Headers**: Use `curl -I` to check `x-vercel-cache` and ensure you aren't seeing a stale Edge response.
-3.  **Clean Up**: Always remove diagnostic routes before finalizing the task to maintain security.
+### Tier 1: Hourly Cloud Update (`price-updater.yml`)
+
+- **Action**: A GitHub Action runs every hour, fetching Keepa prices and writing to the **Turso Cloud** (Source of Truth).
+- **Goal**: Keep the master database up-to-date with 100% hands-free automation.
+
+### Tier 2: Production Lite-Sync (`lite-db-sync.yml`)
+
+- **Action**: A GitHub Action runs twice a day. It pulls data from Turso Cloud, generates a fresh `cleverprices-lite.db`, and **uploads it to Vercel Blob**.
+- **Deployment**: Vercel's scheduled deployment (Cron Jobs) triggers a build, which downloads the DB from Blob during `prebuild`.
+- **Goal**: Keep the Git repo clean (no binary commits) while still bundling fresh data into each deployment.
+
+### Quota Economics
+
+- **Writes**: Hourly writes to Turso Cloud (within 10M free tier).
+- **Reads**: Production users read from the bundled local file ($0).
+- **Sync Reads**: Only the 2x daily GitHub Runner sync consumes "reads" (~14k reads/sync).
+- **Blob Storage**: Free tier (100GB egress/month).
+
+---
+
+## 7. Data Tiering: Static vs. Volatile
+
+For maximum efficiency, we separate data based on its "change frequency":
+
+- **Static Tier (Lite DB Bundle)**: Store high-weight, low-frequency data here (Titles, Brand IDs, Categories, Descriptions). This stays in the repository.
+- **Volatile Tier (Turso Cloud)**: Store high-frequency data here (Current Price, Buy Box Status, Last Updated). This is updated by the worker.
+
+---
+
+## 8. The Cold Start Performance Trap (Vitals vs. Freshness)
+
+While the Autonomous Hybrid model is powerful, it introduces a critical risk for **Serverless Cold Starts**. If your Cloud DB has a large delta (e.g., 7,000 modified prices) and the sync occurs during a cold start, the user may face a multi-second delay.
+
+### The Risk
+
+- **TTFB/LCP Impact**: Every second spent syncing is a second the user sees a loading state or a blank screen. This can severely degrade **Core Web Vitals**.
+
+### The Mitigation Strategy: The 500ms Rule
+
+To protect the user experience and SEO rankings, never allow the database sync to block the UI for more than 500ms.
+
+1. **Safety Cutoff (Race Pattern)**:
+   Implement a `Promise.race` in the `dbReady` logic. If `client.sync()` does not resolve within 500ms, resolve the promise anyway and fall back to the bundled `lite.db` data.
+2. **"Weekly Fresh" Discipline**:
+   Run `bun run deploy` at least once a week. This "bakes" the prices into the repository's `lite.db`, ensuring that even on a sync timeout, the user is seeing data that is "Close enough" for a listing page.
+
+3. **Background Syncing**:
+   Perform the sync in the background so that _subsequent_ requests in that same Lambda instance benefit from the fresh data, even if the first user triggered the fallback.
+
+**Verdict**: UX and SEO (LCP) are the priority. It is better to show a "1-day old" price instantly than a "1-minute old" price after a 3-second delay.
+
+---
+
+## 9. SQLite Performance Tuning
+
+For maximum query speed on the bundled Lite DB, CleverPrices uses several optimization strategies.
+
+### 9.1 PRAGMA Settings
+
+These are configured in `src/db/index.ts`:
+
+| PRAGMA         | Value           | Benefit                                   |
+| :------------- | :-------------- | :---------------------------------------- |
+| `cache_size`   | `-20000` (20MB) | Fits entire 11MB DB in RAM                |
+| `mmap_size`    | `20000000`      | Memory-maps the file for OS-level caching |
+| `busy_timeout` | `5000`          | Prevents lock errors on concurrent access |
+
+### 9.2 Index Strategy
+
+Indexes are defined in `src/db/schema.ts`. Key principles:
+
+- **Filter columns get indexes**: `category`, `brand`, `technology`.
+- **Sort columns get indexes**: `salesRank`, `rating`, `normalizedCapacity`.
+- **Composite indexes for common queries**: `(category, salesRank)` for "Popular in Category".
+
+### 9.3 When to Add an Index
+
+Add an index if:
+
+1. A column is used in a `WHERE` clause or `ORDER BY`.
+2. The column has high cardinality (many unique values).
+3. The query runs frequently (e.g., on every page load).
+
+**Avoid over-indexing**: Each index increases write time and database size. Only index what you query.
