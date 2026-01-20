@@ -17,7 +17,7 @@
     "worker:local": "DB_LOCAL=1 bun run scripts/keepa-worker.ts de -c --no-sync",
     "worker:enrich": "DB_LOCAL=1 bun run scripts/enrich-products.ts de --limit=200",
     "db:lite": "./scripts/prepare-deploy.sh",
-    "deploy": "npm run db:lite && git commit -am 'Update product data' && git push",
+    "deploy": "bun run db:lite && git commit -am 'Update product data' && git push",
     "import": "bun run scripts/import-products.ts",
     "db:deploy": "bun run scripts/deploy-data.ts",
     "db:pull": "bun run scripts/pull-data.ts",
