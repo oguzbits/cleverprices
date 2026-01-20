@@ -240,8 +240,9 @@ const getInternalSearchResults = async (
       categories: categorySuggestions,
       products: matchedProducts,
     };
-  } catch (error) {
-    console.error("Search Action Error:", error);
+  } catch (error: any) {
+    console.error(`Search Action Error for query "${query}":`, error.message);
+    // Return empty results instead of throwing to maintain UI stability
     return { categories: [], products: [] };
   }
 };
@@ -253,7 +254,7 @@ const getInternalSearchResults = async (
 const getCachedSearchResults = unstable_cache(
   async (query: string, limit: number) =>
     getInternalSearchResults(query, limit),
-  ["search-results-v1"],
+  ["search-results-v2"],
   { revalidate: 3600 },
 );
 

@@ -24,43 +24,53 @@ const isVercelProduction = process.env.VERCEL === "1";
 
 // Determine database URL
 function getDatabaseUrl(): string {
-  // QUOTA FALLBACK: Force specific local file usage if DB_LOCAL=1 or not on Vercel
+  // 1. Force local file if requested (useful for scripts)
   if (process.env.DB_LOCAL === "1") {
     return "file:./data/cleverprices.db";
   }
 
-  // Production (Vercel): Use the LITE database (no history) to stay under 250MB limit
+  // 2. Explicit Remote Request: Use Turso cloud
+  // Triggered by setting DB_REMOTE=1 in Vercel/Local env
+  if (process.env.DB_REMOTE === "1" && process.env.TURSO_DATABASE_URL) {
+    return process.env.TURSO_DATABASE_URL;
+  }
+
+  // 3. Production (Vercel): Default to bundled LITE database
+  // This saves Turso quota and avoids read-only filesystem errors.
   if (isVercelProduction) {
-    // robust path resolution for Vercel
     return `file:${process.cwd()}/data/cleverprices-lite.db`;
   }
 
-  // Development: Use the FULL database (with history) for local work
+  // 4. Local Development Fallback
   return "file:./data/cleverprices.db";
 }
 
 // Create libSQL client
 function createDbClient(): Client {
   const url = getDatabaseUrl();
+  const isRemote = url.startsWith("libsql://") || url.startsWith("https://");
 
-  // Production (Vercel) or explicit remote URL: Direct connection to Turso
-  if (
-    (isVercelProduction || !url.startsWith("file:")) &&
-    process.env.DB_LOCAL !== "1"
-  ) {
-    if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
-      throw new Error(
-        "TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are required for remote connection",
-      );
+  // Production (Vercel) with bundled file: Use plain local SQLite (READ-ONLY)
+  if (isVercelProduction && url.startsWith("file:")) {
+    console.log("[DB] Using bundled LITE database (quota-safe)");
+    return createClient({ url });
+  }
+
+  // Remote connection to Turso (Cloud)
+  // Enabled if URL is remote OR explicitly requested via TURSO_AUTH_TOKEN with non-file URL
+  if (isRemote || (process.env.TURSO_AUTH_TOKEN && !url.startsWith("file:"))) {
+    if (!process.env.TURSO_AUTH_TOKEN) {
+      throw new Error("TURSO_AUTH_TOKEN is required for remote connection");
     }
+    console.log("[DB] Connecting to Turso Cloud:", url.split("@")[0]); // Log URL without token
     return createClient({
       url,
       authToken: process.env.TURSO_AUTH_TOKEN,
     });
   }
 
-  // Local development: Plain local SQLite (no sync)
-  console.log("[DB] Using plain local SQLite (no Turso sync)");
+  // Local development: Plain local SQLite
+  console.log("[DB] Using local SQLite:", url);
   const client = createClient({ url });
 
   // Set performance PRAGMAs for local SQLite
