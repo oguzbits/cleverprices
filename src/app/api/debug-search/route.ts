@@ -1,4 +1,3 @@
-export const dynamic = "force-dynamic";
 import { performSearch } from "@/lib/actions/search";
 import { NextResponse } from "next/server";
 
