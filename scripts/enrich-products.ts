@@ -169,11 +169,8 @@ async function enrich() {
                         ),
                       ),
                   );
-                } else {
-                  console.log(
-                    `    ⚠️ Skipping history deletion for ${localProduct.asin} (Use --force to overwrite)`,
-                  );
                 }
+
                 globalHistoryInsertions.push(...historyToInsert);
               }
             }

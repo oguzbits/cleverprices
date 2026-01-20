@@ -15,7 +15,7 @@
     "db:migrate": "drizzle-kit push --config=drizzle.config.ts",
     "db:migrate:cloud": "TURSO_DATABASE_URL=$TURSO_DATABASE_URL TURSO_AUTH_TOKEN=$TURSO_AUTH_TOKEN drizzle-kit push --config=drizzle.config.ts",
     "worker:local": "DB_LOCAL=1 bun run scripts/keepa-worker.ts de -c --no-sync",
-    "worker:enrich": "DB_LOCAL=1 bun run scripts/enrich-products.ts de --limit=200",
+    "worker:enrich": "DB_LOCAL=1 bun run scripts/enrich-products.ts de",
     "db:lite": "./scripts/prepare-deploy.sh",
     "deploy": "bun run db:lite && git commit -am 'Update product data' && git push",
     "import": "bun run scripts/import-products.ts",
