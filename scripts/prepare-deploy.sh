@@ -17,7 +17,7 @@ cp data/cleverprices.db data/cleverprices-lite.db
 
 # 3. Prune History, Heavy Text Columns & Vacuum
 echo "🧹 Pruning history, raw_data, features, description and optimizing..."
-sqlite3 data/cleverprices-lite.db "DELETE FROM price_history; UPDATE products SET raw_data = NULL, features = NULL, description = NULL; INSERT INTO products_search(products_search) VALUES('rebuild'); VACUUM;"
+sqlite3 data/cleverprices-lite.db "PRAGMA journal_mode = DELETE; PRAGMA synchronous = OFF; DELETE FROM price_history; UPDATE products SET raw_data = NULL, features = NULL, description = NULL; INSERT INTO products_search(products_search) VALUES('rebuild'); VACUUM;"
 
 # 4. Show Size Comparison
 echo "📊 Database Size Comparison:"
