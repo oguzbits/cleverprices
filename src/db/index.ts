@@ -63,11 +63,16 @@ function createDbClient(): Client {
   console.log("[DB] Using plain local SQLite (no Turso sync)");
   const client = createClient({ url });
 
-  // Set busy timeout for local SQLite to reduce locking issues
+  // Set performance PRAGMAs for local SQLite
   if (url.startsWith("file:")) {
-    client.execute("PRAGMA busy_timeout = 5000").catch((e) => {
-      console.warn("[DB] Failed to set busy_timeout:", e.message);
-    });
+    try {
+      client.execute("PRAGMA journal_mode = WAL");
+      client.execute("PRAGMA synchronous = NORMAL");
+      client.execute("PRAGMA busy_timeout = 5000");
+      client.execute("PRAGMA cache_size = -10000"); // 10MB cache
+    } catch (e: any) {
+      console.warn("[DB] Failed to set performance PRAGMAs:", e.message);
+    }
   }
 
   return client;

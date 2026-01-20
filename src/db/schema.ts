@@ -1,10 +1,10 @@
-import { sql } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  index,
   integer,
   real,
   sqliteTable,
   text,
-  index,
   uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 
@@ -96,6 +96,8 @@ export const prices = sqliteTable(
       .references(() => products.id, { onDelete: "cascade" }),
 
     country: text("country").notNull(), // CountryCode: "us", "de", etc.
+    asin: text("asin"), // Stable identifier for resilience
+    gtin: text("gtin"), // Universal identifier for cross-vendor matching
 
     // Amazon prices
     amazonPrice: real("amazon_price"), // Sold by Amazon
@@ -136,6 +138,8 @@ export const prices = sqliteTable(
       table.productId,
       table.country,
     ),
+    index("idx_prices_asin").on(table.asin),
+    index("idx_prices_gtin").on(table.gtin),
     index("idx_prices_country").on(table.country),
     index("idx_prices_product_id").on(table.productId),
   ],
@@ -155,6 +159,8 @@ export const priceHistory = sqliteTable(
       .references(() => products.id, { onDelete: "cascade" }),
 
     country: text("country").notNull(),
+    asin: text("asin"), // Stable identifier for resilience
+    gtin: text("gtin"), // Universal identifier for cross-vendor matching
 
     // Price at this point in time
     price: real("price").notNull(),
@@ -173,6 +179,8 @@ export const priceHistory = sqliteTable(
       table.productId,
       table.country,
     ),
+    index("idx_price_history_asin").on(table.asin),
+    index("idx_price_history_gtin").on(table.gtin),
     index("idx_price_history_recorded").on(table.recordedAt),
   ],
 );
@@ -297,7 +305,6 @@ export const productOffers = sqliteTable(
 // Type exports for use in application
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
-import { relations } from "drizzle-orm";
 
 export const productsRelations = relations(products, ({ many }) => ({
   prices: many(prices),

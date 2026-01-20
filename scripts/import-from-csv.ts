@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
 import Papa from "papaparse";
 import { db, NewPrice, NewProduct, prices, products } from "../src/db";
@@ -214,6 +214,8 @@ async function main() {
               .update(prices)
               .set({
                 ...priceData,
+                asin,
+                gtin,
                 priceAvg30:
                   parseCSVPrice(row["Amazon: 30 days avg."]) ||
                   parseCSVPrice(row["New: 30 days avg."]),
@@ -225,6 +227,8 @@ async function main() {
           } else {
             await db.insert(prices).values({
               ...priceData,
+              asin,
+              gtin,
               priceAvg30:
                 parseCSVPrice(row["Amazon: 30 days avg."]) ||
                 parseCSVPrice(row["New: 30 days avg."]),
@@ -247,6 +251,28 @@ async function main() {
   console.log(
     `\n✨ Done! Added: ${successCount}, Updated: ${updateCount}, Skipped: ${skipCount}`,
   );
+
+  // --- ULTIMATE SELF-HEALING: Core recovery in one pass ---
+  console.log("\n🩹 Running bulk history recovery for all orphaned records...");
+  try {
+    const healStart = performance.now();
+    // 1. Sync ASIN links
+    await db.run(sql`
+      UPDATE price_history 
+      SET product_id = (SELECT id FROM products WHERE products.asin = price_history.asin)
+      WHERE asin IS NOT NULL AND (product_id IS NULL OR product_id NOT IN (SELECT id FROM products))
+    `);
+    // 2. Sync GTIN links (for non-Amazon sources)
+    await db.run(sql`
+      UPDATE price_history 
+      SET product_id = (SELECT id FROM products WHERE products.gtin = price_history.gtin)
+      WHERE gtin IS NOT NULL AND product_id IS NULL
+    `);
+    const duration = ((performance.now() - healStart) / 1000).toFixed(2);
+    console.log(`✅ History recovered and re-linked in ${duration}s.`);
+  } catch (e: any) {
+    console.warn("⚠️  Bulk recovery had issues:", e.message);
+  }
 }
 
 function mapCategory(

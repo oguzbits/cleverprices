@@ -141,6 +141,8 @@ async function enrich() {
                   currency: "EUR",
                   priceType: "amazon",
                   recordedAt: new Date(h.timestamp),
+                  asin: localProduct.asin,
+                  gtin: localProduct.gtin,
                 })),
                 ...newHistory.map((h) => ({
                   productId: localProduct.id,
@@ -149,6 +151,8 @@ async function enrich() {
                   currency: "EUR",
                   priceType: "new",
                   recordedAt: new Date(h.timestamp),
+                  asin: localProduct.asin,
+                  gtin: localProduct.gtin,
                 })),
               ];
 

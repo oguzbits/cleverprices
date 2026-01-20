@@ -65,6 +65,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
     .select({
       id: products.id,
       asin: products.asin,
+      gtin: products.gtin,
       normalizedCapacity: products.normalizedCapacity,
       salesRank: products.salesRank,
       rating: products.rating,
@@ -241,6 +242,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
                 sqlQueries.push(
                   db.insert(priceHistory).values({
                     productId: product.id,
+                    asin: product.asin,
+                    gtin: product.gtin,
                     country,
                     price: bestPrice,
                     currency,
@@ -272,6 +275,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   .insert(prices)
                   .values({
                     productId: product.id,
+                    asin: product.asin,
+                    gtin: product.gtin,
                     country,
                     amazonPrice,
                     newPrice,
@@ -293,6 +298,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   .onConflictDoUpdate({
                     target: [prices.productId, prices.country],
                     set: {
+                      asin: product.asin,
+                      gtin: product.gtin,
                       amazonPrice,
                       newPrice,
                       usedPrice,
