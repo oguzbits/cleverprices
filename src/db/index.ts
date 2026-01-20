@@ -22,6 +22,7 @@ const isVercelProduction = process.env.VERCEL === "1";
  * Without these, it falls back to local SQLite file.
  */
 
+import fs from "fs";
 import path from "path";
 
 // Determine database URL
@@ -42,6 +43,8 @@ function getDatabaseUrl(): string {
   if (isVercelProduction) {
     // robust path resolution for Vercel
     const dbPath = path.join(process.cwd(), "data", "cleverprices-lite.db");
+    const exists = fs.existsSync(dbPath);
+    console.log(`[DB Check] Path: ${dbPath}, Exists: ${exists}`);
     return `file:${dbPath}`;
   }
 
