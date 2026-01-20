@@ -24,12 +24,14 @@ const isVercelProduction = process.env.VERCEL === "1";
 
 // Determine database URL
 function getDatabaseUrl(): string {
-  // Priority 1: Environment Variable (Production/Remote)
-  if (process.env.TURSO_DATABASE_URL) {
-    return process.env.TURSO_DATABASE_URL;
+  // VEGAS BLACKOUT: Force specific local file usage based on environment
+
+  // Production (Vercel): Use the LITE database (no history) to stay under 250MB limit
+  if (isVercelProduction) {
+    return "file:./data/cleverprices-lite.db";
   }
 
-  // Priority 2: Fallback to local file for development
+  // Development: Use the FULL database (with history) for local work
   return "file:./data/cleverprices.db";
 }
 
