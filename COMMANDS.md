@@ -13,11 +13,11 @@ This guide explains the most important commands for your workflow.
 
 ## 🚀 2. Deployment & Cloud
 
-| Command                    | Description                                                                                    |
-| :------------------------- | :--------------------------------------------------------------------------------------------- |
-| `bun run db:lite`          | **Step 1.** Creates the `cleverprices-lite.db` (stripped of raw JSON and history) for testing. |
-| `bun run deploy`           | **Step 2.** Runs the lite preparation, commits everything, and pushes to Production.           |
-| `bun run db:migrate:cloud` | Pushes your latest schema changes to the Turso production database.                            |
+| Command                    | Description                                                                                                                              |
+| :------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun run db:lite`          | **Step 1.** Creates the `cleverprices-lite.db` (strips history, rawData, features, description). Typically **~88% smaller** than Master. |
+| `bun run deploy`           | **Step 2.** Runs the lite preparation, commits everything, and pushes to Production.                                                     |
+| `bun run db:migrate:cloud` | Pushes your latest schema changes to the Turso production database.                                                                      |
 
 ## 📥 3. Data Ingestion
 

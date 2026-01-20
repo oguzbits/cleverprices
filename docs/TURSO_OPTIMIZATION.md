@@ -164,7 +164,31 @@ To prevent accidental resource exhaustion or data loss, all management scripts f
 
 ---
 
+## Lite DB Optimization
+
+For Vercel production, we use a "Lite" database that strips unused data:
+
+| What is Stripped                     | Typical Savings |
+| :----------------------------------- | --------------: |
+| `raw_data` (Keepa JSON blobs)        |            ~70% |
+| `features` (product bullet points)   |             ~8% |
+| `description` (product descriptions) |             ~4% |
+| `price_history` (full table)         |             ~2% |
+
+**Result:** Lite DB is typically **~88% smaller** than the Master DB.
+
+These columns are stripped because:
+
+- `features` and `description` are only needed on single product pages (which use the Master DB or fetch live).
+- `raw_data` is for debugging only.
+- `price_history` is not served in production (charts use computed averages).
+
+**Command:** `bun run db:lite`
+
+---
+
 _Last updated: 2026-01-20 by Antigravity_
 
+- **Lite DB Optimization**: Stripping `features` and `description` columns reduces Lite DB to 11MB.
 - **Keepa Batching**: Always fetch data from Keepa in batches of **50-100 ASINs** (API limit).
   _Last updated: 2026-01-19 by Antigravity_
