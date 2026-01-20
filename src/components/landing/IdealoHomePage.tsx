@@ -1,4 +1,5 @@
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
+import { CategoryNav } from "@/components/layout/CategoryNav";
 import { EmptyState } from "@/components/ui/EmptyState";
 import dynamic from "next/dynamic";
 import { IdealoHero } from "./IdealoHero";
@@ -31,6 +32,7 @@ interface IdealoHomePageProps {
   deals: Product[];
   bestsellers: Product[];
   newArrivals: Product[];
+  country: string;
 }
 
 export function IdealoHomePage({
@@ -38,6 +40,7 @@ export function IdealoHomePage({
   deals,
   bestsellers,
   newArrivals,
+  country,
 }: IdealoHomePageProps) {
   // Handle empty state if all lists are empty
   if (
@@ -64,6 +67,7 @@ export function IdealoHomePage({
 
   return (
     <div className="bg-[#f5f5f5]">
+      <CategoryNav country={country} />
       {/* Hero Section - light blue bg - Critical, so we keep regular import or direct usage */}
       {popular.length > 0 ? (
         <IdealoSection variant="lightBlue">

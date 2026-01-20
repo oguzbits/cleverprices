@@ -1,7 +1,5 @@
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 
-import { CategoryNav } from "@/components/layout/CategoryNav";
 import { Logo } from "@/components/layout/Logo";
 import { SearchButton } from "@/components/layout/SearchButton";
 import { SearchManager } from "@/components/layout/SearchManager";
@@ -32,9 +30,6 @@ export function Navbar({ country: propCountry }: { country?: string }) {
         </div>
         <SearchManager />
       </header>
-
-      {/* Category Nav - Simplified */}
-      <CategoryNav country={country} />
     </>
   );
 }

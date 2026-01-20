@@ -94,6 +94,7 @@ export default async function HomeContent({
         deals={deals}
         bestsellers={bestsellers}
         newArrivals={newArrivals}
+        country={countryCode}
       />
     </>
   );

@@ -20,7 +20,6 @@ import {
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle, formatTechText } from "@/lib/utils/formatting";
-import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
@@ -90,13 +89,41 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Live search using TanStack Query + Server Action
-  const { data, isFetching } = useQuery({
-    queryKey: ["product-search", debouncedSearch, limit],
-    queryFn: () => performSearch(debouncedSearch, limit),
-    enabled: debouncedSearch.length >= 2,
-    staleTime: 60 * 1000,
-  });
+  const [data, setData] = React.useState<{
+    categories: any[];
+    products: any[];
+  } | null>(null);
+  const [isFetching, setIsFetching] = React.useState(false);
+
+  // Live search using native fetch (Server Action) - Replaces TanStack Query to save 23KB
+  React.useEffect(() => {
+    if (debouncedSearch.length < 2) {
+      setData(null);
+      return;
+    }
+
+    let active = true;
+    const fetchResults = async () => {
+      setIsFetching(true);
+      try {
+        const results = await performSearch(debouncedSearch, limit);
+        if (active) {
+          setData(results);
+        }
+      } catch (error) {
+        console.error("Search failed:", error);
+      } finally {
+        if (active) {
+          setIsFetching(false);
+        }
+      }
+    };
+
+    fetchResults();
+    return () => {
+      active = false;
+    };
+  }, [debouncedSearch, limit]);
 
   const categories = data?.categories || [];
   const products = data?.products || [];
