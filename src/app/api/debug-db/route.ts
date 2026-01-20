@@ -11,36 +11,50 @@ export async function GET() {
 
   const diagnostics: any = {
     timestamp: new Date().toISOString(),
-    dbFileExists: exists,
+    dbPath,
+    exists,
   };
 
-  try {
-    // 1. Raw SQL test on products
-    const rawResult = await client.execute(
-      "SELECT id, title FROM products LIMIT 1",
-    );
-    diagnostics.rawSqlSuccess = true;
-    diagnostics.firstProduct = rawResult.rows[0];
-
-    // 2. Drizzle test on products
+  if (exists) {
     try {
-      const drizzleResult = await db
-        .select({ id: products.id, title: products.title })
-        .from(products)
-        .limit(1);
-      diagnostics.drizzleSuccess = true;
-      diagnostics.drizzleProduct = drizzleResult[0];
-    } catch (drizzleErr: any) {
-      diagnostics.drizzleError = drizzleErr.message;
-      diagnostics.drizzleStack = drizzleErr.stack;
+      const stats = fs.statSync(dbPath);
+      diagnostics.size = stats.size;
+
+      const fd = fs.openSync(dbPath, "r");
+      const buffer = Buffer.alloc(16);
+      fs.readSync(fd, buffer, 0, 16, 0);
+      diagnostics.header = buffer.toString("ascii");
+      fs.closeSync(fd);
+    } catch (fsErr: any) {
+      diagnostics.fsError = fsErr.message;
+    }
+  }
+
+  try {
+    // 1. Raw Client Test
+    const raw = await client.execute("SELECT 1 as test");
+    diagnostics.clientTest = raw.rows[0].test;
+
+    // 2. Select from products (Raw)
+    try {
+      const rawProducts = await client.execute(
+        "SELECT id, title FROM products LIMIT 1",
+      );
+      diagnostics.rawResults = rawProducts.rows.length;
+    } catch (rawErr: any) {
+      diagnostics.rawError = rawErr.message;
     }
 
-    // 3. FTS test
-    const ftsResult = await client.execute(
-      "SELECT id FROM products_search WHERE products_search MATCH 'Samsung*' LIMIT 1",
-    );
-    diagnostics.ftsSuccess = true;
-    diagnostics.ftsCount = ftsResult.rows.length;
+    // 3. Drizzle Test
+    try {
+      const drizzleResult = await db
+        .select({ id: products.id })
+        .from(products)
+        .limit(1);
+      diagnostics.drizzleResults = drizzleResult.length;
+    } catch (drizzleErr: any) {
+      diagnostics.drizzleError = drizzleErr.message;
+    }
   } catch (err: any) {
     diagnostics.globalError = err.message;
   }
