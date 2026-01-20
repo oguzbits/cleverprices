@@ -10,40 +10,39 @@ export async function GET() {
   const exists = fs.existsSync(dbPath);
 
   const diagnostics: any = {
-    cwd: process.cwd(),
-    dbPath,
-    dbFileExists: exists,
     timestamp: new Date().toISOString(),
+    dbFileExists: exists,
   };
 
   try {
-    // 1. Simple Test: Get 1 product
-    const oneProduct = await db.select().from(products).limit(1);
-    diagnostics.oneProduct = oneProduct[0]?.title || "NONE FOUND";
+    // 1. Raw SQL test on products
+    const rawResult = await client.execute(
+      "SELECT id, title FROM products LIMIT 1",
+    );
+    diagnostics.rawSqlSuccess = true;
+    diagnostics.firstProduct = rawResult.rows[0];
 
-    // 2. FTS Test: Manual execution
+    // 2. Drizzle test on products
     try {
-      const ftsTest = await client.execute({
-        sql: "SELECT id FROM products_search WHERE products_search MATCH ? LIMIT 5",
-        args: ["Samsung*"],
-      });
-      diagnostics.ftsResults = ftsTest.rows.length;
-      diagnostics.ftsFirstId = ftsTest.rows[0]?.id;
-    } catch (ftsErr: any) {
-      diagnostics.ftsError = ftsErr.message;
+      const drizzleResult = await db
+        .select({ id: products.id, title: products.title })
+        .from(products)
+        .limit(1);
+      diagnostics.drizzleSuccess = true;
+      diagnostics.drizzleProduct = drizzleResult[0];
+    } catch (drizzleErr: any) {
+      diagnostics.drizzleError = drizzleErr.message;
+      diagnostics.drizzleStack = drizzleErr.stack;
     }
 
-    // 3. Simple SQL Test
-    try {
-      const sqliteCount = await client.execute(
-        "SELECT count(*) as c FROM products",
-      );
-      diagnostics.sqliteProductCount = sqliteCount.rows[0].c;
-    } catch (sqlErr: any) {
-      diagnostics.sqliteError = sqlErr.message;
-    }
+    // 3. FTS test
+    const ftsResult = await client.execute(
+      "SELECT id FROM products_search WHERE products_search MATCH 'Samsung*' LIMIT 1",
+    );
+    diagnostics.ftsSuccess = true;
+    diagnostics.ftsCount = ftsResult.rows.length;
   } catch (err: any) {
-    diagnostics.mainError = err.message;
+    diagnostics.globalError = err.message;
   }
 
   return NextResponse.json(diagnostics);
