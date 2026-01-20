@@ -31,6 +31,10 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-tabs",
       "@radix-ui/react-tooltip",
     ],
+    // IMPORTANT: Explicitly include the SQLite file in the Vercel Function bundle
+    outputFileTracingIncludes: {
+      "/*": ["./data/cleverprices-lite.db"],
+    },
   },
   poweredByHeader: false,
   // Cache Life Profiles for Next.js 16 "use cache"

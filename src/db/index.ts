@@ -28,7 +28,8 @@ function getDatabaseUrl(): string {
 
   // Production (Vercel): Use the LITE database (no history) to stay under 250MB limit
   if (isVercelProduction) {
-    return "file:./data/cleverprices-lite.db";
+    // robust path resolution for Vercel
+    return `file:${process.cwd()}/data/cleverprices-lite.db`;
   }
 
   // Development: Use the FULL database (with history) for local work
