@@ -42,7 +42,7 @@ function getDatabaseUrl(): string {
   if (isVercelProduction) {
     // robust path resolution for Vercel
     const dbPath = path.join(process.cwd(), "data", "cleverprices-lite.db");
-    return `file:${dbPath}?mode=ro`;
+    return `file:${dbPath}`;
   }
 
   // 4. Local Development Fallback
