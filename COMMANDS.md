@@ -13,11 +13,11 @@ This guide explains the most important commands for your workflow.
 
 ## 🚀 2. Deployment & Cloud
 
-| Command                    | Description                                                                                                                              |
-| :------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| `bun run db:lite`          | **Step 1.** Creates the `cleverprices-lite.db` (strips history, rawData, features, description). Typically **~88% smaller** than Master. |
-| `bun run deploy`           | **Step 2.** Runs the lite preparation, commits everything, and pushes to Production.                                                     |
-| `bun run db:migrate:cloud` | Pushes your latest schema changes to the Turso production database.                                                                      |
+| Command                    | Description                                                                                                           |
+| :------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
+| `bun run db:lite`          | **Step 1.** Creates `cleverprices-lite.db`. Strips heavy columns & sets `DELETE` journal mode (mandatory for Vercel). |
+| `bun run deploy`           | **Step 2.** Runs the lite preparation, commits everything, and pushes to Production.                                  |
+| `bun run db:migrate:cloud` | Pushes your latest schema changes to the Turso production database.                                                   |
 
 ## 📥 3. Data Ingestion
 
@@ -28,5 +28,6 @@ This guide explains the most important commands for your workflow.
 
 ## 💡 Troubleshooting
 
-- **Database "Locked"?** The system now uses WAL mode, so this should rarely happen. If it does, stop the worker and restart it.
+- **Search fails in Production but works locally?** This is usually because `cleverprices-lite.db` was not prepared correctly. Run `bun run deploy` instead of just a raw `git push`.
+- **Database "Locked"?** If local, restart the worker. If production, ensure `journal_mode=DELETE` was applied by `db:lite`.
 - **Charts Empty?** Run `bun run worker:enrich`. Note: it takes tokens, so use it sparingly.
