@@ -3,7 +3,7 @@
 # Exit on error
 set -e
 
-echo "🚀 Preparing 'Vegas Lite' deployment..."
+echo "🚀 Preparing 'CleverPrices Lite' deployment..."
 
 # 1. Verify Master DB exists
 if [ ! -f "data/cleverprices.db" ]; then

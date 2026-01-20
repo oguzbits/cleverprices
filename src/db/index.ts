@@ -24,7 +24,10 @@ const isVercelProduction = process.env.VERCEL === "1";
 
 // Determine database URL
 function getDatabaseUrl(): string {
-  // VEGAS BLACKOUT: Force specific local file usage based on environment
+  // QUOTA FALLBACK: Force specific local file usage if DB_LOCAL=1 or not on Vercel
+  if (process.env.DB_LOCAL === "1") {
+    return "file:./data/cleverprices.db";
+  }
 
   // Production (Vercel): Use the LITE database (no history) to stay under 250MB limit
   if (isVercelProduction) {
@@ -41,7 +44,10 @@ function createDbClient(): Client {
   const url = getDatabaseUrl();
 
   // Production (Vercel) or explicit remote URL: Direct connection to Turso
-  if (isVercelProduction || !url.startsWith("file:")) {
+  if (
+    (isVercelProduction || !url.startsWith("file:")) &&
+    process.env.DB_LOCAL !== "1"
+  ) {
     if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
       throw new Error(
         "TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are required for remote connection",

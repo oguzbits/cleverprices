@@ -142,6 +142,7 @@ async function main() {
           `bun run scripts/update-prices.ts ${country} --stale --limit=${priceLimit}`,
           {
             stdio: "inherit",
+            env: { ...process.env, DB_LOCAL: shouldSync ? "0" : "1" },
           },
         );
       };
@@ -156,6 +157,7 @@ async function main() {
               `bun run scripts/enrich-products.ts ${country} --limit=${enrichmentLimit}`,
               {
                 stdio: "inherit",
+                env: { ...process.env, DB_LOCAL: shouldSync ? "0" : "1" },
               },
             );
           } catch (e) {
