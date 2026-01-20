@@ -151,9 +151,10 @@ export function mapDbProduct(
       if (price && pr.country) {
         pricesObj[pr.country] = price;
         if (pr.lastUpdated) {
-          pricesLastUpdatedObj[pr.country] = new Date(
-            pr.lastUpdated,
-          ).toISOString();
+          // Handle seconds (Unix timestamp) vs milliseconds
+          const ts = Number(pr.lastUpdated);
+          const date = new Date(ts < 10000000000 ? ts * 1000 : ts);
+          pricesLastUpdatedObj[pr.country] = date.toISOString();
         }
         if (pr.priceAvg30) avg30Obj[pr.country] = pr.priceAvg30;
         if (pr.priceAvg90) avg90Obj[pr.country] = pr.priceAvg90;
@@ -308,10 +309,10 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   const getCachedProducts = unstable_cache(
     fetchProducts,
-    [`category-products-v24-${category}`],
+    [`category-products-v25-${category}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: [`category-v24-${category}`],
+      tags: [`category-v25-${category}`],
     },
   );
 

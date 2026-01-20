@@ -353,7 +353,7 @@ export async function getCategoryProducts(
   const localizedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v25",
+    "v26",
   );
 
   const category = allCategories[categorySlug as CategorySlug];
