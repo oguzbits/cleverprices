@@ -48,7 +48,8 @@ export function generateProductSlug(
 
   const validUnits = ["tb", "gb", "w", "zoll"];
   const hasValidUnit =
-    capacityUnit && validUnits.includes(capacityUnit.toLowerCase());
+    typeof capacityUnit === "string" &&
+    validUnits.includes(capacityUnit.toLowerCase());
 
   if (!hasValidUnit) {
     // Try to extract storage capacity (TB/GB)
@@ -158,7 +159,7 @@ export function generateProductSlug(
   }
 
   // 5. Add capacity if available (key differentiator for storage products)
-  if (extractedCapacity && extractedUnit) {
+  if (extractedCapacity && typeof extractedUnit === "string") {
     const unit = extractedUnit.toLowerCase();
     const capacityStr =
       extractedCapacity % 1 === 0

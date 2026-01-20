@@ -44,6 +44,9 @@ next-env.d.ts
 *.db
 *.db-wal
 *.db-shm
+*.backup
+*.sqlite
+/data/*.backup
 /data/backups/
 /drizzle/
 

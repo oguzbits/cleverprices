@@ -38,7 +38,19 @@ async function pullData() {
   // Ensure directory exists
   const localDb = new Database("./data/cleverprices.db", { create: true });
 
-  // 1. Prepare Local Schema (Simple approach: we assume schema matches)
+  // 1. Pre-Flight Safety Check
+  console.log("📡 verifying cloud connection...");
+  try {
+    await cloudClient.execute("SELECT 1");
+    console.log("✅ Cloud connection verified.");
+  } catch (e) {
+    console.error("❌ CRITICAL ERROR: Could not connect to Turso Cloud.");
+    console.error("   Aborting pull to protect local data.");
+    console.error("   Error:", e);
+    process.exit(1);
+  }
+
+  // 2. Prepare Local Schema (Simple approach: we assume schema matches)
   // We disable foreign keys temporarily for faster bulk inserts
   localDb.run("PRAGMA foreign_keys = OFF;");
 
