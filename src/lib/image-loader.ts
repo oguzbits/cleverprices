@@ -43,7 +43,8 @@ export default function amazonImageLoader({
     // Construct new path with:
     // SX = Scale X (Width)
     // QL = Quality Level
-    const newPathname = `${cleanBase}._SX${width}_QL${quality}_${extension}`;
+    // FMwebp = Force WebP format (Amazon-specific modifier)
+    const newPathname = `${cleanBase}._SX${width}_QL${quality}_FMwebp_${extension}`;
 
     url.pathname = newPathname;
     return url.toString();
