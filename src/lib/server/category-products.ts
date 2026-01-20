@@ -93,7 +93,17 @@ async function getCachedLocalizedCategoryProducts(
   countryCode: string,
   version: string = "v1", // Cache buster
 ): Promise<LocalizedProduct[]> {
-  cacheLife("category" as any); // 11h revalidation
+  // Guard cacheLife for script execution context
+  try {
+    if (
+      process.env.NEXT_RUNTIME === "nodejs" ||
+      process.env.NEXT_RUNTIME === "edge"
+    ) {
+      cacheLife("category" as any); // 11h revalidation
+    }
+  } catch (e) {
+    // Ignore cacheLife error in scripts
+  }
 
   let rawProducts;
   if (categorySlug === "deals") {
@@ -109,7 +119,8 @@ async function getCachedLocalizedCategoryProducts(
         p,
         countryCode,
       );
-      if (!price) return null;
+      // Relaxed check: Allow products even if price is missing (display as unavailable)
+      // if (!price) return null;
 
       // 1. Extract static attributes (pruning raw specifications)
       let socket = p.specifications?.Socket || p.specifications?.["Socket-Typ"];
