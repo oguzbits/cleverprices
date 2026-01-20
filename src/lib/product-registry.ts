@@ -522,34 +522,37 @@ export async function searchProducts(
   // Prioritize brand match, then title match
   const matchQuery = `(brand : ${terms}) OR (title : ${terms})`;
 
+  let ids: number[] = [];
+
+  // 1. Try high-performance FTS5 search
   try {
-    // 1. Get matching IDs from the FTS5 virtual table (Super Fast)
-    // We use ORDER BY rank to ensure the most relevant items (brand matches) come first
     const result = await client.execute({
       sql: "SELECT id FROM products_search WHERE products_search MATCH ? ORDER BY rank LIMIT ?",
       args: [matchQuery, limit],
     });
+    ids = result.rows.map((r: any) => Number(r.id));
+  } catch (error) {
+    console.warn(`[Search] FTS MATCH failed for "${query}", falling back...`);
+  }
 
-    const ids = result.rows.map((r: any) => Number(r.id));
-
-    // 2. Fallback: If no results from FTS, try a basic LIKE search on products table
-    if (ids.length === 0) {
-      console.log(
-        `[Search] No FTS results for "${query}", trying basic LIKE fallback...`,
-      );
+  // 2. Fallback: If no results from FTS or FTS failed, try a basic LIKE search
+  if (ids.length === 0) {
+    try {
       const fallbackResult = await db
         .select({ id: products.id })
         .from(products)
         .where(like(products.title, `%${sanitized}%`))
         .limit(limit);
 
-      const fallbackIds = fallbackResult.map((r) => r.id);
-      if (fallbackIds.length === 0) return [];
-
-      // Update ids array for the data fetching step below
-      ids.push(...(fallbackIds as number[]));
+      ids = fallbackResult.map((r) => Number(r.id));
+      if (ids.length === 0) return [];
+    } catch (fallbackErr) {
+      console.error("[Search] Fallback LIKE also failed:", fallbackErr);
+      return [];
     }
+  }
 
+  try {
     // 3. Fetch full product data and prices for those specific IDs
     const prods = await db
       .select(liteProductColumns)
