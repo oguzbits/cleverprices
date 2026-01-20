@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import { client, db } from "@/db";
 import { products } from "@/db/schema";
 import fs from "fs";
