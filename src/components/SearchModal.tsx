@@ -9,7 +9,9 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { performSearch } from "@/lib/actions/search";
-import { allCategories, getCategoryPath } from "@/lib/categories";
+import { CATEGORY_MAP } from "@/lib/category-definitions";
+import { CategorySlug } from "@/lib/category-types";
+import { getCategoryPath } from "@/lib/category-utils";
 import {
   CountryCode,
   DEFAULT_COUNTRY,
@@ -197,13 +199,15 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             </CommandGroup>
 
             <CommandGroup>
-              {Object.values(allCategories)
-                .filter((c) => !c.hidden)
+              {Object.entries(CATEGORY_MAP)
+                .filter(([_, c]) => !c.hidden)
                 .slice(0, limit === 6 ? 2 : 5)
-                .map((cat) => (
+                .map(([slug, cat]) => (
                   <CommandItem
-                    key={cat.slug}
-                    onSelect={() => handleSelect(getCategoryPath(cat.slug))}
+                    key={slug}
+                    onSelect={() =>
+                      handleSelect(getCategoryPath(slug as CategorySlug))
+                    }
                     className="cursor-pointer"
                   >
                     {formatTechText(cat.name)}
