@@ -24,21 +24,14 @@ const isVercelProduction = process.env.VERCEL === "1";
 
 // Determine database URL
 function getDatabaseUrl(): string {
-  // Explicit path override? Use it (e.g. for migrations or scripts)
-  if (process.env.DATABASE_PATH) {
-    return process.env.DATABASE_PATH;
-  }
+  // VEGAS BLACKOUT: Force specific local file usage based on environment
 
-  // Production (Vercel): Always use Turso
+  // Production (Vercel): Use the LITE database (no history) to stay under 250MB limit
   if (isVercelProduction) {
-    if (!process.env.TURSO_DATABASE_URL) {
-      throw new Error("TURSO_DATABASE_URL is required in Vercel production");
-    }
-    return process.env.TURSO_DATABASE_URL;
+    return "file:./data/cleverprices-lite.db";
   }
 
-  // Development: Default to local SQLite file for speed and isolation
-  // Users can still force Turso by setting DATABASE_PATH to the Turso URL
+  // Development: Use the FULL database (with history) for local work
   return "file:./data/cleverprices.db";
 }
 

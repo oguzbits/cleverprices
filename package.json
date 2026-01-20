@@ -18,6 +18,7 @@
     "import": "bun run scripts/import-products.ts",
     "update-prices": "bun run scripts/update-prices.ts",
     "collect-history": "bun run scripts/collect-price-history.ts",
+    "deploy": "./scripts/prepare-deploy.sh",
     "db:deploy": "bun run scripts/deploy-data.ts",
     "db:pull": "bun run scripts/pull-data.ts",
     "worker": "./scripts/start-worker-sync.sh",

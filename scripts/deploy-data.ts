@@ -439,8 +439,9 @@ async function migrate() {
           const asin = getLocalAsin(h.product_id);
           if (!asin) return null;
 
-          // Skip if already seeded in cloud
-          if (asinsAlreadySeeded.has(asin)) {
+          // Skip if already seeded in cloud (ONLY if this is an incremental delta sync)
+          // For full syncs (!isDelta), we wiped the history table, so we must push everything regardless.
+          if (isDelta && asinsAlreadySeeded.has(asin)) {
             skippedProducts.add(asin);
             return null;
           }

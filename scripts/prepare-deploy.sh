@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Exit on error
+set -e
+
+echo "🚀 Preparing 'Vegas Lite' deployment..."
+
+# 1. Verify Master DB exists
+if [ ! -f "data/cleverprices.db" ]; then
+    echo "❌ Error: Master database 'data/cleverprices.db' not found!"
+    exit 1
+fi
+
+# 2. Copy Master to Lite
+echo "📦 Creating Lite database copy..."
+cp data/cleverprices.db data/cleverprices-lite.db
+
+# 3. Prune History & Vacuum
+echo "🧹 Pruning price_history and optimizing..."
+sqlite3 data/cleverprices-lite.db "DELETE FROM price_history; VACUUM;"
+
+# 4. Show Size Comparison
+echo "📊 Database Size Comparison:"
+ls -lh data/cleverprices.db data/cleverprices-lite.db
+
+# 5. Git Stage
+echo "git add data/cleverprices-lite.db..."
+git add -f data/cleverprices-lite.db
+
+echo "✅ Ready to commit and push!"
