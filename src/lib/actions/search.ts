@@ -3,7 +3,6 @@
 import { client } from "@/db";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { searchProducts } from "@/lib/product-registry";
-import { unstable_cache } from "next/cache";
 
 export interface SearchCategory {
   name: string;
@@ -127,17 +126,23 @@ const getInternalSearchResults = async (
         .filter((c): c is SearchCategory => c !== null);
     } else if (!isMultiWord && s.length > 2) {
       // 2. Dynamic Brand-Category Mapping (Only for single words to save reads)
-      const brandCategoriesResult = await client.execute({
-        sql: `
-          SELECT brand, category, COUNT(*) as count 
-          FROM products 
-          WHERE brand LIKE ? 
-          GROUP BY brand, category 
-          ORDER BY count DESC 
-          LIMIT 5
-        `,
-        args: [`${query}%`],
-      });
+      let brandCategoriesResult;
+      try {
+        brandCategoriesResult = await client.execute({
+          sql: `
+            SELECT brand, category, COUNT(*) as count 
+            FROM products 
+            WHERE brand LIKE ? 
+            GROUP BY brand, category 
+            ORDER BY count DESC 
+            LIMIT 5
+          `,
+          args: [`${query}%`],
+        });
+      } catch (e) {
+        console.warn("Brand categories query failed:", e);
+        brandCategoriesResult = { rows: [] };
+      }
 
       brandMatchedCategories = brandCategoriesResult.rows
         .map((row: any): SearchCategory | null => {
@@ -251,24 +256,19 @@ const getInternalSearchResults = async (
 };
 
 /**
- * Cached version of search results.
- * Shared across users, revalidates every hour.
+ * LIVE Search Action (Bypass cache for diagnostics)
  */
-const getCachedSearchResults = unstable_cache(
-  async (query: string, limit: number) =>
-    getInternalSearchResults(query, limit),
-  ["search-results-v2"],
-  { revalidate: 3600 },
-);
-
-export async function performSearch(
+export const performSearch = async (
   query: string,
-  limit: number = 10,
-): Promise<SearchResults> {
-  const normalizedQuery = query.toLowerCase().trim();
-  if (!normalizedQuery || normalizedQuery.length < 2) {
+  limit: number = 6,
+): Promise<SearchResults> => {
+  if (!query || query.length < 2) return { categories: [], products: [] };
+
+  try {
+    // Call internal search directly to isolate issues from unstable_cache
+    return await getInternalSearchResults(query, limit);
+  } catch (error: any) {
+    console.error(`Perform Search Crash [query="${query}"]:`, error.message);
     return { categories: [], products: [] };
   }
-
-  return getCachedSearchResults(normalizedQuery, limit);
-}
+};

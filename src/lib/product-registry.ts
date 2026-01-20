@@ -531,9 +531,26 @@ export async function searchProducts(
     });
 
     const ids = result.rows.map((r: any) => Number(r.id));
-    if (ids.length === 0) return [];
 
-    // 2. Fetch full product data and prices for those specific IDs
+    // 2. Fallback: If no results from FTS, try a basic LIKE search on products table
+    if (ids.length === 0) {
+      console.log(
+        `[Search] No FTS results for "${query}", trying basic LIKE fallback...`,
+      );
+      const fallbackResult = await db
+        .select({ id: products.id })
+        .from(products)
+        .where(like(products.title, `%${sanitized}%`))
+        .limit(limit);
+
+      const fallbackIds = fallbackResult.map((r) => r.id);
+      if (fallbackIds.length === 0) return [];
+
+      // Update ids array for the data fetching step below
+      ids.push(...(fallbackIds as number[]));
+    }
+
+    // 3. Fetch full product data and prices for those specific IDs
     const prods = await db
       .select(liteProductColumns)
       .from(products)
