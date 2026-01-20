@@ -214,19 +214,21 @@ const getInternalSearchResults = async (
       }
     });
 
-    // C. Products with Intelligent Grouping (Up to 'limit' total items)
+    // C. Products with Intelligent Grouping
     const seenFamilies = new Set<string>();
     const matchedProducts: SearchProduct[] = [];
 
-    const categoryCount = categorySuggestions.length;
-    const maxProducts = Math.max(2, limit - categoryCount);
+    // Aim for at least 3-4 products even if categories are many
+    const minProducts = 4;
+    const maxTotalItems = Math.max(limit + 2, 10);
 
     for (const p of productResults) {
       if (
-        matchedProducts.length >= maxProducts ||
-        matchedProducts.length + categoryCount >= limit
-      )
+        matchedProducts.length >= minProducts &&
+        matchedProducts.length + categorySuggestions.length >= maxTotalItems
+      ) {
         break;
+      }
 
       const familyKey = p.parentAsin || p.title.toLowerCase().trim();
       if (!seenFamilies.has(familyKey)) {
