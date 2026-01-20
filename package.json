@@ -22,7 +22,8 @@
     "db:deploy": "bun run scripts/deploy-data.ts",
     "db:pull": "bun run scripts/pull-data.ts",
     "warm-cache": "bun run scripts/warm-cache.ts",
-    "update-prices": "bun run scripts/update-prices.ts"
+    "update-prices": "bun run scripts/update-prices.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@libsql/client": "^0.17.0",
@@ -69,6 +70,7 @@
   },
   "devDependencies": {
     "@next/bundle-analyzer": "^16.1.4",
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
