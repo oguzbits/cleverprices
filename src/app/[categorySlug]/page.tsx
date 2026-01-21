@@ -160,7 +160,11 @@ export default async function DedicatedCategoryPage({
       />
     );
   } catch (error: any) {
-    if (error?.digest?.startsWith("NEXT_")) {
+    if (
+      error?.digest?.startsWith("NEXT_") ||
+      error?.digest === "HANGING_PROMISE_REJECTION" ||
+      error?.message?.includes("searchParams")
+    ) {
       throw error;
     }
     console.error(`[Page Error] Category ${categorySlug}:`, error);

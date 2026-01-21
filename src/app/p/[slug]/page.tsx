@@ -200,8 +200,10 @@ export default async function ProductPage({ params }: Props) {
       />
     );
   } catch (error: any) {
-    if (error?.digest?.startsWith("NEXT_")) {
-      // Re-throw Next.js internal errors (redirect, notFound)
+    if (
+      error?.digest?.startsWith("NEXT_") ||
+      error?.digest === "HANGING_PROMISE_REJECTION"
+    ) {
       throw error;
     }
     console.error(`[Page Error] Product ${slug}:`, error);
