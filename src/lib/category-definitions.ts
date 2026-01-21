@@ -728,6 +728,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Game-Controller", href: "/game-controllers" },
     ],
   },
+  games: {
+    ...CATEGORY_MANIFEST.games,
+    description: "Videospiele für alle Plattformen",
+    categoryType: "standard",
+  },
   cameras: {
     name: "Digitalkameras",
     description: "Kameras & Optik",
