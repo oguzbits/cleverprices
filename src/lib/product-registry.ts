@@ -750,11 +750,18 @@ const getCachedPopular = unstable_cache(
 
     const pricesByProduct = indexPricesById(prs);
 
-    return prods.map((p) =>
-      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
-    );
+    return prods
+      .map((p) =>
+        mapDbProduct(
+          p as DbProduct,
+          pricesByProduct.get(p.id!) || [],
+          [],
+          true,
+        ),
+      )
+      .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
-  ["popular-deals-v10"],
+  ["popular-deals-v11"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
     tags: ["products", "popular", "v10"],
@@ -839,14 +846,16 @@ export async function getDiverseMostPopular(
 
   const pricesByProduct = indexPricesById(prs);
 
-  return prods.map((p) =>
-    mapDbProduct(
-      p as DbProduct,
-      pricesByProduct.get(p.id!) || [],
-      [],
-      true, // Strip heavy data (Home curation doesn't need specs)
-    ),
-  );
+  return prods
+    .map((p) =>
+      mapDbProduct(
+        p as DbProduct,
+        pricesByProduct.get(p.id!) || [],
+        [],
+        true, // Strip heavy data (Home curation doesn't need specs)
+      ),
+    )
+    .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
 }
 
 const getCachedNew = unstable_cache(
@@ -882,11 +891,18 @@ const getCachedNew = unstable_cache(
 
     const pricesByProduct = indexPricesById(prs);
 
-    return prods.map((p) =>
-      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
-    );
+    return prods
+      .map((p) =>
+        mapDbProduct(
+          p as DbProduct,
+          pricesByProduct.get(p.id!) || [],
+          [],
+          true,
+        ),
+      )
+      .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
-  ["new-arrivals-v10"],
+  ["new-arrivals-v11"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
     tags: ["products", "new", "v10"],
