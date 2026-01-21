@@ -238,6 +238,8 @@ async function getCachedLocalizedCategoryProducts(
         cores,
         lastUpdated,
         variationAttributes: p.variationAttributes,
+        savings,
+        listPrice: displayListPrice,
       } as LocalizedProduct;
     })
     .filter((p): p is LocalizedProduct => p !== null);
@@ -364,7 +366,7 @@ export async function getCategoryProducts(
   const localizedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v28",
+    "v29",
   );
 
   const category = allCategories[categorySlug as CategorySlug];

@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-@import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -124,8 +123,10 @@
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
+  :root,
+  html,
+  body {
+    scroll-behavior: auto !important;
   }
   * {
     @apply border-border outline-ring/50;
