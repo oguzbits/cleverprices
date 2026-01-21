@@ -21,12 +21,13 @@ interface IdealoProductCardProps {
   isBestseller?: boolean;
   variationAttributes?: string;
   countryCode?: string;
+  /** Load image with priority (use for first 4 visible cards only) */
+  priorityLoad?: boolean;
 }
 
 export function IdealoProductCard({
   title,
   price,
-  currency = "EUR",
   slug,
   image,
   rating,
@@ -37,8 +38,8 @@ export function IdealoProductCard({
   categoryName,
   discountRate,
   isBestseller,
-  variationAttributes,
   countryCode = "de",
+  priorityLoad = false,
 }: IdealoProductCardProps) {
   return (
     <PrefetchLink
@@ -70,9 +71,9 @@ export function IdealoProductCard({
               className="object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 600px) 148px, 200px"
               quality={40}
-              priority={isBestseller}
+              priority={priorityLoad}
               // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
-              fetchPriority={isBestseller ? "high" : "auto"}
+              fetchPriority={priorityLoad ? "high" : "auto"}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gray-50 text-gray-300">

@@ -84,6 +84,9 @@ export function ProductCard({
             sizes="224px"
             quality={50}
             priority={priority}
+            loading={priority ? undefined : "lazy"}
+            // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
+            fetchPriority={priority ? "high" : "low"}
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-zinc-50 text-zinc-300">

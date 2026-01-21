@@ -149,4 +149,30 @@ Add an index if:
 2. The column has high cardinality (many unique values).
 3. The query runs frequently (e.g., on every page load).
 
-**Avoid over-indexing**: Each index increases write time and database size. Only index what you query.
+## **Avoid over-indexing**: Each index increases write time and database size. Only index what you query.
+
+## 10. Hydration & Rendering Patterns
+
+To keep the application fast as it grows, we use specific patterns to defer non-critical rendering.
+
+### 10.1 The "Lazy Server" Pattern
+
+We often need to lazy-load complex sections (like carousels) without losing the SEO benefits of **Server Components**.
+
+- **Structure**:
+  ```tsx
+  <LazySection rootMargin="0px">
+    <CachedCarouselFromServer />
+  </LazySection>
+  ```
+- **Why**: `LazySection` is a small Client Component that uses `IntersectionObserver`. It only renders its `children` when visible. Since the children are passed in from a Server Component parent, they remain server-rendered HTML, but their hydration and image-fetching are deferred until they hit the viewport.
+
+### 10.2 Viewport Conservative Baselines
+
+Instead of using heavy client-side hooks (`useWindowSize`) to determine how many items fit a grid, we use a **Conservative Baseline**.
+
+- **Standard**: Always set `priority` for only the first **2 items** (`index < 2`).
+- **Effect**:
+  - **Mobile**: First row is prioritized perfectly.
+  - **Desktop**: First row is halfway prioritized; the browser's native lazy-loader handles the remaining 2 visible items instantly.
+- **Benefit**: No "Hydration Mismatch" errors and zero dependency on client-side measurement hooks.

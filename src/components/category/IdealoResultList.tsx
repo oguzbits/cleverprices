@@ -47,7 +47,7 @@ export function IdealoResultList({
             key={product.id || product.slug}
             product={product}
             countryCode={countryCode}
-            priority={index < 8}
+            priority={index < 2}
           />
         ))}
       </div>
@@ -72,7 +72,7 @@ export function IdealoResultList({
           key={product.id || product.slug}
           product={product}
           countryCode={countryCode}
-          priority={index < 8}
+          priority={index < 2}
         />
       ))}
     </div>

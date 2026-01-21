@@ -79,6 +79,9 @@ export function IdealoListCard({
               alt={product.title}
               fill
               priority={priority}
+              loading={priority ? undefined : "lazy"}
+              // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
+              fetchPriority={priority ? "high" : "low"}
               className="object-contain p-2"
               sizes="168px"
               quality={50}

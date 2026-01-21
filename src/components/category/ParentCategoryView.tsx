@@ -5,6 +5,8 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryHubCard } from "@/components/category/CategoryHubCard";
 import { ProductBestsellerGrid } from "@/components/category/ProductBestsellerGrid";
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
+import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
+import { LazySection } from "@/components/ui/LazySection";
 import { type LeanProduct } from "@/lib/types";
 import { formatTechText } from "@/lib/utils/formatting";
 
@@ -20,8 +22,6 @@ interface ParentCategoryViewProps {
   deals?: LeanProduct[];
   breadcrumbItems?: { name: string; href?: string }[];
 }
-
-import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 
 export function ParentCategoryView({
   parentCategory,
@@ -52,58 +52,67 @@ export function ParentCategoryView({
             ))}
           </div>
         </section>
-        {/* Bestseller Section - Internal Links to Products */}
+
+        {/* Bestseller Section - Lazy loaded since it's below the fold */}
         {bestsellers.length > 0 && (
-          <ProductBestsellerGrid
-            title={`Bestseller in "${formatTechText(parentCategory.name)}"`}
-            products={bestsellers}
-            className="mb-10"
-          />
+          <LazySection placeholderHeight="600px" rootMargin="0px">
+            <ProductBestsellerGrid
+              title={`Bestseller in "${formatTechText(parentCategory.name)}"`}
+              products={bestsellers}
+              className="mb-10"
+            />
+          </LazySection>
         )}
-        {/* New Products Carousel - Internal Links to Products */}
+
+        {/* New Products Carousel - Lazy loaded */}
         {newProducts.length > 0 && (
-          <section className="mb-10 rounded-lg bg-[#e8f4fd] px-6 py-6">
-            <IdealoProductCarousel
-              title={`Neu in ${formatTechText(parentCategory.name)}`}
-              products={newProducts.map((p) => ({
-                title: p.title,
-                price: p.price,
-                slug: p.slug,
-                image: p.image,
-                rating: p.rating,
-                ratingCount: p.reviewCount,
-                categoryName: p.category,
-                discountRate: p.savings
-                  ? Math.round(p.savings * 100)
-                  : undefined,
-                isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
-                variationAttributes: p.variationAttributes,
-              }))}
-            />
-          </section>
+          <LazySection placeholderHeight="400px" rootMargin="0px">
+            <section className="mb-10 rounded-lg bg-[#e8f4fd] px-6 py-6">
+              <IdealoProductCarousel
+                title={`Neu in ${formatTechText(parentCategory.name)}`}
+                products={newProducts.map((p) => ({
+                  title: p.title,
+                  price: p.price,
+                  slug: p.slug,
+                  image: p.image,
+                  rating: p.rating,
+                  ratingCount: p.reviewCount,
+                  categoryName: p.category,
+                  discountRate: p.savings
+                    ? Math.round(p.savings * 100)
+                    : undefined,
+                  isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
+                  variationAttributes: p.variationAttributes,
+                }))}
+              />
+            </section>
+          </LazySection>
         )}
-        {/* Deals Carousel - Internal Links to Products */}
+
+        {/* Deals Carousel - Lazy loaded */}
         {deals.length > 0 && (
-          <section className="mb-10 rounded-lg bg-white px-6 py-6 shadow-sm">
-            <IdealoProductCarousel
-              title={`Deals in "${formatTechText(parentCategory.name)}"`}
-              products={deals.map((p) => ({
-                title: p.title,
-                price: p.price,
-                slug: p.slug,
-                image: p.image,
-                rating: p.rating,
-                ratingCount: p.reviewCount,
-                categoryName: p.category,
-                discountRate: p.savings
-                  ? Math.round(p.savings * 100)
-                  : undefined,
-                isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
-                variationAttributes: p.variationAttributes,
-                badgeText: p.savings && p.savings > 0 ? undefined : "Deal", // Only show "Deal" if no discount badge
-              }))}
-            />
-          </section>
+          <LazySection placeholderHeight="400px" rootMargin="0px">
+            <section className="mb-10 rounded-lg bg-white px-6 py-6 shadow-sm">
+              <IdealoProductCarousel
+                title={`Deals in "${formatTechText(parentCategory.name)}"`}
+                products={deals.map((p) => ({
+                  title: p.title,
+                  price: p.price,
+                  slug: p.slug,
+                  image: p.image,
+                  rating: p.rating,
+                  ratingCount: p.reviewCount,
+                  categoryName: p.category,
+                  discountRate: p.savings
+                    ? Math.round(p.savings * 100)
+                    : undefined,
+                  isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
+                  variationAttributes: p.variationAttributes,
+                  badgeText: p.savings && p.savings > 0 ? undefined : "Deal",
+                }))}
+              />
+            </section>
+          </LazySection>
         )}
       </div>
     </div>

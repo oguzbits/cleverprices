@@ -5,6 +5,7 @@ import {
   ProductSchema,
 } from "@/components/seo/ProductSchema";
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
+import { LazySection } from "@/components/ui/LazySection";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import {
   getCategoryBySlug,
@@ -270,10 +271,12 @@ export function IdealoProductPage({
                 <div className="h-[400px] w-full animate-pulse rounded bg-gray-50" />
               }
             >
-              <CachedSimilarCarousel
-                similarProducts={similarProducts}
-                countryCode={countryCode}
-              />
+              <LazySection placeholderHeight="400px" rootMargin="0px">
+                <CachedSimilarCarousel
+                  similarProducts={similarProducts}
+                  countryCode={countryCode}
+                />
+              </LazySection>
             </Suspense>
           </ComponentErrorBoundary>
         </div>
@@ -339,6 +342,9 @@ async function CachedSidebarSimilarProducts({
                   className="object-contain p-1.5"
                   sizes="56px"
                   quality={30}
+                  loading="lazy"
+                  // @ts-ignore
+                  fetchPriority="low"
                 />
               )}
             </div>

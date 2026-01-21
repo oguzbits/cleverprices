@@ -1,10 +1,3 @@
-/**
- * Idealo Product Carousel Component
- *
- * Reusable product carousel section for bestsellers, new products, etc.
- * Uses the existing IdealoProductCard component for individual cards.
- */
-
 import { IdealoProductCard } from "@/components/landing/IdealoProductCard";
 import { CarouselContainer } from "@/components/ui/CarouselContainer";
 import { type CountryCode } from "@/lib/countries";
@@ -31,7 +24,7 @@ interface IdealoProductCarouselProps {
   products: CarouselProduct[];
   className?: string;
   countryCode?: CountryCode;
-  /** Enable priority loading for first 4 images (for above-the-fold carousels) */
+  /** Enable priority loading for first images (count depends on viewport) */
   priorityImages?: boolean;
 }
 
@@ -88,9 +81,10 @@ export function IdealoProductCarousel({
             badgeText={product.badgeText}
             categoryName={product.categoryName}
             discountRate={product.discountRate}
-            isBestseller={product.isBestseller || (priorityImages && index < 4)}
+            isBestseller={product.isBestseller}
             variationAttributes={product.variationAttributes}
             countryCode={countryCode}
+            priorityLoad={priorityImages && index < 2}
           />
         ))}
       </CarouselContainer>

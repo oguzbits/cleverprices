@@ -3,8 +3,8 @@
  * Uses the actual categories from lib/categories.ts
  */
 
-import { allCategories, getCategoryHierarchy } from "@/lib/categories";
 import type { CategoryData } from "@/components/categories/IdealoCategoryOverview";
+import { allCategories, getCategoryHierarchy } from "@/lib/categories";
 
 /**
  * Get all visible child categories for the categories page.
@@ -16,7 +16,8 @@ export function getCategoriesForDisplay(): CategoryData[] {
     .map((category) => ({
       title: category.name,
       slug: category.slug,
-      imageUrl: category.imageUrl || `/images/category/${category.slug}.jpg`,
+      // Only pass imageUrl if explicitly defined - don't generate fallbacks to avoid 404s
+      imageUrl: category.imageUrl,
       popularLinks: category.popularFilters?.slice(0, 10).map((filter) => ({
         title: filter.label,
         href: `/${category.slug}?${filter.params}`,

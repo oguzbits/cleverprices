@@ -1,6 +1,7 @@
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
 import { CategoryNav } from "@/components/layout/CategoryNav";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LazySection } from "@/components/ui/LazySection";
 import dynamic from "next/dynamic";
 import { IdealoHero } from "./IdealoHero";
 import { IdealoSection } from "./IdealoSection";
@@ -75,28 +76,34 @@ export function IdealoHomePage({
         </IdealoSection>
       ) : null}
 
-      {/* Bestseller Carousel - Below hero, can be dynamic or static depending on fold */}
+      {/* Bestseller Carousel - Just below hero, might be visible on load */}
       {bestsellers.length > 0 ? (
-        <IdealoSection variant="white">
-          <IdealoProductCarousel title="Bestseller" products={bestsellers} />
-        </IdealoSection>
+        <LazySection placeholderHeight="400px" rootMargin="0px">
+          <IdealoSection variant="white">
+            <IdealoProductCarousel title="Bestseller" products={bestsellers} />
+          </IdealoSection>
+        </LazySection>
       ) : null}
 
-      {/* Top Deals - Below the fold (Vercel Best Practices: bundle-dynamic-imports) */}
+      {/* Top Deals - Below the fold */}
       {deals.length > 0 ? (
-        <IdealoSection variant="lightBlue">
-          <DynamicProductCarousel
-            title="Aktuelle Deals für dich"
-            products={deals}
-          />
-        </IdealoSection>
+        <LazySection placeholderHeight="400px" rootMargin="0px">
+          <IdealoSection variant="lightBlue">
+            <DynamicProductCarousel
+              title="Aktuelle Deals für dich"
+              products={deals}
+            />
+          </IdealoSection>
+        </LazySection>
       ) : null}
 
       {/* New Arrivals - Below the fold */}
       {newArrivals.length > 0 ? (
-        <IdealoSection variant="white">
-          <DynamicProductCarousel title="Neuheiten" products={newArrivals} />
-        </IdealoSection>
+        <LazySection placeholderHeight="400px" rootMargin="0px">
+          <IdealoSection variant="white">
+            <DynamicProductCarousel title="Neuheiten" products={newArrivals} />
+          </IdealoSection>
+        </LazySection>
       ) : null}
     </div>
   );

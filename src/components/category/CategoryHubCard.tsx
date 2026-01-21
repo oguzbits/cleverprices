@@ -24,21 +24,25 @@ import { formatTechText } from "@/lib/utils/formatting";
  */
 export function CategoryHubCard({ category, Icon }: CategoryHubCardProps) {
   const categoryPath = getCategoryPath(category.slug as CategorySlug);
-  const imagePath =
-    category.imageUrl || `/images/category/${category.slug}.jpg`;
+  // Only use explicit imageUrl - don't generate fallbacks to avoid 404s
+  const imagePath = category.imageUrl;
 
   return (
     <div className="flex h-full flex-col bg-transparent">
       {/* 1. Large Visual Area */}
       <Link href={categoryPath} className="group mb-4 block no-underline">
         <div className="mb-6 flex h-[100px] w-full items-center justify-center overflow-hidden bg-transparent">
-          {/* We use a simple img tag. On the server we can't handle onError easily with hooks, 
-              but we can use a CSS background fallback or just assume the image exists if it's in our public folder. */}
-          <img
-            src={imagePath}
-            alt={category.name}
-            className="h-full w-auto object-contain transition-transform duration-300"
-          />
+          {imagePath ? (
+            <img
+              src={imagePath}
+              alt={category.name}
+              className="h-full w-auto object-contain transition-transform duration-300"
+              loading="lazy"
+            />
+          ) : (
+            /* Fallback to Icon when no image is available */
+            <Icon className="h-16 w-16 text-[#0066cc] opacity-60" />
+          )}
         </div>
 
         {/* 2. Headline Area */}
