@@ -270,6 +270,133 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // --- GSC 404 Fixes (January 2026) ---
+      // Legacy /elektroartikel/* subcategory paths
+      {
+        source: "/elektroartikel/dunstabzugshauben",
+        destination: "/categories", // No direct equivalent - send to category list
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/w%C3%A4schetrockner",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/wäschetrockner",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/tablets",
+        destination: "/tablets",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/notebooks",
+        destination: "/notebooks",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/waschmaschinen",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/hifi-audio",
+        destination: "/hifi-audio",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/nas",
+        destination: "/nas",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/gefrierschr%C3%A4nke",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/gefrierschränke",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/receiver",
+        destination: "/receiver",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/back%C3%B6fen",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/backöfen",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/mikrowellen",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/espressomaschinen",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/drones",
+        destination: "/drones",
+        permanent: true,
+      },
+      {
+        source: "/elektroartikel/medien",
+        destination: "/categories",
+        permanent: true,
+      },
+      // Legacy /computer/* paths
+      {
+        source: "/computer/webcams",
+        destination: "/webcams",
+        permanent: true,
+      },
+      {
+        source: "/computer/ups",
+        destination: "/ups",
+        permanent: true,
+      },
+      // Legacy /electronics/* paths not covered above
+      {
+        source: "/electronics/office-chairs",
+        destination: "/office-chairs",
+        permanent: true,
+      },
+      {
+        source: "/electronics/phone-accessories",
+        destination: "/telekommunikation",
+        permanent: true,
+      },
+      {
+        source: "/electronics/monitor-arms",
+        destination: "/monitor-arms",
+        permanent: true,
+      },
+      // Legacy /storage/* paths
+      {
+        source: "/storage/ssds",
+        destination: "/ssds",
+        permanent: true,
+      },
+      // Legacy /telekommunikation/* paths
+      {
+        source: "/telekommunikation/phone-accessories",
+        destination: "/telekommunikation",
+        permanent: true,
+      },
+
       // --- Legacy English/V1 Path Corrections ---
       { source: "/electronics/ram", destination: "/ram", permanent: true },
       {

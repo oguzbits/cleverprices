@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
 /**
  * Affiliate Redirect Route
@@ -22,9 +22,8 @@ export async function GET(
   const product = await getProductBySlug(slug);
 
   if (!product) {
-    // Product not found - redirect to hard-drives page
-    const url = new URL("/de/electronics/hard-drives", request.url);
-    return NextResponse.redirect(url, 307);
+    // Product not found - return 404 (GSC fix: avoid soft redirects for missing products)
+    return new NextResponse("Product not found", { status: 404 });
   }
 
   // Redirect to Amazon affiliate URL

@@ -136,6 +136,20 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
+  // GSC Fix: Return 404 for products with insufficient data (prevents soft 404)
+  // Products need: meaningful title + valid price to render a useful page
+  const hasPrice =
+    product.prices[countryCode] ||
+    Object.values(product.prices).some((p) => p > 0);
+  const hasMeaningfulTitle =
+    product.title &&
+    product.title.length > 10 &&
+    product.title !== product.asin;
+
+  if (!hasPrice || !hasMeaningfulTitle) {
+    notFound();
+  }
+
   // 2. Prepare slow live data as a Promise (Non-blocking)
   const isBuild =
     process.env.CI === "true" ||
