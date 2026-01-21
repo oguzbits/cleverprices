@@ -104,7 +104,7 @@ export function IdealoProductPage({
                       alt={product.title}
                       fill
                       className="object-contain p-4"
-                      sizes="(max-width: 432px) calc(100vw - 32px), 400px"
+                      sizes="(max-width: 432px) calc(100vw - 80px), 320px"
                       quality={50}
                       priority
                     />
@@ -351,11 +351,11 @@ async function CachedSidebarSimilarProducts({
             <div className="min-w-0 flex-1">
               <Link
                 href={`/p/${p.slug}`}
-                className="!text-idealo-text-primary hover:!text-primary focus-visible:ring-idealo-blue line-clamp-2 block text-[12px] font-bold !underline outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+                className="text-idealo-text-primary! hover:text-primary! focus-visible:ring-idealo-blue line-clamp-2 block text-[12px] font-bold underline! outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
               >
                 {formatDisplayTitle(p.title)}
               </Link>
-              <div className="text-idealo-text-primary mt-1 text-[12px] !font-bold">
+              <div className="text-idealo-text-primary mt-1 text-[12px] font-bold!">
                 <LegalPrice price={p.prices[countryCode]} showAb />
               </div>
             </div>

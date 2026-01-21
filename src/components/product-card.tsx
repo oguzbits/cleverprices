@@ -81,7 +81,7 @@ export function ProductCard({
             alt={title}
             fill
             className="object-contain p-4"
-            sizes="224px"
+            sizes="(max-width: 600px) 120px, 180px"
             quality={50}
             priority={priority}
             loading={priority ? undefined : "lazy"}
