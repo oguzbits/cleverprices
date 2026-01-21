@@ -82,86 +82,88 @@ export default async function DedicatedCategoryPage({
 
   if (!category) notFound();
 
-  const childCategories = getChildCategories(categorySlug as CategorySlug);
-
-  // If it's a hub (has children), show the parent view with product sections
-  if (childCategories.length > 0) {
+  try {
     const childCategories = getChildCategories(categorySlug as CategorySlug);
 
-    // Fetch products for internal linking sections (in parallel)
-    const [bestsellers, newProducts, deals] = await Promise.all([
-      getCategoryBestsellers(categorySlug as CategorySlug, 24, DEFAULT_COUNTRY),
-      getCategoryNewProducts(categorySlug as CategorySlug, 8, DEFAULT_COUNTRY),
-      getCategoryDeals(categorySlug as CategorySlug, 8, DEFAULT_COUNTRY),
-    ]);
+    // If it's a hub (has children), show the parent view with product sections
+    if (childCategories.length > 0) {
+      // Fetch products for internal linking sections (in parallel)
+      const [bestsellers, newProducts, deals] = await Promise.all([
+        getCategoryBestsellers(
+          categorySlug as CategorySlug,
+          24,
+          DEFAULT_COUNTRY,
+        ),
+        getCategoryNewProducts(
+          categorySlug as CategorySlug,
+          8,
+          DEFAULT_COUNTRY,
+        ),
+        getCategoryDeals(categorySlug as CategorySlug, 8, DEFAULT_COUNTRY),
+      ]).catch((err) => {
+        console.error(
+          `[DB Error] Parent category products ${categorySlug}:`,
+          err,
+        );
+        return [[], [], []]; // Fallback to empty lists if DB fails
+      });
 
-    // Transform products to LeanProduct format for consistent card styling
-    const transformProduct = (p: {
-      title: string;
-      slug: string;
-      image?: string;
-      brand: string;
-      category: string;
-      prices: Record<string, number>;
-      rating?: number;
-      reviewCount?: number;
-      salesRank?: number;
-      monthlySold?: number;
-      capacity?: number;
-      capacityUnit?: string;
-      formFactor?: string;
-      listPrice?: Record<string, number>;
-      savings?: number;
-      pricePerUnit?: number;
-      variationAttributes?: string;
-    }) => ({
-      slug: p.slug,
-      title: p.title,
-      image: p.image,
-      price: p.prices[DEFAULT_COUNTRY] || 0,
-      pricePerUnit: p.pricePerUnit,
-      capacity: p.capacity,
-      capacityUnit: p.capacityUnit,
-      formFactor: p.formFactor,
-      brand: p.brand,
-      rating: p.rating,
-      reviewCount: p.reviewCount,
-      salesRank: p.salesRank,
-      monthlySold: p.monthlySold,
-      variationAttributes: p.variationAttributes,
-      category: p.category,
-      listPrice: p.listPrice?.[DEFAULT_COUNTRY],
-      savings: p.savings,
-    });
+      // Transform products to LeanProduct format for consistent card styling
+      const transformProduct = (p: any) => ({
+        slug: p.slug,
+        title: p.title,
+        image: p.image,
+        price: p.prices[DEFAULT_COUNTRY] || 0,
+        pricePerUnit: p.pricePerUnit,
+        capacity: p.capacity,
+        capacityUnit: p.capacityUnit,
+        formFactor: p.formFactor,
+        brand: p.brand,
+        rating: p.rating,
+        reviewCount: p.reviewCount,
+        salesRank: p.salesRank,
+        monthlySold: p.monthlySold,
+        variationAttributes: p.variationAttributes,
+        category: p.category,
+        listPrice: p.listPrice?.[DEFAULT_COUNTRY],
+        savings: p.savings,
+      });
 
-    // Build breadcrumbs for the parent view
-    const breadcrumbItems = [
-      { name: "Home", href: "/" },
-      ...getBreadcrumbs(categorySlug as CategorySlug).map((crumb) => ({
-        name: crumb.name,
-        href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
-      })),
-    ];
+      // Build breadcrumbs for the parent view
+      const breadcrumbItems = [
+        { name: "Home", href: "/" },
+        ...getBreadcrumbs(categorySlug as CategorySlug).map((crumb) => ({
+          name: crumb.name,
+          href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
+        })),
+      ];
 
+      return (
+        <ParentCategoryView
+          parentCategory={stripCategoryIcon(category)}
+          childCategories={childCategories.map(stripCategoryIcon)}
+          bestsellers={bestsellers.map(transformProduct)}
+          newProducts={newProducts.map(transformProduct)}
+          deals={deals.map(transformProduct)}
+          breadcrumbItems={breadcrumbItems}
+        />
+      );
+    }
+
+    // If it's a child category, show the NEW Idealo-style products view
+    const filters = await searchParams;
     return (
-      <ParentCategoryView
-        parentCategory={stripCategoryIcon(category)}
-        childCategories={childCategories.map(stripCategoryIcon)}
-        bestsellers={bestsellers.map(transformProduct)}
-        newProducts={newProducts.map(transformProduct)}
-        deals={deals.map(transformProduct)}
-        breadcrumbItems={breadcrumbItems}
+      <IdealoCategoryPage
+        category={stripCategoryIcon(category)}
+        countryCode={DEFAULT_COUNTRY}
+        searchParams={filters}
       />
     );
+  } catch (error: any) {
+    if (error?.digest?.startsWith("NEXT_")) {
+      throw error;
+    }
+    console.error(`[Page Error] Category ${categorySlug}:`, error);
+    notFound();
   }
-
-  // If it's a child category, show the NEW Idealo-style products view
-  const filters = await searchParams;
-  return (
-    <IdealoCategoryPage
-      category={stripCategoryIcon(category)}
-      countryCode={DEFAULT_COUNTRY}
-      searchParams={filters}
-    />
-  );
 }

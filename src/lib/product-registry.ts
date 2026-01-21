@@ -427,23 +427,36 @@ export async function findProductSlugByAsinSuffix(
   // 1. Try full 10-char ASIN (standard Amazon)
   const fullAsinMatch = oldSlug.match(/([a-z0-9]{10})$/i);
   if (fullAsinMatch) {
+    const asin = fullAsinMatch[1].toUpperCase();
+    // Indexed lookup is O(1)
     const [p] = await db
       .select({ slug: products.slug })
       .from(products)
-      .where(eq(products.asin, fullAsinMatch[1].toUpperCase()))
+      .where(eq(products.asin, asin))
       .limit(1);
     if (p) return p.slug;
   }
 
   // 2. Try short 4-char suffix (common in our generated slugs)
+  // ONLY do this if the slug actually looks like it has a suffix (ends in -XXXX)
   const shortSuffixMatch = oldSlug.match(/-([a-z0-9]{4})$/i);
   if (shortSuffixMatch) {
     const suffix = shortSuffixMatch[1].toUpperCase();
-    // Search for products where ASIN ends with this suffix
+
+    // Safety: LIKE '%XXXX' is a full table scan O(N).
+    // We only do this if N is small or we have no other choice.
+    // In CleverPrices, we'll keep it but ensure it's the last resort.
     const [p] = await db
       .select({ slug: products.slug })
       .from(products)
-      .where(sql`${products.asin} LIKE ${"%" + suffix}`)
+      .where(
+        and(
+          sql`${products.asin} LIKE ${"%" + suffix}`,
+          // Optimization: usually these are in the same category or related
+          // but since we don't know the category from the slug easily,
+          // we just limit to 1.
+        ),
+      )
       .limit(1);
     return p?.slug;
   }
