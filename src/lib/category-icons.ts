@@ -93,6 +93,7 @@ export const CATEGORY_ICONS: Record<CategorySlug, LucideIcon> = {
   smartphones: Smartphone,
   smartwatches: Watch,
   consoles: Gamepad2,
+  games: Gamepad2,
   cameras: Camera,
   keyboards: Keyboard,
   mice: Mouse,
