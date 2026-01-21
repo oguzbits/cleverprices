@@ -384,4 +384,10 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     singularName: "Kompaktkamera",
     parent: "fotografie",
   },
+  games: {
+    name: "Games",
+    singularName: "Game",
+    parent: "gaming-elektrospielzeug",
+    hidden: true,
+  },
 };

@@ -92,7 +92,8 @@ export type CategorySlug =
   | "3d-drucker"
   | "laserdrucker"
   | "fotografie"
-  | "kompaktkameras";
+  | "kompaktkameras"
+  | "games";
 
 export interface FilterGroup {
   label: string;

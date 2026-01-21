@@ -62,8 +62,16 @@ async function main() {
         // 1. Map Category
         const subCategory = row["Categories: Sub"] || "";
         const rootCategory = row["Categories: Root"] || "";
+        const treeCategory = row["Categories: Tree"] || "";
+        const productType = row["Type"] || ""; // Amazon's official product type
         const categorySlug =
-          mapCategory(title, rootCategory, subCategory) || "uncategorized";
+          mapCategory(
+            title,
+            rootCategory,
+            subCategory,
+            treeCategory,
+            productType,
+          ) || "uncategorized";
 
         const brand = row["Brand"] || "";
         const manufacturer = row["Manufacturer"] || "";
@@ -279,562 +287,276 @@ function mapCategory(
   title: string,
   root: string,
   sub: string,
+  tree: string,
+  productType: string,
 ): CategorySlug | null {
   const s = sub.toLowerCase();
   const t = title.toLowerCase();
+  const tr = tree.toLowerCase();
+
+  const pt = productType ? productType.toUpperCase() : "";
 
   // ============================================================================
-  // 1. HELPERS & DEFINITIONS (Defined first so they can cross-reference)
+  // 0. PRE-FLIGHT CHECKS (Global Exclusions/Redirects)
   // ============================================================================
 
-  function isEnclosure(): boolean {
-    return (
-      (t.includes("gehäuse") ||
-        t.includes("enclosure") ||
-        t.includes("festplattengehäuse")) &&
-      (t.includes("ssd") ||
-        t.includes("nvme") ||
-        t.includes("m.2") ||
-        t.includes("festplatte") ||
-        t.includes("sata") ||
-        s.includes("festplatten-zubehör"))
-    );
+  // Cables & Adapters (Global check to prevent them landing in device categories)
+  if (/\b(kabel|cable|adapter)\b/i.test(t) && !/\b(tv|monitor)\b/i.test(t)) {
+    // careful not to catch "TV with cable" but often "USB Cable" is clear
+    return "cables";
   }
 
-  function isAccessory(): boolean {
-    const accKeywords = [
-      "hülle",
-      "tasche",
-      "bag",
-      "cover",
-      "skin",
-      "mounting",
-      "bracket",
-      "kabel",
-      "cable",
-      "adapter",
-      "charger",
-      "ladegerät",
-      "folie",
-      "protector",
-      "docking",
-      "hub",
-      "ständer",
-      "stand",
-      "halterung",
-      "mount",
-      "ersatz",
-      "replacement",
-      "tastaturschutz",
-      "rucksack",
-      "backpack",
-      "schutztasche",
-      "einbaurahmen",
-      "cloning kit",
-      "standfuß",
-      "wandhalterung",
-      "netzteil für",
-      "mousepad",
-      "mauspad",
-      "bumper",
-      "strap",
-      "armband",
-      "displayfolie",
-      "panzerglas",
-      "schutzfolie",
-      "screen protector",
-    ];
-    const accPattern = /\b(battery|akku|zubehör|accessory|batterie)\b/i;
-    const forPattern =
-      /\b(fuer|for|compatibile con|compatible with|pour|passend fuer|passend für)\b/i;
-    const startsWithAcc =
-      /^(hülle|case|tasche|bag|cover|kabel|cable|adapter|charger|batterie|akku|zubehör|skin|schutz|reparatur)/i.test(
-        t,
-      );
+  // SSD Cases / Enclosures
+  if (
+    /\b(gehäuse|enclosure|case)\b/i.test(t) &&
+    /\b(ssd|festplatte|hdd)\b/i.test(t) &&
+    !/\b(pc|computer)\b/i.test(t) // avoid PC cases
+  ) {
+    return "external-storage";
+  }
 
-    // Safety check: High-end device features should never be accessories
-    // "Batterie für den ganzen Tag" triggers accPattern, so we protect against it here
-    if (
-      t.includes("retina xdr") ||
-      t.includes("lidar scanner") ||
-      t.includes("nanotexturglas") ||
-      t.includes("m4 chip") ||
-      t.includes("m5 chip")
+  // Soundbars (Title override)
+  if (/\bsoundbar\b/i.test(t)) return "soundbars";
+
+  // Raspberry Pi Kits (Pollute components, so exclude even if case/set)
+  if (/raspberry pi/i.test(t)) {
+    return null;
+  }
+
+  // Obvious SSDs (Global override for bad Amazon data, e.g. SSDs in Headphones)
+  if (
+    /\b(ssd|nvme)\b/i.test(t) &&
+    /\b(gb|tb|pcie|m\.2)\b/i.test(t) &&
+    !/\b(gehäuse|enclosure|case|mount|halterung|adapter|kabel|cable|dock)\b/i.test(
+      t,
     )
-      return false;
-
-    const hasAccKeyword = accKeywords.some((kw) => t.includes(kw));
-    const isActuallyAccessory =
-      hasAccKeyword || accPattern.test(t) || startsWithAcc;
-    const isForSomething = forPattern.test(t);
-
-    if (
-      t.includes("headset") ||
-      t.includes("controller") ||
-      t.includes("maus") ||
-      t.includes("tastatur") ||
-      t.includes("drucker") ||
-      t.includes("multifunktion") ||
-      t.includes("ecotank") ||
-      t.includes("pixma")
-    )
-      return false;
-    if (
-      t.includes("tower") ||
-      t.includes("atx") ||
-      t.includes("itx") ||
-      t.includes("matx")
-    )
-      return false;
-
-    return isActuallyAccessory || (isForSomething && hasAccKeyword);
+  ) {
+    return "ssds";
   }
 
-  function isMiniPc(): boolean {
-    return (
-      /\b(nuc|mini pc|mini-pc|micro pc|micro-pc|beelink|geekom|minisforum|pro micro|ultraneptune|tiny pc)\b/i.test(
-        t,
-      ) ||
-      s.includes("mini pcs") ||
-      s.includes("barebones")
-    );
-  }
-
-  function isNotebook(): boolean {
-    if (root.toLowerCase().includes("software")) return false;
-
-    // 1. Definite Notebook Models & Keywords
-    const strongModels =
-      /\b(macbook|chromebook|matebook|thinkpad|ideapad|yoga|legion|latitude|vostro|precision|inspiron|xps|pavilion|envy|victus|omen|zenbook|vivobook|expertbook|swift|aspire|predator|gram|galaxy book|surface laptop|surface pro|elitebook|probook|jodabook|toughbook)\b/i;
-    const hpModel = /\bhp\s+(\d{3}|g\d)\b/i;
-    const isExplicitTitleSystem =
-      /\b(laptop|notebook|ultrabook|convertible|macbook|chromebook)\b/i.test(
-        t,
-      ) ||
-      strongModels.test(t) ||
-      hpModel.test(t);
-
-    // 2. Hardware Spec Patterns (e.g., Core i5 + 16GB RAM + SSD)
-    const hasCpu =
-      /\b(core i[3579]|ryzen [3579]|intel core|athlon|pentium|celeron|apple m[1234])\b/i.test(
-        t,
-      );
-    const hasRam = /\b(\d+gb|ram)\b/i.test(t);
-    const hasSsd = /\b(\d+gb|ssd|nvme|m\.2|tb ssd)\b/i.test(t);
-    const hasSystemSpecs = hasCpu && hasRam && hasSsd;
-
-    const isOtherPeripheral =
-      /\b(maus|mouse|tastatur|keyboard|monitor|headset|headphone|kopfhörer|speicherkarte|sd-karte|powerbank|kamera|drucker)\b/i.test(
-        t,
-      );
-    const isSsdProduct =
-      (t.startsWith("ssd") ||
-        t.startsWith("interner ssd") ||
-        t.startsWith("samsung 9")) &&
-      !t.includes("laptop") &&
-      !t.includes("notebook");
-
-    // If it has peripheral names but is clearly a system, it's a notebook
-    if (
-      (isOtherPeripheral || isSsdProduct) &&
-      !isExplicitTitleSystem &&
-      !hasSystemSpecs
-    )
-      return false;
-
-    const isNitroSystem =
-      t.includes("nitro") &&
-      (t.includes("acer") || t.includes("laptop") || t.includes("notebook"));
-    const isKnownSub =
-      s.includes("notebook") || s.includes("macbook") || s.includes("laptops");
-    const isMainlyBag =
-      /^(tasche|rucksack|hülle|cover|case|stand|ständer)/i.test(t);
-
-    return (
-      (isExplicitTitleSystem ||
-        hasSystemSpecs ||
-        isNitroSystem ||
-        isKnownSub) &&
-      !isMainlyBag
-    );
-  }
-
-  function isRam(): boolean {
-    if (
-      t.includes("mainboard") ||
-      t.includes("motherboard") ||
-      isNotebook() ||
-      isMiniPc()
-    )
-      return false;
-    if (/\b(x870|z890|z790|z690|b760|b650|h610)\b/i.test(t)) {
-      if (!/\b(\d+gb|cl\d+|mt\/s|mhz)\b/i.test(t)) return false;
-    }
-    const ramPattern =
-      /\b(vengeance|fury|trident|dominator|crucial ram|kingston ram|corsair ram|g\.skill|v-color|lexar thorium|arbeitsspeicher|sodimm|ddr4|ddr5)\b/i;
-    return (
-      ramPattern.test(t) ||
-      s.includes("arbeitsspeicher") ||
-      s.includes("ddr-sdram")
-    );
-  }
-
-  function isMainboard(): boolean {
-    if (
-      isNotebook() ||
-      isEnclosure() ||
-      t.includes("psu") ||
-      t.includes("netzteil") ||
-      isMiniPc()
-    )
-      return false;
-    if (
-      t.includes("kühler") ||
-      t.includes("cooler") ||
-      t.includes("gehäuse") ||
-      t.includes("case") ||
-      t.includes("ssd")
-    )
-      return false;
-    const mbKeywords = ["mainboard", "motherboard"];
-    const mbPattern =
-      /\b(tuf|rog|strix|prime|aorus|phantom|legend|proart|mag|mpg|meg|asrock|gigabyte|biostar|b450|b550|b650|x570|x670|z690|z790|h610|a620|b760|x870|z890)\b/i;
-    const gpuKeywords = /\b(geforce|radeon rx|rtx|gtx|arc)\b/i;
-    if (gpuKeywords.test(t)) return false;
-    return mbKeywords.some((kw) => t.includes(kw)) || mbPattern.test(t);
-  }
-
-  function isSsd(): boolean {
-    if (
-      isEnclosure() ||
-      isNotebook() ||
-      isMainboard() ||
-      t.includes("extern") ||
-      isMiniPc()
-    )
-      return false;
-    const ssdKeywords = ["ssd", "nvme", "m.2 ssd"];
-    const ssdPattern =
-      /\b(samsung 980|samsung 990|crucial p[235]|wd[ _]black|wd blue sn|kingston [a-z]v|pny cs)\b/i;
-    return (
-      ssdKeywords.some((kw) => t.includes(kw)) ||
-      ssdPattern.test(t) ||
-      s.includes("interne ssd")
-    );
-  }
-
-  function isHardDrive(): boolean {
-    const isSsdProduct =
-      t.includes("ssd") || t.includes("nvme") || t.includes("m.2");
-    return (
-      (t.includes("festplatte") ||
-        t.includes("hdd") ||
-        s.includes("festplatten") ||
-        t.includes("surveillance drive")) &&
-      !isSsdProduct &&
-      !isNotebook()
-    );
-  }
-
-  function is3DPrinter(): boolean {
-    return (
-      s.includes("3d-drucker") ||
-      (t.includes("3d") && (t.includes("drucker") || t.includes("printer"))) ||
-      t.includes("resin") ||
-      t.includes("filament") ||
-      t.includes("anycubic") ||
-      t.includes("elegoo") ||
-      t.includes("creality")
-    );
-  }
-
-  function isPrinter(): boolean {
-    if (isTablet() || isNotebook() || is3DPrinter()) return false;
-    // Explicit exclusions for Tablet features that sound like printers
-    if (t.includes("lidar scanner")) return false;
-    return (
-      /\b(drucker|scanner|kopierer|multifunktion|pixma|ecotank|laserjet|officejet)\b/i.test(
-        t,
-      ) ||
-      s.includes("drucker") ||
-      s.includes("scanner")
-    );
-  }
-
-  function isTablet(): boolean {
-    if (isAccessory()) return false;
-    const tabletModels =
-      /\b(ipad|galaxy tab|surface go|fire hd|tab s\d|tab a\d|mediapad|mi pad|pixel tablet)\b/i;
-    return tabletModels.test(t) || s.includes("tablets");
-  }
-
-  function isSmartphone(): boolean {
-    if (isNotebook() || isTablet() || isAccessory()) return false;
-    const isStorage =
-      t.includes("ssd") ||
-      t.includes("festplatte") ||
-      t.includes("flash") ||
-      t.includes("memory");
-    const isAudio =
-      t.includes("headset") ||
-      t.includes("kopfhörer") ||
-      t.includes("speaker") ||
-      t.includes("boxen");
-    if (isStorage || isAudio) return false;
-    return (
-      /\b(iphone|galaxy s\d+|pixel|oneplus|xiaomi|smartphone|handy)\b/i.test(
-        t,
-      ) || s.includes("handy")
-    );
-  }
-
-  function isPsu(): boolean {
-    if (isNotebook() || isMainboard() || isMiniPc()) return false;
-    const wattMatch = t.match(/\b(\d{3,4})\s*w\b/i);
-    const hasEnoughWatt = !!(wattMatch && parseInt(wattMatch[1]) >= 300);
-    return (
-      (/\b(netzteil|psu|power supply|80 plus)\b/i.test(t) ||
-        (hasEnoughWatt && t.includes("watt"))) &&
-      !t.includes("adapter")
-    );
-  }
-
-  function isPcCase(): boolean {
-    return (
-      (t.includes("gehäuse") || t.includes("case")) &&
-      (t.includes("tower") ||
-        t.includes("atx") ||
-        t.includes("itx") ||
-        t.includes("matx")) &&
-      !t.includes("ssd") &&
-      !isNotebook() &&
-      !isMiniPc()
-    );
-  }
-
-  function isGpu(): boolean {
-    if (isNotebook() || isMiniPc()) return false;
-    return (
-      /\b(geforce|radeon rx|grafikkarte|video card)\b/i.test(t) ||
-      s.includes("grafikkarten")
-    );
-  }
-
-  function isCpu(): boolean {
-    if (isNotebook() || isMiniPc() || t.includes("motherboard")) return false;
-    return (
-      /\b(ryzen|intel core|xeon|threadripper)\b.*\b(cpu|prozessor|processor)\b/i.test(
-        t,
-      ) || s.includes("prozessoren")
-    );
-  }
-
-  function isMemoryCard(): boolean {
-    return (
-      /\b(microsd|sdxc|sdhc|memoria|speicherkarte|cfexpress|cfast|compactflash|xqd)\b/i.test(
-        t,
-      ) || s.includes("speicherkarten")
-    );
-  }
-
-  function isCamera(): boolean {
-    if (
-      isSsd() ||
-      isHardDrive() ||
-      isMemoryCard() ||
-      t.includes("ssd") ||
-      t.includes("hdd")
-    )
-      return false;
-    return (
-      /\b(spiegellos|vollformat|mirrorless|dslr|bridgekamera|kompaktkamera|camcorder)\b/i.test(
-        t,
-      ) ||
-      s.includes("digitalkameras") ||
-      s.includes("systemkameras") ||
-      s.includes("kompaktkameras")
-    );
-  }
-
-  function isCpuCooler(): boolean {
-    return (
-      /\b(cpu[- ]kühler|prozessorlüfter|luftkühler|wasserkühler|aio|liquid cooler|cpu cooler)\b/i.test(
-        t,
-      ) ||
-      s.includes("cpu-kühler") ||
-      s.includes("prozessorlüfter")
-    );
-  }
-
-  // ============================================================================
-  // 2. DECISION TREE (ORDER MATTERS)
-  // ============================================================================
-
-  // --- 0. Pre-Flight Exclusions ---
   if (root.toLowerCase().includes("software") || s.includes("software"))
     return null;
+  if (s.includes("zubehör") && !s.includes("computer & zubehör")) return null;
 
-  // STRICT Accessory filtering: If it's just a case/cable/bag, exclude it
-  if (isAccessory()) {
-    // Exception: If it's a known system/peripheral brand with a "bundle" feel, let it fall through
-    if (
-      !t.includes("laptop") &&
-      !t.includes("notebook") &&
-      !t.includes("macbook") &&
-      !isMemoryCard() &&
-      !is3DPrinter()
-    ) {
-      return null;
-    }
-  }
-
-  // --- 1. Precision & High-Confidence Mapping ---
-  // We check these first so specific devices don't get caught by generic peripheral/printer keywords.
-  if (isNotebook()) return "notebooks";
-  if (isTablet()) return "tablets";
-  if (is3DPrinter()) return "3d-drucker";
-  if (isMiniPc()) return "notebooks";
-
-  const SUB_MAP: Record<string, CategorySlug> = {
-    notebooks: "notebooks",
-    macbooks: "notebooks",
-    laptops: "notebooks",
-    "laptop-computer": "notebooks",
-    tablets: "tablets",
+  // ============================================================================
+  // 1. SUBCATEGORY-BASED DETECTION (Highest Priority - Most Specific)
+  // ============================================================================
+  // Using Amazon's Categories: Sub column for exact match categorization
+  const SUB_TO_CATEGORY: Record<string, CategorySlug> = {
+    // Storage
+    "solid state drives": "ssds",
     "interne ssd": "ssds",
-    grafikkarten: "gpu",
-    "video cards": "gpu",
-    prozessoren: "cpu",
-    mainboards: "motherboards",
-    motherboards: "motherboards",
-    arbeitsspeicher: "ram",
-    "ddr-sdram": "ram",
-    netzteile: "power-supplies",
-    gehäuse: "pc-cases",
-    smartphones: "smartphones",
-    handy: "smartphones",
-    smartwatch: "smartwatches",
-    fernseher: "tvs",
-    tvs: "tvs",
-    router: "routers",
-    systemkameras: "systemkameras",
-    digitalkameras: "cameras",
-    kompaktkameras: "kompaktkameras",
-    "3d-drucker": "3d-drucker",
-    laserdrucker: "laserdrucker",
-    multifunktionsdrucker: "multifunktionsdrucker",
-    tintenstrahldrucker: "multifunktionsdrucker",
-    drucker: "multifunktionsdrucker",
+    "externe solid state drives": "external-storage",
     "externe festplatten": "external-storage",
-    "festplatten - intern": "hard-drives",
-    "cpu-kühler": "cpu-coolers",
+    // "festplatten": "hard-drives", <-- Too generic, often contains SSDs. Fallback to Tree logic.
+    "micro sd": "speicherkarten",
+    // PC Components
+    grafikkarten: "gpu",
+    mainboards: "motherboards",
+    arbeitsspeicher: "ram",
+    prozessoren: "cpu",
     prozessorlüfter: "cpu-coolers",
+    "pc-gehäuse": "pc-cases",
+    "pc-netzteile": "power-supplies",
+    // Peripherals
+    monitore: "monitors",
+    mäuse: "mice",
+    tastaturen: "keyboards",
+    "bluetooth-kopfhörer": "headphones",
+    "lautsprecher, smart speaker": "speakers",
+    // Computers
+    "normale laptops": "notebooks",
+    tablets: "tablets",
+    // Mobile
+    "simlockfreie handys": "smartphones",
+    smartwatches: "smartwatches",
+    // Cameras
+    kompaktkameras: "kompaktkameras",
+    "kompakte systemkameras": "systemkameras",
+    // Printers
+    laserdrucker: "laserdrucker",
+    "3d-drucker": "3d-drucker",
+    "tintenstrahl, tintenstrahldrucker": "multifunktionsdrucker",
+    // TV & Networking
+    "fernseher, smart-tvs": "tvs",
+    router: "routers",
+    // Gaming
+    konsolen: "consoles",
   };
 
-  for (const [key, slug] of Object.entries(SUB_MAP)) {
-    if (s.includes(key)) {
-      if (slug === "notebooks" && !isNotebook()) continue;
-      if (slug === "ssds" && !isSsd()) continue;
-      if (slug === "ram" && !isRam()) continue;
-      if (slug === "motherboards" && !isMainboard()) continue;
-      if (slug === "gpu" && !isGpu()) continue;
-      if (slug === "cpu" && !isCpu()) continue;
-      if (slug === "power-supplies" && !isPsu()) continue;
-      if (slug === "pc-cases" && !isPcCase()) continue;
-      return slug;
-    }
+  // Exact match on subcategory (most reliable)
+  if (SUB_TO_CATEGORY[s]) {
+    return SUB_TO_CATEGORY[s];
   }
 
-  // --- 2. Peripherals & Audio ---
-  if (
-    s.includes("monitore") ||
-    (t.includes("monitor") && !isNotebook() && !isMiniPc())
-  )
-    return "monitors";
-  if (s.includes("tastaturen") || (t.includes("tastatur") && !isNotebook())) {
-    return "keyboards";
-  }
-  if (s.includes("mäuse") || (t.includes("maus") && !isNotebook()))
-    return "mice";
-  if (
-    t.includes("headset") ||
-    t.includes("kopfhörer") ||
-    s.includes("kopfhörer")
-  )
-    return "headphones";
-  if (
-    t.includes("boxen") ||
-    t.includes("lautsprecher") ||
-    s.includes("lautsprecher")
-  )
-    return "speakers";
+  // ============================================================================
+  // 2. TYPE-BASED DETECTION (Amazon's Official Type - Second Priority)
+  // ============================================================================
+  const TYPE_TO_CATEGORY: Record<string, CategorySlug> = {
+    // Storage
+    // COMPUTER_DRIVE_OR_STORAGE: "ssds", // Too generic, can be HDD or SSD
+    FLASH_MEMORY: "speicherkarten",
+    // PC Components
+    VIDEO_CARD: "gpu",
+    MOTHERBOARD: "motherboards",
+    INTERNAL_MEMORY: "ram",
+    COMPUTER_PROCESSOR: "cpu",
+    ELECTRONIC_COMPONENT_FAN: "cpu-coolers",
+    COMPUTER_CHASSIS: "pc-cases",
+    SYSTEM_POWER_DEVICE: "power-supplies",
+    // Peripherals
+    MONITOR: "monitors",
+    INPUT_MOUSE: "mice",
+    KEYBOARDS: "keyboards",
+    HEADPHONES: "headphones",
+    // Computers
+    NOTEBOOK_COMPUTER: "notebooks",
+    TABLET_COMPUTER: "tablets",
+    // Mobile
+    CELLULAR_PHONE: "smartphones",
+    WEARABLE_COMPUTER: "smartwatches",
+    // Cameras
+    CAMERA_DIGITAL: "cameras",
+    // Printers
+    PRINTER: "multifunktionsdrucker",
+    "3D_PRINTER": "3d-drucker",
+    // TV & Networking
+    TELEVISION: "tvs",
+    NETWORKING_ROUTER: "routers",
+    // Gaming
+    VIDEO_GAME_CONSOLE: "consoles",
+    VIDEO_GAME: "games",
+    PHYSICAL_VIDEO_GAME_SOFTWARE: "games",
+    DOWNLOADABLE_VIDEO_GAME: "games",
+  };
 
-  // --- 2. Storage Media & Enclosures ---
-  if (isMemoryCard()) {
-    if (!t.includes("slot") && !t.includes("adapter für")) {
-      return "speicherkarten";
-    }
-  }
-  if (isEnclosure()) return "external-storage";
-
-  // --- 3. Printers & Scanners (Medium Priority, after Enclosures) ---
-  if (isPrinter()) {
-    // Check SUB_MAP first for specific types like Laserdrucker
-    if (s.includes("laserdrucker")) return "laserdrucker";
-    return "multifunktionsdrucker";
+  if (pt && TYPE_TO_CATEGORY[pt]) {
+    return TYPE_TO_CATEGORY[pt];
   }
 
-  // --- 4. Gaming & Consoles ---
+  // ============================================================================
+  // 3. TREE-BASED DETECTION (Amazon's Category Hierarchy - Third Priority)
+  // ============================================================================
+  // Only used when Sub and Type don't provide a match
+
+  // Storage (with title-based safety checks for miscategorization)
+  if (tr.includes("solid state drives") || tr.includes("interne ssd"))
+    return "ssds";
+  if (tr.includes("externe festplatten") || tr.includes("externe ssd"))
+    return "external-storage";
   if (
-    root.toLowerCase().includes("game") ||
-    s.includes("spiele") ||
-    s.includes("videospiel") ||
-    t.includes("playstation") ||
-    t.includes(" nintendo ") ||
-    t.includes(" xbox ")
+    (tr.includes("interner speicher") && tr.includes("festplatten")) ||
+    tr.includes("festplatten - intern")
   ) {
-    if (
-      t.includes("konsole") ||
-      t.includes("playstation 5") ||
-      t.includes("xbox series") ||
-      t.includes("nintendo switch")
-    )
-      return "consoles";
-    return t.includes("guthaben") || t.includes("card") || t.includes("code")
-      ? null
-      : "consoles";
+    // Exclude SSDs and SD Cards miscategorized as HDDs
+    if (/\b(ssd|nvme)\b/i.test(t)) return "ssds";
+    if (/\b(sd|sdxc|sdhc|microsd|microsdxc|microsdhc|uhs)\b/i.test(t))
+      return "speicherkarten";
+    return "hard-drives";
+  }
+  if (tr.includes("speicherkarten")) return "speicherkarten";
+
+  // PC Components
+  if (tr.includes("grafikkarten")) return "gpu";
+  if (tr.includes("mainboards") || tr.includes("motherboards")) {
+    if (/raspberry pi/i.test(t)) return null; // Exclude Raspberry Pi
+    return "motherboards";
+  }
+  if (tr.includes("arbeitsspeicher") || tr.includes("ddr-sdram")) return "ram";
+  if (tr.includes("prozessoren") || tr.includes("cpus")) return "cpu";
+  if (tr.includes("cpu-kühler") || tr.includes("prozessorlüfter"))
+    return "cpu-coolers";
+  if (tr.includes("pc-gehäuse")) return "pc-cases";
+  if (tr.includes("netzteile") && !tr.includes("notebook")) {
+    if (/raspberry pi/i.test(t)) return null; // Exclude RPi power supplies
+    return "power-supplies";
   }
 
-  // --- 5. Precision Helpers (Remaining) ---
-  if (isRam()) return "ram";
-  if (isSsd()) return "ssds";
-  if (isMainboard()) return "motherboards";
-  if (isCpuCooler()) return "cpu-coolers";
-  if (isSmartphone()) return "smartphones";
-  if (isPsu()) return "power-supplies";
-  if (isPcCase()) return "pc-cases";
-  if (isGpu()) return "gpu";
-  if (isCpu()) return "cpu";
-
-  // --- 6. Bulk Fallbacks ---
-  if (isAccessory()) return null;
-  if (t.includes("smartwatch") || s.includes("smartwatch"))
-    return "smartwatches";
-  if (t.includes("tv") || t.includes("fernseher")) return "tvs";
-  if (isCamera() || t.includes("kamera") || s.includes("kamera")) {
-    if (isHardDrive()) return "hard-drives";
-    if (
-      t.includes("ssd") ||
-      t.includes("portable drive") ||
-      t.includes("external drive")
-    ) {
-      return "external-storage";
-    }
-    if (s.includes("systemkameras") || t.includes("systemkamera"))
-      return "systemkameras";
-    return "cameras";
+  // Peripherals
+  if (tr.includes("monitore") || tr.includes("computerbildschirme"))
+    return "monitors";
+  if (tr.includes("mäuse") && !tr.includes("mauspad")) return "mice";
+  if (tr.includes("tastaturen")) return "keyboards";
+  if (tr.includes("headsets") || tr.includes("kopfhörer")) {
+    // VR Headsets (Meta Quest, etc.)
+    if (/meta quest|oculus|vr headset|vr-brille/i.test(t)) return "vr-headsets";
+    return "headphones";
   }
-  if (isHardDrive()) return "hard-drives";
+  if (tr.includes("vr-brillen")) return "vr-headsets";
+  if (tr.includes("webcams")) return "webcams";
+  if (tr.includes("soundbars")) return "soundbars";
+  if (tr.includes("lautsprecher")) return "speakers";
+  if (tr.includes("mikrofone")) return "microphones";
+
+  // Computers
+  if (
+    tr.includes("laptops") ||
+    tr.includes("notebooks") ||
+    tr.includes("gaming-notebook")
+  )
+    return "notebooks";
+  if (tr.includes("tablets")) return "tablets";
+
+  // Mobile
+  if (tr.includes("smartphones") || tr.includes("handys")) return "smartphones";
+  if (tr.includes("smartwatches")) return "smartwatches";
+
+  // Cameras
+  if (tr.includes("spiegellose systemkameras") || tr.includes("systemkameras"))
+    return "systemkameras";
+  if (tr.includes("digitalkameras")) return "cameras";
+  if (tr.includes("kompaktkameras")) return "kompaktkameras";
+  if (tr.includes("drohnen")) return "drones";
+
+  // Printers
+  if (tr.includes("3d-drucker")) return "3d-drucker";
+  if (tr.includes("laserdrucker")) return "laserdrucker";
+  if (tr.includes("multifunktionsgeräte") || tr.includes("tintenstrahldrucker"))
+    return "multifunktionsdrucker";
+
+  // TV & Networking
+  if (tr.includes("fernseher") || tr.includes("tvs")) return "tvs";
+  if (tr.includes("router") || tr.includes("repeater")) return "routers";
+
+  // Gaming
+  if (tr.includes("spielekonsolen") || tr.includes("konsolen"))
+    return "consoles";
+  if (tr.includes("games") || tr.includes("videospiele")) return "games";
+
+  // ============================================================================
+  // 4. TITLE-BASED FALLBACK (Last Resort - Only for products with no Sub/Type/Tree)
+  // ============================================================================
+  // Minimal regex patterns for obvious products that have empty structured data
+
+  // SSD detection (for products with empty Type/Sub)
+  if (/\b(ssd|nvme)\b/i.test(t) && /\b(gb|tb|pcie|m\.2)\b/i.test(t)) {
+    return "ssds";
+  }
+
+  // HDD detection
+  if (
+    /\b(hdd|festplatte)\b/i.test(t) &&
+    /\b(7200|5400|rpm|3\.5|2\.5)\b/i.test(t)
+  ) {
+    if (/\bextern/i.test(t)) return "external-storage";
+    return "hard-drives";
+  }
+
+  // Mouse detection (for products in wrong CSV)
+  if (
+    /\b(mouse|gaming-maus|deathadder|mx master|basilisk)\b/i.test(t) &&
+    !t.includes("tastatur")
+  ) {
+    return "mice";
+  }
+
+  // ============================================================================
+  // 5. SKIP UNRECOGNIZED (Strict Guard)
+  // ============================================================================
+  // If there's Tree/Sub/Type data but we didn't match, skip to avoid miscategorization
+  if (tr.length > 10 || s.length > 3 || pt.length > 3) {
+    return null;
+  }
 
   return null;
 }
