@@ -29,6 +29,7 @@ import {
   formatDisplayTitle,
   formatTechText,
 } from "@/lib/utils/formatting";
+import { isProductBestseller } from "@/lib/utils/products";
 import { IdealoStarRating } from "./IdealoStarRating";
 
 interface IdealoListCardProps {
@@ -190,7 +191,7 @@ export function IdealoListCard({
 
         {/* BADGES */}
         <div className="sr-resultItemTile__badges absolute bottom-2 left-[200px] flex flex-wrap gap-1">
-          {(product.salesRank ?? 0) > 0 && product.salesRank! < 10000 && (
+          {isProductBestseller(product as any) && (
             <span className="rounded-[2px] bg-[#0066cc] px-2 py-0.5 text-[11px] font-bold text-white">
               Bestseller
             </span>

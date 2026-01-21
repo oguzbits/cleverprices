@@ -4,6 +4,7 @@ import { calculateDesirabilityScore } from "./server/scoring";
 import {
   calculateProductDiscount,
   getLocalizedProductData,
+  isProductBestseller,
 } from "./utils/products";
 
 export interface DashboardProduct {
@@ -112,11 +113,7 @@ export function curateProductList(
           categoryName:
             allCategories[p.category as CategorySlug]?.name || p.category,
           discountRate: discountRate > 0 ? discountRate : undefined,
-          isBestseller: !!(
-            p.salesRank &&
-            p.salesRank > 0 &&
-            p.salesRank < 5000
-          ),
+          isBestseller: isProductBestseller(p),
           brand: p.brand || "Generic",
           variationAttributes: p.variationAttributes,
           parentAsin: p.parentAsin,

@@ -1,5 +1,3 @@
-import { type CategorySlug } from "./categories";
-
 export interface LeanProduct {
   id?: number;
   slug: string;
@@ -14,6 +12,7 @@ export interface LeanProduct {
   rating?: number;
   reviewCount?: number;
   salesRank?: number;
+  monthlySold?: number;
   variationAttributes?: string;
   category?: string;
   listPrice?: number;

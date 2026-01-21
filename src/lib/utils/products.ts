@@ -195,3 +195,23 @@ export function calculateProductDiscount(
 
   return discountRate;
 }
+
+/**
+ * Determines if a product is a Bestseller based on strict criteria.
+ * Replaces loose < 10000 rank checks with a combination of rank, volume and rating.
+ */
+export function isProductBestseller(p: Partial<Product>): boolean {
+  const rank = p.salesRank ?? 0;
+  const sold = p.monthlySold ?? 0;
+  const rating = p.rating ?? 0;
+
+  // Criteria (approx. 7% of catalog):
+  // 1. Excellent Sales Rank (< 200 in Department)
+  // 2. OR High Volume (3000+ sold/mo) with good rating (4.0+)
+  // 3. AND Must have basic quality (rating >= 3.5)
+  const isEliteRank = rank > 0 && rank < 200;
+  const isHighVolume = sold >= 3000 && rating >= 4.0;
+  const isDecentQuality = rating >= 3.5;
+
+  return (isEliteRank || isHighVolume) && isDecentQuality;
+}

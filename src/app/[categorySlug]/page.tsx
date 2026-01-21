@@ -106,6 +106,7 @@ export default async function DedicatedCategoryPage({
       rating?: number;
       reviewCount?: number;
       salesRank?: number;
+      monthlySold?: number;
       capacity?: number;
       capacityUnit?: string;
       formFactor?: string;
@@ -126,6 +127,7 @@ export default async function DedicatedCategoryPage({
       rating: p.rating,
       reviewCount: p.reviewCount,
       salesRank: p.salesRank,
+      monthlySold: p.monthlySold,
       variationAttributes: p.variationAttributes,
       category: p.category,
       listPrice: p.listPrice?.[DEFAULT_COUNTRY],
