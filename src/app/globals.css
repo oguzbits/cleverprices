@@ -178,3 +178,12 @@
   content-visibility: auto;
   contain-intrinsic-size: auto 80px;
 }
+
+/* Utils */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

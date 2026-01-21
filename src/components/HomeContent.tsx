@@ -13,6 +13,7 @@ import {
   getDiverseMostPopular,
   getNewArrivals,
 } from "@/lib/server/cached-products";
+import { getAmazonImageUrl } from "@/lib/utils/images";
 import { cacheLife } from "next/cache";
 
 export default async function HomeContent({
@@ -89,6 +90,26 @@ export default async function HomeContent({
     <>
       <OrganizationSchema />
       <WebSiteSchema />
+
+      {/* Performance: Preload first 2 hero images for immediate LCP improvement */}
+      {heroProducts.slice(0, 2).map((p) =>
+        p.image ? (
+          <link
+            key={p.slug}
+            rel="preload"
+            as="image"
+            href={getAmazonImageUrl({
+              src: p.image,
+              width: 320,
+              quality: 40,
+              format: "webp",
+            })}
+            // @ts-ignore - fetchpriority is supported in modern browsers
+            fetchpriority="high"
+          />
+        ) : null,
+      )}
+
       <IdealoHomePage
         popular={heroProducts}
         deals={deals}
