@@ -176,3 +176,17 @@ Instead of using heavy client-side hooks (`useWindowSize`) to determine how many
   - **Mobile**: First row is prioritized perfectly.
   - **Desktop**: First row is halfway prioritized; the browser's native lazy-loader handles the remaining 2 visible items instantly.
 - **Benefit**: No "Hydration Mismatch" errors and zero dependency on client-side measurement hooks.
+
+### 10.3 Balanced Typography (CLS vs. Brand)
+
+We use `display: "swap"` for fonts to ensure brand consistency (Inter) while relying on Next.js's automatic font-metric matching to minimize Cumulative Layout Shift.
+
+- **Pattern**: `display: "swap"` in `RootLayoutWrapper.tsx`.
+- **Preload**: Set `preload: true` to ensure the font is requested early in the critical path.
+
+### 10.4 CSS-First Interactivity
+
+Avoid using JavaScript for purely visual elements like "hiding scrollbars" on carousels.
+
+- **Solution**: Use the `.scrollbar-hide` utility class in CSS.
+- **Benefit**: The UI looks "finished" the moment the HTML arrives, long before the JS bundle executes. This significantly improves the **Perceived Performance**.

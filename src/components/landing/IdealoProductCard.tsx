@@ -69,8 +69,8 @@ export function IdealoProductCard({
               alt={title}
               fill
               className="object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
-              sizes="(max-width: 600px) 160px, 180px"
-              quality={40}
+              sizes="(max-width: 600px) 128px, 192px"
+              quality={30}
               priority={priorityLoad}
               // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
               fetchPriority={priorityLoad ? "high" : "auto"}

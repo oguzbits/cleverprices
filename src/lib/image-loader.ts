@@ -7,5 +7,6 @@ export default function amazonImageLoader({
   width,
   quality = 75,
 }: ImageLoaderParams): string {
-  return getAmazonImageUrl({ src, width, quality, format: "webp" });
+  // Use AVIF globally for maximum compression
+  return getAmazonImageUrl({ src, width, quality, format: "avif" });
 }

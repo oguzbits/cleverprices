@@ -105,7 +105,7 @@ export function IdealoProductPage({
                       fill
                       className="object-contain p-4"
                       sizes="(max-width: 432px) calc(100vw - 80px), 320px"
-                      quality={50}
+                      quality={30}
                       priority
                     />
                   ) : (

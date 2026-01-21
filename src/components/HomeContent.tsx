@@ -13,7 +13,6 @@ import {
   getDiverseMostPopular,
   getNewArrivals,
 } from "@/lib/server/cached-products";
-import { getAmazonImageUrl } from "@/lib/utils/images";
 import { cacheLife } from "next/cache";
 
 export default async function HomeContent({
@@ -45,7 +44,6 @@ export default async function HomeContent({
   };
 
   // 1. Hero Section: "Revenue Kings"
-  // High Price (>200€) + High Volume = The true market flagships (iPhones, GPUs, Consoles)
   const heroProducts = curateProductList(rawPopular, countryCode, {
     maxItems: 5,
     minPrice: 200,
@@ -81,7 +79,7 @@ export default async function HomeContent({
   const newArrivals = curateProductList(rawNew, countryCode, {
     maxItems: 12,
     sortBy: "date",
-    categoryLimit: 4, // Higher limit for new arrivals to fill the carousel better
+    categoryLimit: 4,
     excludeIds: globalSeen,
     excludeParentIds: globalSeenParents,
   });
@@ -90,25 +88,6 @@ export default async function HomeContent({
     <>
       <OrganizationSchema />
       <WebSiteSchema />
-
-      {/* Performance: Preload first 2 hero images for immediate LCP improvement */}
-      {heroProducts.slice(0, 2).map((p) =>
-        p.image ? (
-          <link
-            key={p.slug}
-            rel="preload"
-            as="image"
-            href={getAmazonImageUrl({
-              src: p.image,
-              width: 320,
-              quality: 40,
-              format: "webp",
-            })}
-            // @ts-ignore - fetchpriority is supported in modern browsers
-            fetchpriority="high"
-          />
-        ) : null,
-      )}
 
       <IdealoHomePage
         popular={heroProducts}

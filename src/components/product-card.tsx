@@ -81,8 +81,8 @@ export function ProductCard({
             alt={title}
             fill
             className="object-contain p-4"
-            sizes="(max-width: 600px) 120px, 180px"
-            quality={50}
+            sizes="(max-width: 600px) 128px, 192px"
+            quality={30}
             priority={priority}
             loading={priority ? undefined : "lazy"}
             // @ts-ignore - fetchPriority is supported in Next.js 16/React 19

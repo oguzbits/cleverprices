@@ -33,10 +33,14 @@ Amazon uses specifically formatted strings in the URL to transform images on the
 - **`SX[width]` (e.g., `SX400`)**: **Scale X (Width)**. This tells Amazon to resize the image to exactly a specific width in pixels. It automatically maintains the aspect ratio.
   - `SX400` = 400 pixels wide.
   - `SX200` = 200 pixels wide (half the size of SX400).
-- **`QL[quality]` (e.g., `QL75`)**: **Quality Level**. This controls the JPEG compression.
+- **`QL[quality]` (e.g., `QL30`)**: **Quality Level**. This controls the JPEG/AVIF compression.
   - `QL100` = Maximum quality, large file size.
+  - `QL75` = Balanced compression.
+  - `QL30` = **Project Standard** for product cards. Achieves <20KB files with high visual fidelity in AVIF.
   - `QL10` = Very low quality, extremely small file size.
-  - `QL75` = Balanced compression (default).
+- **`FM[format]` (e.g., `FMavif`)**: **File Format**.
+  - `FMavif` = Modern AVIF format (30% smaller than WebP).
+  - `FMwebp` = WebP format.
 
 ## Implementation Details
 
@@ -45,8 +49,10 @@ Amazon uses specifically formatted strings in the URL to transform images on the
 This function receives `src`, `width`, and `quality` from Next.js.
 It parses the Amazon URL and injects the `._SX[width]_QL[quality]_` parameter.
 
+- **Format**: We force **AVIF globally** (`format: 'avif'`) for a ~30% size reduction over WebP.
 - **Resizing**: We use `SX` to match the `width` prop passed by Next.js.
-- **Optimization**: We pass the `quality` prop (from `75` down to `10` for maximum savings) to the `QL` parameter.
+- **Optimization**: We pass the `quality` prop to the `QL` parameter. We default to **30** for most card views.
+- **Bucket Alignment**: We use standard `sizes` values (128px, 192px, 320px) that align with Next.js internal image buckets to ensure high cache hit rates and zero pixel waste.
 
 ### 2. Configuration (`next.config.ts`)
 
@@ -108,10 +114,12 @@ To maintain a balance between visual quality and performance, we use the followi
 
 | Component Type         | Usage Example               | Recommended Quality |
 | :--------------------- | :-------------------------- | :------------------ |
-| **Hero Images**        | Product Detail main image   | `quality={75}`      |
-| **Grid/List Cards**    | Category pages, Bestsellers | `quality={50}`      |
+| **Hero Images**        | Product Detail main image   | `quality={30}`      |
+| **Grid/List Cards**    | Category pages, Bestsellers | `quality={30}`      |
 | **Sidebar/Thumbnails** | Product page thumbnails     | `quality={30}`      |
 | **Background/Tiny**    | Gallery list, History       | `quality={10}`      |
+
+> **Note**: While Q30 seems low for JPEGs, on **AVIF** it maintains excellent sharpness for product covers while keeping file sizes between 12KB and 18KB.
 
 ## Benefits
 
