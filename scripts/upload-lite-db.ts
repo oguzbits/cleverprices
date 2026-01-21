@@ -41,6 +41,8 @@ async function uploadLiteDb() {
     const blob = await put("cleverprices-lite.db", fileBuffer, {
       access: "public",
       contentType: "application/x-sqlite3",
+      addRandomSuffix: false,
+      allowOverwrite: true,
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 
