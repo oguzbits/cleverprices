@@ -20,6 +20,13 @@ These workflows run automatically in GitHub to keep the site fresh without manua
 | **Price Sync**   | Hourly    | Fetches Keepa prices, enriches products, and writes to Turso Cloud.               |
 | **Lite DB Sync** | 2x Daily  | Builds `lite.db`, uploads to Vercel Blob, and triggers a fresh Vercel deployment. |
 
+## 🔧 3. Data Management
+
+| Command                                     | Description                                                                                     |
+| :------------------------------------------ | :---------------------------------------------------------------------------------------------- |
+| `bun run scripts/import-from-csv.ts <file>` | Imports/Updates products from a Keepa CSV export. Logic prioritizes Amazon structured data.     |
+| `bun run scripts/validate-categories.ts`    | Audits the database for categorization errors (e.g. Headphones in SSDs) and reports violations. |
+
 ## 💡 Troubleshooting
 
 - **Search fails in Production?** Ensure `cleverprices-lite.db` was prepared with `DELETE` journal mode (run `bun run db:lite`).

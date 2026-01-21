@@ -52,6 +52,17 @@
   - **Direct Cloud Access**: Scripts connect directly to Turso (Cloud) via `DATABASE_PATH` environment variable.
   - **Reference**: See `.github/workflows/daily-maintenance.yml`.
 
+### 1.1 Data Ingestion (Import Logic)
+
+- **Source**: CSV exports from Keepa (Sales Rank < 30k, filtered).
+- **Categorization Logic**: The `script/import-from-csv.ts` script uses a strict priority system to clean Amazon's messy data:
+  1.  **Pre-Flight**: Global title overrides (e.g. Soundbars, SSD Cases, Cables) to fix common errors.
+  2.  **Subcategory**: Exact match on Amazon's `Categories: Sub` field (Highest confidence).
+  3.  **Type**: Maps Amazon's `Type` field (e.g. `VIDEO_GAME_CONSOLE`) to internal slugs.
+  4.  **Tree**: Parsed `Categories: Tree` path with context-aware logic (e.g. distinguishing Internal HDDs from SSDs).
+  5.  **Title Fallback**: Last resort simple regex for obvious products.
+- **Validation**: Run `bun run scripts/validate-categories.ts` to audit the database for cross-category pollution.
+
 ### 2. Localization & Routing
 
 - **Primary Market**: Germany (`de`).

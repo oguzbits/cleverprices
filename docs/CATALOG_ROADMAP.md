@@ -10,23 +10,24 @@ _Goal: Build the essential hardware and electronics foundation._
 | :--------------------- | :-------------------------------- | :----------- | :--------- |
 | **Computer & Zubehör** | Master Filter (Sales Rank < 10k)  | ✅ Completed | ~500       |
 | **CPUs**               | Processors (Sales Rank < 20k)     | ✅ Completed | ~350       |
-| **GPUs**               | Graphics Cards (Sales Rank < 20k) | ✅ Completed | ~450       |
-| **SSDs / Storage**     | SSDs & External Drives            | ✅ Completed | ~800       |
-| **Smartphones**        | Apple, Samsung, Google            | 🧪 Active    | ~250       |
-| **Mainboards**         | AM5 / LGA1700 Bestsellers         | 🕒 Planned   | ~200       |
-| **Notebooks**          | Focused Laptop Selection          | 🕒 Planned   | ~400       |
+| **GPUs**               | Graphics Cards (Sales Rank < 20k) | ✅ Completed | ~550       |
+| **SSDs / Storage**     | SSDs & External Drives            | ✅ Completed | ~900       |
+| **Smartphones**        | Apple, Samsung, Google            | ✅ Completed | ~1,100     |
+| **Mainboards**         | AM5 / LGA1700 Bestsellers         | ✅ Completed | ~150       |
+| **Notebooks**          | Focused Laptop Selection          | ✅ Completed | ~650       |
+| **Peripherals**        | Mice, Keyboards                   | ✅ Completed | ~250       |
 
-## 🏠 Phase 2: Home & Lifestyle (Target: ~1,000 Products)
+## 🏠 Phase 2: Home & Lifestyle (Target: ~2,000 Products)
 
 _Goal: Broaden appeal to general shoppers._
 
-| Category            | Keepa Search Target               | Status     | Est. Count |
-| :------------------ | :-------------------------------- | :--------- | :--------- |
-| **Coffee Machines** | Espressomaschinen / Vollautomaten | 🕒 Planned | ~150       |
-| **Household**       | Washing Machines / Fridges        | 🕒 Planned | ~300       |
-| **Smartphones**     | Apple, Samsung, Google            | 🕒 Planned | ~200       |
-| **TVs**             | OLED & Smart TV Bestsellers       | 🕒 Planned | ~200       |
-| **Audio**           | Headphones & Speakers             | 🕒 Planned | ~200       |
+| Category            | Keepa Search Target               | Status       | Est. Count |
+| :------------------ | :-------------------------------- | :----------- | :--------- |
+| **Coffee Machines** | Espressomaschinen / Vollautomaten | 🕒 Planned   | ~150       |
+| **Household**       | Washing Machines / Fridges        | 🕒 Planned   | ~300       |
+| **TVs**             | OLED & Smart TV Bestsellers       | ✅ Completed | ~400       |
+| **Audio**           | Headphones / Speakers / Soundbars | ✅ Completed | ~800       |
+| **Gaming**          | Consoles / VR / Games             | ✅ Completed | ~150       |
 
 ## 🛠️ Data Quality Standards
 
