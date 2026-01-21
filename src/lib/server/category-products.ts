@@ -119,8 +119,8 @@ async function getCachedLocalizedCategoryProducts(
         p,
         countryCode,
       );
-      // Relaxed check: Allow products even if price is missing (display as unavailable)
-      // if (!price) return null;
+      // Filter out products with no valid price - they shouldn't appear in listings
+      if (!price || price <= 0) return null;
 
       // 1. Extract static attributes (pruning raw specifications)
       let socket = p.specifications?.Socket || p.specifications?.["Socket-Typ"];
@@ -364,7 +364,7 @@ export async function getCategoryProducts(
   const localizedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v27",
+    "v28",
   );
 
   const category = allCategories[categorySlug as CategorySlug];
