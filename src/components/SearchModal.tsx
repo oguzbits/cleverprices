@@ -269,7 +269,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                         </span>
                         {cat.path && (
                           <span className="text-muted-foreground text-[13px]">
-                            - in {formatTechText(cat.path)}
+                            - {formatTechText(cat.path)}
                           </span>
                         )}
                       </div>
@@ -293,9 +293,11 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                       <span className="truncate font-semibold text-[#2d2d2d]">
                         {formatDisplayTitle(product.title)}
                       </span>
-                      <span className="text-muted-foreground shrink-0 text-[12px]">
-                        - in {formatTechText(product.categoryName)}
-                      </span>
+                      {product.categoryName && (
+                        <span className="text-muted-foreground shrink-0 text-[12px]">
+                          - {formatTechText(product.categoryName)}
+                        </span>
+                      )}
                     </div>
                   </CommandItem>
                 ))}

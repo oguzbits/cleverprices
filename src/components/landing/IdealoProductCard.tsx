@@ -92,14 +92,15 @@ export function IdealoProductCard({
               Bestseller
             </div>
           ) : null}
-          {categoryName ? (
+          {categoryName && categoryName !== "uncategorized" ? (
             <span
               className={cn(
                 "truncate text-[14px] text-gray-500",
                 isBestseller && "font-medium",
               )}
             >
-              in {categoryName}
+              {isBestseller ? "in " : ""}
+              {categoryName}
             </span>
           ) : null}
         </div>

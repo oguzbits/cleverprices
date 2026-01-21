@@ -25,12 +25,16 @@ export interface CategoryHierarchy {
 // Re-export constants for backward compatibility
 export { CATEGORY_MAP };
 
+import { CATEGORY_MANIFEST } from "./category-manifest";
+
 // All categories in a flat structure with slug added (Icon removed to prevent client bloating)
 export const allCategories: Record<CategorySlug, Category> = Object.entries(
   CATEGORY_MAP,
 ).reduce(
   (acc, [slug, data]) => {
+    const manifestEntry = CATEGORY_MANIFEST[slug as CategorySlug] || {};
     acc[slug as CategorySlug] = {
+      ...manifestEntry,
       ...(data as BaseCategoryData),
       slug: slug as CategorySlug,
     } as Category;

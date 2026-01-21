@@ -16,7 +16,7 @@ export interface DashboardProduct {
   ratingCount: number;
   testRating?: number;
   testCount?: number;
-  categoryName: string;
+  categoryName?: string;
   discountRate?: number;
   isBestseller: boolean;
   variationAttributes?: any;
@@ -111,7 +111,10 @@ export function curateProductList(
           testRating: undefined,
           testCount: undefined,
           categoryName:
-            allCategories[p.category as CategorySlug]?.name || p.category,
+            p.category !== "uncategorized"
+              ? allCategories[p.category as CategorySlug]?.singularName ||
+                allCategories[p.category as CategorySlug]?.name
+              : undefined,
           discountRate: discountRate > 0 ? discountRate : undefined,
           isBestseller: isProductBestseller(p),
           brand: p.brand || "Generic",

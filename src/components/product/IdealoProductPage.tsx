@@ -8,6 +8,7 @@ import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
 import { LazySection } from "@/components/ui/LazySection";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import {
+  allCategories,
   getCategoryBySlug,
   getCategoryPath,
   type CategorySlug,
@@ -18,6 +19,7 @@ import { Product } from "@/lib/product-registry";
 import { getProductPriceHistory } from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
+import { isProductBestseller } from "@/lib/utils/products";
 import { Package } from "lucide-react";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
@@ -391,6 +393,13 @@ async function CachedSimilarCarousel({
           products={similarProducts.map((p) => ({
             ...p,
             price: p.prices[countryCode],
+            categoryName:
+              p.category !== "uncategorized"
+                ? allCategories[p.category as CategorySlug]?.singularName ||
+                  allCategories[p.category as CategorySlug]?.name
+                : undefined,
+            // @ts-ignore - Product type is slightly different but compatible
+            isBestseller: isProductBestseller(p),
           }))}
           countryCode={countryCode}
         />

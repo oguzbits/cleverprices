@@ -103,6 +103,7 @@ export interface FilterGroup {
 
 export interface CategoryData {
   name: string;
+  singularName?: string;
   description: string;
   parent?: CategorySlug;
   metaTitle?: string;

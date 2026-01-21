@@ -1,4 +1,4 @@
-import { Category } from "@/lib/categories";
+import { allCategories, Category, type CategorySlug } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -9,6 +9,7 @@ import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 import { LazySection } from "@/components/ui/LazySection";
 import { type LeanProduct } from "@/lib/types";
 import { formatTechText } from "@/lib/utils/formatting";
+import { isProductBestseller } from "@/lib/utils/products";
 
 interface ParentCategoryViewProps {
   parentCategory: Omit<Category, "icon">;
@@ -77,11 +78,16 @@ export function ParentCategoryView({
                   image: p.image,
                   rating: p.rating,
                   ratingCount: p.reviewCount,
-                  categoryName: p.category,
+                  categoryName:
+                    p.category !== "uncategorized"
+                      ? allCategories[p.category as CategorySlug]
+                          ?.singularName ||
+                        allCategories[p.category as CategorySlug]?.name
+                      : undefined,
                   discountRate: p.savings
                     ? Math.round(p.savings * 100)
                     : undefined,
-                  isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
+                  isBestseller: isProductBestseller(p as any),
                   variationAttributes: p.variationAttributes,
                 }))}
               />
@@ -102,11 +108,16 @@ export function ParentCategoryView({
                   image: p.image,
                   rating: p.rating,
                   ratingCount: p.reviewCount,
-                  categoryName: p.category,
+                  categoryName:
+                    p.category !== "uncategorized"
+                      ? allCategories[p.category as CategorySlug]
+                          ?.singularName ||
+                        allCategories[p.category as CategorySlug]?.name
+                      : undefined,
                   discountRate: p.savings
                     ? Math.round(p.savings * 100)
                     : undefined,
-                  isBestseller: (p.salesRank ?? 0) > 0 && p.salesRank! < 10000,
+                  isBestseller: isProductBestseller(p as any),
                   variationAttributes: p.variationAttributes,
                   badgeText: p.savings && p.savings > 0 ? undefined : "Deal",
                 }))}

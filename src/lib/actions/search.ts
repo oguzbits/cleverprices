@@ -15,7 +15,7 @@ export interface SearchCategory {
 export interface SearchProduct {
   slug: string;
   title: string;
-  categoryName: string;
+  categoryName?: string;
 }
 
 export interface SearchResults {
@@ -238,8 +238,10 @@ const getInternalSearchResults = async (
           slug: p.slug,
           title: p.title,
           categoryName:
-            allCategories[p.category as keyof typeof allCategories]?.name ||
-            p.category,
+            p.category !== "uncategorized"
+              ? allCategories[p.category as keyof typeof allCategories]?.name ||
+                p.category
+              : undefined,
         });
       }
     }
