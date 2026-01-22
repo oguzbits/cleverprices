@@ -30,8 +30,19 @@ export async function getLivePricesForProducts(
 
   const priceMap = new Map();
   latestPrices.forEach((p) => {
-    // Map to standardized price logic (Amazon > New > Used)
-    const price = p.amazonPrice || p.newPrice || p.usedPrice;
+    // Map to standardized price logic (Buy Box > Min(Amazon, New) > Used)
+    // CRITICAL: Ignore prices <= 0 to avoid broken comparison data.
+    const buyBox = p.buyBoxPrice && p.buyBoxPrice > 0 ? p.buyBoxPrice : null;
+    const amazon = p.amazonPrice && p.amazonPrice > 0 ? p.amazonPrice : null;
+    const marketplace = p.newPrice && p.newPrice > 0 ? p.newPrice : null;
+    const used = p.usedPrice && p.usedPrice > 0 ? p.usedPrice : null;
+
+    const price =
+      buyBox ??
+      (amazon && marketplace
+        ? Math.min(amazon, marketplace)
+        : (amazon ?? marketplace ?? used));
+
     if (price) {
       priceMap.set(p.productId, {
         price,

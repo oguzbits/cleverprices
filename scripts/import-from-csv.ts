@@ -206,6 +206,7 @@ async function main() {
             amazonPrice,
             newPrice,
             usedPrice: parseCSVPrice(row["Used: Current"]),
+            buyBoxPrice: parseCSVPrice(row["Buy Box: Current"]),
             warehousePrice: parseCSVPrice(row["Warehouse Deals: Current"]),
             listPrice: parseCSVPrice(row["List Price: Current"]),
             source: "keepa",

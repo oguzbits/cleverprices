@@ -22,6 +22,7 @@ const KEEPA_PRICE_TYPES = {
   NEW: 1,
   USED: 2,
   WAREHOUSE: 9,
+  BUY_BOX: 18,
 };
 
 const DOMAIN_CURRENCIES: Record<number, string> = {
@@ -74,6 +75,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
       currentAmazonPrice: prices.amazonPrice,
       currentNewPrice: prices.newPrice,
       currentUsedPrice: prices.usedPrice,
+      currentBuyBoxPrice: prices.buyBoxPrice,
       currentLastUpdated: prices.lastUpdated,
     })
     .from(products)
@@ -183,7 +185,18 @@ async function updatePrices(country: CountryCode): Promise<void> {
             const newPrice = keepaPriceToDecimal(
               currentPrices[KEEPA_PRICE_TYPES.NEW],
             );
-            const bestPrice = amazonPrice ?? newPrice;
+            const buyBoxPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.BUY_BOX],
+            );
+
+            // Standardized price logic: Use Buy Box if available, otherwise MIN of Amazon/New
+            // CRITICAL: Ignore prices <= 0 to avoid recording broken data.
+            const bBox = buyBoxPrice && buyBoxPrice > 0 ? buyBoxPrice : null;
+            const amz = amazonPrice && amazonPrice > 0 ? amazonPrice : null;
+            const mkt = newPrice && newPrice > 0 ? newPrice : null;
+
+            const bestPrice =
+              bBox ?? (amz && mkt ? Math.min(amz, mkt) : (amz ?? mkt));
 
             const salesRank =
               extractSalesRank(kp.salesRanks) ?? product.salesRank;
@@ -218,7 +231,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
             const priceChanged =
               amazonPrice !== product.currentAmazonPrice ||
               newPrice !== product.currentNewPrice ||
-              usedPrice !== product.currentUsedPrice;
+              usedPrice !== product.currentUsedPrice ||
+              buyBoxPrice !== (product as any).currentBuyBoxPrice;
 
             // 3. History (Only if price changed or no record today)
             if (bestPrice) {
@@ -281,6 +295,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
                     amazonPrice,
                     newPrice,
                     usedPrice,
+                    buyBoxPrice,
                     warehousePrice: keepaPriceToDecimal(
                       currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
                     ),
@@ -303,6 +318,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
                       amazonPrice,
                       newPrice,
                       usedPrice,
+                      buyBoxPrice,
                       warehousePrice: keepaPriceToDecimal(
                         currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
                       ),

@@ -23,6 +23,7 @@ export const litePriceColumns = {
   amazonPrice: prices.amazonPrice,
   newPrice: prices.newPrice,
   usedPrice: prices.usedPrice,
+  buyBoxPrice: prices.buyBoxPrice,
   listPrice: prices.listPrice,
   priceAvg30: prices.priceAvg30,
   priceAvg90: prices.priceAvg90,
@@ -125,6 +126,7 @@ type LitePrice = Pick<
   | "amazonPrice"
   | "newPrice"
   | "usedPrice"
+  | "buyBoxPrice"
   | "listPrice"
   | "priceAvg30"
   | "priceAvg90"
@@ -146,8 +148,21 @@ export function mapDbProduct(
 
   if (pricesList) {
     pricesList.forEach((pr) => {
-      // Use Amazon price, fallback to New price, then Used price
-      const price = pr.amazonPrice || pr.newPrice || pr.usedPrice;
+      // Standardized price logic (Buy Box > Min(Amazon, New) > Used)
+      // CRITICAL: Ignore prices <= 0 to avoid showing broken comparison data.
+      const buyBox =
+        pr.buyBoxPrice && pr.buyBoxPrice > 0 ? pr.buyBoxPrice : null;
+      const amazon =
+        pr.amazonPrice && pr.amazonPrice > 0 ? pr.amazonPrice : null;
+      const marketplace = pr.newPrice && pr.newPrice > 0 ? pr.newPrice : null;
+      const used = pr.usedPrice && pr.usedPrice > 0 ? pr.usedPrice : null;
+
+      const price =
+        buyBox ??
+        (amazon && marketplace
+          ? Math.min(amazon, marketplace)
+          : (amazon ?? marketplace ?? used));
+
       if (price && pr.country) {
         pricesObj[pr.country] = price;
         if (pr.lastUpdated) {

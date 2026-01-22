@@ -113,6 +113,7 @@ export const prices = sqliteTable(
     amazonPriceFormatted: text("amazon_price_formatted"),
     newPrice: real("new_price"), // Marketplace new
     usedPrice: real("used_price"), // Marketplace used
+    buyBoxPrice: real("buy_box_price"), // Official Amazon Buy Box
     warehousePrice: real("warehouse_price"), // Amazon Warehouse
     listPrice: real("list_price"), // MSRP for discount calculation
 
