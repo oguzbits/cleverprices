@@ -7,7 +7,6 @@ import {
   getAllProductSlugs,
   getProductBySlug,
   getSimilarProducts,
-  getUnifiedProduct,
 } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
@@ -17,6 +16,9 @@ import { notFound, redirect } from "next/navigation";
 interface Props {
   params: Promise<{
     slug: string;
+  }>;
+  searchParams: Promise<{
+    condition?: string;
   }>;
 }
 // Generate static params for all products (Germany only)
@@ -132,8 +134,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { condition } = await searchParams;
   const countryCode = DEFAULT_COUNTRY;
 
   // Handle static collection for the dynamic template route
@@ -172,13 +175,6 @@ export default async function ProductPage({ params }: Props) {
       process.env.CI === "1" ||
       process.env.NEXT_PHASE === "phase-production-build";
 
-    const unifiedProductPromise = !isBuild
-      ? getUnifiedProduct(product.asin, countryCode).catch((error) => {
-          console.error("Error fetching unified product:", error);
-          return null;
-        })
-      : Promise.resolve(null);
-
     // 3. Fetch similar products (Cached/Fast)
     const similarProducts = await getSimilarProducts(product, 12, countryCode);
 
@@ -195,7 +191,7 @@ export default async function ProductPage({ params }: Props) {
       <IdealoProductPage
         product={product}
         countryCode={countryCode}
-        unifiedProductPromise={unifiedProductPromise}
+        selectedCondition={condition as "new" | "used"}
         similarProducts={liteSimilarProducts}
       />
     );

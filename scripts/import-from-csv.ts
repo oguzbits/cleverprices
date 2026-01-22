@@ -139,25 +139,22 @@ async function main() {
           parseCSVPrice(row["Amazon: 90 days avg."]) ||
           parseCSVPrice(row["New: 90 days avg."]);
 
+        // Lean schema: no description, features, salesRankReference, rawData
         const productData: NewProduct = {
           asin,
           title,
           brand,
           manufacturer,
-          description,
-          features: JSON.stringify(features),
           imageUrl,
           rating,
           reviewCount,
           salesRank,
-          salesRankReference: salesRankRef,
           monthlySold,
           gtin,
           mpn,
           parentAsin: row["Parent ASIN"] || null,
           variationAttributes: row["Variation Attributes"] || null,
           specifications: JSON.stringify(specs),
-          rawData: JSON.stringify(row), // Full backup
           category: categorySlug as CategorySlug,
           slug: generateProductSlug(
             title,
@@ -168,7 +165,7 @@ async function main() {
           ),
           capacity: capacityValue,
           capacityUnit,
-          historySeeded: false, // CSV averages are not full granular history, always enrich via Keepa
+          historySeeded: false,
           updatedAt: new Date(),
         };
 
@@ -195,20 +192,29 @@ async function main() {
           successCount++;
         }
 
-        // 4. Update Price
+        // 4. Update Price (Lean schema: consolidated price column)
         const amazonPrice = parseCSVPrice(row["Amazon: Current"]);
         const newPrice = parseCSVPrice(row["New: Current"]);
-        if (amazonPrice || newPrice) {
+        const usedPrice = parseCSVPrice(row["Used: Current"]);
+        const buyBoxPrice = parseCSVPrice(row["Buy Box: Current"]);
+
+        // Calculate consolidated "clever" price
+        const amz = amazonPrice && amazonPrice > 0 ? amazonPrice : null;
+        const mkt = newPrice && newPrice > 0 ? newPrice : null;
+        const bBox = buyBoxPrice && buyBoxPrice > 0 ? buyBoxPrice : null;
+        const cleverPrice =
+          bBox ?? (amz && mkt ? Math.min(amz, mkt) : (amz ?? mkt));
+
+        if (cleverPrice) {
           const priceData: NewPrice = {
             productId,
             country: "de",
             currency: "EUR",
-            amazonPrice,
-            newPrice,
-            usedPrice: parseCSVPrice(row["Used: Current"]),
-            buyBoxPrice: parseCSVPrice(row["Buy Box: Current"]),
-            warehousePrice: parseCSVPrice(row["Warehouse Deals: Current"]),
-            listPrice: parseCSVPrice(row["List Price: Current"]),
+            price: cleverPrice,
+            usedPrice,
+            priceAvg90:
+              parseCSVPrice(row["Amazon: 90 days avg."]) ||
+              parseCSVPrice(row["New: 90 days avg."]),
             source: "keepa",
             lastUpdated: new Date(),
           };
@@ -224,29 +230,14 @@ async function main() {
             await db
               .update(prices)
               .set({
-                ...priceData,
-                asin,
-                gtin,
-                priceAvg30:
-                  parseCSVPrice(row["Amazon: 30 days avg."]) ||
-                  parseCSVPrice(row["New: 30 days avg."]),
-                priceAvg90:
-                  parseCSVPrice(row["Amazon: 90 days avg."]) ||
-                  parseCSVPrice(row["New: 90 days avg."]),
+                price: cleverPrice,
+                usedPrice,
+                priceAvg90: priceData.priceAvg90,
+                lastUpdated: new Date(),
               })
               .where(eq(prices.id, existingPrice.id));
           } else {
-            await db.insert(prices).values({
-              ...priceData,
-              asin,
-              gtin,
-              priceAvg30:
-                parseCSVPrice(row["Amazon: 30 days avg."]) ||
-                parseCSVPrice(row["New: 30 days avg."]),
-              priceAvg90:
-                parseCSVPrice(row["Amazon: 90 days avg."]) ||
-                parseCSVPrice(row["New: 90 days avg."]),
-            });
+            await db.insert(prices).values(priceData);
           }
         }
       } catch (err) {

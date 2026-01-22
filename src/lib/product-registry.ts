@@ -1,11 +1,9 @@
 import { client, db } from "@/db";
 import {
-  priceHistory,
   prices,
   products,
   type Product as DbProduct,
   type Price,
-  type PriceHistoryRecord,
 } from "@/db/schema";
 import { and, asc, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
@@ -15,22 +13,19 @@ import {
 } from "./site-config";
 import { calculateProductMetrics } from "./utils/products";
 
-// Lightweight price columns - excludes rarely-used fields (Drizzle ORM skill: query-select-columns)
+// Lightweight price columns - lean schema (Drizzle ORM skill: query-select-columns)
 export const litePriceColumns = {
   id: prices.id,
   productId: prices.productId,
   country: prices.country,
-  amazonPrice: prices.amazonPrice,
-  newPrice: prices.newPrice,
+  price: prices.price, // Consolidated "clever" price
   usedPrice: prices.usedPrice,
-  buyBoxPrice: prices.buyBoxPrice,
   listPrice: prices.listPrice,
-  priceAvg30: prices.priceAvg30,
   priceAvg90: prices.priceAvg90,
+  pricePerUnit: prices.pricePerUnit,
+  historyJson: prices.historyJson,
   currency: prices.currency,
   lastUpdated: prices.lastUpdated,
-  // EXCLUDED: amazonPriceFormatted, warehousePrice, priceMin, priceMax,
-  //           pricePerUnit, availability, deliveryTime, deliveryCost, deliveryFree, source
 };
 
 // Define lightweight columns for list views to avoid fetching huge JSON/text blobs
@@ -39,7 +34,6 @@ export const liteProductColumns = {
   asin: products.asin,
   gtin: products.gtin,
   mpn: products.mpn,
-  sku: products.sku,
   slug: products.slug,
   title: products.title,
   brand: products.brand,
@@ -55,7 +49,6 @@ export const liteProductColumns = {
   rating: products.rating,
   reviewCount: products.reviewCount,
   salesRank: products.salesRank,
-  salesRankReference: products.salesRankReference,
   monthlySold: products.monthlySold,
   parentAsin: products.parentAsin,
   variationAttributes: products.variationAttributes,
@@ -64,7 +57,7 @@ export const liteProductColumns = {
   historySeeded: products.historySeeded,
   createdAt: products.createdAt,
   updatedAt: products.updatedAt,
-  // EXCLUDED: rawData, features, description
+  // EXCLUDED: rawData, features, description (removed in lean schema)
 };
 
 /**
@@ -81,6 +74,7 @@ export interface Product {
   image?: string;
   affiliateUrl: string;
   prices: Record<string, number>;
+  usedPrices?: Record<string, number>;
   /**
    * Last updated timestamp per country price (ISO string)
    * Essential for Amazon compliance
@@ -108,60 +102,69 @@ export interface Product {
   reviewCount?: number;
   energyLabel?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
   salesRank?: number;
-  priceAvg30?: Record<string, number>;
   priceAvg90?: Record<string, number>;
-  listPrice?: Record<string, number>;
   monthlySold?: number;
-  description?: string;
   mpn?: string;
   createdAt?: string; // ISO string
   savings?: number; // Calculated savings percentage (0-1)
+  listPrice?: Record<string, number>;
+  pricesPerUnit?: Record<string, number>;
 }
 
-// Lite price type for optimized queries
+// Lite price type for optimized queries (lean schema)
 type LitePrice = Pick<
   Price,
   | "productId"
   | "country"
-  | "amazonPrice"
-  | "newPrice"
+  | "price"
   | "usedPrice"
-  | "buyBoxPrice"
   | "listPrice"
-  | "priceAvg30"
   | "priceAvg90"
+  | "pricePerUnit"
+  | "historyJson"
   | "lastUpdated"
 >;
 
-// Helper to map DB to Interface
+/**
+ * Parse historyJson blob into price history array
+ * Format: { "2025-01-15": 4999, "2025-01-16": 5199, ... } (prices in cents)
+ */
+function parseHistoryJson(
+  historyJson: string | null,
+): { date: string; price: number }[] {
+  if (!historyJson) return [];
+  try {
+    const parsed = JSON.parse(historyJson) as Record<string, number>;
+    return Object.entries(parsed)
+      .map(([date, priceCents]) => ({
+        date: new Date(date).toISOString(),
+        price: priceCents / 100, // Convert cents to decimal
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+  } catch {
+    return [];
+  }
+}
+
+// Helper to map DB to Interface (lean schema)
 export function mapDbProduct(
   p: DbProduct,
   pricesList: LitePrice[] | Price[],
-  historyList: { recordedAt: Date | null; price: number }[] = [],
+  _historyList: { recordedAt: Date | null; price: number }[] = [], // Deprecated, use historyJson instead
   stripHeavyData: boolean = false,
 ): Product {
   const pricesObj: Record<string, number> = {};
   const pricesLastUpdatedObj: Record<string, string> = {};
-  const avg30Obj: Record<string, number> = {};
   const avg90Obj: Record<string, number> = {};
-  const listPricesObj: Record<string, number> = {};
+  const listPriceObj: Record<string, number> = {};
+  const unitPriceObj: Record<string, number> = {};
+  const usedPricesObj: Record<string, number> = {};
+  let historyData: { date: string; price: number }[] = [];
 
   if (pricesList) {
     pricesList.forEach((pr) => {
-      // Standardized price logic (Buy Box > Min(Amazon, New) > Used)
-      // CRITICAL: Ignore prices <= 0 to avoid showing broken comparison data.
-      const buyBox =
-        pr.buyBoxPrice && pr.buyBoxPrice > 0 ? pr.buyBoxPrice : null;
-      const amazon =
-        pr.amazonPrice && pr.amazonPrice > 0 ? pr.amazonPrice : null;
-      const marketplace = pr.newPrice && pr.newPrice > 0 ? pr.newPrice : null;
-      const used = pr.usedPrice && pr.usedPrice > 0 ? pr.usedPrice : null;
-
-      const price =
-        buyBox ??
-        (amazon && marketplace
-          ? Math.min(amazon, marketplace)
-          : (amazon ?? marketplace ?? used));
+      // Lean schema: price is already the "clever" consolidated price
+      const price = pr.price && pr.price > 0 ? pr.price : null;
 
       if (price && pr.country) {
         pricesObj[pr.country] = price;
@@ -171,9 +174,19 @@ export function mapDbProduct(
           const date = new Date(ts < 10000000000 ? ts * 1000 : ts);
           pricesLastUpdatedObj[pr.country] = date.toISOString();
         }
-        if (pr.priceAvg30) avg30Obj[pr.country] = pr.priceAvg30;
         if (pr.priceAvg90) avg90Obj[pr.country] = pr.priceAvg90;
-        if (pr.listPrice) listPricesObj[pr.country] = pr.listPrice;
+        if (pr.listPrice) listPriceObj[pr.country] = pr.listPrice;
+        if (pr.pricePerUnit) unitPriceObj[pr.country] = pr.pricePerUnit;
+        if (pr.usedPrice) usedPricesObj[pr.country] = pr.usedPrice;
+
+        // Parse historyJson from first price record (all countries share product history)
+        if (
+          !stripHeavyData &&
+          historyData.length === 0 &&
+          "historyJson" in pr
+        ) {
+          historyData = parseHistoryJson(pr.historyJson as string | null);
+        }
       }
     });
   }
@@ -207,23 +220,18 @@ export function mapDbProduct(
     variationAttributes: p.variationAttributes || undefined,
     specifications:
       !stripHeavyData && p.specifications ? JSON.parse(p.specifications) : {},
-    features: !stripHeavyData && p.features ? JSON.parse(p.features) : [],
-    priceHistory: stripHeavyData
-      ? []
-      : historyList.map((h) => ({
-          date: new Date(h.recordedAt || new Date()).toISOString(),
-          price: h.price,
-        })),
+    features: [], // Removed in lean schema
+    priceHistory: stripHeavyData ? [] : historyData,
     rating: p.rating || 0,
     reviewCount: p.reviewCount || 0,
     energyLabel: stripHeavyData ? undefined : (p.energyLabel as any),
     salesRank: p.salesRank || undefined,
     monthlySold: p.monthlySold || 0,
-    description: stripHeavyData ? undefined : p.description || undefined,
     mpn: p.mpn || undefined,
-    priceAvg30: avg30Obj,
     priceAvg90: avg90Obj,
-    listPrice: listPricesObj,
+    listPrice: listPriceObj,
+    pricesPerUnit: unitPriceObj,
+    usedPrices: usedPricesObj,
     createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
   };
 
@@ -303,7 +311,6 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
       // ALWAYS strip extremely heavy fields for category lists to stay under 2MB cache limit.
       // These are only needed on the single product page fetched via getProductBySlug.
       mapped.features = [];
-      mapped.description = undefined;
 
       if (stripHeavyData) {
         mapped.specifications = {};
@@ -336,18 +343,13 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 
 const fetchProductBySlug = async (
   slug: string,
-  includeHistory: boolean = false,
+  _includeHistory: boolean = false, // History now comes from historyJson in prices
 ): Promise<Product | undefined> => {
   // Try exact match first using Relational Query Builder
   let p = await db.query.products.findFirst({
     where: eq(products.slug, slug),
     with: {
       prices: true,
-      priceHistory: includeHistory
-        ? {
-            orderBy: (history, { asc }) => [asc(history.recordedAt)],
-          }
-        : undefined,
     },
   });
 
@@ -360,11 +362,6 @@ const fetchProductBySlug = async (
           where: eq(products.slug, decoded),
           with: {
             prices: true,
-            priceHistory: includeHistory
-              ? {
-                  orderBy: (history, { asc }) => [asc(history.recordedAt)],
-                }
-              : undefined,
           },
         });
       }
@@ -375,37 +372,18 @@ const fetchProductBySlug = async (
 
   if (!p) return undefined;
 
-  // Map the result (prices and history are now attached to p)
-  // We need to cast p because db.query returns the inferred type with relations,
-  // but mapDbProduct expects the raw DbProduct + separate arrays.
-  // leveraging the existing mapper by splitting them back out is easiest for now
-  // to maintain calculation logic in mapDbProduct.
-  const {
-    prices: productPrices,
-    priceHistory: productHistory,
-    ...productData
-  } = p;
+  // Map the result (prices are now attached to p, history comes from historyJson)
+  const { prices: productPrices, ...productData } = p;
 
   return mapDbProduct(
     productData as DbProduct,
     productPrices,
-    productHistory || [],
+    [], // History is now parsed from historyJson inside mapDbProduct
   );
 };
 
-export const getProductPriceHistory = unstable_cache(
-  async (productId: number): Promise<PriceHistoryRecord[]> => {
-    return db
-      .select()
-      .from(priceHistory)
-      .where(eq(priceHistory.productId, productId))
-      .orderBy(priceHistory.recordedAt);
-  },
-  ["product-history-v2"],
-  {
-    revalidate: PRODUCT_REVALIDATE_SECONDS,
-  },
-);
+// Note: getProductPriceHistory removed in lean schema.
+// Price history is now stored in prices.historyJson and parsed by mapDbProduct.
 
 export const getProductBySlug = cache(async function getProductBySlug(
   slug: string,
@@ -671,10 +649,11 @@ export async function getProductsByBrand(
 
 const getCachedDeals = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
+    // Lean schema: use consolidated `price` column instead of amazonPrice/newPrice
     const whereConditions = [
       eq(prices.country, countryCode),
       gt(prices.priceAvg90, 0),
-      or(gt(prices.amazonPrice, 0), gt(prices.newPrice, 0)),
+      gt(prices.price, 0), // Consolidated "clever" price
     ];
 
     if (condition) {
@@ -698,7 +677,8 @@ const getCachedDeals = unstable_cache(
       .where(and(...whereConditions))
       .orderBy(
         desc(
-          sql`(${prices.priceAvg90} - COALESCE(${prices.amazonPrice}, ${prices.newPrice})) / ${prices.priceAvg90}`,
+          // Deal percentage: (90-day avg - current price) / 90-day avg
+          sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90}`,
         ),
       )
       .limit(limit);

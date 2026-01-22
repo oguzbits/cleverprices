@@ -14,13 +14,11 @@ import {
   type CategorySlug,
 } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
-import type { UnifiedProduct } from "@/lib/data-sources";
 import { Product } from "@/lib/product-registry";
-import { getProductPriceHistory } from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { isProductBestseller } from "@/lib/utils/products";
-import { Package } from "lucide-react";
+import { Check, Package } from "lucide-react";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
@@ -31,21 +29,21 @@ import {
   IdealoLivePrice,
   IdealoLivePriceSkeleton,
   IdealoProductOffers,
-  IdealoProductOffersSkeleton,
 } from "./IdealoProductOffers";
+import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
 import { SpecificationsTable } from "./SpecificationsTable";
 
 interface IdealoProductPageProps {
   product: Product;
   countryCode: CountryCode;
-  unifiedProductPromise: Promise<UnifiedProduct | null>;
+  selectedCondition?: "new" | "used";
   similarProducts?: Product[];
 }
 
 export function IdealoProductPage({
   product,
   countryCode,
-  unifiedProductPromise,
+  selectedCondition = "new",
   similarProducts = [],
 }: IdealoProductPageProps) {
   const category = getCategoryBySlug(product.category);
@@ -131,7 +129,6 @@ export function IdealoProductPage({
                       <IdealoLivePrice
                         product={product}
                         countryCode={countryCode}
-                        unifiedProductPromise={unifiedProductPromise}
                         className="text-idealo-text-primary text-lg font-extrabold"
                       />
                     </Suspense>
@@ -140,6 +137,8 @@ export function IdealoProductPage({
                     </span>
                   </a>
                 </div>
+
+                {/* Mobile: Price Alert Button */}
               </div>
             </div>
 
@@ -156,6 +155,10 @@ export function IdealoProductPage({
                   rating={product.rating || 4.5}
                   reviewCount={product.reviewCount || 0}
                 />
+
+                {(product.savings || 0) > 0 && (
+                  <PriceAnalysisBadge savings={product.savings || 0} />
+                )}
               </div>
             </div>
 
@@ -187,9 +190,24 @@ export function IdealoProductPage({
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-2.5">
-                  <button className="border-idealo-blue focus-visible:ring-idealo-blue flex min-w-[140px] flex-col items-center justify-center rounded-[2px] border bg-blue-50 px-4 py-2 outline-none hover:bg-blue-100 focus-visible:ring-2 focus-visible:ring-offset-1">
-                    <div className="text-idealo-text-primary text-[13px] font-bold">
-                      Neu ab
+                  {/* NEW OFFERS BOX */}
+                  <Link
+                    href="?condition=new"
+                    scroll={false}
+                    className={cn(
+                      "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 transition-all outline-none",
+                      selectedCondition === "new"
+                        ? "border-[#0771d0] bg-white ring-1 ring-[#0771d0]"
+                        : "border-[#b4b4b4] bg-white hover:border-[#888]",
+                    )}
+                  >
+                    <div className="relative w-full">
+                      {selectedCondition === "new" && (
+                        <Check className="absolute -top-1 -left-2 h-3.5 w-3.5 text-[#0771d0]" />
+                      )}
+                      <div className="text-idealo-text-primary text-center text-[13px] font-bold">
+                        Neu ab
+                      </div>
                     </div>
                     <div className="text-idealo-text-primary text-[15px] font-extrabold">
                       <Suspense
@@ -200,11 +218,39 @@ export function IdealoProductPage({
                         <IdealoLivePrice
                           product={product}
                           countryCode={countryCode}
-                          unifiedProductPromise={unifiedProductPromise}
                         />
                       </Suspense>
                     </div>
-                  </button>
+                  </Link>
+
+                  {/* USED OFFERS BOX */}
+                  {product.usedPrices?.[countryCode] && (
+                    <Link
+                      href="?condition=used"
+                      scroll={false}
+                      className={cn(
+                        "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 transition-all outline-none",
+                        selectedCondition === "used"
+                          ? "border-[#0771d0] bg-white ring-1 ring-[#0771d0]"
+                          : "border-[#b4b4b4] bg-white hover:border-[#888]",
+                      )}
+                    >
+                      <div className="relative w-full">
+                        {selectedCondition === "used" && (
+                          <Check className="absolute -top-1 -left-2 h-3.5 w-3.5 text-[#0771d0]" />
+                        )}
+                        <div className="text-idealo-text-primary text-center text-[13px] font-bold">
+                          Gebraucht ab
+                        </div>
+                      </div>
+                      <div className="text-idealo-text-primary text-[15px] font-extrabold">
+                        <LegalPrice
+                          price={product.usedPrices[countryCode]}
+                          priceClassName="text-idealo-text-primary text-[15px] font-extrabold"
+                        />
+                      </div>
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
@@ -212,13 +258,7 @@ export function IdealoProductPage({
             {/* Price Chart Column */}
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
               <ComponentErrorBoundary name="PriceChart">
-                <Suspense
-                  fallback={
-                    <div className="bg-muted h-[200px] w-full animate-pulse rounded" />
-                  }
-                >
-                  <CachedPriceChart productId={product.id || 0} />
-                </Suspense>
+                <IdealoPriceChart history={product.priceHistory || []} />
               </ComponentErrorBoundary>
             </div>
           </div>
@@ -243,14 +283,12 @@ export function IdealoProductPage({
               </ComponentErrorBoundary>
             </aside>
 
-            {/* Streaming Offers Section */}
-            <Suspense fallback={<IdealoProductOffersSkeleton />}>
-              <IdealoProductOffers
-                product={product}
-                countryCode={countryCode}
-                unifiedProductPromise={unifiedProductPromise}
-              />
-            </Suspense>
+            {/* Offers Section (DB only) */}
+            <IdealoProductOffers
+              product={product}
+              countryCode={countryCode}
+              selectedCondition={selectedCondition}
+            />
           </div>
 
           {/* Specifications Table (Bottom) */}
@@ -292,23 +330,7 @@ export function IdealoProductPage({
  * Each of these is rendered once and stored as static Rsc in the Vercel Data Cache.
  */
 
-async function CachedPriceChart({ productId }: { productId: number }) {
-  "use cache";
-  cacheLife("product");
-  const history = await getProductPriceHistory(productId);
-  if (!history || history.length === 0) return null;
-
-  const chartHistory = history.map((h) => ({
-    date: new Date(h.recordedAt).toISOString(),
-    price: h.price,
-  }));
-
-  return (
-    <div id="price-chart-wrapper" className="sticky top-4">
-      <IdealoPriceChart history={chartHistory} />
-    </div>
-  );
-}
+// Live Price Chart that prefers fresh data from Keepa
 
 async function CachedSidebarSimilarProducts({
   product,

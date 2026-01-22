@@ -21,7 +21,6 @@ export const products = sqliteTable(
     asin: text("asin").notNull().unique(), // Amazon ASIN (primary for now)
     gtin: text("gtin"), // EAN-13 or UPC-12 for multi-source matching
     mpn: text("mpn"), // Manufacturer Part Number
-    sku: text("sku"), // Internal SKU (optional)
     slug: text("slug").notNull().unique(),
 
     // Basic Info
@@ -43,20 +42,16 @@ export const products = sqliteTable(
     rating: real("rating"),
     reviewCount: integer("review_count"),
     salesRank: integer("sales_rank"),
-    salesRankReference: integer("sales_rank_reference"),
     monthlySold: integer("monthly_sold"),
 
-    // Variants (New)
+    // Variants
     parentAsin: text("parent_asin"),
     variationAttributes: text("variation_attributes"), // e.g. "Color: Black; Size: 256GB"
 
-    // JSON Buckets (New)
+    // JSON Buckets
     specifications: text("specifications"), // Key-value JSON of all specs
-    rawData: text("raw_data"), // Complete Keepa CSV row as JSON string
 
     // UI Content
-    features: text("features"), // Extracted JSON array
-    description: text("description"),
     energyLabel: text("energy_label"),
 
     // Status
@@ -93,7 +88,13 @@ export const products = sqliteTable(
 
 /**
  * Prices Table
- * Current prices per product per country
+ * Current prices per product per country (lean schema)
+ *
+ * LEAN SCHEMA:
+ * - `price`: Consolidated "clever" price (buyBox ?? min(amazon, new) ?? used)
+ * - `used_price`: Separate used price option
+ * - `history_json`: Daily low prices in cents, format: {"2025-01-15": 4999, ...}
+ * - `price_avg_90`: 90-day average for deal calculation
  */
 export const prices = sqliteTable(
   "prices",
@@ -105,35 +106,28 @@ export const prices = sqliteTable(
       .references(() => products.id, { onDelete: "cascade" }),
 
     country: text("country").notNull(), // CountryCode: "us", "de", etc.
-    asin: text("asin"), // Stable identifier for resilience
-    gtin: text("gtin"), // Universal identifier for cross-vendor matching
 
-    // Amazon prices
-    amazonPrice: real("amazon_price"), // Sold by Amazon
-    amazonPriceFormatted: text("amazon_price_formatted"),
-    newPrice: real("new_price"), // Marketplace new
-    usedPrice: real("used_price"), // Marketplace used
-    buyBoxPrice: real("buy_box_price"), // Official Amazon Buy Box
-    warehousePrice: real("warehouse_price"), // Amazon Warehouse
-    listPrice: real("list_price"), // MSRP for discount calculation
+    // Consolidated price (the "clever" price shown to users)
+    price: real("price"),
+
+    // Used price (kept separate for user choice)
+    usedPrice: real("used_price"),
+
+    // List price (MSRP/RRP)
+    listPrice: real("list_price"),
 
     // Price statistics (from Keepa)
-    priceMin: real("price_min"), // All-time lowest
-    priceMax: real("price_max"), // All-time highest
-    priceAvg30: real("price_avg_30"), // 30-day average
-    priceAvg90: real("price_avg_90"), // 90-day average
+    priceAvg90: real("price_avg_90"), // 90-day average for deal badges
 
-    // Calculated
-    pricePerUnit: real("price_per_unit"), // Price per GB/TB/W
+    // Derived unit price (Price per TB, Price per GB, etc.)
+    pricePerUnit: real("price_per_unit"),
+
+    // History as compact JSON blob (Idealo-style)
+    // Format: {"2025-01-15": 4999, "2025-01-16": 5199, ...} (prices in cents)
+    historyJson: text("history_json"),
 
     // Currency
     currency: text("currency").notNull(), // "USD", "EUR", etc.
-
-    // Availability & Delivery (for future PA API / Awin)
-    availability: text("availability"), // "in_stock", "out_of_stock", "unknown"
-    deliveryTime: text("delivery_time"), // e.g., "1-2 Werktage"
-    deliveryCost: real("delivery_cost"), // Shipping cost
-    deliveryFree: integer("delivery_free", { mode: "boolean" }), // Free shipping?
 
     // Source info
     source: text("source").notNull(), // "keepa", "amazon-paapi", "static"
@@ -148,177 +142,15 @@ export const prices = sqliteTable(
       table.productId,
       table.country,
     ),
-    index("idx_prices_asin").on(table.asin),
-    index("idx_prices_gtin").on(table.gtin),
     index("idx_prices_country").on(table.country),
     index("idx_prices_product_id").on(table.productId),
+    index("idx_prices_last_updated").on(table.lastUpdated),
   ],
 );
 
-/**
- * Price History Table
- * Historical prices for charts
- */
-export const priceHistory = sqliteTable(
-  "price_history",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-
-    productId: integer("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
-
-    country: text("country").notNull(),
-    asin: text("asin"), // Stable identifier for resilience
-    gtin: text("gtin"), // Universal identifier for cross-vendor matching
-
-    // Price at this point in time
-    price: real("price").notNull(),
-    currency: text("currency").notNull(),
-
-    // Type of price
-    priceType: text("price_type").notNull(), // "amazon", "new", "used", "warehouse"
-
-    // Timestamp
-    recordedAt: integer("recorded_at", { mode: "timestamp" })
-      .notNull()
-      .default(sql`(unixepoch() * 1000)`),
-  },
-  (table) => [
-    index("idx_price_history_product_country").on(
-      table.productId,
-      table.country,
-    ),
-    index("idx_price_history_asin").on(table.asin),
-    index("idx_price_history_gtin").on(table.gtin),
-    index("idx_price_history_recorded").on(table.recordedAt),
-  ],
-);
-
-/**
- * Affiliate Links Table
- * Store affiliate URLs per product/country/source
- */
-export const affiliateLinks = sqliteTable(
-  "affiliate_links",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-
-    productId: integer("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
-
-    country: text("country").notNull(),
-    source: text("source").notNull(), // "amazon", "ebay", "newegg"
-
-    url: text("url").notNull(),
-
-    // Timestamps
-    createdAt: integer("created_at", { mode: "timestamp" })
-      .notNull()
-      .default(sql`(unixepoch() * 1000)`),
-  },
-  (table) => [
-    index("idx_affiliate_links_multi").on(
-      table.productId,
-      table.country,
-      table.source,
-    ),
-  ],
-);
-
-/**
- * Product Identifiers Table
- * Maps products to external source-specific IDs
- * Enables matching across Amazon, Awin, TradeTracker, etc.
- */
-export const productIdentifiers = sqliteTable(
-  "product_identifiers",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-
-    productId: integer("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
-
-    // Source identification
-    source: text("source").notNull(), // "amazon", "awin", "tradetracker", "ebay"
-    externalId: text("external_id").notNull(), // ASIN, Awin product ID, etc.
-    country: text("country"), // Optional: country-specific ID
-
-    // Timestamps
-    createdAt: integer("created_at", { mode: "timestamp" })
-      .notNull()
-      .default(sql`(unixepoch() * 1000)`),
-  },
-  (table) => [
-    index("idx_identifiers_source_external").on(table.source, table.externalId),
-    index("idx_identifiers_product").on(table.productId),
-  ],
-);
-
-/**
- * Product Offers Table
- * Multiple offers per product from different retailers
- * Enables idealo-style price comparison across merchants
- */
-export const productOffers = sqliteTable(
-  "product_offers",
-  {
-    id: integer("id").primaryKey({ autoIncrement: true }),
-
-    productId: integer("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
-
-    // Source identification
-    source: text("source").notNull(), // "amazon", "awin_mediamarkt", "awin_saturn", "tradetracker"
-    merchantName: text("merchant_name").notNull(), // "Amazon", "MediaMarkt", "Saturn"
-    merchantLogo: text("merchant_logo"), // URL to merchant logo
-
-    // Pricing
-    price: real("price").notNull(),
-    currency: text("currency").notNull().default("EUR"),
-    shippingCost: real("shipping_cost"),
-    totalPrice: real("total_price"), // price + shipping (calculated)
-
-    // Links
-    affiliateUrl: text("affiliate_url").notNull(),
-    deepLink: text("deep_link"), // Direct product page without affiliate
-
-    // Availability
-    availability: text("availability"), // "in_stock", "limited", "out_of_stock"
-    deliveryTime: text("delivery_time"), // "1-2 Tage", "3-5 Werktage"
-
-    // Merchant rating (optional, from Trustpilot etc.)
-    merchantRating: real("merchant_rating"),
-    merchantReviewCount: integer("merchant_review_count"),
-
-    // Timestamps
-    lastUpdated: integer("last_updated", { mode: "timestamp" })
-      .notNull()
-      .default(sql`(unixepoch() * 1000)`),
-  },
-  (table) => [
-    index("idx_offers_product").on(table.productId),
-    index("idx_offers_source").on(table.source),
-    index("idx_offers_price").on(table.price),
-    index("idx_offers_total_price").on(table.totalPrice),
-    uniqueIndex("unique_offer_composite").on(
-      table.productId,
-      table.source,
-      table.merchantName,
-    ),
-  ],
-);
-
-// Type exports for use in application
-export type Product = typeof products.$inferSelect;
-export type NewProduct = typeof products.$inferInsert;
-
+// Relations
 export const productsRelations = relations(products, ({ many }) => ({
   prices: many(prices),
-  priceHistory: many(priceHistory),
 }));
 
 export const pricesRelations = relations(prices, ({ one }) => ({
@@ -328,13 +160,8 @@ export const pricesRelations = relations(prices, ({ one }) => ({
   }),
 }));
 
+// Type exports for use in application
+export type Product = typeof products.$inferSelect;
+export type NewProduct = typeof products.$inferInsert;
 export type Price = typeof prices.$inferSelect;
 export type NewPrice = typeof prices.$inferInsert;
-export type PriceHistoryRecord = typeof priceHistory.$inferSelect;
-export type NewPriceHistoryRecord = typeof priceHistory.$inferInsert;
-export type AffiliateLink = typeof affiliateLinks.$inferSelect;
-export type NewAffiliateLink = typeof affiliateLinks.$inferInsert;
-export type ProductIdentifier = typeof productIdentifiers.$inferSelect;
-export type NewProductIdentifier = typeof productIdentifiers.$inferInsert;
-export type ProductOffer = typeof productOffers.$inferSelect;
-export type NewProductOffer = typeof productOffers.$inferInsert;

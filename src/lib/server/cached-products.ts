@@ -1,4 +1,3 @@
-import { type PriceHistoryRecord } from "@/db/schema";
 import { cacheLife } from "next/cache";
 import { type CountryCode } from "../countries";
 import { dataAggregator } from "../data-sources";
@@ -10,7 +9,6 @@ import {
   getMostPopular as getMostPopularSync,
   getNewArrivals as getNewArrivalsSync,
   getProductBySlug as getProductBySlugSync,
-  getProductPriceHistory as getProductPriceHistorySync,
   getSimilarProducts as getSimilarProductsSync,
   type Product,
 } from "../product-registry";
@@ -152,13 +150,8 @@ export async function getProductBySlug(
   return merged[0];
 }
 
-export async function getProductPriceHistory(
-  productId: number,
-): Promise<PriceHistoryRecord[]> {
-  "use cache";
-  cacheLife("product");
-  return getProductPriceHistorySync(productId);
-}
+// Note: getProductPriceHistory removed in lean schema.
+// Price history is now stored in prices.historyJson and parsed by mapDbProduct.
 
 export async function getUnifiedProduct(
   asin: string,

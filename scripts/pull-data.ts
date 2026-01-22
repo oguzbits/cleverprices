@@ -54,7 +54,7 @@ async function pullData() {
   // We disable foreign keys temporarily for faster bulk inserts
   localDb.run("PRAGMA foreign_keys = OFF;");
 
-  const tables = ["products", "prices", "product_offers", "price_history"];
+  const tables = ["products", "prices"];
 
   for (const table of tables) {
     console.log(`\n📦 Processing table: ${table}...`);

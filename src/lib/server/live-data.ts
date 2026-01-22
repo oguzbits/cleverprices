@@ -8,6 +8,8 @@ import { calculateProductMetrics } from "../utils/products";
 /**
  * Fetches the latest prices for a set of product IDs.
  * Use this to overwrite cached price data with fresh data from the DB.
+ *
+ * LEAN SCHEMA: Uses consolidated `price` column instead of separate price types.
  */
 export async function getLivePricesForProducts(
   productIds: number[],
@@ -30,26 +32,16 @@ export async function getLivePricesForProducts(
 
   const priceMap = new Map();
   latestPrices.forEach((p) => {
-    // Map to standardized price logic (Buy Box > Min(Amazon, New) > Used)
-    // CRITICAL: Ignore prices <= 0 to avoid broken comparison data.
-    const buyBox = p.buyBoxPrice && p.buyBoxPrice > 0 ? p.buyBoxPrice : null;
-    const amazon = p.amazonPrice && p.amazonPrice > 0 ? p.amazonPrice : null;
-    const marketplace = p.newPrice && p.newPrice > 0 ? p.newPrice : null;
-    const used = p.usedPrice && p.usedPrice > 0 ? p.usedPrice : null;
-
-    const price =
-      buyBox ??
-      (amazon && marketplace
-        ? Math.min(amazon, marketplace)
-        : (amazon ?? marketplace ?? used));
+    // Lean schema: price is already the consolidated "clever" price
+    const price = p.price && p.price > 0 ? p.price : null;
 
     if (price) {
       priceMap.set(p.productId, {
         price,
         lastUpdated: p.lastUpdated,
-        priceAvg30: p.priceAvg30,
         priceAvg90: p.priceAvg90,
         listPrice: p.listPrice,
+        pricePerUnit: p.pricePerUnit,
       });
     }
   });
@@ -95,9 +87,9 @@ export async function mergeLivePrices(
           ...p.pricesLastUpdated,
           [countryCode]: new Date(live.lastUpdated).toISOString(),
         },
-        priceAvg30: { ...p.priceAvg30, [countryCode]: live.priceAvg30 },
         priceAvg90: { ...p.priceAvg90, [countryCode]: live.priceAvg90 },
         listPrice: { ...p.listPrice, [countryCode]: live.listPrice },
+        pricesPerUnit: { ...p.pricesPerUnit, [countryCode]: live.pricePerUnit },
       };
 
       // Recalculate derived metrics (like savings) based on new prices

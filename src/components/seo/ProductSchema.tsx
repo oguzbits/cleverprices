@@ -51,7 +51,6 @@ export function ProductSchema({
     "@type": "Product",
     name: product.title,
     description:
-      product.description ||
       `${product.title} - ${product.brand} ${product.category} mit ${product.capacity} ${product.capacityUnit} Kapazität. ${product.technology || ""} ${product.formFactor || ""}`.trim(),
     brand: {
       "@type": "Brand",

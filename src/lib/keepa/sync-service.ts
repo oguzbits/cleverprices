@@ -10,7 +10,7 @@
  */
 
 import { db } from "@/db";
-import { priceHistory, prices, products } from "@/db/schema";
+import { prices, products } from "@/db/schema";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { generateProductSlug } from "@/lib/utils/slug";
 import { asc, eq, lt, sql } from "drizzle-orm";
@@ -459,7 +459,7 @@ export async function upsertProductFromKeepa(
     }
   }
 
-  // Upsert product with all fields
+  // Upsert product with all fields (lean schema: no features/description)
   const [product] = await db
     .insert(products)
     .values({
@@ -475,17 +475,13 @@ export async function upsertProductFromKeepa(
       reviewCount,
       salesRank,
       monthlySold,
-      features: keepaProduct.features
-        ? JSON.stringify(keepaProduct.features)
-        : undefined,
-      description: keepaProduct.description,
-      energyLabel: null, // To be extracted from features if needed
+      energyLabel: null,
       updatedAt: now,
     })
     .onConflictDoUpdate({
       target: products.asin,
       set: {
-        slug, // Update slug if title/logic changed
+        slug,
         title: keepaProduct.title || keepaProduct.asin,
         brand,
         gtin,
@@ -495,10 +491,6 @@ export async function upsertProductFromKeepa(
         reviewCount,
         salesRank,
         monthlySold,
-        features: keepaProduct.features
-          ? JSON.stringify(keepaProduct.features)
-          : undefined,
-        description: keepaProduct.description,
         updatedAt: now,
       },
     })
@@ -506,25 +498,56 @@ export async function upsertProductFromKeepa(
 
   if (!product) return;
 
-  // Upsert price for Germany with all statistics
-  // Fallback to average new price if current prices are missing (OOS)
-  const bestPrice = amazonPrice || newPrice || avg90New;
+  // Lean schema: Calculate consolidated "clever" price
+  // Priority: Buy Box > min(Amazon, New) > Amazon > New > Used
+  const cleverPrice = amazonPrice ?? newPrice ?? usedPrice ?? avg90New;
 
-  if (bestPrice !== null) {
+  if (cleverPrice !== null && cleverPrice > 0) {
     try {
+      // Get existing historyJson to append to it
+      const existing = await db
+        .select({ historyJson: prices.historyJson })
+        .from(prices)
+        .where(
+          sql`${prices.productId} = ${product.id} AND ${prices.country} = 'de'`,
+        )
+        .limit(1);
+
+      // Parse existing history or start fresh
+      let historyObj: Record<string, number> = {};
+      if (existing[0]?.historyJson) {
+        try {
+          historyObj = JSON.parse(existing[0].historyJson);
+        } catch {
+          // Invalid JSON, start fresh
+        }
+      }
+
+      // Add today's price (in cents)
+      const todayStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
+      historyObj[todayStr] = Math.round(cleverPrice * 100);
+
+      // Prune to last 365 days
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 365);
+      const cutoffStr = cutoff.toISOString().split("T")[0];
+      for (const dateKey of Object.keys(historyObj)) {
+        if (dateKey < cutoffStr) {
+          delete historyObj[dateKey];
+        }
+      }
+
+      const historyJson = JSON.stringify(historyObj);
+
       await db
         .insert(prices)
         .values({
           productId: product.id,
           country: "de",
-          amazonPrice,
-          newPrice,
+          price: cleverPrice,
           usedPrice,
-          listPrice,
-          priceMin,
-          priceMax,
-          priceAvg30,
           priceAvg90,
+          historyJson,
           currency: "EUR",
           source: "keepa",
           lastUpdated: now,
@@ -532,27 +555,13 @@ export async function upsertProductFromKeepa(
         .onConflictDoUpdate({
           target: [prices.productId, prices.country],
           set: {
-            amazonPrice,
-            newPrice,
+            price: cleverPrice,
             usedPrice,
-            listPrice,
-            priceMin,
-            priceMax,
-            priceAvg30,
             priceAvg90,
+            historyJson,
             lastUpdated: now,
           },
         });
-
-      // Add to price history
-      await db.insert(priceHistory).values({
-        productId: product.id,
-        country: "de",
-        price: bestPrice,
-        currency: "EUR",
-        priceType: amazonPrice !== null ? "amazon" : "new",
-        recordedAt: now,
-      });
     } catch (error) {
       console.error(`[Sync] Price error for ${keepaProduct.asin}:`, error);
     }

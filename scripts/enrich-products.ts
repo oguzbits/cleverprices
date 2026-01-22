@@ -1,5 +1,5 @@
-import { and, asc, eq, isNull, or } from "drizzle-orm";
-import { db, priceHistory, prices, products } from "../src/db";
+import { and, asc, eq, isNull, or, sql } from "drizzle-orm";
+import { db, prices, products } from "../src/db";
 import { withRetry } from "../src/db/utils";
 import type { CountryCode } from "../src/lib/countries";
 import {
@@ -13,25 +13,24 @@ import {
   parseKeepaHistory,
 } from "../src/lib/keepa/utils";
 
+/**
+ * Enrich Products
+ *
+ * Seeds historical price data from Keepa into the historyJson column.
+ * Lean schema: history is stored as JSON blob instead of separate rows.
+ */
 async function enrich() {
   const isDryRun = process.argv.includes("--dry-run");
   const isForce = process.argv.includes("--force");
-  // Robust country detection: search for a 2-letter alphabetical code that doesn't start with -
   const countryArg =
     process.argv.slice(2).find((a) => /^[a-zA-Z]{2}$/.test(a)) || "de";
   const country = countryArg as CountryCode;
 
-  console.log("💎 CleverPrices Product Enrichment");
+  console.log("💎 CleverPrices Product Enrichment (Lean Schema)");
   console.log(`🌍 Seeding historical data for ${country.toUpperCase()}...`);
 
   if (isDryRun) {
     console.log("🧪 DRY RUN MODE: Database commits will be skipped.");
-  }
-
-  if (!isForce && !isDryRun) {
-    console.log(
-      "⚠️  SAFE MODE: History deletion is disabled. Use --force to allow overwriting existing history.",
-    );
   }
 
   // Robust argument parsing for --limit
@@ -48,8 +47,7 @@ async function enrich() {
   if (isNaN(customLimit)) customLimit = 200;
 
   // SMART CANDIDATE DISCOVERY:
-  // We look for products marked as not seeded, OR products that are marked as seeded
-  // but exist in a database where we know history is missing (as verified by the user).
+  // Products that need enrichment (not yet seeded with history)
   const candidates = await db.query.products.findMany({
     where: or(
       eq(products.historySeeded, false),
@@ -64,38 +62,26 @@ async function enrich() {
     return;
   }
 
-  console.log(`🔍 Found ${candidates.length} candidates for enrichment.`);
+  console.log(`📋 Found ${candidates.length} candidates to enrich.`);
 
+  const tokensPre = await getTokenStatus();
+  console.log(`💰 Keepa tokens: ${tokensPre.tokensLeft} available`);
+
+  const BATCH_SIZE = 50;
+  const batches: string[][] = [];
+  for (let j = 0; j < candidates.length; j += BATCH_SIZE) {
+    batches.push(candidates.slice(j, j + BATCH_SIZE).map((p) => p.asin));
+  }
+  console.log(`📦 Split into ${batches.length} batches of ${BATCH_SIZE}.\n`);
+
+  const allQueries: any[] = [];
   let seeded = 0;
-  const asins = candidates.map((p) => p.asin);
-
-  // Create batches (Keepa supports up to 100, but 50 is better for heavy history data)
-  const batches = [];
-  for (let i = 0; i < asins.length; i += 50) {
-    batches.push(asins.slice(i, i + 50));
-  }
-
-  // Check tokens before parallel launch
-  // Enrichment is expensive (~2-5 tokens/product). 20 products = ~40-100 tokens.
-  const status = await getTokenStatus();
-  if (status.tokensLeft < batches.length * 50) {
-    console.log(
-      `\n⚠️ Low tokens (${status.tokensLeft}). Processing batches sequentially (not implemented, proceeding with caution or could just run parallel anyway as bucket is shared).`,
-    );
-    // For now, proceed. Keepa handles concurrency.
-  }
-
-  const BATCH_CONCURRENCY = 3;
-  const allMetadataQueries: any[] = [];
-  const globalHistoryInsertions: any[] = [];
   const now = new Date();
 
-  // PHASE 1: Data Acquisition
-  console.log(
-    `📡 Phase 1: Fetching data from Keepa (${batches.length} batches)...`,
-  );
+  console.log(`🛰️ Phase 1: Fetching data from Keepa (with history)...`);
   const fetchStart = performance.now();
 
+  const BATCH_CONCURRENCY = 3;
   for (let i = 0; i < batches.length; i += BATCH_CONCURRENCY) {
     const currentBatches = batches.slice(i, i + BATCH_CONCURRENCY);
     await Promise.all(
@@ -110,75 +96,111 @@ async function enrich() {
             const localProduct = candidates.find((p) => p.asin === ep.asin);
             if (!localProduct) continue;
 
-            // 1. Prepare metadata - Only if changed
-            const priceAvg90 = keepaPriceToDecimal(ep.stats?.avg90?.[1]);
-            // Search local candidate to find if priceAvg90 is already set (need to find it in the price list, but candidates doesn't have prices)
-            // Simplified: Always push AVG90 for now as it's part of the enrichment goal, but avoid if zero/null
-            if (priceAvg90 && priceAvg90 > 0) {
-              allMetadataQueries.push(
-                db
-                  .update(prices)
-                  .set({ priceAvg90 })
-                  .where(
-                    and(
-                      eq(prices.productId, localProduct.id),
-                      eq(prices.country, country),
-                    ),
-                  ),
-              );
+            // 1. Build historyJson from Keepa CSV data
+            let historyObj: Record<string, number> = {};
+
+            // Get existing historyJson if available
+            const existingPrice = await db
+              .select({ historyJson: prices.historyJson })
+              .from(prices)
+              .where(
+                and(
+                  eq(prices.productId, localProduct.id),
+                  eq(prices.country, country),
+                ),
+              )
+              .limit(1);
+
+            if (existingPrice[0]?.historyJson && !isForce) {
+              try {
+                historyObj = JSON.parse(existingPrice[0].historyJson);
+              } catch {
+                // Invalid JSON, start fresh
+              }
             }
 
-            // 2. Prepare History
+            // Parse Keepa history and merge into historyObj
             if (ep.csv) {
               const amazonHistory = getDailyLow(parseKeepaHistory(ep.csv[0]));
               const newHistory = getDailyLow(parseKeepaHistory(ep.csv[1]));
 
-              const historyToInsert = [
-                ...amazonHistory.map((h) => ({
-                  productId: localProduct.id,
-                  country,
-                  price: h.price,
-                  currency: "EUR",
-                  priceType: "amazon",
-                  recordedAt: new Date(h.timestamp),
-                  asin: localProduct.asin,
-                  gtin: localProduct.gtin,
-                })),
-                ...newHistory.map((h) => ({
-                  productId: localProduct.id,
-                  country,
-                  price: h.price,
-                  currency: "EUR",
-                  priceType: "new",
-                  recordedAt: new Date(h.timestamp),
-                  asin: localProduct.asin,
-                  gtin: localProduct.gtin,
-                })),
-              ];
-
-              if (historyToInsert.length > 0) {
-                // Only delete if we suspect there might be partial data (extra safety)
-                if (isForce) {
-                  allMetadataQueries.push(
-                    db
-                      .delete(priceHistory)
-                      .where(
-                        and(
-                          eq(priceHistory.productId, localProduct.id),
-                          eq(priceHistory.country, country),
-                        ),
-                      ),
-                  );
+              // Merge Amazon and New histories, keeping the lowest price per day
+              for (const h of [...amazonHistory, ...newHistory]) {
+                const dateStr = new Date(h.timestamp)
+                  .toISOString()
+                  .split("T")[0];
+                const priceCents = Math.round(h.price * 100);
+                if (!historyObj[dateStr] || priceCents < historyObj[dateStr]) {
+                  historyObj[dateStr] = priceCents;
                 }
-
-                globalHistoryInsertions.push(...historyToInsert);
               }
             }
 
+            // Prune to last 365 days
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - 365);
+            const cutoffStr = cutoff.toISOString().split("T")[0];
+            for (const dateKey of Object.keys(historyObj)) {
+              if (dateKey < cutoffStr) {
+                delete historyObj[dateKey];
+              }
+            }
+
+            const historyJson = JSON.stringify(historyObj);
+
+            // 2. Get price statistics from stats
+            // Index 1 is NEW price, index 8 is LIST price (MSRP)
+            const priceAvg90 = keepaPriceToDecimal(ep.stats?.avg90?.[1]);
+            const listPrice = keepaPriceToDecimal(ep.stats?.current?.[8]);
+
+            // Calculate price per unit
+            // TODO: Implement thorough population plan per category
+            let pricePerUnit: number | null = null;
+            /*
+            const currentPrice = keepaPriceToDecimal(ep.stats?.current?.[1]); // Use NEW price as fallback for current
+            if (
+              currentPrice &&
+              localProduct.normalizedCapacity &&
+              localProduct.normalizedCapacity > 0
+            ) {
+              pricePerUnit = currentPrice / localProduct.normalizedCapacity;
+            }
+            */
+
+            // 3. Upsert prices with historyJson and stats
+            if (Object.keys(historyObj).length > 0 || priceAvg90 || listPrice) {
+              allQueries.push(
+                db
+                  .insert(prices)
+                  .values({
+                    productId: localProduct.id,
+                    country,
+                    historyJson,
+                    priceAvg90,
+                    listPrice,
+                    // pricePerUnit, (Keeping empty for now)
+                    currency: "EUR",
+                    source: "keepa",
+                    lastUpdated: now,
+                  })
+                  .onConflictDoUpdate({
+                    target: [prices.productId, prices.country],
+                    set: {
+                      historyJson,
+                      priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
+                      listPrice: listPrice ?? sql`${prices.listPrice}`,
+                      // pricePerUnit: pricePerUnit ?? sql`${prices.pricePerUnit}`,
+                      lastUpdated: now,
+                    },
+                  }),
+              );
+            }
+
+            // 4. Mark product as enriched
             const salesRank =
               extractSalesRank(ep.salesRanks) ?? localProduct.salesRank;
 
-            allMetadataQueries.push(
+            allQueries.push(
               db
                 .update(products)
                 .set({
@@ -203,71 +225,28 @@ async function enrich() {
   console.log(`🛰️ Acquisition complete in ${fetchTime}s\n`);
 
   // PHASE 2: Database Sync
-  console.log(
-    `🚀 Phase 2: Committing to DB (${allMetadataQueries.length} updates, ${globalHistoryInsertions.length} history points)...`,
-  );
+  console.log(`🚀 Phase 2: Committing to DB (${allQueries.length} queries)...`);
   const syncStart = performance.now();
 
   try {
     if (isDryRun) {
       console.log("  🧪 [DRY RUN] Skipping database commits.");
     } else {
-      // 1. Run all metadata updates and deletions in parallel batches
-      if (allMetadataQueries.length > 0) {
+      if (allQueries.length > 0) {
         const BATCH_LIMIT = 500;
-        const metadataChunks = [];
-        for (let j = 0; j < allMetadataQueries.length; j += BATCH_LIMIT) {
-          metadataChunks.push(allMetadataQueries.slice(j, j + BATCH_LIMIT));
+        const chunks = [];
+        for (let j = 0; j < allQueries.length; j += BATCH_LIMIT) {
+          chunks.push(allQueries.slice(j, j + BATCH_LIMIT));
         }
 
-        console.log(
-          `  📦 Executing ${metadataChunks.length} metadata batches...`,
-        );
+        console.log(`  📦 Executing ${chunks.length} query batches...`);
         await Promise.all(
-          metadataChunks.map((chunk) =>
+          chunks.map((chunk) =>
             withRetry(async () => {
               await (db as any).batch(chunk as any);
             }),
           ),
         );
-      }
-
-      // 2. Run the mega-insert for all history points in parallel chunks
-      if (globalHistoryInsertions.length > 0) {
-        const CHUNK_SIZE = 3000;
-        const historyChunks = [];
-        for (let j = 0; j < globalHistoryInsertions.length; j += CHUNK_SIZE) {
-          historyChunks.push(globalHistoryInsertions.slice(j, j + CHUNK_SIZE));
-        }
-
-        const CONCURRENCY = 5;
-        console.log(
-          `  📦 Executing ${historyChunks.length} history chunks (concurrency: ${CONCURRENCY})...`,
-        );
-
-        for (let j = 0; j < historyChunks.length; j += CONCURRENCY) {
-          const group = historyChunks.slice(j, j + CONCURRENCY);
-          await Promise.all(
-            group.map((chunk, groupIdx) =>
-              withRetry(async () => {
-                await db.insert(priceHistory).values(chunk);
-              }).catch((err) => {
-                console.error(
-                  `    ❌ Chunk failed in wave ${Math.floor(j / CONCURRENCY) + 1}, index ${groupIdx}:`,
-                  err.message,
-                );
-                throw err;
-              }),
-            ),
-          );
-          const progress = Math.min(
-            globalHistoryInsertions.length,
-            (j + group.length) * CHUNK_SIZE,
-          );
-          console.log(
-            `    ... progress: ${progress}/${globalHistoryInsertions.length}`,
-          );
-        }
       }
     }
   } catch (err: any) {

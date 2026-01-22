@@ -1,19 +1,19 @@
+import { ClientDate } from "@/components/ui/ClientDate";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PaymentMethodIcon } from "@/components/ui/PaymentMethodIcon";
 import { getAffiliateRedirectPath } from "@/lib/affiliate-utils";
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
-import type { ProductOffer, UnifiedProduct } from "@/lib/data-sources";
+import type { ProductOffer } from "@/lib/data-sources";
 import type { Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Star } from "lucide-react";
-import { ClientDate } from "@/components/ui/ClientDate";
 
 interface OffersListProps {
   product: Product;
   countryCode: CountryCode;
-  unifiedProductPromise: Promise<UnifiedProduct | null> | UnifiedProduct | null;
+  selectedCondition?: "new" | "used";
 }
 
 /**
@@ -23,12 +23,9 @@ interface OffersListProps {
 export async function IdealoLivePrice({
   product,
   countryCode,
-  unifiedProductPromise,
   className = "text-[15px] font-extrabold text-[#2d2d2d]",
 }: OffersListProps & { className?: string }) {
-  const unifiedProduct = await unifiedProductPromise;
-  const bestPrice =
-    unifiedProduct?.offers?.[0]?.price || product.prices[countryCode];
+  const bestPrice = product.prices[countryCode];
 
   return <LegalPrice price={bestPrice} priceClassName={className} />;
 }
@@ -48,26 +45,28 @@ export function IdealoLivePriceSkeleton({
 export async function IdealoProductOffers({
   product,
   countryCode,
-  unifiedProductPromise,
+  selectedCondition = "new",
 }: OffersListProps) {
-  // Await the live data if it's a promise
-  const unifiedProduct = await unifiedProductPromise;
   const countryConfig = getCountryByCode(countryCode);
-  const price = product.prices[countryCode];
+  const targetPrice =
+    selectedCondition === "used"
+      ? product.usedPrices?.[countryCode]
+      : product.prices[countryCode];
 
-  // Get offers from live data, or fallback to DB price as a single offer
-  const offers: ProductOffer[] = unifiedProduct?.offers || [];
-  if (offers.length === 0 && price) {
+  // In DB-only mode, we generate a single offer from the persistent price
+  const offers: ProductOffer[] = [];
+
+  if (targetPrice) {
     offers.push({
       source: "amazon" as const,
-      price,
+      price: targetPrice,
       currency: countryConfig?.currency || "EUR",
-      displayPrice: formatCurrency(price, countryCode),
+      displayPrice: formatCurrency(targetPrice, countryCode),
       affiliateLink: getAffiliateRedirectPath(product.slug),
-      condition: (product.condition?.toLowerCase() as any) || "new",
+      condition: selectedCondition === "used" ? "used" : "new",
       availability: "in_stock" as const,
       freeShipping: true,
-      seller: "Amazon",
+      seller: selectedCondition === "used" ? "Amazon Warehouse" : "Amazon",
       country: countryCode,
     });
   }
@@ -202,16 +201,11 @@ export async function IdealoProductOffers({
       <div className="mt-4 text-left text-[12px] text-[#767676]">
         * Preise inkl. MwSt., ggf. zzgl. Versand. Preise und Verfügbarkeit
         können sich ändern.
-        {(unifiedProduct?.lastUpdated ||
-          product.pricesLastUpdated?.[countryCode]) && (
+        {product.pricesLastUpdated?.[countryCode] && (
           <span className="mt-1 block">
             Zuletzt aktualisiert:{" "}
             <ClientDate
-              date={
-                unifiedProduct?.lastUpdated ||
-                product.pricesLastUpdated?.[countryCode] ||
-                new Date()
-              }
+              date={product.pricesLastUpdated?.[countryCode] || new Date()}
             />
           </span>
         )}

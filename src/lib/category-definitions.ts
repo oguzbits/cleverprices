@@ -599,6 +599,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "LGA 1700", params: "socket=LGA1700" },
       { label: "B650 Chipsatz", params: "chipset=B650" },
     ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Sockel", field: "socket", type: "checkbox" },
+      { label: "Formfaktor", field: "formFactor", type: "checkbox" },
+    ],
   },
   ram: {
     name: "Arbeitsspeicher",
@@ -613,6 +618,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "DDR5 RAM", params: "type=DDR5" },
       { label: "32GB Kits", params: "capacity=32" },
       { label: "6000 MHz", params: "speed=6000" },
+    ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Kapazität", field: "capacity", type: "checkbox" },
+      { label: "Technologie", field: "technology", type: "checkbox" },
     ],
   },
   "pc-cases": {
@@ -641,6 +651,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "80 PLUS Gold", params: "efficiency=gold" },
       { label: "750 Watt", params: "wattage=750" },
       { label: "Vollmodular", params: "modularity=full" },
+    ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Leistung", field: "capacity", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
   "cpu-coolers": {
@@ -933,6 +948,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     popularFilters: [
       { label: "Sockel AM5", params: "socket=AM5" },
       { label: "Sockel 1700", params: "socket=LGA1700" },
+    ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Sockel", field: "socket", type: "checkbox" },
+      { label: "Kerne", field: "cores", type: "checkbox" },
     ],
   },
   elektrowerkzeuge: {

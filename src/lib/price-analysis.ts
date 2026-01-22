@@ -2,13 +2,35 @@
  * Price Analysis Service
  *
  * Analyzes price history data to provide "is this a good deal?" recommendations.
- * Works with self-collected history (no Keepa needed).
+ * Works with historyJson blob (lean schema) instead of priceHistory table.
  */
 
-import { eq, and, desc, gte } from "drizzle-orm";
-import { db, priceHistory, prices } from "@/db";
-import type { PriceAnalysis } from "@/lib/data-sources/types";
+import { db } from "@/db";
+import { prices } from "@/db/schema";
 import type { CountryCode } from "@/lib/countries";
+import type { PriceAnalysis } from "@/lib/data-sources/types";
+import { and, eq } from "drizzle-orm";
+
+/**
+ * Parse historyJson blob into price history array
+ * Format: { "2025-01-15": 4999, ... } (prices in cents)
+ */
+function parseHistoryJson(
+  historyJson: string | null,
+): { date: Date; price: number }[] {
+  if (!historyJson) return [];
+  try {
+    const parsed = JSON.parse(historyJson) as Record<string, number>;
+    return Object.entries(parsed)
+      .map(([dateStr, priceCents]) => ({
+        date: new Date(dateStr),
+        price: priceCents / 100, // Convert cents to decimal
+      }))
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+  } catch {
+    return [];
+  }
+}
 
 /**
  * Calculate price analysis for a product
@@ -22,33 +44,29 @@ export async function analyzePriceHistory(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
-  // Fetch price history for this product
-  const history = await db
-    .select()
-    .from(priceHistory)
-    .where(
-      and(
-        eq(priceHistory.productId, productId),
-        eq(priceHistory.country, country),
-        eq(priceHistory.priceType, "amazon"),
-        gte(priceHistory.recordedAt, cutoffDate),
-      ),
-    )
-    .orderBy(desc(priceHistory.recordedAt));
+  // Fetch current price record with historyJson
+  const priceRecord = await db.query.prices.findFirst({
+    where: and(eq(prices.productId, productId), eq(prices.country, country)),
+  });
+
+  if (!priceRecord) {
+    return null;
+  }
+
+  // Parse history from historyJson
+  const allHistory = parseHistoryJson(priceRecord.historyJson);
+
+  // Filter to requested time window
+  const history = allHistory.filter((h) => h.date >= cutoffDate);
 
   // Need at least 2 data points for meaningful analysis
   if (history.length < 2) {
     return null;
   }
 
-  // Get current price
-  const currentPriceRecord = await db.query.prices.findFirst({
-    where: and(eq(prices.productId, productId), eq(prices.country, country)),
-  });
-
-  const currentPrice =
-    currentPriceRecord?.amazonPrice ?? currentPriceRecord?.newPrice;
-  if (!currentPrice) {
+  // Get current price (the consolidated "clever" price)
+  const currentPrice = priceRecord.price;
+  if (!currentPrice || currentPrice <= 0) {
     return null;
   }
 
@@ -97,16 +115,14 @@ export async function analyzePriceHistory(
     daysAnalyzed:
       history.length > 0
         ? Math.ceil(
-            (Date.now() -
-              new Date(history[history.length - 1].recordedAt).getTime()) /
-              (1000 * 60 * 60 * 24),
+            (Date.now() - history[0].date.getTime()) / (1000 * 60 * 60 * 24),
           )
         : 0,
   };
 }
 
 /**
- * Get price history data points for charting
+ * Get price history data points for charting (from historyJson)
  */
 export async function getPriceHistoryForChart(
   productId: number,
@@ -116,27 +132,24 @@ export async function getPriceHistoryForChart(
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
-  const history = await db
-    .select({
-      date: priceHistory.recordedAt,
-      price: priceHistory.price,
-      priceType: priceHistory.priceType,
-    })
-    .from(priceHistory)
-    .where(
-      and(
-        eq(priceHistory.productId, productId),
-        eq(priceHistory.country, country),
-        gte(priceHistory.recordedAt, cutoffDate),
-      ),
-    )
-    .orderBy(priceHistory.recordedAt);
+  // Fetch price record with historyJson
+  const priceRecord = await db.query.prices.findFirst({
+    where: and(eq(prices.productId, productId), eq(prices.country, country)),
+  });
 
-  return history.map((h) => ({
-    date: new Date(h.date),
-    price: h.price,
-    priceType: h.priceType,
-  }));
+  if (!priceRecord?.historyJson) {
+    return [];
+  }
+
+  const allHistory = parseHistoryJson(priceRecord.historyJson);
+
+  return allHistory
+    .filter((h) => h.date >= cutoffDate)
+    .map((h) => ({
+      date: h.date,
+      price: h.price,
+      priceType: "price", // Lean schema: single consolidated price type
+    }));
 }
 
 /**
@@ -146,23 +159,23 @@ export async function getHistoryCoverage(
   productId: number,
   country: CountryCode,
 ): Promise<{ daysOfData: number; dataPoints: number }> {
-  const history = await db
-    .select()
-    .from(priceHistory)
-    .where(
-      and(
-        eq(priceHistory.productId, productId),
-        eq(priceHistory.country, country),
-      ),
-    )
-    .orderBy(priceHistory.recordedAt);
+  // Fetch price record with historyJson
+  const priceRecord = await db.query.prices.findFirst({
+    where: and(eq(prices.productId, productId), eq(prices.country, country)),
+  });
+
+  if (!priceRecord?.historyJson) {
+    return { daysOfData: 0, dataPoints: 0 };
+  }
+
+  const history = parseHistoryJson(priceRecord.historyJson);
 
   if (history.length === 0) {
     return { daysOfData: 0, dataPoints: 0 };
   }
 
-  const firstDate = new Date(history[0].recordedAt);
-  const lastDate = new Date(history[history.length - 1].recordedAt);
+  const firstDate = history[0].date;
+  const lastDate = history[history.length - 1].date;
   const daysOfData = Math.ceil(
     (lastDate.getTime() - firstDate.getTime()) / (1000 * 60 * 60 * 24),
   );

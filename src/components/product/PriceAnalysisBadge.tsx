@@ -1,87 +1,66 @@
-/**
- * Price Analysis Badge
- *
- * Displays a recommendation based on Keepa price analysis.
- * Shows whether the current price is a "Great Deal", "Good Price", etc.
- */
-
-import type { PriceAnalysis } from "@/lib/data-sources";
 import { cn } from "@/lib/utils";
-import { Minus, Sparkles, TrendingDown, TrendingUp } from "lucide-react";
+import { Minus, TrendingDown, TrendingUp } from "lucide-react";
 
 interface PriceAnalysisBadgeProps {
-  analysis: PriceAnalysis;
+  savings: number; // 0.15 = 15% savings
   className?: string;
 }
 
 export function PriceAnalysisBadge({
-  analysis,
+  savings,
   className,
 }: PriceAnalysisBadgeProps) {
-  const { recommendation, recommendationText, percentFromAverage } = analysis;
+  if (savings >= 0.15) {
+    return (
+      <div
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800",
+          className,
+        )}
+      >
+        <TrendingDown className="h-3.5 w-3.5" />
+        Top-Deal: {(savings * 100).toFixed(0)}% Ersparnis
+      </div>
+    );
+  }
 
-  const config = {
-    great_deal: {
-      icon: Sparkles,
-      bgClass: "bg-emerald-100 dark:bg-emerald-500/20",
-      textClass: "text-emerald-800 dark:text-emerald-300",
-      borderClass: "border-emerald-200 dark:border-emerald-500/30",
-    },
-    good_price: {
-      icon: TrendingDown,
-      bgClass: "bg-blue-100 dark:bg-blue-500/20",
-      textClass: "text-blue-800 dark:text-blue-300",
-      borderClass: "border-blue-200 dark:border-blue-500/30",
-    },
-    fair: {
-      icon: Minus,
-      bgClass: "bg-gray-100 dark:bg-gray-500/20",
-      textClass: "text-gray-800 dark:text-gray-300",
-      borderClass: "border-gray-200 dark:border-gray-500/30",
-    },
-    wait: {
-      icon: TrendingUp,
-      bgClass: "bg-amber-100 dark:bg-amber-500/20",
-      textClass: "text-amber-800 dark:text-amber-300",
-      borderClass: "border-amber-200 dark:border-amber-500/30",
-    },
-    unknown: {
-      icon: Minus,
-      bgClass: "bg-gray-100 dark:bg-gray-500/20",
-      textClass: "text-gray-800 dark:text-gray-300",
-      borderClass: "border-gray-200 dark:border-gray-500/30",
-    },
-  };
+  if (savings > 0) {
+    return (
+      <div
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-800",
+          className,
+        )}
+      >
+        <TrendingDown className="h-3.5 w-3.5" />
+        Guter Preis ({(savings * 100).toFixed(0)}% unter Durchschnitt)
+      </div>
+    );
+  }
 
-  const {
-    icon: Icon,
-    bgClass,
-    textClass,
-    borderClass,
-  } = config[recommendation] || config.unknown;
+  if (savings === 0) {
+    return (
+      <div
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800",
+          className,
+        )}
+      >
+        <Minus className="h-3.5 w-3.5" />
+        Fairer Preis
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-xl border p-4",
-        bgClass,
-        borderClass,
+        "inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800",
         className,
       )}
     >
-      <div className={cn("rounded-full p-2", bgClass)}>
-        <Icon className={cn("h-5 w-5", textClass)} />
-      </div>
-      <div>
-        <p className={cn("font-semibold", textClass)}>
-          {recommendation === "great_deal" && "🎉 Great Deal!"}
-          {recommendation === "good_price" && "👍 Good Price"}
-          {recommendation === "fair" && "Fair Price"}
-          {recommendation === "wait" && "⏳ Consider Waiting"}
-          {recommendation === "unknown" && "Price Analysis Unavailable"}
-        </p>
-        <p className={cn("text-sm", textClass)}>{recommendationText}</p>
-      </div>
+      <TrendingUp className="h-3.5 w-3.5" />
+      Preis über Durchschnitt
     </div>
   );
 }

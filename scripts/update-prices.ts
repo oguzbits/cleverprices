@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
-import { and, asc, eq, inArray, isNull, lt, or, sql } from "drizzle-orm";
-import { db, priceHistory, prices, products } from "../src/db";
+import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
+import { db, prices, products } from "../src/db";
 import { withRetry } from "../src/db/utils";
 import type { CountryCode } from "../src/lib/countries";
 import {
@@ -21,6 +21,7 @@ const KEEPA_PRICE_TYPES = {
   AMAZON: 0,
   NEW: 1,
   USED: 2,
+  LIST: 8,
   WAREHOUSE: 9,
   BUY_BOX: 18,
 };
@@ -71,11 +72,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
       salesRank: products.salesRank,
       rating: products.rating,
       reviewCount: products.reviewCount,
-      // Current price state for diffing
-      currentAmazonPrice: prices.amazonPrice,
-      currentNewPrice: prices.newPrice,
+      // Current price state for diffing (lean schema)
+      currentPrice: prices.price,
       currentUsedPrice: prices.usedPrice,
-      currentBuyBoxPrice: prices.buyBoxPrice,
+      currentHistoryJson: prices.historyJson,
       currentLastUpdated: prices.lastUpdated,
     })
     .from(products)
@@ -155,24 +155,9 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
           if (keepaProducts.length === 0) return;
 
-          // History check
-          const startOfDay = new Date();
-          startOfDay.setHours(0, 0, 0, 0);
-
-          const batchProductIds = keepaProducts
-            .map((kp) => productMap.get(kp.asin)?.id)
-            .filter((id): id is number => id !== undefined);
-
-          const existingHistoryToday = await db.query.priceHistory.findMany({
-            where: and(
-              inArray(priceHistory.productId, batchProductIds),
-              eq(priceHistory.country, country),
-              sql`${priceHistory.recordedAt} >= ${startOfDay.getTime()}`,
-            ),
-          });
-
           const sqlQueries: any[] = [];
           const now = new Date();
+          const todayStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
 
           for (const kp of keepaProducts) {
             const product = productMap.get(kp.asin);
@@ -223,89 +208,85 @@ async function updatePrices(country: CountryCode): Promise<void> {
               );
             }
 
-            // 2. Price Diff Checking
+            // 2. Lean Schema: Calculate consolidated "clever" price
             const usedPrice = keepaPriceToDecimal(
               currentPrices[KEEPA_PRICE_TYPES.USED],
             );
+            const listPrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.LIST],
+            );
+
+            // Calculate price per unit (Price/TB, Price/GB, etc.)
+            // TODO: Implement thorough population plan per category
+            let pricePerUnit: number | null = null;
+            /*
+            if (
+              bestPrice &&
+              product.normalizedCapacity &&
+              product.normalizedCapacity > 0
+            ) {
+              pricePerUnit = bestPrice / product.normalizedCapacity;
+            }
+            */
 
             const priceChanged =
-              amazonPrice !== product.currentAmazonPrice ||
-              newPrice !== product.currentNewPrice ||
-              usedPrice !== product.currentUsedPrice ||
-              buyBoxPrice !== (product as any).currentBuyBoxPrice;
+              bestPrice !== product.currentPrice ||
+              usedPrice !== product.currentUsedPrice;
 
-            // 3. History (Only if price changed or no record today)
-            if (bestPrice) {
-              const todayRecord = existingHistoryToday.find(
-                (h) => h.productId === product.id,
-              );
-
-              if (todayRecord) {
-                // Only update history if the new price is LOWER than today's recorded low
-                if (bestPrice < todayRecord.price) {
-                  sqlQueries.push(
-                    db
-                      .update(priceHistory)
-                      .set({ price: bestPrice, recordedAt: now })
-                      .where(eq(priceHistory.id, todayRecord.id)),
-                  );
-                }
-              } else if (priceChanged || !product.currentLastUpdated) {
-                // Only insert new history if the price is different from the last known price
-                // or if we have no price record at all
-                sqlQueries.push(
-                  db.insert(priceHistory).values({
-                    productId: product.id,
-                    asin: product.asin,
-                    gtin: product.gtin,
-                    country,
-                    price: bestPrice,
-                    currency,
-                    priceType: amazonPrice ? "amazon" : "new",
-                    recordedAt: now,
-                  }),
-                );
+            // 3. Update historyJson with today's price
+            let historyObj: Record<string, number> = {};
+            if (product.currentHistoryJson) {
+              try {
+                historyObj = JSON.parse(product.currentHistoryJson);
+              } catch {
+                // Invalid JSON, start fresh
               }
             }
 
-            // 4. Price Upsert - Smart Rotation
-            // We always want to update lastUpdated to keep the rotation going,
-            // but we can skip the write if prices haven't changed AND it was updated recently (< 24h)
+            // Add today's price (in cents) - only if we have a valid price
+            if (bestPrice && bestPrice > 0) {
+              const priceCents = Math.round(bestPrice * 100);
+              // Only update if lower than existing today's price (daily low)
+              if (!historyObj[todayStr] || priceCents < historyObj[todayStr]) {
+                historyObj[todayStr] = priceCents;
+              }
+            }
+
+            // Prune to last 365 days
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - 365);
+            const cutoffStr = cutoff.toISOString().split("T")[0];
+            for (const dateKey of Object.keys(historyObj)) {
+              if (dateKey < cutoffStr) {
+                delete historyObj[dateKey];
+              }
+            }
+
+            const historyJson = JSON.stringify(historyObj);
+
+            // 4. Price Upsert - Lean Schema
             const isVeryFresh =
               product.currentLastUpdated &&
               now.getTime() - new Date(product.currentLastUpdated).getTime() <
                 24 * 60 * 60 * 1000;
 
             if (priceChanged || !isVeryFresh) {
-              const pricePerUnit =
-                product.normalizedCapacity &&
-                product.normalizedCapacity > 0 &&
-                bestPrice
-                  ? bestPrice / product.normalizedCapacity
-                  : null;
+              const priceAvg90 = keepaPriceToDecimal(
+                kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
+              );
 
               sqlQueries.push(
                 db
                   .insert(prices)
                   .values({
                     productId: product.id,
-                    asin: product.asin,
-                    gtin: product.gtin,
                     country,
-                    amazonPrice,
-                    newPrice,
+                    price: bestPrice,
                     usedPrice,
-                    buyBoxPrice,
-                    warehousePrice: keepaPriceToDecimal(
-                      currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
-                    ),
-                    pricePerUnit,
-                    priceAvg30: keepaPriceToDecimal(
-                      kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
-                    ),
-                    priceAvg90: keepaPriceToDecimal(
-                      kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
-                    ),
+                    listPrice,
+                    priceAvg90,
+                    // pricePerUnit, (Keeping empty for now)
+                    historyJson,
                     currency,
                     source: "keepa",
                     lastUpdated: now,
@@ -313,24 +294,12 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   .onConflictDoUpdate({
                     target: [prices.productId, prices.country],
                     set: {
-                      asin: product.asin,
-                      gtin: product.gtin,
-                      amazonPrice,
-                      newPrice,
+                      price: bestPrice,
                       usedPrice,
-                      buyBoxPrice,
-                      warehousePrice: keepaPriceToDecimal(
-                        currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
-                      ),
-                      pricePerUnit,
-                      priceAvg30:
-                        keepaPriceToDecimal(
-                          kp.stats?.avg30?.[KEEPA_PRICE_TYPES.NEW],
-                        ) ?? sql`${prices.priceAvg30}`,
-                      priceAvg90:
-                        keepaPriceToDecimal(
-                          kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
-                        ) ?? sql`${prices.priceAvg90}`,
+                      listPrice: listPrice ?? sql`${prices.listPrice}`,
+                      priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
+                      // pricePerUnit: pricePerUnit ?? sql`${prices.pricePerUnit}`,
+                      historyJson,
                       lastUpdated: now,
                     },
                   }),

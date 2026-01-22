@@ -8,12 +8,14 @@ import {
   mapDbProduct,
 } from "@/lib/product-registry";
 import { CATEGORY_REVALIDATE_SECONDS } from "@/lib/site-config";
-import { and, desc, eq, gt, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
 /**
  * Get all deal products across all categories using a highly optimized single query.
  * "Deal" is determined by price drop compared to 90-day average.
+ *
+ * LEAN SCHEMA: Uses consolidated `price` column instead of amazonPrice/newPrice.
  */
 export const getAllDeals = unstable_cache(
   async (
@@ -33,14 +35,15 @@ export const getAllDeals = unstable_cache(
         and(
           eq(prices.country, countryCode),
           gt(prices.priceAvg90, 0),
-          or(gt(prices.amazonPrice, 0), gt(prices.newPrice, 0)),
+          gt(prices.price, 0), // Lean schema: consolidated "clever" price
           // Only show products where current price is significantly lower than 90d average
-          sql`(${prices.priceAvg90} - COALESCE(${prices.amazonPrice}, ${prices.newPrice})) / ${prices.priceAvg90} > 0`,
+          sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90} > 0`,
         ),
       )
       .orderBy(
         desc(
-          sql`(${prices.priceAvg90} - COALESCE(${prices.amazonPrice}, ${prices.newPrice})) / ${prices.priceAvg90}`,
+          // Deal percentage: (90-day avg - current price) / 90-day avg
+          sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90}`,
         ),
       )
       .limit(limit);
@@ -49,7 +52,7 @@ export const getAllDeals = unstable_cache(
       mapDbProduct(r.product as any, [r.price], [], true),
     );
   },
-  ["all-deals-v2"],
+  ["all-deals-v3"], // Bumped version for schema change
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
     tags: ["products", "deals"],

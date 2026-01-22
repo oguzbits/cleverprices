@@ -34,7 +34,7 @@ import type {
 } from "./types";
 
 // Environment variable
-const KEEPA_API_KEY = process.env.KEEPA_API_KEY || "";
+const KEEPA_API_KEY = (process.env.KEEPA_API_KEY || "").trim();
 
 // Partner tags for link generation
 const PARTNER_TAGS: Record<string, string | undefined> = {
@@ -206,16 +206,20 @@ export class KeepaDataSource implements DataSourceProvider {
       key: KEEPA_API_KEY,
       domain: domain.toString(),
       asin: batchedAsins.join(","),
-      stats: "1", // Include statistics
+      stats: "90", // Standard 90-day statistics
       history: options?.includeHistory ? "1" : "0",
-      offers: "0", // We don't need third-party offers for now
     });
 
     try {
-      const response = await fetch(`${this.baseUrl}/product?${params}`);
+      const url = `${this.baseUrl}/product?${params}`;
+      // debug: Mask the key for logs
+      const logUrl = url.replace(/key=[^&]+/, "key=REDACTED");
+      console.log(`[Keepa] Fetching: ${logUrl}`);
+
+      const response = await fetch(url);
 
       if (!response.ok) {
-        console.warn(`Keepa API error: ${response.status}`);
+        console.warn(`Keepa API error: ${response.status} for URL: ${logUrl}`);
         return [];
       }
 
@@ -471,6 +475,7 @@ export class KeepaDataSource implements DataSourceProvider {
         product.stats?.current?.[KEEPA_PRICE_TYPES.REVIEW_COUNT] ?? undefined,
       features: product.features,
       description: product.description,
+      priceHistory: this.extractPriceHistory(product, country),
       lastUpdated: product.lastUpdate
         ? keepaTimeToDate(product.lastUpdate)
         : new Date(),

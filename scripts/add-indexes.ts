@@ -6,8 +6,8 @@
  * Safe to run multiple times (CREATE INDEX IF NOT EXISTS).
  */
 
-import { Database } from "bun:sqlite";
 import { createClient } from "@libsql/client";
+import { Database } from "bun:sqlite";
 
 const INDEXES = [
   "CREATE INDEX IF NOT EXISTS idx_products_sales_rank ON products(sales_rank)",
@@ -16,8 +16,6 @@ const INDEXES = [
   "CREATE INDEX IF NOT EXISTS idx_prices_country ON prices(country)",
   "CREATE INDEX IF NOT EXISTS idx_prices_product_id ON prices(product_id)",
   "CREATE INDEX IF NOT EXISTS idx_prices_last_updated ON prices(last_updated)",
-  "CREATE INDEX IF NOT EXISTS idx_price_history_recorded_at ON price_history(recorded_at)",
-  "CREATE UNIQUE INDEX IF NOT EXISTS unique_offer_composite ON product_offers(product_id, source, merchant_name)",
 ];
 
 async function main() {
