@@ -54,11 +54,23 @@ const nextConfig: NextConfig = {
       revalidate: 86400,
       expire: 2592000, // 30 days
     },
+    // Short-lived cache for dynamic data like prices
+    dynamic: {
+      stale: 300, // 5 minutes
+      revalidate: 300,
+      expire: 3600, // 1 hour
+    },
+    // Very fast cache for highly volatile data
+    fast: {
+      stale: 60, // 1 minute
+      revalidate: 60,
+      expire: 600, // 10 minutes
+    },
     // Keep legacy name for backward compatibility during migration
     prices: {
-      stale: 39600,
-      revalidate: 39600,
-      expire: 604800,
+      stale: 600, // 10 minutes (Reduced from 11h)
+      revalidate: 600,
+      expire: 3600,
     },
   },
   // Optimize images

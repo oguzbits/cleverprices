@@ -1,5 +1,3 @@
-"use cache";
-
 import { allCategories, CategorySlug } from "@/lib/categories";
 import { getAllDeals } from "@/lib/data/dealsData";
 import { getProductsByCategory } from "@/lib/product-registry";
@@ -10,6 +8,7 @@ import {
 } from "@/lib/utils/category-utils";
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { cacheLife } from "next/cache";
+import { getLivePricesForProducts } from "./live-data";
 import { calculateDesirabilityScore } from "./scoring";
 
 export interface LocalizedProduct {
@@ -87,23 +86,15 @@ function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
 /**
  * RE-USABLE CACHED LAYER: Localizes, scores, and PRUNES products in a category.
  * Pruning is essential to stay under Vercel's 2MB cache limit.
+ * Price is included but will be overwritten by the loader for live sync.
  */
 async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
   version: string = "v1", // Cache buster
 ): Promise<LocalizedProduct[]> {
-  // Guard cacheLife for script execution context
-  try {
-    if (
-      process.env.NEXT_RUNTIME === "nodejs" ||
-      process.env.NEXT_RUNTIME === "edge"
-    ) {
-      cacheLife("category" as any); // 11h revalidation
-    }
-  } catch (e) {
-    // Ignore cacheLife error in scripts
-  }
+  "use cache";
+  cacheLife("category");
 
   let rawProducts;
   if (categorySlug === "deals") {
@@ -140,7 +131,7 @@ async function getCachedLocalizedCategoryProducts(
         }
       }
 
-      // 2. Metrics & Desirability
+      // 2. Metrics & Desirability (Initial calculation)
       const { popularityScore } = calculateDesirabilityScore(
         p,
         price || 0,
@@ -156,7 +147,7 @@ async function getCachedLocalizedCategoryProducts(
       const displayListPrice =
         refPrice && price && refPrice > price ? refPrice : undefined;
 
-      // 3. Storage Capacity Extraction (fallback for incorrect data like '1 stück')
+      // 3. Storage Capacity Extraction
       let capacity = p.capacity;
       let capacityUnit = p.capacityUnit || "";
       let normCap = p.normalizedCapacity || 0;
@@ -167,7 +158,6 @@ async function getCachedLocalizedCategoryProducts(
         ) &&
         (capacity === 1 || !normCap || normCap === 0)
       ) {
-        // Try to parse title for capacity: "16TB", "16 TB", "500GB", etc.
         const capMatch = (title || "").match(/(\d+(?:\.\d+)?)\s?(TB|GB)/i);
         if (capMatch) {
           const val = parseFloat(capMatch[1]);
@@ -184,7 +174,7 @@ async function getCachedLocalizedCategoryProducts(
         }
       }
 
-      // 4. Price per Unit (MB for calculation, normalized back to GB/TB in UI)
+      // 4. Price per Unit (Initial calculation)
       const capacityMB =
         capacityUnit === "TB"
           ? capacity * 1024 * 1024
@@ -195,7 +185,6 @@ async function getCachedLocalizedCategoryProducts(
         capacityMB > 0 ? ((price || 0) / capacityMB) * 1024 : 0;
 
       // --- SNAP NORMALIZATION ---
-      // 1. Thresholding: Filter out low-capacity trash/accessories from SSDs/HDDs
       if (
         (categorySlug === "ssds" || categorySlug === "hard-drives") &&
         normCap > 0 &&
@@ -204,17 +193,13 @@ async function getCachedLocalizedCategoryProducts(
         normCap = 0;
       }
 
-      // 2. Snapping: Map 1024 -> 1000, 2048 -> 2000, etc. for cleaner filters
       if (normCap >= 900) {
-        // Find nearest TB multiple
         const tbCount = Math.round(normCap / 1000);
-        // Only snap if within 10% of a TB boundary (e.g. 1024)
         if (Math.abs(normCap - tbCount * 1000) < 100) {
           normCap = tbCount * 1000;
         }
       }
 
-      // 5. Return PRUNED object
       return {
         id: p.id || 0,
         slug: p.slug,
@@ -246,45 +231,54 @@ async function getCachedLocalizedCategoryProducts(
 }
 
 /**
+ * Merges fresh prices into localized products and recalculates price-dependent fields.
+ */
+async function mergeLivePricesIntoLocalized(
+  products: LocalizedProduct[],
+  countryCode: string,
+): Promise<LocalizedProduct[]> {
+  const ids = products.map((p) => p.id);
+  if (ids.length === 0) return products;
+
+  const priceMap = await getLivePricesForProducts(ids, countryCode);
+
+  return products.map((p) => {
+    const live = priceMap.get(p.id);
+    if (!live || live.price === p.price) return p;
+
+    // Price changed! Recalculate dependencies
+    const newPrice = live.price;
+    const refPrice = live.priceAvg90 || 0;
+    const savings = refPrice > newPrice ? (refPrice - newPrice) / refPrice : 0;
+    const listPrice = refPrice > newPrice ? refPrice : undefined;
+
+    const capacityMB =
+      p.capacityUnit === "TB"
+        ? p.capacity * 1024 * 1024
+        : p.capacityUnit === "GB"
+          ? p.capacity * 1024
+          : p.capacity;
+    const pricePerUnit = capacityMB > 0 ? (newPrice / capacityMB) * 1024 : 0;
+
+    // Popularity score technically depends on price too (in scoring.ts)
+    // For now we'll keep the cached popularity score to avoid re-fetching full product details
+    // which would hit the DB hard and is probably fine since popularity is mostly salesRank.
+
+    return {
+      ...p,
+      price: newPrice,
+      pricePerUnit,
+      savings,
+      listPrice,
+      lastUpdated: new Date(live.lastUpdated).toISOString(),
+    };
+  });
+}
+
+/**
  * Type for filter option counts: { brand: { Samsung: 213, SanDisk: 138 }, ... }
  */
 export type FilterCounts = Record<string, Record<string, number>>;
-
-/**
- * Calculate how many products match each filter option value.
- */
-function calculateFilterCounts(
-  products: LocalizedProduct[],
-  filterGroups: { field: string }[],
-): FilterCounts {
-  const counts: FilterCounts = {};
-  filterGroups.forEach((group) => {
-    counts[group.field] = {};
-  });
-  counts["brand"] = {};
-  products.forEach((p) => {
-    if (p.brand) {
-      counts["brand"][p.brand] = (counts["brand"][p.brand] || 0) + 1;
-    }
-    filterGroups.forEach((group) => {
-      let value =
-        group.field === "capacity"
-          ? p.normalizedCapacity
-          : (p as any)[group.field];
-      if (
-        value !== undefined &&
-        value !== null &&
-        value !== "" &&
-        value !== 0
-      ) {
-        const strValue = String(value);
-        counts[group.field][strValue] =
-          (counts[group.field][strValue] || 0) + 1;
-      }
-    });
-  });
-  return counts;
-}
 
 /**
  * Calculate smart price range buckets based on current product distribution
@@ -305,12 +299,10 @@ function calculatePriceRangeBuckets(products: LocalizedProduct[]) {
     return [{ label: `${min} € bis ${max} €`, min, max }];
   }
 
-  // Calculate quantiles for 4 buckets
   const q1 = prices[Math.floor(prices.length * 0.25)];
   const q2 = prices[Math.floor(prices.length * 0.5)];
   const q3 = prices[Math.floor(prices.length * 0.75)];
 
-  // Round to nearest 5 or 10 for cleaner UI
   const roundPrice = (p: number) => {
     if (p > 500) return Math.round(p / 50) * 50;
     if (p > 100) return Math.round(p / 10) * 10;
@@ -321,21 +313,18 @@ function calculatePriceRangeBuckets(products: LocalizedProduct[]) {
   const r2 = roundPrice(q2);
   const r3 = roundPrice(q3);
 
-  // Filter out duplicates if ranges are too tight
   const uniquePoints = Array.from(new Set([r1, r2, r3])).sort((a, b) => a - b);
 
   if (uniquePoints.length === 0)
     return [{ label: `${min} € bis ${max} €`, min, max }];
 
   const buckets = [];
-  // First bucket
   buckets.push({
     label: `bis ${uniquePoints[0]} €`,
     min: null,
     max: uniquePoints[0],
   });
 
-  // Middle buckets
   for (let i = 0; i < uniquePoints.length - 1; i++) {
     buckets.push({
       label: `${uniquePoints[i]} € bis ${uniquePoints[i + 1]} €`,
@@ -344,7 +333,6 @@ function calculatePriceRangeBuckets(products: LocalizedProduct[]) {
     });
   }
 
-  // Last bucket
   buckets.push({
     label: `ab ${uniquePoints[uniquePoints.length - 1]} €`,
     min: uniquePoints[uniquePoints.length - 1],
@@ -362,16 +350,22 @@ export async function getCategoryProducts(
   countryCode: string,
   filterParams: FilterParams,
 ) {
-  // Super fast cached access to pruned product list
-  const localizedProducts = await getCachedLocalizedCategoryProducts(
+  // 1. Get cached localized data (The "static" core)
+  const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v29",
+    "v30",
+  );
+
+  // 2. Merge fresh prices (The "dynamic" layer)
+  // This satisfies the "never cache prices" requirement while keeping performance
+  const localizedProducts = await mergeLivePricesIntoLocalized(
+    cachedProducts,
+    countryCode,
   );
 
   const category = allCategories[categorySlug as CategorySlug];
   const unitLabel = category?.unitType || "TB";
-  // ... (mappedSort and filters parsing unchanged)
 
   const mappedSort = filterParams.sort
     ? mapSortParam(filterParams.sort)
@@ -394,7 +388,6 @@ export async function getCategoryProducts(
     capacity: filterParams.capacity || [],
   };
 
-  // Dynamically parse filters
   Object.keys(filterParams).forEach((key) => {
     if (
       [
@@ -432,7 +425,6 @@ export async function getCategoryProducts(
     unitLabel,
   );
 
-  // If we only need the products for filter options, skip sorting and pagination
   if (filterParams.fetchAll) {
     return {
       products: filtered,
@@ -449,11 +441,9 @@ export async function getCategoryProducts(
     filters.sortOrder,
   ) as LocalizedProduct[];
 
-  // Calculate dynamic filter counts based on the CURRENT context
   const dynamicFilterCounts: FilterCounts = {};
   if (category?.filterGroups) {
     category.filterGroups.forEach((group) => {
-      // For capacity, we must use the 'capacity' field from the filter state
       const otherFilters = { ...filters };
       delete (otherFilters as any)[group.field];
 
@@ -484,7 +474,6 @@ export async function getCategoryProducts(
       });
     });
 
-    // Ensure brand is always handled if not in filterGroups
     if (!dynamicFilterCounts["brand"]) {
       const otherFilters = { ...filters };
       delete (otherFilters as any)["brand"];
@@ -503,7 +492,6 @@ export async function getCategoryProducts(
     }
   }
 
-  // Calculate context-aware max price (matching all filters EXCEPT price)
   const productsMatchingNonPrice = filterProducts(
     localizedProducts,
     { ...filters, minPrice: null, maxPrice: null },
@@ -521,7 +509,6 @@ export async function getCategoryProducts(
       ? Math.ceil(Math.max(...productsMatchingNonPrice.map((p) => p.price)))
       : 1000;
 
-  // Calculate dynamic price ranges
   const priceRanges = calculatePriceRangeBuckets(productsMatchingNonPrice);
 
   let paginatedProducts = sorted;

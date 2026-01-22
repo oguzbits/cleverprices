@@ -320,7 +320,7 @@ async function CachedSidebarSimilarProducts({
   countryCode: CountryCode;
 }) {
   "use cache";
-  cacheLife("product");
+  cacheLife("fast");
   return (
     <section
       id="recommendedProducts"
@@ -382,7 +382,7 @@ async function CachedSimilarCarousel({
   countryCode: CountryCode;
 }) {
   "use cache";
-  cacheLife("product");
+  cacheLife("fast");
   return (
     <div className="bg-secondary -mx-4 mt-12 px-4 py-8">
       <div className="mx-auto max-w-[1280px]">

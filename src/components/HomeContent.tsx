@@ -20,7 +20,7 @@ export default async function HomeContent({
 }: {
   country: CountryCode;
 }) {
-  cacheLife("static" as any);
+  cacheLife("dynamic" as any); // 5 minute revalidation for home page content
   const countryConfig = await getCountryByCode(country);
   const countryCode = countryConfig?.code || country;
 

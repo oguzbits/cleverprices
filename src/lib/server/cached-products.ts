@@ -1,5 +1,3 @@
-"use cache";
-
 import { type PriceHistoryRecord } from "@/db/schema";
 import { cacheLife } from "next/cache";
 import { type CountryCode } from "../countries";
@@ -16,10 +14,83 @@ import {
   getSimilarProducts as getSimilarProductsSync,
   type Product,
 } from "../product-registry";
+import { mergeLivePrices } from "./live-data";
 
 /**
- * Cached server-side wrappers for product registry functions
- * These are used in Server Components to benefit from Next.js 16 caching
+ * --- PRIVATE CACHED DATA FETCHERS ---
+ * These handle the "static" or long-term data like specs, images, and basic info.
+ */
+
+async function getCachedBestDeals(
+  limit: number,
+  countryCode: string,
+  condition?: any,
+) {
+  "use cache";
+  cacheLife("category");
+  return getBestDealsSync(limit, countryCode, condition);
+}
+
+async function getCachedMostPopular(
+  limit: number,
+  countryCode: string,
+  condition?: any,
+) {
+  "use cache";
+  cacheLife("category");
+  return getMostPopularSync(limit, countryCode, condition);
+}
+
+async function getCachedNewArrivals(
+  limit: number,
+  countryCode: string,
+  condition?: any,
+) {
+  "use cache";
+  cacheLife("category");
+  return getNewArrivalsSync(limit, countryCode, condition);
+}
+
+async function getCachedDiverseMostPopular(
+  itemsPerCategory: number,
+  countryCode: string,
+) {
+  "use cache";
+  cacheLife("category");
+  return getDiverseMostPopularSync(itemsPerCategory, countryCode);
+}
+
+async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
+  "use cache";
+  cacheLife("product");
+  return getProductBySlugSync(slug, includeHistory);
+}
+
+async function getCachedSimilarProducts(
+  category: string,
+  excludedSlug: string,
+  targetPrice: number,
+  limit: number,
+  countryCode: string,
+) {
+  "use cache";
+  cacheLife("product");
+  // We call the sync version directly to avoid double wrapping
+  return getSimilarProductsSync(
+    {
+      category,
+      slug: excludedSlug,
+      prices: { [countryCode]: targetPrice },
+    } as any,
+    limit,
+    countryCode,
+  );
+}
+
+/**
+ * --- PUBLIC DATA FETCHERS (NO DIRECT "USE CACHE") ---
+ * These fetch cached static data and merge it with fresh live prices.
+ * This ensures that dynamic properties like price are always up-to-date.
  */
 
 export async function getAllProductSlugs(): Promise<
@@ -28,7 +99,6 @@ export async function getAllProductSlugs(): Promise<
   return getAllProductSlugsSync();
 }
 
-// Bypass cache for large registry calls to avoid string limit issues during build
 export async function getAllProducts(): Promise<Product[]> {
   return getAllProductsSync();
 }
@@ -36,50 +106,57 @@ export async function getAllProducts(): Promise<Product[]> {
 export async function getBestDeals(
   limit: number = 8,
   countryCode: string = "de",
-  condition?: "New" | "Used" | "Renewed",
+  condition?: any,
 ): Promise<Product[]> {
-  cacheLife("category" as any);
-  return getBestDealsSync(limit, countryCode, condition);
+  const products = await getCachedBestDeals(limit, countryCode, condition);
+  return mergeLivePrices(products, countryCode);
 }
 
 export async function getMostPopular(
   limit: number = 8,
   countryCode: string = "de",
-  condition?: "New" | "Used" | "Renewed",
+  condition?: any,
 ): Promise<Product[]> {
-  cacheLife("category" as any);
-  return getMostPopularSync(limit, countryCode, condition);
+  const products = await getCachedMostPopular(limit, countryCode, condition);
+  return mergeLivePrices(products, countryCode);
 }
 
 export async function getNewArrivals(
   limit: number = 8,
   countryCode: string = "de",
-  condition?: "New" | "Used" | "Renewed",
+  condition?: any,
 ): Promise<Product[]> {
-  cacheLife("category" as any);
-  return getNewArrivalsSync(limit, countryCode, condition);
+  const products = await getCachedNewArrivals(limit, countryCode, condition);
+  return mergeLivePrices(products, countryCode);
 }
 
 export async function getDiverseMostPopular(
   itemsPerCategory: number = 10,
   countryCode: string = "de",
 ): Promise<Product[]> {
-  cacheLife("category" as any);
-  return getDiverseMostPopularSync(itemsPerCategory, countryCode);
+  const products = await getCachedDiverseMostPopular(
+    itemsPerCategory,
+    countryCode,
+  );
+  return mergeLivePrices(products, countryCode);
 }
 
 export async function getProductBySlug(
   slug: string,
   includeHistory: boolean = false,
 ): Promise<Product | undefined> {
-  cacheLife("product" as any);
-  return getProductBySlugSync(slug, includeHistory);
+  const product = await getCachedProductBySlug(slug, includeHistory);
+  if (!product) return undefined;
+
+  const merged = await mergeLivePrices([product], "de"); // Default to 'de' for now or detect from product
+  return merged[0];
 }
 
 export async function getProductPriceHistory(
   productId: number,
 ): Promise<PriceHistoryRecord[]> {
-  cacheLife("product" as any);
+  "use cache";
+  cacheLife("product");
   return getProductPriceHistorySync(productId);
 }
 
@@ -87,7 +164,8 @@ export async function getUnifiedProduct(
   asin: string,
   countryCode: CountryCode,
 ) {
-  cacheLife("product" as any); // Use the same 6h cache life
+  "use cache";
+  cacheLife("fast"); // Live product data from Keepa/PA-API should use 'fast' (1 min)
   return dataAggregator.fetchProduct(asin, countryCode);
 }
 
@@ -96,6 +174,14 @@ export async function getSimilarProducts(
   limit: number = 4,
   countryCode: string = "de",
 ): Promise<Product[]> {
-  cacheLife("product" as any);
-  return getSimilarProductsSync(product, limit, countryCode);
+  // Use current (potentially fresh) price for similarity lookup
+  const currentPrice = product.prices[countryCode] || 0;
+  const products = await getCachedSimilarProducts(
+    product.category,
+    product.slug,
+    currentPrice,
+    limit,
+    countryCode,
+  );
+  return mergeLivePrices(products, countryCode);
 }
