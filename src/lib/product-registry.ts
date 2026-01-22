@@ -342,41 +342,39 @@ const fetchProductBySlug = async (
   slug: string,
   _includeHistory: boolean = false, // History now comes from historyJson in prices
 ): Promise<Product | undefined> => {
-  // Try exact match first using Relational Query Builder
-  let p = await db.query.products.findFirst({
-    where: eq(products.slug, slug),
-    with: {
-      prices: true,
-    },
-  });
+  const getProductAndPrices = async (targetSlug: string) => {
+    const [p] = await db
+      .select()
+      .from(products)
+      .where(eq(products.slug, targetSlug))
+      .limit(1);
+
+    if (!p) return undefined;
+
+    const prs = await db
+      .select()
+      .from(prices)
+      .where(eq(prices.productId, p.id));
+
+    return mapDbProduct(p as any, prs as any);
+  };
+
+  // Try exact match first
+  let result = await getProductAndPrices(slug);
 
   // If not found, try decoding the slug
-  if (!p) {
+  if (!result) {
     try {
       const decoded = decodeURIComponent(slug);
       if (decoded !== slug) {
-        p = await db.query.products.findFirst({
-          where: eq(products.slug, decoded),
-          with: {
-            prices: true,
-          },
-        });
+        result = await getProductAndPrices(decoded);
       }
     } catch (e) {
       // Ignore decoding errors
     }
   }
 
-  if (!p) return undefined;
-
-  // Map the result (prices are now attached to p, history comes from historyJson)
-  const { prices: productPrices, ...productData } = p;
-
-  return mapDbProduct(
-    productData as DbProduct,
-    productPrices,
-    [], // History is now parsed from historyJson inside mapDbProduct
-  );
+  return result;
 };
 
 // Note: getProductPriceHistory removed in lean schema.

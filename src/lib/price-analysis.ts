@@ -42,9 +42,11 @@ export async function analyzePriceHistory(
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
   // Fetch current price record with historyJson
-  const priceRecord = await db.query.prices.findFirst({
-    where: and(eq(prices.productId, productId), eq(prices.country, country)),
-  });
+  const [priceRecord] = await db
+    .select()
+    .from(prices)
+    .where(and(eq(prices.productId, productId), eq(prices.country, country)))
+    .limit(1);
 
   if (!priceRecord) {
     return null;
