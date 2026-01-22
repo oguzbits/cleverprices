@@ -195,7 +195,7 @@ export function IdealoProductPage({
                     href="?condition=new"
                     scroll={false}
                     className={cn(
-                      "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 transition-all outline-none",
+                      "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",
                       selectedCondition === "new"
                         ? "border-[#0771d0] bg-white ring-1 ring-[#0771d0]"
                         : "border-[#b4b4b4] bg-white hover:border-[#888]",
@@ -229,7 +229,7 @@ export function IdealoProductPage({
                       href="?condition=used"
                       scroll={false}
                       className={cn(
-                        "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 transition-all outline-none",
+                        "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",
                         selectedCondition === "used"
                           ? "border-[#0771d0] bg-white ring-1 ring-[#0771d0]"
                           : "border-[#b4b4b4] bg-white hover:border-[#888]",
@@ -258,7 +258,10 @@ export function IdealoProductPage({
             {/* Price Chart Column */}
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
               <ComponentErrorBoundary name="PriceChart">
-                <IdealoPriceChart history={product.priceHistory || []} />
+                <IdealoPriceChart
+                  history={product.priceHistory || []}
+                  title={product.title}
+                />
               </ComponentErrorBoundary>
             </div>
           </div>

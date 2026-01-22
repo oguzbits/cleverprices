@@ -186,7 +186,7 @@ export async function IdealoProductOffers({
                     href={offer.affiliateLink}
                     target="_blank"
                     rel="noopener nofollow"
-                    className="inline-flex h-[30px] w-full items-center justify-center rounded-[2px] bg-[#38bf84] px-[20px] text-[13px] font-bold text-white hover:bg-[#2fa372]"
+                    className="inline-flex h-[30px] w-full items-center justify-center rounded-[2px] bg-[#38bf84] px-[20px] text-[13px] font-bold text-white no-underline hover:bg-[#2fa372] hover:no-underline"
                   >
                     Zum Shop*
                   </a>

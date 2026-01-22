@@ -275,7 +275,7 @@ export async function ProductDetailView({
                       href={getAffiliateRedirectPath(product.slug)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block no-underline"
+                      className="block no-underline hover:no-underline"
                     >
                       <button className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-sm bg-[#22c55e] py-3 text-lg font-black tracking-wide text-white uppercase shadow-sm transition-all hover:bg-[#16a34a] active:scale-[0.99]">
                         Zum Shop

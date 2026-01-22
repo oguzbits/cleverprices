@@ -4,11 +4,10 @@
  * Displays all price offers from different sources (Amazon, eBay, Newegg, etc.)
  */
 
-import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import type { ProductOffer, DataSourceId } from "@/lib/data-sources";
+import type { DataSourceId, ProductOffer } from "@/lib/data-sources";
 import { cn } from "@/lib/utils";
-import { ExternalLink, Truck, Shield, Star, Check } from "lucide-react";
+import { Check, ExternalLink, Star, Truck } from "lucide-react";
 import Image from "next/image";
 
 interface OfferComparisonTableProps {
@@ -211,7 +210,7 @@ export function OfferComparisonTable({
                 href={offer.affiliateLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 no-underline sm:flex-none"
+                className="flex-1 no-underline hover:no-underline sm:flex-none"
               >
                 <button
                   className={cn(

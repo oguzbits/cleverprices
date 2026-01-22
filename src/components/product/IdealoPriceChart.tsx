@@ -1,169 +1,615 @@
 "use client";
 
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Bell } from "lucide-react";
+import { TrendingDown, TrendingUp } from "lucide-react";
+import React, { useMemo, useRef, useState } from "react";
 
 interface IdealoPriceChartProps {
   history?: { date: string; price: number }[];
+  title?: string;
 }
 
-export function IdealoPriceChart({ history = [] }: IdealoPriceChartProps) {
-  // 1. Process Data
-  const data = history
-    .map((h) => ({
-      date: new Date(h.date).getTime(),
-      price: h.price,
-    }))
-    .sort((a, b) => a.date - b.date);
+type TimeFrame = "1M" | "3M" | "6M" | "1J";
 
-  // 2. Fallback for no data
+const ALL_TIMEFRAMES: { k: TimeFrame; l: string }[] = [
+  { k: "1M", l: "1 Monat" },
+  { k: "3M", l: "3 Monate" },
+  { k: "6M", l: "6 Monate" },
+  { k: "1J", l: "1 Jahr" },
+];
+
+export function IdealoPriceChart({
+  history = [],
+  title,
+}: IdealoPriceChartProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <div
+          className="w-full max-w-[290px] cursor-pointer"
+          title="Preisentwicklung anzeigen"
+        >
+          <ChartRenderer
+            history={history}
+            interactive={true}
+            height={150}
+            isModal={false}
+          />
+        </div>
+      </DialogTrigger>
+      {/* Updated max-width to 580px per screenshot requirements */}
+      <DialogContent className="w-[95vw] max-w-[580px] gap-0 overflow-hidden bg-white p-0 shadow-2xl sm:rounded-xl">
+        <div className="flex items-start justify-between p-6 pb-2">
+          <div>
+            <h2 className="text-idealo-text-primary text-[22px] leading-tight font-bold">
+              Preisentwicklung
+            </h2>
+            <p className="mt-1 text-[15px] text-gray-600">{title}</p>
+          </div>
+        </div>
+
+        <div className="px-6 pb-8">
+          <ChartRenderer
+            history={history}
+            interactive={true}
+            height={320}
+            isModal={true}
+          />
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ChartRenderer({
+  history,
+  interactive,
+  height,
+  isModal = false,
+}: {
+  history: { date: string; price: number }[];
+  interactive: boolean;
+  height: number;
+  isModal: boolean;
+}) {
+  const [timeframe, setTimeframe] = useState<TimeFrame>("3M");
+  const [hoveredData, setHoveredData] = useState<{
+    date: number;
+    price: number;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const { data, minPrice, maxPrice, minDate, maxDate, stats, yTicks, yDomain } =
+    useMemo(() => {
+      // 1. Sort & Map
+      const rawSorted = [...history]
+        .map((h) => ({
+          date: new Date(h.date).getTime(),
+          price: h.price,
+        }))
+        .sort((a, b) => a.date - b.date);
+
+      // 2. Cutoff
+      const now = new Date();
+      now.setHours(23, 59, 59, 999);
+
+      let daysBack = 90;
+      if (timeframe === "1M") daysBack = 30;
+      if (timeframe === "6M") daysBack = 180;
+      if (timeframe === "1J") daysBack = 365;
+
+      const startDate = new Date(now);
+      startDate.setDate(startDate.getDate() - daysBack);
+      startDate.setHours(0, 0, 0, 0);
+
+      const startTime = startDate.getTime();
+
+      // 3. Fill Gaps
+      const priceMap = new Map<string, number>();
+      rawSorted.forEach((d) => {
+        const dateStr = new Date(d.date).toISOString().split("T")[0];
+        priceMap.set(dateStr, d.price);
+      });
+
+      const filledData: { date: number; price: number }[] = [];
+
+      let currentPrice = 0;
+      const preStartData = rawSorted.filter((d) => d.date < startTime);
+      if (preStartData.length > 0) {
+        currentPrice = preStartData[preStartData.length - 1].price;
+      } else if (rawSorted.length > 0) {
+        currentPrice = rawSorted[0].price;
+      }
+
+      const loopDate = new Date(startDate);
+      const endDate = new Date(now);
+
+      while (loopDate <= endDate) {
+        const dateStr = loopDate.toISOString().split("T")[0];
+        if (priceMap.has(dateStr)) {
+          currentPrice = priceMap.get(dateStr)!;
+        }
+        filledData.push({
+          date: loopDate.getTime(),
+          price: currentPrice,
+        });
+
+        loopDate.setDate(loopDate.getDate() + 1);
+      }
+
+      const prices = filledData.map((d) => d.price);
+      const valid = filledData.length > 0;
+
+      const latestPrice = prices[prices.length - 1] || 0;
+      const lowest = valid ? Math.min(...prices) : 0;
+      const highest = valid ? Math.max(...prices) : 0;
+      const avg = valid ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+
+      const lowestPoint = filledData.find((d) => d.price === lowest);
+      const highestPoint = filledData.find((d) => d.price === highest);
+
+      // Calculate Y Axis Intervals (Idealo Style)
+      // They typically use clean, even numbers.
+      // 1. Determine Nice Range
+      const range = highest - lowest;
+      // Add padding (approx 10% bottom, 10% top)
+      const paddedMin = lowest - range * 0.1;
+      const paddedMax = highest + range * 0.1;
+
+      // Find nice scale
+      const roughStep = (paddedMax - paddedMin) / 5; // Aim for ~5 ticks
+      // Round roughStep to nice number (0.5, 1, 2, 5, 10, etc.)
+      const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+      const normalizedStep = roughStep / magnitude; // 1.23
+      let stepSize;
+      if (normalizedStep < 1.5) stepSize = 1 * magnitude;
+      else if (normalizedStep < 3) stepSize = 2 * magnitude;
+      else if (normalizedStep < 7.5) stepSize = 5 * magnitude;
+      else stepSize = 10 * magnitude;
+
+      // Ensure min step of 0.01
+      stepSize = Math.max(stepSize, 0.01);
+
+      const yMin = Math.floor(paddedMin / stepSize) * stepSize;
+      const yMax = Math.ceil(paddedMax / stepSize) * stepSize;
+
+      const ticks = [];
+      for (let v = yMin; v <= yMax + stepSize / 1000; v += stepSize) {
+        ticks.push(v);
+      }
+
+      return {
+        data: filledData,
+        minPrice: lowest,
+        maxPrice: highest,
+        yDomain: { min: yMin, max: yMax },
+        yTicks: ticks,
+        minDate: filledData[0]?.date || startTime,
+        maxDate: filledData[filledData.length - 1]?.date || now.getTime(),
+        stats: {
+          lowest,
+          highest,
+          avg,
+          latestPrice,
+          lowestDate: lowestPoint?.date,
+          highestDate: highestPoint?.date,
+          days: filledData.length,
+        },
+      };
+    }, [history, timeframe]);
+
+  // Helpers
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
+    }).format(price);
+
+  const formatPriceNumber = (price: number) =>
+    new Intl.NumberFormat("de-DE", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price);
+
+  const formatDateFull = (ts: number) =>
+    new Intl.DateTimeFormat("de-DE", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date(ts));
+
+  const formatShortDate = (ts: number) =>
+    new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "2-digit",
+    }).format(new Date(ts));
+
+  const getDaysAgo = (ts?: number) => {
+    if (!ts) return "";
+    const diff = Date.now() - ts;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    if (days === 0) return "Heute";
+    if (days === 1) return "vor 1 Tag";
+    return `vor ${days} Tagen`;
+  };
+
   if (data.length < 2) {
     return (
-      <div className="w-full max-w-[290px]">
-        <div className="embedded-chart-container relative mb-4 flex h-[195px] w-full items-center justify-center border border-[#e5e5e5] bg-white text-xs text-[#999]">
+      <div className={cn("w-full bg-white", !isModal && "max-w-[290px]")}>
+        <div
+          className={cn(
+            "relative mb-4 flex w-full items-center justify-center border border-[#e5e5e5] bg-white text-xs text-[#999]",
+            isModal ? "h-[320px]" : "h-[195px]",
+          )}
+        >
           Keine Preisdaten verfügbar
         </div>
       </div>
     );
   }
 
-  // 3. Calculate Scales
-  const minPrice = Math.min(...data.map((d) => d.price));
-  const maxPrice = Math.max(...data.map((d) => d.price));
-  const minDate = data[0].date;
-  const maxDate = data[data.length - 1].date;
-
-  const width = 290;
-  const height = 150;
-  const padding = 5; // Internal padding to avoid cutting off stroke
+  // Dimensions
+  // Tight yAxisWidth
+  const yAxisWidth = isModal ? 46 : 0; // Reduced to be right beside chart
+  const vboxWidth = isModal ? 580 - yAxisWidth : 290;
+  const vboxHeight = height;
+  const vPaddingTop = 30;
+  const vPaddingBottom = 10;
+  const chartHeight = vboxHeight - vPaddingTop - vPaddingBottom;
 
   const getX = (date: number) => {
-    return ((date - minDate) / (maxDate - minDate)) * width;
+    if (maxDate === minDate) return 0;
+    return ((date - minDate) / (maxDate - minDate)) * vboxWidth;
   };
 
   const getY = (price: number) => {
-    // Invert Y axis (0 is top), add padding
-    const range = maxPrice - minPrice || 1; // Avoid division by zero
-    // Using 90% of height to keep line within bounds
-    return height - ((price - minPrice) / range) * (height - 20) - 10;
+    // Use yDomain for scaling, not min/max price
+    const range = yDomain.max - yDomain.min || 1;
+    return vPaddingTop + (1 - (price - yDomain.min) / range) * chartHeight;
   };
 
-  // 4. Generate SVG Path
-  const points = data.map((d) => `${getX(d.date)},${getY(d.price)}`).join(" ");
-  // Smooth line using a simple polyline for now (or improve with curves if needed)
-  // For simplicity and robustness, using Polyline is fine for price charts.
-  // Ideally, use a helper for bezier curves if "faithful" look requires it.
-  const linePath = `M${points}`;
-
-  // Fill path: Close the loop (down to bottom right, over to bottom left)
-  const fillPath = `${linePath} L${width},${height} L0,${height} Z`;
-
-  // 5. Generate Axis Labels (Simple)
-  const months = [
-    "Jan",
-    "Feb",
-    "Mär",
-    "Apr",
-    "Mai",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Okt",
-    "Nov",
-    "Dez",
-  ];
-
-  // Get 4 evenly spaced labels
-  const dateLabels = [];
-  const step = (maxDate - minDate) / 3;
-  for (let i = 0; i <= 3; i++) {
-    const d = new Date(minDate + step * i);
-    dateLabels.push(months[d.getMonth()]);
+  // Step Chart Path
+  let dPath = `M${getX(data[0].date)},${getY(data[0].price)}`;
+  for (let i = 0; i < data.length - 1; i++) {
+    const p2 = data[i + 1];
+    const x2 = getX(p2.date);
+    const y2 = getY(p2.price);
+    dPath += ` H${x2} V${y2}`;
   }
+  // Fill entire area below
+  const fillPath = `${dPath} L${vboxWidth},${vboxHeight} L0,${vboxHeight} Z`;
+
+  const currentPriceY = getY(stats.latestPrice);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const xRatio = x / rect.width;
+    const targetDate = minDate + xRatio * (maxDate - minDate);
+
+    let closest = data[0];
+    let minDiff = Math.abs(targetDate - closest.date);
+    for (const d of data) {
+      const diff = Math.abs(targetDate - d.date);
+      if (diff < minDiff) {
+        minDiff = diff;
+        closest = d;
+      }
+    }
+    setHoveredData({
+      date: closest.date,
+      price: closest.price,
+      x: getX(closest.date),
+      y: getY(closest.price),
+    });
+  };
+
+  const visibleTimeframes = isModal
+    ? ALL_TIMEFRAMES
+    : ALL_TIMEFRAMES.filter((t) => t.k !== "1M");
 
   return (
-    <div className="w-full max-w-[290px]">
-      {/* Container matching .embedded-chart-container */}
-      <div className="embedded-chart-container relative mb-4 h-[195px] w-full">
-        {/* Header matching .styled-price-chart-embedded-header */}
-        <div className="styled-price-chart-embedded-header mb-2 flex items-center justify-between pr-1">
-          <h3 className="text-idealo-text-primary text-sm font-bold">
+    <div className={cn("w-full select-none", !isModal && "max-w-[290px]")}>
+      {/* Controls */}
+      <div
+        className={cn(
+          "mb-2 flex items-center justify-between",
+          isModal && "mb-3 justify-end border-b border-gray-100 pb-2", // Border bottom for modal buttons
+        )}
+      >
+        {!isModal && (
+          <h3 className="text-idealo-text-primary text-[14px] font-bold">
             Preisentwicklung
           </h3>
-          <div className="flex gap-1">
-            {["1M", "3M", "6M", "1J"].map((label) => (
+        )}
+
+        <div className="flex gap-1.5">
+          {visibleTimeframes.map((tf) => {
+            const isActive = timeframe === tf.k;
+            return (
               <button
-                key={label}
+                key={tf.k}
+                onClick={(e) => {
+                  if (isModal) {
+                    e.stopPropagation();
+                    setTimeframe(tf.k as TimeFrame);
+                  }
+                }}
                 className={cn(
-                  "rounded px-1.5 py-0.5 text-[11px] font-medium transition-colors",
-                  label === "3M"
-                    ? "text-idealo-blue bg-blue-100"
-                    : "text-idealo-text-secondary hover:bg-gray-100",
+                  "cursor-pointer rounded border text-[11px] font-bold transition-colors",
+                  isActive
+                    ? "border-[#0a6AB1] bg-[#0a6AB1] text-white"
+                    : "border-[#0a6AB1] bg-white text-black hover:bg-blue-50",
+                  isModal
+                    ? "h-[30px] min-w-[30px] px-2 text-xs whitespace-nowrap" // Allow width to grow for text, no wrap
+                    : "h-[30px] w-[30px] p-0 px-1 text-center",
                 )}
               >
-                {label}
+                {/* Use Long label (1 Monat) in modal, Short (1M) in widget */}
+                {isModal ? tf.l : tf.k}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
+      </div>
 
-        {/* Chart Area */}
-        <div className="text-primary relative h-[150px] w-full bg-white">
+      <div className="flex w-full gap-0">
+        {" "}
+        {/* Removed Gap to stick Y-axis to chart */}
+        <div
+          ref={containerRef}
+          className={cn(
+            "relative cursor-pointer bg-white select-none",
+            isModal ? "h-[320px] flex-1" : "h-[150px] w-full",
+          )}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => setHoveredData(null)}
+        >
+          {hoveredData && (
+            <>
+              {/* Tooltip */}
+              <div
+                className="pointer-events-none absolute z-20 flex -translate-x-1/2 flex-col items-start"
+                style={{
+                  left: isModal
+                    ? `${(hoveredData.x / vboxWidth) * 100}%`
+                    : `${hoveredData.x}px`,
+                  top: isModal ? "0px" : "0px",
+                }}
+              >
+                <div className="rounded-[2px] bg-[#ff6600] px-2 py-1 text-white shadow-md">
+                  <div className="mb-0.5 text-left text-[15px] leading-none font-bold whitespace-nowrap">
+                    {formatPrice(hoveredData.price)}
+                  </div>
+                  <div className="text-left text-[12px] leading-none font-bold whitespace-nowrap text-white/90">
+                    {formatDateFull(hoveredData.date)}
+                  </div>
+                </div>
+                <div className="h-0 w-0 self-center border-t-4 border-r-4 border-l-4 border-t-[#ff6600] border-r-transparent border-l-transparent"></div>
+              </div>
+
+              {/* Round Hover Point (HTML) - Fixes aspect ratio distortion */}
+              <div
+                className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-1/2 transform rounded-full border-2 border-white bg-[#ff6600] shadow-md"
+                style={{
+                  left: isModal
+                    ? `${(hoveredData.x / vboxWidth) * 100}%`
+                    : `${hoveredData.x}px`,
+                  top: isModal
+                    ? `${(hoveredData.y / vboxHeight) * 100}%`
+                    : // For widget, calculate percentage top similarly if we want consistency,
+                      // or just leverage the fact that SVG and Div share height.
+                      // Relative positioning works best with %.
+                      `${(hoveredData.y / vboxHeight) * 100}%`,
+                  width: isModal ? "16px" : "10px",
+                  height: isModal ? "16px" : "10px",
+                }}
+              />
+            </>
+          )}
+
           <svg
-            className="h-full w-full"
-            viewBox={`0 0 ${width} ${height}`}
+            className="h-full w-full overflow-visible"
+            viewBox={`0 0 ${vboxWidth} ${vboxHeight}`}
             preserveAspectRatio="none"
           >
             <defs>
-              <linearGradient
-                id="priceGradientIdealo"
-                x1="0%"
-                y1="0%"
-                x2="0%"
-                y2="100%"
-              >
-                <stop offset="0%" stopColor="currentColor" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="currentColor" stopOpacity="0" />
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                {/* Lighter opacity gradient */}
+                <stop offset="0%" stopColor="#ff6600" stopOpacity="0.10" />
+                <stop offset="100%" stopColor="#ff6600" stopOpacity="0.05" />
               </linearGradient>
             </defs>
-            {/* Fill */}
-            <path d={fillPath} fill="url(#priceGradientIdealo)" />
-            {/* Line */}
+
+            {isModal && (
+              <g className="text-gray-200">
+                {yTicks.slice(1, -1).map((tick) => {
+                  const y = getY(tick);
+                  // Don't draw if out of bounds
+                  if (y < 0 || y > vboxHeight) return null;
+                  return (
+                    <line
+                      key={tick}
+                      x1="0"
+                      y1={y}
+                      x2={vboxWidth}
+                      y2={y}
+                      stroke="currentColor"
+                      strokeWidth="1"
+                      strokeDasharray="2 2"
+                    />
+                  );
+                })}
+              </g>
+            )}
+
+            <path d={fillPath} fill="url(#chartGradient)" />
             <path
-              d={linePath}
+              d={dPath}
               fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+              stroke="#ff6600"
+              strokeWidth={isModal ? "1.5" : "1.5"}
               strokeLinejoin="round"
               strokeLinecap="round"
             />
+
+            {hoveredData && (
+              <line
+                x1={hoveredData.x}
+                y1={0}
+                x2={hoveredData.x}
+                y2={vboxHeight}
+                stroke="#000"
+                strokeWidth="1"
+                strokeDasharray="2 2"
+                opacity="0.8"
+              />
+            )}
+            {/* Circle removed from SVG to prevent oval distortion */}
           </svg>
 
-          {/* Grid lines (simple overlay) */}
-          <div className="pointer-events-none absolute inset-0 flex flex-col justify-between py-2 opacity-5">
-            <div className="h-px w-full bg-black"></div>
-            <div className="h-px w-full bg-black"></div>
-            <div className="h-px w-full bg-black"></div>
-            <div className="h-px w-full bg-black"></div>
+          {isModal && (
+            <div className="absolute right-0 -bottom-6 left-0 flex justify-between px-1 text-xs font-medium text-gray-500">
+              <span>{formatShortDate(minDate)}</span>
+              <span className="translate-x-4">
+                {formatShortDate((minDate + maxDate) / 2)}
+              </span>
+              <span>{formatShortDate(maxDate)}</span>
+            </div>
+          )}
+        </div>
+        {isModal && (
+          <div className="relative flex h-[320px] w-[50px] flex-col overflow-visible border-l border-gray-100/50 bg-white text-[10px] text-gray-500">
+            {/* Draw Labels Absolute based on getY coords */}
+            {yTicks.map((tick) => {
+              const top = getY(tick);
+              return (
+                <div
+                  key={tick}
+                  className="absolute right-0 w-full pr-1 text-right leading-none select-none"
+                  style={{ top: top - 5 }} // Center text vertically
+                >
+                  {formatPriceNumber(tick)}
+                </div>
+              );
+            })}
+
+            <div
+              className="pointer-events-none absolute right-0 z-10 rounded-[2px] bg-[#ff6600] px-1 py-0.5 text-[10px] font-bold text-white shadow-sm"
+              style={{ top: currentPriceY - 8 }} // Center badge
+            >
+              {formatPriceNumber(stats.latestPrice)}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {isModal && (
+        <div className="mt-10 grid grid-cols-1 gap-4 border-t pt-6">
+          <div className="group flex cursor-default items-center justify-between rounded border-b border-gray-50 px-2 py-2 transition-colors hover:bg-gray-50/50">
+            <div className="flex flex-col">
+              <span className="text-[14px] font-bold text-gray-800">
+                Tiefster Preis
+              </span>
+              <span className="text-[12px] text-gray-500">
+                {getDaysAgo(stats.lowestDate)}
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-[18px] font-bold text-gray-900 tabular-nums">
+                {formatPrice(stats.lowest)}
+              </span>
+              <DifferenceBadge
+                current={stats.latestPrice}
+                other={stats.lowest}
+              />
+            </div>
+          </div>
+
+          <div className="group flex cursor-default items-center justify-between rounded border-b border-gray-50 px-2 py-2 transition-colors hover:bg-gray-50/50">
+            <div className="flex flex-col">
+              <span className="text-[14px] font-bold text-gray-800">
+                Durchschnitt
+              </span>
+              <span className="text-[12px] text-gray-500">
+                über {stats.days} Tage
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-[18px] font-bold text-gray-900 tabular-nums">
+                {formatPrice(stats.avg)}
+              </span>
+              <DifferenceBadge current={stats.latestPrice} other={stats.avg} />
+            </div>
+          </div>
+
+          <div className="group flex cursor-default items-center justify-between rounded border-b border-gray-50 px-2 py-2 transition-colors hover:bg-gray-50/50">
+            <div className="flex flex-col">
+              <span className="text-[14px] font-bold text-gray-800">
+                Höchster Preis
+              </span>
+              <span className="text-[12px] text-gray-500">
+                {getDaysAgo(stats.highestDate)}
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-[18px] font-bold text-gray-900 tabular-nums">
+                {formatPrice(stats.highest)}
+              </span>
+              <DifferenceBadge
+                current={stats.latestPrice}
+                other={stats.highest}
+              />
+            </div>
           </div>
         </div>
-
-        {/* Date Axis */}
-        <div className="text-idealo-text-secondary mt-1 flex justify-between px-1 text-[10px]">
-          {dateLabels.map((label, i) => (
-            <span key={i}>{label}</span>
-          ))}
-        </div>
-      </div>
-
-      {/* Price Alert Button matching .styled-price-alert-button */}
-      <div className="border-t border-gray-200 pt-4">
-        <button className="styled-price-alert-button border-idealo-blue text-idealo-blue flex w-full items-center justify-center gap-2 rounded border bg-white px-4 py-2.5 text-sm font-semibold transition-colors hover:bg-blue-50">
-          <Bell className="h-4 w-4" />
-          Preiswecker stellen
-        </button>
-      </div>
+      )}
     </div>
+  );
+}
+
+function DifferenceBadge({
+  current,
+  other,
+}: {
+  current: number;
+  other: number;
+}) {
+  const diff = current - other;
+  const absDiff = Math.abs(diff);
+
+  // If difference is remarkably small, show nothing or neutral
+  if (absDiff < 0.01) return <span className="w-16"></span>;
+
+  const isHigher = diff > 0;
+
+  // Logic:
+  // If current > other: Red Arrow Up (More expensive than reference point)
+  // If current < other: Green Arrow Down (Cheaper than reference point)
+
+  const colorClass = isHigher ? "text-[#D50000]" : "text-[#008a00]";
+  const Icon = isHigher ? TrendingUp : TrendingDown;
+
+  return (
+    <span
+      className={cn(
+        "flex w-24 items-center justify-end text-[13px] font-bold tabular-nums",
+        colorClass,
+      )}
+    >
+      <Icon className="mr-1 h-4 w-4" />
+      {new Intl.NumberFormat("de-DE", {
+        style: "currency",
+        currency: "EUR",
+      }).format(absDiff)}
+    </span>
   );
 }
