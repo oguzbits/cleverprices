@@ -30,41 +30,18 @@ function parseHistoryJson(
 }
 
 /**
- * Calculate price analysis for a product
+ * Pure function to calculate price analysis metrics.
+ * Exported for unit testing.
  */
-export async function analyzePriceHistory(
-  productId: number,
-  country: CountryCode,
-  daysBack: number = 90,
-): Promise<PriceAnalysis | null> {
-  // Get the cutoff date
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-
-  // Fetch current price record with historyJson
-  const [priceRecord] = await db
-    .select()
-    .from(prices)
-    .where(and(eq(prices.productId, productId), eq(prices.country, country)))
-    .limit(1);
-
-  if (!priceRecord) {
-    return null;
-  }
-
-  // Parse history from historyJson
-  const allHistory = parseHistoryJson(priceRecord.historyJson);
-
-  // Filter to requested time window
-  const history = allHistory.filter((h) => h.date >= cutoffDate);
-
+export function computePriceAnalysis(
+  currentPrice: number,
+  history: { date: Date; price: number }[],
+): PriceAnalysis | null {
   // Need at least 2 data points for meaningful analysis
   if (history.length < 2) {
     return null;
   }
 
-  // Get current price (the consolidated "clever" price)
-  const currentPrice = priceRecord.price;
   if (!currentPrice || currentPrice <= 0) {
     return null;
   }
@@ -121,6 +98,41 @@ export async function analyzePriceHistory(
 }
 
 /**
+ * Calculate price analysis for a product
+ */
+export async function analyzePriceHistory(
+  productId: number,
+  country: CountryCode,
+  daysBack: number = 90,
+): Promise<PriceAnalysis | null> {
+  // Get the cutoff date
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+
+  // Fetch current price record with historyJson
+  const [priceRecord] = await db
+    .select()
+    .from(prices)
+    .where(and(eq(prices.productId, productId), eq(prices.country, country)))
+    .limit(1);
+
+  if (!priceRecord) {
+    return null;
+  }
+
+  // Parse history from historyJson
+  const allHistory = parseHistoryJson(priceRecord.historyJson);
+
+  // Filter to requested time window
+  const history = allHistory.filter((h) => h.date >= cutoffDate);
+
+  // Get current price (the consolidated "clever" price)
+  const currentPrice = priceRecord.price || 0;
+
+  return computePriceAnalysis(currentPrice, history);
+}
+
+/**
  * Get price history data points for charting (from historyJson)
  */
 export async function getPriceHistoryForChart(
@@ -132,9 +144,11 @@ export async function getPriceHistoryForChart(
   cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
   // Fetch price record with historyJson
-  const priceRecord = await db.query.prices.findFirst({
-    where: and(eq(prices.productId, productId), eq(prices.country, country)),
-  });
+  const [priceRecord] = await db
+    .select()
+    .from(prices)
+    .where(and(eq(prices.productId, productId), eq(prices.country, country)))
+    .limit(1);
 
   if (!priceRecord?.historyJson) {
     return [];
@@ -159,9 +173,11 @@ export async function getHistoryCoverage(
   country: CountryCode,
 ): Promise<{ daysOfData: number; dataPoints: number }> {
   // Fetch price record with historyJson
-  const priceRecord = await db.query.prices.findFirst({
-    where: and(eq(prices.productId, productId), eq(prices.country, country)),
-  });
+  const [priceRecord] = await db
+    .select()
+    .from(prices)
+    .where(and(eq(prices.productId, productId), eq(prices.country, country)))
+    .limit(1);
 
   if (!priceRecord?.historyJson) {
     return { daysOfData: 0, dataPoints: 0 };
