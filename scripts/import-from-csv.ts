@@ -178,9 +178,11 @@ async function main() {
 
         let productId: number;
         if (existing) {
+          // Preserve historySeeded status (don't reset to false on CSV import)
+          const { historySeeded, ...updateData } = productData;
           await db
             .update(products)
-            .set(productData)
+            .set(updateData)
             .where(eq(products.id, existing.id));
           productId = existing.id;
           updateCount++;
