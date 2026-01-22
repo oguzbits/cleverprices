@@ -63,7 +63,10 @@ export async function IdealoProductOffers({
       currency: countryConfig?.currency || "EUR",
       displayPrice: formatCurrency(targetPrice, countryCode),
       affiliateLink: getAffiliateRedirectPath(product.slug),
-      condition: selectedCondition === "used" ? "used" : "new",
+      condition:
+        selectedCondition === "used"
+          ? "used"
+          : (product.condition.toLowerCase() as any),
       availability: "in_stock" as const,
       freeShipping: true,
       seller: selectedCondition === "used" ? "Amazon Warehouse" : "Amazon",

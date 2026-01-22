@@ -209,8 +209,10 @@ export function mapDbProduct(
       p.title.includes("(Generalüberholt)") ||
       p.title.includes("erneuert") ||
       p.title.includes("Renewed")
-        ? "Used"
-        : (p.condition as any) || "New",
+        ? "Renewed"
+        : (p.condition as any) === "Used"
+          ? "Used"
+          : "New",
     brand: p.brand || "Generic",
     manufacturer: stripHeavyData ? undefined : p.manufacturer || undefined,
     parentAsin: p.parentAsin || undefined,

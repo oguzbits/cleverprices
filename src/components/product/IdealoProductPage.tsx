@@ -203,10 +203,12 @@ export function IdealoProductPage({
                   >
                     <div className="relative w-full">
                       {selectedCondition === "new" && (
-                        <Check className="absolute -top-1 -left-2 h-3.5 w-3.5 text-[#0771d0]" />
+                        <Check className="absolute -top-1.5 -left-3 h-4 w-4 stroke-[3px] text-[#0771d0]" />
                       )}
                       <div className="text-idealo-text-primary text-center text-[13px] font-bold">
-                        Neu ab
+                        {product.condition === "Renewed"
+                          ? "Generalüberholt ab"
+                          : "Neu ab"}
                       </div>
                     </div>
                     <div className="text-idealo-text-primary text-[15px] font-extrabold">
@@ -237,7 +239,7 @@ export function IdealoProductPage({
                     >
                       <div className="relative w-full">
                         {selectedCondition === "used" && (
-                          <Check className="absolute -top-1 -left-2 h-3.5 w-3.5 text-[#0771d0]" />
+                          <Check className="absolute -top-1.5 -left-3 h-4 w-4 stroke-[3px] text-[#0771d0]" />
                         )}
                         <div className="text-idealo-text-primary text-center text-[13px] font-bold">
                           Gebraucht ab
