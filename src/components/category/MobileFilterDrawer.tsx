@@ -42,7 +42,7 @@ export function MobileFilterDrawer({
   const [open, setOpen] = React.useState(false);
   const [filters, setFilters] = useFilters();
 
-  const activeFilterCount = React.useMemo(() => {
+  const activeFilterCount = (() => {
     let count = 0;
     if (filters.condition.length > 0) count++;
     if (filters.brand.length > 0) count++;
@@ -52,7 +52,7 @@ export function MobileFilterDrawer({
     if (filters.cores.length > 0) count++;
     if (filters.minPrice !== null || filters.maxPrice !== null) count++;
     return count;
-  }, [filters]);
+  })();
 
   const resetFilters = () => {
     setFilters({

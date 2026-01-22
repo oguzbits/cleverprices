@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, ReactNode } from "react";
+import { ReactNode } from "react";
 
 interface PrefetchLinkProps {
   href: string;
@@ -26,11 +26,11 @@ export function PrefetchLink({
 }: PrefetchLinkProps) {
   const router = useRouter();
 
-  const handlePrefetch = useCallback(() => {
+  const handlePrefetch = () => {
     if (prefetchOnHover) {
       router.prefetch(href);
     }
-  }, [router, href, prefetchOnHover]);
+  };
 
   return (
     <Link

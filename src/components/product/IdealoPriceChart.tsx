@@ -3,7 +3,7 @@
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { TrendingDown, TrendingUp } from "lucide-react";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 
 interface IdealoPriceChartProps {
   history?: { date: string; price: number }[];
@@ -86,7 +86,7 @@ function ChartRenderer({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const { data, minPrice, maxPrice, minDate, maxDate, stats, yTicks, yDomain } =
-    useMemo(() => {
+    (() => {
       // 1. Sort & Map
       const rawSorted = [...history]
         .map((h) => ({
@@ -202,7 +202,7 @@ function ChartRenderer({
           days: filledData.length,
         },
       };
-    }, [history, timeframe]);
+    })();
 
   // Helpers
   const formatPrice = (price: number) =>

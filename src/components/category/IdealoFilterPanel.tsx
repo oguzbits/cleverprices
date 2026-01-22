@@ -12,7 +12,7 @@ import { FilterGroup } from "@/lib/category-types";
 import { useFilters } from "@/lib/hooks/use-filters";
 import type { FilterCounts } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 interface IdealoFilterBarProps {
   categorySlug: string;
@@ -247,7 +247,7 @@ export function IdealoFilterPanel({
   const [groupShowAll, setGroupShowAll] = useState<Record<string, boolean>>({});
 
   // Derive options for filter groups
-  const optionsMap = useMemo(() => {
+  const optionsMap = (() => {
     if (!filterGroups) return {};
     const options: Record<string, string[]> = {};
     filterGroups.forEach((group) => {
@@ -269,7 +269,7 @@ export function IdealoFilterPanel({
       options[group.field] = sorted;
     });
     return options;
-  }, [filterGroups, filterOptions, filterCounts, filters]);
+  })();
 
   // Handle price update
   const handlePriceUpdate = (min: string, max: string) => {

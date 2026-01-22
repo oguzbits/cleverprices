@@ -13,7 +13,6 @@
 
 import { cn } from "@/lib/utils";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
 
 interface IdealoTopBarProps {
   categoryName: string;
@@ -40,27 +39,21 @@ export function IdealoTopBar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const setView = useCallback(
-    (view: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("view", view);
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    },
-    [router, pathname, searchParams],
-  );
+  const setView = (view: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("view", view);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
-  const setSort = useCallback(
-    (sort: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (sort === "popular") {
-        params.delete("sort"); // Default, no need to set
-      } else {
-        params.set("sort", sort);
-      }
-      router.push(`${pathname}?${params.toString()}`, { scroll: false });
-    },
-    [router, pathname, searchParams],
-  );
+  const setSort = (sort: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (sort === "popular") {
+      params.delete("sort"); // Default, no need to set
+    } else {
+      params.set("sort", sort);
+    }
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <div
