@@ -138,7 +138,7 @@ export async function IdealoProductOffers({
                       <LegalPrice
                         price={offer.price}
                         displayPrice={offer.displayPrice}
-                        priceClassName="min-[600px]:text-[20px] lg:text-2xl text-[#2d2d2d]"
+                        priceClassName="text-[24px] font-bold text-[#2d2d2d]"
                       />
                     </a>
                     <div className="mt-1 text-[11px] text-[#666]">

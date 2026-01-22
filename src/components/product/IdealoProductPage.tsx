@@ -23,13 +23,13 @@ import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import React, { Suspense } from "react";
-import { IdealoStarRating } from "../category/IdealoStarRating";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import {
   IdealoLivePrice,
   IdealoLivePriceSkeleton,
   IdealoProductOffers,
 } from "./IdealoProductOffers";
+import { MobileActionGrid } from "./MobileActionGrid";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
 import { SpecificationsTable } from "./SpecificationsTable";
 
@@ -54,8 +54,8 @@ export function IdealoProductPage({
     product.specifications?.Model as string,
   );
 
-  // Build breadcrumbs
-  const breadcrumbItems = [
+  // Build breadcrumbs for SEO Schema (includes product title)
+  const schemaBreadcrumbs = [
     { name: "Home", href: "/" },
     ...(category
       ? [
@@ -78,14 +78,18 @@ export function IdealoProductPage({
         rating={product.rating ?? 4.5}
         reviewCount={product.reviewCount ?? 0}
       />
-      <BreadcrumbSchema items={breadcrumbItems} />
+      <BreadcrumbSchema items={schemaBreadcrumbs} />
 
       {/* Performance Hints: Preconnect to Amazon Image domains */}
       <link rel="preconnect" href="https://m.media-amazon.com" />
       <link rel="dns-prefetch" href="https://m.media-amazon.com" />
 
       <div className="mx-auto max-w-[1280px] px-4">
-        <Breadcrumbs items={breadcrumbItems} className="mb-[10px] py-0 pt-3" />
+        <Breadcrumbs
+          items={schemaBreadcrumbs}
+          hideLast={true}
+          className="mb-[10px] py-0 pt-3"
+        />
 
         <div className="text-[14px]">
           <div
@@ -97,14 +101,14 @@ export function IdealoProductPage({
             {/* Gallery */}
             <div className="min-w-0 flex-1 px-2.5 sm:px-0 lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:-row-end-1">
               <div className="oopStage-gallery">
-                <div className="bg-card relative mx-auto aspect-square w-full max-w-[400px]">
+                <div className="bg-card relative mx-auto aspect-square w-full max-w-[265px]">
                   {product.image ? (
                     <Image
                       src={product.image}
                       alt={product.title}
                       fill
-                      className="object-contain p-4"
-                      sizes="(max-width: 432px) calc(100vw - 80px), 320px"
+                      className="object-contain p-0"
+                      sizes="(max-width: 265px) calc(100vw - 80px), 265px"
                       quality={30}
                       priority
                     />
@@ -115,28 +119,31 @@ export function IdealoProductPage({
                   )}
                 </div>
 
-                {/* Mobile Price CTA - Now Live/Skeleton */}
-                <div className="mt-4 rounded border border-gray-200 p-4 lg:hidden">
-                  <a
-                    href="#offerList"
-                    className="focus-visible:ring-idealo-blue flex items-center justify-between outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                  >
+                {/* Mobile: Big Price & Button Display */}
+                <div className="flex flex-col items-center lg:hidden">
+                  <div className="mb-4 text-[24px] font-extrabold text-[#2d2d2d]">
                     <Suspense
                       fallback={
-                        <IdealoLivePriceSkeleton className="h-6 w-20" />
+                        <IdealoLivePriceSkeleton className="h-8 w-24" />
                       }
                     >
                       <IdealoLivePrice
                         product={product}
                         countryCode={countryCode}
-                        className="text-idealo-text-primary text-lg font-extrabold"
+                        className="text-[28px] font-black text-[#2d2d2d]"
                       />
                     </Suspense>
-                    <span className="text-idealo-blue text-sm font-semibold">
-                      Zum Preisvergleich
-                    </span>
+                  </div>
+
+                  <a
+                    href="#offerList"
+                    className="flex h-[44px] w-full items-center justify-center rounded-[4px] border border-[#0771d0] px-4 text-[14px] font-bold text-[#0771d0] transition-colors hover:bg-blue-50"
+                  >
+                    Angebote vergleichen
                   </a>
                 </div>
+
+                <MobileActionGrid />
 
                 {/* Mobile: Price Alert Button */}
               </div>
@@ -146,15 +153,28 @@ export function IdealoProductPage({
             <div className="col-start-1 row-start-1 min-w-0 flex-1 px-2.5 sm:px-[15px] lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-2 lg:pl-[25px]">
               <h1
                 id="oopStage-title"
-                className="text-idealo-text-primary mb-1 text-[20px] leading-tight font-bold"
+                className="text-idealo-text-primary mb-1 text-[20px] leading-tight font-bold sm:text-center lg:text-left"
               >
                 {displayTitle}
               </h1>
-              <div className="oopStage-metaInfo mb-4 flex flex-wrap items-center gap-4">
-                <IdealoStarRating
-                  rating={product.rating || 4.5}
-                  reviewCount={product.reviewCount || 0}
-                />
+              <div className="oopStage-metaInfo mb-4 flex flex-wrap items-center gap-4 sm:justify-center lg:justify-start">
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <svg
+                        key={i}
+                        viewBox="0 0 24 24"
+                        fill={i <= 4 ? "black" : "#dcdcdc"}
+                        className="h-3.5 w-3.5"
+                      >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    ))}
+                  </div>
+                  <span className="text-[13px] font-bold text-[#2d2d2d]">
+                    ({product.reviewCount || 10})
+                  </span>
+                </div>
 
                 {(product.savings || 0) > 0 && (
                   <PriceAnalysisBadge savings={product.savings || 0} />
@@ -164,29 +184,43 @@ export function IdealoProductPage({
 
             {/* Product Overview */}
             <div className="w-full min-w-0 flex-1 lg:col-start-2 lg:col-end-3 lg:row-start-2 lg:-row-end-1 lg:justify-self-start lg:pl-[25px]">
-              <div className="oopStage-productInfo mb-5">
-                <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
-                  <b className="font-bold">Produktübersicht:</b>
+              <div className="oopStage-productInfo border-t border-[#dcdcdc] pt-4 lg:border-t-0 lg:pt-0">
+                <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:justify-center lg:justify-start">
+                  <b className="text-[13px] font-bold text-[#2d2d2d]">
+                    Produktübersicht:
+                  </b>
                   {Object.entries(product.specifications || {})
                     .slice(0, 5)
                     .map(([key, value], i) => (
                       <React.Fragment key={key}>
-                        <span className="oopStage-productInfoTopItem inline-block">
+                        <span className="text-[13px] text-[#2d2d2d]">
                           {String(value)}
                         </span>
                         {i < 4 && (
-                          <span className="text-idealo-text-primary mx-0.5">
-                            ·
-                          </span>
+                          <span className="text-[13px] text-[#767676]">·</span>
                         )}
                       </React.Fragment>
                     ))}
-                  <a
-                    href="#datasheet"
-                    className="text-idealo-blue focus-visible:ring-idealo-blue ml-1 outline-none hover:no-underline focus-visible:ring-2 focus-visible:ring-offset-1"
+                </div>
+
+                {/* Similar Products Links Row */}
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:justify-center lg:justify-start">
+                  <b className="text-[13px] font-bold text-[#2d2d2d]">
+                    Ähnliche Produkte:
+                  </b>
+                  <Link
+                    href={`/search?q=${category?.name}`}
+                    className="text-[13px] text-[#0771d0] underline decoration-[#0771d0]/30 hover:no-underline"
                   >
-                    Produktdetails
-                  </a>
+                    {category?.name}
+                  </Link>
+                  <span className="text-[13px] text-[#767676]">·</span>
+                  <Link
+                    href={`/search?q=${product.brand}`}
+                    className="text-[13px] text-[#0771d0] underline decoration-[#0771d0]/30 hover:no-underline"
+                  >
+                    {product.brand} {category?.singularName || category?.name}
+                  </Link>
                 </div>
 
                 <div className="mt-6 flex flex-wrap gap-2.5">

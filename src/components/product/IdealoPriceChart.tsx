@@ -40,18 +40,19 @@ export function IdealoPriceChart({
           />
         </div>
       </DialogTrigger>
-      {/* Updated max-width to 580px per screenshot requirements */}
-      <DialogContent className="w-[95vw] max-w-[580px] gap-0 overflow-hidden bg-white p-0 shadow-2xl sm:rounded-xl">
-        <div className="flex items-start justify-between p-6 pb-2">
-          <div>
+      <DialogContent className="flex h-full w-full max-w-none flex-col gap-0 overflow-y-auto bg-white p-0 sm:h-auto sm:w-[95vw] sm:max-w-[580px] sm:rounded-xl sm:shadow-2xl">
+        <div className="flex items-start justify-between p-6 pb-12">
+          <div className="pr-8">
             <h2 className="text-idealo-text-primary text-[22px] leading-tight font-bold">
               Preisentwicklung
             </h2>
-            <p className="mt-1 text-[15px] text-gray-600">{title}</p>
+            <p className="mt-1 line-clamp-2 text-[15px] font-medium text-gray-600 sm:line-clamp-none">
+              {title}
+            </p>
           </div>
         </div>
 
-        <div className="px-6 pb-8">
+        <div className="flex-1 px-6 pb-8">
           <ChartRenderer
             history={history}
             interactive={true}
@@ -586,8 +587,7 @@ function DifferenceBadge({
   const diff = current - other;
   const absDiff = Math.abs(diff);
 
-  // If difference is remarkably small, show nothing or neutral
-  if (absDiff < 0.01) return <span className="w-16"></span>;
+  if (absDiff < 0.01) return <div className="w-24 shrink-0"></div>;
 
   const isHigher = diff > 0;
 

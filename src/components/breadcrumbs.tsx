@@ -8,6 +8,7 @@ interface BreadcrumbsProps {
   items: BreadcrumbItem[];
   className?: string;
   renderLastAsH1?: boolean;
+  hideLast?: boolean;
 }
 
 /**
@@ -17,12 +18,17 @@ export function Breadcrumbs({
   items,
   className,
   renderLastAsH1 = false,
+  hideLast = false,
 }: BreadcrumbsProps) {
+  const visibleItems = hideLast ? items.slice(0, -1) : items;
+
   return (
     <nav className={cn("mb-4", className)} aria-label="Breadcrumb">
       <ol className="flex flex-wrap items-center gap-1.5 gap-y-1 text-[12px] leading-normal text-[#767676] sm:gap-2">
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1;
+        {visibleItems.map((item, index) => {
+          const isLastInVisible = index === visibleItems.length - 1;
+          // Even if it's the last VISIBLE item, if hideLast is true, it shouldn't be treated as the FINAL page (text)
+          const shouldRenderAsText = isLastInVisible && !hideLast;
           const Icon = item.icon;
           const isHome = item.href === "/";
 
@@ -30,7 +36,7 @@ export function Breadcrumbs({
             <span
               className={cn(
                 "inline-flex items-center gap-1.5",
-                isLast
+                shouldRenderAsText
                   ? "text-[#2d2d2d]"
                   : "text-inherit underline! decoration-[#2d2d2d]! underline-offset-2 group-hover:decoration-[#f97316]!",
               )}
@@ -75,7 +81,7 @@ export function Breadcrumbs({
               )}
               {/* Breadcrumb item */}
               <li className="flex items-center">
-                {item.href && !isLast ? (
+                {item.href && !shouldRenderAsText ? (
                   <Link
                     href={item.href}
                     className="group font-bold text-[#2d2d2d]! hover:text-[#f97316]! hover:decoration-[#f97316]!"
@@ -83,7 +89,7 @@ export function Breadcrumbs({
                   >
                     {content}
                   </Link>
-                ) : isLast ? (
+                ) : shouldRenderAsText ? (
                   renderLastAsH1 ? (
                     <h1 className="inline font-normal">{content}</h1>
                   ) : (
