@@ -409,8 +409,8 @@ function ChartRenderer({
                       // or just leverage the fact that SVG and Div share height.
                       // Relative positioning works best with %.
                       `${(hoveredData.y / vboxHeight) * 100}%`,
-                  width: isModal ? "16px" : "10px",
-                  height: isModal ? "16px" : "10px",
+                  width: "16px",
+                  height: "16px",
                 }}
               />
             </>
