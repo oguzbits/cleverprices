@@ -12,8 +12,13 @@
 import { db } from "@/db";
 import { prices, products } from "@/db/schema";
 import { allCategories, type CategorySlug } from "@/lib/categories";
+import {
+  compressHistory,
+  parseHistoryBlob,
+  pruneHistory,
+} from "@/lib/history-compression";
 import { generateProductSlug } from "@/lib/utils/slug";
-import { asc, eq, lt, sql } from "drizzle-orm";
+import { and, asc, eq, lt, sql } from "drizzle-orm";
 
 import {
   getBestsellers,
@@ -508,36 +513,23 @@ export async function upsertProductFromKeepa(
       const existing = await db
         .select({ historyJson: prices.historyJson })
         .from(prices)
-        .where(
-          sql`${prices.productId} = ${product.id} AND ${prices.country} = 'de'`,
-        )
+        .where(and(eq(prices.productId, product.id), eq(prices.country, "de")))
         .limit(1);
 
-      // Parse existing history or start fresh
-      let historyObj: Record<string, number> = {};
-      if (existing[0]?.historyJson) {
-        try {
-          historyObj = JSON.parse(existing[0].historyJson);
-        } catch {
-          // Invalid JSON, start fresh
-        }
-      }
+      // Parse existing history or start fresh (handles both legacy TEXT and compressed BLOB)
+      let historyObj: Record<string, number> = parseHistoryBlob(
+        existing[0]?.historyJson,
+      );
 
       // Add today's price (in cents)
       const todayStr = now.toISOString().split("T")[0]; // YYYY-MM-DD
       historyObj[todayStr] = Math.round(cleverPrice * 100);
 
       // Prune to last 365 days
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 365);
-      const cutoffStr = cutoff.toISOString().split("T")[0];
-      for (const dateKey of Object.keys(historyObj)) {
-        if (dateKey < cutoffStr) {
-          delete historyObj[dateKey];
-        }
-      }
+      historyObj = pruneHistory(historyObj, 365);
 
-      const historyJson = JSON.stringify(historyObj);
+      // Compress for storage
+      const historyJson = compressHistory(JSON.stringify(historyObj));
 
       await db
         .insert(prices)

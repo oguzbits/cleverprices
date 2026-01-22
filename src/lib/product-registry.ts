@@ -7,6 +7,7 @@ import {
 } from "@/db/schema";
 import { and, asc, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+import { parseHistoryBlob } from "./history-compression";
 import {
   CATEGORY_REVALIDATE_SECONDS,
   PRODUCT_REVALIDATE_SECONDS,
@@ -128,22 +129,18 @@ type LitePrice = Pick<
 /**
  * Parse historyJson blob into price history array
  * Format: { "2025-01-15": 4999, "2025-01-16": 5199, ... } (prices in cents)
+ * Now supports both legacy TEXT and compressed BLOB formats.
  */
 function parseHistoryJson(
-  historyJson: string | null,
+  historyJson: Buffer | string | null,
 ): { date: string; price: number }[] {
-  if (!historyJson) return [];
-  try {
-    const parsed = JSON.parse(historyJson) as Record<string, number>;
-    return Object.entries(parsed)
-      .map(([date, priceCents]) => ({
-        date: new Date(date).toISOString(),
-        price: priceCents / 100, // Convert cents to decimal
-      }))
-      .sort((a, b) => a.date.localeCompare(b.date));
-  } catch {
-    return [];
-  }
+  const parsed = parseHistoryBlob(historyJson);
+  return Object.entries(parsed)
+    .map(([date, priceCents]) => ({
+      date: new Date(date).toISOString(),
+      price: priceCents / 100, // Convert cents to decimal
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
 // Helper to map DB to Interface (lean schema)

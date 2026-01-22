@@ -4,6 +4,11 @@ import { db, prices, products } from "../src/db";
 import { withRetry } from "../src/db/utils";
 import type { CountryCode } from "../src/lib/countries";
 import {
+  compressHistory,
+  parseHistoryBlob,
+  pruneHistory,
+} from "../src/lib/history-compression";
+import {
   getProducts,
   getTokenStatus,
   isKeepaConfigured,
@@ -234,14 +239,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
               usedPrice !== product.currentUsedPrice;
 
             // 3. Update historyJson with today's price
-            let historyObj: Record<string, number> = {};
-            if (product.currentHistoryJson) {
-              try {
-                historyObj = JSON.parse(product.currentHistoryJson);
-              } catch {
-                // Invalid JSON, start fresh
-              }
-            }
+            // Parse existing history (handles both legacy TEXT and compressed BLOB)
+            let historyObj: Record<string, number> = parseHistoryBlob(
+              product.currentHistoryJson,
+            );
 
             // Add today's price (in cents) - only if we have a valid price
             if (bestPrice && bestPrice > 0) {
@@ -253,16 +254,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
             }
 
             // Prune to last 365 days
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - 365);
-            const cutoffStr = cutoff.toISOString().split("T")[0];
-            for (const dateKey of Object.keys(historyObj)) {
-              if (dateKey < cutoffStr) {
-                delete historyObj[dateKey];
-              }
-            }
+            historyObj = pruneHistory(historyObj, 365);
 
-            const historyJson = JSON.stringify(historyObj);
+            // Compress for storage
+            const historyJson = compressHistory(JSON.stringify(historyObj));
 
             // 4. Price Upsert - Lean Schema
             const isVeryFresh =

@@ -3,6 +3,11 @@ import { db, prices, products } from "../src/db";
 import { withRetry } from "../src/db/utils";
 import type { CountryCode } from "../src/lib/countries";
 import {
+  compressHistory,
+  parseHistoryBlob,
+  pruneHistory,
+} from "../src/lib/history-compression";
+import {
   getProducts,
   getTokenStatus,
 } from "../src/lib/keepa/product-discovery";
@@ -97,8 +102,6 @@ async function enrich() {
             if (!localProduct) continue;
 
             // 1. Build historyJson from Keepa CSV data
-            let historyObj: Record<string, number> = {};
-
             // Get existing historyJson if available
             const existingPrice = await db
               .select({ historyJson: prices.historyJson })
@@ -111,12 +114,14 @@ async function enrich() {
               )
               .limit(1);
 
-            if (existingPrice[0]?.historyJson && !isForce) {
-              try {
-                historyObj = JSON.parse(existingPrice[0].historyJson);
-              } catch {
-                // Invalid JSON, start fresh
-              }
+            // Parse existing history (handles both legacy TEXT and compressed BLOB)
+            let historyObj: Record<string, number> = parseHistoryBlob(
+              existingPrice[0]?.historyJson,
+            );
+
+            // If force mode, start fresh
+            if (isForce) {
+              historyObj = {};
             }
 
             // Parse Keepa history and merge into historyObj
@@ -137,16 +142,10 @@ async function enrich() {
             }
 
             // Prune to last 365 days
-            const cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - 365);
-            const cutoffStr = cutoff.toISOString().split("T")[0];
-            for (const dateKey of Object.keys(historyObj)) {
-              if (dateKey < cutoffStr) {
-                delete historyObj[dateKey];
-              }
-            }
+            historyObj = pruneHistory(historyObj, 365);
 
-            const historyJson = JSON.stringify(historyObj);
+            // Compress for storage
+            const historyJson = compressHistory(JSON.stringify(historyObj));
 
             // 2. Get price statistics from stats
             // Index 1 is NEW price, index 8 is LIST price (MSRP)

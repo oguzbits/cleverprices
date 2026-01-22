@@ -108,3 +108,44 @@ const results = await searchStmt.execute({ cat: "ssd" });
 ```
 
 This avoids regenerating the SQL string on every call, saving ~5-10ms of CPU time.
+
+---
+
+## Price History Compression
+
+Price history is stored as a GZIP-compressed BLOB to reduce database size by ~73%.
+
+### Schema
+
+```typescript
+// In src/db/schema.ts
+historyJson: blob("history_json", { mode: "buffer" }),
+```
+
+### Helper Module
+
+Use the centralized utilities in `src/lib/history-compression.ts`:
+
+```typescript
+import {
+  compressHistory,
+  parseHistoryBlob,
+  pruneHistory,
+} from "@/lib/history-compression";
+
+// Reading (handles both legacy TEXT and compressed BLOB)
+const historyObj = parseHistoryBlob(priceRecord.historyJson);
+
+// Writing
+historyObj[todayStr] = priceInCents;
+historyObj = pruneHistory(historyObj, 365); // Keep max 365 days
+const compressed = compressHistory(JSON.stringify(historyObj));
+// Save `compressed` to the database
+```
+
+### Rules
+
+1.  **Always use `parseHistoryBlob()`** to read - it handles both legacy TEXT and compressed BLOB formats.
+2.  **Always use `compressHistory()`** to write - never store raw JSON text.
+3.  **Always use `pruneHistory()`** before writing - enforces the 365-day limit.
+4.  **Format**: Prices are stored in **cents** as integers: `{"2025-01-22": 89900}` (= 899.00€).

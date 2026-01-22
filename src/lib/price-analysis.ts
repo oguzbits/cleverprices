@@ -10,26 +10,23 @@ import { prices } from "@/db/schema";
 import type { CountryCode } from "@/lib/countries";
 import type { PriceAnalysis } from "@/lib/data-sources/types";
 import { and, eq } from "drizzle-orm";
+import { parseHistoryBlob } from "./history-compression";
 
 /**
  * Parse historyJson blob into price history array
  * Format: { "2025-01-15": 4999, ... } (prices in cents)
+ * Now supports both legacy TEXT and compressed BLOB formats.
  */
 function parseHistoryJson(
-  historyJson: string | null,
+  historyJson: Buffer | string | null,
 ): { date: Date; price: number }[] {
-  if (!historyJson) return [];
-  try {
-    const parsed = JSON.parse(historyJson) as Record<string, number>;
-    return Object.entries(parsed)
-      .map(([dateStr, priceCents]) => ({
-        date: new Date(dateStr),
-        price: priceCents / 100, // Convert cents to decimal
-      }))
-      .sort((a, b) => a.date.getTime() - b.date.getTime());
-  } catch {
-    return [];
-  }
+  const parsed = parseHistoryBlob(historyJson);
+  return Object.entries(parsed)
+    .map(([dateStr, priceCents]) => ({
+      date: new Date(dateStr),
+      price: priceCents / 100, // Convert cents to decimal
+    }))
+    .sort((a, b) => a.date.getTime() - b.date.getTime());
 }
 
 /**

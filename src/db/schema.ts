@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  blob,
   index,
   integer,
   real,
@@ -93,7 +94,8 @@ export const products = sqliteTable(
  * LEAN SCHEMA:
  * - `price`: Consolidated "clever" price (buyBox ?? min(amazon, new) ?? used)
  * - `used_price`: Separate used price option
- * - `history_json`: Daily low prices in cents, format: {"2025-01-15": 4999, ...}
+ * - `history_json`: Daily low prices in cents, GZIP compressed
+ *   Format after decompression: {"2025-01-15": 4999, ...}
  * - `price_avg_90`: 90-day average for deal calculation
  */
 export const prices = sqliteTable(
@@ -122,9 +124,10 @@ export const prices = sqliteTable(
     // Derived unit price (Price per TB, Price per GB, etc.)
     pricePerUnit: real("price_per_unit"),
 
-    // History as compact JSON blob (Idealo-style)
-    // Format: {"2025-01-15": 4999, "2025-01-16": 5199, ...} (prices in cents)
-    historyJson: text("history_json"),
+    // History as GZIP-compressed JSON blob (~73% smaller)
+    // Use parseHistoryBlob() from history-compression.ts to read
+    // Use compressHistory(JSON.stringify(obj)) to write
+    historyJson: blob("history_json", { mode: "buffer" }),
 
     // Currency
     currency: text("currency").notNull(), // "USD", "EUR", etc.
