@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Minus, TrendingDown, TrendingUp } from "lucide-react";
+import { Minus, TrendingDown } from "lucide-react";
 
 interface PriceAnalysisBadgeProps {
   savings: number; // 0.15 = 15% savings
@@ -24,7 +24,7 @@ export function PriceAnalysisBadge({
     );
   }
 
-  if (savings > 0) {
+  if (savings >= 0.05) {
     return (
       <div
         className={cn(
@@ -38,29 +38,16 @@ export function PriceAnalysisBadge({
     );
   }
 
-  if (savings === 0) {
-    return (
-      <div
-        className={cn(
-          "inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800",
-          className,
-        )}
-      >
-        <Minus className="h-3.5 w-3.5" />
-        Fairer Preis
-      </div>
-    );
-  }
-
+  // Covers 0% to <5% savings (and theoretically negative savings if they existed)
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800",
+        "inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800",
         className,
       )}
     >
-      <TrendingUp className="h-3.5 w-3.5" />
-      Preis über Durchschnitt
+      <Minus className="h-3.5 w-3.5" />
+      Fairer Preis
     </div>
   );
 }

@@ -328,16 +328,14 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   }
 
   // Use Next.js Data Cache to persist results across requests/users
-  const getCachedProducts = unstable_cache(
+  return unstable_cache(
     fetchProducts,
-    [`category-products-v26-${category}`],
+    [`category-products-v27-${category}-${stripHeavyData}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: [`category-v26-${category}`],
+      tags: [`category-v27-${category}`],
     },
-  );
-
-  return getCachedProducts();
+  )();
 });
 
 const fetchProductBySlug = async (
@@ -462,7 +460,8 @@ const fetchSimilarProducts = async (
   countryCode: string,
 ) => {
   // Fetch category products (already cached via getProductsByCategory)
-  const categoryProducts = await getProductsByCategory(category);
+  // Use stripHeavyData=true to avoid huge blobs since we only need simple props + prices
+  const categoryProducts = await getProductsByCategory(category, true);
 
   const valid = categoryProducts.filter(
     (p) =>

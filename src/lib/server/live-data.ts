@@ -3,7 +3,7 @@ import { prices } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { litePriceColumns, type Product } from "../product-registry";
-import { calculateProductMetrics } from "../utils/products";
+import { calculateProductMetrics, calculateSavings } from "../utils/products";
 
 /**
  * Fetches the latest prices for a set of product IDs.
@@ -79,17 +79,22 @@ export async function mergeLivePrices(
     if (!p.id) return p;
     const live = priceMap.get(p.id);
     if (live) {
+      const newPrice = live.price;
+      const refPrice = live.priceAvg90 || 0;
+      const savings = calculateSavings(newPrice, refPrice);
+
       // Create a copy to avoid mutating cached object
       const updated = {
         ...p,
-        prices: { ...p.prices, [countryCode]: live.price },
+        prices: { ...p.prices, [countryCode]: newPrice },
         pricesLastUpdated: {
           ...p.pricesLastUpdated,
           [countryCode]: new Date(live.lastUpdated).toISOString(),
         },
-        priceAvg90: { ...p.priceAvg90, [countryCode]: live.priceAvg90 },
+        priceAvg90: { ...p.priceAvg90, [countryCode]: refPrice },
         listPrice: { ...p.listPrice, [countryCode]: live.listPrice },
         pricesPerUnit: { ...p.pricesPerUnit, [countryCode]: live.pricePerUnit },
+        savings,
       };
 
       // Recalculate derived metrics (like savings) based on new prices

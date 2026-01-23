@@ -459,6 +459,7 @@ async function CachedSimilarCarousel({
                 ? allCategories[p.category as CategorySlug]?.singularName ||
                   allCategories[p.category as CategorySlug]?.name
                 : undefined,
+            discountRate: p.savings ? Math.round(p.savings * 100) : undefined,
             // @ts-ignore - Product type is slightly different but compatible
             isBestseller: isProductBestseller(p),
           }))}

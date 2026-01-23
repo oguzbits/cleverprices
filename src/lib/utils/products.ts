@@ -185,15 +185,27 @@ export function calculateProductDiscount(
   const currentPrice = p.prices?.[code];
   if (!currentPrice || currentPrice <= 0) return 0;
 
-  const avg90 = p.priceAvg90?.[code];
-  if (!avg90 || avg90 <= currentPrice) return 0;
+  const avg90 = p.priceAvg90?.[code] || 0;
+  const savings = calculateSavings(currentPrice, avg90);
 
-  let discountRate = Math.round(((avg90 - currentPrice) / avg90) * 100);
+  return Math.round(savings * 100);
+}
+
+/**
+ * Calculates raw savings ratio (0.0 to 1.0) based on current price vs 90-day avg.
+ * Includes sanity checks for data anomalies.
+ */
+export function calculateSavings(currentPrice: number, avg90: number): number {
+  if (!currentPrice || !avg90 || currentPrice <= 0 || avg90 <= 0) return 0;
+
+  if (avg90 <= currentPrice) return 0;
+
+  const savings = (avg90 - currentPrice) / avg90;
 
   // Sanity check for bad data (e.g. outlier price drops > 80% are likely errors)
-  if (discountRate > 80) return 0;
+  if (savings > 0.8) return 0;
 
-  return discountRate;
+  return savings;
 }
 
 /**

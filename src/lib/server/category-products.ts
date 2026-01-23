@@ -6,7 +6,10 @@ import {
   normalizeBrand,
   sortProducts,
 } from "@/lib/utils/category-utils";
-import { getLocalizedProductData } from "@/lib/utils/products";
+import {
+  calculateSavings,
+  getLocalizedProductData,
+} from "@/lib/utils/products";
 import { cacheLife } from "next/cache";
 import { getLivePricesForProducts } from "./live-data";
 import { calculateDesirabilityScore } from "./scoring";
@@ -140,12 +143,8 @@ async function getCachedLocalizedCategoryProducts(
       );
 
       const refPrice = p.priceAvg90?.[countryCode] || 0;
-      const savings =
-        refPrice && price && refPrice > price
-          ? (refPrice - price) / refPrice
-          : 0;
-      const displayListPrice =
-        refPrice && price && refPrice > price ? refPrice : undefined;
+      const savings = calculateSavings(price || 0, refPrice);
+      const displayListPrice = savings > 0 ? refPrice : undefined;
 
       // 3. Storage Capacity Extraction
       let capacity = p.capacity;
@@ -249,8 +248,8 @@ async function mergeLivePricesIntoLocalized(
     // Price changed! Recalculate dependencies
     const newPrice = live.price;
     const refPrice = live.priceAvg90 || 0;
-    const savings = refPrice > newPrice ? (refPrice - newPrice) / refPrice : 0;
-    const listPrice = refPrice > newPrice ? refPrice : undefined;
+    const savings = calculateSavings(newPrice, refPrice);
+    const listPrice = savings > 0 ? refPrice : undefined;
 
     const capacityMB =
       p.capacityUnit === "TB"
