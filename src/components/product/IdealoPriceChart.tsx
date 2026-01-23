@@ -22,7 +22,8 @@ const ALL_TIMEFRAMES: { k: TimeFrame; l: string }[] = [
 export function IdealoPriceChart({
   history = [],
   title,
-}: IdealoPriceChartProps) {
+  currentPrice,
+}: IdealoPriceChartProps & { currentPrice?: number }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -37,6 +38,7 @@ export function IdealoPriceChart({
             interactive={true}
             height={150}
             isModal={false}
+            livePrice={currentPrice}
           />
         </div>
       </DialogTrigger>
@@ -58,6 +60,7 @@ export function IdealoPriceChart({
             interactive={true}
             height={320}
             isModal={true}
+            livePrice={currentPrice}
           />
         </div>
       </DialogContent>
@@ -70,11 +73,13 @@ function ChartRenderer({
   interactive,
   height,
   isModal = false,
+  livePrice,
 }: {
   history: { date: string; price: number }[];
   interactive: boolean;
   height: number;
   isModal: boolean;
+  livePrice?: number;
 }) {
   const [timeframe, setTimeframe] = useState<TimeFrame>("3M");
   const [hoveredData, setHoveredData] = useState<{
@@ -96,6 +101,14 @@ function ChartRenderer({
         }))
         .sort((a, b) => a.date - b.date);
 
+      // Inject livePrice if available
+      if (livePrice !== undefined && livePrice !== null) {
+        rawSorted.push({
+          date: Date.now(),
+          price: livePrice,
+        });
+      }
+
       // 2. Cutoff
       const now = new Date();
       now.setHours(23, 59, 59, 999);
@@ -114,7 +127,8 @@ function ChartRenderer({
       // 3. Fill Gaps
       const priceMap = new Map<string, number>();
       rawSorted.forEach((d) => {
-        const dateStr = new Date(d.date).toISOString().split("T")[0];
+        const dateObj = new Date(d.date);
+        const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
         priceMap.set(dateStr, d.price);
       });
 
@@ -132,7 +146,7 @@ function ChartRenderer({
       const endDate = new Date(now);
 
       while (loopDate <= endDate) {
-        const dateStr = loopDate.toISOString().split("T")[0];
+        const dateStr = `${loopDate.getFullYear()}-${String(loopDate.getMonth() + 1).padStart(2, "0")}-${String(loopDate.getDate()).padStart(2, "0")}`;
         if (priceMap.has(dateStr)) {
           currentPrice = priceMap.get(dateStr)!;
         }

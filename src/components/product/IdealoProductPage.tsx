@@ -297,6 +297,7 @@ export function IdealoProductPage({
                 <IdealoPriceChart
                   history={product.priceHistory || []}
                   title={product.title}
+                  currentPrice={product.prices[countryCode]}
                 />
               </ComponentErrorBoundary>
             </div>
