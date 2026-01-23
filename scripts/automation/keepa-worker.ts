@@ -6,16 +6,16 @@
  * Handles automatic token refills and category rotation.
  *
  * Usage:
- *   bun run scripts/keepa-worker.ts [country] [--continuous]
+ *   bun run worker:run [country] [--continuous]
  */
 
 import { execSync } from "child_process";
 import { sql } from "drizzle-orm";
-import { db, products } from "../src/db";
-import type { CountryCode } from "../src/lib/countries";
-import { getTokenStatus } from "../src/lib/keepa/product-discovery";
+import { db, products } from "../../src/db";
+import type { CountryCode } from "../../src/lib/countries";
+import { getTokenStatus } from "../../src/lib/keepa/product-discovery";
 
-import { loadWorkerState, saveWorkerState } from "../src/lib/worker-state";
+import { loadWorkerState, saveWorkerState } from "../../src/lib/worker-state";
 
 async function main() {
   const args = process.argv.slice(2);
@@ -136,7 +136,7 @@ async function main() {
           `\n⚖️ Phase 1: Compliance Sync (Daily Price Updates - Target: ${priceLimit})`,
         );
         execSync(
-          `bun run scripts/update-prices.ts ${country} --stale --limit=${priceLimit}`,
+          `bun run update-prices ${country} --stale --limit=${priceLimit}`,
           {
             stdio: "inherit",
             env: { ...process.env, DB_LOCAL: shouldSync ? "0" : "1" },
@@ -151,7 +151,7 @@ async function main() {
           );
           try {
             execSync(
-              `bun run scripts/enrich-products.ts ${country} --limit=${enrichmentLimit}`,
+              `bun run worker:enrich ${country} --limit=${enrichmentLimit}`,
               {
                 stdio: "inherit",
                 env: { ...process.env, DB_LOCAL: shouldSync ? "0" : "1" },
@@ -171,7 +171,7 @@ async function main() {
         console.log("\n☁️  Phase 3: Cloud Sync (Incremental)");
         try {
           // Use --delta for incremental sync
-          execSync(`bun run scripts/deploy-data.ts --delta`, {
+          execSync(`bun run db:deploy --delta`, {
             stdio: "inherit",
           });
           console.log("✅ Cloud sync successful.");

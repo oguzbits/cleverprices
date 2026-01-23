@@ -2,8 +2,8 @@ import { createClient } from "@libsql/client";
 import { Database } from "bun:sqlite";
 import { inArray, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
-import { prices, products } from "../src/db/schema";
-import { loadWorkerState, updateLastCloudSync } from "../src/lib/worker-state";
+import { prices, products } from "../../src/db/schema";
+import { loadWorkerState, updateLastCloudSync } from "../../src/lib/worker-state";
 
 /**
  * Deploy Data to Turso (Lean Schema)

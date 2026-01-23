@@ -37,7 +37,7 @@ jobs:
 
       - name: 💎 Enrich Products
         continue-on-error: true
-        run: bun run scripts/enrich-products.ts
+        run: bun run worker:enrich de --limit=100
 
       - name: ✨ Done
         run: echo "Price synchronization complete!"

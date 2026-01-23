@@ -1,25 +1,25 @@
 import { execSync } from "child_process";
 import { and, asc, eq, isNull, lt, or, sql } from "drizzle-orm";
-import { db, prices, products } from "../src/db";
-import { withRetry } from "../src/db/utils";
-import type { CountryCode } from "../src/lib/countries";
+import { db, prices, products } from "../../src/db";
+import { withRetry } from "../../src/db/utils";
+import type { CountryCode } from "../../src/lib/countries";
 import {
   compressHistory,
   parseHistoryBlob,
   pruneHistory,
-} from "../src/lib/history-compression";
+} from "../../src/lib/history-compression";
 import {
   getProducts,
   getTokenStatus,
   isKeepaConfigured,
   KEEPA_DOMAINS,
-} from "../src/lib/keepa/product-discovery";
+} from "../../src/lib/keepa/product-discovery";
 import {
   extractSalesRank,
   keepaPriceToDecimal,
   normalizeRating,
-} from "../src/lib/keepa/utils";
-import { updateLastRun } from "../src/lib/worker-state";
+} from "../../src/lib/keepa/utils";
+import { updateLastRun } from "../../src/lib/worker-state";
 
 // Constants
 const KEEPA_PRICE_TYPES = {
@@ -333,7 +333,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
   if (process.env.WARM_CACHE === "true" && !isDryRun) {
     try {
       console.log("\n🔥 Triggering Cache Warmer...");
-      execSync(`bun run scripts/warm-cache.ts`, { stdio: "inherit" });
+      execSync(`bun run warm-cache`, { stdio: "inherit" });
     } catch (e) {
       console.warn("⚠️ Cache warming failed.");
     }

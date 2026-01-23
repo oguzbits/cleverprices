@@ -1,8 +1,8 @@
 import {
   searchProducts,
   getProducts,
-} from "../src/lib/keepa/product-discovery";
-import type { CountryCode } from "../src/lib/countries";
+} from "../../src/lib/keepa/product-discovery";
+import type { CountryCode } from "../../src/lib/countries";
 
 async function main() {
   const keyword = process.argv[2];

@@ -1,7 +1,7 @@
-import { db } from "../src/db";
-import { products } from "../src/db/schema";
-import { allCategories } from "../src/lib/categories";
-import { SITE_URL } from "../src/lib/site-config";
+import { db } from "../../src/db";
+import { products } from "../../src/db/schema";
+import { allCategories } from "../../src/lib/categories";
+import { SITE_URL } from "../../src/lib/site-config";
 
 /**
  * CACHE WARMER SCRIPT
