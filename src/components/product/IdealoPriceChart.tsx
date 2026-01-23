@@ -31,6 +31,7 @@ export function IdealoPriceChart({
   currentPrice,
 }: IdealoPriceChartProps & { currentPrice?: number }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [timeframe, setTimeframe] = useState<TimeFrame>("3M");
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -45,6 +46,8 @@ export function IdealoPriceChart({
             height={150}
             isModal={false}
             livePrice={currentPrice}
+            timeframe={timeframe}
+            onTimeframeChange={setTimeframe}
           />
         </div>
       </DialogTrigger>
@@ -70,6 +73,8 @@ export function IdealoPriceChart({
             height={320}
             isModal={true}
             livePrice={currentPrice}
+            timeframe={timeframe}
+            onTimeframeChange={setTimeframe}
           />
         </div>
       </DialogContent>
@@ -83,14 +88,18 @@ function ChartRenderer({
   height,
   isModal = false,
   livePrice,
+  timeframe,
+  onTimeframeChange,
 }: {
   history: { date: string; price: number }[];
   interactive: boolean;
   height: number;
   isModal: boolean;
   livePrice?: number;
+  timeframe: TimeFrame;
+  onTimeframeChange: (tf: TimeFrame) => void;
 }) {
-  const [timeframe, setTimeframe] = useState<TimeFrame>("3M");
+  const [activeTimeframe, setActiveTimeframe] = useState<TimeFrame>(timeframe);
   const [hoveredData, setHoveredData] = useState<{
     date: number;
     price: number;
@@ -123,9 +132,9 @@ function ChartRenderer({
       now.setHours(23, 59, 59, 999);
 
       let daysBack = 90;
-      if (timeframe === "1M") daysBack = 30;
-      if (timeframe === "6M") daysBack = 180;
-      if (timeframe === "1J") daysBack = 365;
+      if (activeTimeframe === "1M") daysBack = 30;
+      if (activeTimeframe === "6M") daysBack = 180;
+      if (activeTimeframe === "1J") daysBack = 365;
 
       const startDate = new Date(now);
       startDate.setDate(startDate.getDate() - daysBack);
@@ -368,15 +377,17 @@ function ChartRenderer({
 
         <div className="flex gap-1.5">
           {visibleTimeframes.map((tf) => {
-            const isActive = timeframe === tf.k;
+            const isActive = activeTimeframe === tf.k;
             return (
               <button
                 key={tf.k}
                 onClick={(e) => {
                   if (isModal) {
                     e.stopPropagation();
-                    setTimeframe(tf.k as TimeFrame);
+                  } else {
+                    onTimeframeChange(tf.k as TimeFrame);
                   }
+                  setActiveTimeframe(tf.k as TimeFrame);
                 }}
                 className={cn(
                   "cursor-pointer rounded border text-[11px] font-bold transition-colors",
