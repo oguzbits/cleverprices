@@ -127,7 +127,7 @@ export function CategoryNav({ country }: { country: string }) {
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="scrollbar-hide relative flex h-[80px] w-full snap-x snap-mandatory items-center justify-start overflow-x-auto scroll-smooth md:justify-center"
+          className="scrollbar-hide relative flex h-[80px] w-full snap-x snap-mandatory items-center overflow-x-auto"
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
@@ -138,7 +138,7 @@ export function CategoryNav({ country }: { country: string }) {
             scrollPaddingRight: "0px",
           }}
         >
-          <div className="flex shrink-0 items-center gap-4 px-4 md:gap-6 md:px-8">
+          <div className="mx-auto flex shrink-0 items-center gap-4 px-4 md:gap-6 md:px-8">
             {/* Deals Button (First) */}
             <PrefetchLink
               href="/deals"
@@ -172,10 +172,10 @@ export function CategoryNav({ country }: { country: string }) {
         {canScrollLeft && (
           <button
             onClick={() => scroll("left")}
-            className="pointer-events-none absolute top-0 left-0 z-30 hidden h-full items-center bg-linear-to-r from-[#27272a] to-transparent pr-12 pl-2 md:flex"
+            className="pointer-events-none absolute top-0 left-0 z-30 flex h-full items-center bg-linear-to-r from-(--sub-header-bg) to-transparent pr-12 pl-2 transition-opacity duration-300"
             aria-label="Scroll left"
           >
-            <div className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95">
+            <div className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-105 hover:bg-white/25 active:scale-95">
               <ChevronLeft className="h-5 w-5" />
             </div>
           </button>
@@ -185,10 +185,10 @@ export function CategoryNav({ country }: { country: string }) {
         {canScrollRight && (
           <button
             onClick={() => scroll("right")}
-            className="pointer-events-none absolute top-0 right-0 z-30 hidden h-full items-center bg-linear-to-l from-[#27272a] to-transparent pr-2 pl-12 md:flex"
+            className="pointer-events-none absolute top-0 right-0 z-30 flex h-full items-center bg-linear-to-l from-(--sub-header-bg) to-transparent pr-2 pl-12 transition-opacity duration-300"
             aria-label="Scroll right"
           >
-            <div className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95">
+            <div className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-105 hover:bg-white/25 active:scale-95">
               <ChevronRight className="h-5 w-5" />
             </div>
           </button>
