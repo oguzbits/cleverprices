@@ -6,7 +6,6 @@ import { findProductSlugByAsinSuffix } from "@/lib/product-registry";
 import {
   getAllProductSlugs,
   getProductBySlug,
-  getSimilarProducts,
 } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
@@ -146,7 +145,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   try {
     // 1. Fetch essential DB data (Lightning Fast)
-    const product = await getProductBySlug(slug);
+    const product = await getProductBySlug(slug, false, true);
 
     if (!product) {
       const newSlug = await findProductSlugByAsinSuffix(slug);
@@ -175,24 +174,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
       process.env.CI === "1" ||
       process.env.NEXT_PHASE === "phase-production-build";
 
-    // 3. Fetch similar products (Cached/Fast)
-    const similarProducts = await getSimilarProducts(product, 12, countryCode);
-
-    // Strip heavy data for cleaner RSC payload
-    const liteSimilarProducts = similarProducts.map((p) => ({
-      ...p,
-      specifications: {},
-      features: [],
-      priceHistory: [],
-    }));
-
     // 4. Render immediately!
     return (
       <IdealoProductPage
         product={product}
         countryCode={countryCode}
         selectedCondition={condition as "new" | "used"}
-        similarProducts={liteSimilarProducts}
       />
     );
   } catch (error: any) {

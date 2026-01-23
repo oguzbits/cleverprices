@@ -15,6 +15,7 @@ import {
 } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
 import { Product } from "@/lib/product-registry";
+import { getSimilarProducts } from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { isProductBestseller } from "@/lib/utils/products";
@@ -23,11 +24,11 @@ import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import React, { Suspense } from "react";
+import { IdealoLivePrice, IdealoLivePriceSkeleton } from "./IdealoLivePrice";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import {
-  IdealoLivePrice,
-  IdealoLivePriceSkeleton,
   IdealoProductOffers,
+  IdealoProductOffersSkeleton,
 } from "./IdealoProductOffers";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
@@ -37,14 +38,12 @@ interface IdealoProductPageProps {
   product: Product;
   countryCode: CountryCode;
   selectedCondition?: "new" | "used";
-  similarProducts?: Product[];
 }
 
 export function IdealoProductPage({
   product,
   countryCode,
   selectedCondition = "new",
-  similarProducts = [],
 }: IdealoProductPageProps) {
   const category = getCategoryBySlug(product.category);
 
@@ -128,8 +127,9 @@ export function IdealoProductPage({
                       }
                     >
                       <IdealoLivePrice
-                        product={product}
+                        productId={product.id!}
                         countryCode={countryCode}
+                        initialPrice={product.prices[countryCode]}
                         className="text-[28px] font-black text-[#2d2d2d]"
                       />
                     </Suspense>
@@ -252,8 +252,9 @@ export function IdealoProductPage({
                         }
                       >
                         <IdealoLivePrice
-                          product={product}
+                          productId={product.id!}
                           countryCode={countryCode}
+                          initialPrice={product.prices[countryCode]}
                         />
                       </Suspense>
                     </div>
@@ -316,7 +317,6 @@ export function IdealoProductPage({
                 >
                   <CachedSidebarSimilarProducts
                     product={product}
-                    similarProducts={similarProducts.slice(0, 5)}
                     countryCode={countryCode}
                   />
                 </Suspense>
@@ -324,11 +324,16 @@ export function IdealoProductPage({
             </aside>
 
             {/* Offers Section (DB only) */}
-            <IdealoProductOffers
-              product={product}
-              countryCode={countryCode}
-              selectedCondition={selectedCondition}
-            />
+            <ComponentErrorBoundary name="ProductOffers">
+              <Suspense fallback={<IdealoProductOffersSkeleton />}>
+                <IdealoProductOffers
+                  product={product}
+                  productId={product.id!}
+                  countryCode={countryCode}
+                  selectedCondition={selectedCondition}
+                />
+              </Suspense>
+            </ComponentErrorBoundary>
           </div>
 
           {/* Specifications Table (Bottom) */}
@@ -353,7 +358,7 @@ export function IdealoProductPage({
             >
               <LazySection placeholderHeight="400px" rootMargin="0px">
                 <CachedSimilarCarousel
-                  similarProducts={similarProducts}
+                  product={product}
                   countryCode={countryCode}
                 />
               </LazySection>
@@ -374,15 +379,16 @@ export function IdealoProductPage({
 
 async function CachedSidebarSimilarProducts({
   product,
-  similarProducts,
   countryCode,
 }: {
   product: Product;
-  similarProducts: Product[];
   countryCode: CountryCode;
 }) {
   "use cache";
-  cacheLife("fast");
+  cacheLife("product");
+
+  // Fetch similar products internally for streaming
+  const similarProducts = await getSimilarProducts(product, 5, countryCode);
   return (
     <section
       id="recommendedProducts"
@@ -437,14 +443,17 @@ async function CachedSpecifications({ product }: { product: Product }) {
 }
 
 async function CachedSimilarCarousel({
-  similarProducts,
+  product,
   countryCode,
 }: {
-  similarProducts: Product[];
+  product: Product;
   countryCode: CountryCode;
 }) {
   "use cache";
-  cacheLife("fast");
+  cacheLife("product");
+
+  // Fetch similar products internally for streaming
+  const similarProducts = await getSimilarProducts(product, 12, countryCode);
   return (
     <div className="bg-secondary -mx-4 mt-12 px-4 py-8">
       <div className="mx-auto max-w-[1280px]">

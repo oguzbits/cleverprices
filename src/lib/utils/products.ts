@@ -155,6 +155,7 @@ export function adaptToUIModel(
   const displayUnit = categoryConfig?.unitType || p.capacityUnit;
 
   return {
+    id: p.id,
     asin,
     slug: p.slug, // Add slug for internal navigation
     title,

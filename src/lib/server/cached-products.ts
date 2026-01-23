@@ -142,11 +142,12 @@ export async function getDiverseMostPopular(
 export async function getProductBySlug(
   slug: string,
   includeHistory: boolean = false,
+  skipLiveMerge: boolean = false,
 ): Promise<Product | undefined> {
   const product = await getCachedProductBySlug(slug, includeHistory);
-  if (!product) return undefined;
+  if (!product || skipLiveMerge) return product;
 
-  const merged = await mergeLivePrices([product], "de"); // Default to 'de' for now or detect from product
+  const merged = await mergeLivePrices([product], "de");
   return merged[0];
 }
 

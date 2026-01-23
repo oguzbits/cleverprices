@@ -4,9 +4,15 @@ import { formatCurrency } from "@/lib/utils/formatting";
 import { Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { IdealoStarRating } from "./category/IdealoStarRating";
+import {
+  IdealoLivePrice,
+  IdealoLivePriceSkeleton,
+} from "./product/IdealoLivePrice";
 
 export interface ProductCardProps {
+  id?: number; // DB ID for live price fetching
   title: string;
   price: number;
   currency: string;
@@ -24,6 +30,7 @@ export interface ProductCardProps {
 }
 
 export function ProductCard({
+  id,
   title,
   price,
   currency,
@@ -120,14 +127,29 @@ export function ProductCard({
           )}
 
           {/* Price - "ab" prefix with ORANGE price like Idealo */}
-          <div className="flex items-baseline gap-1">
-            <span className="text-[12px] font-semibold text-zinc-500">ab</span>
-            <span className="text-[18px] font-bold text-[#f97316]">
-              {formatCurrency(price, countryCode)}
-            </span>
-          </div>
+          <Suspense
+            fallback={<IdealoLivePriceSkeleton className="h-[27px] w-24" />}
+          >
+            {id ? (
+              <IdealoLivePrice
+                productId={id}
+                countryCode={countryCode as any}
+                initialPrice={price}
+                className="text-[18px] font-bold text-[#f97316]"
+                showAb={true}
+              />
+            ) : (
+              <div className="flex items-baseline gap-1">
+                <span className="text-[12px] font-semibold text-zinc-500">
+                  ab
+                </span>
+                <span className="text-[18px] font-bold text-[#f97316]">
+                  {formatCurrency(price, countryCode)}
+                </span>
+              </div>
+            )}
+          </Suspense>
         </div>
-        {/* Produktdetails link at bottom - blue link like Idealo */}
         <div className="mt-2 flex items-center gap-0.5 text-[11px] font-semibold text-[#0066cc]">
           <span>Produktdetails</span>
         </div>

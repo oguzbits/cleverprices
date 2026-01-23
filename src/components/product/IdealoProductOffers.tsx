@@ -6,37 +6,23 @@ import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
 import type { ProductOffer } from "@/lib/data-sources";
 import type { Product } from "@/lib/product-registry";
-import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Star } from "lucide-react";
 
+import { getLivePriceForProduct } from "@/lib/server/live-data";
+
 interface OffersListProps {
   product: Product;
+  productId: number; // Added to avoid needing the full product object in some cases
   countryCode: CountryCode;
   selectedCondition?: "new" | "used";
+  initialPrice?: number; // Pass the cached price as fallback
 }
 
 /**
  * Component for the "Above the Fold" price tag.
- * Shows a skeleton instead of outdated DB prices.
+ * Fetches fresh price and shows initial price as fallback/during revalidation.
  */
-export async function IdealoLivePrice({
-  product,
-  countryCode,
-  className = "text-[15px] font-extrabold text-[#2d2d2d]",
-}: OffersListProps & { className?: string }) {
-  const bestPrice = product.prices[countryCode];
-
-  return <LegalPrice price={bestPrice} priceClassName={className} />;
-}
-
-export function IdealoLivePriceSkeleton({
-  className = "h-5 w-16",
-}: {
-  className?: string;
-}) {
-  return <div className={cn("animate-pulse rounded bg-gray-200", className)} />;
-}
 
 /**
  * Streaming component for Product Offers.
@@ -48,10 +34,14 @@ export async function IdealoProductOffers({
   selectedCondition = "new",
 }: OffersListProps) {
   const countryConfig = getCountryByCode(countryCode);
+
+  // Fetch fresh price for the offers list
+  const live = await getLivePriceForProduct(product.id!, countryCode);
+
   const targetPrice =
     selectedCondition === "used"
-      ? product.usedPrices?.[countryCode]
-      : product.prices[countryCode];
+      ? (live?.usedPrice ?? product.usedPrices?.[countryCode])
+      : (live?.price ?? product.prices[countryCode]);
 
   // In DB-only mode, we generate a single offer from the persistent price
   const offers: ProductOffer[] = [];

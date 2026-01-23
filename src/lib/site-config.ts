@@ -110,8 +110,8 @@ export const LOGO = {
  * while accounting for build/caching delays.
  */
 export const AMAZON_TOS_LIMIT_SECONDS = 86400; // 24 hours
-export const CATEGORY_REVALIDATE_SECONDS = 43200; // 12 hours (Global category lists)
-export const PRODUCT_REVALIDATE_SECONDS = 43200; // 12 hours (Deep product details)
+export const CATEGORY_REVALIDATE_SECONDS = 3600; // 1 hour (Global category lists)
+export const PRODUCT_REVALIDATE_SECONDS = 3600; // 1 hour (Deep product details)
 export const STATIC_REVALIDATE_SECONDS = 86400; // 24 hours (Legal, Blog lists, Static pages)
 
 // =============================================================================

@@ -22,7 +22,6 @@ import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-import { LegalPrice } from "@/components/ui/LegalPrice";
 import { type LeanProduct } from "@/lib/types";
 import {
   formatCurrency,
@@ -30,6 +29,11 @@ import {
   formatTechText,
 } from "@/lib/utils/formatting";
 import { isProductBestseller } from "@/lib/utils/products";
+import { Suspense } from "react";
+import {
+  IdealoLivePrice,
+  IdealoLivePriceSkeleton,
+} from "../product/IdealoLivePrice";
 import { IdealoStarRating } from "./IdealoStarRating";
 
 interface IdealoGridCardProps {
@@ -169,11 +173,17 @@ export function IdealoGridCard({
                 {formatCurrency(product.listPrice, countryCode)}
               </div>
             )}
-            <LegalPrice
-              price={product.price}
-              showAb
-              priceClassName="text-[20px] text-[#f97316]"
-            />
+            <Suspense
+              fallback={<IdealoLivePriceSkeleton className="h-[30px] w-24" />}
+            >
+              <IdealoLivePrice
+                productId={product.id!}
+                countryCode={countryCode}
+                initialPrice={product.price}
+                showAb
+                className="text-[20px] text-[#f97316]"
+              />
+            </Suspense>
           </div>
 
           {/* ============================================ */}
