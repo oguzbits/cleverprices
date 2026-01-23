@@ -16,8 +16,8 @@ export function Navbar({ country: propCountry }: { country?: string }) {
             <Logo />
           </div>
 
-          {/* Center Search - Only on Desktop - Absolute positioned within relative parent */}
-          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex">
+          {/* Center Search - Only on Desktop (840px+) */}
+          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center min-[840px]:flex">
             <div className="pointer-events-auto">
               <SearchButton mode="desktop" />
             </div>
@@ -25,9 +25,18 @@ export function Navbar({ country: propCountry }: { country?: string }) {
 
           {/* Right Controls */}
           <div className="flex shrink-0 items-center gap-3 sm:gap-6">
-            <SearchButton mode="mobile" />
+            <SearchButton mode="mobile" className="hidden" />
           </div>
         </div>
+
+        {/* Second row search - Visible below 840px */}
+        <div className="mx-auto w-full max-w-[1280px] px-4 pb-4 min-[840px]:hidden">
+          <SearchButton
+            mode="desktop"
+            className="flex w-full max-w-none shadow-sm sm:mx-auto sm:w-[500px]"
+          />
+        </div>
+
         <SearchManager />
       </header>
     </>
