@@ -28,14 +28,54 @@ async function fetchLiteDb() {
     return;
   }
 
-  // Check if file exists but always re-download to ensure freshness
-  if (fs.existsSync(LITE_DB_PATH)) {
-    console.log(
-      "[Prebuild] Existing lite.db found, overwriting with fresh copy...",
-    );
-  }
-
   try {
+    // 1. Check Remote Last-Modified via HEAD request
+    let shouldDownload = true;
+    let remoteLastModified: Date | null = null;
+
+    try {
+      const headResponse = await fetch(BLOB_URL, {
+        method: "HEAD",
+        headers: {
+          ...(process.env.BLOB_READ_WRITE_TOKEN && {
+            Authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`,
+          }),
+        },
+      });
+
+      if (headResponse.ok) {
+        const lastModHeader = headResponse.headers.get("last-modified");
+        if (lastModHeader) {
+          remoteLastModified = new Date(lastModHeader);
+
+          // 2. Compare with Local File (if exists)
+          if (fs.existsSync(LITE_DB_PATH)) {
+            const stats = fs.statSync(LITE_DB_PATH);
+            // Add a small buffer (2s) to avoid clock skew issues
+            if (stats.mtime.getTime() > remoteLastModified.getTime() - 2000) {
+              console.log(
+                `[Prebuild] Local cache is fresh (Remote: ${remoteLastModified.toISOString()}). Skipping download.`,
+              );
+              shouldDownload = false;
+            } else {
+              console.log(
+                `[Prebuild] Remote is newer (${remoteLastModified.toISOString()}). Downloading...`,
+              );
+            }
+          }
+        }
+      }
+    } catch (headError) {
+      console.warn(
+        "[Prebuild] Failed to check HEAD, falling back to download for safety.",
+      );
+    }
+
+    if (!shouldDownload) {
+      return;
+    }
+
+    // 3. Download if needed
     const response = await fetch(BLOB_URL, {
       headers: {
         // Vercel Blob public URLs don't need auth, but private ones do
