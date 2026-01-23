@@ -119,7 +119,6 @@ export function ParentCategoryView({
                     : undefined,
                   isBestseller: isProductBestseller(p as any),
                   variationAttributes: p.variationAttributes,
-                  badgeText: p.savings && p.savings > 0 ? undefined : "Deal",
                 }))}
               />
             </section>

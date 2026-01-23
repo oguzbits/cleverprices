@@ -9,6 +9,7 @@
 import { getChildCategories, type CategorySlug } from "@/lib/categories";
 import { getProductsByCategory, type Product } from "@/lib/product-registry";
 import { mergeLivePrices } from "@/lib/server/live-data";
+import { calculateDesirabilityScore } from "@/lib/server/scoring";
 import { calculateProductDiscount } from "@/lib/utils/products";
 
 /**
@@ -16,11 +17,33 @@ import { calculateProductDiscount } from "@/lib/utils/products";
  * "Bestseller" is determined by having the most offers/price availability.
  * Ensures brand diversity by limiting max products per brand.
  */
+/**
+ * Generate a deduplication key to identify variants even if parentAsin is missing.
+ * Strips common variant modifiers (colors, capacities, etc.)
+ */
+function getProductGroupKey(p: Product): string {
+  if (p.parentAsin) return p.parentAsin;
+
+  const title = (p.title || "").toLowerCase();
+  // Strip common variant noise
+  return title
+    .split(/[\(\)\[\]\|,\-]/)[0] // Take first part before delimiters
+    .replace(
+      /\b(schwarz|weiß|grau|blau|rot|grün|gelb|rosa|gold|silber|black|white|grey|gray|blue|red|green|yellow|pink|gold|silver)\b/g,
+      "",
+    )
+    .replace(/\b\d+\s?(gb|tb|mb|gb|tb|core|kerne|zoll|inch)\b/g, "")
+    .replace(/\b(v[23456]|gen\s?\d+|202\d)\b/g, "")
+    .trim()
+    .substring(0, 30); // Use first 30 chars of cleaned title as group ID
+}
+
 export async function getCategoryBestsellers(
   parentSlug: CategorySlug,
   limit: number = 12,
   countryCode: string = "de",
   maxPerBrand: number = 2, // Limit products per brand for diversity
+  excludeIds: number[] = [],
 ): Promise<Product[]> {
   const childCategories = getChildCategories(parentSlug);
 
@@ -34,39 +57,47 @@ export async function getCategoryBestsellers(
   // Merge live prices to ensure accurate display
   const allProducts = await mergeLivePrices(allProductsRaw, countryCode);
 
-  // Filter products with valid prices and sort by "popularity" (price availability as proxy)
+  // Filter products with valid prices and sort by "popularity"
   const validProducts = allProducts.filter(
-    (p) => p.prices[countryCode] !== undefined && p.prices[countryCode] > 0,
+    (p) =>
+      p.prices[countryCode] !== undefined &&
+      p.prices[countryCode] > 0 &&
+      !excludeIds.includes(p.id!),
   );
 
-  // Sort by number of price entries (more markets = more popular)
-  // Then by salesRank if available, then by alphabetical brand
+  // Sort by advanced desirability score
   const sorted = validProducts.sort((a, b) => {
-    const priceCountA = Object.keys(a.prices).length;
-    const priceCountB = Object.keys(b.prices).length;
-    if (priceCountB !== priceCountA) {
-      return priceCountB - priceCountA;
-    }
-    // Prefer products with better sales rank
-    const rankA = a.salesRank ?? 999999;
-    const rankB = b.salesRank ?? 999999;
-    if (rankA !== rankB) {
-      return rankA - rankB;
-    }
-    return a.brand.localeCompare(b.brand);
+    const scoreA = calculateDesirabilityScore(
+      a,
+      a.prices[countryCode] || 0,
+      a.title,
+      "landing",
+    ).popularityScore;
+    const scoreB = calculateDesirabilityScore(
+      b,
+      b.prices[countryCode] || 0,
+      b.title,
+      "landing",
+    ).popularityScore;
+    return scoreB - scoreA;
   });
 
-  // Apply brand diversity: limit max products per brand
+  // Apply brand diversity and variant deduplication
   const brandCounts = new Map<string, number>();
+  const seenGroups = new Set<string>();
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
     const brand = product.brand.toLowerCase();
     const currentCount = brandCounts.get(brand) || 0;
+    const groupKey = getProductGroupKey(product);
+
+    if (seenGroups.has(groupKey)) continue;
 
     if (currentCount < maxPerBrand) {
       diverseProducts.push(product);
       brandCounts.set(brand, currentCount + 1);
+      seenGroups.add(groupKey);
 
       if (diverseProducts.length >= limit) {
         break;
@@ -76,16 +107,17 @@ export async function getCategoryBestsellers(
 
   return diverseProducts;
 }
+
 /**
  * Get newest products in a parent category.
- * Filters for quality products (not cheap accessories).
- * Prioritizes products with ratings and from known brands.
+ * Prioritizes recently added items from reputable brands.
  */
 export async function getCategoryNewProducts(
   parentSlug: CategorySlug,
   limit: number = 8,
   countryCode: string = "de",
   maxPerBrand: number = 2, // Limit products per brand for diversity
+  excludeIds: number[] = [],
 ): Promise<Product[]> {
   const childCategories = getChildCategories(parentSlug);
 
@@ -99,56 +131,55 @@ export async function getCategoryNewProducts(
   // Merge live prices to ensure accurate display
   const allProducts = await mergeLivePrices(allProductsRaw, countryCode);
 
-  // Filter for quality products:
-  // 1. Valid price in country
-  // 2. Minimum price threshold (filter out cheap accessories)
-  // 3. Prefer products with ratings
+  // Filter for quality products
   const MIN_PRICE = 30; // Filter out €5-€20 accessories
   const validProducts = allProducts.filter(
     (p) =>
-      p.prices[countryCode] !== undefined && p.prices[countryCode] >= MIN_PRICE,
+      p.prices[countryCode] !== undefined &&
+      p.prices[countryCode] >= MIN_PRICE &&
+      !excludeIds.includes(p.id!),
   );
 
-  // Sort by quality signals: rating, then createdAt, then price
+  // Sort by Recency-first composite score
   const sorted = validProducts.sort((a, b) => {
-    // First: prefer products with ratings (rated > unrated)
-    const hasRatingA = (a.rating ?? 0) > 0 ? 1 : 0;
-    const hasRatingB = (b.rating ?? 0) > 0 ? 1 : 0;
-    if (hasRatingB !== hasRatingA) {
-      return hasRatingB - hasRatingA;
-    }
-
-    // Second: higher ratings first
-    const ratingA = a.rating ?? 0;
-    const ratingB = b.rating ?? 0;
-    if (ratingB !== ratingA) {
-      return ratingB - ratingA;
-    }
-
-    // Third: more reviews = more trustworthy
-    const reviewsA = a.reviewCount ?? 0;
-    const reviewsB = b.reviewCount ?? 0;
-    if (reviewsB !== reviewsA) {
-      return reviewsB - reviewsA;
-    }
-
-    // Fourth: by createdAt (newest first)
     const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return dateB - dateA;
+
+    if (Math.abs(dateB - dateA) > 1000 * 60 * 60 * 24 * 7) {
+      return dateB - dateA;
+    }
+
+    const scoreA = calculateDesirabilityScore(
+      a,
+      a.prices[countryCode] || 0,
+      a.title,
+      "landing",
+    ).popularityScore;
+    const scoreB = calculateDesirabilityScore(
+      b,
+      b.prices[countryCode] || 0,
+      b.title,
+      "landing",
+    ).popularityScore;
+    return scoreB - scoreA;
   });
 
-  // Apply brand diversity: limit max products per brand
+  // Apply brand diversity and variant deduplication
   const brandCounts = new Map<string, number>();
+  const seenGroups = new Set<string>();
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
     const brand = product.brand.toLowerCase();
     const currentCount = brandCounts.get(brand) || 0;
+    const groupKey = getProductGroupKey(product);
+
+    if (seenGroups.has(groupKey)) continue;
 
     if (currentCount < maxPerBrand) {
       diverseProducts.push(product);
       brandCounts.set(brand, currentCount + 1);
+      seenGroups.add(groupKey);
 
       if (diverseProducts.length >= limit) {
         break;
@@ -158,16 +189,17 @@ export async function getCategoryNewProducts(
 
   return diverseProducts;
 }
+
 /**
  * Get best deal products in a parent category.
- * "Deal" = products with actual savings (current price < list price or avg price).
- * Filters for quality products (not cheap accessories).
+ * STRICTLY filters for products with actual savings (>5% vs 90d avg).
  */
 export async function getCategoryDeals(
   parentSlug: CategorySlug,
   limit: number = 8,
   countryCode: string = "de",
   maxPerBrand: number = 2, // Limit products per brand for diversity
+  excludeIds: number[] = [],
 ): Promise<Product[]> {
   const childCategories = getChildCategories(parentSlug);
 
@@ -181,69 +213,58 @@ export async function getCategoryDeals(
   // Merge live prices to ensure accurate display
   const allProducts = await mergeLivePrices(allProductsRaw, countryCode);
 
-  // Filter for quality deal products:
-  // 1. Valid price in country
-  // 2. Minimum price threshold (filter out cheap accessories)
-  // 3. Has some indicator of being a "deal" (actual savings vs 90-day avg, or high quality)
-  const MIN_PRICE = 30; // Filter out cheap accessories
+  // Filter for genuine deal products
+  const MIN_PRICE = 30;
   const validProducts = allProducts.filter((p) => {
     const price = p.prices[countryCode];
     if (price === undefined || price < MIN_PRICE) return false;
+    if (excludeIds.includes(p.id!)) return false;
 
-    // Standardized discount calculation (comparing current price vs 90-day avg)
     const discountRate = calculateProductDiscount(p, countryCode);
-    const hasSavings = discountRate > 5; // At least 5% discount vs 90-day avg
-
-    const hasGoodRating = (p.rating ?? 0) >= 4;
-    const hasReviews = (p.reviewCount ?? 0) > 10;
-
-    // Must have at least one quality signal
-    return hasSavings || hasGoodRating || hasReviews;
+    return discountRate >= 5;
   });
 
-  // Sort by deal quality: discount %, then rating, then price
+  // Sort by Deal Magnitude x Brand Power
   const sorted = validProducts.sort((a, b) => {
-    // First: actual discount rate vs 90-day avg
     const discountA = calculateProductDiscount(a, countryCode);
     const discountB = calculateProductDiscount(b, countryCode);
-    if (discountB !== discountA) {
-      return discountB - discountA;
-    }
 
-    // Second: prefer products with ratings
-    const ratingA = a.rating ?? 0;
-    const ratingB = b.rating ?? 0;
-    if (ratingB !== ratingA) {
-      return ratingB - ratingA;
-    }
+    const scoreA = calculateDesirabilityScore(
+      a,
+      a.prices[countryCode] || 0,
+      a.title,
+      "landing",
+    ).popularityScore;
+    const scoreB = calculateDesirabilityScore(
+      b,
+      b.prices[countryCode] || 0,
+      b.title,
+      "landing",
+    ).popularityScore;
 
-    // Third: more reviews = more trustworthy
-    const reviewsA = a.reviewCount ?? 0;
-    const reviewsB = b.reviewCount ?? 0;
-    if (reviewsB !== reviewsA) {
-      return reviewsB - reviewsA;
-    }
+    const finalA = scoreA * (discountA / 100);
+    const finalB = scoreB * (discountB / 100);
 
-    // Fourth: lower price (for tie-breaking)
-    return (
-      (a.prices[countryCode] || 999999) - (b.prices[countryCode] || 999999)
-    );
+    return finalB - finalA;
   });
 
-  // Apply brand diversity: limit max products per brand
+  // Apply brand diversity and variant deduplication
   const brandCounts = new Map<string, number>();
+  const seenGroups = new Set<string>();
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
     const brand = product.brand.toLowerCase();
     const currentCount = brandCounts.get(brand) || 0;
+    const groupKey = getProductGroupKey(product);
+
+    if (seenGroups.has(groupKey)) continue;
 
     if (currentCount < maxPerBrand) {
-      // Attach calculated savings to the product for UI display (fraction 0-1)
       product.savings = calculateProductDiscount(product, countryCode) / 100;
-
       diverseProducts.push(product);
       brandCounts.set(brand, currentCount + 1);
+      seenGroups.add(groupKey);
 
       if (diverseProducts.length >= limit) {
         break;

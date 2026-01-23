@@ -87,29 +87,37 @@ export default async function DedicatedCategoryPage({
 
     // If it's a hub (has children), show the parent view with product sections
     if (childCategories.length > 0) {
-      // Fetch products for internal linking sections (in parallel)
-      const [bestsellers, newProducts, deals] = await Promise.all([
-        getCategoryBestsellers(
-          categorySlug as CategorySlug,
-          24,
-          DEFAULT_COUNTRY,
-        ),
-        getCategoryNewProducts(
-          categorySlug as CategorySlug,
-          8,
-          DEFAULT_COUNTRY,
-        ),
-        getCategoryDeals(categorySlug as CategorySlug, 8, DEFAULT_COUNTRY),
-      ]).catch((err) => {
-        console.error(
-          `[DB Error] Parent category products ${categorySlug}:`,
-          err,
-        );
-        return [[], [], []]; // Fallback to empty lists if DB fails
-      });
+      // Fetch products for internal linking sections (Sequentially to allow for exclusion)
+      const bestsellers = await getCategoryBestsellers(
+        categorySlug as CategorySlug,
+        24,
+        DEFAULT_COUNTRY,
+      ).catch(() => []);
+
+      const excludeForNew = bestsellers.map((p: any) => p.id).filter(Boolean);
+      const newProducts = await getCategoryNewProducts(
+        categorySlug as CategorySlug,
+        8,
+        DEFAULT_COUNTRY,
+        2,
+        excludeForNew,
+      ).catch(() => []);
+
+      const excludeForDeals = [
+        ...excludeForNew,
+        ...newProducts.map((p: any) => p.id).filter(Boolean),
+      ];
+      const deals = await getCategoryDeals(
+        categorySlug as CategorySlug,
+        8,
+        DEFAULT_COUNTRY,
+        2,
+        excludeForDeals,
+      ).catch(() => []);
 
       // Transform products to LeanProduct format for consistent card styling
       const transformProduct = (p: any) => ({
+        id: p.id,
         slug: p.slug,
         title: p.title,
         image: p.image,

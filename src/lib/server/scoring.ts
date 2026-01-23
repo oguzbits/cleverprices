@@ -41,6 +41,15 @@ const PRESTIGE_BRANDS = [
   "playstation",
   "xbox",
   "lego",
+  "beats",
+  "teufel",
+  "razer",
+  "alienware",
+  "bowers & wilkins",
+  "sonos",
+  "marshall",
+  "bang & olufsen",
+  "leica",
 ];
 
 const ESTABLISHED_BRANDS = [
@@ -72,8 +81,18 @@ const ESTABLISHED_BRANDS = [
   "iiyama",
   "benq",
   "dji",
-  "sonos",
-  "marshall",
+  "oneplus",
+  "vivo",
+  "honor",
+  "redmagic",
+  "soundcore",
+  "linsoul",
+  "oppo",
+  "cmf by nothing",
+  "nothing phone",
+  "motorola mobility",
+  "elgato",
+  "evga",
 ];
 
 const BUDGET_BRANDS = [
@@ -89,6 +108,22 @@ const BUDGET_BRANDS = [
   "umidigi",
   "alcatel",
   "cubot",
+  "jumper",
+  "jodabook",
+  "acemagic",
+  "ruzava",
+  "pryloxen",
+  "jlab",
+  "notodd",
+  "morostron",
+  "fsjun",
+  "baolubao",
+  "iowodo",
+  "btootos",
+  "jumper laptop",
+  "fookis",
+  "generic",
+  "unknown",
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -177,9 +212,12 @@ export function calculateDesirabilityScore(
     titleLower.includes("renewed");
   if (isSecondHand) penaltyScore -= 5000;
 
-  // Brand Penalty
-  if (isBudget) penaltyScore -= context === "landing" ? 15000 : 5000;
-  if (isNoName && price < 50) penaltyScore -= 10000; // Suppress cheap generic bulk
+  // Brand Penalty (Aggressive on hub pages to ensure premium feel)
+  if (isBudget) penaltyScore -= context === "landing" ? 30000 : 5000;
+  if (isNoName && price < 200)
+    penaltyScore -= context === "landing" ? 20000 : 10000;
+  if (isNoName && price >= 200)
+    penaltyScore -= context === "landing" ? 10000 : 0;
 
   // --- COMPOSITE CALCULATION ---
   const totalScore =

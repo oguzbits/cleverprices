@@ -108,6 +108,7 @@ export interface Product {
   priceAvg90?: Record<string, number>;
   monthlySold?: number;
   mpn?: string;
+  popularityScore?: number;
   createdAt?: string; // ISO string
   savings?: number; // Calculated savings percentage (0-1)
   listPrice?: Record<string, number>;
