@@ -24,7 +24,8 @@ echo "📊 Database Size Comparison:"
 ls -lh data/cleverprices.db data/cleverprices-lite.db
 
 # 5. Git Stage
-echo "git add data/cleverprices-lite.db..."
-git add -f data/cleverprices-lite.db
+# echo "git add data/cleverprices-lite.db..."
+# git add -f data/cleverprices-lite.db
+echo "⚠️ Skipping git add for lite DB (managed via Vercel Blob)"
 
 echo "✅ Ready to commit and push!"
