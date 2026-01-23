@@ -28,18 +28,11 @@ async function fetchLiteDb() {
     return;
   }
 
-  // Skip if file already exists (e.g., from a previous build cache)
+  // Check if file exists but always re-download to ensure freshness
   if (fs.existsSync(LITE_DB_PATH)) {
-    const stats = fs.statSync(LITE_DB_PATH);
-    const ageHours = (Date.now() - stats.mtimeMs) / (1000 * 60 * 60);
-
-    // If the file is less than 6 hours old, skip re-downloading
-    if (ageHours < 6) {
-      console.log(
-        `[Prebuild] Existing lite.db is ${ageHours.toFixed(1)}h old, skipping fetch.`,
-      );
-      return;
-    }
+    console.log(
+      "[Prebuild] Existing lite.db found, overwriting with fresh copy...",
+    );
   }
 
   try {
