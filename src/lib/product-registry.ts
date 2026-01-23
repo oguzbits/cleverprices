@@ -110,6 +110,7 @@ export interface Product {
   mpn?: string;
   popularityScore?: number;
   createdAt?: string; // ISO string
+  releaseDate?: string; // Extracted from specs or metadata
   savings?: number; // Calculated savings percentage (0-1)
   listPrice?: Record<string, number>;
   pricesPerUnit?: Record<string, number>;
@@ -195,6 +196,12 @@ export function mapDbProduct(
   const rawSpecs = p.specifications ? JSON.parse(p.specifications) : {};
   let socket = rawSpecs.Socket || rawSpecs["Socket-Typ"];
   let cores = rawSpecs.Cores || rawSpecs.Kerne;
+  let releaseDate =
+    rawSpecs["Release Date"] ||
+    rawSpecs["Erscheinungsdatum"] ||
+    rawSpecs["Markteinführung"] ||
+    rawSpecs["Modelljahr"] ||
+    rawSpecs["Model Year"];
 
   // CPU specific title parsing fallback
   if (p.category === "cpu" || p.category === "motherboards") {
@@ -255,6 +262,7 @@ export function mapDbProduct(
     pricesPerUnit: unitPriceObj,
     usedPrices: usedPricesObj,
     createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
+    releaseDate,
   };
 
   return calculateProductMetrics(item) as Product;
@@ -703,10 +711,10 @@ const getCachedDeals = unstable_cache(
       mapDbProduct(r.product as DbProduct, [r.price], [], true),
     );
   },
-  ["best-deals-v11"],
+  ["best-deals-v12"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "deals", "v11"],
+    tags: ["products", "deals", "v12"],
   },
 );
 
@@ -785,10 +793,10 @@ const getCachedPopular = unstable_cache(
       )
       .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
-  ["popular-deals-v11"],
+  ["popular-deals-v12"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "v10"],
+    tags: ["products", "popular", "v12"],
   },
 );
 
@@ -926,10 +934,10 @@ const getCachedNew = unstable_cache(
       )
       .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
-  ["new-arrivals-v11"],
+  ["new-arrivals-v12"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "new", "v10"],
+    tags: ["products", "new", "v12"],
   },
 );
 

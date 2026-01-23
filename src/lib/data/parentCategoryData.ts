@@ -19,24 +19,46 @@ import { calculateProductDiscount } from "@/lib/utils/products";
  */
 /**
  * Generate a deduplication key to identify variants even if parentAsin is missing.
- * Strips common variant modifiers (colors, capacities, etc.)
+ * Strips common variant modifiers (colors, capacities, etc.) and normalizes gaming consoles.
  */
 function getProductGroupKey(p: Product): string {
   if (p.parentAsin) return p.parentAsin;
 
-  const title = (p.title || "").toLowerCase();
-  // Strip common variant noise
+  let title = (p.title || "").toLowerCase();
+
+  // 1. Aggressive Console Normalization
+  if (title.includes("playstation 5") || title.includes("ps5")) return "ps5";
+  if (title.includes("playstation 4") || title.includes("ps4")) return "ps4";
+  if (title.includes("xbox series x")) return "xbox series x";
+  if (title.includes("xbox series s")) return "xbox series s";
+  if (title.includes("nintendo switch")) return "switch";
+
+  // 2. Strip Brand Prefixes (e.g. "Sony PlayStation..." -> "PlayStation...")
+  const brand = (p.brand || "").toLowerCase();
+  if (brand && title.startsWith(brand)) {
+    title = title.substring(brand.length).trim();
+  }
+
+  // 3. Strip common variant noise
+  // Remove technical/marketing filler words (but keep "Pro", "Max", "Ultra" as they distinguish models)
   return title
     .split(/[\(\)\[\]\|,\-]/)[0] // Take first part before delimiters
     .replace(
       /\b(schwarz|weiß|grau|blau|rot|grün|gelb|rosa|gold|silber|black|white|grey|gray|blue|red|green|yellow|pink|gold|silver)\b/g,
       "",
     )
+    .replace(
+      /\b(kompakt|compact|wireless|kabellos|bluetooth|trueplay|smart|edition|subwoofer|lautsprecher|speaker|soundbar|portable|tragbar)\b/g,
+      "",
+    )
     .replace(/\b\d+\s?(gb|tb|mb|gb|tb|core|kerne|zoll|inch)\b/g, "")
     .replace(/\b(v[23456]|gen\s?\d+|202\d)\b/g, "")
     .trim()
+    .replace(/\s+/g, " ") // Collapse multiple spaces
     .substring(0, 30); // Use first 30 chars of cleaned title as group ID
 }
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 export async function getCategoryBestsellers(
   parentSlug: CategorySlug,
@@ -44,6 +66,7 @@ export async function getCategoryBestsellers(
   countryCode: string = "de",
   maxPerBrand: number = 2, // Limit products per brand for diversity
   excludeIds: number[] = [],
+  maxPerCategory: number = 3, // Limit products per sub-category for diversity
 ): Promise<Product[]> {
   const childCategories = getChildCategories(parentSlug);
 
@@ -82,21 +105,25 @@ export async function getCategoryBestsellers(
     return scoreB - scoreA;
   });
 
-  // Apply brand diversity and variant deduplication
+  // Apply brand & category diversity + variant deduplication
   const brandCounts = new Map<string, number>();
+  const categoryCounts = new Map<string, number>();
   const seenGroups = new Set<string>();
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
     const brand = product.brand.toLowerCase();
-    const currentCount = brandCounts.get(brand) || 0;
+    const category = product.category;
+    const currentBrandCount = brandCounts.get(brand) || 0;
+    const currentCatCount = categoryCounts.get(category) || 0;
     const groupKey = getProductGroupKey(product);
 
     if (seenGroups.has(groupKey)) continue;
 
-    if (currentCount < maxPerBrand) {
+    if (currentBrandCount < maxPerBrand && currentCatCount < maxPerCategory) {
       diverseProducts.push(product);
-      brandCounts.set(brand, currentCount + 1);
+      brandCounts.set(brand, currentBrandCount + 1);
+      categoryCounts.set(category, currentCatCount + 1);
       seenGroups.add(groupKey);
 
       if (diverseProducts.length >= limit) {
@@ -118,6 +145,7 @@ export async function getCategoryNewProducts(
   countryCode: string = "de",
   maxPerBrand: number = 2, // Limit products per brand for diversity
   excludeIds: number[] = [],
+  maxPerCategory: number = 2, // Stricter for "New" to avoid "all soundbars"
 ): Promise<Product[]> {
   const childCategories = getChildCategories(parentSlug);
 
@@ -133,19 +161,30 @@ export async function getCategoryNewProducts(
 
   // Filter for quality products
   const MIN_PRICE = 30; // Filter out €5-€20 accessories
-  const validProducts = allProducts.filter(
-    (p) =>
-      p.prices[countryCode] !== undefined &&
-      p.prices[countryCode] >= MIN_PRICE &&
-      !excludeIds.includes(p.id!),
-  );
+  const validProducts = allProducts.filter((p) => {
+    const hasPrice =
+      p.prices[countryCode] !== undefined && p.prices[countryCode] >= MIN_PRICE;
+    const notExcluded = !excludeIds.includes(p.id!);
+
+    // Extract year from title or createdAt
+    const titleMatch = p.title.match(/\b(20[12][0-9])\b/);
+    const yearFromTitle = titleMatch ? parseInt(titleMatch[1]) : 0;
+    const yearFromDate = p.createdAt ? new Date(p.createdAt).getFullYear() : 0;
+    const productYear = Math.max(yearFromTitle, yearFromDate);
+
+    // Hard filter: anything older than 2023 is definitely not "New" in tech
+    const isActuallyOld = productYear > 0 && productYear < CURRENT_YEAR - 1;
+
+    return hasPrice && notExcluded && !isActuallyOld;
+  });
 
   // Sort by Recency-first composite score
   const sorted = validProducts.sort((a, b) => {
     const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
 
-    if (Math.abs(dateB - dateA) > 1000 * 60 * 60 * 24 * 7) {
+    // Primary sort: Date (within 30 days)
+    if (Math.abs(dateB - dateA) > 1000 * 60 * 60 * 24 * 30) {
       return dateB - dateA;
     }
 
@@ -164,21 +203,25 @@ export async function getCategoryNewProducts(
     return scoreB - scoreA;
   });
 
-  // Apply brand diversity and variant deduplication
+  // Apply brand & category diversity + variant deduplication
   const brandCounts = new Map<string, number>();
+  const categoryCounts = new Map<string, number>();
   const seenGroups = new Set<string>();
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
     const brand = product.brand.toLowerCase();
-    const currentCount = brandCounts.get(brand) || 0;
+    const category = product.category;
+    const currentBrandCount = brandCounts.get(brand) || 0;
+    const currentCatCount = categoryCounts.get(category) || 0;
     const groupKey = getProductGroupKey(product);
 
     if (seenGroups.has(groupKey)) continue;
 
-    if (currentCount < maxPerBrand) {
+    if (currentBrandCount < maxPerBrand && currentCatCount < maxPerCategory) {
       diverseProducts.push(product);
-      brandCounts.set(brand, currentCount + 1);
+      brandCounts.set(brand, currentBrandCount + 1);
+      categoryCounts.set(category, currentCatCount + 1);
       seenGroups.add(groupKey);
 
       if (diverseProducts.length >= limit) {
@@ -200,6 +243,7 @@ export async function getCategoryDeals(
   countryCode: string = "de",
   maxPerBrand: number = 2, // Limit products per brand for diversity
   excludeIds: number[] = [],
+  maxPerCategory: number = 3,
 ): Promise<Product[]> {
   const childCategories = getChildCategories(parentSlug);
 
@@ -248,22 +292,26 @@ export async function getCategoryDeals(
     return finalB - finalA;
   });
 
-  // Apply brand diversity and variant deduplication
+  // Apply brand & category diversity + variant deduplication
   const brandCounts = new Map<string, number>();
+  const categoryCounts = new Map<string, number>();
   const seenGroups = new Set<string>();
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
     const brand = product.brand.toLowerCase();
-    const currentCount = brandCounts.get(brand) || 0;
+    const category = product.category;
+    const currentBrandCount = brandCounts.get(brand) || 0;
+    const currentCatCount = categoryCounts.get(category) || 0;
     const groupKey = getProductGroupKey(product);
 
     if (seenGroups.has(groupKey)) continue;
 
-    if (currentCount < maxPerBrand) {
+    if (currentBrandCount < maxPerBrand && currentCatCount < maxPerCategory) {
       product.savings = calculateProductDiscount(product, countryCode) / 100;
       diverseProducts.push(product);
-      brandCounts.set(brand, currentCount + 1);
+      brandCounts.set(brand, currentBrandCount + 1);
+      categoryCounts.set(category, currentCatCount + 1);
       seenGroups.add(groupKey);
 
       if (diverseProducts.length >= limit) {

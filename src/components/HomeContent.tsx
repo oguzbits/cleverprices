@@ -28,18 +28,20 @@ export default async function HomeContent({
   const [rawDeals, rawPopular, rawNew] = await Promise.all([
     getBestDeals(40, countryCode, "New"),
     getDiverseMostPopular(8, countryCode), // Candidates from every category
-    getNewArrivals(50, countryCode, "New"),
+    getNewArrivals(100, countryCode, "New"),
   ]);
 
   // Global duplicate tracker across ALL sections
   const globalSeen = new Set<string>();
   const globalSeenParents = new Set<string>();
+  const globalSeenGroups = new Set<string>();
 
-  // Helper to update seen set
+  // Helper to update seen sets
   const markSeen = (items: any[]) => {
     items.forEach((p) => {
       globalSeen.add(p.slug);
       if (p.parentAsin) globalSeenParents.add(p.parentAsin);
+      if (p.groupKey) globalSeenGroups.add(p.groupKey);
     });
   };
 
@@ -51,6 +53,7 @@ export default async function HomeContent({
     categoryLimit: 1,
     excludeIds: globalSeen,
     excludeParentIds: globalSeenParents,
+    excludeGroupKeys: globalSeenGroups,
   });
   markSeen(heroProducts);
 
@@ -61,6 +64,7 @@ export default async function HomeContent({
     categoryLimit: 1,
     excludeIds: globalSeen,
     excludeParentIds: globalSeenParents,
+    excludeGroupKeys: globalSeenGroups,
   });
   markSeen(bestsellers);
 
@@ -72,6 +76,7 @@ export default async function HomeContent({
     categoryLimit: 2,
     excludeIds: globalSeen,
     excludeParentIds: globalSeenParents,
+    excludeGroupKeys: globalSeenGroups,
   }).map((p) => ({ ...p, badgeText: "Top Deal" }));
   markSeen(deals);
 
@@ -79,9 +84,10 @@ export default async function HomeContent({
   const newArrivals = curateProductList(rawNew, countryCode, {
     maxItems: 12,
     sortBy: "date",
-    categoryLimit: 4,
+    categoryLimit: 2,
     excludeIds: globalSeen,
     excludeParentIds: globalSeenParents,
+    excludeGroupKeys: globalSeenGroups,
   });
 
   return (

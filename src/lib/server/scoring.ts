@@ -124,6 +124,14 @@ const BUDGET_BRANDS = [
   "fookis",
   "generic",
   "unknown",
+  "rulefiss",
+  "poudi",
+  "niuto",
+  "llano",
+  "kuura",
+  "yowhick",
+  "ordtop",
+  "poounur",
 ];
 
 const CURRENT_YEAR = new Date().getFullYear();
