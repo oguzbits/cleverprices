@@ -12,11 +12,18 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
+import { GlobalSchema } from "@/components/seo/GlobalSchema";
+
 // Root layout - minimal wrapper, individual pages/route groups control their own navbar/footer
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <RootLayoutWrapper lang="de">{children}</RootLayoutWrapper>;
+  return (
+    <RootLayoutWrapper lang="de">
+      <GlobalSchema />
+      {children}
+    </RootLayoutWrapper>
+  );
 }

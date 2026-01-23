@@ -11,7 +11,7 @@ export function Footer() {
     >
       <div className="mx-auto max-w-[1280px] px-4 py-10 md:py-14">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Brand Column */}
           <div className="space-y-4">
             <Logo />
@@ -31,6 +31,55 @@ export function Footer() {
               </a>
             </div>
           </div>
+
+          {/* Categories Column */}
+          <nav className="text-sm" aria-label="Kategorien">
+            <h4 className="mb-4 text-[14px] font-bold tracking-wider text-white uppercase">
+              Kategorien
+            </h4>
+            <ul className="space-y-3">
+              <li>
+                <Link
+                  href="/smartphones"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
+                >
+                  Smartphones
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/notebooks"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
+                >
+                  Notebooks
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/ssds"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
+                >
+                  SSDs
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/grafikkarten"
+                  className="text-white/70 no-underline transition-colors hover:text-white"
+                >
+                  Grafikkarten
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/deals"
+                  className="text-[#ff9900] no-underline transition-colors hover:text-white"
+                >
+                  Deals & Angebote
+                </Link>
+              </li>
+            </ul>
+          </nav>
 
           {/* Resources Column */}
           <nav className="text-sm" aria-label="Ressourcen">
