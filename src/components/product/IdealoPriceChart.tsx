@@ -1,6 +1,12 @@
 "use client";
 
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import React, { useRef, useState } from "react";
@@ -42,15 +48,18 @@ export function IdealoPriceChart({
           />
         </div>
       </DialogTrigger>
-      <DialogContent className="flex h-full w-full max-w-none flex-col gap-0 overflow-y-auto bg-white p-0 sm:h-auto sm:w-[95vw] sm:max-w-[580px] sm:rounded-xl sm:shadow-2xl">
+      <DialogContent
+        className="flex h-full w-full max-w-none flex-col gap-0 overflow-y-auto bg-white p-0 sm:h-auto sm:w-[95vw] sm:max-w-[580px] sm:rounded-xl sm:shadow-2xl"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <div className="flex items-start justify-between p-6 pb-12">
           <div className="pr-8">
-            <h2 className="text-idealo-text-primary text-[22px] leading-tight font-bold">
+            <DialogTitle className="text-idealo-text-primary text-[22px] leading-tight font-bold">
               Preisentwicklung
-            </h2>
-            <p className="mt-1 line-clamp-2 text-[15px] font-medium text-gray-600 sm:line-clamp-none">
+            </DialogTitle>
+            <DialogDescription className="mt-1 line-clamp-2 text-[15px] font-medium text-gray-600 sm:line-clamp-none">
               {title}
-            </p>
+            </DialogDescription>
           </div>
         </div>
 
