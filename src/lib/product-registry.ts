@@ -84,6 +84,8 @@ export interface Product {
   parentAsin?: string;
   variationAttributes?: string;
   specifications?: Record<string, any>;
+  socket?: string;
+  cores?: string;
   manufacturer?: string;
   features?: string[]; // Parsed from JSON string
 
@@ -188,6 +190,25 @@ export function mapDbProduct(
     });
   }
 
+  // Extract core specifications for filtering before stripping
+  const rawSpecs = p.specifications ? JSON.parse(p.specifications) : {};
+  let socket = rawSpecs.Socket || rawSpecs["Socket-Typ"];
+  let cores = rawSpecs.Cores || rawSpecs.Kerne;
+
+  // CPU specific title parsing fallback
+  if (p.category === "cpu" || p.category === "motherboards") {
+    if (!socket) {
+      const socketMatch = (p.title || "").match(
+        /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i,
+      );
+      if (socketMatch) socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
+    }
+    if (!cores && p.category === "cpu") {
+      const coreMatch = (p.title || "").match(/(\d+)\s?-?\s?(Core|Kerne)/i);
+      if (coreMatch) cores = parseInt(coreMatch[1]).toString();
+    }
+  }
+
   const item: Product = {
     id: p.id,
     slug: p.slug,
@@ -205,6 +226,8 @@ export function mapDbProduct(
     normalizedCapacity: p.normalizedCapacity || 0,
     formFactor: stripHeavyData ? "" : p.formFactor || "",
     technology: p.technology || "",
+    socket,
+    cores,
     condition:
       p.title.includes("(Generalüberholt)") ||
       p.title.includes("erneuert") ||
@@ -217,8 +240,7 @@ export function mapDbProduct(
     manufacturer: stripHeavyData ? undefined : p.manufacturer || undefined,
     parentAsin: p.parentAsin || undefined,
     variationAttributes: p.variationAttributes || undefined,
-    specifications:
-      !stripHeavyData && p.specifications ? JSON.parse(p.specifications) : {},
+    specifications: stripHeavyData ? {} : rawSpecs,
     features: [], // Removed in lean schema
     priceHistory: stripHeavyData ? [] : historyData,
     rating: p.rating || 0,
@@ -282,7 +304,7 @@ import { cache } from "react";
 // Use React.cache for per-request deduplication (Vercel Best Practices: server-cache-react)
 export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
-  stripHeavyData: boolean = false,
+  stripHeavyData: boolean = true, // Default to true for category lists
 ): Promise<Product[]> {
   const fetchProducts = async () => {
     const prods = await db
@@ -311,9 +333,6 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
       // These are only needed on the single product page fetched via getProductBySlug.
       mapped.features = [];
 
-      if (stripHeavyData) {
-        mapped.specifications = {};
-      }
       return mapped;
     });
   };
@@ -330,10 +349,10 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   return unstable_cache(
     fetchProducts,
-    [`category-products-v29-${category}-${stripHeavyData}`],
+    [`category-products-v31-${category}-${stripHeavyData}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: [`category-v29-${category}`],
+      tags: [`category-v31-${category}`],
     },
   )();
 });

@@ -6,11 +6,11 @@ export interface ProductScore {
   prestigeMultiplier: number;
   isPrestige: boolean;
   scoreBreakdown: {
-    revenue: number;
-    salesRank: number;
-    quality: number;
+    commercial: number;
+    popularity: number;
+    trust: number;
     prestige: number;
-    tech: number;
+    freshness: number;
     penalty: number;
   };
 }
@@ -43,20 +43,61 @@ const PRESTIGE_BRANDS = [
   "lego",
 ];
 
-const BUDGET_BRANDS = [
+const ESTABLISHED_BRANDS = [
   "xiaomi",
+  "huawei",
+  "lenovo",
+  "acer",
+  "gigabyte",
+  "corsair",
+  "kingston",
+  "crucial",
+  "lexar",
+  "seagate",
+  "intel",
+  "amd",
+  "tp-link",
+  "garmin",
+  "motorola",
+  "nothing",
+  "anker",
+  "belkin",
+  "wd",
+  "pny",
+  "patriot memory",
+  "cherry",
+  "be quiet!",
+  "aoc",
+  "toshiba",
+  "iiyama",
+  "benq",
+  "dji",
+  "sonos",
+  "marshall",
+];
+
+const BUDGET_BRANDS = [
   "hisense",
   "tcl",
   "medion",
   "teclast",
   "chuwi",
+  "blackview",
+  "doogee",
+  "oukitel",
+  "ulefone",
+  "umidigi",
+  "alcatel",
+  "cubot",
 ];
 
-const ULTRA_PREMIUM_TECH = ["oled", "mini-led", "qd-oled", "8k", "neo qled"];
-const PREMIUM_TECH_KEYWORDS = ["qled", "pro", "ultra"];
+const CURRENT_YEAR = new Date().getFullYear();
 
 /**
- * Shared scoring logic to ensure consistency across Category pages and Landing page.
+ * Advanced Metric-Driven Scoring Logic.
+ *
+ * Replaces fragile keyword-based sorting with logarithmic scaling of commercial
+ * and trust signals to ensure high-quality items float to the top naturally.
  */
 export function calculateDesirabilityScore(
   p: Product,
@@ -69,124 +110,97 @@ export function calculateDesirabilityScore(
   const reviewCount = p.reviewCount || 0;
   const rating = p.rating || 0;
   const salesRank = p.salesRank || 0;
-
-  // 1. Revenue Component (Price^1.5/1.7 * Sales)
-  // Exponentially favors high-end gear to offset high-volume budget items
-  const baseRevExp = price > 400 ? 1.7 : 1.5;
-  let revenue = Math.pow(price, baseRevExp) * monthlySold;
-
-  const isPrestige = PRESTIGE_BRANDS.includes(brand);
-
-  // Landing page uses a much more aggressive prestige bias for Hero sections
-  const prestigeMultiplier = context === "landing" ? 5 : 3;
-  if (isPrestige) revenue *= prestigeMultiplier;
-
-  // 5. Technology Analysis
   const titleLower = title.toLowerCase();
-  const hasPremiumTech = PREMIUM_TECH_KEYWORDS.some((tech) =>
-    titleLower.includes(tech),
-  );
 
-  // Detect "Commodity" or "Old" tech in premium-heavy categories
-  // For TVs: Standard LED, 60Hz
-  // For Monitors: Office/Standard LCD
-  const commodityTech = ["led", "60hz", "lcd", "ips", "1080p", "hdtv"];
-  const isCommodityTech =
-    !hasPremiumTech && commodityTech.some((tech) => titleLower.includes(tech));
+  // --- 1. BRAND AUTHORITY ---
+  const isPrestige = PRESTIGE_BRANDS.includes(brand);
+  const isEstablished = ESTABLISHED_BRANDS.includes(brand);
+  const isBudget = BUDGET_BRANDS.includes(brand);
+  const isNoName =
+    !isPrestige &&
+    !isEstablished &&
+    !isBudget &&
+    brand !== "generic" &&
+    brand !== "unknown" &&
+    brand !== "";
 
-  // --- ADJUSTMENT ---
-  // If it's a prestige brand but ONLY selling commodity tech (e.g. Sony LED TV),
-  // we reduce its revenue multiplier because it's not a "Flagship" indicator.
-  const techSensitiveCategories = [
-    "tvs",
-    "monitor",
-    "smartphones",
-    "laptop",
-    "gpu",
-    "cpu",
-  ];
-  const isTechSensitive = techSensitiveCategories.includes(p.category);
+  // Brand Power Weight (1.0 to 10.0)
+  const brandMultiplier = isPrestige
+    ? context === "landing"
+      ? 8.0
+      : 4.0
+    : isEstablished
+      ? 1.5
+      : 1.0;
 
-  if (isPrestige && isTechSensitive && isCommodityTech) {
-    revenue *= 0.3; // 70% penalty on the revenue signal for commodity prestige items
-  }
+  // --- 2. COMMERCIAL VALUE (Revenue x Velocity) ---
+  // Use log scaling for price and volume to avoid cheap/expensive bias
+  // Formula: log10(price) * log10(monthlySold + 1)
+  const priceSignal = Math.log10(Math.max(1, price));
+  const volumeSignal = Math.log10(monthlySold + 1);
+  const commercialScore = priceSignal * volumeSignal * 5000;
 
-  let popularityScore = 0;
-
-  // Revenue Weight (The core signal)
-  const revenueComponent = revenue / 15000;
-  popularityScore += revenueComponent;
-
-  // 2. Sales Rank Component
-  let salesRankComponent = 0;
+  // --- 3. POPULARITY (Sales Rank Inverse Log) ---
+  // High rank = Small number. Lower rank = Higher score.
+  // 1 -> 1000, 1000 -> 500, 10000 -> 100, etc.
+  let popularityScoreMetric = 0;
   if (salesRank > 0) {
-    if (salesRank < 100) salesRankComponent = 500;
-    else if (salesRank < 1000) salesRankComponent = 250;
-    else if (salesRank < 5000) salesRankComponent = 100;
-    else if (salesRank < 20000) salesRankComponent = 30;
+    popularityScoreMetric = Math.max(0, 6 - Math.log10(salesRank)) * 500;
   }
-  popularityScore += salesRankComponent;
 
-  // 3. Quality Factor (Rating & Reviews)
-  let qualityComponent = 0;
-  if (rating >= 4.5) qualityComponent += 50;
-  if (reviewCount > 1000) qualityComponent += 50;
-  else if (reviewCount > 100) qualityComponent += 20;
-  popularityScore += qualityComponent;
+  // --- 4. TRUST & QUALITY (Bayesian-lite) ---
+  // We want high ratings AND high volume.
+  // Rating 4.8 with 5 reviews < Rating 4.5 with 1000 reviews.
+  const reviewSignal = Math.log10(reviewCount + 1);
+  const trustScore = rating * reviewSignal * 100;
 
-  // 5. Technology Bonus
-  const isUltraPremium = ULTRA_PREMIUM_TECH.some((tech) =>
-    titleLower.includes(tech),
-  );
-  const isPremium = PREMIUM_TECH_KEYWORDS.some((tech) =>
-    titleLower.includes(tech),
-  );
-
-  // 4. Prestige Bonus (Flat boost)
-  let prestigeComponent = 0;
-  if (isPrestige) {
-    if (isTechSensitive && !isUltraPremium) {
-      prestigeComponent = 500; // Demote non-flagship prestige items in tech-sensitive cats
-    } else {
-      prestigeComponent = 2000;
-    }
+  // --- 5. FRESHNESS (Minimal keyword boost for latest generation) ---
+  let freshnessScore = 0;
+  if (titleLower.includes(String(CURRENT_YEAR))) freshnessScore = 1000;
+  // Tech specific gen boost (still needed as database might lag on ranks for brand new items)
+  if (
+    titleLower.includes("iphone 16") ||
+    titleLower.includes("s24") ||
+    titleLower.includes("m4") ||
+    titleLower.includes("rtx 40")
+  ) {
+    freshnessScore += 5000;
   }
-  popularityScore += prestigeComponent;
 
-  // 5. Technology Bonus
-  let techComponent = 0;
-  if (isUltraPremium) {
-    techComponent = 3000; // Tier 1: Massive boost for OLED/Mini-LED
-  } else if (isPremium) {
-    techComponent = 1000; // Tier 2: Solid boost for QLED/Pro gear
-  } else if (isTechSensitive && isCommodityTech) {
-    techComponent = -2000; // Systemic penalty for standard/old tech in premium categories
-  }
-  popularityScore += techComponent;
+  // --- 6. PENALTIES ---
+  let penaltyScore = 0;
+  // Condition Penalty
+  const isSecondHand =
+    p.condition === "Used" ||
+    p.condition === "Renewed" ||
+    titleLower.includes("generalüberholt") ||
+    titleLower.includes("renewed");
+  if (isSecondHand) penaltyScore -= 5000;
 
-  // 6. Budget Penalties (Manual curated gates)
-  let penaltyComponent = 0;
-  const isBudgetBrand = BUDGET_BRANDS.includes(brand);
-  const isEntryLevelPhilips = brand === "philips" && price < 500;
+  // Brand Penalty
+  if (isBudget) penaltyScore -= context === "landing" ? 15000 : 5000;
+  if (isNoName && price < 50) penaltyScore -= 10000; // Suppress cheap generic bulk
 
-  if (isBudgetBrand || isEntryLevelPhilips) {
-    // Landing page is much stricter - it effectively blocks budget brands
-    penaltyComponent = context === "landing" ? -50000 : -20000;
-  }
-  popularityScore += penaltyComponent;
+  // --- COMPOSITE CALCULATION ---
+  const totalScore =
+    commercialScore * brandMultiplier +
+    popularityScoreMetric * brandMultiplier +
+    trustScore +
+    freshnessScore +
+    penaltyScore;
 
   return {
-    popularityScore,
-    revenue,
-    prestigeMultiplier,
+    popularityScore: totalScore,
+    revenue: commercialScore, // Simplified for metadata
+    prestigeMultiplier: brandMultiplier,
     isPrestige,
     scoreBreakdown: {
-      revenue: revenueComponent,
-      salesRank: salesRankComponent,
-      quality: qualityComponent,
-      prestige: prestigeComponent,
-      tech: techComponent,
-      penalty: penaltyComponent,
+      commercial: commercialScore,
+      popularity: popularityScoreMetric,
+      trust: trustScore,
+      prestige: brandMultiplier,
+      freshness: freshnessScore,
+      penalty: penaltyScore,
     },
   };
 }

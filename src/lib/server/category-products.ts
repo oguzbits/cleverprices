@@ -29,6 +29,7 @@ export interface LocalizedProduct {
   brand: string;
   rating: number;
   reviewCount: number;
+  monthlySold: number;
   salesRank?: number;
   condition: string;
   capacity: number;
@@ -101,8 +102,8 @@ async function getCachedLocalizedCategoryProducts(
 
   let rawProducts;
   if (categorySlug === "deals") {
-    // Fetch a large number of deals to allow for filtering
-    rawProducts = await getAllDeals(100, countryCode);
+    // Fetch a large number of deals to allow for filtering and surpressing no-names via popularity scoring
+    rawProducts = await getAllDeals(250, countryCode);
   } else {
     rawProducts = await getProductsByCategory(categorySlug);
   }
@@ -116,23 +117,8 @@ async function getCachedLocalizedCategoryProducts(
       // Filter out products with no valid price - they shouldn't appear in listings
       if (!price || price <= 0) return null;
 
-      // 1. Extract static attributes (pruning raw specifications)
-      let socket = p.specifications?.Socket || p.specifications?.["Socket-Typ"];
-      let cores = p.specifications?.Cores || p.specifications?.Kerne;
-
-      if (categorySlug === "cpu") {
-        if (!socket) {
-          const socketMatch = (title || "").match(
-            /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i,
-          );
-          if (socketMatch)
-            socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
-        }
-        if (!cores) {
-          const coreMatch = (title || "").match(/(\d+)\s?-?\s?(Core|Kerne)/i);
-          if (coreMatch) cores = parseInt(coreMatch[1]).toString();
-        }
-      }
+      // 1. Extract core attributes (already pre-extracted by Product Registry)
+      let { socket, cores } = p;
 
       // 2. Metrics & Desirability (Initial calculation)
       const { popularityScore } = calculateDesirabilityScore(
@@ -206,11 +192,13 @@ async function getCachedLocalizedCategoryProducts(
         title,
         price: price || 0,
         pricePerUnit,
+        popularityScore,
         category: p.category,
         image: p.image || "",
         brand: normalizeBrand(p.brand || ""),
         rating: p.rating || 0,
         reviewCount: p.reviewCount || 0,
+        monthlySold: p.monthlySold || 0,
         salesRank: p.salesRank,
         condition: p.condition,
         capacity,
@@ -259,14 +247,19 @@ async function mergeLivePricesIntoLocalized(
           : p.capacity;
     const pricePerUnit = capacityMB > 0 ? (newPrice / capacityMB) * 1024 : 0;
 
-    // Popularity score technically depends on price too (in scoring.ts)
-    // For now we'll keep the cached popularity score to avoid re-fetching full product details
-    // which would hit the DB hard and is probably fine since popularity is mostly salesRank.
+    // Recalculate popularity score as it heavily depends on price (commercial value)
+    const { popularityScore } = calculateDesirabilityScore(
+      p as any,
+      newPrice,
+      p.title,
+      "category",
+    );
 
     return {
       ...p,
       price: newPrice,
       pricePerUnit,
+      popularityScore,
       savings,
       listPrice,
       lastUpdated: new Date(live.lastUpdated).toISOString(),
@@ -353,7 +346,7 @@ export async function getCategoryProducts(
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v30",
+    "v31",
   );
 
   // 2. Merge fresh prices (The "dynamic" layer)
