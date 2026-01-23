@@ -5,7 +5,20 @@ import {
   type Product as DbProduct,
   type Price,
 } from "@/db/schema";
-import { and, asc, desc, eq, gt, inArray, like, or, sql } from "drizzle-orm";
+import {
+  and,
+  asc,
+  desc,
+  eq,
+  gt,
+  gte,
+  inArray,
+  like,
+  lte,
+  or,
+  sql,
+  SQL,
+} from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { parseHistoryBlob } from "./history-compression";
 import {
@@ -972,4 +985,183 @@ export async function getNewArrivals(
     );
   }
   return getCachedNew(limit, countryCode, condition);
+}
+
+/**
+ * SERVER-SIDE FILTERING & PAGINATION (Module 2)
+ * Moves logic from JS to SQL for performance and scalability.
+ */
+export async function getFilteredProducts(
+  category: string,
+  countryCode: string,
+  filters: {
+    brand?: string[];
+    technology?: string[];
+    formFactor?: string[];
+    condition?: string[];
+    socket?: string[];
+    cores?: string[];
+    capacity?: string[];
+    minCapacity?: number;
+    maxCapacity?: number;
+    minPrice?: number;
+    maxPrice?: number;
+    sortBy?: string;
+    sortOrder?: string;
+    limit?: number;
+    offset?: number;
+  },
+): Promise<Product[]> {
+  const where: SQL[] = [
+    eq(products.category, category),
+    eq(prices.country, countryCode),
+    gt(prices.price, 0),
+  ];
+
+  if (filters.brand?.length) {
+    where.push(inArray(products.brand, filters.brand));
+  }
+  if (filters.condition?.length) {
+    where.push(inArray(products.condition, filters.condition as any));
+  }
+  if (filters.technology?.length) {
+    where.push(inArray(products.technology, filters.technology));
+  }
+  if (filters.formFactor?.length) {
+    where.push(inArray(products.formFactor, filters.formFactor));
+  }
+  if (filters.socket?.length) {
+    // Socket is often stored in specifications JSON or extracted by mapDbProduct
+    // For SQL efficiency we check the technology column which often contains socket info
+    // or use a LIKE match on the title for legacy compatibility.
+    where.push(
+      or(
+        ...filters.socket.map(
+          (s) => sql`${products.title} LIKE ${"%" + s + "%"}`,
+        ),
+      )!,
+    );
+  }
+  if (filters.cores?.length) {
+    where.push(
+      or(
+        ...filters.cores.map(
+          (c) => sql`${products.title} LIKE ${"%" + c + "%"}`,
+        ),
+      )!,
+    );
+  }
+  if (filters.minCapacity) {
+    where.push(gte(products.normalizedCapacity, filters.minCapacity));
+  }
+  if (filters.maxCapacity) {
+    where.push(lte(products.normalizedCapacity, filters.maxCapacity));
+  }
+  if (filters.minPrice) {
+    where.push(gte(prices.price, filters.minPrice));
+  }
+  if (filters.maxPrice) {
+    where.push(lte(prices.price, filters.maxPrice));
+  }
+
+  // Sort logic mapping
+  let order;
+  const sortOrder = filters.sortOrder === "asc" ? asc : desc;
+
+  switch (filters.sortBy) {
+    case "price":
+      order = sortOrder(prices.price);
+      break;
+    case "pricePerUnit":
+      order = sortOrder(prices.pricePerUnit);
+      break;
+    case "rating":
+      order = [sortOrder(products.rating), desc(products.reviewCount)];
+      break;
+    case "createdAt":
+      order = sortOrder(products.createdAt);
+      break;
+    case "popularityScore":
+    default:
+      // Production Desirability Approximation:
+      // 1. Brand Prestige (Logically implied by sales rank but prioritized for stability)
+      // 2. Sales Rank (Main indicator)
+      // 3. Review Count (Tie breaker)
+      order = [
+        asc(sql`COALESCE(${products.salesRank}, 10000000)`),
+        desc(products.reviewCount),
+      ];
+      break;
+  }
+
+  const results = await db
+    .select({
+      product: liteProductColumns,
+      price: litePriceColumns,
+    })
+    .from(products)
+    .innerJoin(prices, eq(products.id, prices.productId))
+    .where(and(...where))
+    .orderBy(...(Array.isArray(order) ? order : [order]))
+    .limit(filters.limit || 24)
+    .offset(filters.offset || 0);
+
+  return results.map((r) =>
+    mapDbProduct(r.product as DbProduct, [r.price], [], true),
+  );
+}
+
+/**
+ * Get total count for pagination without fetching records.
+ */
+export async function getFilteredProductsCount(
+  category: string,
+  countryCode: string,
+  filters: any,
+): Promise<number> {
+  const where: SQL[] = [
+    eq(products.category, category),
+    eq(prices.country, countryCode),
+    gt(prices.price, 0),
+  ];
+
+  if (filters.brand?.length) where.push(inArray(products.brand, filters.brand));
+  if (filters.condition?.length)
+    where.push(inArray(products.condition, filters.condition as any));
+  if (filters.technology?.length)
+    where.push(inArray(products.technology, filters.technology));
+  if (filters.formFactor?.length)
+    where.push(inArray(products.formFactor, filters.formFactor));
+  if (filters.socket?.length) {
+    where.push(
+      or(
+        ...filters.socket.map(
+          (s: string) => sql`${products.title} LIKE ${"%" + s + "%"}`,
+        ),
+      )!,
+    );
+  }
+  if (filters.cores?.length) {
+    where.push(
+      or(
+        ...filters.cores.map(
+          (c: string) => sql`${products.title} LIKE ${"%" + c + "%"}`,
+        ),
+      )!,
+    );
+  }
+  if (filters.minCapacity)
+    where.push(gte(products.normalizedCapacity, filters.minCapacity));
+  if (filters.maxCapacity)
+    where.push(lte(products.normalizedCapacity, filters.maxCapacity));
+  if (filters.minPrice) where.push(gte(prices.price, filters.minPrice));
+  if (filters.maxPrice) where.push(lte(prices.price, filters.maxPrice));
+
+  const [result] = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(products)
+    .innerJoin(prices, eq(products.id, prices.productId))
+    .where(and(...where));
+
+  return result?.count || 0;
 }

@@ -19,7 +19,7 @@ export async function IdealoLivePrice({
   productId,
   countryCode,
   initialPrice,
-  className = "text-[15px] font-extrabold text-[#2d2d2d]",
+  className = "text-idealo-text-primary text-[15px] font-extrabold",
   showAb = false,
 }: IdealoLivePriceProps) {
   // Fetch fresh price from the 1-minute cached source
@@ -32,7 +32,7 @@ export async function IdealoLivePrice({
 }
 
 export function IdealoLivePriceSkeleton({
-  className = "h-5 w-16",
+  className = "h-7 w-24",
 }: {
   className?: string;
 }) {

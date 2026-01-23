@@ -66,7 +66,7 @@ export function Pagination({
         <Link
           key={1}
           href={createPageUrl(1)}
-          className="text-[#0A6ABF] hover:underline"
+          className="text-idealo-blue hover:underline"
         >
           1
         </Link>
@@ -94,7 +94,7 @@ export function Pagination({
           <Link
             key={i}
             href={createPageUrl(i)}
-            className="text-[#0A6ABF] hover:underline"
+            className="text-idealo-blue hover:underline"
           >
             {i}
           </Link>
@@ -125,7 +125,7 @@ export function Pagination({
           <Link
             key={totalPages}
             href={createPageUrl(totalPages)}
-            className="text-[#0A6ABF] hover:underline"
+            className="text-idealo-blue hover:underline"
           >
             {totalPages}
           </Link>
@@ -137,14 +137,14 @@ export function Pagination({
   };
 
   return (
-    <div className="flex h-[80px] w-full items-stretch justify-end border border-t-0 border-[#b4b4b4] bg-white shadow-sm">
+    <div className="border-idealo-border flex h-[80px] w-full items-stretch justify-end border border-t-0 bg-white shadow-sm">
       {/* Pagination Group (Prev + Numbers) */}
       <div className="flex items-center gap-6 pr-6">
         {/* Previous Button (Icon only) */}
         {currentPage > 1 && (
           <Link
             href={createPageUrl(currentPage - 1)}
-            className="flex items-center justify-center text-[#0066cc] hover:text-[#004499]"
+            className="text-idealo-blue hover:text-idealo-blue-hover flex items-center justify-center"
             aria-label="Vorherige Seite"
           >
             <ChevronLeft className="h-8 w-8" strokeWidth={1.5} />
@@ -161,7 +161,7 @@ export function Pagination({
       {currentPage < totalPages ? (
         <Link
           href={createPageUrl(currentPage + 1)}
-          className="flex w-[80px] items-center justify-center bg-[#1773e8] text-white transition-colors hover:bg-[#1258b3]"
+          className="bg-idealo-blue hover:bg-idealo-blue-hover flex w-[80px] items-center justify-center text-white transition-colors"
           aria-label="Nächste Seite"
         >
           <ChevronRight className="h-10 w-10" strokeWidth={2} />

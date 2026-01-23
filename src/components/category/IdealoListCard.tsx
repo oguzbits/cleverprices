@@ -147,7 +147,7 @@ export function IdealoListCard({
           {/* PRODUCT DETAILS TRIGGER (LIST-specific wrapper) */}
           {/* ============================================ */}
           <div className="sr-resultItemTile__pioTrigger">
-            <div className="sr-productInformationTrigger flex items-center gap-0.5 text-[13px] font-bold text-[#0771d0]">
+            <div className="sr-productInformationTrigger text-idealo-blue flex items-center gap-0.5 text-[13px] font-bold">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
@@ -176,23 +176,21 @@ export function IdealoListCard({
             className="mb-2"
           />
           {product.listPrice && product.listPrice > product.price && (
-            <div className="mb-0.5 text-[14px] text-[#767676] line-through">
+            <div className="text-idealo-text-secondary mb-0.5 text-[14px] line-through">
               {formatCurrency(product.listPrice, countryCode)}
             </div>
           )}
-          <Suspense
-            fallback={<IdealoLivePriceSkeleton className="h-[30px] w-24" />}
-          >
+          <Suspense fallback={<IdealoLivePriceSkeleton className="h-7 w-24" />}>
             <IdealoLivePrice
               productId={product.id!}
               countryCode={countryCode}
               initialPrice={product.price}
               showAb
-              className="text-[20px] text-[#f97316]"
+              className="text-primary text-[20px]"
             />
           </Suspense>
           {!!product.pricePerUnit && (
-            <div className="mt-1 text-right text-[12px] text-[#767676]">
+            <div className="text-idealo-text-secondary mt-1 text-right text-[12px]">
               ({formatCurrency(product.pricePerUnit, countryCode)} /{" "}
               {formatTechText(product.capacityUnit || "Einheit")})
             </div>

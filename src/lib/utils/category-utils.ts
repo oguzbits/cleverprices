@@ -11,6 +11,7 @@ export interface FilterState {
   maxPrice: number | null;
   minCapacity: number | null;
   maxCapacity: number | null;
+  condition: string[];
   [key: string]: string | string[] | number | null | undefined;
 }
 
@@ -98,6 +99,15 @@ export function filterProducts(
       !filters.capacity.includes(
         (p.normalizedCapacity || p.capacity || "").toString(),
       )
+    ) {
+      return false;
+    }
+
+    // 5.1 Condition (New, Used, Renewed)
+    // Always apply condition filter if present, regardless of category manifest
+    if (
+      filters.condition?.length > 0 &&
+      !filters.condition.includes(p.condition || "New")
     ) {
       return false;
     }

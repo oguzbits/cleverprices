@@ -128,9 +128,7 @@
   body {
     scroll-behavior: auto !important;
   }
-  * {
-    @apply border-border outline-ring/50;
-  }
+
   body {
     @apply bg-background text-foreground font-sans text-sm antialiased;
     font-family:
@@ -139,6 +137,7 @@
       -apple-system,
       sans-serif;
     overflow-x: clip;
+    min-height: 100vh;
   }
 
   /* Link styling */
@@ -150,34 +149,6 @@
   a:not(.no-underline):hover {
     text-decoration: underline;
   }
-}
-
-/* === PERFORMANCE OPTIMIZATIONS === */
-/* (Vercel Best Practices: rendering-content-visibility) */
-
-/* Defer rendering of off-screen product list items (Idealo-style) */
-/* List View Items (~200px) */
-.sr-resultList--LIST .sr-resultItem:nth-child(n + 6) {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 200px;
-}
-
-/* Grid View Items (~450px) */
-.resultList--GRID .sr-resultItemTile:nth-child(n + 9) {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 450px;
-}
-
-/* Defer rendering of below-the-fold carousels */
-.cn-productCarousel:nth-of-type(n + 2) {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 380px;
-}
-
-/* Optimize sidebar similar products rendering */
-.sr-sidebar #recommendedProducts li:nth-child(n + 3) {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 80px;
 }
 
 /* Utils */

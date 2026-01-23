@@ -56,20 +56,20 @@ export function ProductCard({
       href={productUrl}
       className={cn(
         // Idealo card: 224px width, white bg, 6px radius, subtle border
-        "group relative flex h-full w-[224px] flex-col overflow-hidden rounded-[6px] border border-[#dcdcdc] bg-white no-underline transition-all hover:border-zinc-400 hover:shadow-lg",
+        "group relative flex h-full w-[224px] flex-col overflow-hidden rounded-[6px] border border-zinc-200 bg-white no-underline transition-all hover:border-zinc-400 hover:shadow-lg",
         className,
       )}
     >
       {/* Badge - top left on image like Idealo (blue for Bestseller) */}
       {badgeText && (
-        <div className="absolute top-2 left-2 z-10 rounded-sm bg-[#0066cc] px-2 py-0.5 text-[10px] font-bold text-white">
+        <div className="bg-idealo-blue absolute top-2 left-2 z-10 rounded-sm px-2 py-0.5 text-[10px] font-bold text-white">
           {badgeText}
         </div>
       )}
 
       {/* Wishlist heart - top right like Idealo */}
       <button
-        className="absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-zinc-400 shadow-sm transition-colors hover:bg-white hover:text-[#f97316]"
+        className="hover:text-primary absolute top-2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-zinc-400 shadow-sm transition-colors hover:bg-white"
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -127,15 +127,13 @@ export function ProductCard({
           )}
 
           {/* Price - "ab" prefix with ORANGE price like Idealo */}
-          <Suspense
-            fallback={<IdealoLivePriceSkeleton className="h-[27px] w-24" />}
-          >
+          <Suspense fallback={<IdealoLivePriceSkeleton className="h-7 w-24" />}>
             {id ? (
               <IdealoLivePrice
                 productId={id}
                 countryCode={countryCode as any}
                 initialPrice={price}
-                className="text-[18px] font-bold text-[#f97316]"
+                className="text-primary text-[18px] font-bold"
                 showAb={true}
               />
             ) : (
@@ -150,7 +148,7 @@ export function ProductCard({
             )}
           </Suspense>
         </div>
-        <div className="mt-2 flex items-center gap-0.5 text-[11px] font-semibold text-[#0066cc]">
+        <div className="text-idealo-blue mt-2 flex items-center gap-0.5 text-[11px] font-semibold">
           <span>Produktdetails</span>
         </div>
       </div>

@@ -169,19 +169,19 @@ export function IdealoGridCard({
               className="mb-1.5"
             />
             {product.listPrice && product.listPrice > product.price && (
-              <div className="mb-0.5 text-[14px] text-[#767676] line-through">
+              <div className="text-idealo-text-secondary mb-0.5 text-[14px] line-through">
                 {formatCurrency(product.listPrice, countryCode)}
               </div>
             )}
             <Suspense
-              fallback={<IdealoLivePriceSkeleton className="h-[30px] w-24" />}
+              fallback={<IdealoLivePriceSkeleton className="h-7 w-24" />}
             >
               <IdealoLivePrice
                 productId={product.id!}
                 countryCode={countryCode}
                 initialPrice={product.price}
                 showAb
-                className="text-[20px] text-[#f97316]"
+                className="text-primary text-[20px]"
               />
             </Suspense>
           </div>
@@ -189,7 +189,7 @@ export function IdealoGridCard({
           {/* ============================================ */}
           {/* PRODUCT DETAILS TRIGGER */}
           {/* ============================================ */}
-          <div className="sr-productInformationTrigger mt-2 flex items-center gap-0.5 text-[13px] font-bold text-[#0771d0]">
+          <div className="sr-productInformationTrigger text-idealo-blue mt-2 flex items-center gap-0.5 text-[13px] font-bold">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="24"

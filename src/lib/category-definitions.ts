@@ -213,6 +213,10 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "16 GB RAM", params: "ram=16" },
       { label: "Intel Core Ultra", params: "cpu=intel-ultra" },
     ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
+    ],
   },
   tablets: {
     name: "Tablets",
@@ -225,6 +229,10 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Samsung Galaxy Tab", params: "brand=Samsung" },
       { label: "Android-Tablet", params: "os=android" },
       { label: "5G-Tablet", params: "connectivity=5g" },
+    ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
   espressomaschinen: {
@@ -253,6 +261,10 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "144 Hz", params: "refresh=144" },
       { label: "4K Monitor", params: "resolution=4k" },
       { label: "Gaming Monitor", params: "type=gaming" },
+    ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
   speakers: {
@@ -720,6 +732,10 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     popularFilters: [
       { label: "iPhone", params: "brand=Apple" },
       { label: "Samsung Galaxy", params: "brand=Samsung" },
+    ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
   smartwatches: {

@@ -120,6 +120,25 @@ async function getCachedLocalizedCategoryProducts(
       // 1. Extract core attributes (already pre-extracted by Product Registry)
       let { socket, cores } = p;
 
+      // 1.1 Enforce correct condition from title (Fixes stale cache issues)
+      // Sometimes the DB cache might label a Renewed item as New. We fix it here.
+      let condition = p.condition;
+      const titleLower = title.toLowerCase();
+      if (
+        titleLower.includes("(generalüberholt)") ||
+        titleLower.includes("generalüberholt") ||
+        titleLower.includes("erneuert") ||
+        titleLower.includes("renewed") ||
+        titleLower.includes("refurbished") ||
+        titleLower.includes("b-ware")
+      ) {
+        condition = "Renewed";
+      } else if (condition === "Used") {
+        condition = "Used";
+      } else {
+        condition = "New";
+      }
+
       // 2. Metrics & Desirability (Initial calculation)
       const { popularityScore } = calculateDesirabilityScore(
         p,
@@ -200,7 +219,7 @@ async function getCachedLocalizedCategoryProducts(
         reviewCount: p.reviewCount || 0,
         monthlySold: p.monthlySold || 0,
         salesRank: p.salesRank,
-        condition: p.condition,
+        condition,
         capacity,
         capacityUnit,
         normalizedCapacity: normCap,
@@ -334,31 +353,11 @@ function calculatePriceRangeBuckets(products: LocalizedProduct[]) {
   return buckets;
 }
 
-/**
- * Server-side function to get and filter products for a category
- */
 export async function getCategoryProducts(
   categorySlug: string,
   countryCode: string,
   filterParams: FilterParams,
 ) {
-  // 1. Get cached localized data (The "static" core)
-  const cachedProducts = await getCachedLocalizedCategoryProducts(
-    categorySlug,
-    countryCode,
-    "v31",
-  );
-
-  // 2. Merge fresh prices (The "dynamic" layer)
-  // This satisfies the "never cache prices" requirement while keeping performance
-  const localizedProducts = await mergeLivePricesIntoLocalized(
-    cachedProducts,
-    countryCode,
-  );
-
-  const category = allCategories[categorySlug as CategorySlug];
-  const unitLabel = category?.unitType || "TB";
-
   const mappedSort = filterParams.sort
     ? mapSortParam(filterParams.sort)
     : { sortBy: filterParams.sortBy, sortOrder: filterParams.sortOrder };
@@ -410,28 +409,62 @@ export async function getCategoryProducts(
     }
   });
 
-  const filtered = filterProducts(
+  // 1. Fetch ALL products for the category (Cached)
+  // We use this "fat" fetch + in-memory filter/sort because the "Desirability Score"
+  // (Prestige/Freshness/Commercial Value) is too complex for efficient SQL.
+  // Since categories have < 2000 items, this is fast and Vercel-safe (2MB limit).
+  const cachedProducts = await getCachedLocalizedCategoryProducts(
+    categorySlug,
+    countryCode,
+    "v33",
+  );
+
+  // 2. [OPTIMIZATION] Skip Live Price Merge for the FULL list
+  // Reason: Calling Keepa/Idealo for 500+ products causes 429 Rate Limits and slow page loads.
+  // Trade-off: The "Desirability Score" sort uses CACHED prices (up to 24h old).
+  // This is acceptable because:
+  //   a) Popularity/Prestige doesn't change hourly
+  //   b) Extreme price swings are rare
+  //   c) We still show LIVE prices for the visible 24 products below.
+  const localizedProducts = cachedProducts;
+
+  const category = allCategories[categorySlug as CategorySlug];
+  const unitLabel = category?.unitType || "TB";
+
+  // 3. Apply Filters In-Memory
+  const filteredProducts = filterProducts(
     localizedProducts,
-    filters,
+    filters as any,
     categorySlug,
     unitLabel,
   );
 
-  if (filterParams.fetchAll) {
-    return {
-      products: filtered,
-      filteredCount: filtered.length,
-      unitLabel,
-      hasProducts: localizedProducts.length > 0,
-      filters,
-    } as any;
-  }
-
-  const sorted = sortProducts(
-    filtered,
+  // 4. Sort In-Memory (Uses the complex popularityScore from scoring.ts)
+  const sortedProducts = sortProducts(
+    filteredProducts,
     filters.sortBy,
     filters.sortOrder,
-  ) as LocalizedProduct[];
+  );
+
+  const totalFilteredCount = sortedProducts.length;
+
+  // 5. Paginate In-Memory
+  const page = filterParams.page ? parseInt(filterParams.page) : 1;
+  const pageSize = 24;
+  const skip = (page - 1) * pageSize;
+  const rawPaginatedProducts = sortedProducts.slice(skip, skip + pageSize);
+
+  // 6. [CRITICAL] Merge Live Prices for VISIBLE products only
+  // This ensures the user sees correct, up-to-the-minute prices/availability
+  // without hammering the external API for the entire back-catalog.
+  const paginatedProducts = await mergeLivePricesIntoLocalized(
+    rawPaginatedProducts,
+    countryCode,
+  );
+
+  // 6. Context (Refactored to re-use our already-fetched list)
+  // No need to re-fetch cachedProducts or mergeLivePrices again.
+  // We use localizedProducts (full list with live prices) for aggregation.
 
   const dynamicFilterCounts: FilterCounts = {};
   if (category?.filterGroups) {
@@ -503,24 +536,17 @@ export async function getCategoryProducts(
 
   const priceRanges = calculatePriceRangeBuckets(productsMatchingNonPrice);
 
-  let paginatedProducts = sorted;
-  let pagination = null;
-
-  const page = filterParams.page ? parseInt(filterParams.page) : 1;
-  const pageSize = 24;
-  const totalItems = sorted.length;
-  const totalPages = Math.ceil(totalItems / pageSize);
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  paginatedProducts = sorted.slice(start, end);
-
-  pagination = { currentPage: page, totalPages, pageSize, totalItems };
+  const pagination = {
+    currentPage: page,
+    totalPages: Math.ceil(totalFilteredCount / pageSize),
+    pageSize,
+    totalItems: totalFilteredCount,
+  };
 
   return {
     products: paginatedProducts,
-    allSortedProducts: sorted,
     totalCount: localizedProducts.length,
-    filteredCount: sorted.length,
+    filteredCount: totalFilteredCount,
     unitLabel,
     hasProducts: localizedProducts.length > 0,
     filters,
