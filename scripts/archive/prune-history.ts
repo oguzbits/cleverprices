@@ -13,7 +13,7 @@ import {
   compressHistory,
   parseHistoryBlob,
   pruneHistory,
-} from "../src/lib/history-compression";
+} from "../../src/lib/history-compression";
 
 const DB_PATH = "data/cleverprices.db";
 

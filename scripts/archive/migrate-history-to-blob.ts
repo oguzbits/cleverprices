@@ -1,11 +1,11 @@
 import { sql } from "drizzle-orm";
-import { db } from "../src/db";
-import { prices } from "../src/db/schema";
+import { db } from "../../src/db";
+import { prices } from "../../src/db/schema";
 import {
   compressHistory,
   parseHistoryBlob,
   pruneHistory,
-} from "../src/lib/history-compression";
+} from "../../src/lib/history-compression";
 
 async function migrate() {
   console.log("🚀 Starting Price History Compression Migration...");
