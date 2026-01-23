@@ -15,9 +15,7 @@ import fs from "fs";
 import path from "path";
 
 const LITE_DB_PATH = path.join(process.cwd(), "data", "cleverprices-lite.db");
-const BLOB_URL =
-  process.env.LITE_DB_BLOB_URL ||
-  "https://lesnkqwwmylsrihc.public.blob.vercel-storage.com/cleverprices-lite.db";
+const BLOB_URL = process.env.LITE_DB_BLOB_URL!;
 
 async function fetchLiteDb() {
   console.log("[Prebuild] Fetching lite.db from Vercel Blob...");
