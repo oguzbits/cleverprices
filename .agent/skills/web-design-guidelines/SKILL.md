@@ -49,14 +49,19 @@ Review files for compliance with Vercel's Web Interface Guidelines.
 
 ---
 
-## CleverPrices-Specific Checks
+### IdealoProductCard (Canonical Card)
 
-### Product Cards
+- [ ] Image alt includes product title.
+- [ ] Legal price asterisk is present (via `LegalPrice` component).
+- [ ] `IdealoLivePrice` is used for real-time price synchronization.
+- [ ] Hover effects provide clear visual feedback without shifting layout.
 
-- [ ] Image alt includes product title
-- [ ] Price has aria-label for screen readers
-- [ ] Link wraps entire card for click target
-- [ ] Savings badge has sufficient contrast
+### Carousel Components
+
+- [ ] Navigation arrows are keyboard accessible.
+- [ ] `scroll-snap` is used for smooth mobile interactions.
+- [ ] `priorityLoad` is applied to the first 2-3 items to optimize LCP.
+- [ ] Mobile scroll indicator is visible.
 
 ### Filters
 

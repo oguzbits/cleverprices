@@ -52,7 +52,10 @@ A modular set of rules to maximize search visibility and organic traffic.
 
 ## CleverPrices-Specific
 
-### Product Pages
+### Global SEO (Brand Authority)
+
+- **JSON-LD Schema**: Always include `GlobalSchema` in the root layout. This defines the **Organization** (Brand, Logo, Social) and **WebSite** (Sitelinks Search Box).
+- **Internal Linking**: Maintain a list of top categories in the Footer. This helps distribute link equity to high-value landing pages.
 
 ```tsx
 // Required meta structure
