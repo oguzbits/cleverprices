@@ -122,25 +122,23 @@ export function CategoryNav({ country }: { country: string }) {
 
   return (
     <div className="z-40 border-b border-white/10 bg-(--sub-header-bg) dark:bg-(--sub-header-bg)">
-      <div className="relative mx-auto max-w-[1280px] px-4">
+      <div className="group/nav relative mx-auto max-w-[1280px]">
         {/* Categories scroll container with CSS Scroll Snap */}
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="scrollbar-hide relative flex h-[80px] w-full snap-x snap-mandatory items-center overflow-x-auto scroll-smooth"
+          className="scrollbar-hide relative flex h-[80px] w-full snap-x snap-mandatory items-center justify-start overflow-x-auto scroll-smooth md:justify-center"
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             touchAction: "pan-x",
             overscrollBehavior: "none",
             overflowY: "hidden",
-            WebkitOverflowScrolling: "touch",
-            // scrollPadding allows the snap markers to align properly with the start of the viewport
-            scrollPaddingLeft: "64px",
-            scrollPaddingRight: "64px",
+            scrollPaddingLeft: "0px",
+            scrollPaddingRight: "0px",
           }}
         >
-          <div className="mx-auto flex w-fit shrink-0 items-center justify-center gap-6 px-16">
+          <div className="flex shrink-0 items-center gap-4 px-4 md:gap-6 md:px-8">
             {/* Deals Button (First) */}
             <PrefetchLink
               href="/deals"
@@ -174,11 +172,11 @@ export function CategoryNav({ country }: { country: string }) {
         {canScrollLeft && (
           <button
             onClick={() => scroll("left")}
-            className="pointer-events-none absolute top-0 left-0 z-30 flex h-full items-center bg-linear-to-r from-[#27272a] via-[#27272a]/95 to-transparent pr-24 pl-4 transition-all duration-300"
+            className="pointer-events-none absolute top-0 left-0 z-30 hidden h-full items-center bg-linear-to-r from-[#27272a] to-transparent pr-12 pl-2 md:flex"
             aria-label="Scroll left"
           >
-            <div className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white shadow-xl backdrop-blur-md transition-transform hover:scale-110 hover:bg-white/20 active:scale-95">
-              <ChevronLeft className="h-6 w-6" />
+            <div className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95">
+              <ChevronLeft className="h-5 w-5" />
             </div>
           </button>
         )}
@@ -187,11 +185,11 @@ export function CategoryNav({ country }: { country: string }) {
         {canScrollRight && (
           <button
             onClick={() => scroll("right")}
-            className="pointer-events-none absolute top-0 right-0 z-30 flex h-full items-center bg-linear-to-l from-[#27272a] via-[#27272a]/95 to-transparent pr-4 pl-24 transition-all duration-300"
+            className="pointer-events-none absolute top-0 right-0 z-30 hidden h-full items-center bg-linear-to-l from-[#27272a] to-transparent pr-2 pl-12 md:flex"
             aria-label="Scroll right"
           >
-            <div className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white shadow-xl backdrop-blur-md transition-transform hover:scale-110 hover:bg-white/20 active:scale-95">
-              <ChevronRight className="h-6 w-6" />
+            <div className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition-all hover:scale-105 hover:bg-white/20 active:scale-95">
+              <ChevronRight className="h-5 w-5" />
             </div>
           </button>
         )}
