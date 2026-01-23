@@ -47,7 +47,8 @@ async function fetchLiteDb() {
           remoteLastModified = new Date(lastModHeader);
 
           // 2. Compare with Local File (if exists)
-          if (fs.existsSync(LITE_DB_PATH)) {
+          // On Vercel, force download to bypass Git timestamp issues
+          if (fs.existsSync(LITE_DB_PATH) && !process.env.VERCEL) {
             const stats = fs.statSync(LITE_DB_PATH);
             // Add a small buffer (2s) to avoid clock skew issues
             if (stats.mtime.getTime() > remoteLastModified.getTime() - 2000) {
