@@ -289,11 +289,11 @@ function ChartRenderer({
 
   const currentPriceY = getY(stats.latestPrice);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const updateHover = (clientX: number) => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const xRatio = x / rect.width;
+    const x = clientX - rect.left;
+    const xRatio = Math.max(0, Math.min(1, x / rect.width));
     const targetDate = minDate + xRatio * (maxDate - minDate);
 
     let closest = data[0];
@@ -311,6 +311,17 @@ function ChartRenderer({
       x: getX(closest.date),
       y: getY(closest.price),
     });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    updateHover(e.clientX);
+  };
+
+  const handleTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    // Prevent default to stop page scrolling while scrubbing
+    if (e.touches.length > 0) {
+      updateHover(e.touches[0].clientX);
+    }
   };
 
   const visibleTimeframes = isModal
@@ -368,11 +379,14 @@ function ChartRenderer({
         <div
           ref={containerRef}
           className={cn(
-            "relative cursor-pointer bg-white select-none",
+            "relative cursor-pointer touch-none bg-white select-none",
             isModal ? "h-[320px] flex-1" : "h-[150px] w-full",
           )}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setHoveredData(null)}
+          onTouchStart={handleTouch}
+          onTouchMove={handleTouch}
+          onTouchEnd={() => setHoveredData(null)}
         >
           {hoveredData && (
             <>
