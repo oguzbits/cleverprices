@@ -105,7 +105,7 @@ export function CategoryNav({ country }: { country: string }) {
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const scrollAmount = 400;
+      const scrollAmount = scrollRef.current.clientWidth * 0.7;
       scrollRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -127,18 +127,18 @@ export function CategoryNav({ country }: { country: string }) {
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="scrollbar-hide relative flex h-[80px] w-full snap-x snap-mandatory items-center overflow-x-auto"
+          className="scrollbar-hide relative flex h-[80px] w-full snap-x snap-mandatory items-center justify-start overflow-x-auto md:justify-center"
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             touchAction: "pan-x",
             overscrollBehavior: "none",
             overflowY: "hidden",
-            scrollPaddingLeft: "0px",
-            scrollPaddingRight: "0px",
+            scrollPaddingLeft: "16px",
+            scrollPaddingRight: "16px",
           }}
         >
-          <div className="mx-auto flex shrink-0 items-center gap-4 px-4 md:gap-6 md:px-8">
+          <div className="flex shrink-0 items-center gap-4 px-4 md:gap-6 md:px-8">
             {/* Deals Button (First) */}
             <PrefetchLink
               href="/deals"
@@ -151,13 +151,14 @@ export function CategoryNav({ country }: { country: string }) {
             {/* Category Pills - Icons on top */}
             {categories
               .filter((cat) => cat.slug !== null)
-              .map((cat) => {
+              .map((cat, index, array) => {
                 const Icon = cat.icon;
+                const isLast = index === array.length - 1;
                 return (
                   <PrefetchLink
                     key={cat.slug}
                     href={getCategoryPath(cat.slug as CategorySlug)}
-                    className="flex shrink-0 snap-start flex-col items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
+                    className={`flex shrink-0 snap-start flex-col items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange) ${isLast ? "snap-end" : ""}`}
                   >
                     <Icon className="h-6 w-6" />
                     <span className="whitespace-nowrap">{cat.label}</span>
