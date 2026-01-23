@@ -129,10 +129,7 @@ async function main() {
       // We aim to use about 70-80% of our current burst capacity
       // leaving room for multiple runs if refill is slow.
       const priceLimit = Math.max(300, Math.min(tokensLeft - 200, 1000));
-      const enrichmentLimit =
-        tokensLeft > 500
-          ? Math.min(50, Math.floor((tokensLeft - priceLimit) / 5))
-          : 0;
+      const enrichmentLimit = 200;
 
       const runCompliancePhase = async () => {
         console.log(
