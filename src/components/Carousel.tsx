@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useRef, useImperativeHandle, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 
 interface CarouselProps {
   children: React.ReactNode;
@@ -96,7 +96,7 @@ export const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
             scrollPaddingLeft: "1rem",
             scrollPaddingRight: "1rem",
             touchAction: "pan-x",
-            overscrollBehavior: "none",
+            overscrollBehavior: "contain auto",
             overflowY: "hidden",
             WebkitOverflowScrolling: "touch",
           }}

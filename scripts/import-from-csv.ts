@@ -165,6 +165,23 @@ async function main() {
           ),
           capacity: capacityValue,
           capacityUnit,
+          condition: (function () {
+            const t = title.toLowerCase();
+            if (
+              t.includes("(generalüberholt)") ||
+              t.includes("generalüberholt") ||
+              t.includes("erneuert") ||
+              t.includes("renewed") ||
+              t.includes("refurbished") ||
+              t.includes("b-ware")
+            ) {
+              return "Renewed";
+            }
+            if (t.includes("gebraucht") || t.includes("used")) {
+              return "Used";
+            }
+            return "New";
+          })(),
           historySeeded: false,
           updatedAt: new Date(),
         };

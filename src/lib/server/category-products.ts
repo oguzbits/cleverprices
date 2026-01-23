@@ -156,24 +156,69 @@ async function getCachedLocalizedCategoryProducts(
       let capacityUnit = p.capacityUnit || "";
       let normCap = p.normalizedCapacity || 0;
 
+      // Ensure we have capacity for devices even if not explicitly normalized in DB
       if (
-        ["hard-drives", "ssds", "external-storage", "storage", "nas"].includes(
-          categorySlug,
-        ) &&
-        (capacity === 1 || !normCap || normCap === 0)
+        [
+          "hard-drives",
+          "ssds",
+          "external-storage",
+          "storage",
+          "nas",
+          "smartphones",
+          "tablets",
+          "notebooks",
+          "ram",
+        ].includes(categorySlug) &&
+        (!normCap || normCap === 0)
       ) {
-        const capMatch = (title || "").match(/(\d+(?:\.\d+)?)\s?(TB|GB)/i);
-        if (capMatch) {
-          const val = parseFloat(capMatch[1]);
-          const unit = capMatch[2].toUpperCase();
-          if (unit === "TB") {
-            normCap = val * 1000;
-            capacity = val;
-            capacityUnit = "TB";
-          } else {
-            normCap = val;
-            capacity = val;
-            capacityUnit = "GB";
+        // Try to get from specifications JSON first (most reliable)
+        if (p.specifications && typeof p.specifications === "object") {
+          const specs = p.specifications as Record<string, any>;
+          const sizeVal =
+            specs.Size || specs.Capacity || specs.Speicherkapazität;
+          if (sizeVal && typeof sizeVal === "string") {
+            const match = sizeVal.match(/(\d+(?:\.\d+)?)\s?(TB|GB|MB)/i);
+            if (match) {
+              const val = parseFloat(match[1]);
+              const unit = match[2].toUpperCase();
+              if (unit === "TB") {
+                normCap = val * 1000;
+                capacity = val;
+                capacityUnit = "TB";
+              } else if (unit === "GB") {
+                normCap = val;
+                capacity = val;
+                capacityUnit = "GB";
+              } else if (unit === "MB") {
+                normCap = val / 1000;
+                capacity = val;
+                capacityUnit = "MB";
+              }
+            }
+          }
+        }
+
+        // Fallback to title regex if still not found
+        if (!normCap || normCap === 0) {
+          const capMatch = (title || "").match(
+            /\b(\d+(?:\.\d+)?)\s?(TB|GB|MB)\b/i,
+          );
+          if (capMatch) {
+            const val = parseFloat(capMatch[1]);
+            const unit = capMatch[2].toUpperCase();
+            if (unit === "TB") {
+              normCap = val * 1000;
+              capacity = val;
+              capacityUnit = "TB";
+            } else if (unit === "GB") {
+              normCap = val;
+              capacity = val;
+              capacityUnit = "GB";
+            } else if (unit === "MB") {
+              normCap = val / 1000;
+              capacity = val;
+              capacityUnit = "MB";
+            }
           }
         }
       }

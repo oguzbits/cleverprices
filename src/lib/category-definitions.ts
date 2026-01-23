@@ -172,6 +172,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Samsung", params: "brand=Samsung" },
       { label: "LG", params: "brand=LG" },
     ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Panel-Technologie", field: "technology", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
+    ],
   },
   staubsauger: {
     name: "Staubsauger",
@@ -198,6 +203,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Bluetooth", params: "type=bluetooth" },
       { label: "Noise-Cancelling", params: "features=anc" },
       { label: "In-Ear", params: "type=in-ear" },
+    ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Technologie", field: "technology", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
   notebooks: {
@@ -279,6 +289,10 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Bluetooth Lautsprecher", params: "type=bluetooth" },
       { label: "Subwoofer", params: "type=subwoofer" },
     ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
+    ],
   },
   kuehlschraenke: {
     name: "Kühlschränke",
@@ -356,6 +370,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "AVM Fritz!Box", params: "brand=AVM" },
       { label: "WiFi 6", params: "standard=wifi-6" },
       { label: "TP-Link", params: "brand=TP-Link" },
+    ],
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Technologie", field: "technology", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
   systemkameras: {
@@ -744,6 +763,10 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     parent: "telekommunikation",
     categoryType: "standard",
     imageUrl: "/images/category/smartwatch.jpg",
+    filterGroups: [
+      { label: "Hersteller", field: "brand", type: "checkbox" },
+      { label: "Zustand", field: "condition", type: "checkbox" },
+    ],
   },
   consoles: {
     name: "Spielekonsolen",

@@ -132,7 +132,7 @@ export function CategoryNav({ country }: { country: string }) {
             scrollbarWidth: "none",
             msOverflowStyle: "none",
             touchAction: "pan-x",
-            overscrollBehavior: "none",
+            overscrollBehavior: "contain auto",
             overflowY: "hidden",
             scrollPaddingLeft: "16px",
             scrollPaddingRight: "16px",
