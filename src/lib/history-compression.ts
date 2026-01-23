@@ -30,14 +30,22 @@ export function decompressHistory(blob: Buffer | Uint8Array | null): string {
   if (!blob) return "{}";
 
   try {
-    const decompressed = gunzipSync(new Uint8Array(blob));
+    // Explicitly handle Buffer/Uint8Array conversion for robustness across runtimes
+    const input = blob instanceof Buffer ? blob : new Uint8Array(blob);
+    const decompressed = gunzipSync(input);
     return new TextDecoder().decode(decompressed);
-  } catch {
-    // If decompression fails, assume it's already plain text (migration period)
-    if (blob instanceof Buffer) {
-      return blob.toString("utf8");
+  } catch (error: any) {
+    console.error("[History Decompression Error]", error?.message || error);
+    // If decompression fails, assume it's already plain text (migration period fallback)
+    try {
+      if (blob instanceof Buffer) {
+        return blob.toString("utf8");
+      }
+      return new TextDecoder().decode(blob);
+    } catch (fallbackError) {
+      console.error("[History Fallback Error]", fallbackError);
+      return "{}";
     }
-    return new TextDecoder().decode(blob);
   }
 }
 
