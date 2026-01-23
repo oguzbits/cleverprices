@@ -19,7 +19,7 @@ export function PriceAnalysisBadge({
         )}
       >
         <TrendingDown className="h-3.5 w-3.5" />
-        Top-Deal: {(savings * 100).toFixed(0)}% Ersparnis
+        Top-Deal: {Math.round(savings * 100)}% Ersparnis
       </div>
     );
   }
@@ -33,7 +33,7 @@ export function PriceAnalysisBadge({
         )}
       >
         <TrendingDown className="h-3.5 w-3.5" />
-        Guter Preis ({(savings * 100).toFixed(0)}% unter Durchschnitt)
+        Guter Preis ({Math.round(savings * 100)}% unter Durchschnitt)
       </div>
     );
   }

@@ -8,6 +8,7 @@
 
 import { getChildCategories, type CategorySlug } from "@/lib/categories";
 import { getProductsByCategory, type Product } from "@/lib/product-registry";
+import { mergeLivePrices } from "@/lib/server/live-data";
 import { calculateProductDiscount } from "@/lib/utils/products";
 
 /**
@@ -28,7 +29,10 @@ export async function getCategoryBestsellers(
     getProductsByCategory(child.slug),
   );
   const productArrays = await Promise.all(productPromises);
-  const allProducts = productArrays.flat();
+  const allProductsRaw = productArrays.flat();
+
+  // Merge live prices to ensure accurate display
+  const allProducts = await mergeLivePrices(allProductsRaw, countryCode);
 
   // Filter products with valid prices and sort by "popularity" (price availability as proxy)
   const validProducts = allProducts.filter(
@@ -90,7 +94,10 @@ export async function getCategoryNewProducts(
     getProductsByCategory(child.slug),
   );
   const productArrays = await Promise.all(productPromises);
-  const allProducts = productArrays.flat();
+  const allProductsRaw = productArrays.flat();
+
+  // Merge live prices to ensure accurate display
+  const allProducts = await mergeLivePrices(allProductsRaw, countryCode);
 
   // Filter for quality products:
   // 1. Valid price in country
@@ -169,7 +176,10 @@ export async function getCategoryDeals(
     getProductsByCategory(child.slug),
   );
   const productArrays = await Promise.all(productPromises);
-  const allProducts = productArrays.flat();
+  const allProductsRaw = productArrays.flat();
+
+  // Merge live prices to ensure accurate display
+  const allProducts = await mergeLivePrices(allProductsRaw, countryCode);
 
   // Filter for quality deal products:
   // 1. Valid price in country

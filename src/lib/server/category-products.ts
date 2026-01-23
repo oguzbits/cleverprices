@@ -243,7 +243,7 @@ async function mergeLivePricesIntoLocalized(
 
   return products.map((p) => {
     const live = priceMap.get(p.id);
-    if (!live || live.price === p.price) return p;
+    if (!live) return p;
 
     // Price changed! Recalculate dependencies
     const newPrice = live.price;
