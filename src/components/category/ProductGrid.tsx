@@ -24,6 +24,15 @@ export function ProductGrid({ products, countryCode }: ProductGridProps) {
             "group relative -mr-px -mb-px flex flex-col border border-[#b4b4b4] bg-white no-underline transition-shadow hover:z-10 hover:shadow-lg",
           )}
         >
+          {/* Badge Area - top left */}
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+            {product.savings >= 0.05 && (
+              <div className="bg-primary rounded-sm px-2 py-1 text-[14px] font-extrabold tracking-tight text-white shadow-sm">
+                -{Math.round(product.savings * 100)}%
+              </div>
+            )}
+          </div>
+
           {/* Image - using aspect ratio for natural sizing */}
           <div className="relative aspect-4/3 w-full bg-white">
             {product.image ? (

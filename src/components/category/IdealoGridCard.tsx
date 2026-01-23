@@ -72,6 +72,15 @@ export function IdealoGridCard({
           "border border-[#b4b4b4] bg-white text-inherit no-underline hover:no-underline",
         )}
       >
+        {/* Badge Area - top left */}
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+          {(product.savings ?? 0) >= 0.05 && (
+            <div className="bg-primary rounded-sm px-2 py-1 text-[14px] font-extrabold tracking-tight text-white shadow-sm">
+              -{Math.round(product.savings! * 100)}%
+            </div>
+          )}
+        </div>
+
         {/* ============================================ */}
         {/* IMAGE SECTION - sr-resultItemTile__imageSection */}
         {/* Idealo: height:140px, width:168px */}
@@ -190,11 +199,6 @@ export function IdealoGridCard({
             {isProductBestseller(product as any) && (
               <span className="rounded-[2px] bg-[#0066cc] px-2 py-0.5 text-[11px] font-bold text-white">
                 Bestseller
-              </span>
-            )}
-            {(product.savings ?? 0) > 0.05 && (
-              <span className="rounded-[2px] bg-[#e10316] px-2 py-0.5 text-[11px] font-bold text-white">
-                -{Math.round(product.savings! * 100)}%
               </span>
             )}
           </div>
