@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "bun run scripts/fetch-lite-db.ts && bun test --exclude e2e",
+    "prebuild": "bun run scripts/fetch-lite-db.ts && bun test src",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
