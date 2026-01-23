@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Minus, TrendingDown } from "lucide-react";
+import { TrendingDown } from "lucide-react";
 
 interface PriceAnalysisBadgeProps {
   savings: number; // 0.15 = 15% savings
@@ -38,16 +38,5 @@ export function PriceAnalysisBadge({
     );
   }
 
-  // Covers 0% to <5% savings (and theoretically negative savings if they existed)
-  return (
-    <div
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800",
-        className,
-      )}
-    >
-      <Minus className="h-3.5 w-3.5" />
-      Fairer Preis
-    </div>
-  );
+  return null;
 }
