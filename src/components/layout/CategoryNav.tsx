@@ -4,17 +4,17 @@ import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { type CategorySlug } from "@/lib/category-types";
 import { getCategoryPath } from "@/lib/category-utils";
 import {
-  Camera,
   ChevronLeft,
+  ChevronRight,
+  CircuitBoard,
   Cpu,
   Grid3X3,
   HardDrive,
   MemoryStick,
   Monitor,
   Percent,
-  Printer,
+  Smartphone,
   Video,
-  Wifi,
   Zap,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -30,12 +30,11 @@ const categories: {
   { slug: "cpu", label: "Prozessoren", icon: Cpu },
   { slug: "gpu", label: "Grafikkarten", icon: Video },
   { slug: "ram", label: "Arbeitsspeicher", icon: MemoryStick },
-  { slug: "hard-drives", label: "Festplatten", icon: HardDrive },
+  { slug: "ssds", label: "SSDs", icon: HardDrive },
   { slug: "power-supplies", label: "Netzteile", icon: Zap },
   { slug: "monitors", label: "Monitore", icon: Monitor },
-  { slug: "3d-drucker", label: "3D-Drucker", icon: Printer },
-  { slug: "cameras", label: "Kameras", icon: Camera },
-  { slug: "routers", label: "Router", icon: Wifi },
+  { slug: "motherboards", label: "Mainboards", icon: CircuitBoard },
+  { slug: "smartphones", label: "Smartphones", icon: Smartphone },
 ];
 
 export function CategoryNav({ country }: { country: string }) {
@@ -50,11 +49,51 @@ export function CategoryNav({ country }: { country: string }) {
     pathname === `/${country}` ||
     pathname === `/${country}/`;
 
+  const [isOverflowing, setIsOverflowing] = useState(false);
+
+  useEffect(() => {
+    // Force scroll to start on mount/pathname change
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = 0;
+      // Small delay to ensure layout is ready before checking scroll
+      const timer = setTimeout(checkScroll, 100);
+      // Second check after images/layout might have shifted
+      const timer2 = setTimeout(checkScroll, 1000);
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(timer2);
+      };
+    }
+  }, [pathname]);
+
   const checkScroll = () => {
     if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      setCanScrollLeft(scrollLeft > 0);
-      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 10);
+      const container = scrollRef.current;
+      const { scrollWidth, clientWidth } = container;
+      // Threshold 10 to ignore tiny overflow rounding
+      const overflow = scrollWidth > clientWidth + 10;
+      setIsOverflowing(overflow);
+
+      if (!overflow) {
+        setCanScrollLeft(false);
+        setCanScrollRight(false);
+        return;
+      }
+
+      // Visual detection: Check if the first and last items are truly visible
+      // This is immune to scroll snap offsets or hidden offsets
+      const items = container.querySelectorAll("a");
+      if (items.length > 0) {
+        const firstItem = items[0];
+        const lastItem = items[items.length - 1];
+        const containerRect = container.getBoundingClientRect();
+        const firstRect = firstItem.getBoundingClientRect();
+        const lastRect = lastItem.getBoundingClientRect();
+
+        // 10px tolerance for rounding
+        setCanScrollLeft(firstRect.left < containerRect.left - 10);
+        setCanScrollRight(lastRect.right > containerRect.right + 10);
+      }
     }
   };
 
@@ -66,12 +105,13 @@ export function CategoryNav({ country }: { country: string }) {
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const scrollAmount = 200;
+      const scrollAmount = 400;
       scrollRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
       });
-      setTimeout(checkScroll, 300);
+      // Allow time for the smooth scroll plus snap-alignment to settle
+      setTimeout(checkScroll, 600);
     }
   };
 
@@ -83,22 +123,11 @@ export function CategoryNav({ country }: { country: string }) {
   return (
     <div className="z-40 border-b border-white/10 bg-(--sub-header-bg) dark:bg-(--sub-header-bg)">
       <div className="relative mx-auto max-w-[1280px] px-4">
-        {/* Left scroll button */}
-        {canScrollLeft && (
-          <button
-            onClick={() => scroll("left")}
-            className="absolute top-1/2 left-0 z-10 flex h-full -translate-y-1/2 items-center bg-linear-to-r from-[#27272a] via-[#27272a] to-transparent pr-4 pl-2"
-            aria-label="Scroll left"
-          >
-            <ChevronLeft className="h-5 w-5 text-zinc-400" />
-          </button>
-        )}
-
-        {/* Categories scroll container */}
+        {/* Categories scroll container with CSS Scroll Snap */}
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="scrollbar-hide flex h-[80px] items-center justify-center gap-6 overflow-x-auto"
+          className="scrollbar-hide relative flex h-[80px] w-full snap-x snap-mandatory items-center overflow-x-auto scroll-smooth"
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
@@ -106,35 +135,66 @@ export function CategoryNav({ country }: { country: string }) {
             overscrollBehavior: "none",
             overflowY: "hidden",
             WebkitOverflowScrolling: "touch",
-            height: "100%",
+            // scrollPadding allows the snap markers to align properly with the start of the viewport
+            scrollPaddingLeft: "64px",
+            scrollPaddingRight: "64px",
           }}
         >
-          {/* Deals Button (First) */}
-          <PrefetchLink
-            href="/deals"
-            className="flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
-          >
-            <Percent className="h-6 w-6" />
-            <span>Deals</span>
-          </PrefetchLink>
+          <div className="mx-auto flex w-fit shrink-0 items-center justify-center gap-6 px-16">
+            {/* Deals Button (First) */}
+            <PrefetchLink
+              href="/deals"
+              className="flex shrink-0 snap-start flex-col items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
+            >
+              <Percent className="h-6 w-6" />
+              <span>Deals</span>
+            </PrefetchLink>
 
-          {/* Category Pills - Icons on top */}
-          {categories
-            .filter((cat) => cat.slug !== null)
-            .map((cat) => {
-              const Icon = cat.icon;
-              return (
-                <PrefetchLink
-                  key={cat.slug}
-                  href={getCategoryPath(cat.slug as CategorySlug)}
-                  className="flex shrink-0 flex-col items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
-                >
-                  <Icon className="h-6 w-6" />
-                  <span className="whitespace-nowrap">{cat.label}</span>
-                </PrefetchLink>
-              );
-            })}
+            {/* Category Pills - Icons on top */}
+            {categories
+              .filter((cat) => cat.slug !== null)
+              .map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <PrefetchLink
+                    key={cat.slug}
+                    href={getCategoryPath(cat.slug as CategorySlug)}
+                    className="flex shrink-0 snap-start flex-col items-center gap-2 rounded-xl px-4 py-2 text-[12px] font-medium text-white/80 no-underline transition-all hover:bg-white/10 hover:text-(--ccc-orange)"
+                  >
+                    <Icon className="h-6 w-6" />
+                    <span className="whitespace-nowrap">{cat.label}</span>
+                  </PrefetchLink>
+                );
+              })}
+          </div>
         </div>
+
+        {/* Navigation Buttons - Placed after scroll container for consistent stacking context */}
+        {/* Left scroll button */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scroll("left")}
+            className="pointer-events-none absolute top-0 left-0 z-30 flex h-full items-center bg-linear-to-r from-[#27272a] via-[#27272a]/95 to-transparent pr-24 pl-4 transition-all duration-300"
+            aria-label="Scroll left"
+          >
+            <div className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white shadow-xl backdrop-blur-md transition-transform hover:scale-110 hover:bg-white/20 active:scale-95">
+              <ChevronLeft className="h-6 w-6" />
+            </div>
+          </button>
+        )}
+
+        {/* Right scroll button */}
+        {canScrollRight && (
+          <button
+            onClick={() => scroll("right")}
+            className="pointer-events-none absolute top-0 right-0 z-30 flex h-full items-center bg-linear-to-l from-[#27272a] via-[#27272a]/95 to-transparent pr-4 pl-24 transition-all duration-300"
+            aria-label="Scroll right"
+          >
+            <div className="pointer-events-auto flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white shadow-xl backdrop-blur-md transition-transform hover:scale-110 hover:bg-white/20 active:scale-95">
+              <ChevronRight className="h-6 w-6" />
+            </div>
+          </button>
+        )}
       </div>
     </div>
   );
