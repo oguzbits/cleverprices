@@ -29,23 +29,32 @@ export function compressHistory(json: string): Buffer {
 export function decompressHistory(blob: Buffer | Uint8Array | null): string {
   if (!blob) return "{}";
 
-  try {
-    // Explicitly handle Buffer/Uint8Array conversion for robustness across runtimes
-    const input = blob instanceof Buffer ? blob : new Uint8Array(blob);
-    const decompressed = gunzipSync(input);
-    return new TextDecoder().decode(decompressed);
-  } catch (error: any) {
-    console.error("[History Decompression Error]", error?.message || error);
-    // If decompression fails, assume it's already plain text (migration period fallback)
+  const input = blob instanceof Buffer ? blob : new Uint8Array(blob);
+
+  // Check for gzip magic number (0x1f 0x8b)
+  const isGzipped = input.length >= 2 && input[0] === 0x1f && input[1] === 0x8b;
+
+  if (isGzipped) {
     try {
-      if (blob instanceof Buffer) {
-        return blob.toString("utf8");
-      }
-      return new TextDecoder().decode(blob);
-    } catch (fallbackError) {
-      console.error("[History Fallback Error]", fallbackError);
-      return "{}";
+      const decompressed = gunzipSync(input);
+      return new TextDecoder().decode(decompressed);
+    } catch (error: any) {
+      console.error("[History Decompression Error]", error?.message || error);
+      // If decompression fails despite having the header, fall back to plain text
     }
+  }
+
+  // Fallback to plain text (either not gzipped or gunzip failed)
+  try {
+    if (blob instanceof Buffer) {
+      return blob.toString("utf8");
+    }
+    return new TextDecoder().decode(blob);
+  } catch (fallbackError) {
+    if (isGzipped) {
+      console.error("[History Fallback Error]", fallbackError);
+    }
+    return "{}";
   }
 }
 
