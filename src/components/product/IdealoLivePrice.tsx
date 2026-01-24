@@ -19,12 +19,16 @@ export async function IdealoLivePrice({
   productId,
   countryCode,
   initialPrice,
+  priceType = "new",
   className = "text-idealo-text-primary text-[15px] font-extrabold",
   showAb = false,
-}: IdealoLivePriceProps) {
+}: IdealoLivePriceProps & { priceType?: "new" | "used" }) {
   // Fetch fresh price from the 1-minute cached source
   const live = await getLivePriceForProduct(productId, countryCode);
-  const bestPrice = live?.price ?? initialPrice;
+  const bestPrice =
+    priceType === "used"
+      ? (live?.usedPrice ?? initialPrice)
+      : (live?.price ?? initialPrice);
 
   return (
     <LegalPrice price={bestPrice} priceClassName={className} showAb={showAb} />

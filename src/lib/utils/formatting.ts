@@ -166,7 +166,7 @@ export function formatDisplayTitle(title: string, model?: string): string {
   if (!title) return "";
 
   // 1. Initial split to remove noise (everything after separators)
-  const splitTitle = title.split(/ \- | \(| \||, /)[0].trim();
+  const splitTitle = title.split(/ \- | \(| \||, |: |\|/)[0].trim();
 
   // 2. Use refined source
   let result = splitTitle.length > 3 ? splitTitle : model || title;

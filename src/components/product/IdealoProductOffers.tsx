@@ -92,32 +92,60 @@ export async function IdealoProductOffers({
     });
     if (bestItem) productsToShow = [bestItem];
   } else {
-    // Normal mode: just the current product
-    const live = await getLivePriceForProduct(product.id!, countryCode);
-    const p = product;
+    // Normal mode: current product + identical siblings (same specs)
+    let targets = [product];
 
-    if (isUsedTrack) {
-      const cond = (p.condition || "").toLowerCase();
-      if (cond === "renewed") {
-        productsToShow.push({
-          product: p,
-          price: live?.price ?? p.prices[countryCode],
-          type: "renewed",
-        });
+    if (product.parentAsin) {
+      const familyMembers = await getProductFamilyMembers(
+        product.parentAsin,
+        countryCode,
+      );
+      const curAttrs = product.variationAttributes?.toLowerCase().trim();
+      const identicalSiblings = familyMembers.filter(
+        (m) =>
+          m.id !== product.id &&
+          m.variationAttributes?.toLowerCase().trim() === curAttrs,
+      );
+      targets = [...targets, ...identicalSiblings];
+    }
+
+    // Process all spec-identical targets
+    for (const p of targets) {
+      const isMain = p.id === product.id;
+      const live = isMain
+        ? await getLivePriceForProduct(p.id!, countryCode)
+        : null;
+
+      if (isUsedTrack) {
+        const cond = (p.condition || "").toLowerCase();
+        if (cond === "renewed") {
+          const pr = live?.price ?? p.prices[countryCode];
+          if (pr)
+            productsToShow.push({ product: p, price: pr, type: "renewed" });
+        }
+        const up = live?.usedPrice ?? p.usedPrices?.[countryCode];
+        if (up)
+          productsToShow.push({ product: p, price: up, type: "warehouse" });
+      } else {
+        const cond = (p.condition || "").toLowerCase();
+        if (cond !== "renewed" && cond !== "used") {
+          const pr = live?.price ?? p.prices[countryCode];
+          if (pr) productsToShow.push({ product: p, price: pr, type: "new" });
+        }
       }
-      if (live?.usedPrice || p.usedPrices?.[countryCode]) {
-        productsToShow.push({
-          product: p,
-          price: live?.usedPrice ?? p.usedPrices?.[countryCode],
-          type: "warehouse",
-        });
-      }
-    } else {
-      productsToShow.push({
-        product: p,
-        price: live?.price ?? p.prices[countryCode],
-        type: "new",
+    }
+
+    // DEDUPLICATE: Only show the single best offer for this specific variant spec
+    if (productsToShow.length > 1) {
+      let min = Infinity;
+      let best: (typeof productsToShow)[0] | null = null;
+      productsToShow.forEach((item) => {
+        if (item.price && (min === Infinity || item.price < min)) {
+          min = item.price;
+          best = item;
+        }
       });
+      productsToShow = best ? [best] : [];
     }
   }
 

@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import {
   extractAttributeGroups,
+  extractRealStorageFromTitle,
+  parseCapacityToGB,
   parseVariationAttributes,
 } from "@/lib/utils/variants";
 import { Check } from "lucide-react";
@@ -23,6 +25,7 @@ interface Product {
   specifications?: Record<string, any>;
   parentAsin?: string;
   condition: "New" | "Used" | "Renewed"; // Added condition
+  category?: string;
 }
 
 interface VariantCardProps {
@@ -51,10 +54,49 @@ function VariantCard({
   selectedCondition,
 }: VariantCardProps) {
   // ... (VariantCard implementation remains strictly visual)
+  // Enhanced Label Logic for Smartphones/Tech
   const attrs = parseVariationAttributes(variant?.variationAttributes);
-  const label = isAllVariants
-    ? "Alle Varianten"
-    : Object.values(attrs).join(" ") || variant?.title.slice(0, 30);
+  const isSmartphone =
+    variant?.category === "smartphones" ||
+    variant?.title.toLowerCase().includes("smartphone");
+
+  const label = useMemo(() => {
+    if (isAllVariants) return "Alle Varianten";
+
+    // Extract values and handle misconceptions (like RAM being labeled as Storage)
+    const displayValues: string[] = [];
+    let foundRealStorage = false;
+
+    Object.entries(attrs).forEach(([key, value]) => {
+      const k = key.toLowerCase();
+      const gb = parseCapacityToGB(value);
+
+      if (gb >= 64) {
+        foundRealStorage = true;
+      }
+
+      // Heuristic: If it's a smartphone and the "Storage" is exactly 8, 12, 16, or < 64, it's likely RAM.
+      // We exclude these from the primary card label to avoid "12GB Titanium" (RAM + Color).
+      if (
+        isSmartphone &&
+        (k.includes("storage") ||
+          k.includes("speicher") ||
+          k.includes("memory"))
+      ) {
+        if (gb > 0 && gb < 64) return; // Skip RAM in labels
+      }
+
+      displayValues.push(value);
+    });
+
+    // Recovery if real storage wasn't in variation attributes
+    if (isSmartphone && !foundRealStorage) {
+      const real = extractRealStorageFromTitle(variant?.title);
+      if (real) displayValues.unshift(real);
+    }
+
+    return displayValues.join(" ") || variant?.title.slice(0, 30);
+  }, [variant, attrs, isAllVariants, isSmartphone]);
 
   // Price Logic: Show Used price if condition is 'used', otherwise New price
   const isUsedMode = selectedCondition === "used";
@@ -197,16 +239,17 @@ function AttributeSelector({
         ? "Farbe"
         : label;
 
+  const isColor =
+    label.toLowerCase() === "color" || label.toLowerCase() === "farbe";
+
   return (
     <div className="mt-4">
       <span className="text-[13px] font-bold text-[#2d2d2d]">
         {displayLabel}:
       </span>
-      <div className="mt-1.5 flex flex-wrap gap-2">
+      <div className={cn("mt-1.5 flex min-h-[33px] flex-wrap gap-2")}>
         {options.map((option) => {
           // Availability Logic
-          const isColor =
-            label.toLowerCase() === "color" || label.toLowerCase() === "farbe";
           const isUsedMode = condition === "used";
           const isAvailable =
             isParentView ||
@@ -294,10 +337,10 @@ function AttributeSelector({
               href={href}
               scroll={false}
               className={cn(
-                "relative flex min-w-[70px] flex-col items-center rounded-[4px] border py-1.5 text-[#2d2d2d] no-underline transition-all",
+                "relative flex min-w-[70px] flex-col items-center justify-center rounded-[4px] border px-3 py-1.5 text-[#2d2d2d] no-underline transition-all",
                 isSelected
-                  ? "border-[#0771d0] bg-white pr-3 pl-5"
-                  : "border-[#b4b4b4] bg-white px-3 hover:border-[#888]",
+                  ? "border-[#0771d0] bg-white"
+                  : "border-[#b4b4b4] bg-white hover:border-[#888]",
                 !isAvailable && !isSelected && "pointer-events-none opacity-40",
               )}
             >
@@ -308,11 +351,19 @@ function AttributeSelector({
               )}
               <span
                 className={cn(
-                  "text-[13px]",
+                  "inline-grid grid-cols-1 grid-rows-1 items-center justify-center text-[13px]",
                   isSelected ? "font-bold text-[#0771d0]" : "",
                 )}
               >
-                {option}
+                <span
+                  className="invisible col-start-1 row-start-1 font-bold whitespace-nowrap"
+                  aria-hidden="true"
+                >
+                  {option}
+                </span>
+                <span className="col-start-1 row-start-1 whitespace-nowrap">
+                  {option}
+                </span>
               </span>
             </Link>
           );
@@ -383,10 +434,11 @@ export function ProductVariantSelector({
             : p.usedPrices?.[countryCode];
         };
 
-        const priceV = getEffectivePrice(v);
-        const priceE = getEffectivePrice(existing);
+        const priceV = getEffectivePrice(v) || 0;
+        const priceE = getEffectivePrice(existing) || 0;
 
-        if (priceV && priceE && priceV < priceE) {
+        // Replace if: new has price and existing doesn't, OR new is cheaper than existing
+        if (priceV > 0 && (priceE === 0 || priceV < priceE)) {
           uniqueMap.set(key, v);
         }
       }
@@ -394,6 +446,10 @@ export function ProductVariantSelector({
 
     return Array.from(uniqueMap.values());
   }, [allVariants, targetCondition, countryCode]);
+
+  const isSmartphone =
+    currentProduct.category === "smartphones" ||
+    currentProduct.title.toLowerCase().includes("smartphone");
 
   const attributeGroups = useMemo(
     () => extractAttributeGroups(variants),
@@ -571,18 +627,34 @@ export function ProductVariantSelector({
 
   if (allVariants.length <= 1) return null;
 
-  const sortedAttributeGroups = Object.entries(attributeGroups).sort(
-    ([a], [b]) => {
-      const score = (key: string) => {
+  const sortedAttributeGroups = useMemo(() => {
+    return Object.entries(attributeGroups)
+      .map(([key, values]) => {
         const k = key.toLowerCase();
-        if (k === "color" || k === "farbe") return 0;
-        if (k === "storage" || k === "interner speicher" || k === "size")
-          return 1;
-        return 2;
-      };
-      return score(a) - score(b);
-    },
-  );
+        // For smartphones, filter out RAM (usually < 64GB) from storage-labeled groups
+        if (
+          isSmartphone &&
+          (k.includes("storage") ||
+            k.includes("speicher") ||
+            k.includes("memory"))
+        ) {
+          const filtered = values.filter((v) => parseCapacityToGB(v) >= 64);
+          return [key, filtered] as [string, string[]];
+        }
+        return [key, values] as [string, string[]];
+      })
+      .filter(([_, values]) => values.length > 0)
+      .sort(([a], [b]) => {
+        const score = (key: string) => {
+          const k = key.toLowerCase();
+          if (k === "color" || k === "farbe") return 0;
+          if (k === "storage" || k === "interner speicher" || k === "size")
+            return 1;
+          return 2;
+        };
+        return score(a) - score(b);
+      });
+  }, [attributeGroups, isSmartphone]);
 
   return (
     <div className="mt-4 mb-6">

@@ -34,10 +34,12 @@ export async function getLivePricesForProducts(
   latestPrices.forEach((p) => {
     // Lean schema: price is already the consolidated "clever" price
     const price = p.price && p.price > 0 ? p.price : null;
+    const usedPrice = p.usedPrice && p.usedPrice > 0 ? p.usedPrice : null;
 
-    if (price) {
+    if (price || usedPrice) {
       priceMap.set(p.productId, {
         price,
+        usedPrice,
         lastUpdated: p.lastUpdated,
         priceAvg90: p.priceAvg90,
         listPrice: p.listPrice,

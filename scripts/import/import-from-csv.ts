@@ -5,6 +5,7 @@ import Papa from "papaparse";
 import { db, NewPrice, NewProduct, prices, products } from "../../src/db";
 import type { CategorySlug } from "../../src/lib/categories";
 import { generateProductSlug } from "../../src/lib/utils/slug";
+import { normalizeVariantAttributes } from "../../src/lib/utils/variants";
 
 /**
  * Keepa CSV Importer (Universal Version)
@@ -153,7 +154,11 @@ async function main() {
           gtin,
           mpn,
           parentAsin: row["Parent ASIN"] || null,
-          variationAttributes: row["Variation Attributes"] || null,
+          variationAttributes: normalizeVariantAttributes({
+            title,
+            variationAttributes: row["Variation Attributes"] || null,
+            category: categorySlug,
+          }),
           specifications: JSON.stringify(specs),
           category: categorySlug as CategorySlug,
           slug: generateProductSlug(

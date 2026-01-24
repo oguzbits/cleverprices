@@ -37,6 +37,7 @@ export async function ConditionButtons({
 
   let bestNewProductId = 0;
   let bestUsedOverallProductId = 0;
+  let usedOverallType: "renewed" | "warehouse" = "renewed";
 
   // Initialize with current product
   if (currentIsNew) {
@@ -56,11 +57,13 @@ export async function ConditionButtons({
     usedOverallPrice = curRenewedPrice;
     usedOverallSlug = product.slug;
     bestUsedOverallProductId = product.id!;
+    usedOverallType = "renewed";
     hasUsedOverall = true;
   } else if (curWarehousePrice > 0) {
     usedOverallPrice = curWarehousePrice;
     usedOverallSlug = product.slug;
     bestUsedOverallProductId = product.id!;
+    usedOverallType = "warehouse";
     hasUsedOverall = true;
   }
 
@@ -93,7 +96,12 @@ export async function ConditionButtons({
 
       // Track "Gebraucht" prices (Priority: Renewed > Warehouse)
       // On Family view, we still want the absolute 'ab' (starting) price
-      const possibleUsed = [];
+      const possibleUsed: {
+        price: number;
+        id: number;
+        slug: string;
+        type: "renewed" | "warehouse";
+      }[] = [];
       if (mCond === "renewed" && p > 0)
         possibleUsed.push({
           price: p,
@@ -114,6 +122,7 @@ export async function ConditionButtons({
           usedOverallPrice = item.price;
           usedOverallSlug = item.slug;
           bestUsedOverallProductId = item.id;
+          usedOverallType = item.type;
           hasUsedOverall = true;
         } else {
           // If we have a choice, pick the lower price, but on individual spec prioritize renewed if price is similar?
@@ -121,11 +130,7 @@ export async function ConditionButtons({
           // but user specifically said "take the price... which is main on amazon".
           // If 468 (Renewed) and 429 (Warehouse), and user says "take 468 as main", we prioritize Renewed listings.
 
-          const currentIsWarehouse = !familyMembers.find(
-            (fm) =>
-              fm.id === bestUsedOverallProductId &&
-              (fm.condition || "").toLowerCase() === "renewed",
-          );
+          const currentIsWarehouse = usedOverallType === "warehouse";
           const itemIsRenewed = item.type === "renewed";
 
           // Rule: If current best is warehouse but we found a renewed one, we might prefer renewed if it's the "Main" thing.
@@ -136,6 +141,7 @@ export async function ConditionButtons({
               usedOverallPrice = item.price;
               usedOverallSlug = item.slug;
               bestUsedOverallProductId = item.id;
+              usedOverallType = item.type;
             }
           } else {
             // Variant page: If we find a Renewed price, use it as 'Main'.
@@ -150,12 +156,14 @@ export async function ConditionButtons({
                 usedOverallPrice = item.price;
                 usedOverallSlug = item.slug;
                 bestUsedOverallProductId = item.id;
+                usedOverallType = item.type;
               }
             } else if (currentIsWarehouse) {
               if (item.price < usedOverallPrice) {
                 usedOverallPrice = item.price;
                 usedOverallSlug = item.slug;
                 bestUsedOverallProductId = item.id;
+                usedOverallType = item.type;
               }
             }
           }
@@ -198,6 +206,7 @@ export async function ConditionButtons({
                 productId={bestNewProductId}
                 countryCode={countryCode as any}
                 initialPrice={newPrice}
+                priceType="new"
               />
             </Suspense>
           </div>
@@ -233,6 +242,7 @@ export async function ConditionButtons({
                 productId={bestUsedOverallProductId}
                 countryCode={countryCode as any}
                 initialPrice={usedOverallPrice}
+                priceType={usedOverallType === "renewed" ? "new" : "used"}
               />
             </Suspense>
           </div>

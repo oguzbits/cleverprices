@@ -11,6 +11,7 @@ import {
   getProductBySlug,
 } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import { Metadata } from "next";
 
 import { notFound, redirect } from "next/navigation";
@@ -48,9 +49,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   try {
-    const product = await getProductBySlug(slug);
+    let product = await getProductBySlug(slug);
+    let isParentViewMode = false;
+
     if (!product) {
-      // Try resolving by ASIN suffix before giving up
+      // 1. Try resolving by ASIN suffix (Redirect logic)
       const newSlug = await findProductSlugByAsinSuffix(slug);
       if (newSlug && newSlug !== slug) {
         const canonicalUrl = `https://${BRAND_DOMAIN}/p/${newSlug}`;
@@ -60,6 +63,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           robots: { index: false, follow: true },
         };
       }
+
+      // 2. Try resolving by PARENT ASIN suffix (Neutral URL logic)
+      product = await findProductByParentAsinSuffix(slug);
+      if (product) {
+        isParentViewMode = product.isParentView || false;
+      }
+    }
+
+    if (!product) {
       return { title: "Produkt nicht gefunden - CleverPrices" };
     }
 
@@ -68,6 +80,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const category = allCategories[product.category as CategorySlug];
     const price =
       product.prices[countryCode] || Object.values(product.prices)[0];
+
+    // ... rest of the logic uses product and isParentViewMode ...
+    const isParentView = isParentViewMode;
+    const identity = getProductIdentity(product);
 
     // Calculate price per unit for SEO
     const pricePerUnit =
@@ -79,13 +95,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? ` - ${pricePerUnit}€ pro ${category.unitType}`
         : "";
 
-    // German SEO-optimized title (Max ~60 chars ideal)
-    const shortTitle =
-      product.title.length > 50
-        ? product.title.substring(0, 50) + "..."
-        : product.title;
-
-    const title = `${shortTitle} ${unitPriceText} - CleverPrices`.trim();
+    // SEO-optimized Title
+    const seoTitle = isParentView ? identity.fullModel : product.title;
+    const title = `${seoTitle}${unitPriceText} - CleverPrices | ${BRAND_DOMAIN}`;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
     const description =
@@ -170,7 +182,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
     // GSC Fix: Return 404 for products with insufficient data (prevents soft 404)
     const hasPrice =
       product.prices[countryCode] ||
-      Object.values(product.prices).some((p) => p > 0);
+      product.usedPrices?.[countryCode] ||
+      Object.values(product.prices).some((p) => p && p > 0) ||
+      (product.usedPrices &&
+        Object.values(product.usedPrices).some((p) => p && p > 0));
     const hasMeaningfulTitle =
       product.title &&
       product.title.length > 10 &&

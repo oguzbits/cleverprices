@@ -610,9 +610,9 @@ export async function findProductSlugByAsinSuffix(
     if (p) return p.slug;
   }
 
-  // 2. Try short 4-char suffix (common in our generated slugs)
-  // ONLY do this if the slug actually looks like it has a suffix (ends in -XXXX)
-  const shortSuffixMatch = oldSlug.match(/-([a-z0-9]{4})$/i);
+  // 2. Try short 3-4 char suffix (common in our generated slugs)
+  // ONLY do this if the slug actually looks like it has a suffix (ends in -XXX or -XXXX)
+  const shortSuffixMatch = oldSlug.match(/-([a-z0-9]{3,4})$/i);
   if (shortSuffixMatch) {
     const suffix = shortSuffixMatch[1].toUpperCase();
 
@@ -644,16 +644,28 @@ export async function findProductSlugByAsinSuffix(
 export async function findProductByParentAsinSuffix(
   slug: string,
 ): Promise<Product | undefined> {
-  const shortSuffixMatch = slug.match(/-([a-z0-9]{4})$/i);
+  const shortSuffixMatch = slug.match(/-([a-z0-9]{3,4})$/i);
   if (!shortSuffixMatch) return undefined;
 
   const suffix = shortSuffixMatch[1].toUpperCase();
+  const prefix = slug.slice(0, slug.lastIndexOf("-"));
+  const keywords = prefix
+    .split("-")
+    .filter((k) => k.length >= 2)
+    .slice(0, 3); // Take first 3 meaningful tokens (e.g. apple, iphone, 17)
 
-  // Search by parent_asin suffix
+  // Search by parent_asin suffix + title keywords to avoid collision (e.g. s25 vs s24)
+  const conditions = [sql`${products.parentAsin} LIKE ${"%" + suffix}`];
+
+  // Apply keyword filters if any found
+  for (const k of keywords) {
+    conditions.push(like(products.title, `%${k}%`));
+  }
+
   const [p] = await db
     .select(liteProductColumns)
     .from(products)
-    .where(sql`${products.parentAsin} LIKE ${"%" + suffix}`)
+    .where(and(...conditions))
     .limit(1);
 
   if (!p) return undefined;
