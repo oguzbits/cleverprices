@@ -644,7 +644,7 @@ export async function findProductSlugByAsinSuffix(
 export async function findProductByParentAsinSuffix(
   slug: string,
 ): Promise<Product | undefined> {
-  const shortSuffixMatch = slug.match(/-([a-z0-9]{3,4})$/i);
+  const shortSuffixMatch = slug.match(/-([a-z0-9]{3,4})-?$/i);
   if (!shortSuffixMatch) return undefined;
 
   const suffix = shortSuffixMatch[1].toUpperCase();
@@ -655,7 +655,13 @@ export async function findProductByParentAsinSuffix(
     .slice(0, 3); // Take first 3 meaningful tokens (e.g. apple, iphone, 17)
 
   // Search by parent_asin suffix + title keywords to avoid collision (e.g. s25 vs s24)
-  const conditions = [sql`${products.parentAsin} LIKE ${"%" + suffix}`];
+  // We use OR to handle both exact suffix and cases where it ends with a dash (common in FAM- slugs)
+  const conditions = [
+    or(
+      like(products.parentAsin, `%${suffix}`),
+      like(products.parentAsin, `%${suffix}-`),
+    ),
+  ] as (SQL | undefined)[];
 
   // Apply keyword filters if any found
   for (const k of keywords) {

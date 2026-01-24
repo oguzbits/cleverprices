@@ -516,7 +516,9 @@ export function ProductVariantSelector({
   // Generate parent neutral slug using robust subtraction logic
   const parentSlug = useMemo(() => {
     const parentAsis = currentProduct.parentAsin || currentProduct.asin;
-    const parentAsinSuffix = parentAsis.slice(-4).toLowerCase();
+    // Clean suffix: Trim trailing non-alphanumeric (like the - in FAM- identifiers)
+    const cleanParentAsis = parentAsis.replace(/[^a-zA-Z0-9]+$/, "");
+    const parentAsinSuffix = cleanParentAsis.slice(-4).toLowerCase();
 
     // 1. Collect all variation values to subtract
     const variationTokens = new Set<string>();
