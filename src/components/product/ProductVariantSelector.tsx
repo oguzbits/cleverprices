@@ -658,23 +658,43 @@ export function ProductVariantSelector({
       });
   }, [attributeGroups, isSmartphone]);
 
+  const activeVariants = useMemo(() => {
+    return sortedVariants.filter((v) => {
+      const p =
+        targetCondition === "used"
+          ? v.usedPrices?.[countryCode] || v.prices[countryCode]
+          : v.prices[countryCode];
+      // Ensure we don't hide the current product even if price is missing (safety)
+      const attrsMatch =
+        v.variationAttributes?.toLowerCase().trim() ===
+        currentProduct.variationAttributes?.toLowerCase().trim();
+      return (p && p > 0) || attrsMatch;
+    });
+  }, [sortedVariants, targetCondition, countryCode, currentProduct]);
+
+  const carouselTitle = useMemo(() => {
+    if (!isParentView) return "Variante:";
+
+    const count = activeVariants.length;
+
+    if (!bestPrice) return `${count} Varianten`;
+
+    const formatter = new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
+      minimumFractionDigits: 2,
+    });
+
+    return `${count} Varianten ab ${formatter.format(bestPrice)}`;
+  }, [isParentView, activeVariants.length, bestPrice]);
+
   return (
     <div className="mt-4 mb-6">
-      {sortedAttributeGroups.map(([attrName, values]) => (
-        <AttributeSelector
-          key={attrName}
-          label={attrName}
-          options={values}
-          selected={currentAttrs[attrName]}
-          isParentView={isParentView}
-          variants={variants}
-          currentAttrs={currentAttrs}
-          countryCode={countryCode}
-          condition={targetCondition}
-        />
-      ))}
+      <div className="mb-2 text-[13px] font-bold text-[#2d2d2d]">
+        {carouselTitle}
+      </div>
 
-      <div className="relative mt-6 w-full max-w-full overflow-hidden">
+      <div className="relative w-full max-w-full overflow-hidden">
         <div className="scrollbar-thin scrollbar-thumb-gray-300 flex gap-2.5 overflow-x-auto pt-1 pb-2">
           {/* Alle Varianten Card */}
           <Link
@@ -694,44 +714,46 @@ export function ProductVariantSelector({
             />
           </Link>
 
-          {sortedVariants
-            .filter((v) => {
-              const p =
-                targetCondition === "used"
-                  ? v.usedPrices?.[countryCode] || v.prices[countryCode]
-                  : v.prices[countryCode];
-              // Ensure we don't hide the current product even if price is missing (safety)
-              const attrsMatch =
-                v.variationAttributes?.toLowerCase().trim() ===
-                currentProduct.variationAttributes?.toLowerCase().trim();
-              return (p && p > 0) || attrsMatch;
-            })
-            .map((variant) => (
-              <Link
-                key={variant.asin}
-                href={`/p/${variant.slug}${
-                  targetCondition ? `?condition=${targetCondition}` : ""
-                }`}
-                scroll={false}
-                className="group cursor-pointer no-underline"
-              >
-                <VariantCard
-                  variant={variant}
-                  isSelected={
-                    !isParentView &&
-                    variant.variationAttributes?.toLowerCase().trim() ===
-                      currentProduct.variationAttributes?.toLowerCase().trim()
-                  }
-                  countryCode={countryCode}
-                  currentSlug={currentProduct.slug}
-                  isCheapest={variant.asin === cheapestAsin}
-                  isHubMode={isParentView}
-                  selectedCondition={targetCondition}
-                />
-              </Link>
-            ))}
+          {activeVariants.map((variant) => (
+            <Link
+              key={variant.asin}
+              href={`/p/${variant.slug}${
+                targetCondition ? `?condition=${targetCondition}` : ""
+              }`}
+              scroll={false}
+              className="group cursor-pointer no-underline"
+            >
+              <VariantCard
+                variant={variant}
+                isSelected={
+                  !isParentView &&
+                  variant.variationAttributes?.toLowerCase().trim() ===
+                    currentProduct.variationAttributes?.toLowerCase().trim()
+                }
+                countryCode={countryCode}
+                currentSlug={currentProduct.slug}
+                isCheapest={variant.asin === cheapestAsin}
+                isHubMode={isParentView}
+                selectedCondition={targetCondition}
+              />
+            </Link>
+          ))}
         </div>
       </div>
+
+      {sortedAttributeGroups.map(([attrName, values]) => (
+        <AttributeSelector
+          key={attrName}
+          label={attrName}
+          options={values}
+          selected={currentAttrs[attrName]}
+          isParentView={isParentView}
+          variants={variants}
+          currentAttrs={currentAttrs}
+          countryCode={countryCode}
+          condition={targetCondition}
+        />
+      ))}
     </div>
   );
 }
