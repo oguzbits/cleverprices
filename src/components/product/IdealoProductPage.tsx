@@ -131,6 +131,13 @@ export function IdealoProductPage({
             {/* Gallery */}
             <div className="min-w-0 flex-1 px-2.5 sm:px-0 lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:-row-end-1">
               <div className="oopStage-gallery">
+                {isParentView && (
+                  <div className="mb-2 flex justify-center">
+                    <div className="rounded-full bg-[#ffb900] px-[10px] py-[5px] text-[14px] font-medium whitespace-nowrap text-black shadow-sm">
+                      Keine Variante ausgewählt.
+                    </div>
+                  </div>
+                )}
                 <div className="bg-card relative mx-auto flex aspect-square w-full max-w-[265px] items-center justify-center overflow-hidden rounded-lg">
                   {isParentView ? (
                     <Suspense

@@ -41,10 +41,12 @@ export async function ConditionButtons({
 
   // Initialize with current product
   if (currentIsNew) {
-    hasNew = true;
-    newSlug = product.slug;
     newPrice = product.prices[countryCode] || 0;
-    bestNewProductId = product.id!;
+    if (newPrice > 0 || effectiveCondition === "new") {
+      hasNew = true;
+      newSlug = product.slug;
+      bestNewProductId = product.id!;
+    }
   }
 
   // Prioritize Renewed price as "Main" used price
@@ -64,6 +66,15 @@ export async function ConditionButtons({
     usedOverallSlug = product.slug;
     bestUsedOverallProductId = product.id!;
     usedOverallType = "warehouse";
+    hasUsedOverall = true;
+  } else if (
+    effectiveCondition === "used" ||
+    effectiveCondition === "renewed"
+  ) {
+    // If we are explicitly in used mode, show the button even if price is missing
+    usedOverallPrice = 0;
+    usedOverallSlug = product.slug;
+    bestUsedOverallProductId = product.id!;
     hasUsedOverall = true;
   }
 

@@ -30,6 +30,14 @@ export async function IdealoLivePrice({
       ? (live?.usedPrice ?? initialPrice)
       : (live?.price ?? initialPrice);
 
+  if (!bestPrice || bestPrice <= 0) {
+    return (
+      <span className={cn("text-[13px] font-bold text-[#767676]", className)}>
+        Nicht verfügbar
+      </span>
+    );
+  }
+
   return (
     <LegalPrice price={bestPrice} priceClassName={className} showAb={showAb} />
   );
