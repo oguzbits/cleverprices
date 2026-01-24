@@ -127,6 +127,7 @@ export interface Product {
   savings?: number; // Calculated savings percentage (0-1)
   listPrice?: Record<string, number>;
   pricesPerUnit?: Record<string, number>;
+  isParentView?: boolean; // Flag to indicate we are in aggregated mode
 }
 
 // Lite price type for optimized queries (lean schema)
@@ -179,19 +180,25 @@ export function mapDbProduct(
     pricesList.forEach((pr) => {
       // Lean schema: price is already the "clever" consolidated price
       const price = pr.price && pr.price > 0 ? pr.price : null;
+      const usedPrice = pr.usedPrice && pr.usedPrice > 0 ? pr.usedPrice : null;
 
-      if (price && pr.country) {
-        pricesObj[pr.country] = price;
-        if (pr.lastUpdated) {
-          // Handle seconds (Unix timestamp) vs milliseconds
-          const ts = Number(pr.lastUpdated);
-          const date = new Date(ts < 10000000000 ? ts * 1000 : ts);
-          pricesLastUpdatedObj[pr.country] = date.toISOString();
+      if ((price || usedPrice) && pr.country) {
+        if (price) {
+          pricesObj[pr.country] = price;
+          if (pr.lastUpdated) {
+            // Handle seconds (Unix timestamp) vs milliseconds
+            const ts = Number(pr.lastUpdated);
+            const date = new Date(ts < 10000000000 ? ts * 1000 : ts);
+            pricesLastUpdatedObj[pr.country] = date.toISOString();
+          }
+          if (pr.priceAvg90) avg90Obj[pr.country] = pr.priceAvg90;
+          if (pr.listPrice) listPriceObj[pr.country] = pr.listPrice;
+          if (pr.pricePerUnit) unitPriceObj[pr.country] = pr.pricePerUnit;
         }
-        if (pr.priceAvg90) avg90Obj[pr.country] = pr.priceAvg90;
-        if (pr.listPrice) listPriceObj[pr.country] = pr.listPrice;
-        if (pr.pricePerUnit) unitPriceObj[pr.country] = pr.pricePerUnit;
-        if (pr.usedPrice) usedPricesObj[pr.country] = pr.usedPrice;
+
+        if (usedPrice) {
+          usedPricesObj[pr.country] = usedPrice;
+        }
 
         // Parse historyJson from first price record (all countries share product history)
         if (
@@ -290,6 +297,143 @@ export async function getAllProductSlugs(): Promise<
       updatedAt: products.updatedAt,
     })
     .from(products);
+}
+
+/**
+ * Parse variation attributes string into key-value pairs
+ * Input: "Color: Cosmic Orange; Storage: 2000GB"
+ * Output: { Color: "Cosmic Orange", Storage: "2000GB" }
+ */
+export function parseVariationAttributes(
+  attrs: string | undefined,
+): Record<string, string> {
+  if (!attrs) return {};
+  return Object.fromEntries(
+    attrs
+      .split(";")
+      .map((pair) => {
+        const [key, ...valueParts] = pair.split(":");
+        const value = valueParts.join(":").trim(); // Handle values that might contain ":"
+        return [key?.trim(), value];
+      })
+      .filter(([key, value]) => key && value),
+  );
+}
+
+/**
+ * Extract unique attribute values from a list of variants
+ * Returns: { Color: ["Cosmic Orange", "Tiefblau", "Silber"], Storage: ["256GB", "512GB", ...] }
+ */
+export function extractAttributeGroups(
+  variants: Product[],
+): Record<string, string[]> {
+  const groups: Record<string, Set<string>> = {};
+
+  for (const variant of variants) {
+    const attrs = parseVariationAttributes(variant.variationAttributes);
+    for (const [key, value] of Object.entries(attrs)) {
+      if (!groups[key]) groups[key] = new Set();
+      groups[key].add(value);
+    }
+  }
+
+  // Convert Sets to sorted arrays
+  return Object.fromEntries(
+    Object.entries(groups).map(([key, valueSet]) => [
+      key,
+      Array.from(valueSet).sort(),
+    ]),
+  );
+}
+
+/**
+ * Get all variants for a product (products sharing the same parentAsin)
+ * Returns products sorted by price (cheapest first)
+ */
+export async function getProductVariants(
+  product: Product,
+  countryCode: string = "de",
+): Promise<Product[]> {
+  // If this product has no parentAsin, it has no variants
+  if (!product.parentAsin) return [];
+
+  // Fetch all products with the same parentAsin
+  const variantProducts = await db
+    .select(liteProductColumns)
+    .from(products)
+    .where(eq(products.parentAsin, product.parentAsin));
+
+  if (variantProducts.length <= 1) return [];
+
+  // Fetch prices for all variants
+  const ids = variantProducts.map((p) => p.id);
+  const variantPrices = await db
+    .select(litePriceColumns)
+    .from(prices)
+    .where(
+      and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+    );
+
+  const pricesByProduct = indexPricesById(variantPrices);
+
+  // Map and sort by price
+  const mappedVariants = variantProducts
+    .map((p) =>
+      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
+    )
+    .filter(
+      (v) =>
+        (v.prices[countryCode] || 0) > 0 ||
+        (v.usedPrices?.[countryCode] || 0) > 0,
+    )
+    .sort((a, b) => {
+      const pA = a.prices[countryCode] || a.usedPrices?.[countryCode] || 0;
+      const pB = b.prices[countryCode] || b.usedPrices?.[countryCode] || 0;
+      return pA - pB;
+    });
+
+  return mappedVariants;
+}
+
+/**
+ * Get all products in a family (sharing same parentAsin)
+ * Used for the "Alle Varianten" hub page
+ */
+export async function getProductFamilyMembers(
+  parentAsin: string,
+  countryCode: string = "de",
+): Promise<Product[]> {
+  const familyProducts = await db
+    .select(liteProductColumns)
+    .from(products)
+    .where(eq(products.parentAsin, parentAsin));
+
+  if (familyProducts.length === 0) return [];
+
+  const ids = familyProducts.map((p) => p.id);
+  const familyPrices = await db
+    .select(litePriceColumns)
+    .from(prices)
+    .where(
+      and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+    );
+
+  const pricesByProduct = indexPricesById(familyPrices);
+
+  return familyProducts
+    .map((p) =>
+      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
+    )
+    .filter(
+      (v) =>
+        (v.prices[countryCode] || 0) > 0 ||
+        (v.usedPrices?.[countryCode] || 0) > 0,
+    )
+    .sort((a, b) => {
+      const pA = a.prices[countryCode] || a.usedPrices?.[countryCode] || 0;
+      const pB = b.prices[countryCode] || b.usedPrices?.[countryCode] || 0;
+      return pA - pB;
+    });
 }
 
 export async function getAllProducts(): Promise<Product[]> {
@@ -491,6 +635,37 @@ export async function findProductSlugByAsinSuffix(
   }
 
   return undefined;
+}
+
+/**
+ * Find a product by Parent ASIN suffix.
+ * Used for neutral parent slugs (e.g. apple-iphone-15-[parent-suffix]).
+ */
+export async function findProductByParentAsinSuffix(
+  slug: string,
+): Promise<Product | undefined> {
+  const shortSuffixMatch = slug.match(/-([a-z0-9]{4})$/i);
+  if (!shortSuffixMatch) return undefined;
+
+  const suffix = shortSuffixMatch[1].toUpperCase();
+
+  // Search by parent_asin suffix
+  const [p] = await db
+    .select(liteProductColumns)
+    .from(products)
+    .where(sql`${products.parentAsin} LIKE ${"%" + suffix}`)
+    .limit(1);
+
+  if (!p) return undefined;
+
+  // IMPORTANT: We found a child, but we mark it as parent view
+  const prs = await db
+    .select(litePriceColumns)
+    .from(prices)
+    .where(eq(prices.productId, p.id));
+
+  const product = mapDbProduct(p as DbProduct, prs);
+  return { ...product, isParentView: true };
 }
 
 const fetchSimilarProducts = async (

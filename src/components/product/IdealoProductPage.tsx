@@ -14,16 +14,18 @@ import {
   type CategorySlug,
 } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
-import { Product } from "@/lib/product-registry";
+import { getProductVariants, Product } from "@/lib/product-registry";
 import { getSimilarProducts } from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { isProductBestseller } from "@/lib/utils/products";
-import { Check, Package } from "lucide-react";
+import { Package } from "lucide-react";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import React, { Suspense } from "react";
+import { CachedVariantSelector } from "./CachedVariantSelector";
+import { ConditionButtons } from "./ConditionButtons";
 import { IdealoLivePrice, IdealoLivePriceSkeleton } from "./IdealoLivePrice";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import {
@@ -32,20 +34,27 @@ import {
 } from "./IdealoProductOffers";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
+import { ProductVariantSelectorSkeleton } from "./ProductVariantSelector";
 import { SpecificationsTable } from "./SpecificationsTable";
 
 interface IdealoProductPageProps {
   product: Product;
   countryCode: CountryCode;
-  selectedCondition?: "new" | "used";
+  selectedCondition?: "new" | "used" | "renewed";
+  isParentView?: boolean;
 }
 
 export function IdealoProductPage({
   product,
   countryCode,
-  selectedCondition = "new",
+  selectedCondition,
+  isParentView = false,
 }: IdealoProductPageProps) {
   const category = getCategoryBySlug(product.category);
+
+  // Default condition logic: If no param, fallback to product's natural condition
+  const effectiveCondition =
+    selectedCondition || (product.condition === "Renewed" ? "renewed" : "new");
 
   // Use centralized title splitting logic
   const shortTitle = formatDisplayTitle(
@@ -53,7 +62,183 @@ export function IdealoProductPage({
     product.specifications?.Model as string,
   );
 
-  // Build breadcrumbs for SEO Schema (includes product title)
+  // Parent View: Use a cleaner generic title
+  let genericTitle = product.brand;
+  const model = product.specifications?.Model as string;
+  if (model) {
+    const isTechnicalCode =
+      /^[A-Za-z0-9/\-\.]{6,}$/.test(model) &&
+      (/[0-9]/.test(model) || /[A-Z]{2,}/.test(model));
+    if (!isTechnicalCode) {
+      genericTitle += ` ${model}`;
+    } else {
+      genericTitle = shortTitle.split("(")[0].split("-")[0].trim();
+    }
+  } else {
+    // If no generic title found, try to strip parens and dash from short title
+    const parts = shortTitle.split("(")[0].split("-");
+    genericTitle = parts[0].trim();
+  }
+
+  const displayTitle = isParentView ? genericTitle : shortTitle;
+
+  // Generate parent slug for breadcrumbs
+  const parentAsis = product.parentAsin || product.asin;
+  const parentAsinSuffix = parentAsis.slice(-4).toLowerCase();
+
+  // Pure neutral slug logic similar to ProductVariantSelector
+  // Robust subtraction logic to keep "15" but remove "512"
+  const variationTokens = new Set<string>();
+  if (product.variationAttributes) {
+    const currentAttrs = product.variationAttributes
+      .split(";")
+      .map((s) => s.trim());
+    currentAttrs.forEach((pair) => {
+      const parts = pair.split(":");
+      if (parts.length > 1) {
+        const val = parts[1].trim().toLowerCase();
+        variationTokens.add(val);
+        // Add split tokens too (robust split to catch "512" from "512GB")
+        val
+          .split(/([^a-z0-9]+)|(?<=[0-9])(?=[a-z])|(?<=[a-z])(?=[0-9])/)
+          .filter((t) => t && !/^\s+$/.test(t))
+          .forEach((t) => variationTokens.add(t));
+      }
+    });
+  }
+  const keywordsToFilter = [
+    "gb",
+    "mb",
+    "tb",
+    "neu",
+    "new",
+    "used",
+    "gebraucht",
+    "generalueberholt",
+    "general",
+    "ueberholt",
+    "berholt",
+    "refurbished",
+    "renewed",
+  ];
+  keywordsToFilter.forEach((k) => variationTokens.add(k));
+
+  const brandPart = product.brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  let baseName = product.title
+    .toLowerCase()
+    .normalize("NFKC")
+    .replace(/\u00E4/g, "ae")
+    .replace(/\u00F6/g, "oe")
+    .replace(/\u00FC/g, "ue")
+    .replace(/\u00DF/g, "ss");
+
+  // Remove Brand from title start safely
+  if (baseName.startsWith(brandPart.replace(/-/g, " "))) {
+    baseName = baseName.replace(brandPart.replace(/-/g, " "), "").trim();
+  } else if (baseName.startsWith(product.brand.toLowerCase())) {
+    baseName = baseName.slice(product.brand.length).trim();
+  }
+
+  const cleanTokens = baseName
+    .split(/([^a-z0-9]+)|(?<=[0-9])(?=[a-z])|(?<=[a-z])(?=[0-9])/)
+    .filter((t) => t && !/^\s+$/.test(t))
+    .filter((t) => {
+      const token = t.toLowerCase().trim();
+      // Strict filter: Must contain at least one alphanumeric char
+      if (!/[a-z0-9]/.test(token)) return false;
+      if (token === "-") return false;
+
+      // Aggressive kill-list
+      if (
+        token.includes("general") ||
+        token.includes("berholt") ||
+        token.includes("ueberholt") ||
+        token.includes("refurbished") ||
+        token.includes("renewed")
+      )
+        return false;
+
+      if (variationTokens.has(token)) return false;
+      if (/^[0-9]+[gtm]b$/.test(token)) return false;
+      return true;
+    });
+
+  const modelPart = cleanTokens.slice(0, 4).join("-");
+
+  const parentSlug = `${brandPart}-${modelPart}-${parentAsinSuffix}`.replace(
+    /-+/g,
+    "-",
+  );
+
+  // Stable Parent Title Logic for Breadcrumb
+  // Reconstruct "Apple iPhone 15" from brand + modelPart
+  let parentTitle = genericTitle;
+  if (!isParentView && modelPart.length > 1) {
+    const displayBrand = product.brand;
+    const displayModel = modelPart
+      .split("-")
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(" ");
+    parentTitle = `${displayBrand} ${displayModel}`;
+  }
+
+  // Build specific variant name for breadcrumbs from attributes
+  let variantName = "Variante";
+  if (product.variationAttributes) {
+    const attrs = product.variationAttributes
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    if (attrs.length > 0) {
+      // Sort attributes: Storage/Size first, then Color
+      const parsedAttrs: Record<string, string> = {};
+      attrs.forEach((pair) => {
+        const [k, v] = pair.split(":");
+        if (k && v) parsedAttrs[k.trim().toLowerCase()] = v.trim();
+      });
+
+      const parts: string[] = [];
+      // Prioritize known keys
+      ["storage", "interner speicher", "size", "größe", "grösse"].forEach(
+        (k) => {
+          if (parsedAttrs[k]) {
+            parts.push(parsedAttrs[k]);
+            delete parsedAttrs[k];
+          }
+        },
+      );
+      ["color", "farbe"].forEach((k) => {
+        if (parsedAttrs[k]) {
+          parts.push(parsedAttrs[k]);
+          delete parsedAttrs[k];
+        }
+      });
+      // Add remaining (excluding condition/zustand)
+      const ignoredKeys = [
+        "condition",
+        "zustand",
+        "artikelzustand",
+        "state",
+        "status",
+        "renewed",
+        "refurbished",
+        "generalueberholt",
+        "generalüberholt",
+      ];
+      Object.entries(parsedAttrs).forEach(([k, v]) => {
+        if (!ignoredKeys.includes(k.toLowerCase())) {
+          parts.push(v);
+        }
+      });
+
+      if (parts.length > 0) {
+        variantName = parts.slice(0, 3).join(" ");
+      }
+    }
+  }
+
+  // Build breadcrumbs for SEO Schema (Idealo Style)
   const schemaBreadcrumbs = [
     { name: "Home", href: "/" },
     ...(category
@@ -64,10 +249,15 @@ export function IdealoProductPage({
           },
         ]
       : []),
-    { name: shortTitle },
+    ...(isParentView
+      ? [{ name: displayTitle }]
+      : [
+          { name: parentTitle, href: `/p/${parentSlug}` },
+          {
+            name: variantName,
+          },
+        ]),
   ];
-
-  const displayTitle = shortTitle;
 
   return (
     <div className="bg-background min-h-screen">
@@ -86,7 +276,6 @@ export function IdealoProductPage({
       <div className="mx-auto max-w-[1280px] px-4">
         <Breadcrumbs
           items={schemaBreadcrumbs}
-          hideLast={true}
           className="mb-[10px] py-0 pt-3"
         />
 
@@ -100,13 +289,26 @@ export function IdealoProductPage({
             {/* Gallery */}
             <div className="min-w-0 flex-1 px-2.5 sm:px-0 lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:-row-end-1">
               <div className="oopStage-gallery">
-                <div className="bg-card relative mx-auto aspect-square w-full max-w-[265px]">
-                  {product.image ? (
+                <div className="bg-card relative mx-auto flex aspect-square w-full max-w-[265px] items-center justify-center overflow-hidden rounded-lg">
+                  {isParentView ? (
+                    <Suspense
+                      fallback={
+                        <div className="flex h-full w-full items-center justify-center bg-gray-50">
+                          <Package className="h-12 w-12 text-gray-200" />
+                        </div>
+                      }
+                    >
+                      <ParentHeroImage
+                        product={product}
+                        countryCode={countryCode}
+                      />
+                    </Suspense>
+                  ) : product.image ? (
                     <Image
                       src={product.image}
                       alt={product.title}
                       fill
-                      className="object-contain p-0"
+                      className="object-contain p-2"
                       sizes="(max-width: 265px) calc(100vw - 80px), 265px"
                       quality={30}
                       priority
@@ -150,7 +352,7 @@ export function IdealoProductPage({
             </div>
 
             {/* Title & Rating */}
-            <div className="col-start-1 row-start-1 min-w-0 flex-1 px-2.5 sm:px-[15px] lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-2 lg:pl-[25px]">
+            <div className="col-start-1 row-start-1 min-w-0 flex-1 px-2.5 sm:px-[15px] lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-2 lg:pr-10 lg:pl-[25px]">
               <h1
                 id="oopStage-title"
                 className="text-idealo-text-primary mb-1 text-[20px] leading-tight font-bold sm:text-center lg:text-left"
@@ -183,7 +385,7 @@ export function IdealoProductPage({
             </div>
 
             {/* Product Overview */}
-            <div className="w-full min-w-0 flex-1 lg:col-start-2 lg:col-end-3 lg:row-start-2 lg:-row-end-1 lg:justify-self-start lg:pl-[25px]">
+            <div className="w-full min-w-0 flex-1 lg:col-start-2 lg:col-end-3 lg:row-start-2 lg:-row-end-1 lg:justify-self-start lg:pr-10 lg:pl-[25px]">
               <div className="oopStage-productInfo border-t border-[#dcdcdc] pt-4 lg:border-t-0 lg:pt-0">
                 <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:justify-center lg:justify-start">
                   <b className="text-[13px] font-bold text-[#2d2d2d]">
@@ -223,71 +425,37 @@ export function IdealoProductPage({
                   </Link>
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-2.5">
-                  {/* NEW OFFERS BOX */}
-                  <Link
-                    href="?condition=new"
-                    scroll={false}
-                    className={cn(
-                      "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",
-                      selectedCondition === "new"
-                        ? "border-[#0771d0] bg-white ring-1 ring-[#0771d0]"
-                        : "border-[#b4b4b4] bg-white hover:border-[#888]",
-                    )}
-                  >
-                    <div className="relative w-full">
-                      {selectedCondition === "new" && (
-                        <Check className="absolute -top-1.5 -left-3 h-4 w-4 stroke-[3px] text-[#0771d0]" />
-                      )}
-                      <div className="text-idealo-text-primary text-center text-[13px] font-bold">
-                        {product.condition === "Renewed"
-                          ? "Generalüberholt ab"
-                          : "Neu ab"}
-                      </div>
-                    </div>
-                    <div className="text-idealo-text-primary text-[15px] font-extrabold">
-                      <Suspense
-                        fallback={
-                          <IdealoLivePriceSkeleton className="h-5 w-16" />
-                        }
-                      >
-                        <IdealoLivePrice
-                          productId={product.id!}
+                {/* Variant Selector (scoped to selected condition) */}
+                {product.parentAsin && (
+                  <div className="mt-4 w-full max-w-full overflow-hidden">
+                    <ComponentErrorBoundary name="VariantSelector">
+                      <Suspense fallback={<ProductVariantSelectorSkeleton />}>
+                        <CachedVariantSelector
+                          product={product}
                           countryCode={countryCode}
-                          initialPrice={product.prices[countryCode]}
+                          isParentView={isParentView}
+                          selectedCondition={effectiveCondition}
                         />
                       </Suspense>
-                    </div>
-                  </Link>
+                    </ComponentErrorBoundary>
+                  </div>
+                )}
 
-                  {/* USED OFFERS BOX */}
-                  {product.usedPrices?.[countryCode] && (
-                    <Link
-                      href="?condition=used"
-                      scroll={false}
-                      className={cn(
-                        "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",
-                        selectedCondition === "used"
-                          ? "border-[#0771d0] bg-white ring-1 ring-[#0771d0]"
-                          : "border-[#b4b4b4] bg-white hover:border-[#888]",
-                      )}
-                    >
-                      <div className="relative w-full">
-                        {selectedCondition === "used" && (
-                          <Check className="absolute -top-1.5 -left-3 h-4 w-4 stroke-[3px] text-[#0771d0]" />
-                        )}
-                        <div className="text-idealo-text-primary text-center text-[13px] font-bold">
-                          Gebraucht ab
-                        </div>
-                      </div>
-                      <div className="text-idealo-text-primary text-[15px] font-extrabold">
-                        <LegalPrice
-                          price={product.usedPrices[countryCode]}
-                          priceClassName="text-idealo-text-primary text-[15px] font-extrabold"
-                        />
-                      </div>
-                    </Link>
-                  )}
+                {/* Condition Buttons */}
+                <div className="mt-6 flex flex-wrap gap-2.5">
+                  <Suspense
+                    fallback={
+                      <div className="h-14 w-full animate-pulse bg-gray-100" />
+                    }
+                  >
+                    <ConditionButtons
+                      product={product}
+                      countryCode={countryCode}
+                      effectiveCondition={effectiveCondition}
+                      isParentView={isParentView}
+                      parentSlug={parentSlug}
+                    />
+                  </Suspense>
                 </div>
               </div>
             </div>
@@ -330,7 +498,8 @@ export function IdealoProductPage({
                   product={product}
                   productId={product.id!}
                   countryCode={countryCode}
-                  selectedCondition={selectedCondition}
+                  selectedCondition={effectiveCondition}
+                  isParentView={isParentView}
                 />
               </Suspense>
             </ComponentErrorBoundary>
@@ -476,6 +645,43 @@ async function CachedSimilarCarousel({
           countryCode={countryCode}
         />
       </div>
+    </div>
+  );
+}
+
+async function ParentHeroImage({
+  product,
+  countryCode,
+}: {
+  product: Product;
+  countryCode: string;
+}) {
+  const variants = await getProductVariants(product, countryCode);
+  const uniqueImages: string[] = [];
+  variants.forEach((v) => {
+    if (v.image && !uniqueImages.includes(v.image)) {
+      uniqueImages.push(v.image);
+    }
+  });
+  const allImages = uniqueImages.slice(0, 4);
+
+  return (
+    <div className="grid h-full w-full grid-cols-2 gap-0.5 bg-white p-0">
+      {allImages.map((img, i) => (
+        <div key={i} className="relative aspect-square">
+          <Image
+            src={img!}
+            alt=""
+            fill
+            className="object-contain mix-blend-multiply"
+            sizes="120px"
+            quality={20}
+          />
+        </div>
+      ))}
+      {Array.from({ length: Math.max(0, 4 - allImages.length) }).map((_, i) => (
+        <div key={`empty-${i}`} className="aspect-square bg-gray-50" />
+      ))}
     </div>
   );
 }

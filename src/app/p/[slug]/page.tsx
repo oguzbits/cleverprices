@@ -2,7 +2,10 @@ import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
-import { findProductSlugByAsinSuffix } from "@/lib/product-registry";
+import {
+  findProductByParentAsinSuffix,
+  findProductSlugByAsinSuffix,
+} from "@/lib/product-registry";
 import {
   getAllProductSlugs,
   getProductBySlug,
@@ -145,15 +148,24 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   try {
     // 1. Fetch essential DB data (Lightning Fast)
-    const product = await getProductBySlug(slug, false, true);
+    let product = await getProductBySlug(slug, false, true);
 
     if (!product) {
+      // 1.1 Try resolving by ASIN suffix
       const newSlug = await findProductSlugByAsinSuffix(slug);
       if (newSlug && newSlug !== slug) {
         redirect(`/p/${newSlug}`);
       }
-      notFound();
+
+      // 1.2 Try resolving by PARENT ASIN suffix (Neutral URL)
+      product = await findProductByParentAsinSuffix(slug);
+
+      if (!product) {
+        notFound();
+      }
     }
+
+    const parentViewMode = product.isParentView;
 
     // GSC Fix: Return 404 for products with insufficient data (prevents soft 404)
     const hasPrice =
@@ -179,7 +191,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
       <IdealoProductPage
         product={product}
         countryCode={countryCode}
-        selectedCondition={condition as "new" | "used"}
+        selectedCondition={condition as any}
+        isParentView={parentViewMode}
       />
     );
   } catch (error: any) {

@@ -5,7 +5,7 @@ import { getAffiliateRedirectPath } from "@/lib/affiliate-utils";
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
 import type { ProductOffer } from "@/lib/data-sources";
-import type { Product } from "@/lib/product-registry";
+import { getProductFamilyMembers, type Product } from "@/lib/product-registry";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Star } from "lucide-react";
 
@@ -15,8 +15,9 @@ interface OffersListProps {
   product: Product;
   productId: number; // Added to avoid needing the full product object in some cases
   countryCode: CountryCode;
-  selectedCondition?: "new" | "used";
+  selectedCondition?: "new" | "used" | "renewed";
   initialPrice?: number; // Pass the cached price as fallback
+  isParentView?: boolean;
 }
 
 /**
@@ -32,36 +33,126 @@ export async function IdealoProductOffers({
   product,
   countryCode,
   selectedCondition = "new",
+  isParentView = false,
 }: OffersListProps) {
   const countryConfig = getCountryByCode(countryCode);
 
-  // Fetch fresh price for the offers list
-  const live = await getLivePriceForProduct(product.id!, countryCode);
+  // 1. Determine which products we are showing offers for
+  let productsToShow: {
+    product: Product;
+    price?: number;
+    type?: "new" | "renewed" | "warehouse";
+  }[] = [];
 
-  const targetPrice =
-    selectedCondition === "used"
-      ? (live?.usedPrice ?? product.usedPrices?.[countryCode])
-      : (live?.price ?? product.prices[countryCode]);
+  const isUsedTrack =
+    selectedCondition === "used" || selectedCondition === "renewed";
 
-  // In DB-only mode, we generate a single offer from the persistent price
-  const offers: ProductOffer[] = [];
+  if (isParentView && product.parentAsin) {
+    const familyMembers = await getProductFamilyMembers(
+      product.parentAsin,
+      countryCode,
+    );
 
-  if (targetPrice) {
-    offers.push({
-      source: "amazon" as const,
-      price: targetPrice,
-      currency: countryConfig?.currency || "EUR",
-      displayPrice: formatCurrency(targetPrice, countryCode),
-      affiliateLink: getAffiliateRedirectPath(product.slug),
-      condition:
-        selectedCondition === "used"
-          ? "used"
-          : (product.condition.toLowerCase() as any),
-      availability: "in_stock" as const,
-      freeShipping: true,
-      seller: selectedCondition === "used" ? "Amazon Warehouse" : "Amazon",
-      country: countryCode,
+    let minPrice = Infinity;
+    let bestItem: {
+      product: Product;
+      price?: number;
+      type?: "new" | "renewed" | "warehouse";
+    } | null = null;
+
+    familyMembers.forEach((m) => {
+      if (isUsedTrack) {
+        const cond = (m.condition || "").toLowerCase();
+        // Option A: Renewed main listing
+        const rp = m.prices[countryCode];
+        if (cond === "renewed" && rp && rp > 0) {
+          if (rp < minPrice) {
+            minPrice = rp;
+            bestItem = { product: m, price: rp, type: "renewed" };
+          }
+        }
+        // Option B: Warehouse used deals on this ASIN
+        const wp = m.usedPrices?.[countryCode];
+        if (wp && wp > 0) {
+          if (wp < minPrice) {
+            minPrice = wp;
+            bestItem = { product: m, price: wp, type: "warehouse" };
+          }
+        }
+      } else {
+        // New mode: Only show non-renewed listings primary prices
+        const p = m.prices[countryCode];
+        if ((m.condition || "").toLowerCase() !== "renewed" && p && p > 0) {
+          if (p < minPrice) {
+            minPrice = p;
+            bestItem = { product: m, price: p, type: "new" };
+          }
+        }
+      }
     });
+    if (bestItem) productsToShow = [bestItem];
+  } else {
+    // Normal mode: just the current product
+    const live = await getLivePriceForProduct(product.id!, countryCode);
+    const p = product;
+
+    if (isUsedTrack) {
+      const cond = (p.condition || "").toLowerCase();
+      if (cond === "renewed") {
+        productsToShow.push({
+          product: p,
+          price: live?.price ?? p.prices[countryCode],
+          type: "renewed",
+        });
+      }
+      if (live?.usedPrice || p.usedPrices?.[countryCode]) {
+        productsToShow.push({
+          product: p,
+          price: live?.usedPrice ?? p.usedPrices?.[countryCode],
+          type: "warehouse",
+        });
+      }
+    } else {
+      productsToShow.push({
+        product: p,
+        price: live?.price ?? p.prices[countryCode],
+        type: "new",
+      });
+    }
+  }
+
+  // 2. Generate offers from the price data
+  const offers: (ProductOffer & { product: Product })[] = [];
+
+  productsToShow.forEach(({ product: p, price, type }) => {
+    if (price && price > 0) {
+      offers.push({
+        source: "amazon" as const,
+        price: price,
+        currency: countryConfig?.currency || "EUR",
+        displayPrice: formatCurrency(price, countryCode),
+        affiliateLink: getAffiliateRedirectPath(p.slug),
+        condition:
+          type === "renewed" || type === "warehouse"
+            ? "used"
+            : (p.condition.toLowerCase() as any),
+        availability: "in_stock" as const,
+        freeShipping: true,
+        seller:
+          type === "renewed"
+            ? "Amazon Erneuert"
+            : type === "warehouse"
+              ? "Amazon Warehouse"
+              : "Amazon",
+        country: countryCode,
+        product: p, // Link back to the specific variant
+      });
+    }
+  });
+
+  // Sort aggregated offers by price
+  if (isParentView) {
+    offers.sort((a, b) => a.price - b.price);
   }
 
   return (
@@ -100,7 +191,7 @@ export async function IdealoProductOffers({
                   rel="noopener nofollow"
                   className="text-[12px] font-bold text-[#2d2d2d] underline decoration-[#dcdcdc] hover:no-underline"
                 >
-                  {product.title}
+                  {offer.product?.title || product.title}
                 </a>
               </div>
 
@@ -112,7 +203,7 @@ export async function IdealoProductOffers({
                   rel="noopener nofollow"
                   className="line-clamp-4 block max-h-[4.8em] overflow-hidden text-[11px] leading-normal font-bold text-ellipsis text-[#2d2d2d] underline decoration-[#dcdcdc] transition-colors hover:no-underline min-[840px]:text-[12px]"
                 >
-                  {product.title}
+                  {offer.product?.title || product.title}
                 </a>
               </div>
 

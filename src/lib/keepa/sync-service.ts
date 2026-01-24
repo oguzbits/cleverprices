@@ -397,12 +397,6 @@ export async function upsertProductFromKeepa(
   const reviewCount =
     currentStats[17] && currentStats[17] > 0 ? currentStats[17] : null;
 
-  // Extract price statistics
-  // Extract price statistics
-  // min and max are [timestamp, price] pairs in the API response
-  const minStats = keepaProduct.stats?.min;
-  const maxStats = keepaProduct.stats?.max;
-  const avg30Stats = keepaProduct.stats?.avg30 || [];
   const avg90Stats = keepaProduct.stats?.avg90 || [];
 
   // Helper to get price from min/max array which might be [time, price]
@@ -413,9 +407,6 @@ export async function upsertProductFromKeepa(
     return val;
   };
 
-  const priceMin = keepaPriceToDecimal(getMinMaxPrice(minStats, 0)); // All-time lowest Amazon price
-  const priceMax = keepaPriceToDecimal(getMinMaxPrice(maxStats, 0)); // All-time highest Amazon price
-  const priceAvg30 = keepaPriceToDecimal(avg30Stats[0]); // 30-day average
   const priceAvg90 = keepaPriceToDecimal(avg90Stats[0]); // 90-day average
 
   // Refined Price Logic:
@@ -448,6 +439,19 @@ export async function upsertProductFromKeepa(
   // Get brand (fallback to manufacturer)
   const brand = keepaProduct.brand || keepaProduct.manufacturer || null;
 
+  // Determine condition based on title
+  const lowerTitle = (keepaProduct.title || "").toLowerCase();
+  let condition = "New"; // Default
+
+  if (
+    lowerTitle.includes("generalüberholt") ||
+    lowerTitle.includes("erneuert") ||
+    lowerTitle.includes("renewed") ||
+    lowerTitle.includes("refurbished")
+  ) {
+    condition = "Renewed";
+  }
+
   // Generate slug from title with uniqueness
   const slug = generateProductSlug(
     keepaProduct.title || keepaProduct.asin,
@@ -463,6 +467,10 @@ export async function upsertProductFromKeepa(
       imageUrl = `https://images-na.ssl-images-amazon.com/images/I/${firstImage}`;
     }
   }
+
+  // Parse variant information from Keepa
+  const parentAsin = keepaProduct.parentAsin || null;
+  const variationAttributes = parseVariationCSV(keepaProduct.variationCSV);
 
   // Upsert product with all fields (lean schema: no features/description)
   const [product] = await db
@@ -480,7 +488,10 @@ export async function upsertProductFromKeepa(
       reviewCount,
       salesRank,
       monthlySold,
+      parentAsin,
+      variationAttributes,
       energyLabel: null,
+      condition,
       updatedAt: now,
     })
     .onConflictDoUpdate({
@@ -496,6 +507,9 @@ export async function upsertProductFromKeepa(
         reviewCount,
         salesRank,
         monthlySold,
+        parentAsin,
+        variationAttributes,
+        condition,
         updatedAt: now,
       },
     })
@@ -566,6 +580,28 @@ export async function upsertProductFromKeepa(
 function keepaPriceToDecimal(price: number | null | undefined): number | null {
   if (price === null || price === undefined || price < 0) return null;
   return price / 100;
+}
+
+/**
+ * Parse Keepa variationCSV into readable attribute string
+ * Keepa format: "dimensionName1|dimensionValue1,dimensionName2|dimensionValue2"
+ * Output: "dimensionName1: dimensionValue1; dimensionName2: dimensionValue2"
+ */
+function parseVariationCSV(csv: string | undefined): string | null {
+  if (!csv) return null;
+  try {
+    return csv
+      .split(",")
+      .map((pair) => {
+        const [name, value] = pair.split("|");
+        if (!name || !value) return null;
+        return `${name.trim()}: ${value.trim()}`;
+      })
+      .filter(Boolean)
+      .join("; ");
+  } catch {
+    return null;
+  }
 }
 
 /**
