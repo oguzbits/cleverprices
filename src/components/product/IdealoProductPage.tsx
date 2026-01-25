@@ -68,7 +68,7 @@ export function IdealoProductPage({
 
   // Breadcrumb Data from Universal Identity
   const parentTitle = identity.fullModel;
-  const variantName = identity.variantLabel || "Variante";
+  const variantName = identity.variantLabel || "Standard";
 
   // Build breadcrumbs for SEO Schema (Idealo Style)
   const schemaBreadcrumbs = [

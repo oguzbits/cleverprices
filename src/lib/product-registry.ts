@@ -154,10 +154,14 @@ export async function getProductById(
   id: number,
   _country = "de", // Parameter kept for signature compatibility
 ): Promise<Product | undefined> {
+  // Handle 200m offset from slugs
+  const realId =
+    id >= 900000000 ? id - 900000000 : id >= 200000000 ? id - 200000000 : id;
+
   const [p] = await db
     .select()
     .from(products)
-    .where(eq(products.id, id))
+    .where(eq(products.id, realId))
     .limit(1);
 
   if (!p) return undefined;
@@ -166,7 +170,13 @@ export async function getProductById(
   const prs = await db.select().from(prices).where(eq(prices.productId, p.id));
 
   // Use centralized mapping logic which correctly handles historyJson
-  return mapDbProduct(p as DbProduct, prs as Price[], [], false);
+  const product = mapDbProduct(p as DbProduct, prs as Price[], [], false);
+
+  // Preserve the synthetic/offset ID if provided
+  if (id >= 200000000) {
+    return { ...product, id };
+  }
+  return product;
 }
 
 /**

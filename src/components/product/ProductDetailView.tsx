@@ -23,8 +23,10 @@ import {
   BreadcrumbSchema,
   ProductSchema,
 } from "@/components/seo/ProductSchema";
+import { getFamilyIdentity } from "@/lib/product-families";
 import { getSimilarProducts } from "@/lib/product-registry";
 import { formatCurrency } from "@/lib/utils/formatting";
+
 import { IdealoStarRating } from "../category/IdealoStarRating";
 import { OfferComparisonTable } from "./OfferComparisonTable";
 import { SpecificationsTable } from "./SpecificationsTable";
@@ -79,7 +81,8 @@ export async function ProductDetailView({
       price,
       currency: countryConfig?.currency || "EUR",
       displayPrice: formatCurrency(price, countryCode),
-      affiliateLink: `/out/${product.slug.includes("_-") ? product.slug : `${200000000 + (product.id || 0)}_-${product.slug}`}`,
+      affiliateLink: `/out/${getFamilyIdentity(product).slug}`,
+
       condition: product.condition.toLowerCase() as "new" | "renewed" | "used",
       availability: "in_stock" as const,
       freeShipping: true,
@@ -271,7 +274,7 @@ export async function ProductDetailView({
                     )}
 
                     <a
-                      href={`/out/${product.slug.includes("_-") ? product.slug : `${200000000 + (product.id || 0)}_-${product.slug}`}`}
+                      href={`/out/${getFamilyIdentity(product).slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block no-underline hover:no-underline"

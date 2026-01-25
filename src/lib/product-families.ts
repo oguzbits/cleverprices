@@ -41,139 +41,122 @@ export function getFamilyIdentity(
   representative: Product | Partial<Product>,
   allVariants: Product[] = [],
 ): { slug: string; title: string; brand: string } {
-  // 1. Basic Identity
+  // 1. Basic Identity (Contains normalized brand e.g. PlayStation -> Sony)
   const identity = getProductIdentity(representative);
-  const brand = representative.brand || "Generic";
-  const parentAsin = representative.parentAsin || representative.asin || "";
+  const brand = identity.brand || "Generic";
+  const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
-  // Clean suffix: Trim trailing non-alphanumeric
-  const cleanParentAsis = parentAsin.replace(/[^a-zA-Z0-9]+$/, "");
-  const parentAsinSuffix = cleanParentAsis.slice(-4).toLowerCase();
+  // 2. Determine Scope
+  const isHub =
+    representative.isParentView ||
+    ((representative as any).syntheticId &&
+      (representative as any).syntheticId >= 900000000);
+  const syntheticId =
+    (representative as any).syntheticId ||
+    (isHub ? representative.id : undefined);
 
-  const brandPrefix = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-  // 2. Base Name Strategy: Use fullModel from identity
-  // This is cleaner than raw title because getProductIdentity already strips many attributes
-  let baseName = identity.model.toLowerCase();
-
-  // Normalize
-  baseName = baseName
+  // 3. Core Model Construction
+  // Use identity.model which is already stripped of redundant brand and variant tokens
+  let modelPart = identity.model
+    .toLowerCase()
     .normalize("NFKC")
     .replace(/\u00E4/g, "ae")
     .replace(/\u00F6/g, "oe")
     .replace(/\u00FC/g, "ue")
-    .replace(/\u00DF/g, "ss");
-
-  // Remve brand prefix if present
-  if (baseName.startsWith(brand.toLowerCase())) {
-    baseName = baseName.slice(brand.length).trim();
-  }
-
-  // 3. Tokenize
-  // Split by non-alphanumeric OR by Number->Letter transition (e.g. 128GB -> 128, GB)
-  // We DO NOT split Letter->Number (e.g. S24 keeps S24) to preserve model numbers.
-  const tokens = baseName
-    .split(/([^a-z0-9]+)|(?<=[0-9])(?=[a-z])/)
-    .filter((t) => t && !/^\s+$/.test(t));
-
-  // 4. Attribute Stripping Configuration
-  const variationTokens = new Set<string>();
-
-  const keywordsToFilter = [
-    "gb",
-    "mb",
-    "tb",
-    "ram",
-    "memory",
-    "speicher",
-    "kapazität",
-    "generalüberholt",
-    "renewed",
-    "neu",
-    "gebraucht",
-    "used",
-    "refurbished",
-    "handy",
-    "smartphone",
-    "mobiltelefon",
-    "telefon",
-    "farbe",
-    "color",
-    "colour",
-    "edition",
-    "duos",
-    "sim",
-    "esim",
-    "5g",
-    "4g",
-    "lte",
-    "wifi",
-    "cellular",
-    "ai",
-  ];
-  keywordsToFilter.forEach((k) => variationTokens.add(k));
-
-  if (allVariants.length > 0) {
-    allVariants.forEach((v) => {
-      if (v.variationAttributes) {
-        const attrs = parseVariationAttributes(v.variationAttributes);
-        Object.values(attrs).forEach((val) => {
-          val
-            .toLowerCase()
-            .split(/[^a-z0-9]+/)
-            .forEach((t) => {
-              if (t && t.length > 1) variationTokens.add(t);
-            });
-        });
-      }
-    });
-  }
-
-  const cleanTokens = tokens.filter((t) => {
-    const token = t && typeof t === "string" ? t.toLowerCase().trim() : "";
-    if (!token) return false;
-    // Strict filter: Must contain at least one alphanumeric char
-    if (!/[a-z0-9]/.test(token)) return false;
-
-    // Check against variant tokens
-    if (variationTokens.has(token)) return false;
-    // Check against capacity patterns
-    if (/^\d+[gt]b$/.test(token)) return false;
-
-    return true;
-  });
-
-  // 5. Construct Slug
-  // Deduplicate and limit to 4 model tokens
-  const uniqueTokens: string[] = [];
-  cleanTokens.forEach((t) => {
-    // Don't add if it's the exact same as prev token
-    if (uniqueTokens.length > 0 && uniqueTokens[uniqueTokens.length - 1] === t)
-      return;
-    uniqueTokens.push(t);
-  });
-
-  const modelPart = uniqueTokens.slice(0, 4).join("-");
-
-  const textSlug = `${brandPrefix}-${modelPart}`
-    .replace(/-+/g, "-")
+    .replace(/\u00DF/g, "ss")
+    .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  // ID-Based Slug Generation (Idealo Style)
-  // Format: [ID]_-text-slug
-  // If syntheticId is provided, we use that (Parent View).
-  // Otherwise we use representative.id with a 200m offset (Child View).
-  const id = (representative as any).syntheticId || representative.id || 0;
+  // 4. Dynamic Variant Differentiators (Category-Agnostic)
+  let variantPart = "";
 
+  // Use extracted variant map from identity (includes Title Recovery)
+  // This allows us to get "2tb" into the slug even if DB attributes are missing
+  if (!isHub) {
+    const attrs = identity.variantMap || {}; // Fallback to empty if not provided (though we added it)
+
+    // Fallback to reparsing if map is empty but attributes string exists (defensive)
+    if (Object.keys(attrs).length === 0 && representative.variationAttributes) {
+      Object.assign(
+        attrs,
+        parseVariationAttributes(representative.variationAttributes),
+      );
+    }
+
+    // Priority-ranked differentiators for the slug
+    // We scan for the first matching keys in each tier
+    const primaryKeys = [
+      "Storage",
+      "Speicher",
+      "Kapazität",
+      "Capacity",
+      "Size",
+      "Kerne",
+      "Wattage",
+      "Leistung",
+    ];
+    const secondaryKeys = [
+      "Color",
+      "Farbe",
+      "Socket",
+      "Sockel",
+      "Technology",
+      "Technologie",
+    ];
+
+    const parts: string[] = [];
+
+    // Extract Top 2 meaningful differentiators
+    [primaryKeys, secondaryKeys].forEach((tier) => {
+      for (const key of tier) {
+        const val = attrs[key];
+        if (val) {
+          // Normalize: remove spaces from units (e.g. "128 GB" -> "128gb")
+          let normalized = val.toLowerCase();
+          if (/^\d+\s+(gb|tb|mb|wh|w|zoll|inch)$/i.test(normalized)) {
+            normalized = normalized.replace(/\s+/, "");
+          }
+
+          if (!parts.includes(normalized)) {
+            parts.push(normalized);
+            if (parts.length >= 2) break;
+          }
+        }
+      }
+    });
+
+    if (parts.length > 0) {
+      variantPart = parts
+        .join("-")
+        .replace(/[^a-z0-9-]+/g, "")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+    }
+  }
+
+  // 5. Construct Text Slug (Idealo Style: [model]-[variants?]-[brand])
+  let textSlug = modelPart;
+  if (variantPart) textSlug += `-${variantPart}`;
+
+  // Use identity brand to ensure manufacturers like "Sony" are added
+  if (brandSlug && !textSlug.includes(brandSlug)) {
+    textSlug += `-${brandSlug}`;
+  }
+
+  // Final cleanup of the text part
+  textSlug = textSlug.replace(/-+/g, "-").replace(/^-|-$/g, "");
+
+  // 6. ID-Based Prefixing
+  // Format: [ID]_-text-slug
+  const idValue = syntheticId || representative.id || 0;
   // Standardize to 9 digits:
   // Hubs: 900,000,000 + ID
   // Variants: 200,000,000 + ID
-  const idPrefix = id >= 200000000 ? id : 200000000 + id;
-
-  const slug = `${idPrefix}_-${textSlug}`;
+  const idPrefix =
+    idValue >= 200000000 ? idValue : (isHub ? 900000000 : 200000000) + idValue;
 
   return {
-    slug,
+    slug: `${idPrefix}_-${textSlug}`,
     title: identity.fullModel,
     brand,
   };

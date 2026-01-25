@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
  * which redirects to the affiliate URL stored in the Product Registry.
  */
 
-import { getProductBySlug } from "@/lib/product-registry";
+import { getProductById, getProductBySlug } from "@/lib/product-registry";
 
 export async function GET(
   request: NextRequest,
@@ -18,8 +18,20 @@ export async function GET(
   const params = await props.params;
   const { slug } = params;
 
-  // Look up product from the registry (single source of truth)
-  const product = await getProductBySlug(slug);
+  // 1. Try ID-based match first (Matching logic from /p/ route)
+  const idMatch = slug.match(/^(\d+)_-(.*)$/);
+  let product;
+
+  if (idMatch) {
+    const id = parseInt(idMatch[1]);
+    // Handle 200m/900m offsets
+    const realId =
+      id >= 900000000 ? id - 900000000 : id >= 200000000 ? id - 200000000 : id;
+    product = await getProductById(realId);
+  } else {
+    // 2. Legacy fallback: Look up by raw slug
+    product = await getProductBySlug(slug);
+  }
 
   if (!product) {
     // Product not found - return 404 (GSC fix: avoid soft redirects for missing products)

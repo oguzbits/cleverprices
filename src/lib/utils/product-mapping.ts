@@ -108,6 +108,7 @@ export function mapDbProduct(
     affiliateUrl: stripHeavyData
       ? ""
       : `https://www.amazon.de/dp/${p.asin}?tag=cleverprices-21`,
+
     prices: pricesObj,
     pricesLastUpdated: stripHeavyData ? {} : pricesLastUpdatedObj,
     capacity: p.capacity || 0,
