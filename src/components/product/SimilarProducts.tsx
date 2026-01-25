@@ -5,13 +5,13 @@
  * Shows products from the same category, sorted by price similarity.
  */
 
-import Image from "next/image";
-import Link from "next/link";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import type { Product } from "@/lib/product-registry";
+import { Card, CardContent } from "@/components/ui/card";
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
+import type { Product } from "@/lib/product-registry";
+import Image from "next/image";
+import Link from "next/link";
 
 interface SimilarProductsProps {
   products: Product[];
@@ -39,7 +39,7 @@ export function SimilarProducts({
         return (
           <Link
             key={product.slug}
-            href={`/p/${product.slug}`}
+            href={`/p/${product.slug.includes("_-") ? product.slug : `${200000000 + (product.id || 0)}_-${product.slug}`}`}
             className="group no-underline"
           >
             <Card className="h-full transition-shadow hover:shadow-md">
@@ -123,7 +123,7 @@ export function SimilarProductsCompact({
         return (
           <li key={product.slug}>
             <Link
-              href={`/p/${product.slug}`}
+              href={`/p/${product.slug.includes("_-") ? product.slug : `${200000000 + (product.id || 0)}_-${product.slug}`}`}
               className="hover:bg-muted flex items-center gap-3 rounded-md p-2 transition-colors"
             >
               {/* Thumbnail */}

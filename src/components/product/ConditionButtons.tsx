@@ -1,5 +1,6 @@
 import { getProductFamilyMembers, type Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
+import { normalizeVariantAttributes } from "@/lib/utils/variants";
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -84,15 +85,17 @@ export async function ConditionButtons({
       product.parentAsin,
       countryCode,
     );
-    const curAttrs = product.variationAttributes?.toLowerCase().trim();
+    const normalizedCurAttrs = normalizeVariantAttributes(product);
+    const category = product.category || "";
 
     familyMembers.forEach((m) => {
       const p = m.prices[countryCode] || 0;
       const up = m.usedPrices?.[countryCode] || 0;
       const mCond = (m.condition || "").toLowerCase();
-      const mAttrs = m.variationAttributes?.toLowerCase().trim();
+      const normalizedMAttrs = normalizeVariantAttributes(m);
 
-      const isCorrectSpec = isParentView || mAttrs === curAttrs;
+      const isCorrectSpec =
+        isParentView || normalizedMAttrs === normalizedCurAttrs;
       if (!isCorrectSpec) return;
 
       // Track New prices
@@ -106,13 +109,14 @@ export async function ConditionButtons({
       }
 
       // Track "Gebraucht" prices (Priority: Renewed > Warehouse)
-      // On Family view, we still want the absolute 'ab' (starting) price
       const possibleUsed: {
         price: number;
         id: number;
         slug: string;
         type: "renewed" | "warehouse";
       }[] = [];
+
+      // 1. Renewed products contribute their MAIN price
       if (mCond === "renewed" && p > 0)
         possibleUsed.push({
           price: p,
@@ -120,6 +124,8 @@ export async function ConditionButtons({
           slug: m.slug,
           type: "renewed",
         });
+
+      // 2. Any product matching the spec can contribute its WAREHOUSE price
       if (up > 0)
         possibleUsed.push({
           price: up,
@@ -136,18 +142,11 @@ export async function ConditionButtons({
           usedOverallType = item.type;
           hasUsedOverall = true;
         } else {
-          // If we have a choice, pick the lower price, but on individual spec prioritize renewed if price is similar?
-          // Actually, 'Starting at' should probably just be the absolute min for clarity,
-          // but user specifically said "take the price... which is main on amazon".
-          // If 468 (Renewed) and 429 (Warehouse), and user says "take 468 as main", we prioritize Renewed listings.
-
           const currentIsWarehouse = usedOverallType === "warehouse";
           const itemIsRenewed = item.type === "renewed";
 
-          // Rule: If current best is warehouse but we found a renewed one, we might prefer renewed if it's the "Main" thing.
-          // However, for an "ab" (starting at) label, absolute minimum is standard.
-          // Let's compromise: If on variant page, prioritize Renewed. If on Family page, use absolute minimum.
           if (isParentView) {
+            // Overall summary (e.g. "Alle Varianten") always shows absolute minimum
             if (item.price < usedOverallPrice) {
               usedOverallPrice = item.price;
               usedOverallSlug = item.slug;
@@ -155,13 +154,16 @@ export async function ConditionButtons({
               usedOverallType = item.type;
             }
           } else {
-            // Variant page: If we find a Renewed price, use it as 'Main'.
-            // Only use Warehouse if Renewed is missing or significantly more expensive could be a rule,
-            // but let's stick to "Renewed is Main".
+            // SPEC-SPECIFIC View:
+            // If we find a Renewed price (the 'Main' Amazon offer), it usually
+            // should take precedence over a Warehouse price unless the Warehouse
+            // price is significantly cheaper.
+            // But since our goal is trust, if Renewed exists and is at least
+            // roughly as cheap as warehouse, use it.
             if (itemIsRenewed) {
               if (
                 usedOverallPrice === 0 ||
-                item.price < usedOverallPrice ||
+                item.price < usedOverallPrice + 5 || // Prefer Renewed even if up to 5€ more expensive
                 currentIsWarehouse
               ) {
                 usedOverallPrice = item.price;
@@ -170,6 +172,7 @@ export async function ConditionButtons({
                 usedOverallType = item.type;
               }
             } else if (currentIsWarehouse) {
+              // Only update Warehouse if it's strictly cheaper than existing Warehouse
               if (item.price < usedOverallPrice) {
                 usedOverallPrice = item.price;
                 usedOverallSlug = item.slug;
@@ -187,12 +190,28 @@ export async function ConditionButtons({
   if (hasNew && !newSlug) newSlug = product.slug;
   if (hasUsedOverall && !usedOverallSlug) usedOverallSlug = product.slug;
 
+  // Smart Link Helpers
+  const getSmartSlug = (slug: string, id: number) => {
+    if (slug.match(/^\d+_-/)) return slug;
+    const finalId = id >= 200000000 ? id : 200000000 + (id || 0);
+    return `${finalId}_-${slug}`;
+  };
+
+  const finalNewSlug = getSmartSlug(
+    newSlug,
+    bestNewProductId || product.id || 0,
+  );
+  const finalUsedSlug = getSmartSlug(
+    usedOverallSlug,
+    bestUsedOverallProductId || product.id || 0,
+  );
+
   return (
     <>
       {/* 1. NEW OFFER BOX */}
       {hasNew && (
         <Link
-          href={`/p/${isParentView && parentSlug ? parentSlug : newSlug}?condition=new`}
+          href={`/p/${isParentView && parentSlug ? parentSlug : finalNewSlug}?condition=new`}
           scroll={false}
           className={cn(
             "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",
@@ -227,7 +246,7 @@ export async function ConditionButtons({
       {/* 2. GEBRAUCHT OFFER BOX (Merged Renewed & Warehouse) */}
       {hasUsedOverall && (
         <Link
-          href={`/p/${isParentView && parentSlug ? parentSlug : usedOverallSlug}?condition=used`}
+          href={`/p/${isParentView && parentSlug ? parentSlug : finalUsedSlug}?condition=used`}
           scroll={false}
           className={cn(
             "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",

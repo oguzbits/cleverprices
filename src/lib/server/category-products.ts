@@ -468,7 +468,7 @@ export async function getCategoryProducts(
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v40",
+    "v41",
   );
 
   // 2. [OPTIMIZATION] Skip Live Price Merge for the FULL list
@@ -523,6 +523,10 @@ export async function getCategoryProducts(
       const representative = getFamilyRepresentative(
         group as any,
       )! as unknown as LocalizedProduct;
+      const realId = (representative.id || 0) % 100000000;
+      const syntheticId = 900000000 + realId;
+      (representative as any).syntheticId = syntheticId;
+
       const { slug: parentSlug, title: cleanestTitle } = getFamilyIdentity(
         representative as any,
         group as any,
@@ -539,7 +543,7 @@ export async function getCategoryProducts(
 
       const syntheticParent: LocalizedProduct = {
         ...representative,
-        id: 900000000 + (representative.id || 0),
+        id: 900000000 + realId,
 
         slug: parentSlug,
         title: cleanestTitle,

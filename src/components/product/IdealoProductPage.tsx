@@ -60,7 +60,11 @@ export function IdealoProductPage({
   const effectiveCondition =
     selectedCondition || (product.condition === "Renewed" ? "renewed" : "new");
 
-  const { slug: parentSlug } = getFamilyIdentity(product);
+  // Create a synthetic parent representative to generate the Hub URL for breadcrumbs
+  const realId = (product.id || 0) % 100000000;
+  const syntheticId = 900000000 + realId;
+  const parentRep = { ...product, syntheticId };
+  const { slug: parentSlug } = getFamilyIdentity(parentRep);
 
   // Breadcrumb Data from Universal Identity
   const parentTitle = identity.fullModel;
@@ -429,7 +433,7 @@ async function CachedSidebarSimilarProducts({
             </div>
             <div className="min-w-0 flex-1">
               <Link
-                href={`/p/${p.slug}`}
+                href={`/p/${p.slug.includes("_-") ? p.slug : `${200000000 + (p.id || 0)}_-${p.slug}`}`}
                 className="text-idealo-text-primary! hover:text-primary! focus-visible:ring-idealo-blue line-clamp-2 block text-[12px] font-bold underline! outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
               >
                 {formatDisplayTitle(p.title)}

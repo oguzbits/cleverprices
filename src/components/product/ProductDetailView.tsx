@@ -1,4 +1,3 @@
-import { getAffiliateRedirectPath } from "@/lib/affiliate-utils";
 import {
   getCategoryBySlug,
   getCategoryPath,
@@ -80,7 +79,7 @@ export async function ProductDetailView({
       price,
       currency: countryConfig?.currency || "EUR",
       displayPrice: formatCurrency(price, countryCode),
-      affiliateLink: getAffiliateRedirectPath(product.slug),
+      affiliateLink: `/out/${product.slug.includes("_-") ? product.slug : `${200000000 + (product.id || 0)}_-${product.slug}`}`,
       condition: product.condition.toLowerCase() as "new" | "renewed" | "used",
       availability: "in_stock" as const,
       freeShipping: true,
@@ -272,7 +271,7 @@ export async function ProductDetailView({
                     )}
 
                     <a
-                      href={getAffiliateRedirectPath(product.slug)}
+                      href={`/out/${product.slug.includes("_-") ? product.slug : `${200000000 + (product.id || 0)}_-${product.slug}`}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block no-underline hover:no-underline"
@@ -403,7 +402,7 @@ export async function ProductDetailView({
                 {similarProducts.slice(0, 3).map((p) => (
                   <Link
                     key={p.slug}
-                    href={`/p/${p.slug}`}
+                    href={`/p/${p.slug.includes("_-") ? p.slug : `${200000000 + (p.id || 0)}_-${p.slug}`}`}
                     className="group flex items-center gap-4 p-4 no-underline transition-colors hover:bg-zinc-50"
                   >
                     <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-zinc-100 bg-white p-1 shadow-sm">

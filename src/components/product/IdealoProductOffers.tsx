@@ -1,7 +1,6 @@
 import { ClientDate } from "@/components/ui/ClientDate";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PaymentMethodIcon } from "@/components/ui/PaymentMethodIcon";
-import { getAffiliateRedirectPath } from "@/lib/affiliate-utils";
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
 import type { ProductOffer } from "@/lib/data-sources";
@@ -159,7 +158,7 @@ export async function IdealoProductOffers({
         price: price,
         currency: countryConfig?.currency || "EUR",
         displayPrice: formatCurrency(price, countryCode),
-        affiliateLink: getAffiliateRedirectPath(p.slug),
+        affiliateLink: `/out/${p.slug.match(/^\d+_-/) ? p.slug : `${p.id}_-${p.slug}`}`,
         condition:
           type === "renewed" || type === "warehouse"
             ? "used"

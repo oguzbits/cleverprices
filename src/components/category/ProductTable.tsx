@@ -95,8 +95,8 @@ export function ProductTable({
                   <Link
                     href={
                       countryCode === DEFAULT_COUNTRY
-                        ? `/p/${product.slug}`
-                        : `/${countryCode}/p/${product.slug}`
+                        ? `/p/${product.slug.includes("_-") ? product.slug : `${(product.isVariantGroup ? 900000000 : 200000000) + (product.id || 0)}_-${product.slug}`}`
+                        : `/${countryCode}/p/${product.slug.includes("_-") ? product.slug : `${(product.isVariantGroup ? 900000000 : 200000000) + (product.id || 0)}_-${product.slug}`}`
                     }
                     className="text-primary line-clamp-2 block text-sm leading-snug font-medium hover:underline sm:text-base"
                   >

@@ -19,7 +19,7 @@ export function ProductGrid({ products, countryCode }: ProductGridProps) {
       {products.map((product) => (
         <Link
           key={product.id || product.slug}
-          href={`/p/${product.slug}`}
+          href={`/p/${product.slug.includes("_-") ? product.slug : `${(product.isVariantGroup ? 900000000 : 200000000) + (product.id || 0)}_-${product.slug}`}`}
           className={cn(
             "group relative -mr-px -mb-px flex flex-col border border-[#b4b4b4] bg-white no-underline transition-shadow hover:z-10 hover:shadow-lg",
           )}

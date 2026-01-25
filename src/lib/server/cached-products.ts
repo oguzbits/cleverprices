@@ -92,7 +92,7 @@ async function getCachedSimilarProducts(
  */
 
 export async function getAllProductSlugs(): Promise<
-  { slug: string; updatedAt: Date }[]
+  { id: number; slug: string; updatedAt: Date }[]
 > {
   return getAllProductSlugsSync();
 }

@@ -13,9 +13,11 @@ export interface SearchCategory {
 }
 
 export interface SearchProduct {
+  id: number;
   slug: string;
   title: string;
   categoryName?: string;
+  isVariantGroup?: boolean;
 }
 
 export interface SearchResults {
@@ -235,6 +237,7 @@ const getInternalSearchResults = async (
       if (!seenFamilies.has(familyKey)) {
         seenFamilies.add(familyKey);
         matchedProducts.push({
+          id: p.id!,
           slug: p.slug,
           title: p.title,
           categoryName:
@@ -268,7 +271,7 @@ const getCachedSearchResults = unstable_cache(
   async (query: string, limit: number): Promise<SearchResults> => {
     return getInternalSearchResults(query, limit);
   },
-  ["search-results-v4"], // Bumped version
+  ["search-results-v5"], // Bumped version
   {
     revalidate: 3600, // Cache for 1 hour
     tags: ["search"],

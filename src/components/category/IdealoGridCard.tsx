@@ -69,7 +69,7 @@ export function IdealoGridCard({
       )}
     >
       <PrefetchLink
-        href={`/p/${product.slug}`}
+        href={`/p/${product.slug.includes("_-") ? product.slug : `${(product.isVariantGroup ? 900000000 : 200000000) + (product.id || 0)}_-${product.slug}`}`}
         className={cn(
           "sr-resultItemTile sr-resultItemTile--GRID",
           "relative flex h-full flex-col",

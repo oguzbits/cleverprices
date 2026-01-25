@@ -8,6 +8,7 @@ import {
 } from "./utils/products";
 
 export interface DashboardProduct {
+  id?: number;
   title: string;
   price: number;
   slug: string;
@@ -116,6 +117,10 @@ export function curateProductList(
     sortBy = "quality",
     requireDiscount = false,
   } = options;
+  // The provided code snippet for `parentSlug` uses React hooks (`useMemo`) and undefined variables (`currentProduct`, `variants`, `getFamilyIdentity`).
+  // It also contains a syntax error: `});.excludeIds`.
+  // As this function is not a React component, and to maintain syntactical correctness, this specific snippet cannot be directly inserted.
+  // If the intent was to define `excludeIds`, `excludeParentIds`, and `excludeGroupKeys` differently, please provide a syntactically valid JavaScript/TypeScript implementation.
   const excludeIds = options.excludeIds || new Set<string>();
   const excludeParentIds = options.excludeParentIds || new Set<string>();
   const excludeGroupKeys =
@@ -240,6 +245,7 @@ export function curateProductList(
           parentAsin: p.parentAsin,
           groupKey, // Pass groupKey for global tracking
           pricesLastUpdated: p.pricesLastUpdated,
+          id: p.id,
         },
         score,
         revenue,

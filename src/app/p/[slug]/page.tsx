@@ -2,9 +2,12 @@ import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
+import { getFamilyIdentity } from "@/lib/product-families"; // Needed for redirects
 import {
   findProductByParentAsinSuffix,
-  findProductSlugByAsinSuffix,
+  findProductBySyntheticId,
+  findProductSlugByAsinSuffix, // New
+  getProductById, // New
 } from "@/lib/product-registry";
 import {
   getAllProductSlugs,
@@ -15,6 +18,76 @@ import { getProductIdentity } from "@/lib/utils/product-identity";
 import { Metadata } from "next";
 
 import { notFound, redirect } from "next/navigation";
+
+// Universal Product Resolver (ID-based + Legacy Fallbacks)
+async function resolveProductFromRoute(slug: string) {
+  // 1. New ID-Based Routing (e.g. 900123456_-apple-iphone)
+  const idMatch = slug.match(/^(\d+)_-(.*)$/);
+  if (idMatch) {
+    const id = parseInt(idMatch[1]);
+
+    // Synthetic Parent (Hub)
+    if (id >= 900000000) {
+      const product = await findProductBySyntheticId(id);
+      if (!product) return null;
+      const { slug: canonical } = getFamilyIdentity(product, []);
+      const redirect = slug !== canonical ? `/p/${canonical}` : null;
+      return { product, isParentView: true, redirect };
+    }
+
+    // Standard Product
+    // Handle 200m offset or legacy raw ID
+    const realId = id >= 200000000 ? id - 200000000 : id;
+    const product = await getProductById(realId);
+    if (!product) return null;
+
+    // Standardize to 200m offset for the canonical URL
+    const canonicalId = 200000000 + realId;
+    const { slug: canonical } = getFamilyIdentity(
+      { ...product, id: canonicalId },
+      [],
+    );
+
+    const redirect = slug !== canonical ? `/p/${canonical}` : null;
+    return { product, isParentView: false, redirect };
+  }
+
+  // 2. Legacy: Exact Slug Match
+  let product = await getProductBySlug(slug, false, true);
+  if (product) {
+    // Determine new ID-based slug for redirect
+    const { slug: newSlug } = getFamilyIdentity(product, []); // Assume single item context
+    // If we want to force migration:
+    const redirectUrl = `/p/${newSlug}`; // 301 to new format
+    return { product, isParentView: false, redirect: redirectUrl };
+  }
+
+  // 3. Legacy: ASIN Suffix
+  const newSlug = await findProductSlugByAsinSuffix(slug);
+  if (newSlug) {
+    // This helper returns a SLUG string. Recursively resolve it?
+    // Or just redirect to it. checking if it's new format?
+    // findProductSlugByAsinSuffix currently returns string from DB slug column.
+    // So it returns "apple-iphone-17-pro" (Legacy).
+    // We will redirect to that, then hit case #2, then redirect to ID? Double redirect.
+    // Acceptable for compatibility.
+    if (newSlug !== slug)
+      return { product: null, isParentView: false, redirect: `/p/${newSlug}` };
+  }
+
+  // 4. Legacy: Parent ASIN Suffix (Hub)
+  product = await findProductByParentAsinSuffix(slug);
+  if (product) {
+    // Generate new Synthetic Slug
+    const syntheticId = 900000000 + ((product.id || 0) % 100000000);
+    (product as any).syntheticId = syntheticId;
+    const { slug: newHubSlug } = getFamilyIdentity(product, []);
+
+    return { product, isParentView: true, redirect: `/p/${newHubSlug}` };
+  }
+
+  return null;
+}
 
 interface Props {
   params: Promise<{
@@ -49,26 +122,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   try {
-    let product = await getProductBySlug(slug);
-    let isParentViewMode = false;
+    const resolution = await resolveProductFromRoute(slug);
+    let product = resolution?.product;
+    let isParentViewMode = resolution?.isParentView || false;
 
-    if (!product) {
-      // 1. Try resolving by ASIN suffix (Redirect logic)
-      const newSlug = await findProductSlugByAsinSuffix(slug);
-      if (newSlug && newSlug !== slug) {
-        const canonicalUrl = `https://${BRAND_DOMAIN}/p/${newSlug}`;
-        return {
-          title: "Produkt verschoben - CleverPrices",
-          alternates: { canonical: canonicalUrl },
-          robots: { index: false, follow: true },
-        };
-      }
-
-      // 2. Try resolving by PARENT ASIN suffix (Neutral URL logic)
-      product = await findProductByParentAsinSuffix(slug);
-      if (product) {
-        isParentViewMode = product.isParentView || false;
-      }
+    // Handle Metadata redirects if needed (canonical)
+    if (resolution?.redirect) {
+      // We can't strictly redirect in metadata, but we can set canonical to the target
+      const canonicalUrl = `https://${BRAND_DOMAIN}${resolution.redirect}`;
+      return {
+        title: "Produkt wird geladen...",
+        alternates: { canonical: canonicalUrl },
+        robots: { index: false, follow: true },
+      };
     }
 
     if (!product) {
@@ -160,24 +226,18 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   try {
     // 1. Fetch essential DB data (Lightning Fast)
-    let product = await getProductBySlug(slug, false, true);
+    const resolution = await resolveProductFromRoute(slug);
 
-    if (!product) {
-      // 1.1 Try resolving by ASIN suffix
-      const newSlug = await findProductSlugByAsinSuffix(slug);
-      if (newSlug && newSlug !== slug) {
-        redirect(`/p/${newSlug}`);
-      }
-
-      // 1.2 Try resolving by PARENT ASIN suffix (Neutral URL)
-      product = await findProductByParentAsinSuffix(slug);
-
-      if (!product) {
-        notFound();
-      }
+    if (resolution?.redirect) {
+      redirect(resolution.redirect);
     }
 
-    const parentViewMode = product.isParentView;
+    let product = resolution?.product;
+    const parentViewMode = resolution?.isParentView || false;
+
+    if (!product) {
+      notFound();
+    }
 
     // GSC Fix: Return 404 for products with insufficient data (prevents soft 404)
     const hasPrice =

@@ -82,7 +82,7 @@ export function ProductSchema({
         offerCount: allPrices.length,
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
-        url: `https://${BRAND_DOMAIN}/p/${product.slug}`,
+        url: `https://${BRAND_DOMAIN}/p/${product.id}_-${product.slug}`,
         priceValidUntil: "2027-12-31",
         seller: {
           "@type": "Organization",
@@ -114,7 +114,7 @@ export function ProductSchema({
         price: currentPrice.toFixed(2),
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
-        url: `https://${BRAND_DOMAIN}/p/${product.slug}`,
+        url: `https://${BRAND_DOMAIN}/p/${product.id}_-${product.slug}`,
         seller: {
           "@type": "Organization",
           name: "Amazon",
@@ -148,7 +148,7 @@ export function ProductSchema({
         offerCount: allPrices.length,
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
-        url: `https://${BRAND_DOMAIN}/p/${product.slug}`,
+        url: `https://${BRAND_DOMAIN}/p/${product.id}_-${product.slug}`,
         priceValidUntil: "2027-12-31",
       };
     }

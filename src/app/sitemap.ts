@@ -70,7 +70,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Product pages - high priority for SEO
   const products = await getAllProductSlugs();
   const productRoutes: MetadataRoute.Sitemap = products.map((product) => {
-    const productPath = `/p/${product.slug}`;
+    const productPath = `/p/${product.slug.includes("_-") ? product.slug : `${200000000 + product.id}_-${product.slug}`}`;
     return {
       url: `${baseUrl}${productPath}`,
       lastModified: product.updatedAt,

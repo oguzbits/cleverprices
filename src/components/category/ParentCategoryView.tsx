@@ -74,6 +74,7 @@ export function ParentCategoryView({
                 products={newProducts.map((p) => ({
                   title: p.title,
                   price: p.price,
+                  id: p.id,
                   slug: p.slug,
                   image: p.image,
                   rating: p.rating,
@@ -88,6 +89,7 @@ export function ParentCategoryView({
                     ? Math.round(p.savings * 100)
                     : undefined,
                   isBestseller: isProductBestseller(p as any),
+                  isVariantGroup: p.isVariantGroup,
                   variationAttributes: p.variationAttributes,
                 }))}
               />
@@ -104,6 +106,7 @@ export function ParentCategoryView({
                 products={deals.map((p) => ({
                   title: p.title,
                   price: p.price,
+                  id: p.id,
                   slug: p.slug,
                   image: p.image,
                   rating: p.rating,
@@ -118,6 +121,7 @@ export function ParentCategoryView({
                     ? Math.round(p.savings * 100)
                     : undefined,
                   isBestseller: isProductBestseller(p as any),
+                  isVariantGroup: p.isVariantGroup,
                   variationAttributes: p.variationAttributes,
                 }))}
               />

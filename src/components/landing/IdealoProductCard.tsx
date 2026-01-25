@@ -25,6 +25,7 @@ export interface IdealoProductCardProps {
   categoryName?: string;
   discountRate?: number;
   isBestseller?: boolean;
+  isVariantGroup?: boolean;
   variationAttributes?: string;
   countryCode?: string;
   priorityLoad?: boolean;
@@ -44,13 +45,14 @@ export function IdealoProductCard({
   categoryName,
   discountRate,
   isBestseller,
+  isVariantGroup,
   countryCode = "de",
   priorityLoad = false,
 }: IdealoProductCardProps) {
   return (
     <div className="group border-idealo-border relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border bg-white transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[224px]">
       <PrefetchLink
-        href={`/p/${slug}`}
+        href={`/p/${slug.includes("_-") ? slug : `${(isVariantGroup ? 900000000 : 200000000) + (id || 0)}_-${slug}`}`}
         className="flex h-full w-full flex-col no-underline"
       >
         {/* Badges Area - top left */}

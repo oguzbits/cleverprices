@@ -155,9 +155,22 @@ export function getFamilyIdentity(
 
   const modelPart = uniqueTokens.slice(0, 4).join("-");
 
-  const slug = `${brandPrefix}-${modelPart}-${parentAsinSuffix}`
+  const textSlug = `${brandPrefix}-${modelPart}`
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
+
+  // ID-Based Slug Generation (Idealo Style)
+  // Format: [ID]_-text-slug
+  // If syntheticId is provided, we use that (Parent View).
+  // Otherwise we use representative.id with a 200m offset (Child View).
+  const id = (representative as any).syntheticId || representative.id || 0;
+
+  // Standardize to 9 digits:
+  // Hubs: 900,000,000 + ID
+  // Variants: 200,000,000 + ID
+  const idPrefix = id >= 200000000 ? id : 200000000 + id;
+
+  const slug = `${idPrefix}_-${textSlug}`;
 
   return {
     slug,

@@ -1,5 +1,6 @@
 "use client";
 
+import { getFamilyIdentity } from "@/lib/product-families";
 import { cn } from "@/lib/utils";
 import {
   extractAttributeGroups,
@@ -14,6 +15,7 @@ import { useMemo } from "react";
 import { LegalPrice } from "../ui/LegalPrice";
 
 interface Product {
+  id: number;
   asin: string;
   slug: string;
   title: string;
@@ -100,9 +102,10 @@ function VariantCard({
 
   // Price Logic: Show Used price if condition is 'used', otherwise New price
   const isUsedMode = selectedCondition === "used";
+  const isRenewed = variant?.condition?.toLowerCase() === "renewed";
   const price = isAllVariants
     ? bestPrice
-    : isUsedMode
+    : isUsedMode && !isRenewed
       ? variant?.usedPrices?.[countryCode]
       : variant?.prices[countryCode];
 
@@ -328,7 +331,7 @@ function AttributeSelector({
             getBestMatch(variants) || getRelaxedMatch(variants);
 
           const href = targetVariant
-            ? `/p/${targetVariant.slug}${condition ? `?condition=${condition}` : ""}`
+            ? `/p/${targetVariant.slug.includes("_-") ? targetVariant.slug : `${200000000 + (targetVariant.id || 0)}_-${targetVariant.slug}`}${condition ? `?condition=${condition}` : ""}`
             : "#";
 
           return (
@@ -518,118 +521,16 @@ export function ProductVariantSelector({
     });
   }, [variants, currentProduct, targetCondition, countryCode]);
 
-  // Generate parent neutral slug using robust subtraction logic
+  // Generate parent neutral slug using canonical logic
   const parentSlug = useMemo(() => {
-    const parentAsis = currentProduct.parentAsin || currentProduct.asin;
-    // Clean suffix: Trim trailing non-alphanumeric (like the - in FAM- identifiers)
-    const cleanParentAsis = parentAsis.replace(/[^a-zA-Z0-9]+$/, "");
-    const parentAsinSuffix = cleanParentAsis.slice(-4).toLowerCase();
-
-    // 1. Collect all variation values to subtract
-    const variationTokens = new Set<string>();
-    variants.forEach((v) => {
-      const attrs = parseVariationAttributes(v.variationAttributes);
-      Object.entries(attrs).forEach(([key, value]) => {
-        // Add exact value
-        variationTokens.add(value.toLowerCase());
-        // Add split parts (e.g. "512 GB" -> "512", "gb")
-        value
-          .toLowerCase()
-          .split(/([^a-z0-9]+)|(?<=[0-9])(?=[a-z])|(?<=[a-z])(?=[0-9])/)
-          .filter((t) => t && !/^\s+$/.test(t))
-          .forEach((t) => variationTokens.add(t));
-      });
-    });
-
-    // 2. Add common spec keywords to filter
-    const keywordsToFilter = [
-      "gb",
-      "mb",
-      "tb",
-      "generalüberholt",
-      "renewed",
-      "neu",
-      "new",
-      "brandnew",
-      "used",
-      "gebraucht",
-      "handy",
-      "mobile",
-      "telefon",
-      "generalueberholt",
-      "general",
-      "ueberholt",
-      "berholt",
-      "refurbished",
-      "renewed",
-    ];
-
-    // Also add singular versions of variations just in case
-    variants.forEach((v) => {
-      // ... handled above by splitting loop
-    });
-    keywordsToFilter.forEach((k) => variationTokens.add(k));
-
-    // 3. Clean Brand
-    const brand = currentProduct.brand;
-    const brandPrefix = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-    // 4. Determine base name (Model or Title)
-    // We prefer Title because Model sometimes is missing or cryptic,
-    // but we will rigorously strip the variation tokens from it.
-
-    let baseName = currentProduct.title
-      .toLowerCase()
-      .normalize("NFKC")
-      .replace(/\u00E4/g, "ae")
-      .replace(/\u00F6/g, "oe")
-      .replace(/\u00FC/g, "ue")
-      .replace(/\u00DF/g, "ss");
-
-    // Remove Brand from title to avoid duplication if it's there
-    if (baseName.startsWith(brand.toLowerCase())) {
-      baseName = baseName.slice(brand.length).trim();
-    }
-
-    // 5. Tokenize and Filter
-    // Robust split: Split by non-alphanumeric AND transitions between digits and letters
-    // e.g. "512GB" -> "512", "GB"
-    const tokens = baseName
-      .split(/([^a-z0-9]+)|(?<=[0-9])(?=[a-z])|(?<=[a-z])(?=[0-9])/)
-      .filter((t) => t && !/^\s+$/.test(t));
-
-    const cleanTokens = tokens.filter((t) => {
-      const token = t.toLowerCase().trim();
-      if (!token) return false;
-      // Strict filter: Must contain at least one alphanumeric char
-      if (!/[a-z0-9]/.test(token)) return false;
-
-      // Aggressive kill-list
-      if (
-        token.includes("general") ||
-        token.includes("berholt") ||
-        token.includes("ueberholt") ||
-        token.includes("refurbished") ||
-        token.includes("renewed")
-      )
-        return false;
-
-      // If token is a known variation value (like "512", "black"), skip it
-      if (variationTokens.has(token)) return false;
-      // If token looks like a capacity unit (redundant check but safe)
-      if (/^[0-9]+[gtm]b$/.test(t)) return false;
-      return true;
-    });
-
-    // 6. Reconstruct
-    // Take the first few meaningful tokens (usually Model Name parts)
-    // e.g. ["iphone", "15"]
-    const modelPart = cleanTokens.slice(0, 4).join("-");
-
-    return `${brandPrefix}-${modelPart}-${parentAsinSuffix}`.replace(
-      /-+/g,
-      "-",
+    const rawId = currentProduct.id || 0;
+    const realId = rawId % 100000000;
+    const parentId = 900000000 + realId;
+    const { slug } = getFamilyIdentity(
+      { ...currentProduct, id: parentId } as any,
+      variants as any,
     );
+    return slug;
   }, [currentProduct, variants]);
 
   if (allVariants.length <= 1) return null;
@@ -722,7 +623,7 @@ export function ProductVariantSelector({
           {activeVariants.map((variant) => (
             <Link
               key={variant.asin}
-              href={`/p/${variant.slug}${
+              href={`/p/${variant.slug.includes("_-") ? variant.slug : `${200000000 + (variant.id || 0)}_-${variant.slug}`}${
                 targetCondition ? `?condition=${targetCondition}` : ""
               }`}
               scroll={false}

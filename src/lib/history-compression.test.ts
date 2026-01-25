@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { gzipSync } from "node:zlib";
-import { decompressHistory } from "./history-compression";
+import { decompressHistory, parseHistoryBlob } from "./history-compression";
 
 describe("history-compression", () => {
   describe("decompressHistory", () => {
@@ -39,6 +39,26 @@ describe("history-compression", () => {
       // Let's verify it doesn't crash.
       const result = decompressHistory(garbage);
       expect(typeof result).toBe("string");
+    });
+  });
+
+  describe("parseHistoryBlob", () => {
+    it("should parse legacy plain text JSON string", () => {
+      const data = { "2024-01-01": 500 };
+      const result = parseHistoryBlob(JSON.stringify(data));
+      expect(result).toEqual(data);
+    });
+
+    it("should parse compressed Buffer", () => {
+      const data = { "2024-01-01": 500 };
+      const compressed = gzipSync(JSON.stringify(data));
+      const result = parseHistoryBlob(compressed);
+      expect(result).toEqual(data);
+    });
+
+    it("should return empty object for invalid input", () => {
+      expect(parseHistoryBlob(null)).toEqual({});
+      expect(parseHistoryBlob("invalid-json")).toEqual({});
     });
   });
 });

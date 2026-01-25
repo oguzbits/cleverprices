@@ -17,6 +17,7 @@ export interface CarouselProduct {
   categoryName?: string;
   discountRate?: number;
   isBestseller?: boolean;
+  isVariantGroup?: boolean;
   variationAttributes?: string;
 }
 
@@ -73,6 +74,7 @@ export function IdealoProductCarousel({
           categoryName={product.categoryName}
           discountRate={product.discountRate}
           isBestseller={product.isBestseller}
+          isVariantGroup={product.isVariantGroup}
           variationAttributes={product.variationAttributes}
           countryCode={countryCode}
           priorityLoad={priorityImages && index < 2}

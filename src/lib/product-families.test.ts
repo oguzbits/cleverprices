@@ -106,10 +106,8 @@ describe("Product Families Logic", () => {
 
       const { slug } = getFamilyIdentity(rep, [rep]);
 
-      // Expected: brand-model-parentSuffix
-      // suffix of B0_IPHONE15_PARENT -> rent
-      // model tokens: iphone, 15
-      expect(slug).toBe("apple-iphone-15-rent");
+      // Expected: 200m prefix + brand + model tokens
+      expect(slug).toBe("200000001_-apple-iphone-15");
     });
 
     it("should strip attribute tokens from the slug", () => {
@@ -140,7 +138,7 @@ describe("Product Families Logic", () => {
 
       const { slug } = getFamilyIdentity(rep, []);
 
-      expect(slug).toBe("apple-iphone-14-pro-max-4xyz");
+      expect(slug).toBe("200000001_-apple-iphone-14-pro-max");
       expect(slug).not.toContain("generalueberholt");
     });
 
@@ -167,7 +165,46 @@ describe("Product Families Logic", () => {
 
       const { slug } = getFamilyIdentity(rep, [rep]);
       // Should NOT be sonos-sonos-arc-...
-      expect(slug).toMatch(/^sonos-arc/);
+      expect(slug).toMatch(/^200\d{6}_-sonos-arc/);
+    });
+
+    it("should apply 900,000,000 prefix for parent views (hubs)", () => {
+      const rep = createMockProduct({
+        id: 123,
+        brand: "Apple",
+        title: "iPhone 15",
+        parentAsin: "P123",
+      });
+
+      // Simulation of a parent view request (syntheticId provided)
+      const parentRep = { ...rep, syntheticId: 900000123 };
+
+      const { slug } = getFamilyIdentity(parentRep as any, [rep]);
+      expect(slug).toBe("900000123_-apple-iphone-15");
+    });
+
+    it("should apply 200,000,000 prefix for variant views (children)", () => {
+      const rep = createMockProduct({
+        id: 456,
+        brand: "Apple",
+        title: "iPhone 15",
+        parentAsin: "P456",
+      });
+
+      const { slug } = getFamilyIdentity(rep, [rep]);
+      expect(slug).toBe("200000456_-apple-iphone-15");
+    });
+
+    it("should not double-prefix if ID is already 200m+", () => {
+      const rep = createMockProduct({
+        id: 200000789,
+        brand: "Apple",
+        title: "iPhone 15",
+        parentAsin: "P789",
+      });
+
+      const { slug } = getFamilyIdentity(rep, [rep]);
+      expect(slug).toBe("200000789_-apple-iphone-15");
     });
   });
 

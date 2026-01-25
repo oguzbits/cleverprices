@@ -20,12 +20,12 @@ import {
   SQL,
 } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
-import { parseHistoryBlob } from "./history-compression";
+import { getFamilyIdentity } from "./product-families";
 import {
   CATEGORY_REVALIDATE_SECONDS,
   PRODUCT_REVALIDATE_SECONDS,
 } from "./site-config";
-import { calculateProductMetrics } from "./utils/products";
+import { mapDbProduct } from "./utils/product-mapping";
 
 // Lightweight price columns - lean schema (Drizzle ORM skill: query-select-columns)
 export const litePriceColumns = {
@@ -144,159 +144,72 @@ type LitePrice = Pick<
   | "lastUpdated"
 >;
 
-/**
- * Parse historyJson blob into price history array
- * Format: { "2025-01-15": 4999, "2025-01-16": 5199, ... } (prices in cents)
- * Now supports both legacy TEXT and compressed BLOB formats.
- */
-function parseHistoryJson(
-  historyJson: Buffer | string | null,
-): { date: string; price: number }[] {
-  const parsed = parseHistoryBlob(historyJson);
-  return Object.entries(parsed)
-    .map(([date, priceCents]) => ({
-      date: new Date(date).toISOString(),
-      price: priceCents / 100, // Convert cents to decimal
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+// Lite price type for optimized queries (lean schema)
+export type { LitePrice };
+
+// Re-export mapping logic for backward compatibility
+export { mapDbProduct, parseHistoryJson } from "./utils/product-mapping";
+
+export async function getProductById(
+  id: number,
+  _country = "de", // Parameter kept for signature compatibility
+): Promise<Product | undefined> {
+  const [p] = await db
+    .select()
+    .from(products)
+    .where(eq(products.id, id))
+    .limit(1);
+
+  if (!p) return undefined;
+
+  // Fetch all prices for this product to populate the prices object and history
+  const prs = await db.select().from(prices).where(eq(prices.productId, p.id));
+
+  // Use centralized mapping logic which correctly handles historyJson
+  return mapDbProduct(p as DbProduct, prs as Price[], [], false);
 }
 
-// Helper to map DB to Interface (lean schema)
-export function mapDbProduct(
-  p: DbProduct,
-  pricesList: LitePrice[] | Price[],
-  _historyList: { recordedAt: Date | null; price: number }[] = [], // Deprecated, use historyJson instead
-  stripHeavyData: boolean = false,
-): Product {
-  const pricesObj: Record<string, number> = {};
-  const pricesLastUpdatedObj: Record<string, string> = {};
-  const avg90Obj: Record<string, number> = {};
-  const listPriceObj: Record<string, number> = {};
-  const unitPriceObj: Record<string, number> = {};
-  const usedPricesObj: Record<string, number> = {};
-  let historyData: { date: string; price: number }[] = [];
+/**
+ * Handle synthetic IDs for "Alle Varianten" / Parent Views.
+ * ID = 900,000,000 + Real_Child_ID
+ */
+export async function findProductBySyntheticId(
+  syntheticId: number,
+): Promise<Product | undefined> {
+  if (syntheticId < 900000000) return undefined;
 
-  if (pricesList) {
-    pricesList.forEach((pr) => {
-      // Lean schema: price is already the "clever" consolidated price
-      const price = pr.price && pr.price > 0 ? pr.price : null;
-      const usedPrice = pr.usedPrice && pr.usedPrice > 0 ? pr.usedPrice : null;
+  const realId = syntheticId - 900000000;
+  const product = await getProductById(realId);
 
-      if ((price || usedPrice) && pr.country) {
-        if (price) {
-          pricesObj[pr.country] = price;
-          if (pr.lastUpdated) {
-            // Handle seconds (Unix timestamp) vs milliseconds
-            const ts = Number(pr.lastUpdated);
-            const date = new Date(ts < 10000000000 ? ts * 1000 : ts);
-            pricesLastUpdatedObj[pr.country] = date.toISOString();
-          }
-          if (pr.priceAvg90) avg90Obj[pr.country] = pr.priceAvg90;
-          if (pr.listPrice) listPriceObj[pr.country] = pr.listPrice;
-          if (pr.pricePerUnit) unitPriceObj[pr.country] = pr.pricePerUnit;
-        }
+  if (!product) return undefined;
 
-        if (usedPrice) {
-          usedPricesObj[pr.country] = usedPrice;
-        }
-
-        // Parse historyJson from first price record (all countries share product history)
-        if (
-          !stripHeavyData &&
-          historyData.length === 0 &&
-          "historyJson" in pr
-        ) {
-          historyData = parseHistoryJson(pr.historyJson as string | null);
-        }
-      }
-    });
-  }
-
-  // Extract core specifications for filtering before stripping
-  const rawSpecs = p.specifications ? JSON.parse(p.specifications) : {};
-  let socket = rawSpecs.Socket || rawSpecs["Socket-Typ"];
-  let cores = rawSpecs.Cores || rawSpecs.Kerne;
-  let releaseDate =
-    rawSpecs["Release Date"] ||
-    rawSpecs["Erscheinungsdatum"] ||
-    rawSpecs["Markteinführung"] ||
-    rawSpecs["Modelljahr"] ||
-    rawSpecs["Model Year"];
-
-  // CPU specific title parsing fallback
-  if (p.category === "cpu" || p.category === "motherboards") {
-    if (!socket) {
-      const socketMatch = (p.title || "").match(
-        /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i,
-      );
-      if (socketMatch) socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
-    }
-    if (!cores && p.category === "cpu") {
-      const coreMatch = (p.title || "").match(/(\d+)\s?-?\s?(Core|Kerne)/i);
-      if (coreMatch) cores = parseInt(coreMatch[1]).toString();
-    }
-  }
-
-  const item: Product = {
-    id: p.id,
-    slug: p.slug,
-    asin: p.asin,
-    title: p.title,
-    category: p.category,
-    image: p.imageUrl || "",
-    affiliateUrl: stripHeavyData
-      ? ""
-      : `https://www.amazon.de/dp/${p.asin}?tag=${process.env.PAAPI_PARTNER_TAG || "cleverprices-21"}`,
-    prices: pricesObj,
-    pricesLastUpdated: stripHeavyData ? {} : pricesLastUpdatedObj,
-    capacity: p.capacity || 0,
-    capacityUnit: (p.capacityUnit as any) || "GB",
-    normalizedCapacity: p.normalizedCapacity || 0,
-    formFactor: stripHeavyData ? "" : p.formFactor || "",
-    technology: p.technology || "",
-    socket,
-    cores,
-    condition:
-      p.title.includes("(Generalüberholt)") ||
-      p.title.includes("erneuert") ||
-      p.title.includes("Renewed")
-        ? "Renewed"
-        : (p.condition as any) === "Used"
-          ? "Used"
-          : "New",
-    brand: p.brand || "Generic",
-    manufacturer: stripHeavyData ? undefined : p.manufacturer || undefined,
-    parentAsin: p.parentAsin || undefined,
-    variationAttributes: p.variationAttributes || undefined,
-    specifications: stripHeavyData ? {} : rawSpecs,
-    features: [], // Removed in lean schema
-    priceHistory: stripHeavyData ? [] : historyData,
-    rating: p.rating || 0,
-    reviewCount: p.reviewCount || 0,
-    energyLabel: stripHeavyData ? undefined : (p.energyLabel as any),
-    salesRank: p.salesRank || undefined,
-    monthlySold: p.monthlySold || 0,
-    mpn: p.mpn || undefined,
-    priceAvg90: avg90Obj,
-    listPrice: listPriceObj,
-    pricesPerUnit: unitPriceObj,
-    usedPrices: usedPricesObj,
-    createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
-    releaseDate,
-  };
-
-  return calculateProductMetrics(item) as Product;
+  // Mark as parent view and replace ID with synthetic one
+  return { ...product, id: syntheticId, isParentView: true };
 }
 
 export async function getAllProductSlugs(): Promise<
-  { slug: string; updatedAt: Date }[]
+  { id: number; slug: string; updatedAt: Date }[]
 > {
-  return db
+  const allProducts = await db
     .select({
+      id: products.id,
       slug: products.slug,
+      title: products.title,
+      brand: products.brand,
+      parentAsin: products.parentAsin,
       updatedAt: products.updatedAt,
     })
     .from(products);
+
+  return allProducts.map((p) => {
+    // Generate canonical slug (includes ID prefix)
+    const { slug: canonical } = getFamilyIdentity(p as any);
+    return {
+      id: p.id,
+      slug: canonical,
+      updatedAt: p.updatedAt || new Date(),
+    };
+  });
 }
 
 /**
@@ -515,10 +428,10 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   return unstable_cache(
     fetchProducts,
-    [`category-products-v31-${category}-${stripHeavyData}`],
+    [`category-products-v32-${category}-${stripHeavyData}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: [`category-v31-${category}`],
+      tags: [`category-v32-${category}`],
     },
   )();
 });
@@ -544,7 +457,15 @@ const fetchProductBySlug = async (
     return mapDbProduct(p as any, prs as any);
   };
 
-  // Try exact match first
+  // 1. Try ID-based match first (Robust path)
+  const idMatch = slug.match(/^(\d+)_-(.*)$/);
+  if (idMatch) {
+    const id = parseInt(idMatch[1]);
+    const p = await getProductById(id);
+    if (p) return p;
+  }
+
+  // 2. Try exact match (Legacy path)
   let result = await getProductAndPrices(slug);
 
   // If not found, try decoding the slug
@@ -578,10 +499,10 @@ export const getProductBySlug = cache(async function getProductBySlug(
 
   return unstable_cache(
     fetchProductBySlug,
-    [`product-slug-v5-${slug}-${includeHistory}`],
+    [`product-slug-v6-${slug}-${includeHistory}`],
     {
       revalidate: PRODUCT_REVALIDATE_SECONDS,
-      tags: [`product-v5-${slug}`],
+      tags: [`product-v6-${slug}`],
     },
   )(slug, includeHistory);
 });
