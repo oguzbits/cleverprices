@@ -402,6 +402,11 @@ export function ProductVariantSelector({
 
   const variants = useMemo(() => {
     const rawFiltered = allVariants.filter((v) => {
+      // HUB MODE FIX: Always show all unique configurations in Parent View.
+      // This ensures the "15 Varianten" count on Category Page (which counts unique specs)
+      // matches the number of cards shown here (e.g. 15).
+      if (isParentView) return true;
+
       const cond = (v.condition || "New").toLowerCase();
       const isRenewedListing = cond === "renewed";
       const hasWarehousePrice = (v.usedPrices?.[countryCode] || 0) > 0;

@@ -668,11 +668,68 @@ export async function findProductByParentAsinSuffix(
     conditions.push(like(products.title, `%${k}%`));
   }
 
-  const [p] = await db
-    .select(liteProductColumns)
+  console.log(
+    `[ParentLookup] Debug: slug=${slug}, suffix=${suffix}, keywords=${keywords.join(",")}`,
+  );
+
+  // Join with prices to ensure we pick a child that actually exists and has a price
+  // This prevents 404s if the first matching substring happens to be an unavailable product
+  const candidates = await db
+    .select({
+      ...liteProductColumns,
+      price: prices.price,
+    })
     .from(products)
-    .where(and(...conditions))
-    .limit(1);
+    .innerJoin(prices, eq(products.id, prices.productId))
+    .where(
+      and(
+        ...conditions,
+        eq(prices.country, "de"), // Default to DE for resolving parent
+        gt(prices.price, 0),
+      ),
+    )
+    .orderBy(desc(prices.price)) // Pick expensive one (usually fully specced) or any valid one
+    .limit(10); // Fetch multiple candidates to resolve collisions
+
+  if (candidates.length === 0) return undefined;
+
+  // Scoring Logic to resolve collisions (e.g. "Pro" suffix matching "Pro Max" parent)
+  // We check for "Ghost Keywords" - words in the title that are NOT in the slug.
+  const diffKeywords = ["max", "pro", "plus", "ultra", "mini", "lite", "fe"];
+  const slugLower = slug.toLowerCase();
+
+  const scoredCandidates = candidates.map((c) => {
+    let score = 100;
+    const titleLower = c.title.toLowerCase();
+
+    // Check for differentiation keywords
+    for (const kw of diffKeywords) {
+      // 1. Ghost Keyword Check: Title has it, Slug misses it (Pro Max matching Pro query)
+      if (titleLower.includes(kw) && !slugLower.includes(kw)) {
+        score -= 1000;
+      }
+
+      // 2. Missing Keyword Check: Slug has it, Title misses it (Pro matching Pro Max query)
+      if (slugLower.includes(kw) && !titleLower.includes(kw)) {
+        score -= 1000;
+      }
+    }
+
+    // Tiny boost for shorter titles (usually closer to base model) if scores equal
+    score -= c.title.length * 0.01;
+
+    return { product: c, score };
+  });
+
+  // Sort by score descending
+  scoredCandidates.sort((a, b) => b.score - a.score);
+
+  const bestMatch = scoredCandidates[0];
+  const p = bestMatch.score > -500 ? bestMatch.product : candidates[0]; // Fallback if all bad
+
+  console.log(
+    `[ParentLookup] Resolved ${slug} to ${p.title.slice(0, 30)}... (Score: ${bestMatch.score}, Suffix: ${suffix})`,
+  );
 
   if (!p) return undefined;
 

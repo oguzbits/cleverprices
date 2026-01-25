@@ -14,6 +14,8 @@ export interface LeanProduct {
   salesRank?: number;
   monthlySold?: number;
   variationAttributes?: string;
+  isVariantGroup?: boolean;
+  variantCount?: number;
   category?: string;
   listPrice?: number;
   savings?: number;

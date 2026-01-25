@@ -1,5 +1,10 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
 import { getAllDeals } from "@/lib/data/dealsData";
+import {
+  getFamilyIdentity,
+  getFamilyRepresentative,
+  getFamilyStats,
+} from "@/lib/product-families";
 import { getProductsByCategory } from "@/lib/product-registry";
 import {
   filterProducts,
@@ -41,6 +46,9 @@ export interface LocalizedProduct {
   cores?: string;
   lastUpdated?: string;
   variationAttributes?: string;
+  parentAsin?: string; // For grouping
+  isVariantGroup?: boolean; // UI flag
+  variantCount?: number; // UI flag
 }
 
 export interface FilterParams {
@@ -110,10 +118,8 @@ async function getCachedLocalizedCategoryProducts(
 
   return rawProducts
     .map((p) => {
-      const { price, title, asin, lastUpdated } = getLocalizedProductData(
-        p,
-        countryCode,
-      );
+      const { price, title, asin, parentAsin, lastUpdated } =
+        getLocalizedProductData(p, countryCode);
       // Filter out products with no valid price - they shouldn't appear in listings
       if (!price || price <= 0) return null;
 
@@ -273,9 +279,10 @@ async function getCachedLocalizedCategoryProducts(
         socket,
         cores,
         lastUpdated,
-        variationAttributes: p.variationAttributes,
         savings,
         listPrice: displayListPrice,
+        parentAsin,
+        variationAttributes: p.variationAttributes,
       } as LocalizedProduct;
     })
     .filter((p): p is LocalizedProduct => p !== null);
@@ -461,7 +468,7 @@ export async function getCategoryProducts(
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v33",
+    "v40",
   );
 
   // 2. [OPTIMIZATION] Skip Live Price Merge for the FULL list
@@ -484,9 +491,83 @@ export async function getCategoryProducts(
     unitLabel,
   );
 
-  // 4. Sort In-Memory (Uses the complex popularityScore from scoring.ts)
+  // 4. Variant Expansion (Idealo Style)
+  // Logic:
+  // - Keep ALL original variants.
+  // - For each group (by parentAsin), ADD a synthetic "Parent Card" ("Alle Varianten").
+  // - Parent Card gets:
+  //   - Price: Min price of group
+  //   - Popularity: Sum of all variants (so it ranks #1)
+  //   - isVariantGroup: true
+
+  const parentGroups: Record<string, LocalizedProduct[]> = {};
+
+  // 1. Bucket by parentAsin
+  for (const p of filteredProducts) {
+    if (p.parentAsin) {
+      if (!parentGroups[p.parentAsin]) {
+        parentGroups[p.parentAsin] = [];
+      }
+      parentGroups[p.parentAsin].push(p);
+    }
+  }
+
+  const extendedProducts = [...filteredProducts];
+
+  // 2. Create Synthetic Parents
+  for (const parentAsin in parentGroups) {
+    const group = parentGroups[parentAsin];
+    if (group.length > 1) {
+      // --- Refactored using Centralized Product Family Logic ---
+
+      const representative = getFamilyRepresentative(
+        group as any,
+      )! as unknown as LocalizedProduct;
+      const { slug: parentSlug, title: cleanestTitle } = getFamilyIdentity(
+        representative as any,
+        group as any,
+      );
+      const { variantCount } = getFamilyStats(group as any);
+
+      const totalPopularity = group.reduce(
+        (sum, p) => sum + (p.popularityScore || 0),
+        0,
+      );
+
+      // Boost it slightly more to ensure it beats the single best variant
+      const boostedPopularity = totalPopularity * 1.1;
+
+      const syntheticParent: LocalizedProduct = {
+        ...representative,
+        id: 900000000 + (representative.id || 0),
+
+        slug: parentSlug,
+        title: cleanestTitle,
+        price: representative.price || 0,
+        isVariantGroup: true,
+        variantCount: variantCount,
+        popularityScore: boostedPopularity,
+
+        // Remove specific attributes that might be confusing on the "All" card
+        capacity: 0,
+        capacityUnit: "",
+        normalizedCapacity: 0,
+        variationAttributes: "Alle Varianten",
+      };
+
+      if (representative.brand.toLowerCase() === "apple") {
+        console.log(
+          `[ParentExpansion] Created parent for ${cleanestTitle}: slug=${parentSlug}, id=${syntheticParent.id}`,
+        );
+      }
+
+      extendedProducts.push(syntheticParent);
+    }
+  }
+
+  // 5. Sort the EXTENDED list
   const sortedProducts = sortProducts(
-    filteredProducts,
+    extendedProducts,
     filters.sortBy,
     filters.sortOrder,
   );

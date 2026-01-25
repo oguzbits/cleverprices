@@ -1,4 +1,4 @@
-import { Product } from "@/lib/product-registry";
+import type { Product } from "@/lib/product-registry";
 import { parseVariationAttributes } from "./variants";
 
 export interface ProductIdentity {

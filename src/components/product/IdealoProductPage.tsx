@@ -14,6 +14,7 @@ import {
   type CategorySlug,
 } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
+import { getFamilyIdentity } from "@/lib/product-families";
 import { getProductVariants, Product } from "@/lib/product-registry";
 import { getSimilarProducts } from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
@@ -59,22 +60,7 @@ export function IdealoProductPage({
   const effectiveCondition =
     selectedCondition || (product.condition === "Renewed" ? "renewed" : "new");
 
-  // Slug Generation (Neutral for families)
-  const parentAsis = product.parentAsin || product.asin;
-  const parentAsinSuffix = parentAsis.slice(-4).toLowerCase();
-
-  const brandPart = product.brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-  const modelPart = identity.model
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .split("-")
-    .slice(0, 4)
-    .join("-");
-
-  const parentSlug = `${brandPart}-${modelPart}-${parentAsinSuffix}`.replace(
-    /-+/g,
-    "-",
-  );
+  const { slug: parentSlug } = getFamilyIdentity(product);
 
   // Breadcrumb Data from Universal Identity
   const parentTitle = identity.fullModel;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { computePriceAnalysis } from "./price-analysis";
+import { computePriceAnalysis } from "./price-analysis-utils";
 
 describe("computePriceAnalysis", () => {
   // Setup consistent chart data

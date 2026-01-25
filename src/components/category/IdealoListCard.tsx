@@ -138,6 +138,11 @@ export function IdealoListCard({
                       Version: {formatTechText(product.variationAttributes)}
                     </p>
                   )}
+                  {product.isVariantGroup && (
+                    <p className="text-idealo-text-primary mt-1 text-[12px]">
+                      {product.variantCount} Varianten
+                    </p>
+                  )}
                 </span>
               </div>
             </div>
@@ -185,7 +190,7 @@ export function IdealoListCard({
               productId={product.id!}
               countryCode={countryCode}
               initialPrice={product.price}
-              showAb
+              showAb={product.isVariantGroup}
               className="text-primary text-[20px]"
             />
           </Suspense>
