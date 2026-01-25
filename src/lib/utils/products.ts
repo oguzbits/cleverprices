@@ -54,19 +54,40 @@ export function calculateProductMetrics(
   overridePrice?: number,
 ): Partial<Product> {
   const price = overridePrice !== undefined ? overridePrice : 0;
-  let { capacity, capacityUnit, category, title } = p;
-  const categoryConfig = allCategories[category as CategorySlug];
+  let category = p.category;
+  let title = p.title;
+  let capacity = p.capacity;
+  let capacityUnit = p.capacityUnit;
+
+  if (!category) return p;
+
+  // Normalize category (handle aliases if possible)
+  let categoryConfig: any = allCategories[category as CategorySlug];
+  if (!categoryConfig) {
+    // Try to find by alias
+    categoryConfig = Object.values(allCategories).find((cat) =>
+      cat.aliases?.includes(category!),
+    );
+  }
 
   // Try to extract capacity/cores from title if missing
   if (!capacity && title) {
-    if (categoryConfig?.unitType === "core") {
-      const coreMatch = title.match(/(\d+)\s?-?\s?(Core|Kerne)/i);
-      if (coreMatch) capacity = parseInt(coreMatch[1]);
-    } else if (
+    const isStorage =
       category === "ssd" ||
       category === "ssds" ||
-      category === "hard-drives"
-    ) {
+      category === "hard-drives" ||
+      category === "storage" ||
+      categoryConfig?.unitType === "TB" ||
+      categoryConfig?.unitType === "GB";
+    const isCPU =
+      category === "cpu" ||
+      category === "prozessoren" ||
+      categoryConfig?.unitType === "core";
+
+    if (isCPU) {
+      const coreMatch = title.match(/(\d+)\s?-?\s?(Core|Kerne|Cores)/i);
+      if (coreMatch) capacity = parseInt(coreMatch[1]);
+    } else if (isStorage) {
       const capMatch = title.match(/(\d+)\s?(GB|TB)/i);
       if (capMatch) {
         capacity = parseInt(capMatch[1]);
@@ -80,7 +101,9 @@ export function calculateProductMetrics(
     capacity ||
     (categoryConfig?.unitType === "core" ? Number((p as any).cores) : 0);
 
-  if (price === undefined || !actualCapacity || !category) return p;
+  // We need both price and capacity to calculate metrics
+  // allow price 0 if actualCapacity exists, but usually we want price > 0
+  if (!actualCapacity || price === undefined) return p;
 
   const comparisonUnit = categoryConfig?.unitType || capacityUnit || "GB";
 
@@ -89,12 +112,17 @@ export function calculateProductMetrics(
 
   const normalizedCapacity = actualCapacity * fromFactor;
   const capacityInComparisonUnit = normalizedCapacity / toFactor;
+
+  if (!capacityInComparisonUnit) return p;
+
   const pricePerUnit = Number((price / capacityInComparisonUnit).toFixed(2));
 
   return {
     ...p,
     pricePerUnit,
     normalizedCapacity,
+    capacity: capacity as number, // Ensure it's updated if extracted
+    capacityUnit: capacityUnit as string,
   };
 }
 

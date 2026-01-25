@@ -23,33 +23,42 @@ describe("products utility", () => {
   });
 
   describe("calculateProductMetrics", () => {
-    it("should calculate price per unit for storage", () => {
+    it("should calculate price per unit for storage (GB)", () => {
       const product = {
-        category: "ssd",
-        capacity: 1000,
+        category: "ram", // Uses GB
+        capacity: 32,
+        capacityUnit: "GB",
+        title: "Fast RAM",
+      };
+      const result = calculateProductMetrics(product, 160); // 160 / 32 GB
+      expect(result.pricePerUnit).toBe(5);
+    });
+
+    it("should calculate price per unit for storage (TB)", () => {
+      const product = {
+        category: "ssds", // Uses TB
+        capacity: 2000,
         capacityUnit: "GB",
         title: "Fast SSD",
       };
-      const result = calculateProductMetrics(product, 100); // 100 / 1000 GB
-      expect(result.pricePerUnit).toBe(0.1);
+      const result = calculateProductMetrics(product, 200); // 200 / 2 TB
+      expect(result.pricePerUnit).toBe(100);
     });
 
     it("should handle TB to GB conversion", () => {
       const product = {
-        category: "hard-drives",
+        category: "hard-drives", // Uses TB
         capacity: 2,
         capacityUnit: "TB",
         title: "Big HDD",
       };
-      // 2TB. category config for 'hard-drives' uses unitType: 'TB'
-      // Price 200 / 2 TB = 100 per TB
       const result = calculateProductMetrics(product, 200);
       expect(result.pricePerUnit).toBe(100);
     });
 
     it("should extract capacity from title if missing", () => {
       const product = {
-        category: "ssds", // uses unitType: 'TB'
+        category: "ssds",
         title: "Samsung 980 Pro 2TB NVMe",
       };
       const result = calculateProductMetrics(product, 200);
@@ -64,6 +73,15 @@ describe("products utility", () => {
       };
       const result = calculateProductMetrics(product, 600);
       expect(result.pricePerUnit).toBe(25); // 600 / 24
+    });
+
+    it("should handle category aliases", () => {
+      const product = {
+        category: "prozessoren", // Alias for cpu
+        title: "AMD Ryzen 9 7950X (16 Cores)",
+      };
+      const result = calculateProductMetrics(product, 500);
+      expect(result.pricePerUnit).toBe(31.25); // 500 / 16
     });
   });
 
