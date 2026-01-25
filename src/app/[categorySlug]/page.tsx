@@ -43,16 +43,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   const canonicalUrl = `https://${BRAND_DOMAIN}/${category.slug}`;
 
-  // SEO-optimized title: [Category] + [Value Prop] + Brand (Modern SEO skill: seo-02-title-tags)
+  // SEO-optimized title: [Category] + [Value Prop] + Brand
   const unitSuffix = category.unitType
-    ? ` - Preis pro ${category.unitType}`
-    : "";
-  const title = `${category.name}${unitSuffix} - CleverPrices`;
+    ? ` - Günstigster Preis pro ${category.unitType}`
+    : " - Günstig kaufen & sparen";
+  const title = `${category.name}${unitSuffix} | ${BRAND_DOMAIN}`;
 
   // Action-oriented description (Modern SEO skill: seo-03-meta-descriptions)
   const description = category.unitType
-    ? `Vergleichen Sie ${category.name} nach Preis pro ${category.unitType}. Finden Sie die günstigsten Angebote von Top-Marken und sparen Sie bis zu 50%.`
-    : `Vergleichen Sie ${category.name} Preise von Top-Marken. Finden Sie die besten Angebote in Deutschland bei CleverPrices.`;
+    ? `Hardware-Preisvergleich: Vergleichen Sie ${category.name} nach Preis pro ${category.unitType}. Finden Sie die besten Angebote in Deutschland und sparen Sie beim Hardware-Kauf.`
+    : `Vergleichen Sie Preise für ${category.name} von Top-Marken. Finden Sie jetzt die günstigsten Hardware-Angebote bei ${BRAND_DOMAIN}.`;
 
   return {
     title,
@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: getAlternateLanguages(`/${categorySlug}`),
     },
     openGraph: getOpenGraph({
-      title,
+      title: `${category.name} Preisvergleich | ${BRAND_DOMAIN}`,
       description,
       url: canonicalUrl,
       locale: "de_DE",

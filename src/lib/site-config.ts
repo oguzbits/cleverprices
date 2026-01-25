@@ -35,7 +35,7 @@ export const BRAND_DOMAIN = "cleverprices.com";
  * Full site description for SEO
  */
 export const SITE_DESCRIPTION =
-  "Preisvergleich für Hardware & Technik. Vergleichen Sie Festplatten, SSDs und RAM nach dem echten Preis pro TB/GB. Finden Sie sofort die besten Hardware-Angebote.";
+  "Hardware-Preisvergleich mit Fokus auf Preis pro TB/GB. Finden Sie die günstigsten SSDs, HDDs und RAM durch echten Kostenvergleich. Täglich aktualisierte Technik-Deals.";
 
 // =============================================================================
 // CONTACT
@@ -73,7 +73,7 @@ export const TITLE_SUFFIX = BRAND_DOMAIN;
 /**
  * Default meta title for homepage
  */
-export const DEFAULT_TITLE = `Preisvergleich für Hardware & Technik | ${BRAND_DOMAIN}`;
+export const DEFAULT_TITLE = `Hardware Preisvergleich Deutschland | Bester Preis pro TB/GB | ${BRAND_DOMAIN}`;
 
 /**
  * Title template for Next.js metadata

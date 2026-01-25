@@ -163,13 +163,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     // SEO-optimized Title
     const seoTitle = isParentView ? identity.fullModel : product.title;
-    const title = `${seoTitle}${unitPriceText} - CleverPrices | ${BRAND_DOMAIN}`;
+    const title = `${seoTitle}${unitPriceText} | Hardware Preisvergleich | ${BRAND_DOMAIN}`;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
     const description =
       pricePerUnit && category?.unitType
-        ? `Vergleichen Sie ${product.title}. Bester Preis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Jetzt Top-Angebot finden!`
-        : `Vergleichen Sie ${product.title}. Aktueller Bestpreis: ${countryConfig?.currency || "EUR"} ${price?.toFixed(2)}. Finden Sie jetzt das günstigste Angebot bei CleverPrices.`;
+        ? `${product.title} zum besten Preis kaufen. Aktuell nur ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Jetzt Angebote in Deutschland vergleichen und sparen!`
+        : `${product.title} günstig kaufen. Aktueller Bestpreis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Finden Sie jetzt das beste Hardware-Angebot bei ${BRAND_DOMAIN}.`;
 
     const canonicalUrl = `https://${BRAND_DOMAIN}/p/${slug}`;
 
@@ -181,7 +181,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         languages: getAlternateLanguages(`/p/${slug}`),
       },
       openGraph: getOpenGraph({
-        title,
+        title: `${seoTitle} Preisvergleich | ${BRAND_DOMAIN}`,
         description,
         url: canonicalUrl,
         locale: "de_DE",

@@ -1,20 +1,20 @@
 import { BlogIndexView } from "@/components/blog/blog-index-view";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
-import { getSiteUrl } from "@/lib/site-config";
+import { BRAND_DOMAIN, getSiteUrl } from "@/lib/site-config";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Blog: Hardware Pricing & Market Trends",
+  title: `Blog: Hardware-Preistrends & Marktanalysen | ${BRAND_DOMAIN}`,
   description:
-    "Expert analysis of RAM, SSD, and HDD pricing trends. Track market fluctuations and get the best value for your PC build.",
+    "Experten-Analyse zu Preisentwicklungen bei RAM, SSD und HDD. Verfolgen Sie Marktschwankungen und finden Sie das beste Preis-Leistungs-Verhältnis.",
   alternates: {
     canonical: getSiteUrl("/blog"),
     languages: getAlternateLanguages("blog"),
   },
   openGraph: getOpenGraph({
-    title: "Blog: Hardware Pricing & Market Trends",
+    title: `Blog: Hardware-Preistrends & Marktanalysen | ${BRAND_DOMAIN}`,
     description:
-      "Expert analysis of RAM, SSD, and HDD pricing trends. Track market fluctuations and get the best value for your PC build.",
+      "Experten-Analyse zu Preisentwicklungen bei RAM, SSD und HDD. Verfolgen Sie Marktschwankungen und finden Sie das beste Preis-Leistungs-Verhältnis.",
     url: getSiteUrl("/blog"),
   }),
 };

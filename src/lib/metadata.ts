@@ -208,10 +208,16 @@ export function getHomePageMetadata(
     : getCountryUrl(countryCode.toLowerCase());
 
   // Consistent title pattern for all marketplaces
-  const title = `Price Tracker - Amazon ${code}`;
+  const title =
+    countryCode.toLowerCase() === "de"
+      ? `Hardware Preisvergleich Deutschland | Bester Preis pro TB/GB`
+      : `Price Tracker - Amazon ${code}`;
 
   // Description with country code
-  const description = `Amazon ${code} price tracker for hardware & storage. Compare HDD, SSD, RAM and more by true cost per TB/GB. Find the best value hardware deals instantly.`;
+  const description =
+    countryCode.toLowerCase() === "de"
+      ? "CleverPrices: Ihr Preisvergleich für Hardware & Speicher. Vergleichen Sie HDD, SSD und RAM nach echtem Preis pro TB/GB. Jetzt die besten Angebote in Deutschland finden."
+      : `Amazon ${code} price tracker for hardware & storage. Compare HDD, SSD, RAM and more by true cost per TB/GB. Find the best value hardware deals instantly.`;
 
   return {
     title,

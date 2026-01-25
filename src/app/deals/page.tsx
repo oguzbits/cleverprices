@@ -7,9 +7,9 @@ interface Props {
 }
 
 export const metadata = {
-  title: "Deals & Angebote | cleverprices",
+  title: `Hardware Deals & Angebote | cleverprices`,
   description:
-    "Finde die besten Deals und Angebote für Elektronik, Computer und mehr. Täglich geprüft und aktualisiert.",
+    "Finden Sie die besten Hardware-Deals und Technik-Angebote. Täglich geprüfte Preise für SSDs, HDDs, RAM und mehr.",
 };
 
 export default async function DealsPage({ searchParams }: Props) {
