@@ -52,9 +52,10 @@ export function generateProductSlug(
     .replace(/^-|-$/g, "");
 
   // 3. Format Spec Part (Capacity)
+  const castUnit = String(capacityUnit || "GB");
   let specPart = "";
   if (capacity) {
-    const unit = (capacityUnit || "GB").toLowerCase();
+    const unit = castUnit.toLowerCase();
     specPart = `${capacity}${unit}`.replace(/\s+/g, "");
   }
 

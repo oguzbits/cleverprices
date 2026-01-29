@@ -16,6 +16,7 @@ export type DataSourceId =
   | "amazon"
   | "amazon-paapi"
   | "keepa"
+  | "icecat"
   | "ebay"
   | "newegg"
   | "bhphoto"
@@ -198,6 +199,12 @@ export interface ProductSpecifications {
 export interface UnifiedProduct {
   /** Unique product ID (usually ASIN for Amazon products) */
   id: string;
+
+  /** Global Trade Item Number (EAN, UPC, ISBN) */
+  gtin?: string | null;
+
+  /** Manufacturer Part Number */
+  mpn?: string | null;
 
   /** Product title */
   title: string;

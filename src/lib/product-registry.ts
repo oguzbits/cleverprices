@@ -66,12 +66,20 @@ export const liteProductColumns = {
   monthlySold: products.monthlySold,
   parentAsin: products.parentAsin,
   variationAttributes: products.variationAttributes,
-  specifications: products.specifications, // Keep for filtering logic
+  specifications: products.specifications,
+  officialSpecifications: products.officialSpecifications,
+  officialTitle: products.officialTitle,
   energyLabel: products.energyLabel,
   historySeeded: products.historySeeded,
+  icecatId: products.icecatId,
+  enrichmentStatus: products.enrichmentStatus,
+  specificationsSource: products.specificationsSource,
+  keepaFeatures: products.keepaFeatures,
+  completenessScore: products.completenessScore,
+  missingSpecs: products.missingSpecs,
+  lastEnrichedAt: products.lastEnrichedAt,
   createdAt: products.createdAt,
   updatedAt: products.updatedAt,
-  // EXCLUDED: rawData, features, description (removed in lean schema)
 };
 
 /**
@@ -97,6 +105,8 @@ export interface Product {
   parentAsin?: string;
   variationAttributes?: string;
   specifications?: Record<string, any>;
+  officialSpecifications?: Record<string, any>;
+  officialTitle?: string | null;
   socket?: string;
   cores?: string;
   manufacturer?: string;
@@ -128,6 +138,20 @@ export interface Product {
   listPrice?: Record<string, number>;
   pricesPerUnit?: Record<string, number>;
   isParentView?: boolean; // Flag to indicate we are in aggregated mode
+
+  // Enrichment & Data Quality
+  icecatId?: number | null;
+  enrichmentStatus?:
+    | "pending"
+    | "processed"
+    | "not_found"
+    | "error"
+    | "optimized"
+    | "scavenged"
+    | null;
+  completenessScore?: number | null;
+  missingSpecs?: string | null;
+  lastEnrichedAt?: Date | null;
 }
 
 // Lite price type for optimized queries (lean schema)
@@ -277,45 +301,77 @@ export async function getProductVariants(
   product: Product,
   countryCode: string = "de",
 ): Promise<Product[]> {
-  // If this product has no parentAsin, it has no variants
-  if (!product.parentAsin) return [];
+  // 1. PRIMARY: Fetch by parentAsin (Ideal Path)
+  const fetchByAsin = async (parentAsin: string) => {
+    const variantProducts = await db
+      .select(liteProductColumns)
+      .from(products)
+      .where(eq(products.parentAsin, parentAsin));
 
-  // Fetch all products with the same parentAsin
-  const variantProducts = await db
-    .select(liteProductColumns)
-    .from(products)
-    .where(eq(products.parentAsin, product.parentAsin));
+    if (variantProducts.length <= 1) return [];
 
-  if (variantProducts.length <= 1) return [];
+    const ids = variantProducts.map((p) => p.id);
+    const variantPrices = await db
+      .select(litePriceColumns)
+      .from(prices)
+      .where(
+        and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+      );
 
-  // Fetch prices for all variants
-  const ids = variantProducts.map((p) => p.id);
-  const variantPrices = await db
-    .select(litePriceColumns)
-    .from(prices)
-    .where(
-      and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-    );
+    const pricesByProduct = indexPricesById(variantPrices);
 
-  const pricesByProduct = indexPricesById(variantPrices);
+    return variantProducts
+      .map((p) =>
+        mapDbProduct(
+          p as DbProduct,
+          pricesByProduct.get(p.id!) || [],
+          [],
+          true,
+        ),
+      )
+      .filter(
+        (v) =>
+          (v.prices[countryCode] || 0) > 0 ||
+          (v.usedPrices?.[countryCode] || 0) > 0,
+      );
+  };
 
-  // Map and sort by price
-  const mappedVariants = variantProducts
-    .map((p) =>
-      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
-    )
-    .filter(
-      (v) =>
-        (v.prices[countryCode] || 0) > 0 ||
-        (v.usedPrices?.[countryCode] || 0) > 0,
-    )
-    .sort((a, b) => {
-      const pA = a.prices[countryCode] || a.usedPrices?.[countryCode] || 0;
-      const pB = b.prices[countryCode] || b.usedPrices?.[countryCode] || 0;
-      return pA - pB;
+  if (product.parentAsin) {
+    const variants = await fetchByAsin(product.parentAsin);
+    if (variants.length > 0)
+      return variants.sort(
+        (a, b) => (a.prices[countryCode] || 0) - (b.prices[countryCode] || 0),
+      );
+  }
+
+  // 2. SECONDARY: Smart Fallback by Model Identity (RECOVERY)
+  // Used for products missing parentAsin or when current product IS the parent
+  const { getProductIdentity } = await import("./utils/product-identity");
+  const identity = getProductIdentity(product);
+  const targetModelKey = identity.model
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-");
+
+  if (targetModelKey && targetModelKey.length > 2) {
+    // In-registry call to get products in same category
+    // Note: getProductsByCategory might be expensive if many products
+    const siblings = await getProductsByCategory(product.category, true);
+
+    const matched = siblings.filter((s) => {
+      if (s.brand.toLowerCase() !== product.brand.toLowerCase()) return false;
+      const sIdentity = getProductIdentity(s);
+      const sKey = sIdentity.model.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      return sKey === targetModelKey;
     });
 
-  return mappedVariants;
+    if (matched.length > 1) {
+      return matched.sort(
+        (a, b) => (a.prices[countryCode] || 0) - (b.prices[countryCode] || 0),
+      );
+    }
+  }
+
+  return [];
 }
 
 /**

@@ -1,16 +1,12 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
 import { getAllDeals } from "@/lib/data/dealsData";
-import {
-  getFamilyIdentity,
-  getFamilyRepresentative,
-  getFamilyStats,
-} from "@/lib/product-families";
 import { getProductsByCategory } from "@/lib/product-registry";
 import {
   filterProducts,
   normalizeBrand,
   sortProducts,
 } from "@/lib/utils/category-utils";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import {
   calculateSavings,
   getLocalizedProductData,
@@ -49,7 +45,12 @@ export interface LocalizedProduct {
   parentAsin?: string; // For grouping
   isVariantGroup?: boolean; // UI flag
   variantCount?: number; // UI flag
+  officialSpecifications?: any; // Structured official specs
 }
+
+// ... (Wait, I can't put ALL of it here. The prompt size limits might clip it?
+// 2MB limit mentioned in code :)
+// I will try to supply the full block. It is about 200 lines.
 
 export interface FilterParams {
   search?: string;
@@ -100,7 +101,7 @@ function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
  * Pruning is essential to stay under Vercel's 2MB cache limit.
  * Price is included but will be overwritten by the loader for live sync.
  */
-async function getCachedLocalizedCategoryProducts(
+export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
   version: string = "v1", // Cache buster
@@ -283,6 +284,15 @@ async function getCachedLocalizedCategoryProducts(
         listPrice: displayListPrice,
         parentAsin,
         variationAttributes: p.variationAttributes,
+        officialSpecifications:
+          (typeof p.officialSpecifications === "string"
+            ? JSON.parse(p.officialSpecifications)
+            : p.officialSpecifications) ||
+          (p.specifications
+            ? typeof p.specifications === "string"
+              ? JSON.parse(p.specifications)
+              : p.specifications
+            : null),
       } as LocalizedProduct;
     })
     .filter((p): p is LocalizedProduct => p !== null);
@@ -500,74 +510,38 @@ export async function getCategoryProducts(
   //   - Popularity: Sum of all variants (so it ranks #1)
   //   - isVariantGroup: true
 
-  const parentGroups: Record<string, LocalizedProduct[]> = {};
+  // 2. [FLAT LIST MODE] - User requested "DO NOT MERGE"
+  // We simply map the clean identity title to every product and return the flat list.
+  const extendedProducts: LocalizedProduct[] = filteredProducts.map((p) => {
+    // Calculate Identity to get the clean title (e.g. "MacBook Air M4")
+    // This ensures consistency with the Detail Page
+    const identity = getProductIdentity(p as any);
+    const modelKey = identity.model.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
-  // 1. Bucket by parentAsin
-  for (const p of filteredProducts) {
-    if (p.parentAsin) {
-      if (!parentGroups[p.parentAsin]) {
-        parentGroups[p.parentAsin] = [];
-      }
-      parentGroups[p.parentAsin].push(p);
-    }
-  }
+    // Store clean title for later use (Critical for singletons)
+    // FIX: Include variant label to match Detail Page (e.g. "Apple MacBook Air M4 16GB 13\"")
+    const displayTitle = identity.variantLabel
+      ? `${identity.fullModel} ${identity.variantLabel}`
+      : identity.fullModel;
 
-  const extendedProducts = [...filteredProducts];
+    (p as any).cleanTitle = displayTitle;
 
-  // 2. Create Synthetic Parents
-  for (const parentAsin in parentGroups) {
-    const group = parentGroups[parentAsin];
-    if (group.length > 1) {
-      // --- Refactored using Centralized Product Family Logic ---
+    let groupKey: string | null = null;
 
-      const representative = getFamilyRepresentative(
-        group as any,
-      )! as unknown as LocalizedProduct;
-      const realId = (representative.id || 0) % 100000000;
-      const syntheticId = 900000000 + realId;
-      (representative as any).syntheticId = syntheticId;
+    // We MUTATE the title for display consistency
+    // (Using a clone is safer if we were strictly pure, but this is efficient)
+    return {
+      ...p,
+      title: displayTitle,
+      // Remove any parentAsin/syntheticId to prevents any accidental grouping downstream
+      parentAsin: undefined,
+      syntheticId: undefined,
+      isVariantGroup: false,
+    };
+  });
 
-      const { slug: parentSlug, title: cleanestTitle } = getFamilyIdentity(
-        representative as any,
-        group as any,
-      );
-      const { variantCount } = getFamilyStats(group as any);
-
-      const totalPopularity = group.reduce(
-        (sum, p) => sum + (p.popularityScore || 0),
-        0,
-      );
-
-      // Boost it slightly more to ensure it beats the single best variant
-      const boostedPopularity = totalPopularity * 1.1;
-
-      const syntheticParent: LocalizedProduct = {
-        ...representative,
-        id: 900000000 + realId,
-
-        slug: parentSlug,
-        title: cleanestTitle,
-        price: representative.price || 0,
-        isVariantGroup: true,
-        variantCount: variantCount,
-        popularityScore: boostedPopularity,
-
-        // Remove specific attributes that might be confusing on the "All" card
-        capacity: 0,
-        capacityUnit: "",
-        normalizedCapacity: 0,
-        variationAttributes: "Alle Varianten",
-      };
-
-      if (representative.brand.toLowerCase() === "apple") {
-        console.log(
-          `[ParentExpansion] Created parent for ${cleanestTitle}: slug=${parentSlug}, id=${syntheticParent.id}`,
-        );
-      }
-
-      extendedProducts.push(syntheticParent);
-    }
-  }
+  // SKIP GROUPING LOGIC ENTIRELY
+  // The code below previously created synthetic parents. Now we skip it.
 
   // 5. Sort the EXTENDED list
   const sortedProducts = sortProducts(

@@ -120,6 +120,12 @@ interface KeepaProduct {
   categories?: number[];
   rootCategory?: number;
   lastUpdate?: number;
+  eanList?: string[];
+  upcList?: string[];
+  model?: string;
+  color?: string;
+  size?: string;
+  department?: string;
 }
 
 interface KeepaResponse {
@@ -456,14 +462,27 @@ export class KeepaDataSource implements DataSourceProvider {
       }
     }
 
+    // --- ENRICHMENT MAPPING ---
+    const gtin = product.eanList?.[0] || product.upcList?.[0]; // Prefer EAN
+    const mpn = product.model;
+
+    // Map structured specs to generic JSON bucket
+    const specifications: Record<string, any> = {
+      brand: product.brand,
+    };
+    if (product.color) specifications.Color = product.color;
+    if (product.size) specifications.Size = product.size;
+    if (product.department) specifications.Department = product.department;
+    if (product.model) specifications.Model = product.model;
+
     return {
       id: product.asin,
+      gtin, // Extended Field
+      mpn, // Extended Field
       title: product.title || product.asin,
       category: "hard-drives", // Default category - would need to map from Keepa categories
       imageUrl,
-      specifications: {
-        brand: product.brand,
-      },
+      specifications,
       offers,
       bestOffer: offers.find((o) => o.condition === "new"),
       priceAnalysis,

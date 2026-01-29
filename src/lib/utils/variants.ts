@@ -10,6 +10,10 @@
  */
 interface VariantLike {
   variationAttributes?: string;
+  title?: string;
+  category?: string;
+  officialSpecs?: any; // Allow fallback to official/scavenged specs
+  specifications?: any; // Alias for local props
 }
 
 /**
@@ -59,16 +63,24 @@ export function sortCapacities(values: string[]): string[] {
   });
 }
 
-/**
- * Extract unique attribute values from a list of variants
- */
 export function extractAttributeGroups(
   variants: VariantLike[],
 ): Record<string, string[]> {
   const groups: Record<string, Set<string>> = {};
 
   for (const variant of variants) {
-    const attrs = parseVariationAttributes(variant.variationAttributes);
+    // robust normalization using all available data
+    const normalizedStr = normalizeVariantAttributes({
+      variationAttributes: variant.variationAttributes,
+      title: variant.title || "",
+      category: variant.category || "",
+      officialSpecs:
+        (variant as any).officialSpecifications ||
+        variant.officialSpecs ||
+        variant.specifications,
+    });
+
+    const attrs = parseVariationAttributes(normalizedStr);
     for (const [key, value] of Object.entries(attrs)) {
       if (!groups[key]) groups[key] = new Set();
       groups[key].add(value);
@@ -104,39 +116,61 @@ export function extractRealStorageFromTitle(
 ): string | null {
   if (!title) return null;
 
-  // 1. Try standard GB/TB matches first
+  const lowerTitle = title.toLowerCase();
+
+  // Define RAM Patterns (to exclude)
+  // Matches: "16GB RAM", "16 GB Arbeitsspeicher", "RAM 16GB", "16GB Gemeinsamer Arbeitsspeicher"
+  const ramPatterns = [
+    /\b(\d+)\s*(?:gb|tb)\s+(?:ddr\d|lpddr\d|ram|memory|arbeitsspeicher|gemeinsamer\s+arbeitsspeicher)\b/gi,
+    /\b(?:ram|arbeitsspeicher|memory)\s*:?\s*(\d+)\s*(?:gb|tb)\b/gi,
+  ];
+
+  // Identifies ranges in the string that are RAM
+  const ramRanges: [number, number][] = [];
+  for (const pattern of ramPatterns) {
+    const matches = lowerTitle.matchAll(pattern);
+    for (const m of matches) {
+      if (m.index !== undefined) {
+        ramRanges.push([m.index, m.index + m[0].length]);
+      }
+    }
+  }
+
+  // Find all capacity matches
   const capacityMatches = Array.from(title.matchAll(/(\d+)\s*(GB|TB)/gi));
-  let bestMatch: string | null = null;
+
+  let bestStorageMatch: string | null = null;
   let maxGB = 0;
 
   for (const match of capacityMatches) {
     const val = match[0];
     const gb = parseCapacityToGB(val);
+    const start = match.index || 0;
+    const end = start + val.length;
 
-    // Heuristic: Storage is typically >= 64GB and a power of 2 or common tier
-    const isStandardTier = [64, 128, 256, 512, 1024, 2048].includes(gb);
+    // Check if this match falls clearly inside a RAM range
+    const isRam = ramRanges.some((r) => start >= r[0] && end <= r[1]); // Strict overlap
+
+    // Also check immediate proximity (fallback for "16GB, RAM") if not caught by patterns
+    const contextCheck = lowerTitle.slice(
+      Math.max(0, start - 15),
+      Math.min(title.length, end + 15),
+    );
+    // If "RAM" is very close but separated by comma, it might be ambiguous, but usually RAM is tightly bound.
+    // We trust the regex patterns above mostly.
+
+    if (isRam) continue;
+
+    // Heuristic: Storage is typically >= 64GB
     if (gb >= 64) {
-      if (isStandardTier || gb > maxGB) {
+      if (gb > maxGB) {
         maxGB = gb;
-        bestMatch = val;
+        bestStorageMatch = val;
       }
     }
   }
 
-  if (bestMatch) return bestMatch;
-
-  // 2. Fallback: Look for numbers >= 64 after "Speicher", "Memory", "Internal"
-  const rawMatches = Array.from(
-    title.matchAll(/(?:speicher|memory|internal|interner)\D*(\d{3,4})/gi),
-  );
-  for (const match of rawMatches) {
-    const num = parseInt(match[1]);
-    if ([64, 128, 256, 512, 1024].includes(num)) {
-      return num >= 1024 ? `${num / 1024} TB` : `${num} GB`;
-    }
-  }
-
-  return null;
+  return bestStorageMatch;
 }
 /**
  * Robust Attribute Normalization for Smartphones & Tech
@@ -287,10 +321,12 @@ export function normalizeVariantAttributes(v: {
   title: string;
   variationAttributes?: string;
   category?: string;
+  officialSpecs?: Record<string, any>;
 }): string {
   const variationAttributes = v.variationAttributes || "";
   const title = v.title || "";
   const category = v.category || "";
+  const specs = v.officialSpecs || {};
 
   const isSmartphone =
     category === "smartphones" || title.toLowerCase().includes("smartphone");
@@ -301,8 +337,52 @@ export function normalizeVariantAttributes(v: {
     title.toLowerCase().includes("ssd ") ||
     title.toLowerCase().includes("hdd ");
 
-  // If both are missing and it's not a tech category, we can't do much.
-  if (!variationAttributes && !isSmartphone && !isStorage) return "";
+  // 0. TRUSTED DB OVERRIDE
+  // If we have explicit Official Specs, use them!
+  const overrides: Record<string, string> = {};
+  if (specs["Farbe"] || specs["Produktfarbe"] || specs["Color"]) {
+    overrides["Farbe"] =
+      specs["Farbe"] || specs["Produktfarbe"] || specs["Color"];
+  }
+  if (
+    specs["Interner Speichertyp"] === "SSD" ||
+    specs["Speicher"] ||
+    specs["Speicherkapazität"] ||
+    specs["HDD Kapazität"] ||
+    specs["SSD Speicherkapazität"]
+  ) {
+    // Only grab capacity, not type
+    const capacity =
+      specs["Speicherkapazität"] ||
+      specs["HDD Kapazität"] ||
+      specs["SSD Speicherkapazität"] ||
+      specs["Kapazität"];
+    if (capacity) overrides["Storage"] = capacity;
+  }
+
+  // 1. Trust Official Specs for RAM
+  if (
+    specs["Arbeitsspeicher"] ||
+    specs["Arbeitsspeicher (RAM)"] ||
+    specs["RAM"] ||
+    specs["Memory"] ||
+    specs["Speicher"] // Ambiguous, check if valid RAM
+  ) {
+    const val =
+      specs["Arbeitsspeicher"] ||
+      specs["Arbeitsspeicher (RAM)"] ||
+      specs["RAM"] ||
+      specs["Memory"] ||
+      specs["Speicher"];
+    if (val && typeof val === "string") {
+      // Basic validation to ensure it looks like "16GB" not "512GB"
+      const gb = parseCapacityToGB(val);
+      if (gb > 0 && gb < 128) {
+        // Assume <128GB is RAM for most consumer devices
+        overrides["RAM"] = val;
+      }
+    }
+  }
 
   const attrs = parseVariationAttributes(variationAttributes);
   const context = { title, category };
@@ -321,24 +401,72 @@ export function normalizeVariantAttributes(v: {
     }
   });
 
+  // Apply Overrides (Trust DB) but ONLY if specific variant data is missing
+  Object.entries(overrides).forEach(([k, v]) => {
+    if (!normalized[k]) {
+      normalized[k] = v;
+    }
+  });
+
   // --- PROACTIVE RECOVERY ---
   // If Farbe or Storage are missing, try to recover them from the title
-  // This ensures all variants in the family have the same keys for robust filtering.
-  if (isSmartphone || isStorage) {
-    if (!normalized["Storage"]) {
-      const recovered = extractRealStorageFromTitle(title);
-      if (recovered) {
-        const result = strategy("Storage", recovered, context);
-        if (result) normalized[result.key] = result.value;
-      }
-    }
-
-    if (isSmartphone && !normalized["Farbe"]) {
-      // For smartphones, we almost always want a color.
-      // We pass a dummy "Titanium" to the strategy to trigger its title recovery logic.
-      const result = strategy("Farbe", "Titanium", context);
+  if (!normalized["Storage"]) {
+    const recovered = extractRealStorageFromTitle(title);
+    if (recovered) {
+      const result = strategy("Storage", recovered, context);
       if (result) normalized[result.key] = result.value;
     }
+  }
+
+  // 2. RAM Recovery (Check Title if missing)
+  if (!normalized["RAM"]) {
+    const recoveredRam = extractRamFromTitle(title);
+    if (recoveredRam) {
+      normalized["RAM"] = recoveredRam;
+    }
+  }
+
+  // Generic Color Recovery (Title Suffix)
+  // Logic: "Product Name - ColorName"
+  if (title.includes(" - ")) {
+    const parts = title.split(" - ");
+    const candidate = parts[parts.length - 1].trim();
+
+    // Check if current color is more generic than title candidate
+    const currentColor = normalized["Farbe"] || "";
+    const isGeneric =
+      !currentColor ||
+      ["blau", "schwarz", "weiss", "rot", "grau", "silber", "gold"].includes(
+        currentColor.toLowerCase(),
+      );
+
+    if (candidate.length < 25 && !/\d{2,}/.test(candidate)) {
+      const ignored = [
+        "Standard",
+        "Box",
+        "Neu",
+        "OVP",
+        "Deal",
+        "Angebot",
+        "EU",
+      ];
+      if (!ignored.includes(candidate)) {
+        const result = strategy("Farbe", candidate, context);
+        if (
+          result &&
+          (isGeneric || result.value.length > currentColor.length)
+        ) {
+          normalized[result.key] = result.value;
+        }
+      }
+    }
+  }
+
+  if (isSmartphone && !normalized["Farbe"]) {
+    // For smartphones, we almost always want a color.
+    // We pass a dummy "Titanium" to the strategy to trigger its title recovery logic.
+    const result = strategy("Farbe", "Titanium", context);
+    if (result) normalized[result.key] = result.value;
   }
 
   // Return sorted string to ensure identical specs produce identical keys
@@ -346,4 +474,26 @@ export function normalizeVariantAttributes(v: {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([k, v]) => `${k}: ${v}`)
     .join("; ");
+}
+
+/**
+ * Extract RAM from title (e.g. "16GB RAM", "32GB Arbeitsspeicher")
+ */
+export function extractRamFromTitle(title: string | undefined): string | null {
+  if (!title) return null;
+  const lowerTitle = title.toLowerCase();
+
+  const ramPatterns = [
+    /\b(\d+)\s*(?:gb)\s+(?:ddr\d|lpddr\d|ram|memory|arbeitsspeicher|gemeinsamer\s+arbeitsspeicher)\b/gi,
+    /\b(?:ram|arbeitsspeicher|memory)\s*:?\s*(\d+)\s*(?:gb)\b/gi,
+  ];
+
+  for (const pattern of ramPatterns) {
+    const match = pattern.exec(lowerTitle);
+    if (match) {
+      // Return normalized "16 GB"
+      return `${match[1]} GB`;
+    }
+  }
+  return null;
 }

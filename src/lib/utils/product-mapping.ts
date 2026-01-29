@@ -131,6 +131,11 @@ export function mapDbProduct(
     parentAsin: p.parentAsin || undefined,
     variationAttributes: p.variationAttributes || undefined,
     specifications: stripHeavyData ? {} : rawSpecs,
+    officialSpecifications:
+      !stripHeavyData && p.officialSpecifications
+        ? JSON.parse(p.officialSpecifications)
+        : undefined,
+    officialTitle: p.officialTitle,
     features: [],
     priceHistory: stripHeavyData ? [] : historyData,
     rating: p.rating || 0,

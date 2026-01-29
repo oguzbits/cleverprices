@@ -40,7 +40,7 @@ export function getFamilyRepresentative(
 export function getFamilyIdentity(
   representative: Product | Partial<Product>,
   allVariants: Product[] = [],
-): { slug: string; title: string; brand: string } {
+): { slug: string; title: string; brand: string; variantSuffix: string } {
   // 1. Basic Identity (Contains normalized brand e.g. PlayStation -> Sony)
   const identity = getProductIdentity(representative);
   const brand = identity.brand || "Generic";
@@ -50,9 +50,13 @@ export function getFamilyIdentity(
   const isHub =
     representative.isParentView ||
     ((representative as any).syntheticId &&
-      (representative as any).syntheticId >= 900000000);
+      (representative as any).syntheticId >= 900000000) ||
+    ((representative as any).id && (representative as any).id >= 900000000);
   const syntheticId =
     (representative as any).syntheticId ||
+    ((representative as any).id && (representative as any).id >= 900000000
+      ? (representative as any).id
+      : undefined) ||
     (isHub ? representative.id : undefined);
 
   // 3. Core Model Construction
@@ -83,60 +87,41 @@ export function getFamilyIdentity(
       );
     }
 
-    // Priority-ranked differentiators for the slug
-    // We scan for the first matching keys in each tier
-    const primaryKeys = [
-      "Storage",
-      "Speicher",
-      "Kapazität",
-      "Capacity",
-      "Size",
-      "Kerne",
-      "Wattage",
-      "Leistung",
-    ];
-    const secondaryKeys = [
-      "Color",
-      "Farbe",
-      "Socket",
-      "Sockel",
-      "Technology",
-      "Technologie",
-    ];
+    // Priority-ranked differentiators for the slug (VARIANT MODE)
+    // Tiered approach:
+    // 1. Color (Most visible differentiator)
+    // 2. MPN (Specific product identifier)
+    const differentiators: string[] = [];
 
-    const parts: string[] = [];
+    // Recovery of MPN from representative or attributes
+    const mpn = (representative.mpn || attrs.MPN || "")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)[0];
+    const colorKey = Object.keys(attrs).find((k) =>
+      ["color", "farbe"].includes(k.toLowerCase()),
+    );
+    const color = colorKey
+      ? attrs[colorKey].toLowerCase().replace(/[^a-z0-9]+/g, "")
+      : null;
 
-    // Extract Top 2 meaningful differentiators
-    [primaryKeys, secondaryKeys].forEach((tier) => {
-      for (const key of tier) {
-        const val = attrs[key];
-        if (val) {
-          // Normalize: remove spaces from units (e.g. "128 GB" -> "128gb")
-          let normalized = val.toLowerCase();
-          if (/^\d+\s+(gb|tb|mb|wh|w|zoll|inch)$/i.test(normalized)) {
-            normalized = normalized.replace(/\s+/, "");
-          }
+    if (color) differentiators.push(color);
+    if (mpn && mpn.length > 3) differentiators.push(mpn);
 
-          if (!parts.includes(normalized)) {
-            parts.push(normalized);
-            if (parts.length >= 2) break;
-          }
-        }
-      }
-    });
-
-    if (parts.length > 0) {
-      variantPart = parts
-        .join("-")
-        .replace(/[^a-z0-9-]+/g, "")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "");
+    if (differentiators.length > 0) {
+      variantPart = differentiators.join("-");
     }
   }
 
   // 5. Construct Text Slug (Idealo Style: [model]-[variants?]-[brand])
   let textSlug = modelPart;
-  if (variantPart) textSlug += `-${variantPart}`;
+  if (!isHub && variantPart) {
+    // If variantPart (color/mpn) is already in modelPart, don't repeat it
+    const vParts = variantPart.split("-");
+    const uniqueVParts = vParts.filter((p) => !modelPart.includes(p));
+    if (uniqueVParts.length > 0) {
+      textSlug += `-${uniqueVParts.join("-")}`;
+    }
+  }
 
   // Use identity brand to ensure manufacturers like "Sony" are added
   if (brandSlug && !textSlug.includes(brandSlug)) {
@@ -157,8 +142,9 @@ export function getFamilyIdentity(
 
   return {
     slug: `${idPrefix}_-${textSlug}`,
-    title: identity.fullModel,
+    title: isHub ? identity.fullModel : identity.displayTitle,
     brand,
+    variantSuffix: identity.variantSuffix,
   };
 }
 

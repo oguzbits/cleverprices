@@ -93,6 +93,9 @@ export type CategorySlug =
   | "laserdrucker"
   | "fotografie"
   | "kompaktkameras"
+  | "prozessoren"
+  | "monitore"
+  | "arbeitsspeicher"
   | "games";
 
 export interface FilterGroup {
