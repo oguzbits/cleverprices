@@ -1,0 +1,3598 @@
+[
+  {
+    "title": "Samsung 990 PRO 2TB NVMe SSD",
+    "text": "Lesegeschwindigkeit 7450 MB/s, Schreibgeschwindigkeit 6900 MB/s",
+    "category": "ssds",
+    "fields": [
+      "Speicherkapazität",
+      "Lesegeschwindigkeit",
+      "Schreibgeschwindigkeit"
+    ],
+    "expected": {
+      "Speicherkapazität": "2048 GB",
+      "Lesegeschwindigkeit": "7450 MB/s",
+      "Schreibgeschwindigkeit": "6900 MB/s"
+    },
+    "description": "Standard SSD extraction with labels"
+  },
+  {
+    "title": "Crucial P3 500GB NVMe 3500MB/s M.2 SSD",
+    "category": "ssds",
+    "fields": ["Speicherkapazität", "Lesegeschwindigkeit"],
+    "expected": {
+      "Speicherkapazität": "500 GB",
+      "Lesegeschwindigkeit": "3500 MB/s"
+    },
+    "description": "SSD extraction from title with slash"
+  },
+  {
+    "title": "Fujifilm X-T50 anthrazit",
+    "text": "40,2 Megapixel X-Trans CMOS 5 HR Sensor",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt", "Produktfarbe"],
+    "expected": {
+      "Megapixel insgesamt": "40,2 MP",
+      "Produktfarbe": "Grau"
+    },
+    "description": "Camera with German decimal and golden color"
+  },
+  {
+    "title": "Sony Alpha 7 IV (33MP, Black)",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt", "Produktfarbe"],
+    "expected": {
+      "Megapixel insgesamt": "33 MP",
+      "Produktfarbe": "Schwarz"
+    },
+    "description": "Camera from title with English synonyms"
+  },
+  {
+    "title": "iPhone 15 Pro 128GB Titan Schwarz",
+    "text": "6.1 Zoll Super Retina XDR, NFC Ja, WLAN: Vorhanden, Bluetooth 5.3",
+    "category": "smartphones",
+    "fields": [
+      "Speicherkapazität",
+      "Produktfarbe",
+      "Bildschirmdiagonale",
+      "NFC",
+      "WLAN"
+    ],
+    "expected": {
+      "Speicherkapazität": "128 GB",
+      "Produktfarbe": "Schwarz",
+      "Bildschirmdiagonale": "6,1 Zoll",
+      "NFC": "Ja",
+      "WLAN": "Ja"
+    },
+    "description": "Smartphone with mixed booleans and decimal unit"
+  },
+  {
+    "title": "Corsair Vengeance 32GB (2x16GB) DDR5 6000MHz CL30",
+    "category": "ram",
+    "fields": [
+      "Speicherkapazität",
+      "Speichertyp",
+      "Speicherdatenübertragungsrate",
+      "CAS Latenz"
+    ],
+    "expected": {
+      "Speicherkapazität": "32 GB",
+      "Speicherdatenübertragungsrate": "6000 MT/s",
+      "CAS Latenz": "CL30"
+    },
+    "description": "RAM with unique numeric units and kit capacity"
+  },
+  {
+    "title": "AMD Ryzen 7 7800X3D (8x 4.2GHz, 104MB Cache, 120W TDP)",
+    "category": "cpu",
+    "fields": [
+      "Anzahl Prozessorkerne",
+      "Prozessortaktfrequenz",
+      "Thermal Design Power (TDP)"
+    ],
+    "expected": {
+      "Anzahl Prozessorkerne": "8",
+      "Prozessortaktfrequenz": "4,2 GHz",
+      "Thermal Design Power (TDP)": "120 W"
+    },
+    "description": "CPU with core count and clock"
+  },
+  {
+    "title": "Product with ANC and GPS",
+    "text": "Geräuschunterdrückung: ja. GPS: false. Wasserfest: nein.",
+    "category": "unknown",
+    "fields": ["Geräuschunterdrückung", "GPS", "Wasserschutz"],
+    "expected": {
+      "Geräuschunterdrückung": "Ja",
+      "GPS": "Nein",
+      "Wasserschutz": "Nein"
+    },
+    "description": "Explicit boolean value mapping"
+  },
+  {
+    "title": "Monitor with 144Hz and G-Sync",
+    "text": "Refresh rate: 144 Hz, NVIDIA G-Sync: Vorhanden",
+    "category": "monitors",
+    "fields": ["Maximale Bildwiederholrate", "G-Sync"],
+    "expected": {
+      "Maximale Bildwiederholrate": "144 Hz",
+      "G-Sync": "Ja"
+    },
+    "description": "Monitor refresh rate and sync tech"
+  },
+  {
+    "title": "Multi-Color Laptop",
+    "text": "Verfügbar in Blau, Silber und Schwarz",
+    "category": "notebooks",
+    "fields": ["Produktfarbe"],
+    "expected": {
+      "Produktfarbe": "Blau, Schwarz, Silber"
+    },
+    "description": "Golden color multi-value sorting"
+  },
+  {
+    "title": "ASUS TUF Gaming GeForce RTX 4080 SUPER 16GB GDDR6X",
+    "text": "Anschlüsse: 2x HDMI 2.1a, 3x DisplayPort 1.4a",
+    "category": "gpu",
+    "fields": [
+      "Videospeicher-Kapazität",
+      "Interner Speichertyp",
+      "Anzahl HDMI-Anschlüsse",
+      "Anzahl DisplayPort Anschlüsse"
+    ],
+    "expected": {
+      "Videospeicher-Kapazität": "16 GB",
+      "Interner Speichertyp": "GDDR6X",
+      "Anzahl HDMI-Anschlüsse": "2",
+      "Anzahl DisplayPort Anschlüsse": "3"
+    },
+    "description": "GPU with specialized memory and port counts"
+  },
+  {
+    "title": "Bosch Serie 6 Waschmaschine 9kg",
+    "text": "Energieeffizienzklasse A, Geräuschwert 71 dB, 1400 U/min",
+    "category": "washing-machines",
+    "fields": [
+      "Energieeffizienzklasse",
+      "Geräuschemissionsklasse",
+      "Maximale Schleuderdrehzahl"
+    ],
+    "expected": {
+      "Energieeffizienzklasse": "A",
+      "Maximale Schleuderdrehzahl": "1400 RPM"
+    },
+    "description": "Appliance with energy class and rotation speed"
+  },
+  {
+    "title": "Compact Soundbar",
+    "text": "Breite: 55cm, Höhe: 64mm, Tiefe: 0.1m, Gewicht: 2.5kg",
+    "category": "electronics",
+    "fields": ["Breite", "Höhe", "Tiefe", "Gewicht"],
+    "expected": {
+      "Breite": "550 mm",
+      "Höhe": "64 mm",
+      "Tiefe": "100 mm",
+      "Gewicht": "2500 g"
+    },
+    "description": "Mixed units normalization (cm, mm, m, kg)"
+  },
+  {
+    "title": "Simple Headphones",
+    "text": "These headphones feature high quality sound. Bluetooth is compatible.",
+    "category": "headphones",
+    "fields": ["Akkulaufzeit", "Geräuschunterdrückung"],
+    "expected": {
+      "Akkulaufzeit": null,
+      "Geräuschunterdrückung": null
+    },
+    "description": "Hallucination defense: fields mentioned in schema but missing in text"
+  },
+  {
+    "title": "Outdoor Watch (No GPS)",
+    "text": "This robust watch is perfect for hiking. It comes without GPS and also has no NFC.",
+    "category": "smartwatches",
+    "fields": ["GPS", "NFC"],
+    "expected": {
+      "GPS": "Nein",
+      "NFC": "Nein"
+    },
+    "description": "Implicit negation: 'without' and 'no' in flowing text"
+  },
+  {
+    "title": "SuperFast SSD X0 (1000/800 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1000 MB/s",
+      "Schreibgeschwindigkeit": "800 MB/s"
+    },
+    "description": "SSD slash extraction #0"
+  },
+  {
+    "title": "SuperFast SSD X1 (1050/850 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1050 MB/s",
+      "Schreibgeschwindigkeit": "850 MB/s"
+    },
+    "description": "SSD slash extraction #1"
+  },
+  {
+    "title": "SuperFast SSD X2 (1100/900 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1100 MB/s",
+      "Schreibgeschwindigkeit": "900 MB/s"
+    },
+    "description": "SSD slash extraction #2"
+  },
+  {
+    "title": "SuperFast SSD X3 (1150/950 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1150 MB/s",
+      "Schreibgeschwindigkeit": "950 MB/s"
+    },
+    "description": "SSD slash extraction #3"
+  },
+  {
+    "title": "SuperFast SSD X4 (1200/1000 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1200 MB/s",
+      "Schreibgeschwindigkeit": "1000 MB/s"
+    },
+    "description": "SSD slash extraction #4"
+  },
+  {
+    "title": "SuperFast SSD X5 (1250/1050 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1250 MB/s",
+      "Schreibgeschwindigkeit": "1050 MB/s"
+    },
+    "description": "SSD slash extraction #5"
+  },
+  {
+    "title": "SuperFast SSD X6 (1300/1100 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1300 MB/s",
+      "Schreibgeschwindigkeit": "1100 MB/s"
+    },
+    "description": "SSD slash extraction #6"
+  },
+  {
+    "title": "SuperFast SSD X7 (1350/1150 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1350 MB/s",
+      "Schreibgeschwindigkeit": "1150 MB/s"
+    },
+    "description": "SSD slash extraction #7"
+  },
+  {
+    "title": "SuperFast SSD X8 (1400/1200 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1400 MB/s",
+      "Schreibgeschwindigkeit": "1200 MB/s"
+    },
+    "description": "SSD slash extraction #8"
+  },
+  {
+    "title": "SuperFast SSD X9 (1450/1250 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1450 MB/s",
+      "Schreibgeschwindigkeit": "1250 MB/s"
+    },
+    "description": "SSD slash extraction #9"
+  },
+  {
+    "title": "SuperFast SSD X10 (1500/1300 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1500 MB/s",
+      "Schreibgeschwindigkeit": "1300 MB/s"
+    },
+    "description": "SSD slash extraction #10"
+  },
+  {
+    "title": "SuperFast SSD X11 (1550/1350 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1550 MB/s",
+      "Schreibgeschwindigkeit": "1350 MB/s"
+    },
+    "description": "SSD slash extraction #11"
+  },
+  {
+    "title": "SuperFast SSD X12 (1600/1400 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1600 MB/s",
+      "Schreibgeschwindigkeit": "1400 MB/s"
+    },
+    "description": "SSD slash extraction #12"
+  },
+  {
+    "title": "SuperFast SSD X13 (1650/1450 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1650 MB/s",
+      "Schreibgeschwindigkeit": "1450 MB/s"
+    },
+    "description": "SSD slash extraction #13"
+  },
+  {
+    "title": "SuperFast SSD X14 (1700/1500 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1700 MB/s",
+      "Schreibgeschwindigkeit": "1500 MB/s"
+    },
+    "description": "SSD slash extraction #14"
+  },
+  {
+    "title": "SuperFast SSD X15 (1750/1550 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1750 MB/s",
+      "Schreibgeschwindigkeit": "1550 MB/s"
+    },
+    "description": "SSD slash extraction #15"
+  },
+  {
+    "title": "SuperFast SSD X16 (1800/1600 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1800 MB/s",
+      "Schreibgeschwindigkeit": "1600 MB/s"
+    },
+    "description": "SSD slash extraction #16"
+  },
+  {
+    "title": "SuperFast SSD X17 (1850/1650 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1850 MB/s",
+      "Schreibgeschwindigkeit": "1650 MB/s"
+    },
+    "description": "SSD slash extraction #17"
+  },
+  {
+    "title": "SuperFast SSD X18 (1900/1700 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1900 MB/s",
+      "Schreibgeschwindigkeit": "1700 MB/s"
+    },
+    "description": "SSD slash extraction #18"
+  },
+  {
+    "title": "SuperFast SSD X19 (1950/1750 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "1950 MB/s",
+      "Schreibgeschwindigkeit": "1750 MB/s"
+    },
+    "description": "SSD slash extraction #19"
+  },
+  {
+    "title": "SuperFast SSD X20 (2000/1800 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2000 MB/s",
+      "Schreibgeschwindigkeit": "1800 MB/s"
+    },
+    "description": "SSD slash extraction #20"
+  },
+  {
+    "title": "SuperFast SSD X21 (2050/1850 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2050 MB/s",
+      "Schreibgeschwindigkeit": "1850 MB/s"
+    },
+    "description": "SSD slash extraction #21"
+  },
+  {
+    "title": "SuperFast SSD X22 (2100/1900 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2100 MB/s",
+      "Schreibgeschwindigkeit": "1900 MB/s"
+    },
+    "description": "SSD slash extraction #22"
+  },
+  {
+    "title": "SuperFast SSD X23 (2150/1950 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2150 MB/s",
+      "Schreibgeschwindigkeit": "1950 MB/s"
+    },
+    "description": "SSD slash extraction #23"
+  },
+  {
+    "title": "SuperFast SSD X24 (2200/2000 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2200 MB/s",
+      "Schreibgeschwindigkeit": "2000 MB/s"
+    },
+    "description": "SSD slash extraction #24"
+  },
+  {
+    "title": "SuperFast SSD X25 (2250/2050 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2250 MB/s",
+      "Schreibgeschwindigkeit": "2050 MB/s"
+    },
+    "description": "SSD slash extraction #25"
+  },
+  {
+    "title": "SuperFast SSD X26 (2300/2100 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2300 MB/s",
+      "Schreibgeschwindigkeit": "2100 MB/s"
+    },
+    "description": "SSD slash extraction #26"
+  },
+  {
+    "title": "SuperFast SSD X27 (2350/2150 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2350 MB/s",
+      "Schreibgeschwindigkeit": "2150 MB/s"
+    },
+    "description": "SSD slash extraction #27"
+  },
+  {
+    "title": "SuperFast SSD X28 (2400/2200 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2400 MB/s",
+      "Schreibgeschwindigkeit": "2200 MB/s"
+    },
+    "description": "SSD slash extraction #28"
+  },
+  {
+    "title": "SuperFast SSD X29 (2450/2250 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2450 MB/s",
+      "Schreibgeschwindigkeit": "2250 MB/s"
+    },
+    "description": "SSD slash extraction #29"
+  },
+  {
+    "title": "SuperFast SSD X30 (2500/2300 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2500 MB/s",
+      "Schreibgeschwindigkeit": "2300 MB/s"
+    },
+    "description": "SSD slash extraction #30"
+  },
+  {
+    "title": "SuperFast SSD X31 (2550/2350 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2550 MB/s",
+      "Schreibgeschwindigkeit": "2350 MB/s"
+    },
+    "description": "SSD slash extraction #31"
+  },
+  {
+    "title": "SuperFast SSD X32 (2600/2400 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2600 MB/s",
+      "Schreibgeschwindigkeit": "2400 MB/s"
+    },
+    "description": "SSD slash extraction #32"
+  },
+  {
+    "title": "SuperFast SSD X33 (2650/2450 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2650 MB/s",
+      "Schreibgeschwindigkeit": "2450 MB/s"
+    },
+    "description": "SSD slash extraction #33"
+  },
+  {
+    "title": "SuperFast SSD X34 (2700/2500 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2700 MB/s",
+      "Schreibgeschwindigkeit": "2500 MB/s"
+    },
+    "description": "SSD slash extraction #34"
+  },
+  {
+    "title": "SuperFast SSD X35 (2750/2550 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2750 MB/s",
+      "Schreibgeschwindigkeit": "2550 MB/s"
+    },
+    "description": "SSD slash extraction #35"
+  },
+  {
+    "title": "SuperFast SSD X36 (2800/2600 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2800 MB/s",
+      "Schreibgeschwindigkeit": "2600 MB/s"
+    },
+    "description": "SSD slash extraction #36"
+  },
+  {
+    "title": "SuperFast SSD X37 (2850/2650 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2850 MB/s",
+      "Schreibgeschwindigkeit": "2650 MB/s"
+    },
+    "description": "SSD slash extraction #37"
+  },
+  {
+    "title": "SuperFast SSD X38 (2900/2700 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2900 MB/s",
+      "Schreibgeschwindigkeit": "2700 MB/s"
+    },
+    "description": "SSD slash extraction #38"
+  },
+  {
+    "title": "SuperFast SSD X39 (2950/2750 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "2950 MB/s",
+      "Schreibgeschwindigkeit": "2750 MB/s"
+    },
+    "description": "SSD slash extraction #39"
+  },
+  {
+    "title": "SuperFast SSD X40 (3000/2800 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3000 MB/s",
+      "Schreibgeschwindigkeit": "2800 MB/s"
+    },
+    "description": "SSD slash extraction #40"
+  },
+  {
+    "title": "SuperFast SSD X41 (3050/2850 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3050 MB/s",
+      "Schreibgeschwindigkeit": "2850 MB/s"
+    },
+    "description": "SSD slash extraction #41"
+  },
+  {
+    "title": "SuperFast SSD X42 (3100/2900 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3100 MB/s",
+      "Schreibgeschwindigkeit": "2900 MB/s"
+    },
+    "description": "SSD slash extraction #42"
+  },
+  {
+    "title": "SuperFast SSD X43 (3150/2950 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3150 MB/s",
+      "Schreibgeschwindigkeit": "2950 MB/s"
+    },
+    "description": "SSD slash extraction #43"
+  },
+  {
+    "title": "SuperFast SSD X44 (3200/3000 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3200 MB/s",
+      "Schreibgeschwindigkeit": "3000 MB/s"
+    },
+    "description": "SSD slash extraction #44"
+  },
+  {
+    "title": "SuperFast SSD X45 (3250/3050 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3250 MB/s",
+      "Schreibgeschwindigkeit": "3050 MB/s"
+    },
+    "description": "SSD slash extraction #45"
+  },
+  {
+    "title": "SuperFast SSD X46 (3300/3100 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3300 MB/s",
+      "Schreibgeschwindigkeit": "3100 MB/s"
+    },
+    "description": "SSD slash extraction #46"
+  },
+  {
+    "title": "SuperFast SSD X47 (3350/3150 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3350 MB/s",
+      "Schreibgeschwindigkeit": "3150 MB/s"
+    },
+    "description": "SSD slash extraction #47"
+  },
+  {
+    "title": "SuperFast SSD X48 (3400/3200 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3400 MB/s",
+      "Schreibgeschwindigkeit": "3200 MB/s"
+    },
+    "description": "SSD slash extraction #48"
+  },
+  {
+    "title": "SuperFast SSD X49 (3450/3250 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3450 MB/s",
+      "Schreibgeschwindigkeit": "3250 MB/s"
+    },
+    "description": "SSD slash extraction #49"
+  },
+  {
+    "title": "SuperFast SSD X50 (3500/3300 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3500 MB/s",
+      "Schreibgeschwindigkeit": "3300 MB/s"
+    },
+    "description": "SSD slash extraction #50"
+  },
+  {
+    "title": "SuperFast SSD X51 (3550/3350 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3550 MB/s",
+      "Schreibgeschwindigkeit": "3350 MB/s"
+    },
+    "description": "SSD slash extraction #51"
+  },
+  {
+    "title": "SuperFast SSD X52 (3600/3400 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3600 MB/s",
+      "Schreibgeschwindigkeit": "3400 MB/s"
+    },
+    "description": "SSD slash extraction #52"
+  },
+  {
+    "title": "SuperFast SSD X53 (3650/3450 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3650 MB/s",
+      "Schreibgeschwindigkeit": "3450 MB/s"
+    },
+    "description": "SSD slash extraction #53"
+  },
+  {
+    "title": "SuperFast SSD X54 (3700/3500 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3700 MB/s",
+      "Schreibgeschwindigkeit": "3500 MB/s"
+    },
+    "description": "SSD slash extraction #54"
+  },
+  {
+    "title": "SuperFast SSD X55 (3750/3550 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3750 MB/s",
+      "Schreibgeschwindigkeit": "3550 MB/s"
+    },
+    "description": "SSD slash extraction #55"
+  },
+  {
+    "title": "SuperFast SSD X56 (3800/3600 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3800 MB/s",
+      "Schreibgeschwindigkeit": "3600 MB/s"
+    },
+    "description": "SSD slash extraction #56"
+  },
+  {
+    "title": "SuperFast SSD X57 (3850/3650 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3850 MB/s",
+      "Schreibgeschwindigkeit": "3650 MB/s"
+    },
+    "description": "SSD slash extraction #57"
+  },
+  {
+    "title": "SuperFast SSD X58 (3900/3700 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3900 MB/s",
+      "Schreibgeschwindigkeit": "3700 MB/s"
+    },
+    "description": "SSD slash extraction #58"
+  },
+  {
+    "title": "SuperFast SSD X59 (3950/3750 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "3950 MB/s",
+      "Schreibgeschwindigkeit": "3750 MB/s"
+    },
+    "description": "SSD slash extraction #59"
+  },
+  {
+    "title": "SuperFast SSD X60 (4000/3800 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4000 MB/s",
+      "Schreibgeschwindigkeit": "3800 MB/s"
+    },
+    "description": "SSD slash extraction #60"
+  },
+  {
+    "title": "SuperFast SSD X61 (4050/3850 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4050 MB/s",
+      "Schreibgeschwindigkeit": "3850 MB/s"
+    },
+    "description": "SSD slash extraction #61"
+  },
+  {
+    "title": "SuperFast SSD X62 (4100/3900 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4100 MB/s",
+      "Schreibgeschwindigkeit": "3900 MB/s"
+    },
+    "description": "SSD slash extraction #62"
+  },
+  {
+    "title": "SuperFast SSD X63 (4150/3950 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4150 MB/s",
+      "Schreibgeschwindigkeit": "3950 MB/s"
+    },
+    "description": "SSD slash extraction #63"
+  },
+  {
+    "title": "SuperFast SSD X64 (4200/4000 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4200 MB/s",
+      "Schreibgeschwindigkeit": "4000 MB/s"
+    },
+    "description": "SSD slash extraction #64"
+  },
+  {
+    "title": "SuperFast SSD X65 (4250/4050 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4250 MB/s",
+      "Schreibgeschwindigkeit": "4050 MB/s"
+    },
+    "description": "SSD slash extraction #65"
+  },
+  {
+    "title": "SuperFast SSD X66 (4300/4100 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4300 MB/s",
+      "Schreibgeschwindigkeit": "4100 MB/s"
+    },
+    "description": "SSD slash extraction #66"
+  },
+  {
+    "title": "SuperFast SSD X67 (4350/4150 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4350 MB/s",
+      "Schreibgeschwindigkeit": "4150 MB/s"
+    },
+    "description": "SSD slash extraction #67"
+  },
+  {
+    "title": "SuperFast SSD X68 (4400/4200 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4400 MB/s",
+      "Schreibgeschwindigkeit": "4200 MB/s"
+    },
+    "description": "SSD slash extraction #68"
+  },
+  {
+    "title": "SuperFast SSD X69 (4450/4250 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4450 MB/s",
+      "Schreibgeschwindigkeit": "4250 MB/s"
+    },
+    "description": "SSD slash extraction #69"
+  },
+  {
+    "title": "SuperFast SSD X70 (4500/4300 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4500 MB/s",
+      "Schreibgeschwindigkeit": "4300 MB/s"
+    },
+    "description": "SSD slash extraction #70"
+  },
+  {
+    "title": "SuperFast SSD X71 (4550/4350 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4550 MB/s",
+      "Schreibgeschwindigkeit": "4350 MB/s"
+    },
+    "description": "SSD slash extraction #71"
+  },
+  {
+    "title": "SuperFast SSD X72 (4600/4400 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4600 MB/s",
+      "Schreibgeschwindigkeit": "4400 MB/s"
+    },
+    "description": "SSD slash extraction #72"
+  },
+  {
+    "title": "SuperFast SSD X73 (4650/4450 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4650 MB/s",
+      "Schreibgeschwindigkeit": "4450 MB/s"
+    },
+    "description": "SSD slash extraction #73"
+  },
+  {
+    "title": "SuperFast SSD X74 (4700/4500 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4700 MB/s",
+      "Schreibgeschwindigkeit": "4500 MB/s"
+    },
+    "description": "SSD slash extraction #74"
+  },
+  {
+    "title": "SuperFast SSD X75 (4750/4550 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4750 MB/s",
+      "Schreibgeschwindigkeit": "4550 MB/s"
+    },
+    "description": "SSD slash extraction #75"
+  },
+  {
+    "title": "SuperFast SSD X76 (4800/4600 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4800 MB/s",
+      "Schreibgeschwindigkeit": "4600 MB/s"
+    },
+    "description": "SSD slash extraction #76"
+  },
+  {
+    "title": "SuperFast SSD X77 (4850/4650 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4850 MB/s",
+      "Schreibgeschwindigkeit": "4650 MB/s"
+    },
+    "description": "SSD slash extraction #77"
+  },
+  {
+    "title": "SuperFast SSD X78 (4900/4700 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4900 MB/s",
+      "Schreibgeschwindigkeit": "4700 MB/s"
+    },
+    "description": "SSD slash extraction #78"
+  },
+  {
+    "title": "SuperFast SSD X79 (4950/4750 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "4950 MB/s",
+      "Schreibgeschwindigkeit": "4750 MB/s"
+    },
+    "description": "SSD slash extraction #79"
+  },
+  {
+    "title": "SuperFast SSD X80 (5000/4800 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5000 MB/s",
+      "Schreibgeschwindigkeit": "4800 MB/s"
+    },
+    "description": "SSD slash extraction #80"
+  },
+  {
+    "title": "SuperFast SSD X81 (5050/4850 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5050 MB/s",
+      "Schreibgeschwindigkeit": "4850 MB/s"
+    },
+    "description": "SSD slash extraction #81"
+  },
+  {
+    "title": "SuperFast SSD X82 (5100/4900 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5100 MB/s",
+      "Schreibgeschwindigkeit": "4900 MB/s"
+    },
+    "description": "SSD slash extraction #82"
+  },
+  {
+    "title": "SuperFast SSD X83 (5150/4950 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5150 MB/s",
+      "Schreibgeschwindigkeit": "4950 MB/s"
+    },
+    "description": "SSD slash extraction #83"
+  },
+  {
+    "title": "SuperFast SSD X84 (5200/5000 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5200 MB/s",
+      "Schreibgeschwindigkeit": "5000 MB/s"
+    },
+    "description": "SSD slash extraction #84"
+  },
+  {
+    "title": "SuperFast SSD X85 (5250/5050 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5250 MB/s",
+      "Schreibgeschwindigkeit": "5050 MB/s"
+    },
+    "description": "SSD slash extraction #85"
+  },
+  {
+    "title": "SuperFast SSD X86 (5300/5100 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5300 MB/s",
+      "Schreibgeschwindigkeit": "5100 MB/s"
+    },
+    "description": "SSD slash extraction #86"
+  },
+  {
+    "title": "SuperFast SSD X87 (5350/5150 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5350 MB/s",
+      "Schreibgeschwindigkeit": "5150 MB/s"
+    },
+    "description": "SSD slash extraction #87"
+  },
+  {
+    "title": "SuperFast SSD X88 (5400/5200 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5400 MB/s",
+      "Schreibgeschwindigkeit": "5200 MB/s"
+    },
+    "description": "SSD slash extraction #88"
+  },
+  {
+    "title": "SuperFast SSD X89 (5450/5250 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5450 MB/s",
+      "Schreibgeschwindigkeit": "5250 MB/s"
+    },
+    "description": "SSD slash extraction #89"
+  },
+  {
+    "title": "SuperFast SSD X90 (5500/5300 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5500 MB/s",
+      "Schreibgeschwindigkeit": "5300 MB/s"
+    },
+    "description": "SSD slash extraction #90"
+  },
+  {
+    "title": "SuperFast SSD X91 (5550/5350 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5550 MB/s",
+      "Schreibgeschwindigkeit": "5350 MB/s"
+    },
+    "description": "SSD slash extraction #91"
+  },
+  {
+    "title": "SuperFast SSD X92 (5600/5400 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5600 MB/s",
+      "Schreibgeschwindigkeit": "5400 MB/s"
+    },
+    "description": "SSD slash extraction #92"
+  },
+  {
+    "title": "SuperFast SSD X93 (5650/5450 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5650 MB/s",
+      "Schreibgeschwindigkeit": "5450 MB/s"
+    },
+    "description": "SSD slash extraction #93"
+  },
+  {
+    "title": "SuperFast SSD X94 (5700/5500 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5700 MB/s",
+      "Schreibgeschwindigkeit": "5500 MB/s"
+    },
+    "description": "SSD slash extraction #94"
+  },
+  {
+    "title": "SuperFast SSD X95 (5750/5550 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5750 MB/s",
+      "Schreibgeschwindigkeit": "5550 MB/s"
+    },
+    "description": "SSD slash extraction #95"
+  },
+  {
+    "title": "SuperFast SSD X96 (5800/5600 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5800 MB/s",
+      "Schreibgeschwindigkeit": "5600 MB/s"
+    },
+    "description": "SSD slash extraction #96"
+  },
+  {
+    "title": "SuperFast SSD X97 (5850/5650 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5850 MB/s",
+      "Schreibgeschwindigkeit": "5650 MB/s"
+    },
+    "description": "SSD slash extraction #97"
+  },
+  {
+    "title": "SuperFast SSD X98 (5900/5700 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5900 MB/s",
+      "Schreibgeschwindigkeit": "5700 MB/s"
+    },
+    "description": "SSD slash extraction #98"
+  },
+  {
+    "title": "SuperFast SSD X99 (5950/5750 MB/s) NVMe Gen4",
+    "category": "ssds",
+    "fields": ["Lesegeschwindigkeit", "Schreibgeschwindigkeit"],
+    "expected": {
+      "Lesegeschwindigkeit": "5950 MB/s",
+      "Schreibgeschwindigkeit": "5750 MB/s"
+    },
+    "description": "SSD slash extraction #99"
+  },
+  {
+    "title": "Camera 0 with 10 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "10 MP"
+    },
+    "description": "Camera MP decimal extraction #0"
+  },
+  {
+    "title": "Camera 1 with 10,51 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "10,51 MP"
+    },
+    "description": "Camera MP decimal extraction #1"
+  },
+  {
+    "title": "Camera 2 with 11,02 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "11,02 MP"
+    },
+    "description": "Camera MP decimal extraction #2"
+  },
+  {
+    "title": "Camera 3 with 11,53 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "11,53 MP"
+    },
+    "description": "Camera MP decimal extraction #3"
+  },
+  {
+    "title": "Camera 4 with 12,04 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "12,04 MP"
+    },
+    "description": "Camera MP decimal extraction #4"
+  },
+  {
+    "title": "Camera 5 with 12,55 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "12,55 MP"
+    },
+    "description": "Camera MP decimal extraction #5"
+  },
+  {
+    "title": "Camera 6 with 13,06 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "13,06 MP"
+    },
+    "description": "Camera MP decimal extraction #6"
+  },
+  {
+    "title": "Camera 7 with 13,57 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "13,57 MP"
+    },
+    "description": "Camera MP decimal extraction #7"
+  },
+  {
+    "title": "Camera 8 with 14,08 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "14,08 MP"
+    },
+    "description": "Camera MP decimal extraction #8"
+  },
+  {
+    "title": "Camera 9 with 14,59 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "14,59 MP"
+    },
+    "description": "Camera MP decimal extraction #9"
+  },
+  {
+    "title": "Camera 10 with 15,1 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "15,1 MP"
+    },
+    "description": "Camera MP decimal extraction #10"
+  },
+  {
+    "title": "Camera 11 with 15,61 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "15,61 MP"
+    },
+    "description": "Camera MP decimal extraction #11"
+  },
+  {
+    "title": "Camera 12 with 16,12 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "16,12 MP"
+    },
+    "description": "Camera MP decimal extraction #12"
+  },
+  {
+    "title": "Camera 13 with 16,63 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "16,63 MP"
+    },
+    "description": "Camera MP decimal extraction #13"
+  },
+  {
+    "title": "Camera 14 with 17,14 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "17,14 MP"
+    },
+    "description": "Camera MP decimal extraction #14"
+  },
+  {
+    "title": "Camera 15 with 17,65 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "17,65 MP"
+    },
+    "description": "Camera MP decimal extraction #15"
+  },
+  {
+    "title": "Camera 16 with 18,16 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "18,16 MP"
+    },
+    "description": "Camera MP decimal extraction #16"
+  },
+  {
+    "title": "Camera 17 with 18,67 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "18,67 MP"
+    },
+    "description": "Camera MP decimal extraction #17"
+  },
+  {
+    "title": "Camera 18 with 19,18 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "19,18 MP"
+    },
+    "description": "Camera MP decimal extraction #18"
+  },
+  {
+    "title": "Camera 19 with 19,69 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "19,69 MP"
+    },
+    "description": "Camera MP decimal extraction #19"
+  },
+  {
+    "title": "Camera 20 with 20,2 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "20,2 MP"
+    },
+    "description": "Camera MP decimal extraction #20"
+  },
+  {
+    "title": "Camera 21 with 20,71 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "20,71 MP"
+    },
+    "description": "Camera MP decimal extraction #21"
+  },
+  {
+    "title": "Camera 22 with 21,22 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "21,22 MP"
+    },
+    "description": "Camera MP decimal extraction #22"
+  },
+  {
+    "title": "Camera 23 with 21,73 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "21,73 MP"
+    },
+    "description": "Camera MP decimal extraction #23"
+  },
+  {
+    "title": "Camera 24 with 22,24 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "22,24 MP"
+    },
+    "description": "Camera MP decimal extraction #24"
+  },
+  {
+    "title": "Camera 25 with 22,75 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "22,75 MP"
+    },
+    "description": "Camera MP decimal extraction #25"
+  },
+  {
+    "title": "Camera 26 with 23,26 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "23,26 MP"
+    },
+    "description": "Camera MP decimal extraction #26"
+  },
+  {
+    "title": "Camera 27 with 23,77 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "23,77 MP"
+    },
+    "description": "Camera MP decimal extraction #27"
+  },
+  {
+    "title": "Camera 28 with 24,28 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "24,28 MP"
+    },
+    "description": "Camera MP decimal extraction #28"
+  },
+  {
+    "title": "Camera 29 with 24,79 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "24,79 MP"
+    },
+    "description": "Camera MP decimal extraction #29"
+  },
+  {
+    "title": "Camera 30 with 25,3 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "25,3 MP"
+    },
+    "description": "Camera MP decimal extraction #30"
+  },
+  {
+    "title": "Camera 31 with 25,81 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "25,81 MP"
+    },
+    "description": "Camera MP decimal extraction #31"
+  },
+  {
+    "title": "Camera 32 with 26,32 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "26,32 MP"
+    },
+    "description": "Camera MP decimal extraction #32"
+  },
+  {
+    "title": "Camera 33 with 26,83 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "26,83 MP"
+    },
+    "description": "Camera MP decimal extraction #33"
+  },
+  {
+    "title": "Camera 34 with 27,34 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "27,34 MP"
+    },
+    "description": "Camera MP decimal extraction #34"
+  },
+  {
+    "title": "Camera 35 with 27,85 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "27,85 MP"
+    },
+    "description": "Camera MP decimal extraction #35"
+  },
+  {
+    "title": "Camera 36 with 28,36 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "28,36 MP"
+    },
+    "description": "Camera MP decimal extraction #36"
+  },
+  {
+    "title": "Camera 37 with 28,87 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "28,87 MP"
+    },
+    "description": "Camera MP decimal extraction #37"
+  },
+  {
+    "title": "Camera 38 with 29,38 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "29,38 MP"
+    },
+    "description": "Camera MP decimal extraction #38"
+  },
+  {
+    "title": "Camera 39 with 29,89 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "29,89 MP"
+    },
+    "description": "Camera MP decimal extraction #39"
+  },
+  {
+    "title": "Camera 40 with 30,4 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "30,4 MP"
+    },
+    "description": "Camera MP decimal extraction #40"
+  },
+  {
+    "title": "Camera 41 with 30,91 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "30,91 MP"
+    },
+    "description": "Camera MP decimal extraction #41"
+  },
+  {
+    "title": "Camera 42 with 31,42 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "31,42 MP"
+    },
+    "description": "Camera MP decimal extraction #42"
+  },
+  {
+    "title": "Camera 43 with 31,93 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "31,93 MP"
+    },
+    "description": "Camera MP decimal extraction #43"
+  },
+  {
+    "title": "Camera 44 with 32,44 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "32,44 MP"
+    },
+    "description": "Camera MP decimal extraction #44"
+  },
+  {
+    "title": "Camera 45 with 32,95 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "32,95 MP"
+    },
+    "description": "Camera MP decimal extraction #45"
+  },
+  {
+    "title": "Camera 46 with 33,46 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "33,46 MP"
+    },
+    "description": "Camera MP decimal extraction #46"
+  },
+  {
+    "title": "Camera 47 with 33,97 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "33,97 MP"
+    },
+    "description": "Camera MP decimal extraction #47"
+  },
+  {
+    "title": "Camera 48 with 34,48 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "34,48 MP"
+    },
+    "description": "Camera MP decimal extraction #48"
+  },
+  {
+    "title": "Camera 49 with 34,99 MP Resolution",
+    "category": "cameras",
+    "fields": ["Megapixel insgesamt"],
+    "expected": {
+      "Megapixel insgesamt": "34,99 MP"
+    },
+    "description": "Camera MP decimal extraction #49"
+  },
+  {
+    "title": "RAM Stick 0 DDR5 3200MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "3200 MT/s"
+    },
+    "description": "RAM MT/s extraction #0"
+  },
+  {
+    "title": "RAM Stick 1 DDR5 3333MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "3333 MT/s"
+    },
+    "description": "RAM MT/s extraction #1"
+  },
+  {
+    "title": "RAM Stick 2 DDR5 3466MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "3466 MT/s"
+    },
+    "description": "RAM MT/s extraction #2"
+  },
+  {
+    "title": "RAM Stick 3 DDR5 3599MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "3599 MT/s"
+    },
+    "description": "RAM MT/s extraction #3"
+  },
+  {
+    "title": "RAM Stick 4 DDR5 3732MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "3732 MT/s"
+    },
+    "description": "RAM MT/s extraction #4"
+  },
+  {
+    "title": "RAM Stick 5 DDR5 3865MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "3865 MT/s"
+    },
+    "description": "RAM MT/s extraction #5"
+  },
+  {
+    "title": "RAM Stick 6 DDR5 3998MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "3998 MT/s"
+    },
+    "description": "RAM MT/s extraction #6"
+  },
+  {
+    "title": "RAM Stick 7 DDR5 4131MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "4131 MT/s"
+    },
+    "description": "RAM MT/s extraction #7"
+  },
+  {
+    "title": "RAM Stick 8 DDR5 4264MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "4264 MT/s"
+    },
+    "description": "RAM MT/s extraction #8"
+  },
+  {
+    "title": "RAM Stick 9 DDR5 4397MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "4397 MT/s"
+    },
+    "description": "RAM MT/s extraction #9"
+  },
+  {
+    "title": "RAM Stick 10 DDR5 4530MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "4530 MT/s"
+    },
+    "description": "RAM MT/s extraction #10"
+  },
+  {
+    "title": "RAM Stick 11 DDR5 4663MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "4663 MT/s"
+    },
+    "description": "RAM MT/s extraction #11"
+  },
+  {
+    "title": "RAM Stick 12 DDR5 4796MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "4796 MT/s"
+    },
+    "description": "RAM MT/s extraction #12"
+  },
+  {
+    "title": "RAM Stick 13 DDR5 4929MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "4929 MT/s"
+    },
+    "description": "RAM MT/s extraction #13"
+  },
+  {
+    "title": "RAM Stick 14 DDR5 5062MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "5062 MT/s"
+    },
+    "description": "RAM MT/s extraction #14"
+  },
+  {
+    "title": "RAM Stick 15 DDR5 5195MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "5195 MT/s"
+    },
+    "description": "RAM MT/s extraction #15"
+  },
+  {
+    "title": "RAM Stick 16 DDR5 5328MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "5328 MT/s"
+    },
+    "description": "RAM MT/s extraction #16"
+  },
+  {
+    "title": "RAM Stick 17 DDR5 5461MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "5461 MT/s"
+    },
+    "description": "RAM MT/s extraction #17"
+  },
+  {
+    "title": "RAM Stick 18 DDR5 5594MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "5594 MT/s"
+    },
+    "description": "RAM MT/s extraction #18"
+  },
+  {
+    "title": "RAM Stick 19 DDR5 5727MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "5727 MT/s"
+    },
+    "description": "RAM MT/s extraction #19"
+  },
+  {
+    "title": "RAM Stick 20 DDR5 5860MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "5860 MT/s"
+    },
+    "description": "RAM MT/s extraction #20"
+  },
+  {
+    "title": "RAM Stick 21 DDR5 5993MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "5993 MT/s"
+    },
+    "description": "RAM MT/s extraction #21"
+  },
+  {
+    "title": "RAM Stick 22 DDR5 6126MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "6126 MT/s"
+    },
+    "description": "RAM MT/s extraction #22"
+  },
+  {
+    "title": "RAM Stick 23 DDR5 6259MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "6259 MT/s"
+    },
+    "description": "RAM MT/s extraction #23"
+  },
+  {
+    "title": "RAM Stick 24 DDR5 6392MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "6392 MT/s"
+    },
+    "description": "RAM MT/s extraction #24"
+  },
+  {
+    "title": "RAM Stick 25 DDR5 6525MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "6525 MT/s"
+    },
+    "description": "RAM MT/s extraction #25"
+  },
+  {
+    "title": "RAM Stick 26 DDR5 6658MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "6658 MT/s"
+    },
+    "description": "RAM MT/s extraction #26"
+  },
+  {
+    "title": "RAM Stick 27 DDR5 6791MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "6791 MT/s"
+    },
+    "description": "RAM MT/s extraction #27"
+  },
+  {
+    "title": "RAM Stick 28 DDR5 6924MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "6924 MT/s"
+    },
+    "description": "RAM MT/s extraction #28"
+  },
+  {
+    "title": "RAM Stick 29 DDR5 7057MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "7057 MT/s"
+    },
+    "description": "RAM MT/s extraction #29"
+  },
+  {
+    "title": "RAM Stick 30 DDR5 7190MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "7190 MT/s"
+    },
+    "description": "RAM MT/s extraction #30"
+  },
+  {
+    "title": "RAM Stick 31 DDR5 7323MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "7323 MT/s"
+    },
+    "description": "RAM MT/s extraction #31"
+  },
+  {
+    "title": "RAM Stick 32 DDR5 7456MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "7456 MT/s"
+    },
+    "description": "RAM MT/s extraction #32"
+  },
+  {
+    "title": "RAM Stick 33 DDR5 7589MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "7589 MT/s"
+    },
+    "description": "RAM MT/s extraction #33"
+  },
+  {
+    "title": "RAM Stick 34 DDR5 7722MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "7722 MT/s"
+    },
+    "description": "RAM MT/s extraction #34"
+  },
+  {
+    "title": "RAM Stick 35 DDR5 7855MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "7855 MT/s"
+    },
+    "description": "RAM MT/s extraction #35"
+  },
+  {
+    "title": "RAM Stick 36 DDR5 7988MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "7988 MT/s"
+    },
+    "description": "RAM MT/s extraction #36"
+  },
+  {
+    "title": "RAM Stick 37 DDR5 8121MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "8121 MT/s"
+    },
+    "description": "RAM MT/s extraction #37"
+  },
+  {
+    "title": "RAM Stick 38 DDR5 8254MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "8254 MT/s"
+    },
+    "description": "RAM MT/s extraction #38"
+  },
+  {
+    "title": "RAM Stick 39 DDR5 8387MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "8387 MT/s"
+    },
+    "description": "RAM MT/s extraction #39"
+  },
+  {
+    "title": "RAM Stick 40 DDR5 8520MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "8520 MT/s"
+    },
+    "description": "RAM MT/s extraction #40"
+  },
+  {
+    "title": "RAM Stick 41 DDR5 8653MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "8653 MT/s"
+    },
+    "description": "RAM MT/s extraction #41"
+  },
+  {
+    "title": "RAM Stick 42 DDR5 8786MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "8786 MT/s"
+    },
+    "description": "RAM MT/s extraction #42"
+  },
+  {
+    "title": "RAM Stick 43 DDR5 8919MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "8919 MT/s"
+    },
+    "description": "RAM MT/s extraction #43"
+  },
+  {
+    "title": "RAM Stick 44 DDR5 9052MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "9052 MT/s"
+    },
+    "description": "RAM MT/s extraction #44"
+  },
+  {
+    "title": "RAM Stick 45 DDR5 9185MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "9185 MT/s"
+    },
+    "description": "RAM MT/s extraction #45"
+  },
+  {
+    "title": "RAM Stick 46 DDR5 9318MT/s CL38",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "9318 MT/s"
+    },
+    "description": "RAM MT/s extraction #46"
+  },
+  {
+    "title": "RAM Stick 47 DDR5 9451MT/s CL39",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "9451 MT/s"
+    },
+    "description": "RAM MT/s extraction #47"
+  },
+  {
+    "title": "RAM Stick 48 DDR5 9584MT/s CL36",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "9584 MT/s"
+    },
+    "description": "RAM MT/s extraction #48"
+  },
+  {
+    "title": "RAM Stick 49 DDR5 9717MT/s CL37",
+    "category": "ram",
+    "fields": ["Interner Speichertyp", "Speicherdatenübertragungsrate"],
+    "expected": {
+      "Interner Speichertyp": "DDR5",
+      "Speicherdatenübertragungsrate": "9717 MT/s"
+    },
+    "description": "RAM MT/s extraction #49"
+  },
+  {
+    "title": "Box 0 Dimensions: Breite: 20,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "20,5 mm"
+    },
+    "description": "Dimension Breite extraction #0"
+  },
+  {
+    "title": "Box 1 Dimensions: Höhe: 22 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "22 mm"
+    },
+    "description": "Dimension Höhe extraction #1"
+  },
+  {
+    "title": "Box 2 Dimensions: Tiefe: 23,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "23,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #2"
+  },
+  {
+    "title": "Box 3 Dimensions: Breite: 25 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "25 mm"
+    },
+    "description": "Dimension Breite extraction #3"
+  },
+  {
+    "title": "Box 4 Dimensions: Höhe: 26,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "26,5 mm"
+    },
+    "description": "Dimension Höhe extraction #4"
+  },
+  {
+    "title": "Box 5 Dimensions: Tiefe: 28 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "28 mm"
+    },
+    "description": "Dimension Tiefe extraction #5"
+  },
+  {
+    "title": "Box 6 Dimensions: Breite: 29,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "29,5 mm"
+    },
+    "description": "Dimension Breite extraction #6"
+  },
+  {
+    "title": "Box 7 Dimensions: Höhe: 31 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "31 mm"
+    },
+    "description": "Dimension Höhe extraction #7"
+  },
+  {
+    "title": "Box 8 Dimensions: Tiefe: 32,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "32,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #8"
+  },
+  {
+    "title": "Box 9 Dimensions: Breite: 34 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "34 mm"
+    },
+    "description": "Dimension Breite extraction #9"
+  },
+  {
+    "title": "Box 10 Dimensions: Höhe: 35,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "35,5 mm"
+    },
+    "description": "Dimension Höhe extraction #10"
+  },
+  {
+    "title": "Box 11 Dimensions: Tiefe: 37 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "37 mm"
+    },
+    "description": "Dimension Tiefe extraction #11"
+  },
+  {
+    "title": "Box 12 Dimensions: Breite: 38,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "38,5 mm"
+    },
+    "description": "Dimension Breite extraction #12"
+  },
+  {
+    "title": "Box 13 Dimensions: Höhe: 40 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "40 mm"
+    },
+    "description": "Dimension Höhe extraction #13"
+  },
+  {
+    "title": "Box 14 Dimensions: Tiefe: 41,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "41,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #14"
+  },
+  {
+    "title": "Box 15 Dimensions: Breite: 43 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "43 mm"
+    },
+    "description": "Dimension Breite extraction #15"
+  },
+  {
+    "title": "Box 16 Dimensions: Höhe: 44,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "44,5 mm"
+    },
+    "description": "Dimension Höhe extraction #16"
+  },
+  {
+    "title": "Box 17 Dimensions: Tiefe: 46 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "46 mm"
+    },
+    "description": "Dimension Tiefe extraction #17"
+  },
+  {
+    "title": "Box 18 Dimensions: Breite: 47,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "47,5 mm"
+    },
+    "description": "Dimension Breite extraction #18"
+  },
+  {
+    "title": "Box 19 Dimensions: Höhe: 49 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "49 mm"
+    },
+    "description": "Dimension Höhe extraction #19"
+  },
+  {
+    "title": "Box 20 Dimensions: Tiefe: 50,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "50,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #20"
+  },
+  {
+    "title": "Box 21 Dimensions: Breite: 52 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "52 mm"
+    },
+    "description": "Dimension Breite extraction #21"
+  },
+  {
+    "title": "Box 22 Dimensions: Höhe: 53,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "53,5 mm"
+    },
+    "description": "Dimension Höhe extraction #22"
+  },
+  {
+    "title": "Box 23 Dimensions: Tiefe: 55 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "55 mm"
+    },
+    "description": "Dimension Tiefe extraction #23"
+  },
+  {
+    "title": "Box 24 Dimensions: Breite: 56,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "56,5 mm"
+    },
+    "description": "Dimension Breite extraction #24"
+  },
+  {
+    "title": "Box 25 Dimensions: Höhe: 58 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "58 mm"
+    },
+    "description": "Dimension Höhe extraction #25"
+  },
+  {
+    "title": "Box 26 Dimensions: Tiefe: 59,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "59,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #26"
+  },
+  {
+    "title": "Box 27 Dimensions: Breite: 61 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "61 mm"
+    },
+    "description": "Dimension Breite extraction #27"
+  },
+  {
+    "title": "Box 28 Dimensions: Höhe: 62,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "62,5 mm"
+    },
+    "description": "Dimension Höhe extraction #28"
+  },
+  {
+    "title": "Box 29 Dimensions: Tiefe: 64 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "64 mm"
+    },
+    "description": "Dimension Tiefe extraction #29"
+  },
+  {
+    "title": "Box 30 Dimensions: Breite: 65,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "65,5 mm"
+    },
+    "description": "Dimension Breite extraction #30"
+  },
+  {
+    "title": "Box 31 Dimensions: Höhe: 67 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "67 mm"
+    },
+    "description": "Dimension Höhe extraction #31"
+  },
+  {
+    "title": "Box 32 Dimensions: Tiefe: 68,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "68,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #32"
+  },
+  {
+    "title": "Box 33 Dimensions: Breite: 70 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "70 mm"
+    },
+    "description": "Dimension Breite extraction #33"
+  },
+  {
+    "title": "Box 34 Dimensions: Höhe: 71,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "71,5 mm"
+    },
+    "description": "Dimension Höhe extraction #34"
+  },
+  {
+    "title": "Box 35 Dimensions: Tiefe: 73 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "73 mm"
+    },
+    "description": "Dimension Tiefe extraction #35"
+  },
+  {
+    "title": "Box 36 Dimensions: Breite: 74,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "74,5 mm"
+    },
+    "description": "Dimension Breite extraction #36"
+  },
+  {
+    "title": "Box 37 Dimensions: Höhe: 76 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "76 mm"
+    },
+    "description": "Dimension Höhe extraction #37"
+  },
+  {
+    "title": "Box 38 Dimensions: Tiefe: 77,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "77,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #38"
+  },
+  {
+    "title": "Box 39 Dimensions: Breite: 79 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "79 mm"
+    },
+    "description": "Dimension Breite extraction #39"
+  },
+  {
+    "title": "Box 40 Dimensions: Höhe: 80,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "80,5 mm"
+    },
+    "description": "Dimension Höhe extraction #40"
+  },
+  {
+    "title": "Box 41 Dimensions: Tiefe: 82 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "82 mm"
+    },
+    "description": "Dimension Tiefe extraction #41"
+  },
+  {
+    "title": "Box 42 Dimensions: Breite: 83,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "83,5 mm"
+    },
+    "description": "Dimension Breite extraction #42"
+  },
+  {
+    "title": "Box 43 Dimensions: Höhe: 85 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "85 mm"
+    },
+    "description": "Dimension Höhe extraction #43"
+  },
+  {
+    "title": "Box 44 Dimensions: Tiefe: 86,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "86,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #44"
+  },
+  {
+    "title": "Box 45 Dimensions: Breite: 88 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "88 mm"
+    },
+    "description": "Dimension Breite extraction #45"
+  },
+  {
+    "title": "Box 46 Dimensions: Höhe: 89,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "89,5 mm"
+    },
+    "description": "Dimension Höhe extraction #46"
+  },
+  {
+    "title": "Box 47 Dimensions: Tiefe: 91 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "91 mm"
+    },
+    "description": "Dimension Tiefe extraction #47"
+  },
+  {
+    "title": "Box 48 Dimensions: Breite: 92,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "92,5 mm"
+    },
+    "description": "Dimension Breite extraction #48"
+  },
+  {
+    "title": "Box 49 Dimensions: Höhe: 94 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "94 mm"
+    },
+    "description": "Dimension Höhe extraction #49"
+  },
+  {
+    "title": "Box 50 Dimensions: Tiefe: 95,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "95,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #50"
+  },
+  {
+    "title": "Box 51 Dimensions: Breite: 97 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "97 mm"
+    },
+    "description": "Dimension Breite extraction #51"
+  },
+  {
+    "title": "Box 52 Dimensions: Höhe: 98,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "98,5 mm"
+    },
+    "description": "Dimension Höhe extraction #52"
+  },
+  {
+    "title": "Box 53 Dimensions: Tiefe: 100 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "100 mm"
+    },
+    "description": "Dimension Tiefe extraction #53"
+  },
+  {
+    "title": "Box 54 Dimensions: Breite: 101,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "101,5 mm"
+    },
+    "description": "Dimension Breite extraction #54"
+  },
+  {
+    "title": "Box 55 Dimensions: Höhe: 103 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "103 mm"
+    },
+    "description": "Dimension Höhe extraction #55"
+  },
+  {
+    "title": "Box 56 Dimensions: Tiefe: 104,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "104,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #56"
+  },
+  {
+    "title": "Box 57 Dimensions: Breite: 106 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "106 mm"
+    },
+    "description": "Dimension Breite extraction #57"
+  },
+  {
+    "title": "Box 58 Dimensions: Höhe: 107,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "107,5 mm"
+    },
+    "description": "Dimension Höhe extraction #58"
+  },
+  {
+    "title": "Box 59 Dimensions: Tiefe: 109 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "109 mm"
+    },
+    "description": "Dimension Tiefe extraction #59"
+  },
+  {
+    "title": "Box 60 Dimensions: Breite: 110,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "110,5 mm"
+    },
+    "description": "Dimension Breite extraction #60"
+  },
+  {
+    "title": "Box 61 Dimensions: Höhe: 112 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "112 mm"
+    },
+    "description": "Dimension Höhe extraction #61"
+  },
+  {
+    "title": "Box 62 Dimensions: Tiefe: 113,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "113,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #62"
+  },
+  {
+    "title": "Box 63 Dimensions: Breite: 115 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "115 mm"
+    },
+    "description": "Dimension Breite extraction #63"
+  },
+  {
+    "title": "Box 64 Dimensions: Höhe: 116,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "116,5 mm"
+    },
+    "description": "Dimension Höhe extraction #64"
+  },
+  {
+    "title": "Box 65 Dimensions: Tiefe: 118 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "118 mm"
+    },
+    "description": "Dimension Tiefe extraction #65"
+  },
+  {
+    "title": "Box 66 Dimensions: Breite: 119,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "119,5 mm"
+    },
+    "description": "Dimension Breite extraction #66"
+  },
+  {
+    "title": "Box 67 Dimensions: Höhe: 121 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "121 mm"
+    },
+    "description": "Dimension Höhe extraction #67"
+  },
+  {
+    "title": "Box 68 Dimensions: Tiefe: 122,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "122,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #68"
+  },
+  {
+    "title": "Box 69 Dimensions: Breite: 124 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "124 mm"
+    },
+    "description": "Dimension Breite extraction #69"
+  },
+  {
+    "title": "Box 70 Dimensions: Höhe: 125,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "125,5 mm"
+    },
+    "description": "Dimension Höhe extraction #70"
+  },
+  {
+    "title": "Box 71 Dimensions: Tiefe: 127 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "127 mm"
+    },
+    "description": "Dimension Tiefe extraction #71"
+  },
+  {
+    "title": "Box 72 Dimensions: Breite: 128,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "128,5 mm"
+    },
+    "description": "Dimension Breite extraction #72"
+  },
+  {
+    "title": "Box 73 Dimensions: Höhe: 130 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "130 mm"
+    },
+    "description": "Dimension Höhe extraction #73"
+  },
+  {
+    "title": "Box 74 Dimensions: Tiefe: 131,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "131,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #74"
+  },
+  {
+    "title": "Box 75 Dimensions: Breite: 133 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "133 mm"
+    },
+    "description": "Dimension Breite extraction #75"
+  },
+  {
+    "title": "Box 76 Dimensions: Höhe: 134,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "134,5 mm"
+    },
+    "description": "Dimension Höhe extraction #76"
+  },
+  {
+    "title": "Box 77 Dimensions: Tiefe: 136 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "136 mm"
+    },
+    "description": "Dimension Tiefe extraction #77"
+  },
+  {
+    "title": "Box 78 Dimensions: Breite: 137,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "137,5 mm"
+    },
+    "description": "Dimension Breite extraction #78"
+  },
+  {
+    "title": "Box 79 Dimensions: Höhe: 139 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "139 mm"
+    },
+    "description": "Dimension Höhe extraction #79"
+  },
+  {
+    "title": "Box 80 Dimensions: Tiefe: 140,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "140,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #80"
+  },
+  {
+    "title": "Box 81 Dimensions: Breite: 142 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "142 mm"
+    },
+    "description": "Dimension Breite extraction #81"
+  },
+  {
+    "title": "Box 82 Dimensions: Höhe: 143,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "143,5 mm"
+    },
+    "description": "Dimension Höhe extraction #82"
+  },
+  {
+    "title": "Box 83 Dimensions: Tiefe: 145 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "145 mm"
+    },
+    "description": "Dimension Tiefe extraction #83"
+  },
+  {
+    "title": "Box 84 Dimensions: Breite: 146,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "146,5 mm"
+    },
+    "description": "Dimension Breite extraction #84"
+  },
+  {
+    "title": "Box 85 Dimensions: Höhe: 148 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "148 mm"
+    },
+    "description": "Dimension Höhe extraction #85"
+  },
+  {
+    "title": "Box 86 Dimensions: Tiefe: 149,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "149,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #86"
+  },
+  {
+    "title": "Box 87 Dimensions: Breite: 151 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "151 mm"
+    },
+    "description": "Dimension Breite extraction #87"
+  },
+  {
+    "title": "Box 88 Dimensions: Höhe: 152,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "152,5 mm"
+    },
+    "description": "Dimension Höhe extraction #88"
+  },
+  {
+    "title": "Box 89 Dimensions: Tiefe: 154 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "154 mm"
+    },
+    "description": "Dimension Tiefe extraction #89"
+  },
+  {
+    "title": "Box 90 Dimensions: Breite: 155,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "155,5 mm"
+    },
+    "description": "Dimension Breite extraction #90"
+  },
+  {
+    "title": "Box 91 Dimensions: Höhe: 157 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "157 mm"
+    },
+    "description": "Dimension Höhe extraction #91"
+  },
+  {
+    "title": "Box 92 Dimensions: Tiefe: 158,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "158,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #92"
+  },
+  {
+    "title": "Box 93 Dimensions: Breite: 160 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "160 mm"
+    },
+    "description": "Dimension Breite extraction #93"
+  },
+  {
+    "title": "Box 94 Dimensions: Höhe: 161,5 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "161,5 mm"
+    },
+    "description": "Dimension Höhe extraction #94"
+  },
+  {
+    "title": "Box 95 Dimensions: Tiefe: 163 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "163 mm"
+    },
+    "description": "Dimension Tiefe extraction #95"
+  },
+  {
+    "title": "Box 96 Dimensions: Breite: 164,5 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "164,5 mm"
+    },
+    "description": "Dimension Breite extraction #96"
+  },
+  {
+    "title": "Box 97 Dimensions: Höhe: 166 mm",
+    "category": "dimensions",
+    "fields": ["Höhe"],
+    "expected": {
+      "Höhe": "166 mm"
+    },
+    "description": "Dimension Höhe extraction #97"
+  },
+  {
+    "title": "Box 98 Dimensions: Tiefe: 167,5 mm",
+    "category": "dimensions",
+    "fields": ["Tiefe"],
+    "expected": {
+      "Tiefe": "167,5 mm"
+    },
+    "description": "Dimension Tiefe extraction #98"
+  },
+  {
+    "title": "Box 99 Dimensions: Breite: 169 mm",
+    "category": "dimensions",
+    "fields": ["Breite"],
+    "expected": {
+      "Breite": "169 mm"
+    },
+    "description": "Dimension Breite extraction #99"
+  },
+  {
+    "title": "Device 0 (Bluetooth 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #0 for Bluetooth"
+  },
+  {
+    "title": "Device 1 (Wi-Fi 6)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #1 for WLAN"
+  },
+  {
+    "title": "Device 2 (Ortung)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #2 for GPS"
+  },
+  {
+    "title": "Device 3 (mit Bluetooth)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #3 for Bluetooth"
+  },
+  {
+    "title": "Device 4 (WLAN ax)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #4 for WLAN"
+  },
+  {
+    "title": "Device 5 (mit GPS)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #5 for GPS"
+  },
+  {
+    "title": "Device 6 (Bluetooth)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #6 for Bluetooth"
+  },
+  {
+    "title": "Device 7 (mit WLAN)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #7 for WLAN"
+  },
+  {
+    "title": "Device 8 (GPS integriert)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #8 for GPS"
+  },
+  {
+    "title": "Device 9 (BT 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #9 for Bluetooth"
+  },
+  {
+    "title": "Device 10 (WiFi)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #10 for WLAN"
+  },
+  {
+    "title": "Device 11 (GLONASS)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #11 for GPS"
+  },
+  {
+    "title": "Device 12 (Bluetooth 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #12 for Bluetooth"
+  },
+  {
+    "title": "Device 13 (Wi-Fi 6)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #13 for WLAN"
+  },
+  {
+    "title": "Device 14 (Ortung)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #14 for GPS"
+  },
+  {
+    "title": "Device 15 (mit Bluetooth)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #15 for Bluetooth"
+  },
+  {
+    "title": "Device 16 (WLAN ax)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #16 for WLAN"
+  },
+  {
+    "title": "Device 17 (mit GPS)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #17 for GPS"
+  },
+  {
+    "title": "Device 18 (Bluetooth)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #18 for Bluetooth"
+  },
+  {
+    "title": "Device 19 (mit WLAN)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #19 for WLAN"
+  },
+  {
+    "title": "Device 20 (GPS integriert)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #20 for GPS"
+  },
+  {
+    "title": "Device 21 (BT 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #21 for Bluetooth"
+  },
+  {
+    "title": "Device 22 (WiFi)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #22 for WLAN"
+  },
+  {
+    "title": "Device 23 (GLONASS)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #23 for GPS"
+  },
+  {
+    "title": "Device 24 (Bluetooth 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #24 for Bluetooth"
+  },
+  {
+    "title": "Device 25 (Wi-Fi 6)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #25 for WLAN"
+  },
+  {
+    "title": "Device 26 (Ortung)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #26 for GPS"
+  },
+  {
+    "title": "Device 27 (mit Bluetooth)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #27 for Bluetooth"
+  },
+  {
+    "title": "Device 28 (WLAN ax)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #28 for WLAN"
+  },
+  {
+    "title": "Device 29 (mit GPS)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #29 for GPS"
+  },
+  {
+    "title": "Device 30 (Bluetooth)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #30 for Bluetooth"
+  },
+  {
+    "title": "Device 31 (mit WLAN)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #31 for WLAN"
+  },
+  {
+    "title": "Device 32 (GPS integriert)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #32 for GPS"
+  },
+  {
+    "title": "Device 33 (BT 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #33 for Bluetooth"
+  },
+  {
+    "title": "Device 34 (WiFi)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #34 for WLAN"
+  },
+  {
+    "title": "Device 35 (GLONASS)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #35 for GPS"
+  },
+  {
+    "title": "Device 36 (Bluetooth 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #36 for Bluetooth"
+  },
+  {
+    "title": "Device 37 (Wi-Fi 6)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #37 for WLAN"
+  },
+  {
+    "title": "Device 38 (Ortung)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #38 for GPS"
+  },
+  {
+    "title": "Device 39 (mit Bluetooth)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #39 for Bluetooth"
+  },
+  {
+    "title": "Device 40 (WLAN ax)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #40 for WLAN"
+  },
+  {
+    "title": "Device 41 (mit GPS)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #41 for GPS"
+  },
+  {
+    "title": "Device 42 (Bluetooth)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #42 for Bluetooth"
+  },
+  {
+    "title": "Device 43 (mit WLAN)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #43 for WLAN"
+  },
+  {
+    "title": "Device 44 (GPS integriert)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #44 for GPS"
+  },
+  {
+    "title": "Device 45 (BT 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #45 for Bluetooth"
+  },
+  {
+    "title": "Device 46 (WiFi)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #46 for WLAN"
+  },
+  {
+    "title": "Device 47 (GLONASS)",
+    "category": "booleans",
+    "fields": ["GPS"],
+    "expected": {
+      "GPS": "Ja"
+    },
+    "description": "Boolean presence #47 for GPS"
+  },
+  {
+    "title": "Device 48 (Bluetooth 5.3)",
+    "category": "booleans",
+    "fields": ["Bluetooth"],
+    "expected": {
+      "Bluetooth": "Ja"
+    },
+    "description": "Boolean presence #48 for Bluetooth"
+  },
+  {
+    "title": "Device 49 (Wi-Fi 6)",
+    "category": "booleans",
+    "fields": ["WLAN"],
+    "expected": {
+      "WLAN": "Ja"
+    },
+    "description": "Boolean presence #49 for WLAN"
+  },
+  {
+    "title": "Battery Device with 3h runtime",
+    "text": "The battery lasts up to 3h. No high refresh rate supported.",
+    "category": "electronics",
+    "fields": ["Akkulaufzeit", "Maximale Bildwiederholrate"],
+    "expected": {
+      "Akkulaufzeit": "3 h",
+      "Maximale Bildwiederholrate": null
+    },
+    "description": "Unit isolation: Prevent 3h (time) from being parsed as 3 Hz (frequency)"
+  },
+  {
+    "title": "Low Frequency Hallucination",
+    "text": "This screen has a static image refresh of 3 Hz.",
+    "category": "monitors",
+    "fields": ["Maximale Bildwiederholrate"],
+    "expected": {
+      "Maximale Bildwiederholrate": null
+    },
+    "description": "Guardrail: Reject nonsensical low refresh rates (< 24 Hz)"
+  },
+  {
+    "title": "High-End Gaming GPU",
+    "text": "Ports: 2x HDMI 2.1, 3x DisplayPort 1.4a. Memory: 16GB GDDR6X VRAM.",
+    "category": "gpus",
+    "fields": [
+      "Anzahl HDMI-Anschlüsse",
+      "Anzahl DisplayPort Anschlüsse",
+      "Videospeicher-Kapazität",
+      "Interner Speichertyp"
+    ],
+    "expected": {
+      "Anzahl HDMI-Anschlüsse": "2",
+      "Anzahl DisplayPort Anschlüsse": "3",
+      "Videospeicher-Kapazität": "16 GB",
+      "Interner Speichertyp": "GDDR6X"
+    },
+    "description": "Advanced technical extraction for GPUs (multi-ports and VRAM)"
+  },
+  {
+    "title": "Modern Washing Machine",
+    "text": "Energy: Klasse A. Noise: Klasse B. Speed: 1400 U/Min.",
+    "category": "washing-machines",
+    "fields": [
+      "Energieeffizienzklasse",
+      "Geräuschemissionsklasse",
+      "Maximale Schleuderdrehzahl"
+    ],
+    "expected": {
+      "Energieeffizienzklasse": "A",
+      "Geräuschemissionsklasse": "B",
+      "Maximale Schleuderdrehzahl": "1400 RPM"
+    },
+    "description": "Appliance classes and rotation speed normalization"
+  },
+  {
+    "title": "Next-Gen CPU Lithography",
+    "text": "Built on the 3nm process node (N3P).",
+    "category": "cpu",
+    "fields": ["Prozessor Lithografie"],
+    "expected": {
+      "Prozessor Lithografie": "3 nm"
+    },
+    "description": "Small length unit (nm) support"
+  },
+  {
+    "title": "Complex Negation Case",
+    "text": "Smartphone with NFC: Nein. Camera without OIS. No built-in GPS.",
+    "category": "smartphones",
+    "fields": ["NFC", "GPS"],
+    "expected": {
+      "NFC": "Nein",
+      "GPS": "Nein"
+    },
+    "description": "Complex negation patterns in description"
+  },
+  {
+    "title": "Implicit Boolean Match",
+    "text": "The laptop features an Integrated Card Reader and a backlit keyboard.",
+    "category": "notebooks",
+    "fields": ["Integrierter Kartenleser"],
+    "expected": {
+      "Integrierter Kartenleser": "Ja"
+    },
+    "description": "Implicit boolean detection from feature list"
+  },
+  {
+    "title": "Display Connectivity Edge",
+    "text": "I/O: 1x USB-C (Thunderbolt 4), 1x HDMI 2.0b",
+    "category": "notebooks",
+    "fields": ["Anzahl HDMI-Anschlüsse", "HDMI-Version"],
+    "expected": {
+      "Anzahl HDMI-Anschlüsse": "1",
+      "HDMI-Version": "2.0b"
+    },
+    "description": "Mixed connectivity and version extraction"
+  }
+]
