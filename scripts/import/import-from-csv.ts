@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
 import Papa from "papaparse";
 import { db, NewPrice, NewProduct, prices, products } from "../../src/db";
 import type { CategorySlug } from "../../src/lib/categories";
 import { generateProductSlug } from "../../src/lib/utils/slug";
 import { normalizeVariantAttributes } from "../../src/lib/utils/variants";
+import { guardIntegrity } from "./data-validator";
 
 /**
  * Keepa CSV Importer (Universal Version)
@@ -87,6 +88,12 @@ async function main() {
         const imageList = row["Image"] || "";
         const imageUrl = imageList.split(";")[0] || null;
 
+        // Store raw features for future scavenging
+        const keepaFeatures = JSON.stringify({
+          description: row["Description & Features: Description"] || "",
+          features: features,
+        });
+
         const rating = parseFloat(row["Reviews: Rating"]) || null;
         const reviewCount = parseInt(row["Reviews: Rating Count"]) || null;
         const salesRank = parseInt(row["Sales Rank: Current"]) || null;
@@ -113,9 +120,12 @@ async function main() {
           "Model",
           "Color",
           "Size",
+          "Dimensions", // Normalized key
+          "Weight", // Normalized key
           "Material",
           "Style",
           "Pattern",
+          "Department", // Added
           "Item: Dimension (cm³)",
           "Item: Weight (g)",
           "Package: Dimension (cm³)",
@@ -123,15 +133,428 @@ async function main() {
           "Release Date",
           "Operating System",
           "Hardware Interface",
+          // Keepa specific
+          "Part Number",
+          "Manufacturer",
         ];
+
         for (const key of specKeys) {
+          // Check standard and CSV-specific variations
           if (row[key]) specs[key] = row[key];
+
+          // Fallback legacy mapping if needed (Keepa CSVs sometimes change headers)
+          if (!specs["Model"] && row["Product Group"])
+            specs["Category"] = row["Product Group"];
         }
 
-        // --- Normalization (for filtering) ---
+        // --- UNIVERSAL SPEC EXTRACTOR (Global High-Accuracy Mapping) ---
+        // Crucial: We prioritize specific "Feature" bullets which often contain the dense tech specs.
+        const featureContext = features.join(" | ");
+        const deepContext = [title, description, featureContext].join(" | ");
+        const lowerContext = deepContext.toLowerCase();
+
+        // 0. Initial Spec Collection (Raw Columns from CSV)
+        const commonKeys = [
+          "Weight",
+          "Dimensions",
+          "Material",
+          "Style",
+          "Release Date",
+          "Manufacturer",
+          "Model",
+          "Color",
+          "Size",
+          "Department",
+        ];
+        for (const key of commonKeys) {
+          if (row[key] && !specs[key]) specs[key] = row[key];
+        }
+        // Specific Keepa Mappings
+        if (row["Item: Weight (g)"])
+          specs.Weight = `${row["Item: Weight (g)"]}g`;
+        if (row["Item: Dimension (cm³)"])
+          specs.Dimensions = row["Item: Dimension (cm³)"];
+
+        // 1. Storage & RAM (Global Core Specs)
+        if (!specs["Size"]) {
+          // Negative lookahead: Ensure we don't catch RAM strings (DDR, RAM, VRAM)
+          const match = deepContext.match(
+            /\b(\d+(?:[\.,]\d+)?)\s*(GB|TB|MB)(?!\s*(?:DDR|RAM|VRAM|Graphic|Arbeitsspeicher))\b/i,
+          );
+          if (match) specs.Storage = match[0];
+          else if (row["Size"]) specs.Storage = row["Size"];
+        }
+        if (!specs["RAM"]) {
+          const match = deepContext.match(
+            /\b(\d+)\s*(GB|MB)\s*(RAM|Arbeitsspeicher|Memory|Gemeinsamer Arbeitsspeicher)\b/i,
+          );
+          if (match) specs.RAM = match[0];
+        }
+
+        // --- GLOBAL TECH DETECTOR (Super-Enrichment Phase) ---
+        // This block extracts high-value data for EVERY product category.
+
+        // Connectivity (Standard Tech)
+        const bt = deepContext.match(/Bluetooth\s*(\d+[\.,]?\d*)/i);
+        if (bt) specs.Bluetooth = bt[0];
+        const wifi = deepContext.match(/(WiFi|WLAN)\s*([67]E?)/i);
+        if (wifi) specs.WiFi = wifi[0];
+        const conn = deepContext.match(/\b(GPS|LTE|4G|5G|NFC|Cellular)\b/i);
+        if (conn) specs.Connectivity = conn[0];
+
+        // Operating System (OS)
+        const os = deepContext.match(
+          /\b(Windows\s*(10|11)|macOS|Android\s*(\d+)?|iOS\s*(\d+)?|Linux|HarmonyOS|ChromeOS)\b/i,
+        );
+        if (os) specs.Operating_System = os[0];
+
+        // Physical & Eco (Aggressive Extraction)
+        const energyClass =
+          deepContext.match(/\bEnergy Class\s*([A-G](\+\+\+)?)\b/i) ||
+          deepContext.match(/\b([A-G])\b/);
+        if (energyClass)
+          specs.Energy_Class = (energyClass[1] || energyClass[0]).trim();
+
+        if (!specs.Weight) {
+          const weight = deepContext.match(
+            /\b(\d+[\.,]?\d*)\s*(g|kg|Gramm|Kilogramm)\b/i,
+          );
+          if (weight) specs.Weight = weight[0];
+        }
+
+        const dims = deepContext.match(
+          /(\d+[\.,]?\d*)\s*x\s*(\d+[\.,]?\d*)\s*(x\s*(\d+[\.,]?\d*))?\s*(mm|cm|Zoll|Inch)/i,
+        );
+        if (dims && !specs.Dimensions) specs.Dimensions = dims[0];
+
+        // Multimedia (Webcam / Sound)
+        const webcamFull = deepContext.match(
+          /(\d+)\s*(MP|Megapixel)\s*(Webcam|Center Stage|Kamera|Frontkamera)/i,
+        );
+        if (webcamFull) specs.Webcam = webcamFull[0];
+
+        const audio = deepContext.match(
+          /\b(Stereo|Dolby\s*Atmos|Harman\s*Kardon|Bose|JBL|Spatial\s*Audio)\b/i,
+        );
+        if (audio) specs.Audio_Tech = audio[0];
+
+        // --- TECHNICAL DICTIONARY SCAVENGER (Extreme Data Recovery Phase) ---
+        // This block hunts for high-value technical keywords that don't always follow a direct "Value + Unit" pattern.
+        const dictionary: Record<string, string[]> = {
+          Display: [
+            "Retina",
+            "Liquid Retina",
+            "Super Retina",
+            "Dynamic AMOLED",
+            "LTPO",
+            "IPS-Level",
+            "Nano-Cell",
+            "QLED",
+            "OLED",
+            "HDR10",
+            "HDR10+",
+            "Dolby Vision",
+          ],
+          Connectivity: [
+            "5G",
+            "4G LTE",
+            "LTE",
+            "NFC",
+            "UWB",
+            "eSIM",
+            "Dual-SIM",
+            "WiFi 6E",
+            "WiFi 7",
+            "Thunderbolt 4",
+            "Thunderbolt 3",
+            "USB4",
+            "HDMI 2.1",
+          ],
+          Audio: [
+            "Stereo Speaker",
+            "Dolby Atmos",
+            "Spatial Audio",
+            "Beats",
+            "Harman Kardon",
+            "DTS:X",
+            "Hi-Res Audio",
+          ],
+          Security: [
+            "Face ID",
+            "Touch ID",
+            "Fingerprint",
+            "Kensington Lock",
+            "TPM 2.0",
+          ],
+          Build: [
+            "Aluminium",
+            "Titanium",
+            "Gorilla Glass",
+            "Magnesium",
+            "IP68",
+            "IP67",
+            "MIL-STD-810G",
+          ],
+        };
+
+        for (const [key, terms] of Object.entries(dictionary)) {
+          terms.forEach((term) => {
+            if (lowerContext.includes(term.toLowerCase())) {
+              const current = specs[key] ? specs[key] + ", " : "";
+              if (!current.includes(term)) specs[key] = current + term;
+            }
+          });
+        }
+
+        // --- QUANTITY HARVESTER (Extracting counts from descriptions) ---
+        const speakerCount = deepContext.match(
+          /(\d+)\s*(Lautsprecher|Speakers|Speaker)/i,
+        );
+        if (speakerCount) specs.Speakers_Count = speakerCount[1];
+        const micCount = deepContext.match(
+          /(\d+)\s*(Mikrofone|Microphones|Mics)/i,
+        );
+        if (micCount) specs.Microphones_Count = micCount[1];
+        const fanCount = deepContext.match(/(\d+)\s*(Lüfter|Fans)/i);
+        if (fanCount) specs.Fan_Count = fanCount[1];
+        const mahMatch = deepContext.match(/(\d+)\s*(mAh)/i);
+        if (mahMatch) specs.Battery_mAh = mahMatch[1];
+        const cache = deepContext.match(
+          /(\d+)\s*(MB|KB)\s*(L[23]\s*Cache|Cache)/i,
+        );
+        if (cache) specs.L3_Cache = cache[0];
+        const igpu = deepContext.match(
+          /\b(Integrated|Onboard|Intel\s*UHD|Intel\s*Iris|Radeon\s*Graphics)\b/i,
+        );
+        if (igpu) specs.Integrated_Graphics = igpu[0];
+
+        // --- RECURSIVE PATTERN SEARCH (Generic Key-Value Harvester) ---
+        // This hunts for "Key: Value" or "Value [Unit] Key" patterns commonly used in tech specs
+        const genericPatterns = [
+          /(\b[A-Za-z\s]{3,15}):\s*([A-Za-z0-9\s\.,]{1,30})\b/g, // Key: Value
+          /(\b[A-Za-z0-9\s\.,]{1,30})\s*:\s*(\b[A-Za-z\s]{3,15})\b/g, // Value : Key (Alternative)
+        ];
+
+        for (const pattern of genericPatterns) {
+          let m;
+          while ((m = pattern.exec(deepContext)) !== null) {
+            const key = m[1].trim();
+            const val = m[2].trim();
+            // Only keep if the key looks like a tech spec we recognize or want
+            const techKeys = [
+              "Betriebssystem",
+              "Lautsprecher",
+              "Mikrofone",
+              "Anschlüsse",
+              "Gewicht",
+              "Abmessungen",
+              "Garantie",
+              "Display",
+            ];
+            if (
+              techKeys.some((tk) =>
+                key.toLowerCase().includes(tk.toLowerCase()),
+              ) &&
+              !specs[key] &&
+              val.length < 30 && // Reject overly long values (likely marketing text)
+              !val.toLowerCase().includes("hast") && // Emergency blocker
+              !val.toLowerCase().includes("haben")
+            ) {
+              specs[key] = val;
+            }
+          }
+        }
+
+        // 2. Category-Specific Differentiators
+        switch (categorySlug) {
+          case "gpu":
+            const gpuChip = deepContext.match(
+              /\b(RTX|GTX|RX|Arc)\s*\d+[a-z]*\s*(Ti|Super|XT|XTX)?\b/i,
+            );
+            if (gpuChip)
+              specs.Chipset =
+                "NVIDIA GeForce " + gpuChip[0].replace(/GeForce\s*/i, ""); // Normalize
+            if (deepContext.match(/Radeon/i) && gpuChip)
+              specs.Chipset =
+                "AMD Radeon " + gpuChip[0].replace(/Radeon\s*/i, "");
+
+            const vram = deepContext.match(
+              /(\d+)\s*(GB|TB)\s*(GDDR\d[X]?|DDR\d)/i,
+            );
+            if (vram) {
+              specs.VRAM = vram[1] + " " + vram[2];
+              specs.VRAM_Type = vram[3];
+            } else {
+              // Fallback separate
+              const vramOnly = deepContext.match(/(\d+)\s*(GB|TB)/i);
+              if (vramOnly && !specs.VRAM) specs.VRAM = vramOnly[0];
+              const typeOnly = deepContext.match(/(GDDR\d[X]?)/i);
+              if (typeOnly) specs.VRAM_Type = typeOnly[0];
+            }
+
+            const gpuClock = deepContext.match(
+              /(Boost-Taktrate|Spieletakt|Boost Clock|Core Clock).*?(\d+)\s*MHz/i,
+            );
+            if (gpuClock) specs.Clock_Speed = gpuClock[2] + " MHz";
+
+            const bus = deepContext.match(/(\d+)\s*(bit|Bit)/i);
+            if (bus) specs.Bus_Width = bus[1] + "-Bit";
+
+            const cooling = deepContext.match(/(\d+)\s*(Fans|Lüfter)/i);
+            if (cooling) specs.Cooling = cooling[0];
+
+            const gpuLen = deepContext.match(/(\d+)\s*mm\s*(Länge|Length)/i);
+            if (gpuLen) specs.Length = gpuLen[0];
+            break;
+          case "cpu":
+          case "prozessoren":
+            const socket = deepContext.match(
+              /(AM\d+|LGA\s*\d+|sTR\d+|Socket\s*\S+|Sockel\s*\S+)/i,
+            );
+            if (socket) specs.Socket = socket[0];
+            const cores = deepContext.match(
+              /(\d+)\s*(Kerne|Cores|Threads|C)\b/i,
+            );
+            if (cores) specs.Cores = cores[1]; // Just the number
+            const tdp = deepContext.match(/(\d+)\s*W\b/i);
+            if (tdp) specs.TDP = tdp[1] + "W";
+            const clock = deepContext.match(/(\d+[\.,]?\d*)\s*GHz/i);
+            if (clock) specs.Clock_Speed = clock[0];
+            const cpuSeries = deepContext.match(
+              /(Ryzen\s*\d|Core\s*[i\d]|Ultra\s*\d|Threadripper|Xeon|Apple\s*M[1-4]|M[1-4]\s*Chip|M[1-4]\s*Max|M[1-4]\s*Pro)/i,
+            );
+            if (cpuSeries) specs.Series = cpuSeries[0];
+            const cpuGen = deepContext.match(/(\d+)\.\s*(Gen|Generation)/i);
+            if (cpuGen) specs.Generation = cpuGen[0];
+            break;
+          case "ram":
+          case "arbeitsspeicher":
+            const ddr = deepContext.match(/(DDR\d|LPDDR\d)/i);
+            if (ddr) specs.Memory_Type = ddr[0];
+            const ramClock = deepContext.match(/(\d+)\s*MHz/i);
+            if (ramClock) specs.Clock_Speed = ramClock[1] + "MHz";
+            const kit = deepContext.match(/(\d+)\s*x\s*(\d+)\s*(GB|MB)/i);
+            if (kit) specs.Kit_Size = kit[0];
+            const lat = deepContext.match(/(CL\d+|C\d+)/i);
+            if (lat) specs.Latency = lat[0];
+            break;
+          case "motherboards":
+          case "mainboards":
+            const mbSocket = deepContext.match(
+              /(AM\d+|LGA\s*\d+|sTR\d+|Socket\s*\S+|Sockel\s*\S+)/i,
+            );
+            if (mbSocket) specs.Socket = mbSocket[0];
+            const chipset = deepContext.match(/\b([ABZ]\d{2,3}|X\d{2,3})\b/i);
+            if (chipset) specs.Chipset = chipset[0];
+            break;
+          case "monitore":
+          case "tvs":
+            const monScreen = deepContext.match(
+              /(\d+[\.,]?\d*)\s*(Zoll|Inch|")/i,
+            );
+            if (monScreen) specs.Screen_Size = monScreen[0];
+            const monRefresh = deepContext.match(/(\d+)\s*Hz/i);
+            if (monRefresh) specs.Refresh_Rate = monRefresh[1] + " Hz";
+            const monPanel = deepContext.match(
+              /(OLED|QLED|IPS|VA|TN|Nano\s*IPS|Mini-LED|Retina|Liquid\s*Retina)/i,
+            );
+            if (monPanel) specs.Panel_Type = monPanel[0];
+            const res = deepContext.match(
+              /(\d{3,4}\s*x\s*\d{3,4}|4K|UHD|WQHD|Full\s*HD|FHD|5K|8K|Resolution|Auflösung)/i,
+            );
+            if (res) specs.Resolution = res[0];
+            const hdr = deepContext.match(
+              /\b(HDR10|HDR10\+|Dolby\s*Vision|DisplayHDR)\b/i,
+            );
+            if (hdr) specs.HDR_Support = hdr[0]; // Updated key to match schema
+            const sync = deepContext.match(
+              /(FreeSync|G-Sync|Adaptive\s*Sync)/i,
+            );
+            if (sync) specs.Sync_Tech = sync[0];
+            const hdmiPorts = deepContext.match(/(\d+)\s*x?\s*HDMI/i);
+            if (hdmiPorts) specs.HDMI_Ports = hdmiPorts[1];
+            break;
+
+          case "haushaltselektronik":
+          case "waschmaschinen":
+          case "waeschetrockner":
+          case "kuehlschraenke":
+          case "geschirrspueler":
+          case "backoefen":
+            const capKg = deepContext.match(/(\d+)\s*kg/i);
+            if (capKg) specs.Capacity_KG = capKg[1] + " kg";
+            const capL = deepContext.match(/(\d+)\s*(Litres|l|Liter)/i);
+            if (capL) specs.Total_Capacity_L = capL[1] + " L";
+            const energy =
+              deepContext.match(/\b([A-G])\b(?:\s*Klasse|class)/i) ||
+              deepContext.match(/Energieeffizienzklasse\s*([A-G])/i);
+            if (energy) specs.Energy_Class = energy[1];
+            const noise = deepContext.match(/(\d+)\s*dB/i);
+            if (noise) specs.Noise_Level_dB = noise[0];
+            // New strict keys
+            const programs = deepContext.match(/(\d+)\s*Programme/i);
+            if (programs) specs.Programs = programs[1];
+            const water = deepContext.match(/(\d+)\s*L(?:\/| pro )Zyklus/i);
+            if (water) specs.Water_Consumption = water[1] + " L";
+            break;
+            break;
+          case "espressomaschinen":
+          case "kuechenmaschinen":
+            const pressure = deepContext.match(/(\d+)\s*bar/i);
+            if (pressure) specs.Pressure_Bar = pressure[0];
+            const watts = deepContext.match(/(\d+)\s*W(att)?\b/i);
+            if (watts) specs.Wattage = watts[1] + "W";
+            break;
+          case "elektrische-zahnbuersten":
+          case "bartschneider-haarschneider":
+            const brushTech = deepContext.match(
+              /(Schall|Oszillierend|Sonic|Rotating)/i,
+            );
+            if (brushTech) specs.Cleaning_Tech = brushTech[0];
+            const len = deepContext.match(/(\d+(?:[\.,]\d+)?)\s*mm/i);
+            if (len) specs.Min_Cutting_Length = len[0];
+            break;
+          case "fotografie":
+          case "cameras":
+          case "systemkameras":
+          case "kompaktkameras":
+            const mp = deepContext.match(
+              /\b(\d+(?:[\.,]\d+)?)\s*(MP|Megapixel)\b/i,
+            );
+            if (mp) specs.Sensor_Resolution_MP = mp[1];
+            const sensor = deepContext.match(
+              /\b(Vollformat|APS-C|MFT|Full Frame|1\s*Zoll|1\s*Inch|Medium\s*Format)\b/i,
+            );
+            if (sensor) specs.Sensor_Size = sensor[0];
+            const video = deepContext.match(/\b(4K|8K|Full\s*HD|FHD|1080p)\b/i);
+            if (video) specs.Video_Resolution = video[0];
+            const iso = deepContext.match(/ISO\s*(\d+)-(\d+)/i);
+            if (iso) specs.ISO_Range = iso[0];
+            break;
+          case "drones":
+            const flight = deepContext.match(/(\d+)\s*(min|Minuten|Minutes)/i);
+            if (flight) specs.Flight_Time_Min = flight[1];
+            const dVideo = deepContext.match(/\b(4K|5\.4K|2\.7K|8K)\b/i);
+            if (dVideo) specs.Video_Resolution = dVideo[0];
+            const range = deepContext.match(/(\d+)\s*(km|Kilometer)/i);
+            if (range) specs.Range_KM = range[1];
+            break;
+          case "smartwatches":
+            const watchSize = deepContext.match(/\b(\d+)\s*(mm)\b/i);
+            if (watchSize) specs.Size = watchSize[0];
+            const conn = deepContext.match(/\b(GPS|LTE|Cellular)\b/i);
+            if (conn) specs.Connectivity = conn[0];
+            break;
+        }
+
+        // --- Normalization & Storage ---
         const capacityValue =
           parseFloat(row["Unit Details: Unit Value"]) || null;
         const capacityUnit = row["Unit Details: Unit Type"] || null;
+
+        // Ensure Specs contains normalization data for fallback
+        if (!specs.Size && capacityValue)
+          specs.Size = `${capacityValue}${capacityUnit}`;
 
         const priceAvg30 =
           parseCSVPrice(row["Amazon: 30 days avg."]) ||
@@ -159,7 +582,23 @@ async function main() {
             variationAttributes: row["Variation Attributes"] || null,
             category: categorySlug,
           }),
-          specifications: JSON.stringify(specs),
+          keepaFeatures,
+          // Validate and Score
+          specifications: (function () {
+            const validation = validateProductSpecs(
+              specs,
+              categorySlug as CategorySlug,
+            );
+            // Log low quality items if needed
+            if (validation.score < 50 && categorySlug !== "uncategorized") {
+              console.log(
+                `⚠️ Low Quality Data (${validation.score}%): ${asin} - Missing: ${validation.missing.join(", ")}`,
+              );
+            }
+            // For now we just store the clean specs.
+            // Once DB schema is updated, we would also store validation.score and validation.missing
+            return JSON.stringify(validation.specs);
+          })(),
           category: categorySlug as CategorySlug,
           slug: generateProductSlug(
             title,
@@ -275,28 +714,6 @@ async function main() {
   console.log(
     `\n✨ Done! Added: ${successCount}, Updated: ${updateCount}, Skipped: ${skipCount}`,
   );
-
-  // --- ULTIMATE SELF-HEALING: Core recovery in one pass ---
-  console.log("\n🩹 Running bulk history recovery for all orphaned records...");
-  try {
-    const healStart = performance.now();
-    // 1. Sync ASIN links
-    await db.run(sql`
-      UPDATE price_history 
-      SET product_id = (SELECT id FROM products WHERE products.asin = price_history.asin)
-      WHERE asin IS NOT NULL AND (product_id IS NULL OR product_id NOT IN (SELECT id FROM products))
-    `);
-    // 2. Sync GTIN links (for non-Amazon sources)
-    await db.run(sql`
-      UPDATE price_history 
-      SET product_id = (SELECT id FROM products WHERE products.gtin = price_history.gtin)
-      WHERE gtin IS NOT NULL AND product_id IS NULL
-    `);
-    const duration = ((performance.now() - healStart) / 1000).toFixed(2);
-    console.log(`✅ History recovered and re-linked in ${duration}s.`);
-  } catch (e: any) {
-    console.warn("⚠️  Bulk recovery had issues:", e.message);
-  }
 }
 
 function mapCategory(
@@ -593,4 +1010,15 @@ function parseCSVPrice(val: any): number | null {
   }
   return null;
 }
+/**
+ * Specification Guard: Validates and standardizes extracted technical attributes.
+ * Prevents misclassification (e.g. DDR5 in Storage) and ensures clean keys.
+ */
+function validateProductSpecs(
+  specs: Record<string, any>,
+  category: CategorySlug,
+): Record<string, any> {
+  return guardIntegrity(specs, category);
+}
+
 main().catch(console.error);
