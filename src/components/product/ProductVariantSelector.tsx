@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import {
   extractAttributeGroups,
   extractRealStorageFromTitle,
+  normalizeVariantAttributes,
   parseCapacityToGB,
   parseVariationAttributes,
 } from "@/lib/utils/variants";
@@ -25,13 +26,22 @@ interface Product {
   usedPrices?: Record<string, number>;
   brand: string;
   specifications?: Record<string, any>;
+  officialSpecifications?: Record<string, any>;
   parentAsin?: string;
   condition: "New" | "Used" | "Renewed"; // Added condition
   category?: string;
+  mpn?: string;
+}
+
+interface NormalizedProduct extends Product {
+  normalizedStr: string;
+  normalizedAttrs: Record<string, string>;
+  canonicalSlug: string;
+  variantSuffix: string;
 }
 
 interface VariantCardProps {
-  variant?: Product;
+  variant?: NormalizedProduct;
   isSelected?: boolean;
   countryCode: string;
   isAllVariants?: boolean;
@@ -57,7 +67,7 @@ function VariantCard({
 }: VariantCardProps) {
   // ... (VariantCard implementation remains strictly visual)
   // Enhanced Label Logic for Smartphones/Tech
-  const attrs = parseVariationAttributes(variant?.variationAttributes);
+  const attrs = variant?.normalizedAttrs || {};
   const isSmartphone =
     variant?.category === "smartphones" ||
     variant?.title.toLowerCase().includes("smartphone");
@@ -69,24 +79,36 @@ function VariantCard({
     const displayValues: string[] = [];
     let foundRealStorage = false;
 
+    const suffixTokens = (variant?.variantSuffix || "")
+      .toLowerCase()
+      .split(/[^a-z0-9]+/);
+
     Object.entries(attrs).forEach(([key, value]) => {
       const k = key.toLowerCase();
+      const valLower = value.toLowerCase();
       const gb = parseCapacityToGB(value);
 
       if (gb >= 64) {
         foundRealStorage = true;
       }
 
-      // Heuristic: If it's a smartphone and the "Storage" is exactly 8, 12, 16, or < 64, it's likely RAM.
-      // We exclude these from the primary card label to avoid "12GB Titanium" (RAM + Color).
+      // Skip attributes that are already in the variantSuffix (Color, MPN)
+      // or are RAM-like placeholders in smartphones
       if (
         isSmartphone &&
         (k.includes("storage") ||
           k.includes("speicher") ||
-          k.includes("memory"))
+          k.includes("memory")) &&
+        gb > 0 &&
+        gb < 64
       ) {
-        if (gb > 0 && gb < 64) return; // Skip RAM in labels
+        return;
       }
+
+      // Check if this specific value is already represented in the subtitle
+      const valTokens = valLower.split(/[^a-z0-9]+/);
+      const isRedundant = valTokens.every((t) => suffixTokens.includes(t));
+      if (isRedundant) return;
 
       displayValues.push(value);
     });
@@ -140,7 +162,7 @@ function VariantCard({
         )}
       >
         {isAllVariants ? (
-          <div className="grid aspect-square h-full max-h-full w-full grid-cols-2 gap-0.5">
+          <div className="max-h=full grid aspect-square h-full w-full grid-cols-2 gap-0.5">
             {allImages?.slice(0, 4).map((img, i) => (
               <div key={i} className="relative aspect-square">
                 {img ? (
@@ -181,7 +203,7 @@ function VariantCard({
               : "text-[#767676]",
           )}
         >
-          {label}
+          {isAllVariants ? "Alle Varianten" : variant?.variantSuffix || ""}
         </span>
 
         <div className="mt-auto flex flex-col items-start">
@@ -217,7 +239,7 @@ interface AttributeSelectorProps {
   options: string[];
   selected?: string;
   isParentView?: boolean;
-  variants: Product[];
+  variants: NormalizedProduct[];
   currentAttrs: Record<string, string>;
   countryCode: string;
   condition?: string;
@@ -237,10 +259,12 @@ function AttributeSelector({
 
   const displayLabel =
     label.toLowerCase() === "storage" || label.toLowerCase() === "size"
-      ? "interner Speicher"
+      ? "Speicherkapazität" // Idealo uses explicitly 'Speicherkapazität' often, or 'Interner Speicher'.
       : label.toLowerCase() === "color"
         ? "Farbe"
-        : label;
+        : label.toLowerCase() === "ram" || label.toLowerCase() === "memory"
+          ? "Arbeitsspeicher"
+          : label;
 
   const isColor =
     label.toLowerCase() === "color" || label.toLowerCase() === "farbe";
@@ -258,7 +282,7 @@ function AttributeSelector({
             isParentView ||
             isColor ||
             variants.some((v) => {
-              const vAttrs = parseVariationAttributes(v.variationAttributes);
+              const vAttrs = v.normalizedAttrs;
               // Check if this variant has this specific option for this attribute
               if (vAttrs[label] !== option) return false;
 
@@ -275,17 +299,27 @@ function AttributeSelector({
               });
             });
 
-          const isSelected = !isParentView && selected === option;
+          const isSelected =
+            !isParentView &&
+            (() => {
+              const currentVal = selected;
+              if (!currentVal) return false;
+
+              // Robust matching: Case-insensitive and Ignore Punctuation/Spaces
+              const normalize = (s: string) =>
+                s.toLowerCase().replace(/[^a-z0-9]/g, "");
+              return normalize(currentVal) === normalize(option);
+            })();
 
           // Find best matching variant for this chip (for the link)
           // Priority: 1. Exact match with current filters, 2. Any match with this option
           // Tie-breaker: If overlapping New/Renewed, PREFER RENEWED (usually cheaper)
           const targetAttrs = { ...currentAttrs, [label]: option };
 
-          const getBestMatch = (candidates: Product[]) => {
+          const getBestMatch = (candidates: NormalizedProduct[]) => {
             // Filter for exact attributes match
             const matches = candidates.filter((v) => {
-              const vAttrs = parseVariationAttributes(v.variationAttributes);
+              const vAttrs = v.normalizedAttrs;
               return Object.entries(targetAttrs).every(
                 ([pk, pv]) => vAttrs[pk] === pv,
               );
@@ -306,9 +340,9 @@ function AttributeSelector({
             })[0];
           };
 
-          const getRelaxedMatch = (candidates: Product[]) => {
+          const getRelaxedMatch = (candidates: NormalizedProduct[]) => {
             const matches = candidates.filter((v) => {
-              const vAttrs = parseVariationAttributes(v.variationAttributes);
+              const vAttrs = v.normalizedAttrs;
               return vAttrs[label] === option;
             });
 
@@ -331,7 +365,7 @@ function AttributeSelector({
             getBestMatch(variants) || getRelaxedMatch(variants);
 
           const href = targetVariant
-            ? `/p/${targetVariant.slug.includes("_-") ? targetVariant.slug : `${200000000 + (targetVariant.id || 0)}_-${targetVariant.slug}`}${condition ? `?condition=${condition}` : ""}`
+            ? `/p/${targetVariant.canonicalSlug}${condition ? `?condition=${condition}` : ""}`
             : "#";
 
           return (
@@ -391,11 +425,51 @@ export function ProductVariantSelector({
   isParentView?: boolean;
   selectedCondition?: "new" | "used" | "renewed";
 }) {
-  // STRICT FILTERING: Only show variants matching the current condition
-  // If current is "Renewed", only show "Renewed". If "New", only show "New".
-  // Note: "New" in UI might map to "New" or "Used" in DB technically, but for our 'Renewed/New' split:
-  // Renewed = (condition === 'Renewed')
-  // New = (condition !== 'Renewed')
+  // 1. Enrich variants with normalized attributes
+  const normalizedAllVariants = useMemo(() => {
+    const normalizedVariants = allVariants.map((v) => {
+      const normStr = normalizeVariantAttributes({
+        variationAttributes: v.variationAttributes,
+        title: v.title,
+        category: v.category,
+        officialSpecs: v.officialSpecifications || v.specifications,
+      });
+
+      // Generate the exact same canonical slug as the server
+      const { slug: canonicalSlug, variantSuffix } = getFamilyIdentity(v);
+
+      return {
+        ...v,
+        normalizedStr: normStr,
+        normalizedAttrs: parseVariationAttributes(normStr),
+        canonicalSlug,
+        variantSuffix,
+      };
+    });
+    return normalizedVariants;
+  }, [allVariants]);
+
+  const normalizedCurrentProduct = useMemo(() => {
+    const normStr = normalizeVariantAttributes({
+      variationAttributes: currentProduct.variationAttributes,
+      title: currentProduct.title,
+      category: currentProduct.category,
+      officialSpecs:
+        currentProduct.officialSpecifications || currentProduct.specifications,
+    });
+
+    // Generate the exact same canonical slug as the server
+    const { slug: canonicalSlug, variantSuffix } =
+      getFamilyIdentity(currentProduct);
+
+    return {
+      ...currentProduct,
+      normalizedStr: normStr,
+      normalizedAttrs: parseVariationAttributes(normStr),
+      canonicalSlug,
+      variantSuffix,
+    };
+  }, [currentProduct]);
 
   // Determine the condition pool to show.
   const targetCondition =
@@ -404,7 +478,7 @@ export function ProductVariantSelector({
       : "new";
 
   const variants = useMemo(() => {
-    const rawFiltered = allVariants.filter((v) => {
+    const rawFiltered = normalizedAllVariants.filter((v) => {
       // HUB MODE FIX: Always show all unique configurations in Parent View.
       // This ensures the "15 Varianten" count on Category Page (which counts unique specs)
       // matches the number of cards shown here (e.g. 15).
@@ -424,16 +498,20 @@ export function ProductVariantSelector({
     });
 
     // Group by attributes to avoid showing duplicates
-    const uniqueMap = new Map<string, Product>();
+    const uniqueMap = new Map<string, NormalizedProduct>();
     rawFiltered.forEach((v) => {
-      const key = (v.variationAttributes || v.asin).toLowerCase().trim();
+      const key = Object.entries(v.normalizedAttrs)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, val]) => `${k}:${val}`)
+        .join(";");
+
       const existing = uniqueMap.get(key);
 
       if (!existing) {
         uniqueMap.set(key, v);
       } else {
         // Prioritize 'Main' price (Renewed) over Warehouse for the card display if both exist for same spec
-        const getEffectivePrice = (p: Product) => {
+        const getEffectivePrice = (p: NormalizedProduct) => {
           if (targetCondition === "new") return p.prices[countryCode];
           // Used Mode logic: Prioritize Renewed price
           const isRenewed = (p.condition || "").toLowerCase() === "renewed";
@@ -453,7 +531,7 @@ export function ProductVariantSelector({
     });
 
     return Array.from(uniqueMap.values());
-  }, [allVariants, targetCondition, countryCode]);
+  }, [normalizedAllVariants, targetCondition, countryCode, isParentView]);
 
   const isSmartphone =
     currentProduct.category === "smartphones" ||
@@ -464,10 +542,7 @@ export function ProductVariantSelector({
     [variants],
   );
 
-  const currentAttrs = useMemo(
-    () => parseVariationAttributes(currentProduct.variationAttributes),
-    [currentProduct.variationAttributes],
-  );
+  const currentAttrs = normalizedCurrentProduct.normalizedAttrs;
 
   const { bestPrice, allImages, cheapestAsin } = useMemo(() => {
     let min = Infinity;
@@ -498,17 +573,28 @@ export function ProductVariantSelector({
   }, [variants, countryCode, targetCondition]);
 
   const sortedVariants = useMemo(() => {
+    const currentNormalizedStr = Object.entries(currentAttrs)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}:${v}`)
+      .join(";");
+
     return [...variants].sort((a, b) => {
+      // Standardize for comparison
+      const normA = Object.entries(a.normalizedAttrs)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}:${v}`)
+        .join(";");
+      const normB = Object.entries(b.normalizedAttrs)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}:${v}`)
+        .join(";");
+
       // 1. Current product specification always first
-      const attrsA = a.variationAttributes?.toLowerCase().trim();
-      const attrsB = b.variationAttributes?.toLowerCase().trim();
-      const curAttrs = currentProduct.variationAttributes?.toLowerCase().trim();
+      if (normA === currentNormalizedStr) return -1;
+      if (normB === currentNormalizedStr) return 1;
 
-      if (attrsA === curAttrs) return -1;
-      if (attrsB === curAttrs) return 1;
-
-      // 2. Sort by active price (Using same Main price logic)
-      const getPrice = (p: Product) => {
+      // 2. Sort by active price
+      const getPrice = (p: NormalizedProduct) => {
         if (targetCondition === "new") return p.prices[countryCode];
         const isRenewed = (p.condition || "").toLowerCase() === "renewed";
         return isRenewed ? p.prices[countryCode] : p.usedPrices?.[countryCode];
@@ -519,7 +605,7 @@ export function ProductVariantSelector({
 
       return (priceA || 999999) - (priceB || 999999);
     });
-  }, [variants, currentProduct, targetCondition, countryCode]);
+  }, [variants, currentAttrs, targetCondition, countryCode]);
 
   // Generate parent neutral slug using canonical logic
   const parentSlug = useMemo(() => {
@@ -555,28 +641,53 @@ export function ProductVariantSelector({
       .sort(([a], [b]) => {
         const score = (key: string) => {
           const k = key.toLowerCase();
-          if (k === "color" || k === "farbe") return 0;
-          if (k === "storage" || k === "interner speicher" || k === "size")
+          if (
+            k === "ram" ||
+            k === "arbeitsspeicher" ||
+            k === "memory" ||
+            k.includes("ram")
+          )
+            return 0;
+          if (
+            k === "storage" ||
+            k === "interner speicher" ||
+            k === "size" ||
+            k === "speicherkapazität" ||
+            k === "ssd"
+          )
             return 1;
-          return 2;
+          if (k === "color" || k === "farbe") return 2;
+          return 3;
         };
         return score(a) - score(b);
       });
   }, [attributeGroups, isSmartphone]);
 
   const activeVariants = useMemo(() => {
+    const currentNormalizedStr = Object.entries(currentAttrs)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([k, v]) => `${k}:${v}`)
+      .join(";");
+
     return sortedVariants.filter((v) => {
       const p =
         targetCondition === "used"
-          ? v.usedPrices?.[countryCode] || v.prices[countryCode]
+          ? (v.condition?.toLowerCase() === "renewed"
+              ? v.prices[countryCode]
+              : v.usedPrices?.[countryCode]) || v.prices[countryCode]
           : v.prices[countryCode];
+
+      // Standardize variant for comparison
+      const variantNormalizedStr = Object.entries(v.normalizedAttrs)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([k, v]) => `${k}:${v}`)
+        .join(";");
+
       // Ensure we don't hide the current product even if price is missing (safety)
-      const attrsMatch =
-        v.variationAttributes?.toLowerCase().trim() ===
-        currentProduct.variationAttributes?.toLowerCase().trim();
+      const attrsMatch = variantNormalizedStr === currentNormalizedStr;
       return (p && p > 0) || attrsMatch;
     });
-  }, [sortedVariants, targetCondition, countryCode, currentProduct]);
+  }, [sortedVariants, targetCondition, countryCode, currentAttrs]);
 
   const carouselTitle = useMemo(() => {
     if (!isParentView) return "Variante:";
@@ -633,8 +744,18 @@ export function ProductVariantSelector({
                 variant={variant}
                 isSelected={
                   !isParentView &&
-                  variant.variationAttributes?.toLowerCase().trim() ===
-                    currentProduct.variationAttributes?.toLowerCase().trim()
+                  (variant.asin === currentProduct.asin ||
+                    (() => {
+                      const curStr = Object.entries(currentAttrs)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([k, val]) => `${k}:${val}`)
+                        .join(";");
+                      const varStr = Object.entries(variant.normalizedAttrs)
+                        .sort(([a], [b]) => a.localeCompare(b))
+                        .map(([k, val]) => `${k}:${val}`)
+                        .join(";");
+                      return curStr === varStr;
+                    })())
                 }
                 countryCode={countryCode}
                 currentSlug={currentProduct.slug}

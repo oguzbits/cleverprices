@@ -114,6 +114,65 @@ export async function generateStaticParams() {
   }));
 }
 
+// Helper to generate rich descriptions from official specs
+function generateEnrichedDescription(
+  product: any,
+  category: any,
+): string | null {
+  if (!product.officialSpecifications) return null;
+
+  try {
+    const specs =
+      typeof product.officialSpecifications === "string"
+        ? JSON.parse(product.officialSpecifications)
+        : product.officialSpecifications;
+
+    // 1. Processors (Intel/AMD)
+    if (
+      product.category === "processors-cpus" ||
+      product.title.includes("Intel") ||
+      product.title.includes("AMD")
+    ) {
+      const cores =
+        specs["Anzahl der Kerne"] || specs["Total Cores"] || specs["Cores"];
+      const turbo =
+        specs["Max. Turbo-Taktfrequenz"] || specs["Max Turbo Frequency"];
+      const cache = specs["Cache"] || specs["L3 Cache"];
+      if (cores && turbo) {
+        return `${product.title} (${cores} Cores, bis zu ${turbo}, ${cache || ""}). Offizielle technische Daten & Bestpreis.`;
+      }
+    }
+
+    // 2. Smartphones (Apple/Samsung)
+    if (
+      product.category === "smartphones" ||
+      product.title.includes("iPhone") ||
+      product.title.includes("Galaxy")
+    ) {
+      const display =
+        specs["Display"] ||
+        specs["Super Retina XDR Display"] ||
+        specs["Display-Größe"];
+      const chip = specs["Chip"] || specs["Prozessor"] || specs["Chipset"];
+      const camera = specs["Kamera"] || specs["Camera"] || specs["Hauptkamera"];
+      const capacity =
+        specs["Kapazität"] || specs["Speicherkapazität"] || specs["Storage"];
+
+      const parts = [];
+      if (display) parts.push(display.replace(/Display/g, "").trim());
+      if (chip) parts.push(chip);
+      if (camera) parts.push(camera.split("\n")[0]); // Take first line often
+
+      if (parts.length > 0) {
+        return `${product.title} (${parts.join(", ")}). Technische Daten, Preisvergleich & Angebote.`;
+      }
+    }
+  } catch (e) {
+    // Fail silently to default
+  }
+  return null;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
 
@@ -166,10 +225,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const title = `${seoTitle}${unitPriceText} | Hardware Preisvergleich | ${BRAND_DOMAIN}`;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
+    // Try enriched description first
+    const enrichedDesc = generateEnrichedDescription(product, category);
+
     const description =
-      pricePerUnit && category?.unitType
+      enrichedDesc ||
+      (pricePerUnit && category?.unitType
         ? `${product.title} zum besten Preis kaufen. Aktuell nur ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Jetzt Angebote in Deutschland vergleichen und sparen!`
-        : `${product.title} günstig kaufen. Aktueller Bestpreis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Finden Sie jetzt das beste Hardware-Angebot bei ${BRAND_DOMAIN}.`;
+        : `${product.title} günstig kaufen. Aktueller Bestpreis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Finden Sie jetzt das beste Hardware-Angebot bei ${BRAND_DOMAIN}.`);
 
     const canonicalUrl = `https://${BRAND_DOMAIN}/p/${slug}`;
 

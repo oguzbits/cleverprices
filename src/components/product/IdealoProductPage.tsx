@@ -68,7 +68,7 @@ export function IdealoProductPage({
 
   // Breadcrumb Data from Universal Identity
   const parentTitle = identity.fullModel;
-  const variantName = identity.variantLabel || "Standard";
+  const variantName = identity.variantSuffix || "Standard";
 
   // Build breadcrumbs for SEO Schema (Idealo Style)
   const schemaBreadcrumbs = [
@@ -196,11 +196,17 @@ export function IdealoProductPage({
                 id="oopStage-title"
                 className="text-idealo-text-primary mb-1 line-clamp-2 min-h-[50px] text-[20px] leading-tight font-bold sm:text-center lg:text-left"
               >
-                {identity.fullModel}
-                {!isParentView && identity.variantLabel && (
-                  <span className="ml-2 text-[16px] font-bold">
-                    {identity.variantLabel}
-                  </span>
+                {isParentView ? (
+                  identity.fullModel
+                ) : (
+                  <>
+                    {identity.modelTitle}
+                    {identity.variantSuffix && (
+                      <span className="ml-2 text-[16px] font-bold">
+                        {identity.variantSuffix}
+                      </span>
+                    )}
+                  </>
                 )}
               </h1>
               <div className="oopStage-metaInfo mb-4 flex flex-wrap items-center gap-4 sm:justify-center lg:justify-start">
@@ -235,7 +241,13 @@ export function IdealoProductPage({
                   <b className="text-[13px] font-bold text-[#2d2d2d]">
                     Produktübersicht:
                   </b>
-                  {Object.entries(product.specifications || {})
+                  {Object.entries(
+                    (product.officialSpecifications
+                      ? typeof product.officialSpecifications === "string"
+                        ? JSON.parse(product.officialSpecifications)
+                        : product.officialSpecifications
+                      : product.specifications) || {},
+                  )
                     .slice(0, 5)
                     .map(([key, value], i) => (
                       <React.Fragment key={key}>
@@ -269,21 +281,19 @@ export function IdealoProductPage({
                   </Link>
                 </div>
 
-                {/* Variant Selector (scoped to selected condition) */}
-                {product.parentAsin && (
-                  <div className="mt-4 w-full max-w-full overflow-hidden">
-                    <ComponentErrorBoundary name="VariantSelector">
-                      <Suspense fallback={<ProductVariantSelectorSkeleton />}>
-                        <CachedVariantSelector
-                          product={product}
-                          countryCode={countryCode}
-                          isParentView={isParentView}
-                          selectedCondition={effectiveCondition}
-                        />
-                      </Suspense>
-                    </ComponentErrorBoundary>
-                  </div>
-                )}
+                {/* Variant Selector (scoped to selected condition) - Always render now, let it decide */}
+                <div className="mt-4 w-full max-w-full overflow-hidden">
+                  <ComponentErrorBoundary name="VariantSelector">
+                    <Suspense fallback={<ProductVariantSelectorSkeleton />}>
+                      <CachedVariantSelector
+                        product={product}
+                        countryCode={countryCode}
+                        isParentView={isParentView}
+                        selectedCondition={effectiveCondition}
+                      />
+                    </Suspense>
+                  </ComponentErrorBoundary>
+                </div>
 
                 {/* Condition Buttons */}
                 <div className="mt-6 flex flex-wrap gap-2.5">

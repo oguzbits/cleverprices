@@ -52,6 +52,7 @@ export async function ProductDetailView({
   const price = product.prices[countryCode];
 
   // Build breadcrumbs
+  const displayTitle = product.officialTitle || product.title;
   const breadcrumbItems = [
     { name: "Home", href: "/" },
     ...(category
@@ -62,7 +63,7 @@ export async function ProductDetailView({
           },
         ]
       : []),
-    { name: product.title.split(" ").slice(0, 5).join(" ") },
+    { name: displayTitle.split(" ").slice(0, 5).join(" ") },
   ];
 
   const pricePerUnit =
@@ -161,7 +162,7 @@ export async function ProductDetailView({
             <div className="flex flex-col lg:col-span-6">
               <div className="mb-6">
                 <h1 className="mb-2 text-2xl leading-tight font-black tracking-tight text-zinc-900 md:text-3xl">
-                  {product.title}
+                  {displayTitle}
                 </h1>
 
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-zinc-500">
