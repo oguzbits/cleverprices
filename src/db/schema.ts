@@ -50,7 +50,10 @@ export const products = sqliteTable(
     variationAttributes: text("variation_attributes"), // e.g. "Color: Black; Size: 256GB"
 
     // JSON Buckets
-    specifications: text("specifications"), // Key-value JSON of all specs
+    specifications: text("specifications"), // Key-value JSON of all specs (legacy/catch-all)
+    officialSpecifications: text("official_specifications"), // Manufacturer-verified (Icecat)
+    officialTitle: text("official_title"), // Clean name from manufacturer
+    keepaFeatures: text("keepa_features"), // Raw description and feature bullets for scavenging希
 
     // UI Content
     energyLabel: text("energy_label"),
@@ -59,6 +62,16 @@ export const products = sqliteTable(
     historySeeded: integer("history_seeded", { mode: "boolean" }).default(
       false,
     ),
+
+    // Data Quality Tracking
+    completenessScore: integer("completeness_score").default(0), // 0-100
+    missingSpecs: text("missing_specs").default("[]"), // JSON list of missing keys
+
+    // Enrichment Tracking (Icecat)
+    icecatId: integer("icecat_id"), // Mapped ID from external source
+    enrichmentStatus: text("enrichment_status").default("pending"), // pending | processed | not_found | error
+    specificationsSource: text("specifications_source"), // "icecat", "intel", "keepa_ai", "google"
+    lastEnrichedAt: integer("last_enriched_at", { mode: "timestamp" }),
 
     // Timestamps
     createdAt: integer("created_at", { mode: "timestamp" })

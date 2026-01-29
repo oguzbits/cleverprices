@@ -27,7 +27,14 @@ import path from "path";
 
 // Determine database URL
 function getDatabaseUrl(): string {
-  // 1. Force local file if requested (useful for scripts)
+  // 1. Force local file if requested (useful for scripts/testing)
+  if (process.env.DB_PATH) {
+    return `file:${process.env.DB_PATH}`;
+  }
+  // Support standard Turso environment variable for local files
+  if (process.env.TURSO_DATABASE_URL?.startsWith("file:")) {
+    return process.env.TURSO_DATABASE_URL;
+  }
   if (process.env.DB_LOCAL === "1") {
     return "file:./data/cleverprices.db";
   }
