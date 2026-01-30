@@ -1,6 +1,7 @@
 import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
 import { chromium } from "playwright";
 import { db, products } from "../../src/db";
+import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
 import { GOOGLE_FIELD_MAP, normalizeGoogleValue } from "./google-mapper";
 
 /**
@@ -25,7 +26,13 @@ class GoogleShoppingEnricher {
     if (this.browser) await this.browser.close();
   }
 
-  async enrichByGtin(gtin: string): Promise<Record<string, string> | null> {
+  async enrichByGtin(
+    gtin: string,
+    brand?: string,
+  ): Promise<{
+    specs: Record<string, string> | null;
+    officialTitle: string | null;
+  } | null> {
     const page = await this.context.newPage();
     try {
       // Use hl=de to ensure German results
@@ -62,6 +69,8 @@ class GoogleShoppingEnricher {
       // Look for the "Informationen zu diesem Produkt" or "Details" section
       // Often in the sidebar for EAN searches
 
+      let officialTitle: string | null = null;
+
       // Selectors based on verified structure
       // .YU1Fsb is the row class
       // .TCzUld is the label class
@@ -70,6 +79,19 @@ class GoogleShoppingEnricher {
 
       // Step 1: Specific Extraction logic
       const extractFromPage = async () => {
+        // Extract Official Title (Knowledge Panel H1)
+        officialTitle = await page.evaluate(() => {
+          // Priority 1: H1 inside the Knowledge Panel / Detail view
+          const h1 = document.querySelector(
+            'h1, [role="heading"][aria-level="1"]',
+          );
+          if (h1 && h1.textContent) {
+            const t = h1.textContent.trim();
+            if (t.length > 5 && t.length < 150) return t;
+          }
+          return null;
+        });
+
         const rows = await page.$$(".YU1Fsb, .W67Drf"); // .W67Drf is sometimes used in KP
         for (const row of rows) {
           const labelEl = await row.$(".TCzUld, .i9777c");
@@ -98,23 +120,25 @@ class GoogleShoppingEnricher {
             }
           }
         }
+
+        // Sanitize the collected specs before returning
+        const sanitized = sanitizeSpecs(specs, brand);
+        Object.keys(specs).forEach((k) => delete specs[k]);
+        Object.assign(specs, sanitized);
       };
 
       // Try Shopping Tab
       await extractFromPage();
 
-      // Step 2: Fallback to General Search (All Tab)
-      if (Object.keys(specs).length < 2) {
-        const generalUrl = `https://www.google.de/search?q=${gtin}&hl=de`;
-        console.log(`🌐 Falling back to General Search: ${generalUrl}`);
-        await page.goto(generalUrl, {
-          waitUntil: "networkidle",
-          timeout: 20000,
-        });
-        await extractFromPage();
-      }
+      // Step 2: Skip General Search (Disabled for Speed)
+      console.log(
+        `   ⏭️ Skipping general search fallback (Disabled for speed)`,
+      );
 
-      return Object.keys(specs).length > 0 ? specs : null;
+      return {
+        specs: Object.keys(specs).length > 0 ? specs : null,
+        officialTitle,
+      };
     } catch (e: any) {
       console.error(`❌ Error enriching ${gtin}:`, e.message);
       return null;
@@ -148,23 +172,29 @@ class GoogleShoppingEnricher {
 
     for (const product of targets) {
       console.log(`🔍 Checking Google for: ${product.title} (${product.gtin})`);
-      const specs = await this.enrichByGtin(product.gtin!);
+      const result = await this.enrichByGtin(
+        product.gtin!,
+        product.brand || undefined,
+      );
 
-      if (specs && Object.keys(specs).length >= 3) {
+      if (result && (result.specs || result.officialTitle)) {
         console.log(
-          `✅ Extracted ${Object.keys(specs).length} fields from Google!`,
+          `✅ Extracted ${Object.keys(result.specs || {}).length} fields and ${result.officialTitle ? "official title" : "no title"}!`,
         );
 
         await db
           .update(products)
           .set({
-            officialSpecifications: JSON.stringify(specs),
+            officialSpecifications: result.specs
+              ? JSON.stringify(result.specs)
+              : product.officialSpecifications,
+            officialTitle: result.officialTitle || product.officialTitle,
             enrichmentStatus: "processed",
             lastEnrichedAt: new Date(),
           })
           .where(eq(products.id, product.id));
       } else {
-        console.log("❌ No significant specs found on Google.");
+        console.log("❌ No significant data found on Google.");
       }
 
       // Random human-like delay between 5-10 seconds to avoid blocking

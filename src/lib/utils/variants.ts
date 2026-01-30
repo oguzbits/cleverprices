@@ -190,26 +190,60 @@ type NormalizationStrategy = (
 const UniversalStrategy: NormalizationStrategy = (key, value) => {
   const k = key.toLowerCase();
 
+  // Clean value first so it applies to all branches
+  let cleanValue = value.trim();
+  // 1. Remove redundant .0 (e.g. 16.0 -> 16)
+  cleanValue = cleanValue.replace(/\.0\b/g, "");
+  // 2. Ensure exactly one space before units (GB, TB, MB, RAM, SSD)
+  cleanValue = cleanValue.replace(/(\d+)\s*(GB|TB|MB|RAM|SSD)/gi, "$1 $2");
+  // 3. Normalized casing for units
+  cleanValue = cleanValue
+    .replace(/\bgb\b/gi, "GB")
+    .replace(/\btb\b/gi, "TB")
+    .replace(/\bmb\b/gi, "MB")
+    .replace(/\bram\b/gi, "RAM")
+    .replace(/\bssd\b/gi, "SSD");
+
   // Unify Keys
   if (
     [
       "storage",
       "interner speicher",
-      "size",
-      "größe",
-      "grösse",
       "kapazität",
       "memory",
+      "harddisksize",
     ].includes(k)
   ) {
-    return { key: "Storage", value };
-  }
-  if (["farbe", "color", "colour"].includes(k)) {
-    return { key: "Farbe", value };
+    return { key: "Storage", value: cleanValue };
   }
 
-  // Clean values
-  return { key, value: value.trim() };
+  if (["ram", "memory", "arbeitsspeicher", "computermemorysize"].includes(k)) {
+    return { key: "RAM", value: cleanValue };
+  }
+
+  // Handle Screen Size separately
+  if (
+    ["size", "größe", "grösse", "bildschirmdiagonale", "display"].includes(k)
+  ) {
+    // Normalize units to "
+    let v = cleanValue
+      .replace(/\s*(?:Zoll|Inch|")/i, "")
+      .trim()
+      .replace(",", ".");
+    if (v && /^\d/.test(v)) {
+      return { key: "Size", value: v + '"' };
+    }
+    return { key: "Size", value: cleanValue };
+  }
+  if (["farbe", "color", "colour"].includes(k)) {
+    return { key: "Farbe", value: cleanValue };
+  }
+
+  if (k === "style") {
+    return { key: "Style", value: cleanValue };
+  }
+
+  return { key, value: cleanValue };
 };
 
 // 2. Tech Storage Strategy (SSDs, HDDs, SD Cards)
@@ -397,6 +431,24 @@ export function normalizeVariantAttributes(v: {
   Object.entries(attrs).forEach(([k, v]) => {
     const result = strategy(k, v, context);
     if (result) {
+      // DEDUPLICATION: If a value like "1 TB" is in "Farbe" or "Style", check if it's actually Storage
+      if (
+        (result.key === "Farbe" || result.key === "Style") &&
+        /^\d+\s*(GB|TB|MB)$/i.test(result.value)
+      ) {
+        // If Storage is not yet set, move it to Storage
+        if (!normalized["Storage"]) {
+          normalized["Storage"] = result.value;
+          return;
+        }
+        // If it matches existing Storage, just drop it
+        if (
+          parseCapacityToGB(normalized["Storage"]) ===
+          parseCapacityToGB(result.value)
+        ) {
+          return;
+        }
+      }
       normalized[result.key] = result.value;
     }
   });
@@ -467,6 +519,23 @@ export function normalizeVariantAttributes(v: {
     // We pass a dummy "Titanium" to the strategy to trigger its title recovery logic.
     const result = strategy("Farbe", "Titanium", context);
     if (result) normalized[result.key] = result.value;
+  }
+
+  // --- CROSS-FIELD DEDUPLICATION ---
+  // Drop "Style" if it's already covered by other fields (e.g. Style: 16GB RAM vs RAM: 16GB)
+  if (normalized["Style"]) {
+    const styleVal = normalized["Style"].toLowerCase();
+    const isRedundant = Object.entries(normalized).some(([k, v]) => {
+      if (k === "Style") return false;
+      const otherVal = String(v).toLowerCase();
+      // Case 1: Style is a superset of RAM/Color (e.g. "16 GB Gemeinsamer Arbeitsspeicher" vs "16 GB")
+      // Case 2: Style is exactly the same as another field
+      return styleVal.includes(otherVal) || otherVal.includes(styleVal);
+    });
+
+    if (isRedundant) {
+      delete normalized["Style"];
+    }
   }
 
   // Return sorted string to ensure identical specs produce identical keys

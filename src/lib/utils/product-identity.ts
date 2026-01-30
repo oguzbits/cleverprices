@@ -1,6 +1,7 @@
 // import type { Product } from "@/lib/product-registry"; // Removed to avoid runtime alias issues in scripts
 import {
   extractRealStorageFromTitle,
+  parseCapacityToGB,
   parseVariationAttributes,
 } from "./variants";
 
@@ -50,6 +51,11 @@ export interface ProductIdentity {
   displayTitle: string;
   modelTitle: string;
   variantSuffix: string;
+  mpn?: string;
+  isHighVariance: boolean;
+  traitCount: number;
+  isLaptop: boolean;
+  categoryUsed: string;
 }
 
 /**
@@ -57,26 +63,76 @@ export interface ProductIdentity {
  * Uses a token-based subtraction approach to separate the core Model
  * from variation specs (color, storage) and brand.
  */
-const TITLE_TEMPLATES: Record<string, string[]> = {
-  "processors-cpus": ["Prozessor"],
-  "graphics-cards": ["Grafikprozessor"],
-  consoles: ["Plattform"],
+export const IDENTITY_CONFIG = {
+  // Categories where specific traits (Size, Year, Generation) are core to the model name
+  FIXED_TRAIT_CATEGORIES: [
+    "notebooks",
+    "laptop",
+    "laptops",
+    "laptop-notebook",
+    "laptop-notebooks",
+    "ultrabooks",
+    "convertibles",
+    "tablets",
+    "monitors",
+    "televisions",
+    "graphics-cards",
+    "gpu",
+    "processors-cpus",
+  ],
+
+  // Keys in specifications that indicate a model-identifying attribute
+  IDENTITY_KEYS: [
+    "model",
+    "modell",
+    "series",
+    "serie",
+    "mpn",
+    "herstellernummer",
+    "sku",
+    "graphics",
+    "grafik",
+    "chipset",
+    "chipsatz",
+    "processor",
+    "prozessor",
+    "gpu",
+    "cpu",
+    "name",
+    "bezeichnung",
+    "family",
+    "familie",
+  ],
 };
 
 export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const rawBrand = (product.brand || "").trim();
   const title = (product.title || "").trim();
   const category = (product.category || "").toLowerCase();
+  const isFixedTraitCategory =
+    IDENTITY_CONFIG.FIXED_TRAIT_CATEGORIES.includes(category);
 
-  // 0. TRUSTED SPECS OVERRIDE
-  // If we have official specs, try to build the model name deterministically
+  // 0. TRUSTED TITLE & SPECS OVERRIDE
+  // High-quality data sources (Icecat, Google) often provide a "Clean" title.
+  // If available, we trust this more than the raw retailer title.
+  let officialModel: string | null = product.officialTitle || null;
+
+  // Validate official title is a plausible model name (not a long sentence/description)
+  if (
+    officialModel &&
+    (officialModel.length > 80 ||
+      officialModel.includes("...") ||
+      officialModel.toLowerCase().includes("unknown icecat product") ||
+      officialModel.toLowerCase() === "unknown product")
+  ) {
+    officialModel = null;
+  }
+
   const specs = product.officialSpecifications
     ? typeof product.officialSpecifications === "string"
       ? JSON.parse(product.officialSpecifications)
       : product.officialSpecifications
     : product.specifications || {};
-
-  let officialModel: string | null = null;
 
   if (specs) {
     if (category === "processors-cpus" && specs["Prozessor"]) {
@@ -88,8 +144,15 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
 
     // Fallback: If we have "Model" or "Modell" explicitly
-    if (!officialModel && (specs["Model"] || specs["Modell"])) {
-      officialModel = specs["Model"] || specs["Modell"];
+    // CRITICAL: We avoid "Technical Model Codes" (e.g. A3523) if they are just identifiers.
+    const rawModel = specs["Model"] || specs["Modell"];
+    if (!officialModel && rawModel) {
+      const isTechnicalModelCode = /^[a-z]\d{4}$/i.test(
+        String(rawModel).trim(),
+      );
+      if (!isTechnicalModelCode) {
+        officialModel = rawModel;
+      }
     }
   }
 
@@ -149,168 +212,205 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
   }
 
+  // PROACTIVE RECOVERY: RAM (e.g. 16GB, 16 GB RAM)
+  if (!variantMap.RAM && !variantMap.Arbeitsspeicher) {
+    const ramMatch =
+      title.match(/(\d+)\s?(?:GB|MB)\s?(?:RAM|Arbeitsspeicher)/i) ||
+      title.match(/\b(\d+)\s?GB\b(?!.*(?:SSD|HDD|Zoll|Inch|"))/i);
+    if (ramMatch) {
+      const val = parseInt(ramMatch[1]);
+      // Heuristic: RAM is usually 2, 4, 8, 16, 32, 64...
+      if (
+        [2, 4, 6, 8, 10, 12, 16, 18, 24, 32, 36, 48, 64, 96, 128].includes(val)
+      ) {
+        variantMap.RAM = `${val}GB`;
+      }
+    }
+  }
+
   // PROACTIVE RECOVERY: Screen Size (TVs, Monitors)
   if (!variantMap.Size && !variantMap.Diagonale) {
     const sizeMatch = title.match(/(\d+(?:[\.,]\d+)?)\s?(?:Zoll|Inch|")/i);
     if (sizeMatch) {
-      variantMap.Size = `${sizeMatch[1].replace(",", ".")} Zoll`;
+      variantMap.Size = `${sizeMatch[1].replace(",", ".")}"`;
     }
   }
+
+  // Proactively normalize Size to use " instead of Zoll/Inch (for cleaner slugs: 13-zoll -> 13)
+  if (variantMap.Size) {
+    variantMap.Size =
+      variantMap.Size.replace(/\s*(?:Zoll|Inch|")/i, "").trim() + '"';
+  }
+
+  const isLaptop =
+    category.includes("laptop") ||
+    category.includes("notebook") ||
+    category.includes("mc") ||
+    title.toLowerCase().includes("macbook");
 
   // --- SHORT CIRCUIT: OFFICIAL MODEL ---
   if (officialModel) {
-    // Clean model name (remove brand if present to avoid duplication)
-    const cleanOfficial = officialModel.replace(
+    let cleanOfficial = officialModel.replace(
       new RegExp(`^${brand}\\s+`, "i"),
       "",
     );
+
+    // ESSENTIAL: For laptops/TVs, Size is part of the Model Identity.
+    // If the official title is missing it, but we have it in the variantMap, append it.
+    if (
+      isFixedTraitCategory &&
+      variantMap.Size &&
+      !cleanOfficial.includes(variantMap.Size)
+    ) {
+      cleanOfficial = `${cleanOfficial} ${variantMap.Size}`.trim();
+    }
+
     const fullModel = `${brand} ${cleanOfficial}`.trim();
 
-    // Generate Variant Label
+    // Generate Variant Label (Subtitle items)
     const variantItems: string[] = [];
+    const isSmartphone =
+      category.includes("smartphone") || category.includes("handy");
+
+    const hasStorage = variantMap.Storage || variantMap.Speicher;
+    const hasRam = variantMap.RAM || variantMap.Arbeitsspeicher;
+    const isComplexTech = isLaptop || (hasStorage && hasRam);
+
     [
       "Storage",
-      "Size",
-      "Color",
-      "Farbe",
-      "Style",
       "Speicher",
       "Kapazität",
       "Speicherkapazität",
+      "RAM",
+      "Arbeitsspeicher",
+      "Size",
+      "Bildschirmdiagonale",
+      "Größe",
+      "Color",
+      "Farbe",
+      "Style",
     ].forEach((k) => {
       const val = variantMap[k];
-      if (val && typeof val === "string") variantItems.push(val);
+      if (val && typeof val === "string") {
+        let displayVal = val;
+        const valLower = val.toLowerCase();
+
+        // Deduplicate: If the official title already implies this trait, skip it
+        if (cleanOfficial.toLowerCase().includes(valLower)) return;
+
+        // EXCLUSION: For Smartphones or FixedTrait categories, Size is handled in the model
+        const isSizeKey =
+          ["size", "bildschirmdiagonale", "größe"].includes(k.toLowerCase()) ||
+          val.includes('"') ||
+          val.toLowerCase().includes("zoll");
+        if ((isSmartphone || isFixedTraitCategory) && isSizeKey) return;
+
+        // COMPLEX TECH: Hide traits from suffix if strong identifiers present
+        if (
+          isComplexTech &&
+          (k.toLowerCase().includes("storage") ||
+            k.toLowerCase().includes("speicher") ||
+            k === "RAM" ||
+            k === "Arbeitsspeicher")
+        ) {
+          const hasColor = variantMap.Color || variantMap.Farbe;
+          const mpnMatch = (product.mpn || variantMap.MPN || "").trim();
+          if (hasColor && mpnMatch.length > 3) return;
+        }
+
+        // SMART LABELING
+        if (valLower.includes("gb") || valLower.includes("tb")) {
+          const hasSSD =
+            valLower.includes("ssd") ||
+            valLower.includes("hdd") ||
+            title.toLowerCase().includes("ssd");
+          const hasRAM =
+            valLower.includes("ram") ||
+            valLower.includes("arbeitsspeicher") ||
+            k.toLowerCase().includes("ram") ||
+            k.toLowerCase().includes("arbeitsspeicher");
+
+          if (!hasSSD && !hasRAM) {
+            if (
+              k.toLowerCase().includes("storage") ||
+              k.toLowerCase().includes("speicher")
+            ) {
+              displayVal = `${val} SSD`;
+            } else if (k === "RAM" || k === "Arbeitsspeicher") {
+              displayVal = `${val} RAM`;
+            }
+          }
+        }
+
+        if (!variantItems.includes(displayVal)) variantItems.push(displayVal);
+      }
     });
+
     const variantLabel = variantItems.join(" ").trim();
 
+    // Variant Suffix: Just the differentiators
+    const variantSuffixParts = [variantLabel];
+    // Robust MPN Recovery
+    let mpnValue = (product.mpn || variantMap.MPN || "").trim().toUpperCase();
+    if (!mpnValue) {
+      const techCode = Object.entries(variantMap).find(
+        ([k, v]) =>
+          /^[a-z]{1,2}\d+[a-z\d\/]+$/i.test(String(v)) && String(v).length >= 4,
+      )?.[1];
+      if (techCode) {
+        mpnValue = String(techCode).trim().toUpperCase();
+      } else {
+        // Fallback to title scan candidate
+        const candidate = title
+          .split(" ")
+          .find(
+            (w) =>
+              /^[a-z]{1,2}\d+[a-z\d\/]{2,}$/i.test(w) ||
+              (w.length >= 7 && /\d/.test(w) && /[A-Z]/.test(w)),
+          );
+        if (candidate) mpnValue = candidate.toUpperCase();
+      }
+    }
+
+    // COMPLEXITY CHECK (Matches the non-official path)
+    const traitCount = variantItems.filter((i) => i.trim().length > 0).length;
+    // Hardened High Variance: Always true for laptops or multi-trait hardware
+    const isHighVariance = isLaptop || traitCount > 2;
+
+    if (
+      (isHighVariance || isLaptop) &&
+      mpnValue &&
+      mpnValue.length > 3 &&
+      !cleanOfficial.toUpperCase().includes(mpnValue) &&
+      !variantLabel.toUpperCase().includes(mpnValue)
+    ) {
+      variantSuffixParts.push(mpnValue);
+    }
+    const variantSuffix = variantSuffixParts.join(" ").trim();
+
     return {
-      brand,
+      brand: brand,
       model: cleanOfficial,
-      fullModel,
-      shortModel: fullModel,
+      fullModel: `${brand} ${cleanOfficial}`,
+      shortModel: cleanOfficial.split(" ")[0] || "",
       variantLabel,
       variantMap,
-      displayTitle: variantLabel ? `${fullModel} (${variantLabel})` : fullModel,
-      modelTitle: fullModel,
-      variantSuffix: variantLabel,
+      displayTitle: variantSuffix
+        ? `${brand} ${cleanOfficial} ${variantSuffix}`
+        : `${brand} ${cleanOfficial}`,
+      modelTitle: `${brand} ${cleanOfficial}`,
+      variantSuffix,
+      mpn: mpnValue,
+      isHighVariance,
+      traitCount,
+      isLaptop,
+      categoryUsed: category,
     };
   }
 
-  // 0. Protected Tokens (Attribute-Driven)
-  // We scan specifications for "Model", "Series", "MPN", etc. to explicitly protect those tokens.
-  const protectedTokens = new Set<string>();
-  const IDENTITY_KEYS = [
-    "model",
-    "modell",
-    "series",
-    "serie",
-    "mpn",
-    "herstellernummer",
-    "sku",
-    "graphics",
-    "grafik",
-    "chipset",
-    "chipsatz",
-    "processor",
-    "prozessor",
-    "gpu",
-    "cpu",
-    "name",
-    "bezeichnung",
-    "family",
-    "familie",
-  ];
-
-  // Combine official variations and specs to find identity tokens
-  const allAttrs: Record<string, any> = { ...specs };
-  if (product.variationAttributes) {
-    Object.assign(
-      allAttrs,
-      parseVariationAttributes(product.variationAttributes),
-    );
-  }
-
-  // Populate Protected Tokens
-  Object.entries(allAttrs).forEach(([k, v]) => {
-    const keyLower = k.toLowerCase();
-    const isIdentityKey = IDENTITY_KEYS.some((ik) => keyLower.includes(ik));
-
-    if (isIdentityKey && typeof v === "string") {
-      v.toLowerCase()
-        .split(/[^a-z0-9]+/)
-        .forEach((t) => {
-          // Protect meaningful tokens (e.g. "4070", "rtx", "s24", "pro")
-          // Avoid protecting extremely generic short words if they appear in specs (unless it's MPN)
-          if (t.length > 1 || (t.match(/\d/) && t.length > 0)) {
-            protectedTokens.add(t);
-          }
-        });
-    }
-  });
-
-  // PROACTIVE RECOVERY: Generational Markers (M1/M2/M3/M4, Years)
-  const coreGenerationalTokens: string[] = []; // Part of the Model Identity (e.g. M4)
-  const descriptiveTokens: string[] = []; // Only for Titles (e.g. 2025, 13")
-
-  // 1. Apple M-Series Chips (CORE IDENTITY)
-  const mChipMatch = title.match(/\b(m[1-9])(?:\s+(pro|max|ultra))?\b/i);
-  if (mChipMatch) {
-    const chip = mChipMatch[1].toUpperCase();
-    const suffix = mChipMatch[2]
-      ? ` ${mChipMatch[2].charAt(0).toUpperCase() + mChipMatch[2].slice(1).toLowerCase()}`
-      : "";
-    coreGenerationalTokens.push(`${chip}${suffix}`.trim());
-  }
-
-  // 2. Size (CORE IDENTITY for Fixed Trait Categories)
-  const isFixedTraitCategory = [
-    "notebooks",
-    "tablets",
-    "monitors",
-    "tvs",
-    "graphics-cards",
-    "gpu",
-    "processors-cpus",
-  ].includes(category);
-
-  if (isFixedTraitCategory && variantMap.Size) {
-    coreGenerationalTokens.push(variantMap.Size);
-  }
-
-  // 3. Release Year (CORE IDENTITY for Fixed Trait Categories)
-  const yearMatch = title.match(/\b(202\d)\b/);
-  if (isFixedTraitCategory && yearMatch) {
-    coreGenerationalTokens.push(yearMatch[1]);
-  } else if (yearMatch) {
-    descriptiveTokens.push(yearMatch[1]);
-  } else if (
-    isFixedTraitCategory &&
-    title.includes("M4") &&
-    title.includes("MacBook")
-  ) {
-    // HARD FALLBACK for 2025 MacBook Air M4 if year missing in title/specs
-    coreGenerationalTokens.push("2025");
-  }
-
-  const specYear =
-    specs["Model Year"] ||
-    specs["Modelljahr"] ||
-    specs["Release Year"] ||
-    specs["Erscheinungsjahr"];
-  if (specYear && String(specYear).match(/\b(202\d)\b/)) {
-    const y = String(specYear).match(/\b(202\d)\b/)?.[1];
-    if (y) {
-      if (isFixedTraitCategory) coreGenerationalTokens.push(y);
-      else descriptiveTokens.push(y);
-    }
-  }
-
-  // 4. Memory/RAM only for technical core components (GPU/CPU) - CORE IDENTITY
-  if (["gpu", "graphics-cards", "processors-cpus"].includes(category)) {
-    if (variantMap.Storage) coreGenerationalTokens.push(variantMap.Storage);
-    if (variantMap.RAM || variantMap.VRAM)
-      coreGenerationalTokens.push(variantMap.RAM || variantMap.VRAM);
-  }
+  // 1. Build Model Parts
+  // We collect meaningful tokens that form the Model Identity.
+  const modelParts: string[] = [];
   // 2. Pre-process Title (Normalization & Aggressive Head Extraction)
   // Split by common marketing delimiters to get the core model head
   let cleanTitle = title
@@ -326,13 +426,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const keyLower = k.toLowerCase();
 
     // ESSENTIAL: For certain categories, Size (e.g. 13", 55") is part of the Model Identity, not just a variant.
-    const isFixedTraitCategory = [
-      "notebooks",
-      "tablets",
-      "monitors",
-      "tvs",
-    ].includes(category);
-
     if (
       isFixedTraitCategory &&
       (keyLower === "size" ||
@@ -345,10 +438,11 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     if (
       keyLower === "model" ||
       keyLower === "modell" ||
-      IDENTITY_KEYS.some((ik) => keyLower.includes(ik))
+      IDENTITY_CONFIG.IDENTITY_KEYS.some((ik) => keyLower.includes(ik))
     )
       return;
 
+    // Subtraction for variation specs
     if (typeof v === "string") {
       v.toLowerCase()
         .split(/[^a-z0-9]+/)
@@ -361,8 +455,90 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
   });
 
-  // Universal Technical & Marketing Noise
-  const universalNoise = [
+  // --- NOISE REDUCTION STRATEGY ---
+  // Instead of one monolithic list, we categorize noise to allow for more granular control.
+
+  // 1. Core Technical Units (Almost always noise in model names)
+  const CORE_TECHNICAL_NOISE = [
+    "gb",
+    "tb",
+    "mb",
+    "wh",
+    "watt",
+    "zoll",
+    "inch",
+    "ghz",
+    "mhz",
+    "mega",
+    "pixel",
+    "mp",
+    "dual-sim",
+    "lte",
+    "5g",
+    "4g",
+    "wifi",
+    "bluetooth",
+    "usb",
+    "ram",
+    "vram",
+  ];
+
+  // 2. Marketing & Sales Fluff (Always noise)
+  const MARKETING_NOISE = [
+    "refurbished",
+    "renewed",
+    "generalueberholt",
+    "wie",
+    "neu",
+    "top",
+    "deal",
+    "angebot",
+    "sale",
+    "cheap",
+    "offer",
+    "ovp",
+    "original",
+    "verpackt",
+    "edition",
+    "slim",
+    "gaming",
+    "modular",
+    "fully",
+    "plus",
+  ];
+
+  // 3. Descriptive/Category Noise (Context-Dependent)
+  // These are often noise *if* they match the category name itself.
+  const DESCRIPTIVE_NOISE = [
+    "smartphone",
+    "handy",
+    "monitor",
+    "bildschirm",
+    "display",
+    "tv",
+    "fernseher",
+    "laptop",
+    "notebook",
+    "pc",
+    "computer",
+    "processor",
+    "prozessor",
+    "grafikkarte",
+    "graphics",
+    "headset",
+    "kopfhoerer",
+    "headphones",
+    "ssd",
+    "hdd",
+    "gehaeuse",
+    "body",
+  ];
+
+  // 4. Conjunctions & Helper Words
+  const HELPER_NOISE = ["und", "mit", "inkl", "ohne", "fuer", "for", "with"];
+
+  // 5. Colors (Almost always noise in model names)
+  const COLOR_NOISE = [
     "schwarz",
     "weiss",
     "blau",
@@ -381,99 +557,64 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "yellow",
     "gray",
     "grey",
-
     "silver",
     "pink",
     "titan",
     "titanium",
-    "refurbished",
-    "renewed",
-    "generalueberholt",
-    "interne?",
-    "externe?",
-    "gb",
-    "tb",
-    "mb",
-    "wh",
-    "watt",
-    "zoll",
-    "inch",
-    "kerne",
-    "cores",
-    "nvme",
-    "pcie",
-    "ssd",
-    "hdd",
-    "kabellos",
-    "wireless",
-    "bluetooth",
-    "kabel",
-    "threads",
-    "ghz",
-    "mhz",
-    "mega",
-    "pixel",
-    "mp",
-    "processor",
-    "prozessor",
-    "monitor",
-    "gaming",
-    "bildschirm",
-    "display",
-    "psu",
-    "netzteil",
-    "modular",
-    "fully",
-    "plus",
-    "gold",
-    "platinum",
-    "silver",
-    "bronze",
-    "80+",
-    "80-plus",
-    "wie",
-    "neu",
-    "und",
-    "mit",
-    "inkl",
-    "ohne",
-    "smartphone",
-    "handy",
-    "ai",
-    "noise",
-    "cancelling",
-    "headphones",
-    "kopfhoerer",
-    "headset",
-    "smart",
-    "tv",
-    "4k",
-    "8k",
-    "uhd",
-    "oled",
-    "qled",
-    "body",
-    "gehaeuse",
-    "edition",
-    "slim",
-    "gaming",
-    "model",
-    "modell",
-    "nvme",
-    "pcie",
-    "ssd",
-    "sata",
-    "m2",
-    "m.2",
-    "cheap",
-    "offer",
-    "sale",
-    "top",
-    "deal",
-    "ovp",
+    "starlight",
+    "midnight",
+    "cosmic",
+    "orange",
+    "peony",
+    "iris",
+    "porcelain",
+    "tiefblau",
+    "space",
+    "graphit",
+    "graphite",
+    "ocean",
+    "mint",
+    "lavender",
+    "purple",
+    "mitternacht",
+    "polarstern",
+    "spacegrau",
+    "polarsilber",
+    "abendrot",
+    "himmelblau",
+    "rosé",
   ];
 
-  universalNoise.forEach((s) => subtractTokens.add(s));
+  // 6. Build Subtraction Set
+  CORE_TECHNICAL_NOISE.forEach((s) => {
+    // PROTECT "Pixel" for Google devices as it is the core model name
+    if (s === "pixel" && brand.toLowerCase().includes("google")) return;
+    subtractTokens.add(s);
+  });
+
+  MARKETING_NOISE.forEach((s) => subtractTokens.add(s));
+  HELPER_NOISE.forEach((s) => subtractTokens.add(s));
+  COLOR_NOISE.forEach((s) => subtractTokens.add(s));
+
+  // Only strip descriptive noise if it's not part of the brand or a very short model
+  DESCRIPTIVE_NOISE.forEach((s) => {
+    subtractTokens.add(s);
+  });
+
+  // Structural Cleaning: Remove technical suffixes (e.g. MG8H4ZD/A, MW123D/A) from tokens
+  // We do this by adding tokens that look like part numbers but aren't core model names to subtraction.
+  title.split(/[^a-z0-9/]+/).forEach((t) => {
+    const lower = t.toLowerCase();
+    const cleaned = lower.replace(/[^a-z0-9]/g, "");
+    // Match common MPNs: MW123D/A, MG8H4, A1234, etc.
+    if (
+      (/^[a-z]{1,2}\d+[a-z\d/]+$/i.test(t) || /^[a-z]\d{4}$/i.test(t)) &&
+      t.length >= 4
+    ) {
+      subtractTokens.add(lower);
+      subtractTokens.add(cleaned);
+    }
+  });
 
   // 3. Identification Logic
   const modelWords: string[] = [];
@@ -489,8 +630,17 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       return w.toUpperCase();
     if (/^m[1-9]$/.test(lower)) return w.toUpperCase(); // M1, M2...
     if (/^s[0-9]+$/.test(lower)) return w.toUpperCase(); // S24, S25...
+    if (lower === "macbook") return "MacBook";
     return w;
   };
+
+  // Proactively find an MPN candidate in the title to subtract from the core model name
+  const mpnCandidate = rawWords.find(
+    (w) =>
+      /^[a-z]{1,2}\d+[a-z\d\/]{2,}$/i.test(w) ||
+      (w.length >= 7 && /\d/.test(w) && /[A-Z]/.test(w)),
+  );
+  if (mpnCandidate) subtractTokens.add(mpnCandidate.toLowerCase());
 
   rawWords.forEach((word, index) => {
     const rawLower = word.toLowerCase();
@@ -510,22 +660,16 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       return;
     }
 
-    // B. Protected Model Keywords
-    // B. Check against Dynamically Protected Tokens (Attribute-Driven)
-    if (protectedTokens.has(cleanLower)) {
-      modelWords.push(word);
-      return;
-    }
-
-    // C. Unit & Capacity Protection
+    // B. Unit & Capacity Protection
     // Handles "128GB", "3.6GHz", "32MP", "165Hz"
     const hasUnits =
       /^\d+(\.\d+)?(gb|tb|mb|wh|w|zoll|inch|ghz|mhz|mp|cores?|kerne|kabel|threads?|hz)$/i.test(
         cleanLower,
       ) || /^\d+(\.\d+)?(hz|ghz|mhz)/i.test(rawLower);
+
     if (hasUnits) return;
 
-    // D. Model Numbers
+    // C. Model Numbers
     const isPureNumber = /^\d+$/.test(cleanLower);
     if (isPureNumber) {
       // Priority: If this number is explicitly a variant token, strip it
@@ -550,8 +694,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       return;
     }
 
-    // E. Subtraction Logic (with normalization for special chars like 80+)
-    // E. Subtraction Logic (with normalization for special chars like 80+)
+    // D. Subtraction Logic (with normalization for special chars like 80+)
     const normalizedToken = cleanLower
       .replace(/80plus/g, "plus")
       .replace(/80/g, "plus");
@@ -562,47 +705,34 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     modelWords.push(word);
   });
-  // 1. Add Core Generational Traits to model identity (e.g. M4, 16GB VRAM)
-  coreGenerationalTokens.forEach((token) => {
-    const tokenLower = token.toLowerCase();
-    const tokenClean = tokenLower.replace(/[^a-z0-9]+/g, "");
-    if (!tokenClean) return;
 
-    const alreadyExists = modelWords.some((word) => {
-      const wordLower = word.toLowerCase();
-      const wordClean = wordLower.replace(/[^a-z0-9]+/g, "");
-      if (wordLower.includes(tokenLower) || tokenLower.includes(wordLower))
-        return true;
-      if (wordClean.includes(tokenClean) || tokenClean.includes(wordClean))
-        return true;
-      return false;
+  // ESSENTIAL: For Laptops/TVs, Screen Size is part of the Model Identity.
+  // If we have it in variantMap but NOT in the modelWords, inject it.
+  if (isFixedTraitCategory && variantMap.Size) {
+    const sizeNorm = variantMap.Size.replace(/\s*(?:Zoll|Inch|")/i, "").trim();
+    const hasSizeInModel = modelWords.some((w) => {
+      const wClean = w.replace(/\s*(?:Zoll|Inch|")/i, "").trim();
+      return wClean === sizeNorm || w.includes('"');
     });
 
-    if (!alreadyExists) {
-      modelWords.push(token);
+    if (!hasSizeInModel) {
+      modelWords.push(variantMap.Size);
     }
-  });
+  }
 
   // Fallback
   if (modelWords.length === 0 && rawWords.length > 0) {
     modelWords.push(rawWords[0]);
   }
 
-  // No-op - moved logic below to ensure trait ordering
-
-  // 5. Construct Descriptive Final Titles (Idealo Pattern: Model + Size + Year + Chip)
-  // We want a stable order for the Hub title regardless of title word order.
+  // 5. Construct Descriptive Final Titles
   const orderedWords: string[] = [];
   const modelHead = modelWords[0] || "";
   orderedWords.push(modelHead);
 
   // Collect traits (deduplicated)
   const traits = new Set<string>();
-  [
-    ...modelWords.slice(1),
-    ...coreGenerationalTokens,
-    ...descriptiveTokens,
-  ].forEach((t) => {
+  modelWords.slice(1).forEach((t) => {
     if (t.toLowerCase() !== modelHead.toLowerCase()) traits.add(t);
   });
 
@@ -610,22 +740,72 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const sortedTraits = Array.from(traits).sort((a, b) => {
     const getPriority = (s: string) => {
       const l = s.toLowerCase();
-      // Priority 0: Essential Model Extensions
-      if (["air", "pro", "max", "ultra", "plus", "mini", "studio"].includes(l))
-        return 0;
-      // Priority 1: Size
+
+      // Dynamic Check: Is this the Size?
+      if (variantMap.Size) {
+        const sizeVal = parseFloat(variantMap.Size);
+        const tokenVal = parseFloat(l.replace(",", "."));
+        // If strict match on numeric value
+        if (
+          !isNaN(sizeVal) &&
+          !isNaN(tokenVal) &&
+          Math.abs(sizeVal - tokenVal) < 0.1 &&
+          // Safety: Don't treat "4" as size match for PS4 if size is 4"... unlikely but possible for small screens
+          variantMap.Size.includes('"')
+        ) {
+          return 3;
+        }
+      }
+
+      // Priority -1: GPU/Marketing Prefixes (Must precede numbers)
       if (
-        l.includes("zoll") ||
-        l.includes("inch") ||
-        l.includes('"') ||
-        /^\d{2}$/.test(l)
+        [
+          "geforce",
+          "radeon",
+          "rtx",
+          "gtx",
+          "rx",
+          "arc",
+          "intel",
+          "amd",
+        ].includes(l)
       )
-        return 1;
-      // Priority 2: Year/Generation
-      if (/^202\d$/.test(l)) return 2;
-      // Priority 3: Chip Generation
-      if (/^m[1-9]/.test(l)) return 3;
-      return 4;
+        return -1;
+
+      // Priority 0: Pure Model ID / Numbers (e.g. "4", "15", "S25", "A54", "4070")
+      // Must be relatively short alphanumeric start-sequence
+      if (/^([a-z]{0,2}\d{1,5}[a-z]?)$/i.test(l)) return 0;
+
+      // Priority 2 -> 0.1: Explicit Suffix Modifiers
+      // Make them stick closer to the model number than generic words (Priority 1)
+      if (
+        [
+          "air",
+          "pro",
+          "max",
+          "ultra",
+          "plus",
+          "mini",
+          "slim",
+          "studio",
+          "ti",
+          "xt",
+          "super",
+          "oc",
+        ].includes(l)
+      )
+        return 0.1;
+
+      // Priority 3: Size
+      if (l.includes("zoll") || l.includes("inch") || l.includes('"')) return 3;
+
+      // Priority 4: Year
+      if (/^202\d$/.test(l)) return 4;
+
+      // Priority 5: Chip Generation
+      if (/^m[1-9]/.test(l)) return 5;
+
+      return 1; // Default for other words (e.g. "Artisan", "Gaming")
     };
     return getPriority(a) - getPriority(b);
   });
@@ -642,59 +822,185 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   });
   const modelWithTraits = [modelHead, ...displayTraits].join(" ").trim();
 
-  // 4. Variant Labeling (Idealo Style: [Traits] [Color] [MPN] [Brand])
-  let colorKey = Object.keys(variantMap).find((k) =>
-    ["farbe", "color"].includes(k.toLowerCase()),
-  );
-  let color = colorKey ? variantMap[colorKey] : null;
+  // 4. Variant Labeling (Idealo Style: [Traits] [Color] [MPN])
+  const isSmartphone =
+    category.includes("smartphone") || category.includes("handy");
 
-  // RECOVERY: If color is missing from attributes, pull from title suffix
-  if (!color && title.includes(" - ")) {
-    const parts = title.split(" - ");
-    const potentialColor = parts[parts.length - 1].trim();
-    if (
-      potentialColor.length < 30 &&
-      !potentialColor.toLowerCase().includes("zoll") &&
-      !potentialColor.toLowerCase().includes("gb")
-    ) {
-      color = potentialColor;
-      variantMap["Color"] = color;
-    }
-  }
-
-  const mpn = (product.mpn || variantMap.MPN || "").trim().toUpperCase();
+  const hasStorage = variantMap.Storage || variantMap.Speicher;
+  const hasRam = variantMap.RAM || variantMap.Arbeitsspeicher;
+  const isTablet =
+    category.includes("tablet") || title.toLowerCase().includes("ipad");
+  const isComplexTech = isLaptop || isTablet || (hasStorage && hasRam);
 
   const variantItems: string[] = [];
-  ["Storage", "RAM", "Style"].forEach((k) => {
+  [
+    "Storage",
+    "Speicher",
+    "Kapazität",
+    "Speicherkapazität",
+    "RAM",
+    "Arbeitsspeicher",
+    "Size",
+    "Bildschirmdiagonale",
+    "Größe",
+    "Color",
+    "Farbe",
+    "Style",
+  ].forEach((k) => {
     const val = variantMap[k];
     if (val && typeof val === "string") {
+      let displayVal = val;
       const valLower = val.toLowerCase();
-      if (!modelWithTraits.toLowerCase().includes(valLower)) {
-        variantItems.push(val);
+
+      // Deduplicate against modelWithTraits (Token-based check)
+      const modelTokens = modelWithTraits.toLowerCase().split(/[^a-z0-9]+/);
+      const valTokens = valLower.split(/[^a-z0-9]+/);
+
+      // Filter out tokens that are already in the model name (e.g. "Series X")
+      const uniqueTokens = valTokens.filter(
+        (t) => t.length > 0 && !modelTokens.includes(t),
+      );
+
+      if (uniqueTokens.length === 0) return; // Entire value is redundant
+
+      // If some tokens were removed, rebuild the displayVal
+      if (uniqueTokens.length < valTokens.length) {
+        displayVal = val
+          .split(/[^a-z0-9]+/i)
+          .filter((t) => t.length > 0 && !modelTokens.includes(t.toLowerCase())) // Keep only tokens NOT in modelTokens
+          .join(" ")
+          .replace(/^[^a-z0-9]+/i, "")
+          .replace(/[^a-z0-9]+$/i, "")
+          .trim();
+
+        if (!displayVal) return;
+      }
+
+      // EXCLUSION: For Smartphones, Size is usually noise in the display title/subtitle
+      const isSizeKey =
+        ["size", "bildschirmdiagonale", "größe"].includes(k.toLowerCase()) ||
+        val.includes('"') ||
+        val.toLowerCase().includes("zoll");
+
+      // If it's a category where Size is part of the Model (Laptops, TVs), exclude from suffix entirely
+      if (isFixedTraitCategory && isSizeKey) return;
+      // Also exclude for smartphones
+      if (isSmartphone && isSizeKey) return;
+
+      // COMPLEX TECH: For MacBooks/Laptops, exclude Storage/RAM from the suffix IF we have Color+MPN
+      // USER REQUEST: Always keep storage for Tablets/Phones as they are primary differentiators
+      if (
+        isComplexTech &&
+        !isTablet &&
+        !isSmartphone &&
+        (k.toLowerCase().includes("storage") ||
+          k.toLowerCase().includes("speicher") ||
+          k === "RAM" ||
+          k === "Arbeitsspeicher")
+      ) {
+        const hasColor = variantMap.Color || variantMap.Farbe;
+        const mpn = (product.mpn || variantMap.MPN || "").trim();
+        if (hasColor && mpn.length > 3) return;
+      }
+
+      // SMART LABELING: Append context if missing (e.g. 16 GB -> 16 GB RAM)
+      if (valLower.includes("gb") || valLower.includes("tb")) {
+        const hasSSD =
+          valLower.includes("ssd") ||
+          valLower.includes("hdd") ||
+          title.toLowerCase().includes("ssd");
+        const hasRAM =
+          valLower.includes("ram") ||
+          valLower.includes("arbeitsspeicher") ||
+          k.toLowerCase().includes("ram") ||
+          k.toLowerCase().includes("arbeitsspeicher");
+
+        if (!hasSSD && !hasRAM) {
+          if (
+            k.toLowerCase().includes("storage") ||
+            k.toLowerCase().includes("speicher")
+          ) {
+            displayVal = `${val} SSD`;
+          } else if (k === "RAM" || k === "Arbeitsspeicher") {
+            displayVal = `${val} RAM`;
+          }
+        }
+      }
+
+      const isAlreadyRepresented = variantItems.some((item) => {
+        const itemNorm = item.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const valNorm = val.toLowerCase().replace(/[^a-z0-9]/g, "");
+        const displayNorm = displayVal.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+        // 1. Exact or normalized string match
+        if (item === displayVal) return true;
+        if (itemNorm.includes(valNorm) || valNorm.includes(itemNorm))
+          return true;
+        if (displayNorm.includes(itemNorm) || itemNorm.includes(displayNorm))
+          return true;
+
+        // 2. Semantic Capacity Match (e.g. "1 TB" and "1024 GB" and "1 TB SSD")
+        const itemGB = parseCapacityToGB(item);
+        const valGB = parseCapacityToGB(val);
+        if (itemGB > 0 && itemGB === valGB) return true;
+
+        return false;
+      });
+
+      if (!isAlreadyRepresented) {
+        variantItems.push(displayVal);
       }
     }
   });
+
   const variantLabel = variantItems.join(" ").trim();
 
-  // Construct Final Display Title (Idealo Style: Brand + Model + Traits + Color + MPN)
-  const displayParts: string[] = [];
-  if (brand) displayParts.push(brand);
-  displayParts.push(modelWithTraits);
-  if (color) displayParts.push(color);
-  if (mpn && mpn.length > 3) displayParts.push(mpn);
-
-  const displayTitle = displayParts.join(" ").trim();
-
-  // Split parts for UI hierarchy
+  // Model Title: Brand + Model Name (without variants)
   const modelTitleParts = [];
   if (brand) modelTitleParts.push(brand);
   modelTitleParts.push(modelWithTraits);
   const modelTitle = modelTitleParts.join(" ").trim();
 
-  const variantSuffixParts = [];
-  if (color) variantSuffixParts.push(color);
-  if (mpn && mpn.length > 3) variantSuffixParts.push(mpn);
+  // Variant Suffix: Just the differentiators
+  const variantSuffixParts = [variantLabel];
+  // Robust MPN Recovery for Suffix
+  let mpnVal = (product.mpn || variantMap.MPN || "").trim().toUpperCase();
+  if (!mpnVal) {
+    // Try to find anything that looks like a technical model code in the variantMap
+    const techCode = Object.entries(variantMap).find(
+      ([k, v]) =>
+        /^[a-z]{1,2}\d+[a-z\d\/]+$/i.test(String(v)) && String(v).length >= 4,
+    )?.[1];
+    if (techCode) {
+      mpnVal = String(techCode).trim().toUpperCase();
+    } else if (mpnCandidate) {
+      // Fallback to title scan candidate already identified
+      mpnVal = mpnCandidate.toUpperCase();
+    }
+  }
+
+  // COMPLEXITY CHECK: Only show MPN in suffix if it's a complex category or highly variable.
+  // Idealo logic: simple products (Smartphone with Color+Storage) don't need MPN in title/slug.
+  // Complex products (Laptops with 5+ variable traits) DO need MPN.
+  const traitCount = variantItems.filter((i) => i.trim().length > 0).length;
+  // Hardened High Variance: Always true for laptops or multi-trait hardware
+  const isHighVariance = isLaptop || traitCount > 2;
+
+  if (
+    (isHighVariance || isLaptop) &&
+    mpnVal &&
+    mpnVal.length > 3 &&
+    !modelWithTraits.toUpperCase().includes(mpnVal) &&
+    !variantLabel.toUpperCase().includes(mpnVal)
+  ) {
+    variantSuffixParts.push(mpnVal);
+  }
   const variantSuffix = variantSuffixParts.join(" ").trim();
+
+  // Full Display Title: Model Title + Variant Suffix
+  const displayTitle = variantSuffix
+    ? `${modelTitle} ${variantSuffix}`
+    : modelTitle;
 
   return {
     brand,
@@ -706,5 +1012,10 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     displayTitle,
     modelTitle,
     variantSuffix,
+    mpn: mpnVal,
+    isHighVariance,
+    traitCount,
+    isLaptop,
+    categoryUsed: category,
   };
 }

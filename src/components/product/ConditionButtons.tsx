@@ -211,7 +211,11 @@ export async function ConditionButtons({
       {/* 1. NEW OFFER BOX */}
       {hasNew && (
         <Link
-          href={`/p/${isParentView && parentSlug ? parentSlug : finalNewSlug}?condition=new`}
+          href={`${
+            isParentView && parentSlug
+              ? `/p/${parentSlug}`
+              : `/p/${finalNewSlug}`
+          }`}
           scroll={false}
           className={cn(
             "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",

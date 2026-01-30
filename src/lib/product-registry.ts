@@ -92,6 +92,7 @@ export interface Product {
   slug: string;
   asin: string;
   title: string;
+  subtitle?: string;
   category: string;
   image?: string;
   affiliateUrl: string;
@@ -141,6 +142,7 @@ export interface Product {
 
   // Enrichment & Data Quality
   icecatId?: number | null;
+  specificationsSource?: string | null;
   enrichmentStatus?:
     | "pending"
     | "processed"
@@ -494,10 +496,10 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   return unstable_cache(
     fetchProducts,
-    [`category-products-v32-${category}-${stripHeavyData}`],
+    [`category-products-v33-${category}-${stripHeavyData}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: [`category-v32-${category}`],
+      tags: ["category-products", `cat-${category}`, "v45"],
     },
   )();
 });
@@ -961,10 +963,10 @@ const getCachedDeals = unstable_cache(
       mapDbProduct(r.product as DbProduct, [r.price], [], true),
     );
   },
-  ["best-deals-v12"],
+  ["best-deals-v13"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "deals", "v12"],
+    tags: ["products", "deals", "v13"],
   },
 );
 
@@ -1043,10 +1045,10 @@ const getCachedPopular = unstable_cache(
       )
       .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
-  ["popular-deals-v12"],
+  ["popular-deals-v13"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "v12"],
+    tags: ["products", "popular", "v13"],
   },
 );
 
@@ -1184,10 +1186,10 @@ const getCachedNew = unstable_cache(
       )
       .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
-  ["new-arrivals-v12"],
+  ["new-arrivals-v13"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "new", "v12"],
+    tags: ["products", "new", "v13"],
   },
 );
 

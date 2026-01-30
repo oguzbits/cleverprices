@@ -31,7 +31,12 @@ export class IntelArkScraper {
     if (!this.browser) {
       this.browser = await puppeteer.launch({
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox", "--lang=de-DE"],
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--lang=de-DE",
+          "--user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        ],
       });
     }
   }
@@ -41,20 +46,23 @@ export class IntelArkScraper {
   }
 
   /**
-   * 1. Discovery: Look up URL in local map
+   * 1. Discovery: Look up URL in local map OR Search
    */
   async discoverUrl(modelName: string): Promise<string | null> {
-    // Exact match
+    // A. Local Map (Fastest)
     if (this.urlMap[modelName]) return this.urlMap[modelName];
 
-    // Fuzzy match (e.g. map has "i7-14700K", model is "Core i7-14700K")
-    // Iterate keys
+    // Fuzzy match in map
     for (const [key, url] of Object.entries(this.urlMap)) {
       if (modelName.includes(key) || key.includes(modelName)) {
         return url;
       }
     }
 
+    // B. Live Search Fallback (Disabled for Speed)
+    console.log(
+      `   ⏭️ Skipping live search for "${modelName}" (Disabled for speed)`,
+    );
     return null;
   }
 
@@ -170,6 +178,14 @@ export class IntelArkScraper {
         sql`${products.title} NOT LIKE '%Cooler%'`,
         sql`${products.title} NOT LIKE '%Mainboard%'`,
         sql`${products.title} NOT LIKE '%Motherboard%'`,
+        sql`${products.title} NOT LIKE '%Drucker%'`, // 3D Printers
+        sql`${products.title} NOT LIKE '%Intelligen%'`, // "Intelligentes..."
+        sql`${products.title} NOT LIKE '%Printer%'`,
+        sql`${products.title} NOT LIKE '%Notebook%'`,
+        sql`${products.title} NOT LIKE '%Laptop%'`,
+        sql`${products.title} NOT LIKE '%SSD%'`,
+        sql`${products.title} NOT LIKE '%Grafikkarte%'`,
+        sql`${products.title} NOT LIKE '%Soundbar%'`,
       ),
       limit: limit,
       orderBy: products.id,
@@ -186,7 +202,10 @@ export class IntelArkScraper {
       const patterns = [
         /(i[3579]-\d{4,5}[A-Z]{0,2})/i, // i7-14700K
         /(Ultra\s+[3579]\s+\d{3}[A-Z]{0,2})/i, // Ultra 7 155H
-        /(Core\s+[3579]\s+\d{3,4}[A-Z]{0,2})/i, // Core 7 150U
+        /(Core\s+[13579]\s+\d{3,4}[A-Z]{0,2})/i, // Core 7 150U
+        /(Core\s+[13579]\s+\d{2,3}[A-Z]{0,1})/i, // Core 3 100U
+        /(Xeon\s+[A-Z0-9-]{4,10})/i, // Xeon Platinum 8468V
+        /\b(U\d{3})\b/i, // U300
         /\b(\d{4,5}[KFS]{1,2})\b/, // 14700K (alone)
       ];
 
@@ -233,6 +252,7 @@ export class IntelArkScraper {
                 model ||
                 p.title,
               enrichmentStatus: "processed",
+              specificationsSource: "intel",
               lastEnrichedAt: new Date(),
             })
             .where(eq(products.id, p.id));

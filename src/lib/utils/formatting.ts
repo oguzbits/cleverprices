@@ -165,12 +165,7 @@ export function formatTechText(text: string): string {
 export function formatDisplayTitle(title: string, model?: string): string {
   if (!title) return "";
 
-  // 1. Initial split to remove noise (everything after separators)
-  const splitTitle = title.split(/ \- | \(| \||, |: |\|/)[0].trim();
-
-  // 2. Use refined source
-  let result = splitTitle.length > 3 ? splitTitle : model || title;
-
-  // 3. Apply smart tech formatting (SSD, 2 TB, etc.)
-  return formatTechText(result);
+  // User SSOT: We now trust the standardized title from mapDbProduct.
+  // Do NOT truncate or split it. Just apply tech formatting.
+  return formatTechText(title);
 }

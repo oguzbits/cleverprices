@@ -142,7 +142,7 @@ export class IcecatDataSource implements DataSourceProvider {
    * FETCH & PARSE XML
    */
   private async fetchProductXml(id: string): Promise<UnifiedProduct | null> {
-    const url = `https://data.icecat.biz/xml_s3/xml_server3.cgi?product_id=${id};lang=en;output=productxml`;
+    const url = `https://data.icecat.biz/xml_s3/xml_server3.cgi?product_id=${id};lang=de;output=productxml`;
 
     try {
       const res = await fetch(url, {
@@ -157,6 +157,16 @@ export class IcecatDataSource implements DataSourceProvider {
       const brandMatch = xml.match(/Supplier Name="([^"]+)"/);
       const descMatch = xml.match(/LongDesc="([^"]+)"/);
       const imgMatch = xml.match(/HighPic="([^"]+)"/);
+
+      const rawTitle = titleMatch ? titleMatch[1] : null;
+      // Basic Entity Decode for title
+      const title = rawTitle
+        ? rawTitle
+            .replace(/&amp;/g, "&")
+            .replace(/&quot;/g, '"')
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+        : null;
 
       // ROBUST MANUAL PARSING (Parsing without DOM)
       const specs: Record<string, string> = {};
@@ -194,7 +204,7 @@ export class IcecatDataSource implements DataSourceProvider {
 
       return {
         id: id,
-        title: titleMatch ? titleMatch[1] : "Unknown Icecat Product",
+        title: title || "",
         category: "uncategorized" as CategorySlug, // We'd need to map Icecat CatID to our slug
         imageUrl: imgMatch ? imgMatch[1] : undefined,
         specifications: {

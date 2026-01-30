@@ -1,61 +1,62 @@
 import fs from "fs";
-import path from "path";
-import puppeteer from "puppeteer";
+import { chromium } from "playwright";
 
-/**
- * Intel Ark Crawler (Puppeteer Edition)
- * Uses headless Chrome to render Intel Ark listing pages and extract product URLs.
- */
-const OUTPUT_FILE = path.join(process.cwd(), "data", "intel-url-map.json");
-
-const SERIES_URLS = [
+const OUTPUT_FILE = "data/intel-url-map.json";
+const TARGET_URLS = [
+  "https://www.intel.de/content/www/de/de/products/details/processors/core/products.html",
   "https://www.intel.de/content/www/de/de/products/details/processors/core/i9/products.html",
   "https://www.intel.de/content/www/de/de/products/details/processors/core/i7/products.html",
   "https://www.intel.de/content/www/de/de/products/details/processors/core/i5/products.html",
   "https://www.intel.de/content/www/de/de/products/details/processors/core/i3/products.html",
-  "https://www.intel.de/content/www/de/de/products/details/processors/core-ultra/series-2/products.html",
-  "https://www.intel.de/content/www/de/de/products/details/processors/core-ultra/series-1/products.html",
+  "https://www.intel.de/content/www/de/de/products/details/processors/core-ultra/products.html",
+  "https://www.intel.de/content/www/de/de/products/details/processors/xeon/products.html",
 ];
 
 async function run() {
   console.log("🕷️ Intel Crawler (Puppeteer): Launching...");
-  const browser = await puppeteer.launch({
-    headless: "new",
-    args: ["--no-sandbox", "--disable-setuid-sandbox", "--lang=de-DE"],
+  const browser = await chromium.launch({ headless: true });
+  const context = await browser.newContext({
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
   });
 
   const productMap: Record<string, string> = {};
 
   try {
-    const page = await browser.newPage();
-    // Set viewport to trigger desktop layout
-    await page.setViewport({ width: 1920, height: 1080 });
+    const page = await context.newPage();
 
-    // Set headers to look like a real German user
-    await page.setExtraHTTPHeaders({
-      "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
-    });
-
-    for (const url of SERIES_URLS) {
+    for (const url of TARGET_URLS) {
       console.log(`   Navigating to: ${url}`);
       try {
-        await page.goto(url, { waitUntil: "networkidle2", timeout: 60000 });
+        await page.goto(url, { waitUntil: "networkidle", timeout: 60000 });
 
-        // Wait for the table/list to appear
-        // Intel pages often use a data table with class 'intel-table' or 'table' or a grid
-        // We'll wait a bit just to be safe as the table loads async
-        await new Promise((r) => setTimeout(r, 5000));
+        // 1. Handle cookie banner if visible
+        try {
+          const cookieBtn = await page.waitForSelector(
+            "#onetrust-accept-btn-handler",
+            {
+              timeout: 5000,
+            },
+          );
+          if (cookieBtn) await cookieBtn.click();
+        } catch (e) {}
 
-        // Extract links
+        // 2. Wait for content
+        await page.waitForSelector("a[href*='/products/sku/']", {
+          timeout: 15000,
+        });
+
+        // 3. Extract links
         const links = await page.evaluate(() => {
           const results: { text: string; href: string }[] = [];
-          const anchors = document.querySelectorAll("a");
+          const anchors = document.querySelectorAll(
+            "a[href*='/products/sku/']",
+          );
 
           anchors.forEach((a) => {
             const href = a.getAttribute("href");
             const text = a.textContent?.trim() || "";
-
-            if (href && href.includes("/products/sku/") && text.length > 5) {
+            if (href && text.length > 2) {
               results.push({ text, href });
             }
           });
@@ -65,31 +66,38 @@ async function run() {
         console.log(`      Found ${links.length} potential product links.`);
 
         for (const link of links) {
-          // Parse model name from text
-          // "Intel® Core™ i9-14900K Processor (36M Cache, up to 6.00 GHz)" -> "i9-14900K"
-          // "Intel® Core™ Ultra 9 Processor 185H (24M Cache, up to 5.10 GHz)" -> "Ultra 9 185H"
           const text = link.text;
           let model = "";
 
-          const matchGen = text.match(/i\d-\d{4,5}[A-Z]{0,2}/i);
+          // Capture everything after Core/Ultra/Xeon until the first parenthesis or comma
+          const matchGen = text.match(/Core™?\s*([^,()]+)/i);
+          const matchUltra = text.match(/Ultra\s*([^,()]+)/i);
+          const matchXeon = text.match(/Xeon\s*([^,()]+)/i);
+
           if (matchGen) {
-            model = matchGen[0];
-          } else {
-            const matchUltra = text.match(/Ultra \d \d{3}[A-Z]{0,1}/i);
-            if (matchUltra) model = matchUltra[0];
+            model = matchGen[1].trim().replace(/\s+/g, "-");
+            model = model.replace(/-(prozessor|processor)/i, "");
+            if (
+              !model.toLowerCase().startsWith("i") &&
+              !model.toLowerCase().startsWith("core")
+            ) {
+              model = "Core-" + model;
+            }
+          } else if (matchUltra) {
+            model = "Ultra-" + matchUltra[1].trim().replace(/\s+/g, "-");
+          } else if (matchXeon) {
+            model = "Xeon-" + matchXeon[1].trim().replace(/\s+/g, "-");
           }
 
           if (model) {
             const fullUrl = link.href.startsWith("http")
               ? link.href
               : "https://www.intel.de" + link.href;
-            // Prefer shorter URL links (sometimes duplicate with query params)
-            if (
-              !productMap[model] ||
-              fullUrl.length < productMap[model].length
-            ) {
-              productMap[model] = fullUrl;
+
+            if (!productMap[model]) {
+              // console.log(`         ✨ Mapped: ${model}`);
             }
+            productMap[model] = fullUrl;
           }
         }
       } catch (err: any) {

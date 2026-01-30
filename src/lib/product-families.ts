@@ -1,5 +1,4 @@
 import type { Product } from "@/lib/product-registry";
-import { parseVariationAttributes } from "@/lib/utils/variants";
 import { getProductIdentity } from "./utils/product-identity";
 
 /**
@@ -77,39 +76,17 @@ export function getFamilyIdentity(
   // Use extracted variant map from identity (includes Title Recovery)
   // This allows us to get "2tb" into the slug even if DB attributes are missing
   if (!isHub) {
-    const attrs = identity.variantMap || {}; // Fallback to empty if not provided (though we added it)
-
-    // Fallback to reparsing if map is empty but attributes string exists (defensive)
-    if (Object.keys(attrs).length === 0 && representative.variationAttributes) {
-      Object.assign(
-        attrs,
-        parseVariationAttributes(representative.variationAttributes),
-      );
-    }
-
-    // Priority-ranked differentiators for the slug (VARIANT MODE)
-    // Tiered approach:
-    // 1. Color (Most visible differentiator)
-    // 2. MPN (Specific product identifier)
-    const differentiators: string[] = [];
-
-    // Recovery of MPN from representative or attributes
-    const mpn = (representative.mpn || attrs.MPN || "")
+    // Use the unified variant suffix as the slug differentiator
+    // This ensures absolute consistency between URL, Breadcrumbs, and Titles.
+    variantPart = identity.variantSuffix
       .toLowerCase()
-      .split(/[^a-z0-9]+/)[0];
-    const colorKey = Object.keys(attrs).find((k) =>
-      ["color", "farbe"].includes(k.toLowerCase()),
-    );
-    const color = colorKey
-      ? attrs[colorKey].toLowerCase().replace(/[^a-z0-9]+/g, "")
-      : null;
-
-    if (color) differentiators.push(color);
-    if (mpn && mpn.length > 3) differentiators.push(mpn);
-
-    if (differentiators.length > 0) {
-      variantPart = differentiators.join("-");
-    }
+      .normalize("NFKC")
+      .replace(/\u00E4/g, "ae")
+      .replace(/\u00F6/g, "oe")
+      .replace(/\u00FC/g, "ue")
+      .replace(/\u00DF/g, "ss")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 
   // 5. Construct Text Slug (Idealo Style: [model]-[variants?]-[brand])
@@ -142,7 +119,7 @@ export function getFamilyIdentity(
 
   return {
     slug: `${idPrefix}_-${textSlug}`,
-    title: isHub ? identity.fullModel : identity.displayTitle,
+    title: identity.fullModel, // Use neutral Hub model name for all family members
     brand,
     variantSuffix: identity.variantSuffix,
   };

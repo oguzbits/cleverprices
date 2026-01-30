@@ -2,9 +2,9 @@
 
 import { getFamilyIdentity } from "@/lib/product-families";
 import { cn } from "@/lib/utils";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import {
   extractAttributeGroups,
-  extractRealStorageFromTitle,
   normalizeVariantAttributes,
   parseCapacityToGB,
   parseVariationAttributes,
@@ -20,6 +20,7 @@ interface Product {
   asin: string;
   slug: string;
   title: string;
+  subtitle?: string;
   image?: string;
   variationAttributes?: string;
   prices: Record<string, number>;
@@ -74,53 +75,12 @@ function VariantCard({
 
   const label = useMemo(() => {
     if (isAllVariants) return "Alle Varianten";
+    // Prioritize pre-calculated suffix from server to ensure 100% consistency
+    if (variant?.variantSuffix) return variant.variantSuffix;
 
-    // Extract values and handle misconceptions (like RAM being labeled as Storage)
-    const displayValues: string[] = [];
-    let foundRealStorage = false;
-
-    const suffixTokens = (variant?.variantSuffix || "")
-      .toLowerCase()
-      .split(/[^a-z0-9]+/);
-
-    Object.entries(attrs).forEach(([key, value]) => {
-      const k = key.toLowerCase();
-      const valLower = value.toLowerCase();
-      const gb = parseCapacityToGB(value);
-
-      if (gb >= 64) {
-        foundRealStorage = true;
-      }
-
-      // Skip attributes that are already in the variantSuffix (Color, MPN)
-      // or are RAM-like placeholders in smartphones
-      if (
-        isSmartphone &&
-        (k.includes("storage") ||
-          k.includes("speicher") ||
-          k.includes("memory")) &&
-        gb > 0 &&
-        gb < 64
-      ) {
-        return;
-      }
-
-      // Check if this specific value is already represented in the subtitle
-      const valTokens = valLower.split(/[^a-z0-9]+/);
-      const isRedundant = valTokens.every((t) => suffixTokens.includes(t));
-      if (isRedundant) return;
-
-      displayValues.push(value);
-    });
-
-    // Recovery if real storage wasn't in variation attributes
-    if (isSmartphone && !foundRealStorage) {
-      const real = extractRealStorageFromTitle(variant?.title);
-      if (real) displayValues.unshift(real);
-    }
-
-    return displayValues.join(" ") || variant?.title.slice(0, 30);
-  }, [variant, attrs, isAllVariants, isSmartphone]);
+    const identity = getProductIdentity(variant as any);
+    return identity.variantSuffix || identity.displayTitle;
+  }, [variant, isAllVariants]);
 
   // Price Logic: Show Used price if condition is 'used', otherwise New price
   const isUsedMode = selectedCondition === "used";
@@ -203,7 +163,7 @@ function VariantCard({
               : "text-[#767676]",
           )}
         >
-          {isAllVariants ? "Alle Varianten" : variant?.variantSuffix || ""}
+          {label}
         </span>
 
         <div className="mt-auto flex flex-col items-start">
@@ -365,8 +325,46 @@ function AttributeSelector({
             getBestMatch(variants) || getRelaxedMatch(variants);
 
           const href = targetVariant
-            ? `/p/${targetVariant.canonicalSlug}${condition ? `?condition=${condition}` : ""}`
+            ? `/p/${targetVariant.canonicalSlug}${
+                condition && condition !== "new"
+                  ? `?condition=${condition}`
+                  : ""
+              }`
             : "#";
+
+          const displayOption = (() => {
+            const kLower = label.toLowerCase();
+            const isStorage =
+              kLower.includes("storage") ||
+              kLower.includes("speicher") ||
+              kLower.includes("kapazität");
+            const isRam =
+              kLower.includes("ram") || kLower.includes("arbeitsspeicher");
+
+            if (!isStorage && !isRam) return option;
+
+            // Check if any variant is a laptop or has high variance
+            const isLaptop = variants.some(
+              (v) =>
+                v.category?.toLowerCase().includes("notebook") ||
+                v.category?.toLowerCase().includes("laptop") ||
+                v.title.toLowerCase().includes("macbook"),
+            );
+
+            if (isLaptop) {
+              if (
+                isStorage &&
+                !option.toLowerCase().includes("ssd") &&
+                !option.toLowerCase().includes("hdd")
+              ) {
+                return `${option} SSD`;
+              }
+              if (isRam && !option.toLowerCase().includes("ram")) {
+                return `${option} RAM`;
+              }
+            }
+            return option;
+          })();
 
           return (
             <Link
@@ -380,6 +378,9 @@ function AttributeSelector({
                   : "border-[#b4b4b4] bg-white hover:border-[#888]",
                 !isAvailable && !isSelected && "pointer-events-none opacity-40",
               )}
+              title={
+                !isAvailable ? "In dieser Kombination nicht verfügbar" : ""
+              }
             >
               {isSelected && (
                 <div className="absolute top-0 left-0 z-20">
@@ -396,10 +397,10 @@ function AttributeSelector({
                   className="invisible col-start-1 row-start-1 font-bold whitespace-nowrap"
                   aria-hidden="true"
                 >
-                  {option}
+                  {displayOption}
                 </span>
                 <span className="col-start-1 row-start-1 whitespace-nowrap">
-                  {option}
+                  {displayOption}
                 </span>
               </span>
             </Link>
@@ -435,15 +436,12 @@ export function ProductVariantSelector({
         officialSpecs: v.officialSpecifications || v.specifications,
       });
 
-      // Generate the exact same canonical slug as the server
-      const { slug: canonicalSlug, variantSuffix } = getFamilyIdentity(v);
-
       return {
         ...v,
         normalizedStr: normStr,
         normalizedAttrs: parseVariationAttributes(normStr),
-        canonicalSlug,
-        variantSuffix,
+        canonicalSlug: v.slug,
+        variantSuffix: v.subtitle || "",
       };
     });
     return normalizedVariants;
@@ -458,16 +456,12 @@ export function ProductVariantSelector({
         currentProduct.officialSpecifications || currentProduct.specifications,
     });
 
-    // Generate the exact same canonical slug as the server
-    const { slug: canonicalSlug, variantSuffix } =
-      getFamilyIdentity(currentProduct);
-
     return {
       ...currentProduct,
       normalizedStr: normStr,
       normalizedAttrs: parseVariationAttributes(normStr),
-      canonicalSlug,
-      variantSuffix,
+      canonicalSlug: currentProduct.slug,
+      variantSuffix: currentProduct.subtitle || "",
     };
   }, [currentProduct]);
 
@@ -622,7 +616,30 @@ export function ProductVariantSelector({
   if (allVariants.length <= 1) return null;
 
   const sortedAttributeGroups = useMemo(() => {
-    return Object.entries(attributeGroups)
+    const rawEntries = Object.entries(attributeGroups);
+    const hasRam = rawEntries.some(([k]) =>
+      /ram|memory|arbeitsspeicher/i.test(k),
+    );
+
+    const isRamCategory = /ram|memory|arbeitsspeicher/i.test(
+      currentProduct.category || "",
+    );
+    const hasStorage = rawEntries.some(([k]) =>
+      /storage|kapazität|speicher/i.test(k),
+    );
+
+    return rawEntries
+      .filter(([key, values]) => {
+        const k = key.toLowerCase();
+        // USER REQUEST: Do not show Style filter anymore
+        if (k === "style") return false;
+
+        // For RAM kits: "RAM" and "Storage" (Kapazität) are duplicates.
+        // Hide "Storage" if we already identified "RAM" in this specific category.
+        if (isRamCategory && k === "storage" && hasRam) return false;
+
+        return true;
+      })
       .map(([key, values]) => {
         const k = key.toLowerCase();
         // For smartphones, filter out RAM (usually < 64GB) from storage-labeled groups
@@ -715,7 +732,11 @@ export function ProductVariantSelector({
         <div className="scrollbar-thin scrollbar-thumb-gray-300 flex gap-2.5 overflow-x-auto pt-1 pb-2">
           {/* Alle Varianten Card */}
           <Link
-            href={`/p/${parentSlug}?condition=${targetCondition}`}
+            href={`/p/${parentSlug}${
+              targetCondition && targetCondition !== "new"
+                ? `?condition=${targetCondition}`
+                : ""
+            }`}
             scroll={false}
             className="group cursor-pointer no-underline"
           >
@@ -734,8 +755,14 @@ export function ProductVariantSelector({
           {activeVariants.map((variant) => (
             <Link
               key={variant.asin}
-              href={`/p/${variant.slug.includes("_-") ? variant.slug : `${200000000 + (variant.id || 0)}_-${variant.slug}`}${
-                targetCondition ? `?condition=${targetCondition}` : ""
+              href={`/p/${
+                variant.slug.includes("_-")
+                  ? variant.slug
+                  : `${200000000 + (variant.id || 0)}_-${variant.slug}`
+              }${
+                targetCondition && targetCondition !== "new"
+                  ? `?condition=${targetCondition}`
+                  : ""
               }`}
               scroll={false}
               className="group cursor-pointer no-underline"

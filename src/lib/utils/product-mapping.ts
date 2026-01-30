@@ -3,6 +3,7 @@ import { parseHistoryBlob } from "../history-compression";
 import { getFamilyIdentity } from "../product-families";
 import { type LitePrice, type Product } from "../product-registry";
 import { calculateProductMetrics } from "./products";
+import { parseCapacityToGB, parseVariationAttributes } from "./variants";
 
 /**
  * Parse historyJson blob into price history array
@@ -74,7 +75,73 @@ export function mapDbProduct(
   }
 
   // Extract core specifications for filtering before stripping
-  const rawSpecs = p.specifications ? JSON.parse(p.specifications) : {};
+  let rawSpecs = p.specifications ? JSON.parse(p.specifications) : {};
+
+  // --- TECH DATA REPAIR LAYER ---
+  // Fix corrupted/misaligned specifications from the DB
+  if (
+    p.category === "smartphones" ||
+    p.category === "tablets" ||
+    p.category === "notebooks"
+  ) {
+    const vMap = parseVariationAttributes(p.variationAttributes || "");
+    const attrStorage =
+      vMap["Storage"] || vMap["Speicher"] || vMap["Speicherkapazität"];
+
+    // 1. Repair Storage: Priority 1: variationAttributes, Priority 2: normalizedCapacity
+    let targetCapacityGB = 0;
+    if (attrStorage) {
+      targetCapacityGB = parseCapacityToGB(attrStorage);
+    } else if (p.normalizedCapacity && p.normalizedCapacity > 0) {
+      targetCapacityGB = p.normalizedCapacity;
+    }
+
+    if (targetCapacityGB > 0) {
+      const dbStorageVal =
+        rawSpecs["Speicherkapazität"] ||
+        rawSpecs["Storage"] ||
+        rawSpecs["Hard Drive"];
+      const dbStorageGB = dbStorageVal
+        ? parseCapacityToGB(String(dbStorageVal))
+        : 0;
+
+      if (dbStorageGB !== targetCapacityGB) {
+        // Correct the spec table to match the actual variation
+        const unit = targetCapacityGB >= 1000 ? "TB" : "GB";
+        const val =
+          targetCapacityGB >= 1000 ? targetCapacityGB / 1000 : targetCapacityGB;
+        rawSpecs["Speicherkapazität"] = `${val} ${unit}`;
+      }
+    }
+
+    // 2. Repair Processor if it contains display info (Corrupted field in some iPads)
+    const proc = String(
+      rawSpecs["Prozessor"] || rawSpecs["Processor"] || "",
+    ).toLowerCase();
+    if (
+      proc.includes("display") ||
+      proc.includes("retina") ||
+      proc.includes("screen") ||
+      proc.includes("inch")
+    ) {
+      // Move display info to display field if missing
+      if (!rawSpecs["Display"] && !rawSpecs["Bildschirm"]) {
+        rawSpecs["Display"] = rawSpecs["Prozessor"];
+      }
+
+      // Try to find real processor in title or clear it.
+      const procMatch = (p.title || "").match(
+        /\b(M[1-9]|A\d+[A-Z]? Bionic|Snapdragon \d[ Gen \d]?|Core i\d|Ryzen \d)\b/i,
+      );
+      if (procMatch) {
+        rawSpecs["Prozessor"] = procMatch[0];
+      } else {
+        delete rawSpecs["Prozessor"];
+        delete rawSpecs["Processor"];
+      }
+    }
+  }
+
   let socket = rawSpecs.Socket || rawSpecs["Socket-Typ"];
   let cores = rawSpecs.Cores || rawSpecs.Kerne;
   let releaseDate =
@@ -150,11 +217,20 @@ export function mapDbProduct(
     usedPrices: usedPricesObj,
     createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
     releaseDate,
+    specificationsSource: p.specificationsSource,
   };
 
-  // Enforce canonical slug
-  const { slug: canonicalSlug } = getFamilyIdentity(item);
+  // Enforce canonical slug and standardized family title/subtitle
+  const {
+    slug: canonicalSlug,
+    title: familyTitle,
+    variantSuffix,
+  } = getFamilyIdentity(item);
   item.slug = canonicalSlug;
+  // User SSOT: Title must be the FULL descriptive title (Family + Variant)
+  // e.g. "Apple MacBook Air 13 M2" + "256GB Midnight"
+  item.title = variantSuffix ? `${familyTitle} ${variantSuffix}` : familyTitle;
+  item.subtitle = variantSuffix;
 
   return calculateProductMetrics(item) as Product;
 }

@@ -7,14 +7,28 @@ async function regenerateSlugs() {
   console.log("Fetching all products...");
   const allProducts = await db.select().from(products);
 
+  // Build Parent Lookup Map
+  const productMap = new Map<string, typeof products.$inferSelect>();
+  allProducts.forEach((p) => productMap.set(p.asin, p));
+
   console.log(`Found ${allProducts.length} products. Regenerating slugs...`);
 
   let updatedCount = 0;
   let skippedCount = 0;
 
   for (const product of allProducts) {
+    let titleBase = product.title;
+
+    // VARIANT URL LOGIC: Use Parent Title if available
+    if (product.parentAsin) {
+      const parent = productMap.get(product.parentAsin);
+      if (parent) {
+        titleBase = parent.title;
+      }
+    }
+
     const newSlug = generateProductSlug(
-      product.title,
+      titleBase,
       product.brand,
       product.asin,
       product.capacity,

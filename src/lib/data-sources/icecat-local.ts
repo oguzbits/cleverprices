@@ -18,10 +18,10 @@ export class LocalIcecatDataSource extends IcecatDataSource {
         // The index file maps EAN_UPC (comma separated) -> ID
         // Since we want to find if *our* GTIN is inside that string, we use LIKE
         this.findByGtinStmt = this.db.prepare(
-          "SELECT id FROM icecat_index WHERE gtins LIKE ? LIMIT 1",
+          "SELECT id, title FROM icecat_index WHERE gtins LIKE ? LIMIT 1",
         );
         this.findByMpnStmt = this.db.prepare(
-          "SELECT id FROM icecat_index WHERE mpn = ? LIMIT 1",
+          "SELECT id, title FROM icecat_index WHERE mpn = ? LIMIT 1",
         );
       } catch (e) {
         console.warn(
@@ -45,10 +45,15 @@ export class LocalIcecatDataSource extends IcecatDataSource {
       return super.findIdByGtin(gtin);
     }
 
-    // Search for %GTIN%
-    const result = this.findByGtinStmt.get(`%${gtin}%`) as {
-      id: string;
-    } | null;
+    // Search for the GTIN inside the comma-separated string
+    // Padding with commas ensures we match full GTINs, e.g. ,123, matches ,123, but not ,0123,
+    // Note: Our database stores it as "gtin1,gtin2" so we should handle start/end
+    const result = this.db
+      .prepare(
+        "SELECT id FROM icecat_index WHERE ',' || gtins || ',' LIKE ? LIMIT 1",
+      )
+      .get(`,${gtin},`) as { id: string } | null;
+
     return result ? result.id : null;
   }
 
@@ -58,6 +63,17 @@ export class LocalIcecatDataSource extends IcecatDataSource {
     }
 
     const result = this.findByMpnStmt.get(mpn) as { id: string } | null;
+    return result ? result.id : null;
+  }
+
+  async findIdByTitle(title: string): Promise<string | null> {
+    if (!this.db) return null;
+
+    // Very simple fuzzy match: if the beginning matches
+    const result = this.db
+      .prepare("SELECT id FROM icecat_index WHERE title LIKE ? LIMIT 1")
+      .get(`${title}%`) as { id: string } | null;
+
     return result ? result.id : null;
   }
 }

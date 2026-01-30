@@ -242,15 +242,21 @@ async function fetchIcecatSpecs(
       const nameMatch = innerContent.match(/<Name[^>]+Value="([^"]+)"/);
 
       if (nameMatch) {
-        // Basic Entity Decode
-        const cleanName = nameMatch[1]
-          .replace(/&amp;/g, "&")
-          .replace(/&lt;/g, "<")
-          .replace(/&gt;/g, ">");
+        // XML Entity Decode
+        const decode = (s: string) =>
+          s
+            .replace(/&amp;/g, "&")
+            .replace(/&quot;/g, '"')
+            .replace(/&lt;/g, "<")
+            .replace(/&gt;/g, ">")
+            .replace(/&nbsp;/g, " ")
+            .replace(/&micro;/g, "µ")
+            .replace(/&deg;/g, "°");
 
-        // Normalization: Key naming strategy (keep verified source keys or map?)
-        // For Phase 1, we keep source keys. Mapping happens in Validator.
-        specs[cleanName] = value;
+        const cleanName = decode(nameMatch[1]);
+        const cleanValue = decode(value);
+
+        specs[cleanName] = cleanValue;
       }
     }
     return { specs, title };

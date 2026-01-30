@@ -5,7 +5,7 @@ import {
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { cn } from "@/lib/utils";
-import { formatDisplayTitle } from "@/lib/utils/formatting";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import Image from "next/image";
 import { Suspense } from "react";
 import { IdealoStarRating } from "../category/IdealoStarRating";
@@ -13,6 +13,7 @@ import { IdealoStarRating } from "../category/IdealoStarRating";
 export interface IdealoProductCardProps {
   id?: number; // DB ID for live price fetching
   title: string;
+  subtitle?: string;
   price: number;
   currency?: string;
   slug: string;
@@ -26,7 +27,6 @@ export interface IdealoProductCardProps {
   discountRate?: number;
   isBestseller?: boolean;
   isVariantGroup?: boolean;
-  variationAttributes?: string;
   countryCode?: string;
   priorityLoad?: boolean;
 }
@@ -34,6 +34,7 @@ export interface IdealoProductCardProps {
 export function IdealoProductCard({
   id,
   title,
+  subtitle,
   price,
   slug,
   image,
@@ -115,8 +116,12 @@ export function IdealoProductCard({
           </div>
 
           {/* Title */}
-          <h3 className="mb-1 line-clamp-2 max-h-[44px] text-[16px] leading-tight font-semibold text-gray-900">
-            {formatDisplayTitle(title)}
+          <h3 className="mb-0.5 line-clamp-2 max-h-[44px] text-[16px] leading-tight font-semibold text-gray-900">
+            {
+              getProductIdentity({ title, subtitle: subtitle ?? "" } as any)
+                .modelTitle
+            }
+            {subtitle && <span className="ml-1.5 font-bold">{subtitle}</span>}
           </h3>
 
           {/* Professional Rating (Note) */}

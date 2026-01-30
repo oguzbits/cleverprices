@@ -23,6 +23,7 @@ async function getCachedBestDeals(
   limit: number,
   countryCode: string,
   condition?: any,
+  _version: string = "v1",
 ) {
   "use cache";
   cacheLife("category");
@@ -33,6 +34,7 @@ async function getCachedMostPopular(
   limit: number,
   countryCode: string,
   condition?: any,
+  _version: string = "v1",
 ) {
   "use cache";
   cacheLife("category");
@@ -43,6 +45,7 @@ async function getCachedNewArrivals(
   limit: number,
   countryCode: string,
   condition?: any,
+  _version: string = "v1",
 ) {
   "use cache";
   cacheLife("category");
@@ -52,6 +55,7 @@ async function getCachedNewArrivals(
 async function getCachedDiverseMostPopular(
   itemsPerCategory: number,
   countryCode: string,
+  _version: string = "v1",
 ) {
   "use cache";
   cacheLife("category");
@@ -84,13 +88,6 @@ async function getCachedSimilarProducts(
     countryCode,
   );
 }
-
-/**
- * --- PUBLIC DATA FETCHERS (NO DIRECT "USE CACHE") ---
- * These fetch cached static data and merge it with fresh live prices.
- * This ensures that dynamic properties like price are always up-to-date.
- */
-
 export async function getAllProductSlugs(): Promise<
   { id: number; slug: string; updatedAt: Date }[]
 > {
@@ -106,7 +103,12 @@ export async function getBestDeals(
   countryCode: string = "de",
   condition?: any,
 ): Promise<Product[]> {
-  const products = await getCachedBestDeals(limit, countryCode, condition);
+  const products = await getCachedBestDeals(
+    limit,
+    countryCode,
+    condition,
+    "v3",
+  );
   return mergeLivePrices(products, countryCode);
 }
 
@@ -115,7 +117,12 @@ export async function getMostPopular(
   countryCode: string = "de",
   condition?: any,
 ): Promise<Product[]> {
-  const products = await getCachedMostPopular(limit, countryCode, condition);
+  const products = await getCachedMostPopular(
+    limit,
+    countryCode,
+    condition,
+    "v3",
+  );
   return mergeLivePrices(products, countryCode);
 }
 
@@ -124,7 +131,12 @@ export async function getNewArrivals(
   countryCode: string = "de",
   condition?: any,
 ): Promise<Product[]> {
-  const products = await getCachedNewArrivals(limit, countryCode, condition);
+  const products = await getCachedNewArrivals(
+    limit,
+    countryCode,
+    condition,
+    "v3",
+  );
   return mergeLivePrices(products, countryCode);
 }
 
@@ -135,6 +147,7 @@ export async function getDiverseMostPopular(
   const products = await getCachedDiverseMostPopular(
     itemsPerCategory,
     countryCode,
+    "v3",
   );
   return mergeLivePrices(products, countryCode);
 }

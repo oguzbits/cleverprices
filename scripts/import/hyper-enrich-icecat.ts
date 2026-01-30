@@ -1,4 +1,4 @@
-import { eq, isNull } from "drizzle-orm";
+import { eq, isNull, or } from "drizzle-orm";
 import { db, products } from "../../src/db";
 import { localIcecatDataSource as icecatDataSource } from "../../src/lib/data-sources/icecat-local";
 
@@ -11,7 +11,10 @@ async function hyperEnrich() {
   console.log("-------------------------------------------------------");
 
   const candidates = await db.query.products.findMany({
-    where: isNull(products.officialSpecifications),
+    where: or(
+      isNull(products.officialSpecifications),
+      eq(products.enrichmentStatus, "pending"),
+    ),
     limit: 10000,
   });
 
@@ -98,6 +101,33 @@ async function hyperEnrich() {
       }
     }
 
+    // 4. Try Fuzzy Title Match (Last Resort)
+    if (!icecatProduct) {
+      // Clean the title for better matching
+      // Clean the title for better matching
+      // 1. Remove specific dimensions usually followed by units, but preserve the rest
+      const cleanTitle = product.title
+        .replace(/\d+\s*(Zoll|cm|GB|TB|RAM|SSD)/gi, "")
+        .replace(/[,()|\[\]]/g, " ")
+        // 2. Split and filter
+        .split(/\s+/)
+        // ALLOW 2-char identifiers like "M4", "S9", "5G"
+        // Reject 1-char, unless maybe it's "X"? Safe to reject 1-char for now.
+        .filter((w) => w.length >= 2)
+        .slice(0, 6) // INCREASED from 3 to 6: "Apple MacBook Air 13 M4 2024" needs more tokens
+        .join(" ")
+        .trim();
+
+      if (cleanTitle.length > 8) {
+        console.log(`   Trying Fuzzy Title Match: "${cleanTitle}"`);
+        const icecatId = await icecatDataSource.findIdByTitle(cleanTitle);
+        if (icecatId) {
+          console.log(`   ✅ FOUND via Title: ${icecatId}`);
+          icecatProduct = await icecatDataSource.fetchProduct(icecatId, "de");
+        }
+      }
+    }
+
     if (icecatProduct) {
       console.log(`   ✅ SUCCESS: Found ${icecatProduct.title}`);
 
@@ -110,6 +140,7 @@ async function hyperEnrich() {
           officialTitle: icecatProduct.title,
           icecatId: Number(icecatProduct.id),
           enrichmentStatus: "processed",
+          specificationsSource: "icecat",
           lastEnrichedAt: new Date(),
           updatedAt: new Date(),
         })

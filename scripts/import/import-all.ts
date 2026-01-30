@@ -4,8 +4,7 @@ import { existsSync, readdirSync } from "fs";
 import { join } from "path";
 
 async function main() {
-  const importDir =
-    "/Users/oguz/Desktop/Dev/cleverprices/Keepa Import 14-01-26";
+  const importDir = "/Users/oguz/Downloads/Keepa Import 14-01-26";
   const importerScript =
     "/Users/oguz/Desktop/Dev/cleverprices/scripts/import/import-from-csv.ts";
 

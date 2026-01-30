@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 export interface CarouselProduct {
   id?: number; // DB ID for live price fetching
   title: string;
+  subtitle?: string;
   price: number;
   slug: string;
   image?: string;
@@ -18,7 +19,6 @@ export interface CarouselProduct {
   discountRate?: number;
   isBestseller?: boolean;
   isVariantGroup?: boolean;
-  variationAttributes?: string;
 }
 
 interface IdealoProductCarouselProps {
@@ -63,6 +63,7 @@ export function IdealoProductCarousel({
           key={product.slug}
           id={product.id}
           title={product.title}
+          subtitle={product.subtitle}
           price={product.price}
           slug={product.slug}
           image={product.image}
@@ -75,7 +76,6 @@ export function IdealoProductCarousel({
           discountRate={product.discountRate}
           isBestseller={product.isBestseller}
           isVariantGroup={product.isVariantGroup}
-          variationAttributes={product.variationAttributes}
           countryCode={countryCode}
           priorityLoad={priorityImages && index < 2}
         />

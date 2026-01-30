@@ -12,39 +12,123 @@ import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useMemo, useState } from "react";
 
-interface SpecificationsTableProps {
+export interface SpecificationsTableProps {
   product: Product;
+  selectedCondition?: "new" | "used" | "renewed";
+  isHubMode?: boolean;
 }
 
-export function SpecificationsTable({ product }: SpecificationsTableProps) {
+export function SpecificationsTable({
+  product,
+  selectedCondition,
+  isHubMode,
+}: SpecificationsTableProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const isDebug = useDebugMode();
 
   // Parse Specs - PROPRIETARY LOGIC: Prioritize Official Manufacturer Data
-  const { specs, isOfficial } = useMemo(() => {
+  const { specs, isOfficial, source } = useMemo(() => {
     // If official specs exist, use them exclusively
+    let rawSpecs: Record<string, any> = {};
+    let sourceLabel = "None";
+    let isOfficialData = false;
+
     if (product.officialSpecifications) {
-      return {
-        specs:
-          typeof product.officialSpecifications === "string"
-            ? JSON.parse(product.officialSpecifications)
-            : product.officialSpecifications,
-        isOfficial: true,
-      };
+      const s =
+        typeof product.officialSpecifications === "string"
+          ? JSON.parse(product.officialSpecifications)
+          : product.officialSpecifications;
+      rawSpecs = s;
+      isOfficialData = true;
+      sourceLabel = product.specificationsSource || s.Source || "Unknown";
+    } else if (product.specifications) {
+      const parsed =
+        typeof product.specifications === "string"
+          ? JSON.parse(product.specifications)
+          : product.specifications;
+      rawSpecs = parsed || {};
+      sourceLabel = "Legacy";
     }
 
-    // Fallback to legacy/baseline specs
-    if (!product.specifications) return { specs: {}, isOfficial: false };
-    const parsed =
-      typeof product.specifications === "string"
-        ? JSON.parse(product.specifications)
-        : product.specifications;
+    // LIST OF ATTRIBUTES TO ALWAYS HIDE IF THEY ARE VARIANTS
+    // (e.g. if we have a Color selector, don't show Color in specs table)
+    const variantKeys = (product.variationAttributes || "").toLowerCase();
+    const isColorVariant =
+      variantKeys.includes("color") || variantKeys.includes("farbe");
+    const isStorageVariant =
+      variantKeys.includes("storage") ||
+      variantKeys.includes("kapazität") ||
+      variantKeys.includes("speicher");
+    const isRamVariant =
+      variantKeys.includes("ram") ||
+      variantKeys.includes("arbeitsspeicher") ||
+      variantKeys.includes("memory");
 
-    return { specs: parsed || {}, isOfficial: false };
-  }, [product.officialSpecifications, product.specifications]);
+    const filtered: Record<string, any> = {};
+
+    // HUB MODE FILTERING LIST
+    const hubUnwanted = [
+      "color",
+      "farbe",
+      "mpn",
+      "ean",
+      "herstellernummer",
+      "part number",
+      "kapazität",
+      "storage",
+      "speicher",
+      "interner speicher",
+      "ram",
+      "memory",
+      "arbeitsspeicher",
+      "neu ab",
+      "gebraucht ab",
+      "preis",
+      "größe", // Size usually varies
+      "size",
+    ];
+
+    Object.entries(rawSpecs).forEach(([k, v]) => {
+      const lowerK = k.toLowerCase();
+
+      // 1. HUB MODE: Aggressive Filtering
+      if (isHubMode) {
+        if (hubUnwanted.some((u) => lowerK.includes(u))) return;
+      }
+
+      // 2. VARIANT DUPLICATION FILTERING (Standard View)
+      // If this attribute is controlled by the Variant Selector, hide it from the static table
+      // to avoid conflicts (e.g. "Spec says Black, Variant is White")
+      if (!isHubMode) {
+        if (isColorVariant && (lowerK === "color" || lowerK === "farbe"))
+          return;
+        // Only hide Storage/RAM if it's strictly just the capacity number.
+        // Sometimes specs have "Storage Type: NVMe" which we want to keep.
+        if (
+          isStorageVariant &&
+          (lowerK === "storage" ||
+            lowerK === "kapazität" ||
+            lowerK === "interner speicher")
+        )
+          return;
+        if (isRamVariant && (lowerK === "ram" || lowerK === "arbeitsspeicher"))
+          return;
+      }
+
+      filtered[k] = v;
+    });
+
+    return { specs: filtered, isOfficial: isOfficialData, source: sourceLabel };
+  }, [
+    product.officialSpecifications,
+    product.specifications,
+    isHubMode,
+    product.variationAttributes,
+  ]);
 
   // Translation Map
   const keyTranslations: Record<string, string> = {
+    // ... existing translations ...
     "release date": "Gelistet seit",
     model: "Modell",
     color: "Farbe",
@@ -115,36 +199,29 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
     Sonstiges: [],
   };
 
-  // 1. Determine variant tokens to exclude (Task: Neutral Specs)
-  const variantTokens = new Set<string>();
-  if (product.variationAttributes) {
-    product.variationAttributes.split(";").forEach((pair) => {
-      const value = pair.split(":")[1];
-      if (value) {
-        value
-          .toLowerCase()
-          .split(/[^a-z0-9]+/)
-          .forEach((t) => {
-            if (t.length > 2) variantTokens.add(t);
-          });
-      }
-    });
-  }
-
   // Add Core Specs first
   if (product.brand) releaseToBucket("Allgemein", "Marke", product.brand);
-  if (product.condition)
-    releaseToBucket(
-      "Allgemein",
-      "Zustand",
-      product.condition === "New" ? "Neu" : product.condition,
-    );
+
+  // DYNAMIC CONDITION: Show only if not Hub Mode, or show generic
+  if (!isHubMode) {
+    const conditionLabel = selectedCondition
+      ? selectedCondition === "new"
+        ? "Neu"
+        : selectedCondition === "renewed"
+          ? "Generalüberholt (Wie Neu)"
+          : "Gebraucht"
+      : product.condition === "New"
+        ? "Neu"
+        : product.condition;
+    releaseToBucket("Allgemein", "Zustand", conditionLabel);
+  }
 
   // Distribute bucket specs
   const ignoredKeys = new Set([
     "Method",
     "Empfohlener Kundenpreis",
     "Datenblatt",
+    "Source",
   ]);
 
   Object.entries(specs).forEach(([key, value]) => {
@@ -156,24 +233,20 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
     )
       return;
 
-    // --- NEUTRAL SPECS FILTER ---
-    // If the value contains variant-specific info (like "256GB" or "Midnight"), skip it
-    const valStr = String(value).toLowerCase();
-    const hasVariantToken = Array.from(variantTokens).some((t) => {
-      // Must be a whole-word match or specific capacity pattern
-      const regex = new RegExp(`\\b${t}\\b`, "i");
-      return regex.test(valStr);
-    });
-    if (hasVariantToken) return;
-
-    // Localize Values (simple dictionary for common terms)
+    // Localize Values
     let displayValue = value;
-    if (value === "Yes") displayValue = "Ja";
-    if (value === "No") displayValue = "Nein";
-
+    if (typeof value === "object") {
+      try {
+        displayValue = JSON.stringify(value);
+      } catch (e) {
+        displayValue = String(value);
+      }
+    }
+    if (displayValue === "Yes") displayValue = "Ja";
+    if (displayValue === "No") displayValue = "Nein";
     const cleanKey = key.replace(/[‡*]/g, "").trim();
     const lowerKey = cleanKey.toLowerCase();
-    const label = keyTranslations[lowerKey] || cleanKey;
+    let label = keyTranslations[lowerKey] || cleanKey;
 
     if (
       lowerKey.includes("processor") ||
@@ -187,7 +260,22 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
       lowerKey.includes("takt") ||
       lowerKey.includes("leistung")
     ) {
-      releaseToBucket("Leistung & Hardware", label, displayValue);
+      if (
+        lowerKey.includes("operating") ||
+        lowerKey.includes("betriebssystem")
+      ) {
+        // Exception: OS should be in Allgemein
+        releaseToBucket("Allgemein", "Betriebssystem", displayValue);
+      } else {
+        releaseToBucket("Leistung & Hardware", label, displayValue);
+      }
+    } else if (
+      lowerKey.includes("operating") ||
+      lowerKey.includes("system") || // Careful, might catch 'system bus'
+      lowerKey.includes("software") ||
+      lowerKey.includes("betriebssystem")
+    ) {
+      releaseToBucket("Allgemein", "Betriebssystem", displayValue);
     } else if (
       lowerKey.includes("display") ||
       lowerKey.includes("screen") ||
@@ -241,7 +329,6 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
     ) {
       releaseToBucket("Abmessungen & Energie", label, displayValue);
     } else {
-      // Default bucket if not 'General'
       if (!groups["Allgemein"].find((g) => g.label === label)) {
         releaseToBucket("Sonstiges", label, displayValue);
       }
@@ -252,15 +339,13 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
     groups[bucket].push({ label, value });
   }
 
-  // Flatten for display if not expanded (show top 8 mixed)
   const flatList = Object.values(groups).flat();
   const hasData = flatList.length > 0;
 
-  // Data Health Check
   // @ts-ignore
   const isEnriched =
     product.enrichmentStatus === "processed" ||
-    product.enrichmentStatus === "optimized" || // New Global Optimization Status
+    product.enrichmentStatus === "optimized" ||
     flatList.length > 15;
   const completeness = Math.min(100, (flatList.length / 20) * 100);
 
@@ -275,7 +360,7 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
           (isOfficial ? (
             // DEBUG MODE: Show granular source info
             (() => {
-              const source = specs.Source || "";
+              // Priority 1: Intel Source
               if (source === "Intel" && specs.Method === "Scraped") {
                 return (
                   <div className="flex items-center gap-1.5 rounded-full border border-blue-600 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
@@ -284,6 +369,7 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
                   </div>
                 );
               }
+              // Priority 2: AMD Source
               if (source.includes("AMD")) {
                 return (
                   <div className="flex items-center gap-1.5 rounded-full border border-red-600 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
@@ -292,7 +378,8 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
                   </div>
                 );
               }
-              if (source.includes("Apple")) {
+              // Priority 3: Apple Source
+              if (source.toLowerCase().includes("apple")) {
                 return (
                   <div className="flex items-center gap-1.5 rounded-full border border-gray-400 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
                     <CheckCircle className="h-3.5 w-3.5" />
@@ -300,10 +387,19 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
                   </div>
                 );
               }
+              // Priority 4: eBay Source (New!)
+              if (source.toLowerCase().includes("ebay") || source === "eBay") {
+                return (
+                  <div className="flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700">
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    eBay Verified (Debug)
+                  </div>
+                );
+              }
               return (
                 <div className="flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
                   <CheckCircle className="h-3.5 w-3.5" />
-                  Icecat / Other (Debug)
+                  {source} / Other (Debug)
                 </div>
               );
             })()
@@ -320,29 +416,15 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
           ))}
       </div>
 
-      <div className="w-full border-t border-[#ebebeb]">
-        {!isExpanded ? (
-          // Collapsed View (Simple List)
-          <ul className="m-0 list-none p-0">
-            {flatList.slice(0, 8).map((spec, index) => (
-              <li
-                key={index}
-                className={cn(
-                  "flex items-center px-[15px] py-[7px] text-[13px] leading-[1.4]",
-                  index % 2 === 0 ? "bg-[#f5f5f5]" : "bg-white",
-                )}
-              >
-                <div className="w-[45%] shrink-0 text-[#767676]">
-                  {spec.label}
-                </div>
-                <div className="w-[55%] font-bold text-[#2d2d2d]">
-                  {spec.value}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          // Expanded View (Grouped)
+      <div className="relative w-full border-t border-[#ebebeb]">
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-500 ease-in-out",
+            !isExpanded && flatList.length > 8
+              ? "max-h-[360px]"
+              : "max-h-[5000px]",
+          )}
+        >
           <div className="space-y-6 pt-4 pb-4">
             {Object.entries(groups).map(([groupName, items]) => {
               if (items.length === 0) return null;
@@ -376,6 +458,11 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
               );
             })}
           </div>
+        </div>
+
+        {/* Gradient Mask */}
+        {!isExpanded && hasData && flatList.length > 8 && (
+          <div className="pointer-events-none absolute bottom-0 left-0 h-[120px] w-full bg-gradient-to-t from-white via-white/80 to-transparent" />
         )}
       </div>
 
@@ -391,8 +478,7 @@ export function SpecificationsTable({ product }: SpecificationsTableProps) {
               </>
             ) : (
               <>
-                Alle Details anzeigen ({flatList.length}){" "}
-                <ChevronDown className="h-4 w-4" />
+                Alle Details anzeigen <ChevronDown className="h-4 w-4" />
               </>
             )}
           </button>

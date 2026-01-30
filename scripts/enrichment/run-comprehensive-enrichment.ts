@@ -32,10 +32,10 @@ async function main() {
   await runScript("scavenge-keepa-data.ts", [limit]);
 
   // 2. eBay Phase (if credentials exist)
-  if (process.env.EBAY_CLIENT_ID) {
+  if (process.env.EBAY_APP_ID) {
     await runScript("ebay-enricher.ts", [limit]);
   } else {
-    console.log("⏭️ Skipping eBay (No EBAY_CLIENT_ID found)");
+    console.log("⏭️ Skipping eBay (No EBAY_APP_ID found)");
   }
 
   // 2. Google Phase (Fallback for remaining gaps)

@@ -2,6 +2,7 @@ export interface LeanProduct {
   id?: number;
   slug: string;
   title: string;
+  subtitle?: string;
   image?: string;
   price: number;
   pricePerUnit?: number;

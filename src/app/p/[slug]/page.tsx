@@ -43,10 +43,10 @@ async function resolveProductFromRoute(slug: string) {
 
     // Standardize to 200m offset for the canonical URL
     const canonicalId = 200000000 + realId;
-    const { slug: canonical } = getFamilyIdentity(
-      { ...product, id: canonicalId },
-      [],
-    );
+
+    // VARIANT FIX: We trust the slug returned by the product registry,
+    // which mapDbProduct automatically ensures is canonical and ID-prefixed.
+    const canonical = product.slug;
 
     const redirect = slug !== canonical ? `/p/${canonical}` : null;
     return { product, isParentView: false, redirect };

@@ -6,7 +6,6 @@ import {
   normalizeBrand,
   sortProducts,
 } from "@/lib/utils/category-utils";
-import { getProductIdentity } from "@/lib/utils/product-identity";
 import {
   calculateSavings,
   getLocalizedProductData,
@@ -20,6 +19,7 @@ export interface LocalizedProduct {
   slug: string;
   asin: string;
   title: string;
+  subtitle?: string;
   price: number;
   pricePerUnit: number;
   popularityScore: number;
@@ -46,6 +46,7 @@ export interface LocalizedProduct {
   isVariantGroup?: boolean; // UI flag
   variantCount?: number; // UI flag
   officialSpecifications?: any; // Structured official specs
+  mpn?: string;
 }
 
 // ... (Wait, I can't put ALL of it here. The prompt size limits might clip it?
@@ -261,6 +262,7 @@ export async function getCachedLocalizedCategoryProducts(
         slug: p.slug,
         asin,
         title,
+        subtitle: p.subtitle,
         price: price || 0,
         pricePerUnit,
         popularityScore,
@@ -293,6 +295,7 @@ export async function getCachedLocalizedCategoryProducts(
               ? JSON.parse(p.specifications)
               : p.specifications
             : null),
+        mpn: p.mpn,
       } as LocalizedProduct;
     })
     .filter((p): p is LocalizedProduct => p !== null);
@@ -478,7 +481,7 @@ export async function getCategoryProducts(
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v41",
+    "v47",
   );
 
   // 2. [OPTIMIZATION] Skip Live Price Merge for the FULL list
@@ -511,28 +514,10 @@ export async function getCategoryProducts(
   //   - isVariantGroup: true
 
   // 2. [FLAT LIST MODE] - User requested "DO NOT MERGE"
-  // We simply map the clean identity title to every product and return the flat list.
+  // We simply pass through the standardized title/subtitle from mapDbProduct.
   const extendedProducts: LocalizedProduct[] = filteredProducts.map((p) => {
-    // Calculate Identity to get the clean title (e.g. "MacBook Air M4")
-    // This ensures consistency with the Detail Page
-    const identity = getProductIdentity(p as any);
-    const modelKey = identity.model.toLowerCase().replace(/[^a-z0-9]+/g, "-");
-
-    // Store clean title for later use (Critical for singletons)
-    // FIX: Include variant label to match Detail Page (e.g. "Apple MacBook Air M4 16GB 13\"")
-    const displayTitle = identity.variantLabel
-      ? `${identity.fullModel} ${identity.variantLabel}`
-      : identity.fullModel;
-
-    (p as any).cleanTitle = displayTitle;
-
-    let groupKey: string | null = null;
-
-    // We MUTATE the title for display consistency
-    // (Using a clone is safer if we were strictly pure, but this is efficient)
     return {
       ...p,
-      title: displayTitle,
       // Remove any parentAsin/syntheticId to prevents any accidental grouping downstream
       parentAsin: undefined,
       syntheticId: undefined,

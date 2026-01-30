@@ -73,6 +73,7 @@ export function ParentCategoryView({
                 title={`Neu in ${formatTechText(parentCategory.name)}`}
                 products={newProducts.map((p) => ({
                   title: p.title,
+                  subtitle: p.subtitle,
                   price: p.price,
                   id: p.id,
                   slug: p.slug,

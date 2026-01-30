@@ -66,8 +66,8 @@ export function IdealoProductPage({
   const parentRep = { ...product, syntheticId };
   const { slug: parentSlug } = getFamilyIdentity(parentRep);
 
-  // Breadcrumb Data from Universal Identity
-  const parentTitle = identity.fullModel;
+  // Breadcrumb Data from Universal Identity - Ensure suffix matches visually
+  const parentTitle = identity.modelTitle;
   const variantName = identity.variantSuffix || "Standard";
 
   // Build breadcrumbs for SEO Schema (Idealo Style)
@@ -196,17 +196,11 @@ export function IdealoProductPage({
                 id="oopStage-title"
                 className="text-idealo-text-primary mb-1 line-clamp-2 min-h-[50px] text-[20px] leading-tight font-bold sm:text-center lg:text-left"
               >
-                {isParentView ? (
-                  identity.fullModel
-                ) : (
-                  <>
-                    {identity.modelTitle}
-                    {identity.variantSuffix && (
-                      <span className="ml-2 text-[16px] font-bold">
-                        {identity.variantSuffix}
-                      </span>
-                    )}
-                  </>
+                {identity.modelTitle}
+                {!isParentView && identity.variantSuffix && (
+                  <span className="ml-2 text-[16px] font-bold">
+                    {identity.variantSuffix}
+                  </span>
                 )}
               </h1>
               <div className="oopStage-metaInfo mb-4 flex flex-wrap items-center gap-4 sm:justify-center lg:justify-start">
@@ -248,10 +242,70 @@ export function IdealoProductPage({
                         : product.officialSpecifications
                       : product.specifications) || {},
                   )
-                    .slice(0, 5)
+                    .filter(([key, value]) => {
+                      if (!isParentView) return true;
+                      // HUB MODE: Filter out variant-specific traits
+                      const k = key.toLowerCase();
+                      const unwanted = [
+                        "color",
+                        "farbe",
+                        "mpn",
+                        "ean",
+                        "herstellernummer",
+                        "part number",
+                        "kapazität",
+                        "storage",
+                        "speicher",
+                        "ram",
+                        "memory",
+                        "arbeitsspeicher",
+                        "größe",
+                        "size",
+                      ];
+                      if (unwanted.some((u) => k.includes(u))) return false;
+
+                      const v = String(value).toLowerCase().trim();
+                      // Filter out description-like keys
+                      if (
+                        /description|summary|marketing|ean|upc|gtin|asin/i.test(
+                          key,
+                        )
+                      )
+                        return false;
+                      // Filter out negative/useless values
+                      if (
+                        [
+                          "nein",
+                          "no",
+                          "false",
+                          "0",
+                          "n/a",
+                          "nicht unterstützt",
+                          "not supported",
+                          "null",
+                          "undefined",
+                          "nicht verfügbar",
+                        ].includes(v)
+                      )
+                        return false;
+                      // Specs are usually short (e.g. "16 GB", "SSD"). Sentences are not specs.
+                      if (v.length === 0 || v.length >= 40) return false;
+
+                      // SELF-EXPLANATORY CHECK:
+                      // Must contain at least one letter (for units like GB, Hz, or text)
+                      // OR contain specific symbols like " (inches), % (percent), or x (resolution 1920x1080)
+                      // This rejects pure numbers like "4096" or "1" which are confusing without labels.
+                      const isSelfExplanatory =
+                        /[a-z%"]/i.test(v) || /\d\s*x\s*\d/.test(v);
+                      return isSelfExplanatory;
+                    })
+                    .slice(0, 5) // Increased back to 5 now that we filter bad ones
                     .map(([key, value], i) => (
                       <React.Fragment key={key}>
-                        <span className="text-[13px] text-[#2d2d2d]">
+                        <span
+                          className="inline-block max-w-[200px] truncate align-bottom text-[13px] text-[#2d2d2d]"
+                          title={String(value)}
+                        >
                           {String(value)}
                         </span>
                         {i < 4 && (
@@ -367,7 +421,11 @@ export function IdealoProductPage({
                   <div className="bg-muted h-[300px] w-full animate-pulse rounded" />
                 }
               >
-                <CachedSpecifications product={product} />
+                <CachedSpecifications
+                  product={product}
+                  selectedCondition={effectiveCondition}
+                  isHubMode={isParentView}
+                />
               </Suspense>
             </ComponentErrorBoundary>
           </div>
@@ -459,10 +517,24 @@ async function CachedSidebarSimilarProducts({
   );
 }
 
-async function CachedSpecifications({ product }: { product: Product }) {
+async function CachedSpecifications({
+  product,
+  selectedCondition,
+  isHubMode,
+}: {
+  product: Product;
+  selectedCondition?: "new" | "used" | "renewed";
+  isHubMode?: boolean;
+}) {
   "use cache";
   cacheLife("product");
-  return <SpecificationsTable product={product} />;
+  return (
+    <SpecificationsTable
+      product={product}
+      selectedCondition={selectedCondition}
+      isHubMode={isHubMode}
+    />
+  );
 }
 
 async function CachedSimilarCarousel({

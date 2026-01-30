@@ -120,6 +120,7 @@ export default async function DedicatedCategoryPage({
         id: p.id,
         slug: p.slug,
         title: p.title,
+        subtitle: p.subtitle,
         image: p.image,
         price: p.prices[DEFAULT_COUNTRY] || 0,
         pricePerUnit: p.pricePerUnit,
