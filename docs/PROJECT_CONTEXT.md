@@ -40,13 +40,21 @@
 
 - **Database**: SQLite (Turso) hosted at the edge.
 - **Schema**:
-  - `products`: Core product data (ASIN, GTIN, MPN, specs, timestamps).
+  - `products`: Core product data (ASIN, GTIN, MPN, clean specs, timestamps).
   - `prices`: Current prices per country (Amazon, New, Used).
   - `price_history`: Historical price points for charts.
+- **Enrichment Buckets (Products table)**:
+  - `official_specifications`: Validated technical data from Icecat/eBay/Intel.
+  - `ebay_raw_data`: Full raw JSON snapshots from eBay API for future "mass remapping" and data analysis.
+  - `keepa_features`: Raw Amazon description bullets for LLM-based scavenging.
 - **Sync Strategy**:
   - **Automated Engine**: GitHub Action (`daily-maintenance.yml`) runs **hourly**.
   - **Price Refresh**: Batches of 500 products (stale-first) per hour.
-  - **Enrichment**: 200-500 products per hour (History, Stats, Sales Rank). Uses the **Parallel Flat Bulk** pattern for O(1) database overhead and minimal sync latency.
+  - **Multi-Source Enrichment**:
+    - **Icecat**: Primary authority for technical sheets.
+    - **eBay Browse API**: Secondary authority; uses GTIN and smart keyword matching.
+    - **Raw Capture**: eBay results are stored as raw snapshots (`ebay_raw_data`) before mapping to ensure no data is lost during code updates.
+    - **Smart Sinking**: Invariant specs (Brand, Model, CPU Family) are automatically propagated from "Lead" variants to all siblings via `scripts/enrichment/smart-variant-syncer.ts`.
   - **Bulk Data Safety**: Implements manual chunking for large inserts to stay within SQLite/Turso parameter limits.
   - **Cache Warming**: Automated warm-up of Next.js "use cache" layers after every sync.
   - **Direct Cloud Access**: Scripts connect directly to Turso (Cloud) via `DATABASE_PATH` environment variable.

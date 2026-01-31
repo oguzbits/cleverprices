@@ -22,7 +22,7 @@ CleverPrices is powered by an automated **Maintenance Engine** (GitHub Actions) 
 
 - **Hourly Updates**: Every hour on the hour (`0 * * * *`), the maintenance workflow runs.
 - **Price Updates**: Uses **Dynamic Scaling** (300-1000 items) based on token budget. Captures the "Daily Low" for long-term charts.
-- **Product Enrichment**: Automatically back-fills 90-day price history into the database for immediate, Idealo-style charts.
+- **Product Enrichment**: Multi-source engine (Icecat, eBay, Intel) back-fills high-quality technical specs. Uses **Smart Sinking** to maintain variant accuracy across ASIN families.
 - **Cache Warming**: Automatically triggers a `warm-cache` script after updates to ensure 100ms response times for users.
 - **Cloud-Native**: All maintenance scripts connect directly to the **Turso Cloud** via environment variables.
 

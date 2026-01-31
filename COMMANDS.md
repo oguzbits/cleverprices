@@ -22,10 +22,12 @@ These workflows run automatically in GitHub to keep the site fresh without manua
 
 ## 🔧 3. Data Management
 
-| Command                                     | Description                                                                                     |
-| :------------------------------------------ | :---------------------------------------------------------------------------------------------- |
-| `bun run scripts/import-from-csv.ts <file>` | Imports/Updates products from a Keepa CSV export. Logic prioritizes Amazon structured data.     |
-| `bun run scripts/validate-categories.ts`    | Audits the database for categorization errors (e.g. Headphones in SSDs) and reports violations. |
+| Command                                          | Description                                                                                     |
+| :----------------------------------------------- | :---------------------------------------------------------------------------------------------- |
+| `bun run scripts/import-from-csv.ts <file>`      | Imports/Updates products from a Keepa CSV export. Logic prioritizes Amazon structured data.     |
+| `bun run scripts/validate-categories.ts`         | Audits the database for categorization errors (e.g. Headphones in SSDs) and reports violations. |
+| `bun scripts/enrichment/ebay-enricher.ts <N>`    | Fetches high-quality technical specs from eBay (Limit N units). Stays under daily API quotas.   |
+| `bun scripts/enrichment/smart-variant-syncer.ts` | Propagates clean specs from "Lead" products to all variants in the same ASIN family.            |
 
 ## 💡 Troubleshooting
 

@@ -35,6 +35,15 @@ Once the database is updated, the engine triggers `scripts/warm-cache.ts`.
 
 - **Purpose**: Next.js "use cache" layers (Cache Components) can be slow on the first hit. This script crawls the most important listing pages so users always experience sub-100ms load times.
 
+### Phase 4: Multi-Source Enrichment (eBay / Icecat)
+
+This phase focuses on high-quality technical specifications beyond simple price/history data.
+
+- **eBay Browse API**: Fetches localized specifications using GTIN or smart keyword matching.
+- **Raw Capture**: Results are stored in the `ebay_raw_data` column. This follows a "Capture Now, Optimize Later" strategy—allowing us to refine technical mappings without re-calling the API.
+- **Icecat**: Used as the primary authority for enterprise-grade product sheets.
+- **Smart Variant Syncing**: Extracted specs are propagated across ASIN families to ensure consistency between sub-variants (e.g., different colors of the same phone model).
+
 ---
 
 ## 📊 Monitoring
