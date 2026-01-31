@@ -44,6 +44,9 @@ interface IdealoProductPageProps {
   countryCode: CountryCode;
   selectedCondition?: "new" | "used" | "renewed";
   isParentView?: boolean;
+  parentSlug?: string; // Stable hub slug from server
+  parentTitle?: string; // Stable hub title from server
+  parentFullModel?: string; // Stable hub full model name
 }
 
 export function IdealoProductPage({
@@ -51,6 +54,9 @@ export function IdealoProductPage({
   countryCode,
   selectedCondition,
   isParentView = false,
+  parentSlug: passedParentSlug,
+  parentTitle: passedParentTitle,
+  parentFullModel: passedFullModel,
 }: IdealoProductPageProps) {
   const category = getCategoryBySlug(product.category);
 
@@ -61,13 +67,16 @@ export function IdealoProductPage({
     selectedCondition || (product.condition === "Renewed" ? "renewed" : "new");
 
   // Create a synthetic parent representative to generate the Hub URL for breadcrumbs
+  // Use passedParentSlug if available (preferred for stability)
   const realId = (product.id || 0) % 100000000;
   const syntheticId = 900000000 + realId;
   const parentRep = { ...product, syntheticId };
-  const { slug: parentSlug } = getFamilyIdentity(parentRep);
+  const { slug: autoParentSlug } = getFamilyIdentity(parentRep);
+  const parentSlug = passedParentSlug || autoParentSlug;
 
   // Breadcrumb Data from Universal Identity - Ensure suffix matches visually
-  const parentTitle = identity.modelTitle;
+  const parentTitle = passedParentTitle || identity.modelTitle;
+  const hubFullModel = passedFullModel || identity.fullModel;
   const variantName = identity.variantSuffix || "Standard";
 
   // Build breadcrumbs for SEO Schema (Idealo Style)
@@ -82,7 +91,7 @@ export function IdealoProductPage({
         ]
       : []),
     ...(isParentView
-      ? [{ name: identity.fullModel }]
+      ? [{ name: hubFullModel }]
       : [
           { name: parentTitle, href: `/p/${parentSlug}` },
           {
@@ -344,6 +353,7 @@ export function IdealoProductPage({
                         countryCode={countryCode}
                         isParentView={isParentView}
                         selectedCondition={effectiveCondition}
+                        parentSlug={parentSlug}
                       />
                     </Suspense>
                   </ComponentErrorBoundary>

@@ -206,6 +206,33 @@ export async function getProductById(
 }
 
 /**
+ * Get the stable canonical ID for a family (Smallest ID in the family).
+ * This ensures all variants point to the same Hub ID regardless of price/condition.
+ */
+export async function getCanonicalFamilyId(
+  parentAsin: string | undefined,
+  currentId: number,
+): Promise<number> {
+  if (!parentAsin) return currentId;
+
+  const fetchCanonicalId = async () => {
+    const [result] = await db
+      .select({ id: products.id })
+      .from(products)
+      .where(eq(products.parentAsin, parentAsin))
+      .orderBy(asc(products.id))
+      .limit(1);
+    return result?.id ?? currentId;
+  };
+
+  // Cache for performance as this is called for every variant link
+  return unstable_cache(fetchCanonicalId, [`canonical-id-v1-${parentAsin}`], {
+    revalidate: PRODUCT_REVALIDATE_SECONDS,
+    tags: ["canonical-id"],
+  })();
+}
+
+/**
  * Handle synthetic IDs for "Alle Varianten" / Parent Views.
  * ID = 900,000,000 + Real_Child_ID
  */
@@ -218,6 +245,30 @@ export async function findProductBySyntheticId(
   const product = await getProductById(realId);
 
   if (!product) return undefined;
+
+  // CANONICAL HUB ENFORCEMENT
+  // If this product has a parentAsin, ensure we are using the canonical Hub ID
+  if (product.parentAsin) {
+    const canonicalRealId = await getCanonicalFamilyId(
+      product.parentAsin,
+      realId,
+    );
+    const canonicalSyntheticId = 900000000 + canonicalRealId;
+
+    // If requested ID is not canonical, the caller (page.tsx) will handle redirect
+    // because the slug returned by getFamilyIdentity will use the canonical ID.
+    // However, we want to return the canonical product for rendering.
+    if (canonicalRealId !== realId) {
+      const canonicalProduct = await getProductById(canonicalRealId);
+      if (canonicalProduct) {
+        return {
+          ...canonicalProduct,
+          id: canonicalSyntheticId,
+          isParentView: true,
+        };
+      }
+    }
+  }
 
   // Mark as parent view and replace ID with synthetic one
   return { ...product, id: syntheticId, isParentView: true };
@@ -496,10 +547,10 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   return unstable_cache(
     fetchProducts,
-    [`category-products-v33-${category}-${stripHeavyData}`],
+    [`category-products-v34-${category}-${stripHeavyData}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: ["category-products", `cat-${category}`, "v45"],
+      tags: ["category-products", `cat-${category}`, "v46"],
     },
   )();
 });
@@ -567,10 +618,10 @@ export const getProductBySlug = cache(async function getProductBySlug(
 
   return unstable_cache(
     fetchProductBySlug,
-    [`product-slug-v6-${slug}-${includeHistory}`],
+    [`product-slug-v7-${slug}-${includeHistory}`],
     {
       revalidate: PRODUCT_REVALIDATE_SECONDS,
-      tags: [`product-v6-${slug}`],
+      tags: [`product-v7-${slug}`],
     },
   )(slug, includeHistory);
 });

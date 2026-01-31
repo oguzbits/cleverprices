@@ -5,6 +5,7 @@ interface ProductVariantSelectorProps {
   countryCode: string;
   isParentView?: boolean;
   selectedCondition?: "new" | "used" | "renewed";
+  parentSlug?: string;
 }
 
 export async function CachedVariantSelector({
@@ -12,6 +13,7 @@ export async function CachedVariantSelector({
   countryCode,
   isParentView,
   selectedCondition,
+  parentSlug,
 }: ProductVariantSelectorProps) {
   const { getProductVariants } = await import("@/lib/product-registry");
   let allVariants = await getProductVariants(product, countryCode);
@@ -139,6 +141,7 @@ export async function CachedVariantSelector({
       countryCode={countryCode}
       isParentView={isParentView}
       selectedCondition={selectedCondition}
+      parentSlug={parentSlug}
     />
   );
 }

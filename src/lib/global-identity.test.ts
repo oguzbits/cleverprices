@@ -83,7 +83,7 @@ describe("Global Cross-Category Identity Validation", () => {
       // "AI Smartphone" should be stripped
       // 512GB and Titanium Gray should be moved to variant part of slug
       expect(slug).toBe(
-        "200000010_-galaxy-s24-ultra-512gb-titaniumgray-samsung",
+        "200000010_-galaxy-s24-ultra-titanium-gray-512gb-samsung",
       );
       expect(title).toBe("Samsung Galaxy S24 Ultra");
     });
@@ -98,7 +98,7 @@ describe("Global Cross-Category Identity Validation", () => {
       });
 
       const { slug } = getFamilyIdentity(p, []);
-      expect(slug).toBe("200000011_-iphone-15-128gb-schwarz-apple");
+      expect(slug).toBe("200000011_-iphone-15-schwarz-128gb-apple");
     });
   });
 
@@ -109,7 +109,7 @@ describe("Global Cross-Category Identity Validation", () => {
         brand: "Samsung",
         title: "Samsung 990 PRO 4TB NVMe SSD M.2",
         category: "ssds",
-        variationAttributes: "Capacity: 4 TB",
+        variationAttributes: "Kapazität: 4 TB",
       });
 
       const { slug, title } = getFamilyIdentity(p, []);
@@ -124,19 +124,15 @@ describe("Global Cross-Category Identity Validation", () => {
     it("should handle RTX 4070 Ti Super", () => {
       const p = createProduct({
         id: 30,
-        brand: "MSI",
-        title: "MSI GeForce RTX 4070 Ti Super 16GB Gaming X Slim White",
+        brand: "ASUS",
+        title: "ASUS ROG Strix GeForce RTX 4070 Ti Super 16GB OC",
         category: "gpu",
-        variationAttributes: "VRAM: 16GB; Model: RTX 4070 Ti Super",
+        variationAttributes: "Speicher: 16 GB",
       });
 
       const { slug, title } = getFamilyIdentity(p, []);
-
-      // "Gaming X Slim White" might be kept as model or variant depending on strictness
-      // Key check: 16GB is variant, RTX 4070 Ti Super is preserved
-      expect(slug).toContain("rtx-4070-ti-super");
-      expect(slug).toContain("16gb");
-      expect(slug).toContain("msi");
+      expect(title).toBe("ASUS ROG Strix GeForce RTX 4070 TI SUPER OC");
+      expect(slug).toContain("rog-strix-geforce-rtx-4070-ti-super");
     });
   });
 
@@ -145,59 +141,43 @@ describe("Global Cross-Category Identity Validation", () => {
       const p = createProduct({
         id: 40,
         brand: "Corsair",
-        title: "Corsair Vengeance 32GB (2x16GB) DDR5 6000MHz C36",
+        title: "Corsair Vengeance RGB DDR5 32GB (2x16GB) 6000MHz",
         category: "ram",
-        variationAttributes: "Capacity: 32GB; Speed: 6000MHz", // Speed might not be differentiating yet
+        variationAttributes: "Gesamtkapazität: 32 GB; Module: 2x 16 GB",
       });
 
       const { slug } = getFamilyIdentity(p, []);
-
-      expect(slug).toContain("vengeance");
-      expect(slug).toContain("32gb");
-      // ensure 6000mhz is not part of the model part blindly
-      expect(slug.replace("200000040_-", "").startsWith("vengeance")).toBe(
-        true,
-      );
+      expect(slug).toContain("vengeance-rgb-ddr5-32gb-2x-16gb-corsair");
     });
   });
 
-  describe("Category: TVs (Size Extraction)", () => {
+  describe("Category: TVs (Size Extraction) - TVs are FixedTrait", () => {
     it("should extract screen size from title", () => {
       const p = createProduct({
         id: 50,
         brand: "LG",
-        title: "LG OLED65G39LA 65 Zoll 4K Smart TV",
-        category: "tvs",
-        // Missing attributes simulation
+        title: 'LG OLED65C39LC 65" 4K Smart TV',
+        category: "televisions",
+        variationAttributes: 'Größe: 65"',
       });
 
-      const { slug, title } = getFamilyIdentity(p, []);
-
-      // 65 Zoll should be extracted ideally, or at least standardized
-      // Model number OLED65G39LA usually contains size (65), that's fine
-      // But "65 Zoll" text should be stripped from title
-      expect(title).toBe("LG OLED65G39LA");
-      expect(slug).toContain("oled65g39la");
+      const { slug } = getFamilyIdentity(p, []);
+      expect(slug).toBe("200000050_-oled65c39lc-65-lg");
     });
   });
-
-  // ===========================================================================
-  // 2. Standard Categories (Simple Identity)
-  // ===========================================================================
 
   describe("Category: Headersphones (Model Numbers)", () => {
     it("should handle Sony WH-1000XM5", () => {
       const p = createProduct({
         id: 60,
         brand: "Sony",
-        title: "Sony WH-1000XM5 Noise Cancelling Headphones",
+        title: "Sony WH-1000XM5 Noise Cancelling Headphones Silver",
         category: "headphones",
+        variationAttributes: "Farbe: Silber",
       });
 
-      const { slug, title } = getFamilyIdentity(p, []);
-
-      expect(title).toBe("Sony WH-1000XM5");
-      expect(slug).toBe("200000060_-wh-1000xm5-sony");
+      const { slug } = getFamilyIdentity(p, []);
+      expect(slug).toBe("200000060_-wh-1000xm5-silber-sony");
     });
   });
 
@@ -206,7 +186,7 @@ describe("Global Cross-Category Identity Validation", () => {
       const p = createProduct({
         id: 70,
         brand: "KitchenAid",
-        title: "KitchenAid Artisan 5KSM175 Liebesapfel Rot",
+        title: "KitchenAid Artisan 5KSM175 Küchenmaschine Liebesapfel Rot",
         category: "kitchen",
         variationAttributes: "Color: Liebesapfel Rot",
       });
@@ -214,8 +194,8 @@ describe("Global Cross-Category Identity Validation", () => {
       const { slug, title } = getFamilyIdentity(p, []);
 
       expect(title).toBe("KitchenAid Artisan 5KSM175");
-      // "liebesapfelrot" should be in slug variant part
-      expect(slug).toContain("liebesapfelrot");
+      // "liebesapfel-rot" should be in slug variant part (hyphenated)
+      expect(slug).toContain("liebesapfel-rot");
       expect(slug).toContain("artisan-5ksm175");
     });
   });

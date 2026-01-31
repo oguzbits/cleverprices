@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNotNull, not, or } from "drizzle-orm";
 import { db, products } from "../../src/db";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
 import { EBAY_FIELD_MAP, normalizeEbayValue } from "./ebay-mapper";
@@ -8,6 +8,14 @@ import { EBAY_FIELD_MAP, normalizeEbayValue } from "./ebay-mapper";
  * Uses EBAY_CLIENT_ID and EBAY_CLIENT_SECRET from environment.
  * Targets products by GTIN (EAN).
  */
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+class RateLimitError extends Error {
+  constructor() {
+    super("RATE_LIMIT");
+  }
+}
+
 export class EbayEnricher {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
@@ -18,8 +26,8 @@ export class EbayEnricher {
       return this.accessToken;
     }
 
-    const clientId = process.env.EBAY_APP_ID; // App ID is Client ID
-    const clientSecret = process.env.EBAY_CERT_ID; // Cert ID is Client Secret
+    const clientId = process.env.EBAY_APP_ID;
+    const clientSecret = process.env.EBAY_CERT_ID;
 
     if (!clientId || !clientSecret) {
       throw new Error("Missing EBAY_APP_ID or EBAY_CERT_ID in environment");
@@ -57,7 +65,7 @@ export class EbayEnricher {
     title: string,
     mpn?: string | null,
   ): Promise<any> {
-    const market = "EBAY_DE"; // Primary market for ID lookup
+    const market = "EBAY_DE";
     const token = await this.getAccessToken();
 
     // 1. Try EXACT GTIN
@@ -69,11 +77,13 @@ export class EbayEnricher {
       },
     });
 
+    if (response.status === 429) throw new RateLimitError();
+
     let data = await response.json();
     let best = await this.getBestItemFromSummaries(data.itemSummaries, market);
     if (best) return { ...best, matchType: "gtin" };
 
-    // 2. Try MPN (Manufacturer Part Number) - Critical for PC Parts
+    // 2. Try MPN
     if (mpn && mpn.length > 3) {
       console.log(`   🔄 No GTIN match, trying MPN: ${mpn}`);
       const url = `${this.baseUrl}/item_summary/search?q=${encodeURIComponent(mpn)}&limit=3&fieldgroups=ASPECTS,EXTENDED`;
@@ -84,29 +94,28 @@ export class EbayEnricher {
             "X-EBAY-C-MARKETPLACE-ID": market,
           },
         });
+        if (response.status === 429) throw new RateLimitError();
         const data = await response.json();
-        // MPN searches can be noisy, so we MUST double-check the title similarity
         const best = await this.getBestItemFromSummaries(
           data.itemSummaries,
           market,
         );
         if (best) {
-          // Validation: Does the found item title contain the MPN?
           if (best.title.toLowerCase().includes(mpn.toLowerCase())) {
             return { ...best, matchType: "mpn" };
           }
         }
       } catch (err) {
-        // Ignore MPN errors
+        if (err instanceof RateLimitError) throw err;
       }
     }
 
-    // 3. Try GTIN Variations (EAN-13 <-> UPC-12)
+    // 3. Try GTIN Variations
     let altGtin = "";
     if (gtin.length === 13 && gtin.startsWith("0")) {
-      altGtin = gtin.substring(1); // Try UPC (12 digits)
+      altGtin = gtin.substring(1);
     } else if (gtin.length === 12) {
-      altGtin = "0" + gtin; // Try EAN (13 digits)
+      altGtin = "0" + gtin;
     }
 
     if (altGtin) {
@@ -119,6 +128,7 @@ export class EbayEnricher {
             "X-EBAY-C-MARKETPLACE-ID": market,
           },
         });
+        if (response.status === 429) throw new RateLimitError();
         const data = await response.json();
         const best = await this.getBestItemFromSummaries(
           data.itemSummaries,
@@ -126,7 +136,7 @@ export class EbayEnricher {
         );
         if (best) return { ...best, matchType: "gtin-alt" };
       } catch (err) {
-        // Ignore Alt GTIN errors
+        if (err instanceof RateLimitError) throw err;
       }
     }
 
@@ -139,17 +149,19 @@ export class EbayEnricher {
     let bestItem: any = null;
     let maxAspects = -1;
 
-    // Pick top 5 to find a catalog entry
+    // Pick top 5
     const candidates = summaries.slice(0, 5);
 
     for (const summary of candidates) {
-      // Catalog entries are the gold standard (epid exists)
-      if (summary.epid) {
-        const details = await this.getItemDetails(summary.itemId, mkt);
-        if (details && details.localizedAspects) return details;
+      // OPTIMIZATION: Check if the summary ALREADY contains aspects (via fieldgroups=ASPECTS)
+      // If it has enough aspects (> 5), use it directly to save an API call.
+      if (summary.localizedAspects && summary.localizedAspects.length > 5) {
+        return summary;
       }
 
+      // Fallback: If no aspects in summary, only THEN get details
       const details = await this.getItemDetails(summary.itemId, mkt);
+      if (!details) continue;
       const aspectCount = details.localizedAspects?.length || 0;
 
       if (aspectCount > maxAspects) {
@@ -157,7 +169,6 @@ export class EbayEnricher {
         bestItem = details;
       }
 
-      // If we found a very good entry (> 12 aspects), take it
       if (aspectCount > 12) break;
     }
 
@@ -175,6 +186,8 @@ export class EbayEnricher {
       },
     });
 
+    if (response.status === 429) throw new RateLimitError();
+
     return await response.json();
   }
 
@@ -184,27 +197,77 @@ export class EbayEnricher {
     const targets = await db
       .select()
       .from(products)
-      .where(eq(products.id, 289))
+      .where(
+        and(
+          not(eq(products.enrichmentStatus, "processed")),
+          not(eq(products.enrichmentStatus, "not_found")),
+          not(eq(products.enrichmentStatus, "error")),
+          or(isNotNull(products.gtin), isNotNull(products.mpn)),
+        ),
+      )
+      .orderBy(products.lastEnrichedAt)
       .limit(limit);
 
-    console.log(`📋 Found ${targets.length} candidates with GTINs.`);
+    console.log(`📋 Found ${targets.length} candidates with GTINs/MPNs.`);
+
+    const noiseTerms = [
+      "hülle",
+      "case",
+      "cover",
+      "folie",
+      "kabel",
+      "cable",
+      "adapter",
+      "tasche",
+      "bag",
+      "schutz",
+    ];
 
     for (const product of targets) {
+      // 1. Freshness Check: Skip if already processed by a sync in this run
+      const currentStatus = await db
+        .select({ status: products.enrichmentStatus })
+        .from(products)
+        .where(eq(products.id, product.id))
+        .get();
+
+      if (currentStatus?.status === "processed") {
+        console.log(
+          `   ⏭️ Skipping ID ${product.id} (Already enriched by sync)`,
+        );
+        continue;
+      }
+
+      // 2. Noise Filter (Pre-check)
+      const lowTitle = product.title.toLowerCase();
+      if (
+        noiseTerms.some((term) => lowTitle.includes(term)) &&
+        (product.category === "smartphones" || product.category === "laptops")
+      ) {
+        console.log(
+          `   ⏩ Skipping noise product (No API call): ${product.title}`,
+        );
+        await db
+          .update(products)
+          .set({ enrichmentStatus: "not_found", lastEnrichedAt: new Date() })
+          .where(eq(products.id, product.id));
+        continue;
+      }
+
+      await sleep(1000); // Respectful 1s delay
       try {
         console.log(
           `🔍 Checking eBay for: ${product.title} (${[product.gtin, product.asin, product.mpn].filter(Boolean).join(", ")})`,
         );
 
-        // 1. Try GTIN/MPN Lookup (Waterfall within the function)
         let ebayData: any = null;
-        if (product.gtin) {
-          // The searchByGtin function already handles GTIN variations and MPN internally.
-          // We pass the primary GTIN, title, and MPN to it.
-          ebayData = await this.searchByGtin(
-            product.gtin,
-            product.title,
-            product.mpn,
-          );
+
+        // 2. GTIN Handling (Normalize UPC to EAN if needed)
+        let gtin = product.gtin;
+        if (gtin && gtin.length === 12) gtin = "0" + gtin;
+
+        if (gtin) {
+          ebayData = await this.searchByGtin(gtin, product.title, product.mpn);
         }
 
         // 2. Fallback: Keyword Search (Waterfall Strategy)
@@ -214,8 +277,8 @@ export class EbayEnricher {
           const cleanTitle = (t: string) =>
             t
               .replace(/[®™©*]/g, "")
-              .replace(/[()|,"+]/g, " ") // Strip punctuation early
-              .replace(/\d+(\.\d+)?\s*(MB\/s|GB\/s|MBps|GBps)/gi, "") // SSD speeds
+              .replace(/[()|,"+]/g, " ")
+              .replace(/\d+(\.\d+)?\s*(MB\/s|GB\/s|MBps|GBps)/gi, "")
               .replace(/\b\d+(GB|TB|MB|MHz|GHz|Hz|W|Wh|mAh)\b/gi, "")
               .replace(
                 /\b(Grafikkarte|Grafik|Smartphone|Handy|Drucker|Kühler|Motherboard|Mainboard|Notebook|Laptop|Tablet|SSD|HDD|Prozessor|CPU|Retail|OC|V2|LHR|Rev\.|Gen\.|Generation|Edition|Gaming|DDR6|GDDR6|DDR5|GDDR5|GB|TB|MB|Generalüberholt|Renewed|Refurbished|Zustand|Gut|Sehr|Wie|Neu|OVP|Ohne|Simlock|Netlock|Vertrag|Brandneu|WIE NEU|TOP ZUSTAND)\b/gi,
@@ -224,39 +287,83 @@ export class EbayEnricher {
               .replace(/\s+/g, " ")
               .trim();
 
-          const attempts = [
-            product.title
-              .replace(/[()|,"+]|(\d+,\d+")/g, " ") // Handle "6,9"" and generic punctuation
-              .replace(/\s+/g, " ")
-              .split(" ")
-              .slice(0, 6)
-              .join(" ")
-              .trim(),
-            cleanTitle(product.title).split(/\s+/).slice(0, 6).join(" "),
-            cleanTitle(product.title).split(/\s+/).slice(0, 4).join(" "),
-            cleanTitle(product.title).split(/\s+/).slice(0, 3).join(" "),
-            // Brand + Model fallback if available
-            product.brand && product.title.split(" ").length > 2
-              ? `${product.brand} ${product.title.split(" ").slice(1, 3).join(" ")}`.replace(
-                  /[()|,"+]/g,
-                  "",
-                )
-              : "",
+          const modelSuffixes = [
+            "pro",
+            "plus",
+            "max",
+            "ultra",
+            "air",
+            "mini",
+            "ti",
+            "super",
+            "xt",
+            "xtx",
+            "elite",
+            "probook",
+            "elitebook",
+            "thinkpad",
           ];
 
+          const validateMatch = (original: string, found: string): boolean => {
+            const o = original.toLowerCase();
+            const f = found.toLowerCase();
+            // Critical check: If original has a suffix, found MUST have it too
+            for (const suffix of modelSuffixes) {
+              if (o.includes(` ${suffix}`) && !f.includes(` ${suffix}`)) {
+                return false;
+              }
+              // Vice versa: if found has it but original doesn't
+              if (f.includes(` ${suffix}`) && !o.includes(` ${suffix}`)) {
+                return false;
+              }
+            }
+            return true;
+          };
+
+          const words = product.title
+            .replace(/[()|,"+]/g, " ")
+            .split(/\s+/)
+            .filter(Boolean);
+
+          const attempts = [
+            // Attempt 1: Just first 8 words (usually enough for full model + variant)
+            words.slice(0, 8).join(" "),
+            // Attempt 2: Cleaned title
+            cleanTitle(product.title).split(/\s+/).slice(0, 6).join(" "),
+            // Attempt 3: Brand + First 2 words of remainder
+            product.brand && words.length > 2
+              ? `${product.brand} ${words
+                  .filter(
+                    (w) => w.toLowerCase() !== product.brand?.toLowerCase(),
+                  )
+                  .slice(0, 3)
+                  .join(" ")}`
+              : "",
+          ].filter((a) => a && a.length > 5);
+
           for (const q of [...new Set(attempts)]) {
-            if (!q || q.length < 5) continue;
             console.log(`      🧪 Trying query: "${q}"`);
-            ebayData = await this.searchByKeywords(q);
-            if (ebayData && ebayData.localizedAspects) {
-              ebayData.isSearchMatch = true;
-              break;
+            const potentialMatch = await this.searchByKeywords(q);
+            if (potentialMatch && potentialMatch.localizedAspects) {
+              if (validateMatch(product.title, potentialMatch.title)) {
+                ebayData = potentialMatch;
+                ebayData.isSearchMatch = true;
+                break;
+              } else {
+                console.log(
+                  `      ⚠️ Rejecting mismatch: "${potentialMatch.title}"`,
+                );
+              }
             }
           }
         }
 
         if (!ebayData || !ebayData.localizedAspects) {
           console.log("❌ No specs found on eBay.");
+          await db
+            .update(products)
+            .set({ enrichmentStatus: "not_found", lastEnrichedAt: new Date() })
+            .where(eq(products.id, product.id));
           continue;
         }
 
@@ -276,21 +383,47 @@ export class EbayEnricher {
             `✅ Extracted ${Object.keys(sanitized).length} clean fields from eBay! (${source}): ${Object.keys(sanitized).join(", ")}`,
           );
 
-          await db
-            .update(products)
-            .set({
-              officialSpecifications: JSON.stringify(sanitized),
-              enrichmentStatus: "processed",
-              specificationsSource: source,
-              lastEnrichedAt: new Date(),
-            })
-            .where(eq(products.id, product.id));
+          // SMART SINKING: Update ALL products with the same GTIN
+          const updateData = {
+            officialTitle: ebayData.title || product.officialTitle,
+            officialSpecifications: JSON.stringify(sanitized),
+            enrichmentStatus: "processed",
+            specificationsSource: source,
+            lastEnrichedAt: new Date(),
+          };
+
+          if (product.gtin) {
+            const syncResult = await db
+              .update(products)
+              .set(updateData)
+              .where(eq(products.gtin, product.gtin));
+            console.log(
+              `   💎 Smart Sinking: Updated all variants with GTIN ${product.gtin}`,
+            );
+          } else {
+            await db
+              .update(products)
+              .set(updateData)
+              .where(eq(products.id, product.id));
+          }
         } else {
           console.log(
             `⚠️ No mapped specs found. Raw eBay labels: ${ebayData.localizedAspects.map((a: any) => a.name).join(", ")}`,
           );
         }
       } catch (e: any) {
+        if (e instanceof RateLimitError) {
+          console.warn(
+            `⛔ Rate Limit Hit for ID ${product.id}. Sleeping 30s...`,
+          );
+          // Mark as tried to move it to the end of the queue
+          await db
+            .update(products)
+            .set({ lastEnrichedAt: new Date() })
+            .where(eq(products.id, product.id));
+          await sleep(30000);
+          continue; // Skip DB update, keep as pending
+        }
         console.error(`❌ Failed ID ${product.id}:`, e.message);
       }
     }
@@ -321,6 +454,8 @@ export class EbayEnricher {
           "X-EBAY-C-MARKETPLACE-ID": mkt,
         },
       });
+
+      if (response.status === 429) throw new RateLimitError();
 
       const data: any = await response.json();
       if (data.itemSummaries && data.itemSummaries.length > 0) {

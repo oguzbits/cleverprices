@@ -30,7 +30,13 @@ async function resolveProductFromRoute(slug: string) {
     if (id >= 900000000) {
       const product = await findProductBySyntheticId(id);
       if (!product) return null;
-      const { slug: canonical } = getFamilyIdentity(product, []);
+
+      // Enable Consensus Identity for the canonical Hub check
+      const { getProductVariants } = await import("@/lib/product-registry");
+      const variants = await getProductVariants(product, DEFAULT_COUNTRY);
+
+      const { getFamilyIdentity } = await import("@/lib/product-families");
+      const { slug: canonical } = getFamilyIdentity(product, variants);
       const redirect = slug !== canonical ? `/p/${canonical}` : null;
       return { product, isParentView: true, redirect };
     }
@@ -208,7 +214,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     // ... rest of the logic uses product and isParentViewMode ...
     const isParentView = isParentViewMode;
-    const identity = getProductIdentity(product);
+    const { getProductVariants } = await import("@/lib/product-registry");
+    const siblings = isParentView
+      ? await getProductVariants(product, countryCode)
+      : [];
+    const identity = getProductIdentity(product, siblings);
 
     // Calculate price per unit for SEO
     const pricePerUnit =
@@ -302,6 +312,42 @@ export default async function ProductPage({ params, searchParams }: Props) {
       notFound();
     }
 
+    // STABLE HUB RESOLUTION: Ensure "Alle Varianten" always points to the same ID
+    let canonicalHubSlug: string | undefined = undefined;
+    let consensusHubTitle: string | undefined = undefined;
+    let consensusHubFullModel: string | undefined = undefined;
+
+    const { getCanonicalFamilyId, getProductById, getProductVariants } =
+      await import("@/lib/product-registry");
+    const { getFamilyIdentity } = await import("@/lib/product-families");
+
+    if (!parentViewMode) {
+      const canonicalRealId = await getCanonicalFamilyId(
+        product.parentAsin,
+        (product.id || 0) % 100000000,
+      );
+      const syntheticId = 900000000 + canonicalRealId;
+
+      const [representative, allVariants] = await Promise.all([
+        getProductById(canonicalRealId),
+        getProductVariants(product, countryCode),
+      ]);
+
+      const familyIdentity = getFamilyIdentity(
+        { ...(representative || product), id: syntheticId },
+        allVariants,
+      );
+      canonicalHubSlug = familyIdentity.slug;
+      consensusHubTitle = familyIdentity.brand + " " + familyIdentity.title;
+      consensusHubFullModel = familyIdentity.title;
+    } else {
+      // We are ON the hub page. Still calculate consensus for the title consistency.
+      const allVariants = await getProductVariants(product, countryCode);
+      const familyIdentity = getFamilyIdentity(product, allVariants);
+      consensusHubTitle = familyIdentity.brand + " " + familyIdentity.title;
+      consensusHubFullModel = familyIdentity.title;
+    }
+
     // GSC Fix: Return 404 for products with insufficient data (prevents soft 404)
     const hasPrice =
       product.prices[countryCode] ||
@@ -331,6 +377,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
         countryCode={countryCode}
         selectedCondition={condition as any}
         isParentView={parentViewMode}
+        parentSlug={canonicalHubSlug}
+        parentTitle={consensusHubTitle}
+        parentFullModel={consensusHubFullModel}
       />
     );
   } catch (error: any) {

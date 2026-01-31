@@ -419,12 +419,14 @@ export function ProductVariantSelector({
   countryCode,
   isParentView = false,
   selectedCondition,
+  parentSlug,
 }: {
   currentProduct: Product;
   variants: Product[];
   countryCode: string;
   isParentView?: boolean;
   selectedCondition?: "new" | "used" | "renewed";
+  parentSlug?: string; // Passed from server for stability
 }) {
   // 1. Enrich variants with normalized attributes
   const normalizedAllVariants = useMemo(() => {
@@ -602,7 +604,9 @@ export function ProductVariantSelector({
   }, [variants, currentAttrs, targetCondition, countryCode]);
 
   // Generate parent neutral slug using canonical logic
-  const parentSlug = useMemo(() => {
+  const derivedParentSlug = useMemo(() => {
+    if (parentSlug) return parentSlug;
+
     const rawId = currentProduct.id || 0;
     const realId = rawId % 100000000;
     const parentId = 900000000 + realId;
@@ -611,7 +615,9 @@ export function ProductVariantSelector({
       variants as any,
     );
     return slug;
-  }, [currentProduct, variants]);
+  }, [currentProduct, variants, parentSlug]);
+
+  const finalParentSlug = parentSlug || derivedParentSlug;
 
   if (allVariants.length <= 1) return null;
 
@@ -732,7 +738,7 @@ export function ProductVariantSelector({
         <div className="scrollbar-thin scrollbar-thumb-gray-300 flex gap-2.5 overflow-x-auto pt-1 pb-2">
           {/* Alle Varianten Card */}
           <Link
-            href={`/p/${parentSlug}${
+            href={`/p/${finalParentSlug}${
               targetCondition && targetCondition !== "new"
                 ? `?condition=${targetCondition}`
                 : ""

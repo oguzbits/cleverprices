@@ -162,10 +162,12 @@ class GoogleShoppingEnricher {
           or(
             isNull(products.officialSpecifications),
             eq(products.enrichmentStatus, "pending"),
+            eq(products.enrichmentStatus, "scavenged"),
             eq(products.enrichmentStatus, "not_found"),
           ),
         ),
       )
+      .orderBy(products.category)
       .limit(limit);
 
     console.log(`📋 Found ${targets.length} candidates.`);

@@ -41,7 +41,7 @@ export function getFamilyIdentity(
   allVariants: Product[] = [],
 ): { slug: string; title: string; brand: string; variantSuffix: string } {
   // 1. Basic Identity (Contains normalized brand e.g. PlayStation -> Sony)
-  const identity = getProductIdentity(representative);
+  const identity = getProductIdentity(representative, allVariants);
   const brand = identity.brand || "Generic";
   const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
@@ -67,24 +67,18 @@ export function getFamilyIdentity(
     .replace(/\u00F6/g, "oe")
     .replace(/\u00FC/g, "ue")
     .replace(/\u00DF/g, "ss")
+    .replace(new RegExp(`\\b${identity.categoryUsed}s?\\b`, "gi"), "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
   // 4. Dynamic Variant Differentiators (Category-Agnostic)
   let variantPart = "";
-
-  // Use extracted variant map from identity (includes Title Recovery)
-  // This allows us to get "2tb" into the slug even if DB attributes are missing
   if (!isHub) {
     // Use the unified variant suffix as the slug differentiator
-    // This ensures absolute consistency between URL, Breadcrumbs, and Titles.
     variantPart = identity.variantSuffix
       .toLowerCase()
+      .replace(/(\d+)\s*(GB|TB|MB|WH)/gi, "$1$2") // Collapse only pure capacity units
       .normalize("NFKC")
-      .replace(/\u00E4/g, "ae")
-      .replace(/\u00F6/g, "oe")
-      .replace(/\u00FC/g, "ue")
-      .replace(/\u00DF/g, "ss")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
   }
@@ -93,8 +87,10 @@ export function getFamilyIdentity(
   let textSlug = modelPart;
   if (!isHub && variantPart) {
     // If variantPart (color/mpn) is already in modelPart, don't repeat it
+    // Use word-boundary aware check (split by hyphen) to avoid stripping 'a' from 'macbook'
+    const modelWords = modelPart.split("-");
     const vParts = variantPart.split("-");
-    const uniqueVParts = vParts.filter((p) => !modelPart.includes(p));
+    const uniqueVParts = vParts.filter((p) => !modelWords.includes(p));
     if (uniqueVParts.length > 0) {
       textSlug += `-${uniqueVParts.join("-")}`;
     }

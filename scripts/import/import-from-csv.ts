@@ -751,6 +751,22 @@ function mapCategory(
   // Soundbars (Title override)
   if (/\bsoundbar\b/i.test(t)) return "soundbars";
 
+  // Notebooks/Laptops (Global override to prevent them from landing in SSDs or components)
+  if (
+    /\b(notebook|laptop|macbook|chromebook|surface book|convertible|elitebook|thinkpad|latitude|probook|zbook|inspiron|vostro|yoga|ideapad|expertbook|zenbook|vivobook)\b/i.test(
+      t,
+    ) ||
+    (/\bGHz\b/.test(title) && !/\bsoundbar\b/i.test(t)) // GHz is a clear signal for a PC, not a component like an SSD
+  ) {
+    if (
+      !/\b(kabel|cable|adapter|netzteil|charger|battery|batterie|tastatur|keyboard|maus|mouse|rucksack|tasche|bag|case|hülle|folie)\b/i.test(
+        t,
+      )
+    ) {
+      return "notebooks";
+    }
+  }
+
   // Raspberry Pi Kits (Pollute components, so exclude even if case/set)
   if (/raspberry pi/i.test(t)) {
     return null;
@@ -760,7 +776,7 @@ function mapCategory(
   if (
     /\b(ssd|nvme)\b/i.test(t) &&
     /\b(gb|tb|pcie|m\.2)\b/i.test(t) &&
-    !/\b(gehäuse|enclosure|case|mount|halterung|adapter|kabel|cable|dock)\b/i.test(
+    !/\b(gehäuse|enclosure|case|mount|halterung|adapter|kabel|cable|dock|laptop|notebook|macbook|book)\b/i.test(
       t,
     )
   ) {
