@@ -1,7 +1,8 @@
-import { allCategories, type CategorySlug } from "@/lib/categories";
-import { type CountryCode } from "@/lib/countries";
-import { Product } from "@/lib/product-registry";
-import { Product as UIProduct, type Currency } from "@/types";
+import type { CategorySlug } from "@/lib/categories";
+import { allCategories } from "@/lib/categories";
+import type { CountryCode } from "@/lib/countries";
+import type { Product } from "@/lib/product-registry";
+import type { Currency, Product as UIProduct } from "@/types";
 
 /**
  * Parses numeric value from strings like "0.03€/GB" or "1.25$/TB"
@@ -103,7 +104,9 @@ export function calculateProductMetrics(
 
   // We need both price and capacity to calculate metrics
   // allow price 0 if actualCapacity exists, but usually we want price > 0
-  if (!actualCapacity || price === undefined) return p;
+  if (!actualCapacity || price === undefined) {
+    return p;
+  }
 
   const comparisonUnit = categoryConfig?.unitType || capacityUnit || "GB";
 

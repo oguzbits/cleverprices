@@ -210,6 +210,32 @@ export class EbayEnricher {
 
     console.log(`📋 Found ${targets.length} candidates with GTINs/MPNs.`);
 
+    const junkBrands = [
+      "jodabook",
+      "shinobee",
+      "rhino computer",
+      "memory pc",
+      "agando",
+      "vibox",
+      "csl",
+      "megaport",
+      "captiva",
+      "systemtreff",
+      "ankermann",
+      "iclever",
+      "dyon",
+      "rca",
+    ];
+
+    const junkTitlePatterns = [
+      /#[0-9]{3,}/, // #7343 SKU style
+      /\| RAM: /i,
+      /\| SSD: /i,
+      /\| Office /i,
+      /mit Rucksack/i,
+      /Allround.*Notebook/i,
+    ];
+
     const noiseTerms = [
       "hülle",
       "case",
@@ -238,7 +264,25 @@ export class EbayEnricher {
         continue;
       }
 
-      // 2. Noise Filter (Pre-check)
+      // 2. Junk / Generic Filter (Enrichment Waste Prevention)
+      const brand = product.brand?.toLowerCase() || "";
+      const isJunkBrand = junkBrands.some((b) => brand.includes(b));
+      const hasJunkPattern = junkTitlePatterns.some((p) =>
+        p.test(product.title),
+      );
+
+      if (isJunkBrand || hasJunkPattern) {
+        console.log(
+          `   ⏩ Skipping generic/assembled product (Waste prevention): ${product.title}`,
+        );
+        await db
+          .update(products)
+          .set({ enrichmentStatus: "not_found", lastEnrichedAt: new Date() })
+          .where(eq(products.id, product.id));
+        continue;
+      }
+
+      // 3. Noise Filter (Pre-check for accessories)
       const lowTitle = product.title.toLowerCase();
       if (
         noiseTerms.some((term) => lowTitle.includes(term)) &&
