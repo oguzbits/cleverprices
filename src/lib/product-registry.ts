@@ -550,11 +550,23 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 
     const pricesByProduct = indexPricesById(prs);
 
+    // Group by parentAsin for correct sibling consensus
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
     return prods.map((p) => {
+      // Use true siblings if part of a family, otherwise just self
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+
       const mapped = mapDbProduct(
         p as DbProduct,
         pricesByProduct.get(p.id!) || [],
-        prods as any[], // Pass siblings for consensus
+        siblings, // CORRECTED: Pass true siblings
         stripHeavyData,
       );
 
@@ -943,14 +955,24 @@ export async function searchProducts(
       (a, b) => (idOrder.get(a.id) ?? 0) - (idOrder.get(b.id) ?? 0),
     );
 
-    return sortedProds.map((p) =>
-      mapDbProduct(
+    // Group by parentAsin for correct sibling consensus
+    const families = new Map<string, any[]>();
+    for (const p of sortedProds) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    return sortedProds.map((p) => {
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+      return mapDbProduct(
         p as DbProduct,
         pricesByProduct.get(p.id!) || [],
-        sortedProds as any[], // Pass siblings for consensus
+        siblings, // Corrected siblings
         true, // Strip heavy data for search results
-      ),
-    );
+      );
+    });
   } catch (error) {
     console.error("FTS Search Error:", error);
     // Fallback to basic search if FTS fails for some reason
@@ -970,14 +992,24 @@ export async function searchProducts(
 
     const fallbackPricesByProduct = indexPricesById(fallbackPrs);
 
-    return fallbackProds.map((p) =>
-      mapDbProduct(
+    // Group fallback results
+    const families = new Map<string, any[]>();
+    for (const p of fallbackProds) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    return fallbackProds.map((p) => {
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+      return mapDbProduct(
         p as DbProduct,
         fallbackPricesByProduct.get(p.id!) || [],
-        fallbackProds as any[], // Pass siblings for consensus
+        siblings, // Corrected siblings
         true, // Strip heavy data for search results (fallback)
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -1005,9 +1037,23 @@ export async function getProductsByBrand(
 
   const pricesByProduct = indexPricesById(prs);
 
-  return prods.map((p) =>
-    mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || []),
-  );
+  // Group by parentAsin for correct sibling consensus
+  const families = new Map<string, any[]>();
+  for (const p of prods) {
+    if (p.parentAsin) {
+      if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+      families.get(p.parentAsin)!.push(p);
+    }
+  }
+
+  return prods.map((p) => {
+    const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+    return mapDbProduct(
+      p as DbProduct,
+      pricesByProduct.get(p.id!) || [],
+      siblings,
+    );
+  });
 }
 
 const getCachedDeals = unstable_cache(
@@ -1047,9 +1093,26 @@ const getCachedDeals = unstable_cache(
       .limit(limit);
 
     const prods = results.map((r) => r.product);
-    return results.map((r) =>
-      mapDbProduct(r.product as DbProduct, [r.price], prods as any[], true),
-    );
+
+    // Group by parentAsin for correct sibling consensus
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    return results.map((r) => {
+      const p = r.product;
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+      return mapDbProduct(
+        r.product as DbProduct,
+        [r.price],
+        siblings,
+        true,
+      );
+    });
   },
   ["best-deals-v13"],
   {
@@ -1079,9 +1142,26 @@ export async function getBestDeals(
       )
       .limit(limit);
     const prods = results.map((r) => r.product);
-    return results.map((r) =>
-      mapDbProduct(r.product as DbProduct, [r.price], prods as any[], true),
-    );
+
+    // Group by parentAsin
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    return results.map((r) => {
+      const p = r.product;
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+      return mapDbProduct(
+        r.product as DbProduct,
+        [r.price],
+        siblings,
+        true,
+      );
+    });
   }
   return getCachedDeals(limit, countryCode, condition);
 }
@@ -1123,15 +1203,25 @@ const getCachedPopular = unstable_cache(
 
     const pricesByProduct = indexPricesById(prs);
 
+    // Group by parentAsin
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
     return prods
-      .map((p) =>
-        mapDbProduct(
+      .map((p) => {
+        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+        return mapDbProduct(
           p as DbProduct,
           pricesByProduct.get(p.id!) || [],
-          prods as any[], // Pass siblings for consensus
+          siblings, // Pass true siblings
           true,
-        ),
-      )
+        );
+      })
       .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
   ["popular-deals-v13"],
@@ -1167,14 +1257,24 @@ export async function getMostPopular(
 
     const pricesByProduct = indexPricesById(prs);
 
-    return prods.map((p) =>
-      mapDbProduct(
+    // Group by parentAsin
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    return prods.map((p) => {
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+      return mapDbProduct(
         p as DbProduct,
         pricesByProduct.get(p.id!) || [],
-        prods as any[],
+        siblings,
         true,
-      ),
-    );
+      );
+    });
   }
   return getCachedPopular(limit, countryCode, condition);
 }
@@ -1222,19 +1322,28 @@ export async function getDiverseMostPopular(
       and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
     );
 
-  const pricesByProduct = indexPricesById(prs);
-
-  return prods
-    .map((p) =>
-      mapDbProduct(
-        p as DbProduct,
-        pricesByProduct.get(p.id!) || [],
-        prods as any[], // Pass siblings for consensus
-        true, // Strip heavy data (Home curation doesn't need specs)
-      ),
-    )
-    .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
-}
+      const pricesByProduct = indexPricesById(prs);
+  
+      // Group by parentAsin
+      const families = new Map<string, any[]>();
+      for (const p of prods) {
+        if (p.parentAsin) {
+          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+          families.get(p.parentAsin)!.push(p);
+        }
+      }
+  
+      return prods
+        .map((p) => {
+          const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+          return mapDbProduct(
+            p as DbProduct,
+            pricesByProduct.get(p.id!) || [],
+            siblings, // Pass true siblings
+            true, // Strip heavy data (Home curation doesn't need specs)
+          );
+        })
+        .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);}
 
 const getCachedNew = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
@@ -1269,15 +1378,25 @@ const getCachedNew = unstable_cache(
 
     const pricesByProduct = indexPricesById(prs);
 
+    // Group by parentAsin
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
     return prods
-      .map((p) =>
-        mapDbProduct(
+      .map((p) => {
+        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+        return mapDbProduct(
           p as DbProduct,
           pricesByProduct.get(p.id!) || [],
-          prods as any[], // Pass siblings for consensus
+          siblings, // Pass siblings for consensus
           true,
-        ),
-      )
+        );
+      })
       .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
   ["new-arrivals-v13"],
@@ -1313,14 +1432,24 @@ export async function getNewArrivals(
 
     const pricesByProduct = indexPricesById(prs);
 
-    return prods.map((p) =>
-      mapDbProduct(
+    // Group by parentAsin
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    return prods.map((p) => {
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+      return mapDbProduct(
         p as DbProduct,
         pricesByProduct.get(p.id!) || [],
-        prods as any[],
+        siblings,
         true,
-      ),
-    );
+      );
+    });
   }
   return getCachedNew(limit, countryCode, condition);
 }
@@ -1445,9 +1574,21 @@ export async function getFilteredProducts(
     .offset(filters.offset || 0);
 
   const prods = results.map((r) => r.product);
-  return results.map((r) =>
-    mapDbProduct(r.product as DbProduct, [r.price], prods as any[], true),
-  );
+
+  // Group by parentAsin for correct sibling consensus
+  const families = new Map<string, any[]>();
+  for (const p of prods) {
+    if (p.parentAsin) {
+      if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+      families.get(p.parentAsin)!.push(p);
+    }
+  }
+
+  return results.map((r) => {
+    const p = r.product;
+    const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+    return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
+  });
 }
 
 /**

@@ -70,11 +70,6 @@ export async function IdealoCategoryPage({
     searchParams,
   );
 
-  // 2. Fetch "all data" for filters (only if needed)
-  const allDataPromise = category.filterGroups
-    ? getCategoryProducts(category.slug, countryCode, { fetchAll: true })
-    : Promise.resolve(null);
-
   // Breadcrumb items
   const breadcrumbItems = [
     { name: "Home", href: "/" },
@@ -141,7 +136,6 @@ export async function IdealoCategoryPage({
               <AsyncFilterPanel
                 category={category}
                 productDataPromise={productDataPromise}
-                allDataPromise={allDataPromise}
               />
             </Suspense>
           </ComponentErrorBoundary>
@@ -167,7 +161,6 @@ export async function IdealoCategoryPage({
                 countryCode={countryCode}
                 searchParams={searchParams}
                 productDataPromise={productDataPromise}
-                allDataPromise={allDataPromise}
               />
             </Suspense>
           </ComponentErrorBoundary>

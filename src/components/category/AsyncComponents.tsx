@@ -46,18 +46,13 @@ export async function AsyncTopBar({
 interface AsyncFilterPanelProps {
   category: Omit<Category, "icon">;
   productDataPromise: Promise<any>;
-  allDataPromise: Promise<any>; // Fetch all for filter options
 }
 
 export async function AsyncFilterPanel({
   category,
   productDataPromise,
-  allDataPromise,
 }: AsyncFilterPanelProps) {
-  const [filteredData, allData] = await Promise.all([
-    productDataPromise,
-    allDataPromise,
-  ]);
+  const filteredData = await productDataPromise;
 
   const {
     filteredCount,
@@ -69,19 +64,20 @@ export async function AsyncFilterPanel({
     priceRanges,
   } = filteredData;
 
-  // Pre-calculate filter options using ALL data (to show all available options)
+  // Pre-calculate filter options using filterCounts (from filteredData)
   const filterGroupOptions: Record<string, string[]> = {};
-  if (hasProducts && category.filterGroups && allData) {
-    const { products: allCategoryProducts } = allData;
-
+  if (hasProducts && category.filterGroups) {
     category.filterGroups.forEach((group) => {
       if (group.options) {
         filterGroupOptions[group.field] = group.options;
       } else {
-        filterGroupOptions[group.field] = getUniqueFieldValues(
-          allCategoryProducts,
-          group.field,
-        );
+        // Use keys from filterCounts to get available options
+        const options = Object.keys(filterCounts[group.field] || {});
+        // Simple sort - can be enhanced if needed
+        filterGroupOptions[group.field] =
+          group.field === "capacity"
+            ? options.sort((a, b) => parseFloat(a) - parseFloat(b))
+            : options.sort();
       }
     });
   }
@@ -120,7 +116,6 @@ interface AsyncProductListProps {
   countryCode: string;
   searchParams: FilterParams;
   productDataPromise: Promise<any>;
-  allDataPromise: Promise<any>; // Needed for Mobile Filter Drawer options
 }
 
 export async function AsyncProductList({
@@ -128,12 +123,8 @@ export async function AsyncProductList({
   countryCode,
   searchParams,
   productDataPromise,
-  allDataPromise,
 }: AsyncProductListProps) {
-  const [data, allData] = await Promise.all([
-    productDataPromise,
-    allDataPromise,
-  ]);
+  const data = await productDataPromise;
   const {
     products,
     filteredCount,
@@ -152,16 +143,17 @@ export async function AsyncProductList({
 
   // Pre-calculate options for Mobile Drawer too
   const filterGroupOptions: Record<string, string[]> = {};
-  if (hasProducts && category.filterGroups && allData) {
-    const { products: allCategoryProducts } = allData;
+  if (hasProducts && category.filterGroups) {
     category.filterGroups.forEach((group) => {
       if (group.options) {
         filterGroupOptions[group.field] = group.options;
       } else {
-        filterGroupOptions[group.field] = getUniqueFieldValues(
-          allCategoryProducts,
-          group.field,
-        );
+         // Use keys from filterCounts to get available options
+         const options = Object.keys(filterCounts[group.field] || {});
+         filterGroupOptions[group.field] =
+           group.field === "capacity"
+             ? options.sort((a, b) => parseFloat(a) - parseFloat(b))
+             : options.sort();
       }
     });
   }
