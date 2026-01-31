@@ -11,11 +11,12 @@ async function run() {
         sql`ALTER TABLE products ADD COLUMN specifications_source text DEFAULT NULL`,
       );
       console.log("✅ Column 'specifications_source' added.");
-    } catch (e: any) {
-      if (e.message.includes("duplicate column")) {
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (message.includes("duplicate column")) {
         console.log("ℹ️ Column 'specifications_source' already exists.");
       } else {
-        console.error("⚠️ Error adding column:", e.message);
+        console.error("⚠️ Error adding column:", message);
       }
     }
 

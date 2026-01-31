@@ -85,8 +85,11 @@ function createDbClient(): Client {
       try {
         fs.copyFileSync(dbPath, replicaPath);
         console.log("[DB] Seeded replica from bundled lite.db");
-      } catch (e: any) {
-        console.warn("[DB] Failed to seed replica:", e.message);
+      } catch (e) {
+        console.warn(
+          "[DB] Failed to seed replica:",
+          e instanceof Error ? e.message : String(e),
+        );
       }
     }
 
@@ -136,8 +139,11 @@ function createDbClient(): Client {
         // Production-only: MMap allows the OS to treat the file like RAM
         client.execute("PRAGMA mmap_size = 20000000").catch(() => {});
       }
-    } catch (e: any) {
-      console.warn("[DB] Failed to set performance PRAGMAs:", e.message);
+    } catch (e) {
+      console.warn(
+        "[DB] Failed to set performance PRAGMAs:",
+        e instanceof Error ? e.message : String(e),
+      );
     }
   }
 
@@ -178,9 +184,12 @@ export const dbReady: Promise<void> = (async () => {
       const result = await client.execute("SELECT count(*) as C FROM products");
       console.log(`[DB DEBUG] Products count on startup: ${result.rows[0].C}`);
     }
-  } catch (e: any) {
+  } catch (e) {
     if (isVercelProduction) {
-      console.error("[DB ERROR] Client initialization failure:", e.message);
+      console.error(
+        "[DB ERROR] Client initialization failure:",
+        e instanceof Error ? e.message : String(e),
+      );
     }
   }
 })();

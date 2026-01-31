@@ -558,9 +558,9 @@ export class SmartParser {
 
           try {
             validated[key] = fieldSchema.parse(val);
-          } catch (err: any) {
+          } catch (err) {
             console.warn(
-              `⚠️ PASS 2: Validation failed for field "${key}" (Value: "${val}"). Reason: ${err.message}`,
+              `⚠️ PASS 2: Validation failed for field "${key}" (Value: "${val}"). Reason: ${err instanceof Error ? err.message : String(err)}`,
             );
             // Drop this specific field but preserve others
           }
@@ -578,9 +578,10 @@ export class SmartParser {
           );
         }
         return finalResults;
-      } catch (e: any) {
+      } catch (e) {
+        const errorMsg = e instanceof Error ? e.message : String(e);
         console.warn(
-          `⚠️ PASS 2: Primary attempt failed (${e.message}). Trying emergency loose fallback...`,
+          `⚠️ PASS 2: Primary attempt failed (${errorMsg}). Trying emergency loose fallback...`,
         );
 
         const looseResult = await generateText({
@@ -613,13 +614,14 @@ export class SmartParser {
         }
         return finalResults;
       }
-    } catch (error: any) {
-      if (error.message.includes("TIMEOUT")) {
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (message.includes("TIMEOUT")) {
         console.warn(
           `🕒 Timeout: Pass 2 failed to respond for "${targetModel}"`,
         );
       } else {
-        console.error("❌ PASS 2: Failed:", error.message);
+        console.error("❌ PASS 2: Failed:", message);
       }
       return deterministicSpecs;
     }

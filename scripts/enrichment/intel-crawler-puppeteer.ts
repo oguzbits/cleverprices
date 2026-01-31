@@ -100,8 +100,10 @@ async function run() {
             productMap[model] = fullUrl;
           }
         }
-      } catch (err: any) {
-        console.error(`      Failed to crawl ${url}: ${err.message}`);
+      } catch (err) {
+        console.error(
+          `      Failed to crawl ${url}: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
 

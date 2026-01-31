@@ -214,8 +214,11 @@ async function enrich() {
           console.log(
             `  ✓ Batch ${batchAbsIndex + 1}/${batches.length} complete`,
           );
-        } catch (e: any) {
-          console.error(`  ❌ Error in batch ${batchAbsIndex + 1}:`, e.message);
+        } catch (e) {
+          console.error(
+            `  ❌ Error in batch ${batchAbsIndex + 1}:`,
+            e instanceof Error ? e.message : String(e),
+          );
         }
       }),
     );
@@ -248,8 +251,11 @@ async function enrich() {
         );
       }
     }
-  } catch (err: any) {
-    console.error(`❌ Database sync failed:`, err.message);
+  } catch (err) {
+    console.error(
+      `❌ Database sync failed:`,
+      err instanceof Error ? err.message : String(err),
+    );
     process.exit(1);
   }
 

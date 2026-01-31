@@ -102,8 +102,9 @@ async function fetchLiteDb() {
 
     const sizeMB = (buffer.byteLength / (1024 * 1024)).toFixed(2);
     console.log(`[Prebuild] ✅ Downloaded lite.db (${sizeMB} MB)`);
-  } catch (error: any) {
-    console.error("[Prebuild] ❌ Failed to fetch lite.db:", error.message);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[Prebuild] ❌ Failed to fetch lite.db:", message);
 
     // If we have a fallback file, don't fail the build
     if (fs.existsSync(LITE_DB_PATH)) {

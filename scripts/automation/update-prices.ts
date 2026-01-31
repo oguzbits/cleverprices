@@ -311,10 +311,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
           console.log(
             `    ✓ Batch ${batchAbsIndex + 1}/${batches.length} synced (${keepaProducts.length} items)`,
           );
-        } catch (err: any) {
+        } catch (err) {
           console.error(
             `    ❌ Batch ${batchAbsIndex + 1} failed:`,
-            err.message,
+            err instanceof Error ? err.message : String(err),
           );
           failed += batch.length;
         }
@@ -334,8 +334,11 @@ async function updatePrices(country: CountryCode): Promise<void> {
     try {
       console.log("\n🔥 Triggering Cache Warmer...");
       execSync(`bun run warm-cache`, { stdio: "inherit" });
-    } catch (e) {
-      console.warn("⚠️ Cache warming failed.");
+    } catch (err) {
+      console.error(
+        "\n   ❌ Cache warming failed:",
+        err instanceof Error ? err.message : String(err),
+      );
     }
   }
 }

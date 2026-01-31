@@ -25,10 +25,11 @@ console.log("🛠️ Starting Surgical Migration...");
       console.log("   ✅ Success");
       successCount++;
     } catch (e) {
-      if (e.message.includes("duplicate column")) {
+      const message = e instanceof Error ? e.message : String(e);
+      if (message.includes("duplicate column")) {
         console.log("   ⚠️ Column already exists (Skipping)");
       } else {
-        console.error("   ❌ Error:", e.message);
+        console.error("   ❌ Error:", message);
       }
     }
   }
