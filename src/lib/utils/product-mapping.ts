@@ -234,8 +234,10 @@ export function mapDbProduct(
   item.title = variantSuffix ? `${familyTitle} ${variantSuffix}` : familyTitle;
   item.subtitle = variantSuffix;
 
-  // Identity and titles are set. We keep officialSpecifications as they are low-weight
-  // and critical for identity consistency in carousels/downstream.
+  // Identity and titles are set. We strip huge blobs if requested to stay under cache limits.
+  if (stripHeavyData) {
+    delete (item as any).officialSpecifications;
+  }
 
   return calculateProductMetrics(item) as Product;
 }

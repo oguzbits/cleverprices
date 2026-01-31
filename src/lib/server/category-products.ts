@@ -288,15 +288,6 @@ export async function getCachedLocalizedCategoryProducts(
         listPrice: displayListPrice,
         parentAsin,
         variationAttributes: p.variationAttributes,
-        officialSpecifications:
-          (typeof p.officialSpecifications === "string"
-            ? JSON.parse(p.officialSpecifications)
-            : p.officialSpecifications) ||
-          (p.specifications
-            ? typeof p.specifications === "string"
-              ? JSON.parse(p.specifications)
-              : p.specifications
-            : null),
         specificationsSource: p.specificationsSource,
         officialTitle: p.officialTitle,
         mpn: p.mpn,

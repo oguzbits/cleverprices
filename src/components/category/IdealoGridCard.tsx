@@ -20,7 +20,6 @@
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
-import { getProductIdentity } from "@/lib/utils/product-identity";
 import Image from "next/image";
 
 import { type LeanProduct } from "@/lib/types";
@@ -131,7 +130,7 @@ export function IdealoGridCard({
                     "mb-1 line-clamp-3 text-[14px] leading-[18px] font-bold hyphens-auto text-[#2d2d2d]",
                   )}
                 >
-                  {getProductIdentity(product).modelTitle}
+                  {product.title}
                   {product.subtitle && (
                     <span className="ml-1.5 font-bold">{product.subtitle}</span>
                   )}

@@ -20,7 +20,6 @@ import {
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
-import { getProductIdentity } from "@/lib/utils/product-identity";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
@@ -296,7 +295,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   >
                     <div className="flex w-full items-baseline gap-2 truncate">
                       <span className="truncate font-semibold text-[#2d2d2d]">
-                        {getProductIdentity(product).modelTitle}
+                        {product.title}
                       </span>
                       {product.subtitle && (
                         <span className="shrink-0 text-[12px] font-bold">
