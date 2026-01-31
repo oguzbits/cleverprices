@@ -11,7 +11,7 @@ describe("Universal Variant Extraction", () => {
     {
       category: "consoles",
       title: "Sony PlayStation 5 Slim 1TB Edition",
-      expectedStorage: "1TB",
+      expectedStorage: "1 TB",
     },
     {
       category: "smartphones", // Control case

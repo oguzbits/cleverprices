@@ -102,8 +102,10 @@ export const IDENTITY_CONFIG = {
     "cpu",
     "name",
     "bezeichnung",
+    "modellbezeichnung",
     "family",
     "familie",
+    "style",
   ],
 };
 
@@ -333,7 +335,7 @@ export function getProductIdentity(
     currentTokens.forEach((t) => {
       if (t.length > 1) {
         const freq = (tokenCounts[t] || 0) / total;
-        if (freq < 0.7 && !IDENTITY_CONFIG.FIXED_TRAIT_CATEGORIES.includes(t)) {
+        if (freq < 0.7 && !isFixedTraitCategory) {
           subtractTokens.add(t);
         }
       }

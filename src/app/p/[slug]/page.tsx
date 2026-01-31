@@ -338,13 +338,13 @@ export default async function ProductPage({ params, searchParams }: Props) {
         allVariants,
       );
       canonicalHubSlug = familyIdentity.slug;
-      consensusHubTitle = familyIdentity.brand + " " + familyIdentity.title;
+      consensusHubTitle = familyIdentity.title;
       consensusHubFullModel = familyIdentity.title;
     } else {
       // We are ON the hub page. Still calculate consensus for the title consistency.
       const allVariants = await getProductVariants(product, countryCode);
       const familyIdentity = getFamilyIdentity(product, allVariants);
-      consensusHubTitle = familyIdentity.brand + " " + familyIdentity.title;
+      consensusHubTitle = familyIdentity.title;
       consensusHubFullModel = familyIdentity.title;
     }
 
