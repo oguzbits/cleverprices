@@ -5,7 +5,6 @@ import {
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { cn } from "@/lib/utils";
-import { getProductIdentity } from "@/lib/utils/product-identity";
 import Image from "next/image";
 import { Suspense } from "react";
 import { IdealoStarRating } from "../category/IdealoStarRating";
@@ -50,10 +49,16 @@ export function IdealoProductCard({
   countryCode = "de",
   priorityLoad = false,
 }: IdealoProductCardProps) {
+  // Robust slug check: If it already has the ID prefix (e.g. 200000000_-), use it as is.
+  const isFinalSlug = /^[29]\d+_-/.test(slug);
+  const href = isFinalSlug
+    ? `/p/${slug}`
+    : `/p/${(isVariantGroup ? 900000000 : 200000000) + (id || 0)}_-${slug.replace(/^[29]\d+_-/, "")}`;
+
   return (
     <div className="group border-idealo-border relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border bg-white transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[224px]">
       <PrefetchLink
-        href={`/p/${slug.includes("_-") ? slug : `${(isVariantGroup ? 900000000 : 200000000) + (id || 0)}_-${slug}`}`}
+        href={href}
         className="flex h-full w-full flex-col no-underline"
       >
         {/* Badges Area - top left */}
@@ -117,10 +122,7 @@ export function IdealoProductCard({
 
           {/* Title */}
           <h3 className="mb-0.5 line-clamp-2 max-h-[44px] text-[16px] leading-tight font-semibold text-gray-900">
-            {
-              getProductIdentity({ title, subtitle: subtitle ?? "" } as any)
-                .modelTitle
-            }
+            {subtitle ? title.replace(subtitle, "").trim() : title}
             {subtitle && <span className="ml-1.5 font-bold">{subtitle}</span>}
           </h3>
 

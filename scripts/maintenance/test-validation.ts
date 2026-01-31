@@ -19,7 +19,7 @@ function validateProductSpecs(specs: any) {
     const stringVal = String(val).toUpperCase();
 
     if (restrictedKeys[stdKey]) {
-      const isProhibited = restrictedKeys[stdKey].some((keyword) =>
+      const isProhibited = restrictedKeys[stdKey].some((keyword: string) =>
         stringVal.includes(keyword),
       );
       if (isProhibited) continue;

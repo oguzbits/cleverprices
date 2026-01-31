@@ -28,7 +28,7 @@ export function parseHistoryJson(
 export function mapDbProduct(
   p: DbProduct,
   pricesList: LitePrice[] | DbPrice[],
-  _historyList: any[] = [], // Deprecated
+  siblings: any[] = [],
   stripHeavyData: boolean = false,
 ): Product {
   const pricesObj: Record<string, number> = {};
@@ -74,11 +74,15 @@ export function mapDbProduct(
     });
   }
 
-  // Extract core specifications for filtering before stripping
-  let rawSpecs = p.specifications ? JSON.parse(p.specifications) : {};
+  // Pre-parse specifications for identity logic (CRITICAL: Needed even if stripHeavyData is true)
+  const parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
+  const parsedOfficialSpecs = p.officialSpecifications
+    ? JSON.parse(p.officialSpecifications)
+    : undefined;
 
   // --- TECH DATA REPAIR LAYER ---
   // Fix corrupted/misaligned specifications from the DB
+  let rawSpecs = { ...parsedSpecs };
   if (
     p.category === "smartphones" ||
     p.category === "tablets" ||
@@ -198,10 +202,7 @@ export function mapDbProduct(
     parentAsin: p.parentAsin || undefined,
     variationAttributes: p.variationAttributes || undefined,
     specifications: stripHeavyData ? {} : rawSpecs,
-    officialSpecifications:
-      !stripHeavyData && p.officialSpecifications
-        ? JSON.parse(p.officialSpecifications)
-        : undefined,
+    officialSpecifications: parsedOfficialSpecs, // Passed to identify logic below
     officialTitle: p.officialTitle,
     features: [],
     priceHistory: stripHeavyData ? [] : historyData,
@@ -220,17 +221,21 @@ export function mapDbProduct(
     specificationsSource: p.specificationsSource,
   };
 
-  // Enforce canonical slug and standardized family title/subtitle
+  // Enforce canonical slug and standardized family title/subtitle using siblings consensus if available
   const {
     slug: canonicalSlug,
     title: familyTitle,
     variantSuffix,
-  } = getFamilyIdentity(item);
+  } = getFamilyIdentity(item, siblings);
+
   item.slug = canonicalSlug;
   // User SSOT: Title must be the FULL descriptive title (Family + Variant)
   // e.g. "Apple MacBook Air 13 M2" + "256GB Midnight"
   item.title = variantSuffix ? `${familyTitle} ${variantSuffix}` : familyTitle;
   item.subtitle = variantSuffix;
+
+  // Identity and titles are set. We keep officialSpecifications as they are low-weight
+  // and critical for identity consistency in carousels/downstream.
 
   return calculateProductMetrics(item) as Product;
 }

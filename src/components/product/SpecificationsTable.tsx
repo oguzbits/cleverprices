@@ -73,7 +73,11 @@ export function SpecificationsTable({
       "mpn",
       "ean",
       "herstellernummer",
+      "teilenummer",
       "part number",
+      "part-number",
+      "artikelnummer",
+      "sku",
       "kapazität",
       "storage",
       "speicher",
@@ -81,6 +85,9 @@ export function SpecificationsTable({
       "ram",
       "memory",
       "arbeitsspeicher",
+      "konnektivität",
+      "connectivity",
+      "mobilfunk",
       "neu ab",
       "gebraucht ab",
       "preis",
@@ -462,7 +469,7 @@ export function SpecificationsTable({
 
         {/* Gradient Mask */}
         {!isExpanded && hasData && flatList.length > 8 && (
-          <div className="pointer-events-none absolute bottom-0 left-0 h-[120px] w-full bg-gradient-to-t from-white via-white/80 to-transparent" />
+          <div className="pointer-events-none absolute bottom-0 left-0 h-[120px] w-full bg-linear-to-t from-white via-white/80 to-transparent" />
         )}
       </div>
 

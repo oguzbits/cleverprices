@@ -239,8 +239,10 @@ const UniversalStrategy: NormalizationStrategy = (key, value) => {
     return { key: "Farbe", value: cleanValue };
   }
 
-  if (k === "style") {
-    return { key: "Style", value: cleanValue };
+  if (k === "style" || k === "konnektivitaet" || k === "connectivity") {
+    if (/^w-?fi$/i.test(cleanValue)) cleanValue = "Wi-Fi";
+    if (/^cellular|lte|5g$/i.test(cleanValue)) cleanValue = "Cellular";
+    return { key: "Connectivity", value: cleanValue };
   }
 
   return { key, value: cleanValue };

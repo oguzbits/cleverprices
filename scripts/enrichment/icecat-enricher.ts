@@ -37,13 +37,13 @@ class IcecatEnricher {
 
         let icecatData = null;
         if (product.gtin) {
-          icecatData = await this.source.fetchProductByGtin(product.gtin, "DE");
+          icecatData = await this.source.fetchProductByGtin(product.gtin, "de");
         }
 
         if (!icecatData && product.mpn) {
           const id = await this.source.findIdByMpn(product.mpn);
           if (id) {
-            icecatData = await this.source.fetchProduct(id, "DE");
+            icecatData = await this.source.fetchProduct(id, "de");
           }
         }
 

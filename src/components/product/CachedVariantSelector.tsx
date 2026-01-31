@@ -1,3 +1,4 @@
+import { getFamilyIdentity } from "@/lib/product-families";
 import { ProductVariantSelector } from "./ProductVariantSelector";
 
 interface ProductVariantSelectorProps {
@@ -126,18 +127,25 @@ export async function CachedVariantSelector({
           (product as any).variationAttributes = currentAttrs;
         }
 
-        // Add self to the list so selector shows current selection correctly
         allVariants = [product, ...siblings] as any[];
       }
     }
   }
 
-  if (allVariants.length <= 1) return null;
+  // Ensure all variants have canonical slugs.
+  // We trust the slugs from getProductVariants (server-side consensus) if available.
+  const variantsWithCorrectSlugs = allVariants.map((v) => {
+    if (v.slug && v.slug.includes(`${v.id}_-`)) return v;
+    const { slug } = getFamilyIdentity(v, allVariants);
+    return { ...v, slug };
+  });
+
+  if (variantsWithCorrectSlugs.length <= 1) return null;
 
   return (
     <ProductVariantSelector
       currentProduct={product}
-      variants={allVariants as any[]}
+      variants={variantsWithCorrectSlugs as any[]}
       countryCode={countryCode}
       isParentView={isParentView}
       selectedCondition={selectedCondition}

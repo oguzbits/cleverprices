@@ -129,6 +129,9 @@ export const CATEGORY_ICONS: Record<CategorySlug, LucideIcon> = {
   "3d-drucker": Printer,
   laserdrucker: Printer,
   kompaktkameras: Camera,
+  prozessoren: Cpu,
+  monitore: Monitor,
+  arbeitsspeicher: MemoryStick,
 };
 
 /**

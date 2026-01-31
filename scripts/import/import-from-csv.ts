@@ -439,7 +439,6 @@ async function main() {
             if (lat) specs.Latency = lat[0];
             break;
           case "motherboards":
-          case "mainboards":
             const mbSocket = deepContext.match(
               /(AM\d+|LGA\s*\d+|sTR\d+|Socket\s*\S+|Sockel\s*\S+)/i,
             );

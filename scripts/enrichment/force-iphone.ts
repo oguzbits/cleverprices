@@ -16,7 +16,7 @@ async function forceiPhone() {
     if (!product) continue;
 
     console.log(`\n🚀 Forcing Icecat for ID ${id}: ${product.title}`);
-    const icecatData = await source.fetchProductByGtin(product.gtin!, "DE");
+    const icecatData = await source.fetchProductByGtin(product.gtin!, "de");
 
     if (icecatData && icecatData.specifications) {
       const sanitized = sanitizeSpecs(icecatData.specifications, "Apple");

@@ -60,6 +60,11 @@ const SOURCE_CONFIG: Record<
     logo: "/logos/amazon.svg",
     color: "bg-[#FF9900]/10",
   },
+  icecat: {
+    name: "Icecat",
+    logo: "/logos/icecat.svg", // Fallback to name if not found
+    color: "bg-blue-600/10",
+  },
 };
 
 // Condition display

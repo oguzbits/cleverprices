@@ -192,11 +192,24 @@ export async function getProductById(
 
   if (!p) return undefined;
 
-  // Fetch all prices for this product to populate the prices object and history
-  const prs = await db.select().from(prices).where(eq(prices.productId, p.id));
+  // Fetch all prices and siblings (for consensus identity resolution)
+  const [prs, siblings] = await Promise.all([
+    db.select().from(prices).where(eq(prices.productId, p.id)),
+    p.parentAsin
+      ? db
+          .select(liteProductColumns)
+          .from(products)
+          .where(eq(products.parentAsin, p.parentAsin))
+      : Promise.resolve([]),
+  ]);
 
-  // Use centralized mapping logic which correctly handles historyJson
-  const product = mapDbProduct(p as DbProduct, prs as Price[], [], false);
+  // Use centralized mapping logic which correctly handles historyJson and identity
+  const product = mapDbProduct(
+    p as DbProduct,
+    prs as Price[],
+    siblings as any[],
+    false,
+  );
 
   // Preserve the synthetic/offset ID if provided
   if (id >= 200000000) {
@@ -288,9 +301,22 @@ export async function getAllProductSlugs(): Promise<
     })
     .from(products);
 
+  // OPTIMIZATION: Index products by parentAsin for fast sibling lookup
+  // This avoids O(N^2) in getFamilyIdentity when processing thousands of products.
+  const families = new Map<string, any[]>();
+  for (const p of allProducts) {
+    if (p.parentAsin) {
+      if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+      families.get(p.parentAsin)!.push(p);
+    }
+  }
+
   return allProducts.map((p) => {
-    // Generate canonical slug (includes ID prefix)
-    const { slug: canonical } = getFamilyIdentity(p as any);
+    // Only pass family members as variants for consensus
+    const siblings = p.parentAsin ? families.get(p.parentAsin) || [] : [p];
+
+    // Generate canonical slug (includes ID prefix) using targeted consensus set
+    const { slug: canonical } = getFamilyIdentity(p as any, siblings as any);
     return {
       id: p.id,
       slug: canonical,
@@ -378,7 +404,7 @@ export async function getProductVariants(
         mapDbProduct(
           p as DbProduct,
           pricesByProduct.get(p.id!) || [],
-          [],
+          variantProducts as any[], // Pass siblings for consensus
           true,
         ),
       )
@@ -454,7 +480,12 @@ export async function getProductFamilyMembers(
 
   return familyProducts
     .map((p) =>
-      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
+      mapDbProduct(
+        p as DbProduct,
+        pricesByProduct.get(p.id!) || [],
+        familyProducts as any[], // Pass siblings for consensus
+        true,
+      ),
     )
     .filter(
       (v) =>
@@ -523,7 +554,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
       const mapped = mapDbProduct(
         p as DbProduct,
         pricesByProduct.get(p.id!) || [],
-        [],
+        prods as any[], // Pass siblings for consensus
         stripHeavyData,
       );
 
@@ -568,12 +599,17 @@ const fetchProductBySlug = async (
 
     if (!p) return undefined;
 
-    const prs = await db
-      .select()
-      .from(prices)
-      .where(eq(prices.productId, p.id));
+    const [prs, siblings] = await Promise.all([
+      db.select().from(prices).where(eq(prices.productId, p.id)),
+      p.parentAsin
+        ? db
+            .select(liteProductColumns)
+            .from(products)
+            .where(eq(products.parentAsin, p.parentAsin))
+        : Promise.resolve([]),
+    ]);
 
-    return mapDbProduct(p as any, prs as any);
+    return mapDbProduct(p as any, prs as any, siblings as any[]);
   };
 
   // 1. Try ID-based match first (Robust path)
@@ -779,7 +815,7 @@ export async function findProductByParentAsinSuffix(
     .from(prices)
     .where(eq(prices.productId, p.id));
 
-  const product = mapDbProduct(p as DbProduct, prs);
+  const product = mapDbProduct(p as unknown as DbProduct, prs);
   return { ...product, isParentView: true };
 }
 
@@ -911,7 +947,7 @@ export async function searchProducts(
       mapDbProduct(
         p as DbProduct,
         pricesByProduct.get(p.id!) || [],
-        [],
+        sortedProds as any[], // Pass siblings for consensus
         true, // Strip heavy data for search results
       ),
     );
@@ -938,7 +974,7 @@ export async function searchProducts(
       mapDbProduct(
         p as DbProduct,
         fallbackPricesByProduct.get(p.id!) || [],
-        [],
+        fallbackProds as any[], // Pass siblings for consensus
         true, // Strip heavy data for search results (fallback)
       ),
     );
@@ -1010,8 +1046,9 @@ const getCachedDeals = unstable_cache(
       )
       .limit(limit);
 
+    const prods = results.map((r) => r.product);
     return results.map((r) =>
-      mapDbProduct(r.product as DbProduct, [r.price], [], true),
+      mapDbProduct(r.product as DbProduct, [r.price], prods as any[], true),
     );
   },
   ["best-deals-v13"],
@@ -1041,8 +1078,9 @@ export async function getBestDeals(
         ),
       )
       .limit(limit);
+    const prods = results.map((r) => r.product);
     return results.map((r) =>
-      mapDbProduct(r.product as DbProduct, [r.price], [], true),
+      mapDbProduct(r.product as DbProduct, [r.price], prods as any[], true),
     );
   }
   return getCachedDeals(limit, countryCode, condition);
@@ -1090,7 +1128,7 @@ const getCachedPopular = unstable_cache(
         mapDbProduct(
           p as DbProduct,
           pricesByProduct.get(p.id!) || [],
-          [],
+          prods as any[], // Pass siblings for consensus
           true,
         ),
       )
@@ -1130,7 +1168,12 @@ export async function getMostPopular(
     const pricesByProduct = indexPricesById(prs);
 
     return prods.map((p) =>
-      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
+      mapDbProduct(
+        p as DbProduct,
+        pricesByProduct.get(p.id!) || [],
+        prods as any[],
+        true,
+      ),
     );
   }
   return getCachedPopular(limit, countryCode, condition);
@@ -1186,7 +1229,7 @@ export async function getDiverseMostPopular(
       mapDbProduct(
         p as DbProduct,
         pricesByProduct.get(p.id!) || [],
-        [],
+        prods as any[], // Pass siblings for consensus
         true, // Strip heavy data (Home curation doesn't need specs)
       ),
     )
@@ -1231,7 +1274,7 @@ const getCachedNew = unstable_cache(
         mapDbProduct(
           p as DbProduct,
           pricesByProduct.get(p.id!) || [],
-          [],
+          prods as any[], // Pass siblings for consensus
           true,
         ),
       )
@@ -1271,7 +1314,12 @@ export async function getNewArrivals(
     const pricesByProduct = indexPricesById(prs);
 
     return prods.map((p) =>
-      mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || [], [], true),
+      mapDbProduct(
+        p as DbProduct,
+        pricesByProduct.get(p.id!) || [],
+        prods as any[],
+        true,
+      ),
     );
   }
   return getCachedNew(limit, countryCode, condition);
@@ -1396,8 +1444,9 @@ export async function getFilteredProducts(
     .limit(filters.limit || 24)
     .offset(filters.offset || 0);
 
+  const prods = results.map((r) => r.product);
   return results.map((r) =>
-    mapDbProduct(r.product as DbProduct, [r.price], [], true),
+    mapDbProduct(r.product as DbProduct, [r.price], prods as any[], true),
   );
 }
 

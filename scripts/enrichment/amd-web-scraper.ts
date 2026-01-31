@@ -92,7 +92,7 @@ export class AmdWebScraper extends DeviceEnricherBase {
 
         console.log(`👀 Looking for model number: ${modelNumber} in table...`);
 
-        const specs = await page.evaluate((targetModel) => {
+        const specs = await page.evaluate((targetModel: string) => {
           const data: Record<string, string> = {
             Source: "AMD Series Page",
             ExtractionDate: new Date().toISOString(),

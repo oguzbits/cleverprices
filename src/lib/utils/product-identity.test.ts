@@ -99,4 +99,81 @@ describe("getProductIdentity", () => {
     const identity = getProductIdentity(product);
     expect(identity.model).toBe("iPhone 15");
   });
+
+  it("should use 'Modell' from official specifications if source is high quality and passes QA", () => {
+    const product = {
+      title:
+        'Apple iPad mit A16 Chip: 11" Liquid Retina Display, 128 GB, WLAN 6 - Blau',
+      officialTitle: 'Apple iPad 11. Generation 27,69cm (10,9") 128GB blau',
+      brand: "Apple",
+      category: "tablets",
+      officialSpecifications: {
+        Modell: "Apple iPad 11 2025 A16",
+      },
+      specificationsSource: "ebay",
+    };
+    const identity = getProductIdentity(product);
+    expect(identity.model).toBe("iPad 11 2025 A16");
+  });
+
+  it("should block 'Modell' override if brand mismatch is detected", () => {
+    const product = {
+      title: "Samsung Galaxy S24 Ultra",
+      brand: "Samsung",
+      category: "smartphones",
+      officialSpecifications: {
+        Modell: "Apple iPhone 15",
+      },
+      specificationsSource: "icecat",
+    };
+    const identity = getProductIdentity(product);
+    expect(identity.model).toBe("Galaxy S24 Ultra"); // Should NOT override
+  });
+
+  it("should block 'Modell' override if no token overlap exists", () => {
+    const product = {
+      title: "Logitech MX Master 3S",
+      brand: "Logitech",
+      category: "mice",
+      officialSpecifications: {
+        Modell: "G502 Hero",
+      },
+      specificationsSource: "google",
+    };
+    const identity = getProductIdentity(product);
+    expect(identity.model).toBe("MX Master 3S"); // Should NOT override
+  });
+
+  it("should preserve 'ohne' and 'mit' in titles for models like AirPods", () => {
+    const p1 = {
+      title: "Apple AirPods 4 mit Aktiver Geräuschunterdrückung",
+      brand: "Apple",
+      category: "headphones",
+    };
+    const i1 = getProductIdentity(p1);
+    expect(i1.model).toBe("AirPods 4 mit Aktiver Geräuschunterdrückung");
+
+    const p2 = {
+      title: "Apple AirPods 4 ohne Aktive Geräuschunterdrückung",
+      brand: "Apple",
+      category: "headphones",
+    };
+    const i2 = getProductIdentity(p2);
+    expect(i2.model).toBe("AirPods 4 ohne Aktive Geräuschunterdrückung");
+  });
+
+  it("should trust official model name even if it contains noise words", () => {
+    const product = {
+      title: "Apple AirPods 4",
+      brand: "Apple",
+      category: "headphones",
+      officialSpecifications: {
+        Modell: "AirPods 4 with Active Noise Cancellation",
+      },
+      specificationsSource: "icecat",
+    };
+    const identity = getProductIdentity(product);
+    // 'with' would have been stripped in the old-path.
+    expect(identity.model).toBe("AirPods 4 with Active Noise Cancellation");
+  });
 });

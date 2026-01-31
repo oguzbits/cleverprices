@@ -37,7 +37,6 @@ interface Product {
 interface NormalizedProduct extends Product {
   normalizedStr: string;
   normalizedAttrs: Record<string, string>;
-  canonicalSlug: string;
   variantSuffix: string;
 }
 
@@ -220,11 +219,14 @@ function AttributeSelector({
   const displayLabel =
     label.toLowerCase() === "storage" || label.toLowerCase() === "size"
       ? "Speicherkapazität" // Idealo uses explicitly 'Speicherkapazität' often, or 'Interner Speicher'.
-      : label.toLowerCase() === "color"
+      : label.toLowerCase() === "color" || label.toLowerCase() === "farbe"
         ? "Farbe"
         : label.toLowerCase() === "ram" || label.toLowerCase() === "memory"
           ? "Arbeitsspeicher"
-          : label;
+          : label.toLowerCase() === "connectivity" ||
+              label.toLowerCase() === "konnektivität"
+            ? "Konnektivität"
+            : label;
 
   const isColor =
     label.toLowerCase() === "color" || label.toLowerCase() === "farbe";
@@ -325,7 +327,7 @@ function AttributeSelector({
             getBestMatch(variants) || getRelaxedMatch(variants);
 
           const href = targetVariant
-            ? `/p/${targetVariant.canonicalSlug}${
+            ? `/p/${targetVariant.slug}${
                 condition && condition !== "new"
                   ? `?condition=${condition}`
                   : ""
@@ -442,7 +444,7 @@ export function ProductVariantSelector({
         ...v,
         normalizedStr: normStr,
         normalizedAttrs: parseVariationAttributes(normStr),
-        canonicalSlug: v.slug,
+        // Use v.slug directly as it is already canonicalized in the Parent (CachedVariantSelector)
         variantSuffix: v.subtitle || "",
       };
     });
@@ -462,7 +464,6 @@ export function ProductVariantSelector({
       ...currentProduct,
       normalizedStr: normStr,
       normalizedAttrs: parseVariationAttributes(normStr),
-      canonicalSlug: currentProduct.slug,
       variantSuffix: currentProduct.subtitle || "",
     };
   }, [currentProduct]);
@@ -612,10 +613,10 @@ export function ProductVariantSelector({
     const parentId = 900000000 + realId;
     const { slug } = getFamilyIdentity(
       { ...currentProduct, id: parentId } as any,
-      variants as any,
+      normalizedAllVariants as any, // Use full list for consensus
     );
     return slug;
-  }, [currentProduct, variants, parentSlug]);
+  }, [currentProduct, normalizedAllVariants, parentSlug]);
 
   const finalParentSlug = parentSlug || derivedParentSlug;
 
@@ -637,7 +638,7 @@ export function ProductVariantSelector({
     return rawEntries
       .filter(([key, values]) => {
         const k = key.toLowerCase();
-        // USER REQUEST: Do not show Style filter anymore
+        // Style is now mapped to Connectivity, but we still filter out generic Style just in case
         if (k === "style") return false;
 
         // For RAM kits: "RAM" and "Storage" (Kapazität) are duplicates.
@@ -680,7 +681,8 @@ export function ProductVariantSelector({
           )
             return 1;
           if (k === "color" || k === "farbe") return 2;
-          return 3;
+          if (k === "connectivity" || k === "konnektivität") return 3;
+          return 4;
         };
         return score(a) - score(b);
       });
@@ -761,11 +763,7 @@ export function ProductVariantSelector({
           {activeVariants.map((variant) => (
             <Link
               key={variant.asin}
-              href={`/p/${
-                variant.slug.includes("_-")
-                  ? variant.slug
-                  : `${200000000 + (variant.id || 0)}_-${variant.slug}`
-              }${
+              href={`/p/${variant.slug}${
                 targetCondition && targetCondition !== "new"
                   ? `?condition=${targetCondition}`
                   : ""

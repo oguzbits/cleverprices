@@ -59,6 +59,80 @@ export interface ProductIdentity {
 }
 
 /**
+ * Robustly removes accents and standardizes special characters.
+ */
+function normalizeAccents(s: string): string {
+  if (!s) return "";
+  return s
+    .replace(/\u00E4/g, "ae")
+    .replace(/\u00F6/g, "oe")
+    .replace(/\u00FC/g, "ue")
+    .replace(/\u00E4/gi, "ae")
+    .replace(/\u00F6/gi, "oe")
+    .replace(/\u00FC/gi, "ue")
+    .replace(/\u00DF/gi, "ss")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .normalize("NFKC");
+}
+
+/**
+ * QA Helper: Verifies if a candidate model name from specifications is
+ * safe to use as an override for the main product title.
+ */
+function verifySpecModel(
+  candidate: string,
+  originalTitle: string,
+  brand: string,
+): boolean {
+  if (!candidate || candidate.length < 3 || candidate.length > 60) return false;
+  if (/unknown|n\/a|model|none|generic|null/i.test(candidate)) return false;
+
+  const candLower = candidate.toLowerCase();
+  const titleLower = originalTitle.toLowerCase();
+  const brandLower = brand.toLowerCase();
+
+  // 1. Brand Consistency (Candidate should not mention a different brand)
+  const brands = [
+    "apple",
+    "samsung",
+    "sony",
+    "intel",
+    "amd",
+    "nvidia",
+    "asus",
+    "msi",
+    "lg",
+  ];
+  for (const b of brands) {
+    if (candLower.includes(b) && brandLower !== b) return false;
+  }
+
+  // 2. Identification Closeness (Candidate must share tokens with the title)
+  // Strips brand from check to avoid false positives based only on brand
+  const candTokens = candLower
+    .replace(brandLower, "")
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 1);
+  const titleTokens = titleLower
+    .replace(brandLower, "")
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 1);
+
+  const intersection = candTokens.filter((t) => titleTokens.includes(t));
+
+  // Requirement: At least one substantial token or two short tokens must overlap
+  const hasStrongOverlap =
+    intersection.some((t) => t.length > 3) || intersection.length >= 2;
+
+  // Special exception: If candidate is just a more specific version of a short title
+  const isSuperSet =
+    candTokens.length > 0 && titleTokens.every((t) => candTokens.includes(t));
+
+  return hasStrongOverlap || isSuperSet;
+}
+
+/**
  * Universally determines the identity of a product across all categories.
  * Uses a token-based subtraction approach to separate the core Model
  * from variation specs (color, storage) and brand.
@@ -141,13 +215,6 @@ export function getProductIdentity(
   // 2. Data Sourcing (Official vs Retailer)
   let officialModel: string | null =
     (product.officialTitle || "").trim() || null;
-  if (
-    officialModel &&
-    (officialModel.length > 80 ||
-      officialModel.toLowerCase().includes("unknown"))
-  ) {
-    officialModel = null;
-  }
 
   const specs = product.officialSpecifications
     ? typeof product.officialSpecifications === "string"
@@ -155,8 +222,56 @@ export function getProductIdentity(
       : product.officialSpecifications
     : product.specifications || {};
 
-  const brand = normalizeBrand(rawBrand, title, category);
-  const brandLower = brand.toLowerCase();
+  const resolvedBrand = normalizeBrand(rawBrand, title, category);
+  const resolvedBrandLower = resolvedBrand.toLowerCase();
+
+  // QA SYSTEM: Verify if the 'Modell' spec is a safe improvement over the title
+  const source = product.specificationsSource || "";
+  const trustedSources = ["icecat", "intel", "ebay", "google"];
+  const isDirectSource = trustedSources.some((s) => source.includes(s));
+
+  if (isDirectSource) {
+    const candidate = String(specs["Modell"] || specs["Model"] || "").trim();
+    if (verifySpecModel(candidate, title, resolvedBrand)) {
+      officialModel = candidate;
+    }
+  }
+
+  // 2b. SIBLING MODEL STEERING: If this product isn't enriched, borrow the official model
+  // from an enriched sibling to ensure family-wide canonical slug consistency.
+  if (!officialModel && siblings.length > 0) {
+    for (const s of siblings) {
+      const sSource = (s.specificationsSource || "").toLowerCase();
+      const isSourced = trustedSources.some((src) => sSource.includes(src));
+      if (!isSourced) continue;
+
+      try {
+        const sSpecs = s.officialSpecifications
+          ? typeof s.officialSpecifications === "string"
+            ? JSON.parse(s.officialSpecifications)
+            : s.officialSpecifications
+          : s.specifications || {};
+
+        const candidate = String(
+          sSpecs["Modell"] || sSpecs["Model"] || "",
+        ).trim();
+        if (verifySpecModel(candidate, title, resolvedBrand)) {
+          officialModel = candidate;
+          break; // Found a valid steering model
+        }
+      } catch (e) {
+        continue;
+      }
+    }
+  }
+
+  if (
+    officialModel &&
+    (officialModel.length > 80 ||
+      officialModel.toLowerCase().includes("unknown"))
+  ) {
+    officialModel = null;
+  }
 
   // 3. Variant Map and Trait Extraction
   const officialAttributes = parseVariationAttributes(
@@ -187,13 +302,6 @@ export function getProductIdentity(
 
   // A. Essential Stopwords & Connectors
   const NOISE_WORDS = [
-    "und",
-    "mit",
-    "inkl",
-    "ohne",
-    "fuer",
-    "for",
-    "with",
     "original",
     "ovp",
     "neu",
@@ -366,25 +474,21 @@ export function getProductIdentity(
   };
 
   const baseTitle = officialModel || title;
-  const cleanTitle = baseTitle
-    .split(/ \- | \/ | \(| \||: | mit | inkl |,/i)[0]
-    .trim();
+  const cleanTitle = baseTitle.split(/ \- | \/ | \(| \||: |,/i)[0].trim();
   const rawWords = cleanTitle.split(/[\s,+\*~]+/).filter(Boolean);
   const modelWords: string[] = [];
   const strippedUnits: string[] = [];
 
   rawWords.forEach((word, index) => {
-    // 1. Clean Word (Remove surrounding noise like brackets, trailing commas)
-    const normalized = word
-      .replace(/^[(\[",\.]+|[)\]",\.]+/g, "")
-      .normalize("NFKC")
-      .replace(/\u00E4/g, "ae")
-      .replace(/\u00F6/g, "oe")
-      .replace(/\u00FC/g, "ue")
-      .replace(/\u00DF/g, "ss");
+    const cleanWord = word.replace(/^[(\[",\.]+|[)\]",\.]+/g, "");
+    const normalized = normalizeAccents(cleanWord);
     const rawLower = normalized.toLowerCase();
     const cleanLower = rawLower.replace(/[^a-z0-9]/g, "");
-    if (!cleanLower || cleanLower === brandLower) return;
+    if (!cleanLower || cleanLower === resolvedBrandLower) return;
+
+    // Protection for Official Models: If we have an official model name,
+    // we bypass the aggressive noise word stripping to respect the source's intent.
+    const isOfficialModelTrustPath = !!officialModel;
 
     // 2. Unit Recognition (e.g. 128GB, 128 GB, 165Hz, 34")
     const isExplicitUnit =
@@ -412,8 +516,6 @@ export function getProductIdentity(
 
     if (isExplicitUnit || isSplitUnit) {
       // Capture stripped capacity/RAM for the variant tokens if not already present
-      // Special Handling for Split Units: If this is a number followed by a unit,
-      // combine them for the variant token.
       if (
         isSplitUnit &&
         /^\d+$/.test(cleanLower) &&
@@ -425,7 +527,7 @@ export function getProductIdentity(
             nextRaw.replace(/[^a-z0-9]/g, ""),
           )
         ) {
-          strippedUnits.push(normalized + nextRaw);
+          strippedUnits.push(cleanWord + nextRaw);
         }
       } else if (
         isExplicitUnit &&
@@ -434,7 +536,7 @@ export function getProductIdentity(
           rawLower.includes("mb") ||
           rawLower.includes("hz"))
       ) {
-        strippedUnits.push(normalized);
+        strippedUnits.push(cleanWord);
       }
       return;
     }
@@ -446,6 +548,9 @@ export function getProductIdentity(
     const isModelCode =
       (hasNum && hasLetter && cleanLower.length >= 3) ||
       (hasNum && cleanLower.length >= 4) ||
+      ((isTablet || isSmartphone) &&
+        /^\d+$/.test(cleanLower) &&
+        cleanLower.length >= 2) || // Protect "11", "13", "15" in tablets/phones
       (cleanLower === "x" && index > 0);
 
     // Protect tech series
@@ -456,14 +561,13 @@ export function getProductIdentity(
     let isActuallyProtected =
       isModelCode ||
       (isProtectedTech &&
-        (!/^m\d$/.test(cleanLower) || brandLower === "apple"));
+        (!/^m\d$/.test(cleanLower) || resolvedBrandLower === "apple"));
 
     // Always protect the first word if not in subtractTokens
     if (index === 0 && !subtractTokens.has(cleanLower))
       isActuallyProtected = true;
 
     // Specific strip: 'x' as separator in resolution (3440 x 1440)
-    // Only strip 'x' if word before and after are pure numbers (to protect Xbox Series X)
     if (cleanLower === "x" && index > 0 && index < rawWords.length - 1) {
       const prevC = rawWords[index - 1].replace(/[^a-z0-9]/g, "");
       const nextC = rawWords[index + 1].replace(/[^a-z0-9]/g, "");
@@ -480,17 +584,22 @@ export function getProductIdentity(
       if (looksLikeSKU && modelWords.length > 0) return;
     }
 
-    // Strip if in noise list AND not protected
-    if (subtractTokens.has(cleanLower) && !isActuallyProtected) return;
+    // Strip if in noise list AND not protected (and not in official trust path)
+    if (
+      subtractTokens.has(cleanLower) &&
+      !isActuallyProtected &&
+      !isOfficialModelTrustPath
+    )
+      return;
 
     // Final clean swap
-    const formatted = fixTechCasing(normalized.replace(/[,\-:\/]+$/, ""));
+    const formatted = fixTechCasing(cleanWord.replace(/[,\-:\/]+$/, ""));
     if (formatted) modelWords.push(formatted);
   });
 
   const modelHead = modelWords[0] || "";
   const hubModelName = modelWords.join(" ").trim();
-  const modelTitle = `${brand} ${hubModelName}`;
+  const modelTitle = `${resolvedBrand} ${hubModelName}`;
 
   // 5. Variant Differentiators (Slug & Subtitle)
   const variantTokens: string[] = [];
@@ -508,6 +617,8 @@ export function getProductIdentity(
     "Kapazität",
     "RAM",
     "Arbeitsspeicher",
+    "Connectivity",
+    "Konnektivität",
     "Size",
   ];
   traitOrder.forEach((k) => {
@@ -530,8 +641,22 @@ export function getProductIdentity(
 
   function processTrait(val: string, k: string) {
     let displayVal = val;
-    const valLower = val.toLowerCase();
-    if (hubModelName.toLowerCase().includes(valLower)) return;
+    const cleanVal = val.toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (cleanVal === "wifi" || cleanVal === "wfi") displayVal = "Wi-Fi";
+    // Catch combined patterns like "Wi-Fi + Cellular", "WiFi+5G", etc.
+    if (
+      /cellular|5g|lte/i.test(val) ||
+      (val.toLowerCase().includes("wi-fi") &&
+        /(?:cellular|5g|lte)/i.test(val.toLowerCase()))
+    ) {
+      displayVal = "Cellular";
+    }
+
+    const valLower = displayVal.toLowerCase();
+    const valNorm = valLower.replace(/[^a-z0-9]/g, "");
+    const modelNorm = hubModelName.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    if (valNorm && modelNorm.includes(valNorm)) return;
 
     // Smart technical labeling: Skip for Consoles, Smartphones, and redundant categories
     const isConsole = category === "consoles";
@@ -543,6 +668,7 @@ export function getProductIdentity(
     if (
       !isSmartphone &&
       !isConsole &&
+      !isTablet &&
       !isSSD &&
       !isRAM &&
       (valLower.includes("gb") || valLower.includes("tb")) &&
@@ -560,6 +686,11 @@ export function getProductIdentity(
       // Track candidate for "One-Feature" logic (Preference: Color > Capacity > First)
       const isColorKey = /color|farbe/i.test(k);
       if (isColorKey && !oneFeatureToken) {
+        oneFeatureToken = displayVal;
+      } else if (
+        /connectivity|konnektivität/i.test(k) &&
+        (!oneFeatureToken || !oneFeatureToken.match(/[a-z]{3,}/i))
+      ) {
         oneFeatureToken = displayVal;
       } else if (
         /storage|capacity|speicher/i.test(k) &&
@@ -581,27 +712,29 @@ export function getProductIdentity(
     }
   });
 
-  // Also include discovered MPN if it's not already in variantTokens
-  if (mpnVal && mpnVal.length > 3) {
-    const norm = mpnVal.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (!processedTokens.has(norm)) {
-      variantTokens.push(mpnVal);
-      processedTokens.add(norm);
-    }
-  }
-
+  // Calculate traits for high-variance check (Features only, no MPN yet)
   const traitCount = variantTokens.length;
-  const isHighVariance =
-    isLaptop || (isTablet ? traitCount > 3 : traitCount > 2);
+  // Threshold: Listing up to 3 features is clean. 4+ features triggers MPN fallback.
+  const isHighVariance = isLaptop || traitCount > 3;
 
-  // LOGIC SWITCH: If high variance, use "One Feature + MPN" instead of listing everything
+  // LOGIC SWITCH: If high variance, use "One Feature + MPN" instead of listing everything.
+  // This prevents overly long titles while keeping them distinct.
   let variantSuffix = "";
   if (isHighVariance && mpnVal && mpnVal.length > 3) {
     variantSuffix = (
       oneFeatureToken ? `${oneFeatureToken} ${mpnVal}` : mpnVal
     ).trim();
   } else {
-    variantSuffix = variantTokens.join(" ").trim();
+    // For low variance, list all tokens found (Color, Storage, etc.).
+    // IDEALO Pattern: If we have "Cellular", we don't need "Wi-Fi" (it's redundant/implied).
+    const hasCellular = variantTokens.some((t) =>
+      /cellular|5g|lte/i.test(t.toLowerCase()),
+    );
+    const filteredTokens = hasCellular
+      ? variantTokens.filter((t) => !/wi-?fi/i.test(t.toLowerCase()))
+      : variantTokens;
+
+    variantSuffix = filteredTokens.join(" ").trim();
   }
 
   const variantLabel = Array.from(new Set(variantTokens)).join(" ").trim();
@@ -610,7 +743,7 @@ export function getProductIdentity(
     : modelTitle;
 
   return {
-    brand,
+    brand: resolvedBrand,
     model: hubModelName,
     fullModel: modelTitle,
     shortModel: modelHead,

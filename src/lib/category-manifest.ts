@@ -390,4 +390,11 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     parent: "gaming-elektrospielzeug",
     hidden: true,
   },
+  prozessoren: { name: "Prozessoren", parent: "pc-komponenten", hidden: true },
+  monitore: { name: "Monitore", parent: "computer", hidden: true },
+  arbeitsspeicher: {
+    name: "Arbeitsspeicher",
+    parent: "pc-komponenten",
+    hidden: true,
+  },
 };

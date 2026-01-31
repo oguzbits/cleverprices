@@ -205,10 +205,14 @@ export function IdealoProductPage({
                 id="oopStage-title"
                 className="text-idealo-text-primary mb-1 line-clamp-2 min-h-[50px] text-[20px] leading-tight font-bold sm:text-center lg:text-left"
               >
-                {identity.modelTitle}
-                {!isParentView && identity.variantSuffix && (
+                {isParentView
+                  ? hubFullModel
+                  : product.subtitle
+                    ? product.title.replace(product.subtitle, "").trim()
+                    : product.title}
+                {!isParentView && product.subtitle && (
                   <span className="ml-2 text-[16px] font-bold">
-                    {identity.variantSuffix}
+                    {product.subtitle}
                   </span>
                 )}
               </h1>
@@ -261,13 +265,20 @@ export function IdealoProductPage({
                         "mpn",
                         "ean",
                         "herstellernummer",
+                        "teilenummer",
                         "part number",
+                        "part-number",
+                        "artikelnummer",
+                        "sku",
                         "kapazität",
                         "storage",
                         "speicher",
                         "ram",
                         "memory",
                         "arbeitsspeicher",
+                        "konnektivität",
+                        "connectivity",
+                        "mobilfunk",
                         "größe",
                         "size",
                       ];
@@ -511,7 +522,7 @@ async function CachedSidebarSimilarProducts({
             </div>
             <div className="min-w-0 flex-1">
               <Link
-                href={`/p/${p.slug.includes("_-") ? p.slug : `${200000000 + (p.id || 0)}_-${p.slug}`}`}
+                href={`/p/${p.slug}`}
                 className="text-idealo-text-primary! hover:text-primary! focus-visible:ring-idealo-blue line-clamp-2 block text-[12px] font-bold underline! outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
               >
                 {formatDisplayTitle(p.title)}
@@ -568,6 +579,7 @@ async function CachedSimilarCarousel({
         <IdealoProductCarousel
           products={similarProducts.map((p) => ({
             ...p,
+            slug: p.slug,
             price: p.prices[countryCode],
             categoryName:
               p.category !== "uncategorized"

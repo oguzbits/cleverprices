@@ -92,7 +92,6 @@ async function run() {
         .update(products)
         .set({
           icecatId: bestMatch.icecat_id,
-          manualMatchReason: "fuzzy_levenshtein",
           enrichmentStatus: "pending_hydration", // Signal for next script
         })
         .where(eq(products.id, p.id));

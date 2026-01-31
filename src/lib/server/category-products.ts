@@ -46,6 +46,8 @@ export interface LocalizedProduct {
   isVariantGroup?: boolean; // UI flag
   variantCount?: number; // UI flag
   officialSpecifications?: any; // Structured official specs
+  specificationsSource?: string;
+  officialTitle?: string;
   mpn?: string;
 }
 
@@ -295,6 +297,8 @@ export async function getCachedLocalizedCategoryProducts(
               ? JSON.parse(p.specifications)
               : p.specifications
             : null),
+        specificationsSource: p.specificationsSource,
+        officialTitle: p.officialTitle,
         mpn: p.mpn,
       } as LocalizedProduct;
     })

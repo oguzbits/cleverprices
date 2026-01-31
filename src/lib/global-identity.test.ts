@@ -162,7 +162,7 @@ describe("Global Cross-Category Identity Validation", () => {
       });
 
       const { slug } = getFamilyIdentity(p, []);
-      expect(slug).toBe("200000050_-oled65c39lc-65-lg");
+      expect(slug).toBe("200000050_-oled65c39lc-lg");
     });
   });
 

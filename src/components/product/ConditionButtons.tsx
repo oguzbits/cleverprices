@@ -1,3 +1,4 @@
+import { getFamilyIdentity } from "@/lib/product-families";
 import { getProductFamilyMembers, type Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
 import { normalizeVariantAttributes } from "@/lib/utils/variants";
@@ -102,7 +103,8 @@ export async function ConditionButtons({
       if (mCond !== "renewed" && mCond !== "used" && p > 0) {
         if (newPrice === 0 || p < newPrice) {
           newPrice = p;
-          newSlug = m.slug;
+          const { slug } = getFamilyIdentity(m as any, familyMembers);
+          newSlug = slug;
           bestNewProductId = m.id!;
           hasNew = true;
         }
@@ -137,7 +139,8 @@ export async function ConditionButtons({
       possibleUsed.forEach((item) => {
         if (!hasUsedOverall) {
           usedOverallPrice = item.price;
-          usedOverallSlug = item.slug;
+          const { slug } = getFamilyIdentity(m as any, familyMembers);
+          usedOverallSlug = slug;
           bestUsedOverallProductId = item.id;
           usedOverallType = item.type;
           hasUsedOverall = true;
@@ -149,17 +152,13 @@ export async function ConditionButtons({
             // Overall summary (e.g. "Alle Varianten") always shows absolute minimum
             if (item.price < usedOverallPrice) {
               usedOverallPrice = item.price;
-              usedOverallSlug = item.slug;
+              const { slug } = getFamilyIdentity(m as any, familyMembers);
+              usedOverallSlug = slug;
               bestUsedOverallProductId = item.id;
               usedOverallType = item.type;
             }
           } else {
-            // SPEC-SPECIFIC View:
-            // If we find a Renewed price (the 'Main' Amazon offer), it usually
-            // should take precedence over a Warehouse price unless the Warehouse
-            // price is significantly cheaper.
-            // But since our goal is trust, if Renewed exists and is at least
-            // roughly as cheap as warehouse, use it.
+            // SPEC-SPECIFIC View
             if (itemIsRenewed) {
               if (
                 usedOverallPrice === 0 ||
@@ -167,7 +166,8 @@ export async function ConditionButtons({
                 currentIsWarehouse
               ) {
                 usedOverallPrice = item.price;
-                usedOverallSlug = item.slug;
+                const { slug } = getFamilyIdentity(m as any, familyMembers);
+                usedOverallSlug = slug;
                 bestUsedOverallProductId = item.id;
                 usedOverallType = item.type;
               }
@@ -175,7 +175,8 @@ export async function ConditionButtons({
               // Only update Warehouse if it's strictly cheaper than existing Warehouse
               if (item.price < usedOverallPrice) {
                 usedOverallPrice = item.price;
-                usedOverallSlug = item.slug;
+                const { slug } = getFamilyIdentity(m as any, familyMembers);
+                usedOverallSlug = slug;
                 bestUsedOverallProductId = item.id;
                 usedOverallType = item.type;
               }
@@ -190,21 +191,13 @@ export async function ConditionButtons({
   if (hasNew && !newSlug) newSlug = product.slug;
   if (hasUsedOverall && !usedOverallSlug) usedOverallSlug = product.slug;
 
-  // Smart Link Helpers
-  const getSmartSlug = (slug: string, id: number) => {
-    if (slug.match(/^\d+_-/)) return slug;
-    const finalId = id >= 200000000 ? id : 200000000 + (id || 0);
-    return `${finalId}_-${slug}`;
-  };
-
-  const finalNewSlug = getSmartSlug(
-    newSlug,
-    bestNewProductId || product.id || 0,
-  );
-  const finalUsedSlug = getSmartSlug(
-    usedOverallSlug,
-    bestUsedOverallProductId || product.id || 0,
-  );
+  // Final Slugs are already canonicalized if found in family
+  const finalNewSlug = newSlug.includes("_-")
+    ? newSlug
+    : getFamilyIdentity(product).slug;
+  const finalUsedSlug = usedOverallSlug.includes("_-")
+    ? usedOverallSlug
+    : getFamilyIdentity(product).slug;
 
   return (
     <>

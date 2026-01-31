@@ -33,6 +33,21 @@ export function getFamilyRepresentative(
 }
 
 /**
+ * Robustly removes accents and standardizes special characters.
+ */
+function normalizeAccents(s: string): string {
+  if (!s) return "";
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // Strip combining accents
+    .replace(/\u00E4/gi, "ae")
+    .replace(/\u00F6/gi, "oe")
+    .replace(/\u00FC/gi, "ue")
+    .replace(/\u00DF/gi, "ss")
+    .normalize("NFKC");
+}
+
+/**
  * Single Source of Truth for Family Identity (Slug, Title).
  * Logic matches the client-side ProductVariantSelector to ensure consistent URLs.
  */
@@ -59,14 +74,8 @@ export function getFamilyIdentity(
     (isHub ? representative.id : undefined);
 
   // 3. Core Model Construction
-  // Use identity.model which is already stripped of redundant brand and variant tokens
-  let modelPart = identity.model
+  let modelPart = normalizeAccents(identity.model)
     .toLowerCase()
-    .normalize("NFKC")
-    .replace(/\u00E4/g, "ae")
-    .replace(/\u00F6/g, "oe")
-    .replace(/\u00FC/g, "ue")
-    .replace(/\u00DF/g, "ss")
     .replace(new RegExp(`\\b${identity.categoryUsed}s?\\b`, "gi"), "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
@@ -75,10 +84,9 @@ export function getFamilyIdentity(
   let variantPart = "";
   if (!isHub) {
     // Use the unified variant suffix as the slug differentiator
-    variantPart = identity.variantSuffix
+    variantPart = normalizeAccents(identity.variantSuffix)
       .toLowerCase()
       .replace(/(\d+)\s*(GB|TB|MB|WH)/gi, "$1$2") // Collapse only pure capacity units
-      .normalize("NFKC")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
   }
