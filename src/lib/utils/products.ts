@@ -49,12 +49,14 @@ const UNIT_CONVERSION: Record<string, number> = {
 
 /**
  * Calculates generic unit price based on category configuration.
+ * Only applies to analytical categories like Storage (TB), RAM (GB), PSU (W).
  */
 export function calculateProductMetrics(
   p: Partial<Product>,
   overridePrice?: number,
 ): Partial<Product> {
-  const price = overridePrice !== undefined ? overridePrice : 0;
+  const price =
+    overridePrice !== undefined ? overridePrice : p.prices?.["de"] || 0;
   let category = p.category;
   let title = p.title;
   let capacity = p.capacity;
@@ -71,45 +73,45 @@ export function calculateProductMetrics(
     );
   }
 
-  // Try to extract capacity/cores from title if missing
-  if (!capacity && title) {
-    const isStorage =
-      category === "ssd" ||
-      category === "ssds" ||
-      category === "hard-drives" ||
-      category === "storage" ||
-      categoryConfig?.unitType === "TB" ||
-      categoryConfig?.unitType === "GB";
-    const isCPU =
-      category === "cpu" ||
-      category === "prozessoren" ||
-      categoryConfig?.unitType === "core";
+  // We explicitly skip "core" based metrics (CPUs) as per user request
+  if (
+    categoryConfig?.unitType === "core" ||
+    category === "cpu" ||
+    category === "prozessoren"
+  ) {
+    return p;
+  }
 
-    if (isCPU) {
-      const coreMatch = title.match(/(\d+)\s?-?\s?(Core|Kerne|Cores)/i);
-      if (coreMatch) capacity = parseInt(coreMatch[1]);
-    } else if (isStorage) {
-      const capMatch = title.match(/(\d+)\s?(GB|TB)/i);
-      if (capMatch) {
-        capacity = parseInt(capMatch[1]);
-        capacityUnit = capMatch[2].toUpperCase();
-      }
+  const isStorageOrMemory =
+    category === "ssd" ||
+    category === "ssds" ||
+    category === "hard-drives" ||
+    category === "storage" ||
+    category === "ram" ||
+    category === "gpu" ||
+    category === "memory" ||
+    categoryConfig?.unitType === "TB" ||
+    categoryConfig?.unitType === "GB";
+
+  // Try to extract capacity from title if missing (only for storage/memory)
+  if (!capacity && title && isStorageOrMemory) {
+    const capMatch = title.match(/(\d+)\s?(GB|TB)/i);
+    if (capMatch) {
+      capacity = parseInt(capMatch[1]);
+      capacityUnit = capMatch[2].toUpperCase();
     }
   }
 
-  // For CPUs, capacity might be stored in 'cores' field (from DB/API)
-  const actualCapacity =
-    capacity ||
-    (categoryConfig?.unitType === "core" ? Number((p as any).cores) : 0);
+  const actualCapacity = capacity || 0;
 
   // We need both price and capacity to calculate metrics
-  // allow price 0 if actualCapacity exists, but usually we want price > 0
-  if (!actualCapacity || price === undefined) {
+  if (!actualCapacity || !price) {
     return p;
   }
 
   const comparisonUnit = categoryConfig?.unitType || capacityUnit || "GB";
 
+  // Prevent conversion for non-storage units like 'W'
   const fromFactor = UNIT_CONVERSION[capacityUnit || "GB"] || 1;
   const toFactor = UNIT_CONVERSION[comparisonUnit] || 1;
 
@@ -124,7 +126,7 @@ export function calculateProductMetrics(
     ...p,
     pricePerUnit,
     normalizedCapacity,
-    capacity: capacity as number, // Ensure it's updated if extracted
+    capacity: capacity as number,
     capacityUnit: capacityUnit as string,
   };
 }

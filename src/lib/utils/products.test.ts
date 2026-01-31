@@ -66,22 +66,15 @@ describe("products utility", () => {
       expect(result.pricePerUnit).toBe(100);
     });
 
-    it("should handle CPU cores", () => {
+    it("should use German price if overridePrice is missing", () => {
       const product = {
-        category: "cpu",
-        title: "Intel Core i9-13900K (24 Kerne)",
-      };
-      const result = calculateProductMetrics(product, 600);
-      expect(result.pricePerUnit).toBe(25); // 600 / 24
-    });
-
-    it("should handle category aliases", () => {
-      const product = {
-        category: "prozessoren", // Alias for cpu
-        title: "AMD Ryzen 9 7950X (16 Cores)",
-      };
-      const result = calculateProductMetrics(product, 500);
-      expect(result.pricePerUnit).toBe(31.25); // 500 / 16
+        category: "ram",
+        capacity: 16,
+        capacityUnit: "GB",
+        prices: { de: 80 },
+      } as any;
+      const result = calculateProductMetrics(product);
+      expect(result.pricePerUnit).toBe(5); // 80 / 16
     });
   });
 

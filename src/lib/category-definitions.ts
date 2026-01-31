@@ -982,8 +982,6 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     categoryType: "analytical",
     imageUrl: "/images/category/cpu.jpg",
     aliases: ["prozessoren", "processors"],
-    unitType: "core",
-    unitLabel: "pro Kern",
     popularFilters: [
       { label: "Sockel AM5", params: "socket=AM5" },
       { label: "Sockel 1700", params: "socket=LGA1700" },
@@ -1087,5 +1085,23 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Panasonic", params: "brand=Panasonic" },
       { label: "Vlogging", params: "type=vlogging" },
     ],
+  },
+  prozessoren: {
+    name: "Prozessoren",
+    description: "CPUs von Intel & AMD",
+    categoryType: "analytical",
+    hidden: true,
+  },
+  monitore: {
+    name: "Monitore",
+    description: "Gaming und Office Monitore",
+    categoryType: "standard",
+    hidden: true,
+  },
+  arbeitsspeicher: {
+    name: "Arbeitsspeicher",
+    description: "DDR4 & DDR5 RAM Module",
+    categoryType: "analytical",
+    hidden: true,
   },
 };
