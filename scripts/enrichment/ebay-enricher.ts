@@ -1,4 +1,4 @@
-import { and, eq, isNotNull, not, or } from "drizzle-orm";
+import { and, eq, isNotNull, like, not, or } from "drizzle-orm";
 import { db, products } from "../../src/db";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
 import { EBAY_FIELD_MAP, normalizeEbayValue } from "./ebay-mapper";
@@ -199,9 +199,12 @@ export class EbayEnricher {
       .from(products)
       .where(
         and(
-          not(eq(products.enrichmentStatus, "processed")),
           not(eq(products.enrichmentStatus, "not_found")),
           not(eq(products.enrichmentStatus, "error")),
+          or(
+            not(eq(products.enrichmentStatus, "processed")),
+            like(products.specificationsSource, "variant-sync:%"),
+          ),
           or(isNotNull(products.gtin), isNotNull(products.mpn)),
         ),
       )
@@ -404,9 +407,14 @@ export class EbayEnricher {
 
         if (!ebayData || !ebayData.localizedAspects) {
           console.log("❌ No specs found on eBay.");
+          const isUpgrade =
+            product.specificationsSource?.startsWith("variant-sync:");
           await db
             .update(products)
-            .set({ enrichmentStatus: "not_found", lastEnrichedAt: new Date() })
+            .set({
+              enrichmentStatus: isUpgrade ? "processed" : "not_found",
+              lastEnrichedAt: new Date(),
+            })
             .where(eq(products.id, product.id));
           continue;
         }
