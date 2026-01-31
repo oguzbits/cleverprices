@@ -68,6 +68,37 @@ export const EBAY_FIELD_MAP: Record<string, string> = {
   "Item Width": "Breite",
   "Item Length": "Tiefe",
   "Cooling Component Included": "Anzahl Lüfter",
+  "Connectivity Technology": "Schnittstelle",
+  "Data Transfer Rate": "Datenübertragungsrate",
+  "Wireless Standard": "WLAN-Standards",
+  "Number of Antennas": "Anzahl Antennen",
+  "Frequency Band": "Frequenzbereich",
+  "Maximum LAN Data Rate": "Max. Transferrate",
+  "Maximum Wireless Data Rate": "Max. Transferrate",
+  "Maximum Data Transfer Rate": "Datenübertragungsrate",
+  Type: "Produktart",
+  "Product Type": "Produktart",
+  "Number of Ports": "Anzahl Ethernet-LAN-Anschlüsse (RJ-45)",
+  "Maximum Resolution": "Display-Auflösung",
+  "Display Technology": "Bildschirmtechnologie",
+  "Processor Model": "Prozessor",
+  "Processor Speed": "Prozessor-Taktfrequenz",
+  "Video Card": "GPU",
+  "Graphic Card": "GPU",
+  "Video Memory": "Interne Speicherkapazität",
+  "Interface Card Slot": "Schnittstelle",
+  "Wireless Communication Technology": "WLAN-Standards",
+  "Security Protocol": "Besonderheiten",
+  "Connector Type": "Schnittstelle",
+  "Input Voltage": "Eingangsspannung",
+  "Supported Standards": "WLAN-Standards",
+  "Port Type": "Schnittstelle",
+  Interface: "Schnittstelle",
+  Ports: "Schnittstelle",
+  "Number of LAN Ports": "Anzahl Ethernet-LAN-Anschlüsse (RJ-45)",
+  "Network Connectivity": "Mobilfunknetzgenerierung",
+  "Connectivity Type": "Schnittstelle",
+  "Cable Length": "Tiefe",
 
   // Components
   Länge: "Tiefe",
@@ -92,16 +123,6 @@ export const EBAY_FIELD_MAP: Record<string, string> = {
   "Schreib-Geschwindigkeit": "Schreibgeschwindigkeit",
   Geschwindigkeit: "Lesegeschwindigkeit", // Generic fallback
 
-  // 3D Printers
-  Drucktechnologie: "Drucktechnologie",
-  "Maximale Druckauflösung": "Maximale Auflösung",
-  Schnittstelle: "Schnittstelle",
-
-  // Weights & Dimensions
-  Gewicht: "Gewicht",
-  Breite: "Breite",
-  Höhe: "Höhe",
-  Tiefe: "Tiefe",
   Abmessungen: "Tiefe", // Fallback
   Artikelgewicht: "Gewicht",
   Produktgewicht: "Gewicht",
@@ -142,13 +163,6 @@ const EBAY_VALUE_TRANSLATIONS: Record<string, string> = {
   Festplattentyp: "Speichermeidien", // e.g. SSD/HDD
   Grafikprozessor: "GPU", // Apple usually labels M3/M4 GPU here
   "Anzahl der Kerne": "Anzahl Prozessorkerne",
-  Gewicht: "Gewicht",
-  Breite: "Breite",
-  Höhe: "Höhe",
-  Tiefe: "Tiefe",
-  "Maximale Auflösung": "Display-Auflösung",
-  Bildschirmauflösung: "Display-Auflösung",
-  Helligkeit: "Helligkeit",
   "Anzahl der Prozessorkerne": "Anzahl Prozessorkerne",
   Festplattenkapazität: "Interne Speicherkapazität",
 
@@ -164,6 +178,19 @@ const EBAY_VALUE_TRANSLATIONS: Record<string, string> = {
   "SSD Capacity": "Interne Speicherkapazität",
 
   matte: "Matt",
+  "not applicable": "Keine",
+  "dual band": "Dual-Band",
+  "tri band": "Tri-Band",
+  "quad band": "Quad-Band",
+  integrated: "Integriert",
+  dedicated: "Dediziert",
+  wired: "Kabelgebunden",
+  wireless: "Kabellos",
+  unlocked: "Ohne Simlock",
+  "factory unlocked": "Ohne Simlock",
+  excellent: "Sehr gut",
+  "very good": "Gut",
+  good: "Befriedigend",
 };
 
 /**

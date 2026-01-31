@@ -53,7 +53,8 @@ export const products = sqliteTable(
     specifications: text("specifications"), // Key-value JSON of all specs (legacy/catch-all)
     officialSpecifications: text("official_specifications"), // Manufacturer-verified (Icecat)
     officialTitle: text("official_title"), // Clean name from manufacturer
-    keepaFeatures: text("keepa_features"), // Raw description and feature bullets for scavenging希
+    keepaFeatures: text("keepa_features"), // Raw description and feature bullets for scavenging
+    ebayRawData: text("ebay_raw_data"), // Raw eBay localizedAspects JSON
 
     // UI Content
     energyLabel: text("energy_label"),

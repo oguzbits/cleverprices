@@ -439,6 +439,7 @@ export class EbayEnricher {
           const updateData = {
             officialTitle: ebayData.title || product.officialTitle,
             officialSpecifications: JSON.stringify(sanitized),
+            ebayRawData: JSON.stringify(ebayData.localizedAspects), // Preserve original eBay data for future mapping
             enrichmentStatus: "processed",
             specificationsSource: source,
             lastEnrichedAt: new Date(),
