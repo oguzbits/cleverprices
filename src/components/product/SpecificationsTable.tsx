@@ -194,6 +194,7 @@ export function SpecificationsTable({
     "display resolution": "Auflösung",
     processor: "Prozessor",
     "chip name": "Chip",
+    description: "Beschreibung",
   };
 
   // Grouping Logic
