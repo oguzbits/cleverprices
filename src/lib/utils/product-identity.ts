@@ -474,7 +474,39 @@ export function getProductIdentity(
   };
 
   const baseTitle = officialModel || title;
-  const cleanTitle = baseTitle.split(/ \- | \/ | \(| \||: |,/i)[0].trim();
+  let cleanTitle = baseTitle.split(/ \- | \/ | \(| \||: |,/i)[0].trim();
+
+  // Robustly strip brand from start of title to prevent duplication
+  // Handle cases where brand has punctuation (be quiet!) that might vary
+  const brandSimple = resolvedBrandLower.replace(/[^a-z0-9]/g, "");
+  const titleSimple = cleanTitle.toLowerCase().replace(/[^a-z0-9]/g, "");
+  
+  if (titleSimple.startsWith(brandSimple)) {
+    // Determine the length of the brand in the actual title string
+    // This is tricky because of punctuation differences. 
+    // Simple heuristic: If it starts with the exact string, strip it.
+    if (cleanTitle.toLowerCase().startsWith(resolvedBrandLower)) {
+        cleanTitle = cleanTitle.slice(resolvedBrand.length).trim();
+    } else {
+        // Fallback for tricky punctuation: Remove the first N words if they match the brand
+        const brandTokens = resolvedBrandLower.split(/\s+/);
+        const titleTokens = cleanTitle.split(/\s+/);
+        let matchCount = 0;
+        for (let i = 0; i < brandTokens.length; i++) {
+            const bT = brandTokens[i].replace(/[^a-z0-9]/g, "");
+            const tT = (titleTokens[i] || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            if (bT === tT) matchCount++;
+            else break;
+        }
+        if (matchCount === brandTokens.length) {
+             cleanTitle = titleTokens.slice(matchCount).join(" ");
+        }
+    }
+  }
+  
+  // Clean up any leading punctuation left over (e.g. "! Dark Rock" -> "Dark Rock")
+  cleanTitle = cleanTitle.replace(/^[^a-z0-9]+/i, "");
+
   const rawWords = cleanTitle.split(/[\s,+\*~]+/).filter(Boolean);
   const modelWords: string[] = [];
   const strippedUnits: string[] = [];

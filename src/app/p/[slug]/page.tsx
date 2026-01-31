@@ -366,7 +366,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
     }
 
     // GSC Fix: Return 404 for products with insufficient data (prevents soft 404)
+    // EXCEPTION: Hub pages (parentViewMode) are valid containers even if the main rep has no price,
+    // as long as they have variants (which is guaranteed by resolveProductFromRoute logic).
     const hasPrice =
+      parentViewMode ||
       product.prices[countryCode] ||
       product.usedPrices?.[countryCode] ||
       Object.values(product.prices).some((p) => p && p > 0) ||

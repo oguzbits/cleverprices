@@ -255,36 +255,78 @@ export async function findProductBySyntheticId(
   if (syntheticId < 900000000) return undefined;
 
   const realId = syntheticId - 900000000;
-  const product = await getProductById(realId);
+  
+  // 1. Fetch the requested "Canonical" product (used for ID stability)
+  const canonicalProduct = await getProductById(realId);
+  if (!canonicalProduct) return undefined;
 
-  if (!product) return undefined;
-
-  // CANONICAL HUB ENFORCEMENT
-  // If this product has a parentAsin, ensure we are using the canonical Hub ID
-  if (product.parentAsin) {
+  // 2. CANONICAL HUB ENFORCEMENT
+  // If the requested product is part of a family, we must ensure we are using the TRUE canonical ID.
+  // If not, we return the canonical one so the page can redirect.
+  if (canonicalProduct.parentAsin) {
     const canonicalRealId = await getCanonicalFamilyId(
-      product.parentAsin,
+      canonicalProduct.parentAsin,
       realId,
     );
     const canonicalSyntheticId = 900000000 + canonicalRealId;
 
-    // If requested ID is not canonical, the caller (page.tsx) will handle redirect
-    // because the slug returned by getFamilyIdentity will use the canonical ID.
-    // However, we want to return the canonical product for rendering.
     if (canonicalRealId !== realId) {
-      const canonicalProduct = await getProductById(canonicalRealId);
-      if (canonicalProduct) {
-        return {
-          ...canonicalProduct,
-          id: canonicalSyntheticId,
-          isParentView: true,
-        };
+      const actualCanonical = await getProductById(canonicalRealId);
+      if (actualCanonical) {
+        // Recursively call to get the best representative for the TRUE canonical ID
+        return findProductBySyntheticId(canonicalSyntheticId);
       }
     }
   }
 
-  // Mark as parent view and replace ID with synthetic one
-  return { ...product, id: syntheticId, isParentView: true };
+  // 3. DYNAMIC REPRESENTATIVE SELECTION (Robustness Layer)
+  // Instead of blindly returning the canonical product (which might be old/OOS),
+  // we fetch all variants and pick the "Best" one to visually represent the family.
+  let representative = canonicalProduct;
+  
+  if (canonicalProduct.parentAsin) {
+    // We use country code 'de' as default for hub optimization
+    const variants = await getProductVariants(canonicalProduct, "de");
+    
+    if (variants.length > 0) {
+      // Sort variants to find the best "Face" for the family
+      // Priority:
+      // 1. Has Price (In Stock)
+      // 2. Is New Condition
+      // 3. Has Image
+      // 4. Newer (higher ID/createdAt)
+      const bestVariant = variants.sort((a, b) => {
+        const priceA = a.prices["de"] || 0;
+        const priceB = b.prices["de"] || 0;
+        const hasPriceA = priceA > 0;
+        const hasPriceB = priceB > 0;
+        
+        if (hasPriceA !== hasPriceB) return hasPriceA ? -1 : 1;
+        
+        const isNewA = a.condition === "New";
+        const isNewB = b.condition === "New";
+        if (isNewA !== isNewB) return isNewA ? -1 : 1;
+
+        const hasImgA = !!a.image;
+        const hasImgB = !!b.image;
+        if (hasImgA !== hasImgB) return hasImgA ? -1 : 1;
+
+        return (b.id || 0) - (a.id || 0); // Prefer newer items
+      })[0];
+
+      if (bestVariant) {
+        representative = bestVariant;
+      }
+    }
+  }
+
+  // 4. Return the "Best" representative, but MASKED with the Synthetic ID
+  // This ensures the URL remains stable (pointing to the family) while the content is dynamic/optimal.
+  return { 
+    ...representative, 
+    id: syntheticId, 
+    isParentView: true 
+  };
 }
 
 export async function getAllProductSlugs(): Promise<
