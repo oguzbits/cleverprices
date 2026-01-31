@@ -17,7 +17,7 @@ import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { Metadata } from "next";
 
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 
 // Universal Product Resolver (ID-based + Legacy Fallbacks)
 async function resolveProductFromRoute(slug: string) {
@@ -39,7 +39,11 @@ async function resolveProductFromRoute(slug: string) {
       if (variants.length <= 1) {
         // We know the real ID is id - 900000000
         const realId = id - 900000000;
-        const singletonProduct = { ...product, id: realId, isParentView: false };
+        const singletonProduct = {
+          ...product,
+          id: realId,
+          isParentView: false,
+        };
         const { getFamilyIdentity } = await import("@/lib/product-families");
         const { slug: singletonSlug } = getFamilyIdentity(
           singletonProduct,
@@ -49,13 +53,19 @@ async function resolveProductFromRoute(slug: string) {
           product: null,
           isParentView: false,
           redirect: `/p/${singletonSlug}`,
+          isPermanent: product.enrichmentStatus === "optimized",
         };
       }
 
       const { getFamilyIdentity } = await import("@/lib/product-families");
       const { slug: canonical } = getFamilyIdentity(product, variants);
-      const redirect = slug !== canonical ? `/p/${canonical}` : null;
-      return { product, isParentView: true, redirect };
+      const isRedirect = slug !== canonical;
+      return {
+        product,
+        isParentView: true,
+        redirect: isRedirect ? `/p/${canonical}` : null,
+        isPermanent: product.enrichmentStatus === "optimized",
+      };
     }
 
     // Standard Product
@@ -70,9 +80,14 @@ async function resolveProductFromRoute(slug: string) {
     // VARIANT FIX: We trust the slug returned by the product registry,
     // which mapDbProduct automatically ensures is canonical and ID-prefixed.
     const canonical = product.slug;
+    const isRedirect = slug !== canonical;
 
-    const redirect = slug !== canonical ? `/p/${canonical}` : null;
-    return { product, isParentView: false, redirect };
+    return {
+      product,
+      isParentView: false,
+      redirect: isRedirect ? `/p/${canonical}` : null,
+      isPermanent: product.enrichmentStatus === "optimized",
+    };
   }
 
   // 2. Legacy: Exact Slug Match
@@ -82,7 +97,12 @@ async function resolveProductFromRoute(slug: string) {
     const { slug: newSlug } = getFamilyIdentity(product, []); // Assume single item context
     // If we want to force migration:
     const redirectUrl = `/p/${newSlug}`; // 301 to new format
-    return { product, isParentView: false, redirect: redirectUrl };
+    return {
+      product,
+      isParentView: false,
+      redirect: `/p/${newSlug}`,
+      isPermanent: product.enrichmentStatus === "optimized",
+    };
   }
 
   // 3. Legacy: ASIN Suffix
@@ -94,8 +114,14 @@ async function resolveProductFromRoute(slug: string) {
     // So it returns "apple-iphone-17-pro" (Legacy).
     // We will redirect to that, then hit case #2, then redirect to ID? Double redirect.
     // Acceptable for compatibility.
-    if (newSlug !== slug)
-      return { product: null, isParentView: false, redirect: `/p/${newSlug}` };
+    if (newSlug !== slug) {
+      return {
+        product: null,
+        isParentView: false,
+        redirect: `/p/${newSlug}`,
+        isPermanent: false, // Let the ID-based resolver handle the final code
+      };
+    }
   }
 
   // 4. Legacy: Parent ASIN Suffix (Hub)
@@ -106,7 +132,12 @@ async function resolveProductFromRoute(slug: string) {
     (product as any).syntheticId = syntheticId;
     const { slug: newHubSlug } = getFamilyIdentity(product, []);
 
-    return { product, isParentView: true, redirect: `/p/${newHubSlug}` };
+    return {
+      product,
+      isParentView: true,
+      redirect: `/p/${newHubSlug}`,
+      isPermanent: product.enrichmentStatus === "optimized",
+    };
   }
 
   return null;
@@ -261,14 +292,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? `${product.title} zum besten Preis kaufen. Aktuell nur ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Jetzt Angebote in Deutschland vergleichen und sparen!`
         : `${product.title} günstig kaufen. Aktueller Bestpreis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Finden Sie jetzt das beste Hardware-Angebot bei ${BRAND_DOMAIN}.`);
 
-    const canonicalUrl = `https://${BRAND_DOMAIN}/p/${slug}`;
+    const canonicalPath = `/p/${product.slug}`;
+    const canonicalUrl = `https://${BRAND_DOMAIN}${canonicalPath}`;
 
     return {
       title,
       description,
       alternates: {
         canonical: canonicalUrl,
-        languages: getAlternateLanguages(`/p/${slug}`),
+        languages: getAlternateLanguages(canonicalPath),
       },
       openGraph: getOpenGraph({
         title: `${seoTitle} Preisvergleich | ${BRAND_DOMAIN}`,
@@ -319,7 +351,14 @@ export default async function ProductPage({ params, searchParams }: Props) {
     const resolution = await resolveProductFromRoute(slug);
 
     if (resolution?.redirect) {
-      redirect(resolution.redirect);
+      console.log(
+        `[SEO Redirect] ${resolution.isPermanent ? "301/308" : "302/307"} ${slug} -> ${resolution.redirect}`,
+      );
+      if (resolution.isPermanent) {
+        permanentRedirect(resolution.redirect);
+      } else {
+        redirect(resolution.redirect);
+      }
     }
 
     let product = resolution?.product;

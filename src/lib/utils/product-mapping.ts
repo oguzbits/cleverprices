@@ -219,6 +219,7 @@ export function mapDbProduct(
     createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
     releaseDate,
     specificationsSource: p.specificationsSource,
+    enrichmentStatus: p.enrichmentStatus as any,
   };
 
   // Enforce canonical slug and standardized family title/subtitle using siblings consensus if available

@@ -255,7 +255,7 @@ export async function findProductBySyntheticId(
   if (syntheticId < 900000000) return undefined;
 
   const realId = syntheticId - 900000000;
-  
+
   // 1. Fetch the requested "Canonical" product (used for ID stability)
   const canonicalProduct = await getProductById(realId);
   if (!canonicalProduct) return undefined;
@@ -283,11 +283,11 @@ export async function findProductBySyntheticId(
   // Instead of blindly returning the canonical product (which might be old/OOS),
   // we fetch all variants and pick the "Best" one to visually represent the family.
   let representative = canonicalProduct;
-  
+
   if (canonicalProduct.parentAsin) {
     // We use country code 'de' as default for hub optimization
     const variants = await getProductVariants(canonicalProduct, "de");
-    
+
     if (variants.length > 0) {
       // Sort variants to find the best "Face" for the family
       // Priority:
@@ -300,9 +300,9 @@ export async function findProductBySyntheticId(
         const priceB = b.prices["de"] || 0;
         const hasPriceA = priceA > 0;
         const hasPriceB = priceB > 0;
-        
+
         if (hasPriceA !== hasPriceB) return hasPriceA ? -1 : 1;
-        
+
         const isNewA = a.condition === "New";
         const isNewB = b.condition === "New";
         if (isNewA !== isNewB) return isNewA ? -1 : 1;
@@ -322,15 +322,20 @@ export async function findProductBySyntheticId(
 
   // 4. Return the "Best" representative, but MASKED with the Synthetic ID
   // This ensures the URL remains stable (pointing to the family) while the content is dynamic/optimal.
-  return { 
-    ...representative, 
-    id: syntheticId, 
-    isParentView: true 
+  return {
+    ...representative,
+    id: syntheticId,
+    isParentView: true,
   };
 }
 
 export async function getAllProductSlugs(): Promise<
-  { id: number; slug: string; updatedAt: Date }[]
+  {
+    id: number;
+    slug: string;
+    enrichmentStatus?: string | null;
+    updatedAt: Date;
+  }[]
 > {
   const allProducts = await db
     .select({
@@ -339,6 +344,7 @@ export async function getAllProductSlugs(): Promise<
       title: products.title,
       brand: products.brand,
       parentAsin: products.parentAsin,
+      enrichmentStatus: products.enrichmentStatus,
       updatedAt: products.updatedAt,
     })
     .from(products);
@@ -362,6 +368,7 @@ export async function getAllProductSlugs(): Promise<
     return {
       id: p.id,
       slug: canonical,
+      enrichmentStatus: p.enrichmentStatus,
       updatedAt: p.updatedAt || new Date(),
     };
   });
@@ -1148,12 +1155,7 @@ const getCachedDeals = unstable_cache(
     return results.map((r) => {
       const p = r.product;
       const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(
-        r.product as DbProduct,
-        [r.price],
-        siblings,
-        true,
-      );
+      return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
     });
   },
   ["best-deals-v13"],
@@ -1197,12 +1199,7 @@ export async function getBestDeals(
     return results.map((r) => {
       const p = r.product;
       const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(
-        r.product as DbProduct,
-        [r.price],
-        siblings,
-        true,
-      );
+      return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
     });
   }
   return getCachedDeals(limit, countryCode, condition);
@@ -1364,28 +1361,29 @@ export async function getDiverseMostPopular(
       and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
     );
 
-      const pricesByProduct = indexPricesById(prs);
-  
-      // Group by parentAsin
-      const families = new Map<string, any[]>();
-      for (const p of prods) {
-        if (p.parentAsin) {
-          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-          families.get(p.parentAsin)!.push(p);
-        }
-      }
-  
-      return prods
-        .map((p) => {
-          const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-          return mapDbProduct(
-            p as DbProduct,
-            pricesByProduct.get(p.id!) || [],
-            siblings, // Pass true siblings
-            true, // Strip heavy data (Home curation doesn't need specs)
-          );
-        })
-        .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);}
+  const pricesByProduct = indexPricesById(prs);
+
+  // Group by parentAsin
+  const families = new Map<string, any[]>();
+  for (const p of prods) {
+    if (p.parentAsin) {
+      if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+      families.get(p.parentAsin)!.push(p);
+    }
+  }
+
+  return prods
+    .map((p) => {
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+      return mapDbProduct(
+        p as DbProduct,
+        pricesByProduct.get(p.id!) || [],
+        siblings, // Pass true siblings
+        true, // Strip heavy data (Home curation doesn't need specs)
+      );
+    })
+    .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
+}
 
 const getCachedNew = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {

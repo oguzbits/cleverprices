@@ -89,7 +89,12 @@ async function getCachedSimilarProducts(
   );
 }
 export async function getAllProductSlugs(): Promise<
-  { id: number; slug: string; updatedAt: Date }[]
+  {
+    id: number;
+    slug: string;
+    enrichmentStatus?: string | null;
+    updatedAt: Date;
+  }[]
 > {
   return getAllProductSlugsSync();
 }

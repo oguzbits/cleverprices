@@ -68,7 +68,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   // Product pages - high priority for SEO
-  const products = await getAllProductSlugs();
+  const allProducts = await getAllProductSlugs();
+  // SEO SAFETY: Only include products that have reached "optimized" status (enriched with Icecat/eBay)
+  // This ensures Google only committed to stable, high-quality URLs.
+  const products = allProducts.filter(
+    (p) => p.enrichmentStatus === "optimized",
+  );
+
   const productRoutes: MetadataRoute.Sitemap = products.map((product) => {
     const productPath = `/p/${product.slug.includes("_-") ? product.slug : `${200000000 + product.id}_-${product.slug}`}`;
     return {
