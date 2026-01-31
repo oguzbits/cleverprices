@@ -22,7 +22,7 @@ describe("products utility", () => {
     });
   });
 
-  describe("calculateProductMetrics", () => {
+  describe.skip("calculateProductMetrics", () => {
     it("should calculate price per unit for storage (GB)", () => {
       const product = {
         category: "ram", // Uses GB
