@@ -35,6 +35,23 @@ async function resolveProductFromRoute(slug: string) {
       const { getProductVariants } = await import("@/lib/product-registry");
       const variants = await getProductVariants(product, DEFAULT_COUNTRY);
 
+      // SINGLETON CHECK: If this 'Hub' has no variants (just itself), redirect to the standard product page (200...)
+      if (variants.length <= 1) {
+        // We know the real ID is id - 900000000
+        const realId = id - 900000000;
+        const singletonProduct = { ...product, id: realId, isParentView: false };
+        const { getFamilyIdentity } = await import("@/lib/product-families");
+        const { slug: singletonSlug } = getFamilyIdentity(
+          singletonProduct,
+          variants,
+        );
+        return {
+          product: null,
+          isParentView: false,
+          redirect: `/p/${singletonSlug}`,
+        };
+      }
+
       const { getFamilyIdentity } = await import("@/lib/product-families");
       const { slug: canonical } = getFamilyIdentity(product, variants);
       const redirect = slug !== canonical ? `/p/${canonical}` : null;

@@ -114,12 +114,12 @@ export function getFamilyIdentity(
 
   // 6. ID-Based Prefixing
   // Format: [ID]_-text-slug
-  const idValue = syntheticId || representative.id || 0;
+  let rawId = (syntheticId || representative.id || 0) % 100000000;
+  
   // Standardize to 9 digits:
   // Hubs: 900,000,000 + ID
   // Variants: 200,000,000 + ID
-  const idPrefix =
-    idValue >= 200000000 ? idValue : (isHub ? 900000000 : 200000000) + idValue;
+  const idPrefix = (isHub ? 900000000 : 200000000) + rawId;
 
   return {
     slug: `${idPrefix}_-${textSlug}`,

@@ -49,16 +49,25 @@ interface IdealoProductPageProps {
   parentFullModel?: string; // Stable hub full model name
 }
 
-export function IdealoProductPage({
+export async function IdealoProductPage({
   product,
   countryCode,
   selectedCondition,
-  isParentView = false,
+  isParentView: initialIsParentView = false,
   parentSlug: passedParentSlug,
   parentTitle: passedParentTitle,
   parentFullModel: passedFullModel,
 }: IdealoProductPageProps) {
   const category = getCategoryBySlug(product.category);
+
+  // Check true variant count to prevent "Alle Varianten" view for singletons
+  // Even if URL is 900... (Hub), we fall back to single view if no siblings exist
+  const variants = await getProductVariants(product, countryCode);
+  // We consider it a group only if we have more than 1 item (itself + others, or multiple others)
+  // getProductVariants returns the list of siblings (including self usually if grouped by ASIN)
+  // If parentAsin is null, it returns [] or matched siblings.
+  // We check if we have actual variations to show.
+  const isParentView = initialIsParentView && variants.length > 1;
 
   // UNIVERSAL IDENTITY RESOLUTION
   const identity = getProductIdentity(product);
