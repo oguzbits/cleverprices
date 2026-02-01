@@ -29,10 +29,15 @@ async function fetchLiteDb() {
   }
 
   try {
+    // In Netlify build context, siteID and token are auto-injected
+    // We ONLY pass them if we are not in the standard build environment (rare)
+    // or if we want to force specific credentials.
+    // However, the error suggests explicit passing when env vars are missing/conflicting is an issue.
+    // Simplest fix: Rely on auto-discovery for builds.
     const store = getStore({
       name: STORE_NAME,
-      siteID: process.env.NETLIFY_SITE_ID,
-      token: process.env.NETLIFY_AUTH_TOKEN,
+      // siteID: process.env.NETLIFY_SITE_ID, // Auto-detected in build
+      // token: process.env.NETLIFY_AUTH_TOKEN, // Auto-detected in build
     });
 
     const blob = await store.get(BLOB_KEY, { type: "arrayBuffer" });
