@@ -1236,56 +1236,64 @@ export async function getProductsByBrand(
 
 const getCachedDeals = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
-    // Lean schema: use consolidated `price` column instead of amazonPrice/newPrice
-    const whereConditions = [
-      eq(prices.country, countryCode),
-      gt(prices.priceAvg90, 0),
-      gt(prices.price, 0), // Consolidated "clever" price
-    ];
+    try {
+      // Lean schema: use consolidated `price` column instead of amazonPrice/newPrice
+      const whereConditions = [
+        eq(prices.country, countryCode),
+        gt(prices.priceAvg90, 0),
+        gt(prices.price, 0), // Consolidated "clever" price
+      ];
 
-    if (condition) {
-      whereConditions.push(eq(products.condition, condition as any));
-      if (condition === "New") {
-        whereConditions.push(
-          sql`${products.title} NOT LIKE '%Generalüberholt%'`,
-        );
-        whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
-        whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
+      if (condition) {
+        whereConditions.push(eq(products.condition, condition as any));
+        if (condition === "New") {
+          whereConditions.push(
+            sql`${products.title} NOT LIKE '%Generalüberholt%'`,
+          );
+          whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
+          whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
+        }
       }
-    }
 
-    const results = await db
-      .select({
-        product: liteProductColumns,
-        price: litePriceColumns,
-      })
-      .from(products)
-      .innerJoin(prices, eq(products.id, prices.productId))
-      .where(and(...whereConditions))
-      .orderBy(
-        desc(
-          // Deal percentage: (90-day avg - current price) / 90-day avg
-          sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90}`,
-        ),
-      )
-      .limit(limit);
+      const results = await db
+        .select({
+          product: liteProductColumns,
+          price: litePriceColumns,
+        })
+        .from(products)
+        .innerJoin(prices, eq(products.id, prices.productId))
+        .where(and(...whereConditions))
+        .orderBy(
+          desc(
+            // Deal percentage: (90-day avg - current price) / 90-day avg
+            sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90}`,
+          ),
+        )
+        .limit(limit);
 
-    const prods = results.map((r) => r.product);
+      const prods = results.map((r) => r.product);
 
-    // Group by parentAsin for correct sibling consensus
-    const families = new Map<string, any[]>();
-    for (const p of prods) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
+      // Group by parentAsin for correct sibling consensus
+      const families = new Map<string, any[]>();
+      for (const p of prods) {
+        if (p.parentAsin) {
+          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+          families.get(p.parentAsin)!.push(p);
+        }
       }
-    }
 
-    return results.map((r) => {
-      const p = r.product;
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
-    });
+      return results.map((r) => {
+        const p = r.product;
+        const siblings =
+          p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+        return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
+      });
+    } catch (e) {
+      console.warn(
+        "[Build Warning] Database missing in getCachedDeals. Returning empty.",
+      );
+      return [];
+    }
   },
   ["best-deals-v13"],
   {
