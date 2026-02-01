@@ -3,7 +3,7 @@ import fs from "fs";
 import { NextResponse } from "next/server";
 import path from "path";
 
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic"; // Removed for Next.js 16 cacheComponents compatibility
 
 export async function GET() {
   const cwd = process.cwd();
