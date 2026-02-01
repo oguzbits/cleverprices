@@ -11,9 +11,6 @@ RUN bun install --frozen-lockfile
 
 # Stage 3: Builder
 FROM base AS builder
-# Install sqlite for the DB generation script
-RUN apk add --no-cache sqlite bash
-
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -22,13 +19,7 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# 1. Generate the Lite DB inside the image
-# We copy the local master DB (cleverprices.db) into the image first
-# Note: Ensure data/cleverprices.db exists locally before building!
-RUN chmod +x scripts/database/prepare-lite-db.sh
-RUN ./scripts/database/prepare-lite-db.sh
-
-# 2. Build Next.js
+# 1. Build Next.js
 RUN bun run build
 
 # Stage 4: Runner
@@ -44,6 +35,9 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
+# Ensure data directory exists for volumes
+RUN mkdir -p data && chown nextjs:nodejs data
+
 # Copy public assets
 COPY --from=builder /app/public ./public
 
@@ -51,10 +45,6 @@ COPY --from=builder /app/public ./public
 # Next.js "standalone" output creates a minimal server
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Copy the generated Lite DB from the builder stage
-# We place it exactly where the app expects it (data/cleverprices-lite.db)
-COPY --from=builder --chown=nextjs:nodejs /app/data/cleverprices-lite.db ./data/cleverprices-lite.db
 
 USER nextjs
 
