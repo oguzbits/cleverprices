@@ -93,8 +93,12 @@ export function calculateProductMetrics(
     categoryConfig?.unitType === "TB" ||
     categoryConfig?.unitType === "GB";
 
-  // Try to extract capacity from title if missing (only for storage/memory)
-  if (!capacity && title && isStorageOrMemory) {
+  // Try to extract capacity from title if missing OR if current unit is non-analytical (like "piece")
+  const isNonAnalyticalUnit =
+    !capacityUnit ||
+    ["stück", "piece", "unit", "item"].includes(capacityUnit.toLowerCase());
+
+  if ((!capacity || isNonAnalyticalUnit) && title && isStorageOrMemory) {
     const capMatch = title.match(/(\d+)\s?(GB|TB)/i);
     if (capMatch) {
       capacity = parseInt(capMatch[1]);
@@ -109,11 +113,17 @@ export function calculateProductMetrics(
     return p;
   }
 
-  const comparisonUnit = categoryConfig?.unitType || capacityUnit || "GB";
+  const comparisonUnit = isNonAnalyticalUnit
+    ? capacityUnit || "Einheit"
+    : categoryConfig?.unitType || capacityUnit || "GB";
 
-  // Prevent conversion for non-storage units like 'W'
-  const fromFactor = UNIT_CONVERSION[capacityUnit || "GB"] || 1;
-  const toFactor = UNIT_CONVERSION[comparisonUnit] || 1;
+  // Prevent conversion for non-storage units like 'W' or 'piece'
+  const fromFactor = isNonAnalyticalUnit
+    ? 1
+    : UNIT_CONVERSION[capacityUnit || "GB"] || 1;
+  const toFactor = isNonAnalyticalUnit
+    ? 1
+    : UNIT_CONVERSION[comparisonUnit] || 1;
 
   const normalizedCapacity = actualCapacity * fromFactor;
   const capacityInComparisonUnit = normalizedCapacity / toFactor;

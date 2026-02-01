@@ -205,17 +205,21 @@ export function IdealoListCard({
 
         {/* BADGES */}
         <div className="sr-resultItemTile__badges absolute bottom-2 left-[200px] flex flex-wrap gap-1">
-          {isProductBestseller(product as any) && (
-            <span className="rounded-[2px] bg-[#0066cc] px-2 py-0.5 text-[11px] font-bold text-white">
-              Bestseller
-            </span>
-          )}
           {(product.savings ?? 0) > 0.05 && (
             <span className="rounded-[2px] bg-[#e10316] px-2 py-0.5 text-[11px] font-bold text-white">
               -{Math.round(product.savings! * 100)}%
             </span>
           )}
         </div>
+
+        {/* TOP LEFT BADGE (Bestseller) */}
+        {isProductBestseller(product as any) && (
+          <div className="absolute top-0 left-0 z-10">
+            <span className="inline-block rounded-br-sm bg-[#0066cc] px-2.5 py-1 text-[14px] font-bold text-white shadow-sm">
+              Bestseller
+            </span>
+          </div>
+        )}
       </PrefetchLink>
     </div>
   );

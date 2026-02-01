@@ -1,5 +1,9 @@
 import { ArticleSchema } from "@/components/blog/article-schema";
-import { LocalizedLink, QuickPicks } from "@/components/blog/mdx-components";
+import {
+  LocalizedLink,
+  ProductCard,
+  QuickPicks,
+} from "@/components/blog/mdx-components";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import {
   Accordion,
@@ -29,7 +33,7 @@ export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
   }
 
   const breadcrumbItems = [
-    { name: "Home", href: "/" },
+    { name: "Startseite", href: "/" },
     { name: "Blog", href: "/blog" },
     { name: post.title },
   ];
@@ -68,6 +72,9 @@ export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
         {props.children}
       </LocalizedLink>
     ),
+    ProductCard: (props: { asin: string }) => (
+      <ProductCard {...props} country={country} />
+    ),
   };
 
   return (
@@ -84,9 +91,9 @@ export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
             <div className="flex items-center gap-2">
               <Calendar className="text-primary h-4 w-4" />
               <span>
-                {new Date(post.publishDate).toLocaleDateString("en-US", {
-                  month: "long",
+                {new Date(post.publishDate).toLocaleDateString("de-DE", {
                   day: "numeric",
+                  month: "long",
                   year: "numeric",
                 })}
               </span>
@@ -119,7 +126,7 @@ export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
         {post.references && post.references.length > 0 && (
           <div className="mt-20 border-t pt-10">
             <h2 className="mb-6 text-2xl font-black tracking-tight uppercase">
-              Market References
+              Quellen & Referenzen
             </h2>
             <ul className="grid gap-4">
               {post.references.map((ref, index) => (
@@ -144,8 +151,8 @@ export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
         {post.faqs && post.faqs.length > 0 && (
           <div className="mt-20 border-t pt-10">
             <h2 className="mb-10 text-3xl font-black tracking-tight uppercase italic">
-              Common <span className="text-primary not-italic">Market</span>{" "}
-              Questions
+              Häufige <span className="text-primary not-italic">Markt</span>{" "}
+              Fragen
             </h2>
             <Accordion type="single" collapsible className="w-full">
               {post.faqs.map((faq, index) => (

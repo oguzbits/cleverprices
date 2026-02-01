@@ -1,16 +1,14 @@
 import { getCategoryPath, type CategorySlug } from "@/lib/categories";
-import {
-  DEFAULT_COUNTRY,
-  getCountryByCode,
-  type CountryCode,
-} from "@/lib/countries";
-import { Product } from "@/lib/product-registry";
+import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
+import { getProductByAsin, type Product } from "@/lib/product-registry";
+import { type LeanProduct } from "@/lib/types";
 import {
   calculateProductMetrics,
   getLocalizedProductData,
 } from "@/lib/utils/products";
 import { TrendingDown, Zap } from "lucide-react";
 import Link from "next/link";
+import { IdealoListCard } from "../category/IdealoListCard";
 
 interface QuickPicksProps {
   category: string;
@@ -64,7 +62,7 @@ export function QuickPicks({
       <div className="bg-muted/20 dark:bg-muted/10 border-border/50 border-b px-6 py-5">
         <h3 className="flex items-center gap-3 text-lg font-black tracking-tighter uppercase italic">
           <Zap className="text-primary fill-primary h-5 w-5" />
-          Live Value Picks:{" "}
+          Top-Angebote:{" "}
           <span className="text-foreground ml-1 not-italic">
             {category.replace("-", " ")}
           </span>
@@ -113,7 +111,7 @@ export function QuickPicks({
                 rel="noopener noreferrer"
                 className="inline-flex h-8 items-center justify-center rounded-lg border border-[#FCD200]/50 bg-[#FFD814] px-3 text-[11px] font-bold whitespace-nowrap text-black no-underline shadow-sm transition-all hover:bg-[#F7CA00] hover:no-underline active:scale-[0.98] sm:h-9 sm:rounded-xl sm:px-4 sm:text-sm"
               >
-                View on Amazon
+                Auf Amazon prüfen
               </a>
             </div>
           </div>
@@ -125,7 +123,7 @@ export function QuickPicks({
           className="text-muted-foreground hover:text-primary group flex items-center justify-center gap-2 text-xs font-black tracking-[0.2em] uppercase transition-all"
           prefetch={true}
         >
-          View all {category.replace("-", " ")} deals
+          Alle {category.replace("-", " ")} Angebote ansehen
           <span className="transition-transform group-hover:translate-x-1">
             →
           </span>
@@ -154,5 +152,53 @@ export function LocalizedLink({
     >
       {children}
     </Link>
+  );
+}
+
+export async function ProductCard({
+  asin,
+  country = "de",
+}: {
+  asin: string;
+  country?: string;
+}) {
+  const product = await getProductByAsin(asin);
+  if (!product) return null;
+
+  // Adapt Product to LeanProduct for IdealoListCard
+  const localized = getLocalizedProductData(product, country);
+
+  const leanProduct: LeanProduct = {
+    id: product.id,
+    slug: product.slug,
+    title: product.title,
+    subtitle: product.subtitle,
+    image: product.image,
+    price: localized.price || 0,
+    pricePerUnit: product.pricePerUnit,
+    capacity: product.capacity,
+    capacityUnit: product.capacityUnit,
+    formFactor: product.formFactor,
+    brand: product.brand,
+    rating: product.rating,
+    reviewCount: product.reviewCount,
+    salesRank: product.salesRank,
+    monthlySold: product.monthlySold,
+    variationAttributes: product.variationAttributes,
+    category: product.category,
+    // listPrice and savings are handled by localized logic in mapping if needed,
+    // but here we just pass them if they exist in the product object for the country
+    listPrice: product.listPrice?.[country],
+    savings: product.savings,
+  };
+
+  return (
+    <div className="not-prose my-8">
+      <IdealoListCard
+        product={leanProduct}
+        countryCode={country as any}
+        className="max-w-3xl"
+      />
+    </div>
   );
 }

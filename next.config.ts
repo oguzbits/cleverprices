@@ -168,6 +168,28 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // --- Blog Slug Migration (German Localization) ---
+      {
+        source: "/blog/best-ssd-for-ps5-2026",
+        destination: "/blog/beste-ssd-fuer-ps5-2026",
+        permanent: true,
+      },
+      {
+        source: "/blog/ssd-buying-guide-2026",
+        destination: "/blog/ssd-kaufberatung-2026",
+        permanent: true,
+      },
+      {
+        source: "/blog/ram-ssd-price-trends-2025",
+        destination: "/blog/ram-ssd-preistrends-2025",
+        permanent: true,
+      },
+      {
+        source: "/blog/best-ram-ssd-value-2025",
+        destination: "/blog/beste-ram-ssd-angebote-2025",
+        permanent: true,
+      },
+
       // --- Category Coverage Fixes (Flattened Hierarchy) ---
       {
         source: "/computer/tablet-accessories",

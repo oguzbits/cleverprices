@@ -723,6 +723,46 @@ export const getProductBySlug = cache(async function getProductBySlug(
   )(slug, includeHistory);
 });
 
+const fetchProductByAsin = async (
+  asin: string,
+): Promise<Product | undefined> => {
+  const [p] = await db
+    .select()
+    .from(products)
+    .where(eq(products.asin, asin.toUpperCase()))
+    .limit(1);
+
+  if (!p) return undefined;
+
+  const [prs, siblings] = await Promise.all([
+    db.select().from(prices).where(eq(prices.productId, p.id)),
+    p.parentAsin
+      ? db
+          .select(liteProductColumns)
+          .from(products)
+          .where(eq(products.parentAsin, p.parentAsin))
+      : Promise.resolve([]),
+  ]);
+
+  return mapDbProduct(p as any, prs as any, siblings as any[]);
+};
+
+export const getProductByAsin = cache(async function getProductByAsin(
+  asin: string,
+): Promise<Product | undefined> {
+  const isScript =
+    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
+
+  if (isScript) {
+    return fetchProductByAsin(asin);
+  }
+
+  return unstable_cache(fetchProductByAsin, [`product-asin-v1-${asin}`], {
+    revalidate: PRODUCT_REVALIDATE_SECONDS,
+    tags: [`product-v1-asin-${asin}`],
+  })(asin);
+});
+
 /**
  * Find a product by ASIN suffix (last 4 characters of ASIN).
  * Used for redirecting old slugs that contain ASIN info to new short slugs.

@@ -47,5 +47,5 @@ export async function generateMetadata({
 
 export default async function BlogPostPage({ params }: BlogPostPageProps) {
   const { slug } = await params;
-  return <BlogPostViewMDX slug={slug} country="us" />;
+  return <BlogPostViewMDX slug={slug} country="de" />;
 }
