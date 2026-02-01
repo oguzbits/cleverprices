@@ -415,19 +415,29 @@ export async function getAllProductSlugs(): Promise<
  */
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   const fetchNonEmpty = async () => {
-    const results = await db
-      .select({ category: products.category })
-      .from(products)
-      .where(
-        inArray(products.enrichmentStatus, [
-          "optimized",
-          "processed",
-          "scavenged",
-        ]),
-      )
-      .groupBy(products.category);
+    try {
+      const results = await db
+        .select({ category: products.category })
+        .from(products)
+        .where(
+          inArray(products.enrichmentStatus, [
+            "optimized",
+            "processed",
+            "scavenged",
+          ]),
+        )
+        .groupBy(products.category);
 
-    return results.map((r) => r.category);
+      return results.map((r) => r.category);
+    } catch (e) {
+      // During Docker build, the DB volume is not yet mounted.
+      // We return empty list to skip static generation of category pages during build.
+      // They will be rendered at runtime via SSR/ISR once the volume is available.
+      console.warn(
+        "[Build Warning] Database missing or inaccessible. Skipping static generation.",
+      );
+      return [];
+    }
   };
 
   const isScript =
