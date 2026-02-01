@@ -1,0 +1,31 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+/playwright-report/
+/test-results/
+
+# Next.js
+/.next/
+/out/
+
+# Vercel/Netlify
+.vercel
+.netlify
+
+# Git
+.git
+.gitignore
+
+# Misc
+.DS_Store
+*.pem
+*.log
+.env*
+
+# Keep data directory but ignore backups
+/data/*.backup
+/logs/

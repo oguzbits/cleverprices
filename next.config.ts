@@ -7,6 +7,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  output: "standalone", // Required for Docker
   reactCompiler: true,
   cacheComponents: true, // Enable "use cache" directive for caching
   // Configure MDX file extensions
@@ -32,7 +33,7 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-tooltip",
     ],
   },
-  // IMPORTANT: Explicitly include the SQLite file in the Function bundle (Vercel/Netlify)
+  // IMPORTANT: Explicitly include the SQLite file in the Function bundle if needed
   outputFileTracingIncludes: {
     "/*": ["./data/cleverprices-lite.db"],
   },

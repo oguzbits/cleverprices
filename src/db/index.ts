@@ -51,7 +51,7 @@ function getDatabaseUrl(): string {
   // 3. Production: Default to bundled LITE database
   // This saves Turso quota and avoids read-only filesystem errors.
   if (isProductionEnvironment) {
-    // robust path resolution for both Vercel and Netlify
+    // robust path resolution for Production (Docker/VPS)
     const dbPath = path.join(process.cwd(), "data", "cleverprices-lite.db");
     const exists = fs.existsSync(dbPath);
     console.log(`[DB Check] Path: ${dbPath}, Exists: ${exists}`);
