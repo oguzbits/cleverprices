@@ -1,7 +1,10 @@
 import { getAllBlogPosts } from "@/lib/blog";
 import { getCategoryHierarchy } from "@/lib/categories";
 import { getAlternateLanguages } from "@/lib/metadata";
-import { getAllProductSlugs } from "@/lib/server/cached-products";
+import {
+  getAllProductSlugs,
+  getNonEmptyCategorySlugs,
+} from "@/lib/server/cached-products";
 import { SITE_URL } from "@/lib/site-config";
 import { MetadataRoute } from "next";
 
@@ -90,6 +93,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Category routes
   const categoryHierarchy = getCategoryHierarchy();
+  const nonEmptyCategorySlugs = await getNonEmptyCategorySlugs();
   const categoryRoutes: MetadataRoute.Sitemap = [];
 
   // 1. Categories listing page
@@ -105,6 +109,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // 2. Parent categories
   categoryHierarchy.forEach((hierarchy) => {
+    // A parent category is included if at least one of its children is non-empty
+    const activeChildren = hierarchy.children.filter(
+      (child) => !child.hidden && nonEmptyCategorySlugs.includes(child.slug),
+    );
+
+    if (activeChildren.length === 0) return;
+
     const path = `/${hierarchy.parent.slug}`;
     categoryRoutes.push({
       url: `${baseUrl}${path}`,
@@ -117,9 +128,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     // 3. Child categories
-    hierarchy.children.forEach((child) => {
-      if (child.hidden) return;
-
+    activeChildren.forEach((child) => {
       const fullPath = `/${hierarchy.parent.slug}/${child.slug}`;
       categoryRoutes.push({
         url: `${baseUrl}${fullPath}`,

@@ -365,6 +365,7 @@ export async function getAllProductSlugs(): Promise<
   {
     id: number;
     slug: string;
+    category: string;
     enrichmentStatus?: string | null;
     updatedAt: Date;
   }[]
@@ -375,6 +376,7 @@ export async function getAllProductSlugs(): Promise<
       slug: products.slug,
       title: products.title,
       brand: products.brand,
+      category: products.category,
       parentAsin: products.parentAsin,
       enrichmentStatus: products.enrichmentStatus,
       updatedAt: products.updatedAt,
@@ -398,12 +400,48 @@ export async function getAllProductSlugs(): Promise<
     // Generate canonical slug (includes ID prefix) using targeted consensus set
     const { slug: canonical } = getFamilyIdentity(p as any, siblings as any);
     return {
-      id: p.id,
+      id: p.id!,
       slug: canonical,
+      category: p.category,
       enrichmentStatus: p.enrichmentStatus,
       updatedAt: p.updatedAt || new Date(),
     };
   });
+}
+
+/**
+ * Get all category slugs that have at least one product with "optimized" status.
+ * Used for filtering the sitemap and preventing thin content.
+ */
+export async function getNonEmptyCategorySlugs(): Promise<string[]> {
+  const fetchNonEmpty = async () => {
+    const results = await db
+      .select({ category: products.category })
+      .from(products)
+      .where(
+        inArray(products.enrichmentStatus, [
+          "optimized",
+          "processed",
+          "scavenged",
+        ]),
+      )
+      .groupBy(products.category);
+
+    return results.map((r) => r.category);
+  };
+
+  const isScript =
+    typeof globalThis === "undefined" ||
+    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
+
+  if (isScript) {
+    return fetchNonEmpty();
+  }
+
+  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v1"], {
+    revalidate: CATEGORY_REVALIDATE_SECONDS,
+    tags: ["categories-non-empty"],
+  })();
 }
 
 /**

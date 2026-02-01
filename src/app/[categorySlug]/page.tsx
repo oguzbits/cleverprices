@@ -19,6 +19,7 @@ import {
   getAlternateLanguages,
   getOpenGraph,
 } from "@/lib/metadata";
+import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -31,8 +32,19 @@ interface Props {
 }
 
 export async function generateStaticParams() {
-  return Object.values(allCategories)
-    .filter((c) => !c.hidden)
+  const nonEmptySlugs = await getNonEmptyCategorySlugs();
+  const categories = Object.values(allCategories).filter((c) => !c.hidden);
+
+  return categories
+    .filter((c) => {
+      const children = getChildCategories(c.slug);
+      if (children.length > 0) {
+        // Parent: include if any child is non-empty
+        return children.some((child) => nonEmptySlugs.includes(child.slug));
+      }
+      // Child: include if non-empty
+      return nonEmptySlugs.includes(c.slug);
+    })
     .map((c) => ({ categorySlug: c.slug }));
 }
 
@@ -40,6 +52,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug } = await params;
   const category = getCategoryBySlug(categorySlug);
   if (!category) return { title: "Kategorie nicht gefunden" };
+
+  // Check if category is empty
+  const nonEmptySlugs = await getNonEmptyCategorySlugs();
+  const children = getChildCategories(categorySlug as CategorySlug);
+  const isEmpty =
+    children.length > 0
+      ? !children.some((child) => nonEmptySlugs.includes(child.slug))
+      : !nonEmptySlugs.includes(categorySlug);
+
+  if (isEmpty) {
+    return { title: "Kategorie nicht gefunden", robots: { index: false } };
+  }
 
   const canonicalUrl = `https://${BRAND_DOMAIN}/${category.slug}`;
 
@@ -81,6 +105,16 @@ export default async function DedicatedCategoryPage({
   const category = getCategoryBySlug(categorySlug);
 
   if (!category) notFound();
+
+  // Check if category is empty to avoid showing empty results pages
+  const nonEmptySlugs = await getNonEmptyCategorySlugs();
+  const children = getChildCategories(categorySlug as CategorySlug);
+  const isEmpty =
+    children.length > 0
+      ? !children.some((child) => nonEmptySlugs.includes(child.slug))
+      : !nonEmptySlugs.includes(categorySlug);
+
+  if (isEmpty) notFound();
 
   try {
     const childCategories = getChildCategories(categorySlug as CategorySlug);

@@ -8,6 +8,7 @@ import {
   getDiverseMostPopular as getDiverseMostPopularSync,
   getMostPopular as getMostPopularSync,
   getNewArrivals as getNewArrivalsSync,
+  getNonEmptyCategorySlugs as getNonEmptyCategorySlugsSync,
   getProductBySlug as getProductBySlugSync,
   getSimilarProducts as getSimilarProductsSync,
   type Product,
@@ -92,11 +93,16 @@ export async function getAllProductSlugs(): Promise<
   {
     id: number;
     slug: string;
+    category: string;
     enrichmentStatus?: string | null;
     updatedAt: Date;
   }[]
 > {
   return getAllProductSlugsSync();
+}
+
+export async function getNonEmptyCategorySlugs(): Promise<string[]> {
+  return getNonEmptyCategorySlugsSync();
 }
 
 export async function getAllProducts(): Promise<Product[]> {
