@@ -11,16 +11,19 @@
  * - LITE_DB_BLOB_URL: The destination URL in Vercel Blob
  */
 
-import { put } from "@vercel/blob";
+import { getStore } from "@netlify/blobs";
 import fs from "fs";
 import path from "path";
 
 const LITE_DB_PATH = path.join(process.cwd(), "data", "cleverprices-lite.db");
+const STORE_NAME = "production-db";
+const BLOB_KEY = "cleverprices-lite.db";
 
 async function uploadLiteDb() {
   // Check for required env vars
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    console.error("❌ Missing BLOB_READ_WRITE_TOKEN in .env.local");
+  if (!process.env.NETLIFY_AUTH_TOKEN || !process.env.NETLIFY_SITE_ID) {
+    console.error("❌ Missing NETLIFY_AUTH_TOKEN or NETLIFY_SITE_ID in .env.local");
+    console.log("💡 Run this with `netlify link` active or set the vars manually.");
     process.exit(1);
   }
 
@@ -33,24 +36,20 @@ async function uploadLiteDb() {
   const stats = fs.statSync(LITE_DB_PATH);
   const sizeMB = (stats.size / (1024 * 1024)).toFixed(2);
 
-  console.log(`📦 Uploading lite.db (${sizeMB} MB) to Vercel Blob...`);
+  console.log(`📦 Uploading lite.db (${sizeMB} MB) to Netlify Blobs...`);
 
   try {
-    const fileBuffer = fs.readFileSync(LITE_DB_PATH);
-
-    const blob = await put("cleverprices-lite.db", fileBuffer, {
-      access: "public",
-      contentType: "application/x-sqlite3",
-      addRandomSuffix: false,
-      allowOverwrite: true,
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+    const store = getStore({
+      name: STORE_NAME,
+      siteID: process.env.NETLIFY_SITE_ID,
+      token: process.env.NETLIFY_AUTH_TOKEN,
     });
 
-    console.log(`✅ Upload complete!`);
-    console.log(`📍 URL: ${blob.url}`);
-    console.log(
-      `\n💡 Add this URL to your Vercel Environment Variables as LITE_DB_BLOB_URL`,
-    );
+    const fileBuffer = fs.readFileSync(LITE_DB_PATH);
+
+    await store.set(BLOB_KEY, fileBuffer);
+
+    console.log(`✅ Upload complete to store: ${STORE_NAME}`);
   } catch (error: any) {
     console.error("❌ Upload failed:", error.message);
     process.exit(1);

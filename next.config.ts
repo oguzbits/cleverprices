@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-tooltip",
     ],
   },
-  // IMPORTANT: Explicitly include the SQLite file in the Vercel Function bundle
+  // IMPORTANT: Explicitly include the SQLite file in the Function bundle (Vercel/Netlify)
   outputFileTracingIncludes: {
     "/*": ["./data/cleverprices-lite.db"],
   },

@@ -4,14 +4,14 @@ import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
 // Environment detection
-// Treat any Vercel environment (production or preview) as production-like for DB connection
-const isVercelProduction = process.env.VERCEL === "1";
+// Treat any Vercel or Netlify environment (production or preview) as production-like for DB connection
+const isProductionEnvironment = process.env.VERCEL === "1" || process.env.NETLIFY === "true";
 
 /**
  * Database Configuration
  *
  * This module supports three modes:
- * 1. Production (Vercel): Connects to Turso cloud database
+ * 1. Production (Cloud): Connects to Turso cloud database
  * 2. Development with Turso: Uses embedded replica that syncs from cloud
  * 3. Development/Build local-only: Uses local SQLite file (fallback)
  *
@@ -40,15 +40,15 @@ function getDatabaseUrl(): string {
   }
 
   // 2. Explicit Remote Request: Use Turso cloud
-  // Triggered by setting DB_REMOTE=1 in Vercel/Local env
+  // Triggered by setting DB_REMOTE=1 in production/Local env
   if (process.env.DB_REMOTE === "1" && process.env.TURSO_DATABASE_URL) {
     return process.env.TURSO_DATABASE_URL;
   }
 
-  // 3. Production (Vercel): Default to bundled LITE database
+  // 3. Production: Default to bundled LITE database
   // This saves Turso quota and avoids read-only filesystem errors.
-  if (isVercelProduction) {
-    // robust path resolution for Vercel
+  if (isProductionEnvironment) {
+    // robust path resolution for both Vercel and Netlify
     const dbPath = path.join(process.cwd(), "data", "cleverprices-lite.db");
     const exists = fs.existsSync(dbPath);
     console.log(`[DB Check] Path: ${dbPath}, Exists: ${exists}`);
@@ -68,7 +68,7 @@ function createDbClient(): Client {
   // Activated only when DB_SYNC=1 is set.
   // Uses bundled lite.db as base, syncs to /tmp, and reads are free/instant.
   if (
-    isVercelProduction &&
+    isProductionEnvironment &&
     process.env.DB_SYNC === "1" &&
     process.env.TURSO_DATABASE_URL &&
     process.env.TURSO_AUTH_TOKEN
@@ -100,8 +100,8 @@ function createDbClient(): Client {
     });
   }
 
-  // 2. Production (Vercel) with bundled file: Use plain local SQLite (READ-ONLY)
-  if (isVercelProduction && url.startsWith("file:")) {
+  // 2. Production with bundled file: Use plain local SQLite (READ-ONLY)
+  if (isProductionEnvironment && url.startsWith("file:")) {
     console.log("[DB] Using bundled LITE database (quota-safe)");
     return createClient({ url });
   }
@@ -131,7 +131,7 @@ function createDbClient(): Client {
       client.execute("PRAGMA busy_timeout = 5000").catch(() => {});
       client.execute("PRAGMA cache_size = -20000").catch(() => {}); // 20MB cache (entire DB fits!)
 
-      if (!isVercelProduction) {
+      if (!isProductionEnvironment) {
         // Dev-only: WAL mode is safe for local disk
         client.execute("PRAGMA journal_mode = WAL").catch(() => {});
         client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
@@ -165,7 +165,7 @@ export const db: LibSQLDatabase<typeof schema> = drizzle(client, { schema });
  */
 export const dbReady: Promise<void> = (async () => {
   try {
-    const isSync = isVercelProduction && process.env.DB_SYNC === "1";
+    const isSync = isProductionEnvironment && process.env.DB_SYNC === "1";
 
     if (isSync) {
       console.log("[DB] Initializing autonomous sync (500ms cutoff)...");
@@ -185,7 +185,7 @@ export const dbReady: Promise<void> = (async () => {
       console.log(`[DB DEBUG] Products count on startup: ${result.rows[0].C}`);
     }
   } catch (e) {
-    if (isVercelProduction) {
+    if (isProductionEnvironment) {
       console.error(
         "[DB ERROR] Client initialization failure:",
         e instanceof Error ? e.message : String(e),
@@ -205,7 +205,7 @@ export { client };
  * Call this periodically or on-demand in development
  */
 export async function syncFromCloud(): Promise<void> {
-  if (!isVercelProduction && process.env.TURSO_DATABASE_URL) {
+  if (!isProductionEnvironment && process.env.TURSO_DATABASE_URL) {
     await client.sync();
     console.log("[DB] Synced from Turso cloud");
   }
