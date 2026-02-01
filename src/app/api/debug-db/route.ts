@@ -1,66 +1,81 @@
-import { db } from "@/db";
 import fs from "fs";
 import { NextResponse } from "next/server";
 import path from "path";
 
-// export const dynamic = "force-dynamic"; // Removed for Next.js 16 cacheComponents compatibility
-
 export async function GET() {
   const cwd = process.cwd();
-  const dataPath = path.join(cwd, "data");
-  const dbPath = path.join(dataPath, "cleverprices-lite.db");
-
-  const debugInfo = {
+  const results: any = {
+    cwd,
+    now: new Date().toISOString(),
     env: {
-      NODE_ENV: process.env.NODE_ENV,
-      VERCEL: process.env.VERCEL,
       NETLIFY: process.env.NETLIFY,
-      DB_LOCAL: process.env.DB_LOCAL,
-      DB_REMOTE: process.env.DB_REMOTE,
-      DB_SYNC: process.env.DB_SYNC,
+      VERCEL: process.env.VERCEL,
+      NODE_ENV: process.env.NODE_ENV,
     },
-    paths: {
-      cwd,
-      dataPath,
-      dbPath,
-    },
-    files: {
-      cwd: [] as string[],
-      data: [] as string[],
-      dbExists: false,
-      dbSize: -1,
-    },
-    dbStatus: "checking",
-    error: null as any,
+    scans: [] as any[],
   };
 
-  try {
-    // Check FS
-    if (fs.existsSync(cwd)) {
-      debugInfo.files.cwd = fs.readdirSync(cwd);
-    }
-    if (fs.existsSync(dataPath)) {
-      debugInfo.files.data = fs.readdirSync(dataPath);
-    }
-    if (fs.existsSync(dbPath)) {
-      debugInfo.files.dbExists = true;
-      debugInfo.files.dbSize = fs.statSync(dbPath).size;
-    }
+  const pathsToScan = [
+    cwd,
+    path.join(cwd, ".next", "server"),
+    path.join(cwd, "data"),
+    "/var/task", // Common lambda path
+    "/var/task/data",
+    path.join(cwd, ".."),
+  ];
 
-    // Check DB Query
-    const start = performance.now();
-    // @ts-ignore - simple query check
-    const result = await db.run("SELECT 1 as val");
-    const duration = performance.now() - start;
-
-    debugInfo.dbStatus = `Connected! Query took ${duration.toFixed(2)}ms`;
-  } catch (e: any) {
-    debugInfo.dbStatus = "FAILED";
-    debugInfo.error = {
-      message: e.message,
-      stack: e.stack,
-    };
+  for (const p of pathsToScan) {
+    try {
+      if (fs.existsSync(p)) {
+        const stats = fs.statSync(p);
+        if (stats.isDirectory()) {
+          const files = fs.readdirSync(p);
+          results.scans.push({
+            path: p,
+            exists: true,
+            type: "directory",
+            files: files.slice(0, 20), // limit to avoid huge response
+            count: files.length,
+          });
+        } else {
+          results.scans.push({
+            path: p,
+            exists: true,
+            type: "file",
+            size: stats.size,
+          });
+        }
+      } else {
+        results.scans.push({ path: p, exists: false });
+      }
+    } catch (e: any) {
+      results.scans.push({ path: p, error: e.message });
+    }
   }
 
-  return NextResponse.json(debugInfo, { status: 200 });
+  // Try to find the DB specifically
+  const possibleDbPaths = [
+    path.join(cwd, "data", "cleverprices-lite.db"),
+    path.join(cwd, "cleverprices-lite.db"),
+    "/var/task/data/cleverprices-lite.db",
+    "/var/task/cleverprices-lite.db",
+  ];
+
+  results.dbSearch = possibleDbPaths.map((p) => ({
+    path: p,
+    exists: fs.existsSync(p),
+    size: fs.existsSync(p) ? fs.statSync(p).size : 0,
+  }));
+
+  // Attempt DB init separately to avoid crashing the whole response
+  try {
+    const { db } = await import("@/db");
+    // @ts-ignore
+    const dbResult = await db.run("SELECT 1 as val");
+    results.dbQuery = { success: true, result: dbResult };
+  } catch (e: any) {
+    results.dbQuery = { success: false, error: e.message };
+  }
+
+  return NextResponse.json(results);
 }
