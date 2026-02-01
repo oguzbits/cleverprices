@@ -246,6 +246,38 @@ export async function getCanonicalFamilyId(
 }
 
 /**
+ * Fetch only price history for a specific product and country.
+ * Optimized for Hub pages where we just need the history of the cheapest variant.
+ */
+export async function getProductPriceHistory(
+  productId: number,
+  countryCode: string = "de",
+): Promise<{ date: string; price: number }[]> {
+  const fetchHistory = async () => {
+    const [pr] = await db
+      .select({ historyJson: prices.historyJson })
+      .from(prices)
+      .where(
+        and(eq(prices.productId, productId), eq(prices.country, countryCode)),
+      )
+      .limit(1);
+
+    if (!pr?.historyJson) return [];
+    const { parseHistoryJson } = await import("./utils/product-mapping");
+    return parseHistoryJson(pr.historyJson);
+  };
+
+  return unstable_cache(
+    fetchHistory,
+    [`product-history-v1-${productId}-${countryCode}`],
+    {
+      revalidate: PRODUCT_REVALIDATE_SECONDS,
+      tags: [`product-history-${productId}`],
+    },
+  )();
+}
+
+/**
  * Handle synthetic IDs for "Alle Varianten" / Parent Views.
  * ID = 900,000,000 + Real_Child_ID
  */

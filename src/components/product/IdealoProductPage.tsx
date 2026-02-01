@@ -15,7 +15,11 @@ import {
 } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
 import { getFamilyIdentity } from "@/lib/product-families";
-import { getProductVariants, Product } from "@/lib/product-registry";
+import {
+  getProductPriceHistory,
+  getProductVariants,
+  Product,
+} from "@/lib/product-registry";
 import { getSimilarProducts } from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
@@ -108,6 +112,24 @@ export async function IdealoProductPage({
           },
         ]),
   ];
+
+  // HUB PRICE HISTORY: If on Hub page, show history of the cheapest variant
+  let chartHistory = product.priceHistory || [];
+  let chartPrice = product.prices[countryCode];
+  let chartTitle = product.title;
+
+  if (isParentView && variants.length > 0) {
+    const cheapest = variants[0];
+    const cheapestHistory = await getProductPriceHistory(
+      cheapest.id!,
+      countryCode,
+    );
+    if (cheapestHistory.length > 0) {
+      chartHistory = cheapestHistory;
+      chartPrice = cheapest.prices[countryCode];
+      chartTitle = cheapest.title;
+    }
+  }
 
   return (
     <div className="bg-background min-h-screen">
@@ -402,9 +424,9 @@ export async function IdealoProductPage({
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
               <ComponentErrorBoundary name="PriceChart">
                 <IdealoPriceChart
-                  history={product.priceHistory || []}
-                  title={product.title}
-                  currentPrice={product.prices[countryCode]}
+                  history={chartHistory}
+                  title={chartTitle}
+                  currentPrice={chartPrice}
                 />
               </ComponentErrorBoundary>
             </div>
