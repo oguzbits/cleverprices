@@ -1299,69 +1299,213 @@ export async function getBestDeals(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
-  const isScript =
-    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
-  if (isScript) {
-    // Fallback for scripts where unstable_cache might not be available or needed
-    const results = await db
-      .select({ product: liteProductColumns, price: litePriceColumns })
-      .from(products)
-      .innerJoin(prices, eq(products.id, prices.productId))
-      .where(
-        and(
-          eq(prices.country, countryCode),
-          condition ? eq(products.condition, condition) : undefined,
-        ),
-      )
-      .limit(limit);
-    const prods = results.map((r) => r.product);
+  try {
+    const isScript =
+      typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
+    if (isScript) {
+      // Fallback for scripts where unstable_cache might not be available or needed
+      const results = await db
+        .select({ product: liteProductColumns, price: litePriceColumns })
+        .from(products)
+        .innerJoin(prices, eq(products.id, prices.productId))
+        .where(
+          and(
+            eq(prices.country, countryCode),
+            condition ? eq(products.condition, condition) : undefined,
+          ),
+        )
+        .limit(limit);
+      const prods = results.map((r) => r.product);
 
-    // Group by parentAsin
-    const families = new Map<string, any[]>();
-    for (const p of prods) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
+      // Group by parentAsin
+      const families = new Map<string, any[]>();
+      for (const p of prods) {
+        if (p.parentAsin) {
+          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+          families.get(p.parentAsin)!.push(p);
+        }
       }
-    }
 
-    return results.map((r) => {
-      const p = r.product;
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
-    });
+      return results.map((r) => {
+        const p = r.product;
+        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+        return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
+      });
+    }
+    return getCachedDeals(limit, countryCode, condition);
+  } catch (e) {
+    console.warn(
+      "[Build Warning] Database missing in getBestDeals. Returning empty.",
+    );
+    return [];
   }
-  return getCachedDeals(limit, countryCode, condition);
 }
 
 const getCachedPopular = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
-    const whereConditions = [];
-    if (condition) {
-      whereConditions.push(eq(products.condition, condition as any));
-      if (condition === "New") {
-        whereConditions.push(
-          sql`${products.title} NOT LIKE '%Generalüberholt%'`,
-        );
-        whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
-        whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
+    try {
+      const whereConditions = [];
+      if (condition) {
+        whereConditions.push(eq(products.condition, condition as any));
+        if (condition === "New") {
+          whereConditions.push(
+            sql`${products.title} NOT LIKE '%Generalüberholt%'`,
+          );
+          whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
+          whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
+        }
       }
-    }
 
+      const prods = await db
+        .select(liteProductColumns)
+        .from(products)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+        .orderBy(
+          asc(sql`COALESCE(${products.salesRank}, 10000000)`),
+          desc(products.reviewCount),
+          desc(products.rating),
+        )
+        .limit(limit);
+
+      if (prods.length === 0) return [];
+
+      const ids = prods.map((p) => p.id);
+      const prs = await db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(
+          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+        );
+
+      const pricesByProduct = indexPricesById(prs);
+
+      // Group by parentAsin
+      const families = new Map<string, any[]>();
+      for (const p of prods) {
+        if (p.parentAsin) {
+          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+          families.get(p.parentAsin)!.push(p);
+        }
+      }
+
+      return prods
+        .map((p) => {
+          const siblings =
+            p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+          return mapDbProduct(
+            p as DbProduct,
+            pricesByProduct.get(p.id!) || [],
+            siblings, // Pass true siblings
+            true,
+          );
+        })
+        .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
+    } catch (e) {
+      console.warn(
+        "[Build Warning] Database missing in getCachedPopular. Returning empty.",
+      );
+      return [];
+    }
+  },
+  ["popular-deals-v13"],
+  {
+    revalidate: CATEGORY_REVALIDATE_SECONDS,
+    tags: ["products", "popular", "v13"],
+  },
+);
+
+export async function getMostPopular(
+  limit: number = 8,
+  countryCode: string = "de",
+  condition?: "New" | "Used" | "Renewed",
+): Promise<Product[]> {
+  try {
+    const isScript =
+      typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
+    if (isScript) {
+      const prods = await db
+        .select(liteProductColumns)
+        .from(products)
+        .where(condition ? eq(products.condition, condition) : undefined)
+        .orderBy(asc(sql`COALESCE(${products.salesRank}, 10000000)`))
+        .limit(limit);
+      if (prods.length === 0) return [];
+
+      const ids = prods.map((p) => p.id);
+      const prs = await db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(
+          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+        );
+
+      const pricesByProduct = indexPricesById(prs);
+
+      // Group by parentAsin
+      const families = new Map<string, any[]>();
+      for (const p of prods) {
+        if (p.parentAsin) {
+          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+          families.get(p.parentAsin)!.push(p);
+        }
+      }
+
+      return prods.map((p) => {
+        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+        return mapDbProduct(
+          p as DbProduct,
+          pricesByProduct.get(p.id!) || [],
+          siblings,
+          true,
+        );
+      });
+    }
+    return getCachedPopular(limit, countryCode, condition);
+  } catch (e) {
+    console.warn(
+      "[Build Warning] Database missing in getMostPopular. Returning empty.",
+    );
+    return [];
+  }
+}
+
+/**
+ * FETCHING OPTIMIZATION: Get a diverse set of popular products (Top N per category)
+ * This uses a SQL Window Function to ensure we get candidates from all categories
+ * instead of just 200 items from the most popular category.
+ */
+export async function getDiverseMostPopular(
+  itemsPerCategory: number = 10,
+  countryCode: string = "de",
+): Promise<Product[]> {
+  try {
+    const result = await client.execute({
+      sql: `
+    WITH RankedProducts AS (
+      SELECT 
+        id,
+        category,
+        ROW_NUMBER() OVER (
+          PARTITION BY category 
+          ORDER BY COALESCE(sales_rank, 10000000) ASC, review_count DESC
+        ) as rank
+      FROM products
+      WHERE condition = 'New'
+    )
+    SELECT id FROM RankedProducts WHERE rank <= ?
+  `,
+      args: [itemsPerCategory],
+    });
+    const ids = result.rows.map((r: any) => Number(r.id));
+
+    if (ids.length === 0) return [];
+
+    // 2. Fetch full (lite) data for these specific IDs
     const prods = await db
       .select(liteProductColumns)
       .from(products)
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-      .orderBy(
-        asc(sql`COALESCE(${products.salesRank}, 10000000)`),
-        desc(products.reviewCount),
-        desc(products.rating),
-      )
-      .limit(limit);
+      .where(inArray(products.id, ids));
 
-    if (prods.length === 0) return [];
-
-    const ids = prods.map((p) => p.id);
     const prs = await db
       .select(litePriceColumns)
       .from(prices)
@@ -1387,186 +1531,79 @@ const getCachedPopular = unstable_cache(
           p as DbProduct,
           pricesByProduct.get(p.id!) || [],
           siblings, // Pass true siblings
-          true,
+          true, // Strip heavy data (Home curation doesn't need specs)
         );
       })
       .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
-  },
-  ["popular-deals-v13"],
-  {
-    revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "v13"],
-  },
-);
-
-export async function getMostPopular(
-  limit: number = 8,
-  countryCode: string = "de",
-  condition?: "New" | "Used" | "Renewed",
-): Promise<Product[]> {
-  const isScript =
-    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
-  if (isScript) {
-    const prods = await db
-      .select(liteProductColumns)
-      .from(products)
-      .where(condition ? eq(products.condition, condition) : undefined)
-      .orderBy(asc(sql`COALESCE(${products.salesRank}, 10000000)`))
-      .limit(limit);
-    if (prods.length === 0) return [];
-
-    const ids = prods.map((p) => p.id);
-    const prs = await db
-      .select(litePriceColumns)
-      .from(prices)
-      .where(
-        and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-      );
-
-    const pricesByProduct = indexPricesById(prs);
-
-    // Group by parentAsin
-    const families = new Map<string, any[]>();
-    for (const p of prods) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
-      }
-    }
-
-    return prods.map((p) => {
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(
-        p as DbProduct,
-        pricesByProduct.get(p.id!) || [],
-        siblings,
-        true,
-      );
-    });
-  }
-  return getCachedPopular(limit, countryCode, condition);
-}
-
-/**
- * FETCHING OPTIMIZATION: Get a diverse set of popular products (Top N per category)
- * This uses a SQL Window Function to ensure we get candidates from all categories
- * instead of just 200 items from the most popular category.
- */
-export async function getDiverseMostPopular(
-  itemsPerCategory: number = 10,
-  countryCode: string = "de",
-): Promise<Product[]> {
-  const result = await client.execute({
-    sql: `
-    WITH RankedProducts AS (
-      SELECT 
-        id,
-        category,
-        ROW_NUMBER() OVER (
-          PARTITION BY category 
-          ORDER BY COALESCE(sales_rank, 10000000) ASC, review_count DESC
-        ) as rank
-      FROM products
-      WHERE condition = 'New'
-    )
-    SELECT id FROM RankedProducts WHERE rank <= ?
-  `,
-    args: [itemsPerCategory],
-  });
-  const ids = result.rows.map((r: any) => Number(r.id));
-
-  if (ids.length === 0) return [];
-
-  // 2. Fetch full (lite) data for these specific IDs
-  const prods = await db
-    .select(liteProductColumns)
-    .from(products)
-    .where(inArray(products.id, ids));
-
-  const prs = await db
-    .select(litePriceColumns)
-    .from(prices)
-    .where(
-      and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+  } catch (e) {
+    console.warn(
+      "[Build Warning] Database missing in getDiverseMostPopular. Returning empty.",
     );
-
-  const pricesByProduct = indexPricesById(prs);
-
-  // Group by parentAsin
-  const families = new Map<string, any[]>();
-  for (const p of prods) {
-    if (p.parentAsin) {
-      if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-      families.get(p.parentAsin)!.push(p);
-    }
+    return [];
   }
-
-  return prods
-    .map((p) => {
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(
-        p as DbProduct,
-        pricesByProduct.get(p.id!) || [],
-        siblings, // Pass true siblings
-        true, // Strip heavy data (Home curation doesn't need specs)
-      );
-    })
-    .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
 }
 
 const getCachedNew = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
-    const whereConditions = [];
-    if (condition) {
-      whereConditions.push(eq(products.condition, condition as any));
-      if (condition === "New") {
-        whereConditions.push(
-          sql`${products.title} NOT LIKE '%Generalüberholt%'`,
-        );
-        whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
-        whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
+    try {
+      const whereConditions = [];
+      if (condition) {
+        whereConditions.push(eq(products.condition, condition as any));
+        if (condition === "New") {
+          whereConditions.push(
+            sql`${products.title} NOT LIKE '%Generalüberholt%'`,
+          );
+          whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
+          whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
+        }
       }
-    }
 
-    const prods = await db
-      .select(liteProductColumns)
-      .from(products)
-      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-      .orderBy(desc(products.createdAt))
-      .limit(limit);
+      const prods = await db
+        .select(liteProductColumns)
+        .from(products)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+        .orderBy(desc(products.createdAt))
+        .limit(limit);
 
-    if (prods.length === 0) return [];
+      if (prods.length === 0) return [];
 
-    const ids = prods.map((p) => p.id);
-    const prs = await db
-      .select(litePriceColumns)
-      .from(prices)
-      .where(
-        and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+      const ids = prods.map((p) => p.id);
+      const prs = await db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(
+          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+        );
+
+      const pricesByProduct = indexPricesById(prs);
+
+      // Group by parentAsin
+      const families = new Map<string, any[]>();
+      for (const p of prods) {
+        if (p.parentAsin) {
+          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+          families.get(p.parentAsin)!.push(p);
+        }
+      }
+
+      return prods
+        .map((p) => {
+          const siblings =
+            p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+          return mapDbProduct(
+            p as DbProduct,
+            pricesByProduct.get(p.id!) || [],
+            siblings, // Pass siblings for consensus
+            true,
+          );
+        })
+        .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
+    } catch (e) {
+      console.warn(
+        "[Build Warning] Database missing in getCachedNew. Returning empty.",
       );
-
-    const pricesByProduct = indexPricesById(prs);
-
-    // Group by parentAsin
-    const families = new Map<string, any[]>();
-    for (const p of prods) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
-      }
+      return [];
     }
-
-    return prods
-      .map((p) => {
-        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-        return mapDbProduct(
-          p as DbProduct,
-          pricesByProduct.get(p.id!) || [],
-          siblings, // Pass siblings for consensus
-          true,
-        );
-      })
-      .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   },
   ["new-arrivals-v13"],
   {
@@ -1580,47 +1617,54 @@ export async function getNewArrivals(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
-  const isScript =
-    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
-  if (isScript) {
-    const prods = await db
-      .select(liteProductColumns)
-      .from(products)
-      .where(condition ? eq(products.condition, condition) : undefined)
-      .orderBy(desc(products.createdAt))
-      .limit(limit);
-    if (prods.length === 0) return [];
+  try {
+    const isScript =
+      typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
+    if (isScript) {
+      const prods = await db
+        .select(liteProductColumns)
+        .from(products)
+        .where(condition ? eq(products.condition, condition) : undefined)
+        .orderBy(desc(products.createdAt))
+        .limit(limit);
+      if (prods.length === 0) return [];
 
-    const ids = prods.map((p) => p.id);
-    const prs = await db
-      .select(litePriceColumns)
-      .from(prices)
-      .where(
-        and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-      );
+      const ids = prods.map((p) => p.id);
+      const prs = await db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(
+          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+        );
 
-    const pricesByProduct = indexPricesById(prs);
+      const pricesByProduct = indexPricesById(prs);
 
-    // Group by parentAsin
-    const families = new Map<string, any[]>();
-    for (const p of prods) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
+      // Group by parentAsin
+      const families = new Map<string, any[]>();
+      for (const p of prods) {
+        if (p.parentAsin) {
+          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+          families.get(p.parentAsin)!.push(p);
+        }
       }
-    }
 
-    return prods.map((p) => {
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(
-        p as DbProduct,
-        pricesByProduct.get(p.id!) || [],
-        siblings,
-        true,
-      );
-    });
+      return prods.map((p) => {
+        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+        return mapDbProduct(
+          p as DbProduct,
+          pricesByProduct.get(p.id!) || [],
+          siblings,
+          true,
+        );
+      });
+    }
+    return getCachedNew(limit, countryCode, condition);
+  } catch (e) {
+    console.warn(
+      "[Build Warning] Database missing in getNewArrivals. Returning empty.",
+    );
+    return [];
   }
-  return getCachedNew(limit, countryCode, condition);
 }
 
 /**
@@ -1648,116 +1692,123 @@ export async function getFilteredProducts(
     offset?: number;
   },
 ): Promise<Product[]> {
-  const where: SQL[] = [
-    eq(products.category, category),
-    eq(prices.country, countryCode),
-    gt(prices.price, 0),
-  ];
+  try {
+    const where: SQL[] = [
+      eq(products.category, category),
+      eq(prices.country, countryCode),
+      gt(prices.price, 0),
+    ];
 
-  if (filters.brand?.length) {
-    where.push(inArray(products.brand, filters.brand));
-  }
-  if (filters.condition?.length) {
-    where.push(inArray(products.condition, filters.condition as any));
-  }
-  if (filters.technology?.length) {
-    where.push(inArray(products.technology, filters.technology));
-  }
-  if (filters.formFactor?.length) {
-    where.push(inArray(products.formFactor, filters.formFactor));
-  }
-  if (filters.socket?.length) {
-    // Socket is often stored in specifications JSON or extracted by mapDbProduct
-    // For SQL efficiency we check the technology column which often contains socket info
-    // or use a LIKE match on the title for legacy compatibility.
-    where.push(
-      or(
-        ...filters.socket.map(
-          (s) => sql`${products.title} LIKE ${"%" + s + "%"}`,
-        ),
-      )!,
-    );
-  }
-  if (filters.cores?.length) {
-    where.push(
-      or(
-        ...filters.cores.map(
-          (c) => sql`${products.title} LIKE ${"%" + c + "%"}`,
-        ),
-      )!,
-    );
-  }
-  if (filters.minCapacity) {
-    where.push(gte(products.normalizedCapacity, filters.minCapacity));
-  }
-  if (filters.maxCapacity) {
-    where.push(lte(products.normalizedCapacity, filters.maxCapacity));
-  }
-  if (filters.minPrice) {
-    where.push(gte(prices.price, filters.minPrice));
-  }
-  if (filters.maxPrice) {
-    where.push(lte(prices.price, filters.maxPrice));
-  }
-
-  // Sort logic mapping
-  let order;
-  const sortOrder = filters.sortOrder === "asc" ? asc : desc;
-
-  switch (filters.sortBy) {
-    case "price":
-      order = sortOrder(prices.price);
-      break;
-    case "pricePerUnit":
-      order = sortOrder(prices.pricePerUnit);
-      break;
-    case "rating":
-      order = [sortOrder(products.rating), desc(products.reviewCount)];
-      break;
-    case "createdAt":
-      order = sortOrder(products.createdAt);
-      break;
-    case "popularityScore":
-    default:
-      // Production Desirability Approximation:
-      // 1. Brand Prestige (Logically implied by sales rank but prioritized for stability)
-      // 2. Sales Rank (Main indicator)
-      // 3. Review Count (Tie breaker)
-      order = [
-        asc(sql`COALESCE(${products.salesRank}, 10000000)`),
-        desc(products.reviewCount),
-      ];
-      break;
-  }
-
-  const results = await db
-    .select({
-      product: liteProductColumns,
-      price: litePriceColumns,
-    })
-    .from(products)
-    .innerJoin(prices, eq(products.id, prices.productId))
-    .where(and(...where))
-    .orderBy(...(Array.isArray(order) ? order : [order]))
-    .limit(filters.limit || 24)
-    .offset(filters.offset || 0);
-
-  const prods = results.map((r) => r.product);
-
-  // Group by parentAsin for correct sibling consensus
-  const families = new Map<string, any[]>();
-  for (const p of prods) {
-    if (p.parentAsin) {
-      if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-      families.get(p.parentAsin)!.push(p);
+    if (filters.brand?.length) {
+      where.push(inArray(products.brand, filters.brand));
     }
-  }
+    if (filters.condition?.length) {
+      where.push(inArray(products.condition, filters.condition as any));
+    }
+    if (filters.technology?.length) {
+      where.push(inArray(products.technology, filters.technology));
+    }
+    if (filters.formFactor?.length) {
+      where.push(inArray(products.formFactor, filters.formFactor));
+    }
+    if (filters.socket?.length) {
+      // Socket is often stored in specifications JSON or extracted by mapDbProduct
+      // For SQL efficiency we check the technology column which often contains socket info
+      // or use a LIKE match on the title for legacy compatibility.
+      where.push(
+        or(
+          ...filters.socket.map(
+            (s) => sql`${products.title} LIKE ${"%" + s + "%"}`,
+          ),
+        )!,
+      );
+    }
+    if (filters.cores?.length) {
+      where.push(
+        or(
+          ...filters.cores.map(
+            (c) => sql`${products.title} LIKE ${"%" + c + "%"}`,
+          ),
+        )!,
+      );
+    }
+    if (filters.minCapacity) {
+      where.push(gte(products.normalizedCapacity, filters.minCapacity));
+    }
+    if (filters.maxCapacity) {
+      where.push(lte(products.normalizedCapacity, filters.maxCapacity));
+    }
+    if (filters.minPrice) {
+      where.push(gte(prices.price, filters.minPrice));
+    }
+    if (filters.maxPrice) {
+      where.push(lte(prices.price, filters.maxPrice));
+    }
 
-  return results.map((r) => {
-    const p = r.product;
-    const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-    return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
-  });
+    // Sort logic mapping
+    let order;
+    const sortOrder = filters.sortOrder === "asc" ? asc : desc;
+
+    switch (filters.sortBy) {
+      case "price":
+        order = sortOrder(prices.price);
+        break;
+      case "pricePerUnit":
+        order = sortOrder(prices.pricePerUnit);
+        break;
+      case "rating":
+        order = [sortOrder(products.rating), desc(products.reviewCount)];
+        break;
+      case "createdAt":
+        order = sortOrder(products.createdAt);
+        break;
+      case "popularityScore":
+    default:
+        // Production Desirability Approximation:
+        // 1. Brand Prestige (Logically implied by sales rank but prioritized for stability)
+        // 2. Sales Rank (Main indicator)
+        // 3. Review Count (Tie breaker)
+        order = [
+          asc(sql`COALESCE(${products.salesRank}, 10000000)`),
+          desc(products.reviewCount),
+        ];
+        break;
+    }
+
+    const results = await db
+      .select({
+        product: liteProductColumns,
+        price: litePriceColumns,
+      })
+      .from(products)
+      .innerJoin(prices, eq(products.id, prices.productId))
+      .where(and(...where))
+      .orderBy(...(Array.isArray(order) ? order : [order]))
+      .limit(filters.limit || 24)
+      .offset(filters.offset || 0);
+
+    const prods = results.map((r) => r.product);
+
+    // Group by parentAsin for correct sibling consensus
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    return results.map((r) => {
+      const p = r.product;
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+      return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
+    });
+  } catch (e) {
+    console.warn(
+      "[Build Warning] Database missing in getFilteredProducts. Returning empty.",
+    );
+    return [];
+  }
 }
 
 /**
