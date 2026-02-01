@@ -4,8 +4,11 @@ import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 
 // Environment detection
-// Treat any Vercel or Netlify environment (production or preview) as production-like for DB connection
-const isProductionEnvironment = process.env.VERCEL === "1" || process.env.NETLIFY === "true";
+// Treat specific flags OR standard NODE_ENV=production as signal to use production assets
+const isProductionEnvironment =
+  process.env.VERCEL === "1" ||
+  process.env.NETLIFY === "true" ||
+  process.env.NODE_ENV === "production";
 
 /**
  * Database Configuration
