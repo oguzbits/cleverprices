@@ -46,8 +46,12 @@ async function uploadLiteDb() {
     });
 
     const fileBuffer = fs.readFileSync(LITE_DB_PATH);
+    const arrayBuffer = fileBuffer.buffer.slice(
+      fileBuffer.byteOffset,
+      fileBuffer.byteOffset + fileBuffer.byteLength,
+    );
 
-    await store.set(BLOB_KEY, fileBuffer);
+    await store.set(BLOB_KEY, arrayBuffer);
 
     console.log(`✅ Upload complete to store: ${STORE_NAME}`);
   } catch (error: any) {
