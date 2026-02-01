@@ -370,43 +370,50 @@ export async function getAllProductSlugs(): Promise<
     updatedAt: Date;
   }[]
 > {
-  const allProducts = await db
-    .select({
-      id: products.id,
-      slug: products.slug,
-      title: products.title,
-      brand: products.brand,
-      category: products.category,
-      parentAsin: products.parentAsin,
-      enrichmentStatus: products.enrichmentStatus,
-      updatedAt: products.updatedAt,
-    })
-    .from(products);
+  try {
+    const allProducts = await db
+      .select({
+        id: products.id,
+        slug: products.slug,
+        title: products.title,
+        brand: products.brand,
+        category: products.category,
+        parentAsin: products.parentAsin,
+        enrichmentStatus: products.enrichmentStatus,
+        updatedAt: products.updatedAt,
+      })
+      .from(products);
 
-  // OPTIMIZATION: Index products by parentAsin for fast sibling lookup
-  // This avoids O(N^2) in getFamilyIdentity when processing thousands of products.
-  const families = new Map<string, any[]>();
-  for (const p of allProducts) {
-    if (p.parentAsin) {
-      if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-      families.get(p.parentAsin)!.push(p);
+    // OPTIMIZATION: Index products by parentAsin for fast sibling lookup
+    // This avoids O(N^2) in getFamilyIdentity when processing thousands of products.
+    const families = new Map<string, any[]>();
+    for (const p of allProducts) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
     }
+
+    return allProducts.map((p) => {
+      // Only pass family members as variants for consensus
+      const siblings = p.parentAsin ? families.get(p.parentAsin) || [] : [p];
+
+      // Generate canonical slug (includes ID prefix) using targeted consensus set
+      const { slug: canonical } = getFamilyIdentity(p as any, siblings as any);
+      return {
+        id: p.id!,
+        slug: canonical,
+        category: p.category,
+        enrichmentStatus: p.enrichmentStatus,
+        updatedAt: p.updatedAt || new Date(),
+      };
+    });
+  } catch (e) {
+    console.warn(
+      "[Build Warning] Database missing or inaccessible in getAllProductSlugs. Skipping static generation.",
+    );
+    return [];
   }
-
-  return allProducts.map((p) => {
-    // Only pass family members as variants for consensus
-    const siblings = p.parentAsin ? families.get(p.parentAsin) || [] : [p];
-
-    // Generate canonical slug (includes ID prefix) using targeted consensus set
-    const { slug: canonical } = getFamilyIdentity(p as any, siblings as any);
-    return {
-      id: p.id!,
-      slug: canonical,
-      category: p.category,
-      enrichmentStatus: p.enrichmentStatus,
-      updatedAt: p.updatedAt || new Date(),
-    };
-  });
 }
 
 /**
@@ -436,7 +443,9 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
       console.warn(
         "[Build Warning] Database missing or inaccessible. Skipping static generation.",
       );
-      return [];
+      // Next.js 16 cacheComponents requires at least one result from generateStaticParams.
+      // We return a placeholder that will be handled at runtime.
+      return ["build-time-placeholder"];
     }
   };
 

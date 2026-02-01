@@ -33,6 +33,15 @@ interface Props {
 
 export async function generateStaticParams() {
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
+
+  // Next.js 16 requirement: return at least one result
+  if (
+    nonEmptySlugs.length === 1 &&
+    nonEmptySlugs[0] === "build-time-placeholder"
+  ) {
+    return [{ categorySlug: "build-time-placeholder" }];
+  }
+
   const categories = Object.values(allCategories).filter((c) => !c.hidden);
 
   return categories
