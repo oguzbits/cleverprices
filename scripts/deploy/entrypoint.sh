@@ -13,21 +13,18 @@ echo "[Entrypoint] Environment check (Safe keys only):"
 env | grep -vE "PASSWORD|TOKEN|SECRET|KEY" || true
 
 # Start the app
-START_CMD="node server.js"
 if [ -n "$LITESTREAM_BUCKET" ] && [ -n "$LITESTREAM_ACCESS_KEY_ID" ]; then
     echo "[Entrypoint] 🚀 Starting Litestream replication..."
-    START_CMD="litestream replicate -config /app/litestream.yml -- $START_CMD"
+    # Correct Litestream syntax for executing a subpoenaed process
+    exec litestream replicate -config /app/litestream.yml -exec "node server.js"
+else
+    echo "[Entrypoint] ⚠️ Starting app directly with node (no Litestream)..."
+    # Ensure server.js exists before running
+    if [ -f "server.js" ]; then
+        exec node server.js
+    else
+        echo "[ERROR] server.js not found in $(pwd)"
+        ls -R /app
+        exit 1
+    fi
 fi
-
-echo "[Entrypoint] 🏁 Executing: $START_CMD"
-
-# Execute and catch failure to keep container alive for debugging
-# Note: we don't use 'exec' here so we can catch the exit code
-$START_CMD || {
-    EXIT_CODE=$?
-    echo "[Entrypoint] ❌ APPLICATION CRASHED with exit code $EXIT_CODE"
-    echo "[Entrypoint] 🔍 Keeping container alive for 30 minutes for diagnostic access..."
-    echo "[Entrypoint] Run: docker exec -it <container_id> sh"
-    sleep 1800
-    exit $EXIT_CODE
-}
