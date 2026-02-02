@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
   },
   // IMPORTANT: Explicitly include the SQLite file in the Function bundle if needed
   outputFileTracingIncludes: {
-    "/*": ["./data/cleverprices-lite.db"],
+    "/*": ["./data/cleverprices.db"],
   },
   poweredByHeader: false,
   // Cache Life Profiles for Next.js 16 "use cache"

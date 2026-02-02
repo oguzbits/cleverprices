@@ -15,9 +15,9 @@ This guide explains the most important commands for your workflow.
 
 These workflows run automatically in GitHub to keep the site fresh without manual effort.
 
-| Workflow         | Frequency | Description                                                                       |
-| :--------------- | :-------- | :-------------------------------------------------------------------------------- |
-| **Price Sync**   | Hourly    | Fetches Keepa prices, enriches products, and writes to Turso Cloud.               |
+| Workflow       | Frequency | Description                                                         |
+| :------------- | :-------- | :------------------------------------------------------------------ |
+| **Price Sync** | Hourly    | Fetches Keepa prices, enriches products, and writes to Turso Cloud. |
 
 ## 🚀 3. Self-Hosting (Hetzner + Dokploy)
 
@@ -27,26 +27,30 @@ These workflows run automatically in GitHub to keep the site fresh without manua
 
 ### Deploy & Updates
 
-| Command | Action | Description |
-| :--- | :--- | :--- |
-| **`bun run db:push-prod`** | **Push Data** | Generates local `lite.db` and uploads it to the production server via SCP. **Run this to update prices/products.** |
-| **`git push`** | **Deploy Code** | Pushing to `main` triggers a Dokploy build. The build is "DB-Safe" (ignores missing DB during build). |
+| Command                    | Action          | Description                                                                                               |
+| :------------------------- | :-------------- | :-------------------------------------------------------------------------------------------------------- |
+| **`bun run db:push-prod`** | **Push Data**   | Uploads local `cleverprices.db` to the production server via SCP. **Run this to update prices/products.** |
+| **`git push`**             | **Deploy Code** | Pushing to `main` triggers a Dokploy build. The build is "DB-Safe" (ignores missing DB during build).     |
 
 ### 🛠️ Troubleshooting
 
 **1. SSH Access**
+
 ```bash
 ssh root@46.225.72.57
 ```
 
 **2. Check App Logs**
+
 ```bash
 # In SSH:
 docker service logs cleverprices-mlaii0 --tail 50
 ```
-*(Note: Service name `cleverprices-mlaii0` might change if you recreate the app. Use `docker service ls` to check.)*
+
+_(Note: Service name `cleverprices-mlaii0` might change if you recreate the app. Use `docker service ls` to check.)_
 
 **3. Check Database on Server**
+
 ```bash
 # In SSH:
 ls -lh /etc/dokploy/volumes/cleverprices/data/
@@ -66,7 +70,7 @@ Go to Dokploy Dashboard -> Applications -> CleverPrices -> Stop / Start.
 
 ## 💡 Troubleshooting
 
-- **Search fails in Production?** Ensure `cleverprices-lite.db` was prepared with `DELETE` journal mode (run `bun run db:lite`).
+- **Search fails in Production?** Ensure FTS5 index exists (run `bun run db:optimize`).
 - **Data out of date?** Check if `bun run db:push-prod` ran successfully.
-- **Database "Locked"?** If local, restart the worker. If production, ensure `journal_mode=DELETE` was applied.
+- **Database "Locked"?** If local, restart the worker. If production, ensured `WAL` mode is used.
 - **Charts Empty?** Ensure the `price-updater` action is running and writing to Turso Cloud.

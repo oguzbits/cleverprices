@@ -10,4 +10,4 @@ services:
       - PORT=3000
     # Mount the DB file if you want to update it without rebuilding (Optional)
     # volumes:
-    #   - ./data/cleverprices-lite.db:/app/data/cleverprices-lite.db
+    #   - ./data/cleverprices.db:/app/data/cleverprices.db

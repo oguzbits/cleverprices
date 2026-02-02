@@ -32,28 +32,50 @@ const s3 = new S3Client({
 });
 
 async function backup() {
-  const dbPath = path.join(process.cwd(), "data", "cleverprices.db");
+  const possiblePaths = [
+    path.join(process.cwd(), "data", "cleverprices.db"),
+    "/app/data/cleverprices.db",
+  ];
+
+  let dbPath = "";
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      dbPath = p;
+      break;
+    }
+  }
+
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const backupName = `backup-${timestamp}.db.gz`;
 
-  console.log(`[Backup] Starting backup for: ${dbPath}`);
-
-  if (!fs.existsSync(dbPath)) {
-    console.error(`[Backup] Database not found at ${dbPath}`);
+  console.log(`[Backup] 🔍 Searching for database...`);
+  if (!dbPath) {
+    console.error(
+      `[Backup] ❌ Database not found! Searched in: ${possiblePaths.join(", ")}`,
+    );
+    console.log(`[Backup] Current directory: ${process.cwd()}`);
+    console.log(
+      `[Backup] Contents of data/:`,
+      fs.existsSync("data") ? fs.readdirSync("data") : "data/ does not exist",
+    );
     process.exit(1);
   }
 
+  console.log(`[Backup] 📂 Found database at: ${dbPath}`);
+
   try {
     // 1. Read and Compress
-    console.log("[Backup] Reading and compressing database...");
+    console.log("[Backup] 📦 Compressing database...");
     const fileBuffer = fs.readFileSync(dbPath);
     const compressedBuffer = await gzipAsync(fileBuffer);
     const sizeMb = (compressedBuffer.length / 1024 / 1024).toFixed(2);
 
-    console.log(`[Backup] Compressed size: ${sizeMb} MB`);
+    console.log(`[Backup] ✅ Compression complete (${sizeMb} MB)`);
 
     // 2. Upload to R2
-    console.log("[Backup] Uploading to R2...");
+    console.log(
+      `[Backup] ☁️ Uploading to R2 (${process.env.R2_BUCKET}/${backupName})...`,
+    );
     const upload = new Upload({
       client: s3,
       params: {
@@ -65,7 +87,7 @@ async function backup() {
     });
 
     await upload.done();
-    console.log(`[Backup] ✅ Success! Saver to: ${backupName}`);
+    console.log(`[Backup] 🚀 Upload successful!`);
 
     // 3. Rotation Policy (SafeGuard)
     console.log("[Backup] Checking retention policy...");
