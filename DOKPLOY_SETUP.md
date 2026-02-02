@@ -185,14 +185,31 @@ bun run db:pull
 
 ---
 
-## 8. Disaster Recovery Checklist
+---
+
+## 8. Database Backups (Cloudflare R2)
+
+We use a custom script to compress and upload the SQLite database to Cloudflare R2 daily.
+
+1.  **Bucket**: `cleverprices-backups`
+2.  **Env Vars** (In Worker App):
+    - `R2_ACCESS_KEY_ID`: `...`
+    - `R2_SECRET_ACCESS_KEY`: `...`
+    - `R2_BUCKET`: `cleverprices-backups`
+    - `R2_ENDPOINT`: `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
+3.  **Cron Job** (In Worker App):
+    - **Schedule**: `0 4 * * *` (Daily 4 AM)
+    - **Command**: `npm run db:backup`
+
+---
+
+## 9. Disaster Recovery Checklist
 
 If the server is deleted:
 
 1.  [ ] Buy new Hetzner Server.
 2.  [ ] Update DNS A Record to new IP.
 3.  [ ] Install Dokploy.
-4.  [ ] Re-create App & Volume Config.
-5.  [ ] **Optional**: Add Litestream credentials -> It will auto-restore on boot.
-6.  [ ] **Manual**: Or run `bun run db:push-prod` to seed manually.
-7.  [ ] Deploy.
+4.  [ ] Re-create Apps (Main & Worker) & Volume Config.
+5.  [ ] **Restore DB**: Download latest `.db.gz` from R2, unzip, and place in `/etc/dokploy/volumes/cleverprices/data/cleverprices.db`.
+6.  [ ] Deploy.

@@ -10,10 +10,14 @@ jobs:
     steps:
       - name: Deploy to Dokploy (Production)
         if: github.ref == 'refs/heads/main'
+        env:
+          WEBHOOK_URL: ${{ secrets.DOKPLOY_PRODUCTION_WEBHOOK_URL }}
         run: |
-          curl -X POST "${{ secrets.DOKPLOY_PRODUCTION_WEBHOOK_URL }}"
+          curl -X POST "$WEBHOOK_URL"
 
       - name: Deploy to Dokploy (Staging)
         if: github.ref == 'refs/heads/staging'
+        env:
+          WEBHOOK_URL: ${{ secrets.DOKPLOY_STAGING_WEBHOOK_URL }}
         run: |
-          curl -X POST "${{ secrets.DOKPLOY_STAGING_WEBHOOK_URL }}"
+          curl -X POST "$WEBHOOK_URL"
