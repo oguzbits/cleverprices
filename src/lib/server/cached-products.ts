@@ -63,10 +63,40 @@ async function getCachedDiverseMostPopular(
   return getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
 
+import { redis } from "../redis";
+
 async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
-  "use cache";
-  cacheLife("product");
-  return getProductBySlugSync(slug, includeHistory);
+  const cacheKey = `product:${slug}:${includeHistory}`;
+
+  // 1. Try "Hot" Redis Cache (Fastest for shared worker/web)
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as Product;
+    }
+  } catch (error) {
+    console.warn("Redis cache miss/error:", error);
+  }
+
+  // 2. Next.js native "use cache" layer
+  const fetcher = async () => {
+    "use cache";
+    cacheLife("product");
+    return getProductBySlugSync(slug, includeHistory);
+  };
+
+  const product = await fetcher();
+
+  // 3. Populate Redis if product exists
+  if (product) {
+    try {
+      await redis.set(cacheKey, JSON.stringify(product), "EX", 3600); // 1 hour hot cache
+    } catch (e) {
+      // Ignore Redis set errors
+    }
+  }
+
+  return product;
 }
 
 async function getCachedSimilarProducts(

@@ -1,0 +1,19 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main, staging]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Dokploy (Production)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          curl -X POST "${{ secrets.DOKPLOY_PRODUCTION_WEBHOOK_URL }}"
+
+      - name: Deploy to Dokploy (Staging)
+        if: github.ref == 'refs/heads/staging'
+        run: |
+          curl -X POST "${{ secrets.DOKPLOY_STAGING_WEBHOOK_URL }}"

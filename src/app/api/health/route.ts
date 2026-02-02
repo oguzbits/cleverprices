@@ -13,10 +13,15 @@ export async function GET() {
     // Quick DB connectivity check
     await client.execute("SELECT 1");
 
+    // Quick Redis connectivity check
+    const { redis } = await import("@/lib/redis");
+    await redis.ping();
+
     return NextResponse.json(
       {
         status: "healthy",
         db: "connected",
+        redis: "connected",
         latency: Date.now() - start,
         timestamp: new Date().toISOString(),
       },

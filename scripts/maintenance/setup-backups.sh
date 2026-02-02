@@ -13,7 +13,7 @@ cat << 'EOF' > /usr/local/bin/backup-cleverprices.sh
 # Daily SQLite Backup for CleverPrices
 DATE=$(date +%Y-%m-%d_%H-%M-%S)
 BACKUP_DIR="/etc/dokploy/volumes/cleverprices/backups"
-DB_FILE="/etc/dokploy/volumes/cleverprices/data/cleverprices-lite.db"
+DB_FILE="/etc/dokploy/volumes/cleverprices/data/cleverprices.db"
 BACKUP_FILE="$BACKUP_DIR/cleverprices_$DATE.db"
 
 # Ensure backup directory exists

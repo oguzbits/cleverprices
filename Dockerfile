@@ -26,6 +26,11 @@ RUN bun run build
 FROM base AS runner
 WORKDIR /app
 
+# Install Litestream and sqlite3
+RUN apk add --no-cache ca-certificates sqlite
+ADD https://github.com/benbjohnson/litestream/releases/download/v0.3.13/litestream-v0.3.13-linux-arm64-static.tar.gz /tmp/litestream.tar.gz
+RUN tar -C /usr/local/bin -xzf /tmp/litestream.tar.gz && rm /tmp/litestream.tar.gz
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
@@ -42,12 +47,13 @@ RUN mkdir -p data && chown nextjs:nodejs data
 COPY --from=builder /app/public ./public
 
 # Copy the standalone build
-# Next.js "standalone" output creates a minimal server
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/litestream.yml ./litestream.yml
 
 USER nextjs
 
 EXPOSE 3000
 
-CMD ["bun", "server.js"]
+# Run litestream to replicate in the background while running the app
+CMD ["litestream", "replicate", "-config", "/app/litestream.yml", "--", "bun", "server.js"]

@@ -77,14 +77,14 @@ function createDbClient(): Client {
       "[DB] 🚀 INITIALIZING AUTONOMOUS HYBRID MODE (Embedded Replica)",
     );
 
-    const dbPath = path.join(process.cwd(), "data", "cleverprices-lite.db");
+    const dbPath = path.join(process.cwd(), "data", "cleverprices.db");
     const replicaPath = path.join("/tmp", "cleverprices-replica.db");
 
     // Copy base if it doesn't exist in tmp to avoid full sync
     if (!fs.existsSync(replicaPath) && fs.existsSync(dbPath)) {
       try {
         fs.copyFileSync(dbPath, replicaPath);
-        console.log("[DB] Seeded replica from bundled lite.db");
+        console.log("[DB] Seeded replica from persistent cleverprices.db");
       } catch (e) {
         console.warn(
           "[DB] Failed to seed replica:",
@@ -129,16 +129,19 @@ function createDbClient(): Client {
     try {
       // Shared Boosters
       client.execute("PRAGMA busy_timeout = 5000").catch(() => {});
-      client.execute("PRAGMA cache_size = -100000").catch(() => {}); // 100MB cache (Entire DB fits in RAM!)
+
+      // CACHE: Use -200000 kb = ~200MB of RAM for page cache
+      // This is safe within our 2.5GB container limit
+      client.execute("PRAGMA cache_size = -200000").catch(() => {});
 
       // WAL mode is safe and highly recommended for persistent local disk (Hetzner/Docker)
       // It allows concurrent reads and writes without locking.
       client.execute("PRAGMA journal_mode = WAL").catch(() => {});
       client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
 
-      // MMap allows the OS to treat the database file like RAM
-      // We set it to 100MB to cover the entire file size.
-      client.execute("PRAGMA mmap_size = 100000000").catch(() => {});
+      // MMAP: Map 256MB of the DB file into RAM
+      // This covers the current 37MB DB + significant growth
+      client.execute("PRAGMA mmap_size = 268435456").catch(() => {});
     } catch (e) {
       console.warn(
         "[DB] Failed to set performance PRAGMAs:",

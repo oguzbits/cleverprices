@@ -542,6 +542,8 @@ const nextConfig: NextConfig = {
   },
 };
 
+import { withSentryConfig } from "@sentry/nextjs";
+
 // Wrap config with MDX support
 const withMDX = createMDX({
   // Add markdown plugins here, as desired
@@ -555,4 +557,21 @@ const withMDX = createMDX({
   },
 });
 
-export default withBundleAnalyzer(withMDX(nextConfig));
+const configWithSentry = withSentryConfig(
+  withBundleAnalyzer(withMDX(nextConfig)),
+  {
+    silent: true,
+    org: "cleverprices",
+    project: "javascript-nextjs",
+  },
+  {
+    widenClientFileUpload: true,
+    transpileClientSDK: true,
+    tunnelRoute: "/monitoring",
+    hideSourceMaps: true,
+    disableLogger: true,
+    automaticVercelMonitors: true,
+  },
+);
+
+export default configWithSentry;
