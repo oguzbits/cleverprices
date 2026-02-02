@@ -130,30 +130,40 @@ chmod -R 775 /etc/dokploy/volumes/cleverprices/data
 
 ---
 
-## 5. Reliability & Backups (Litestream)
+## 5. Worker Service (Background Jobs)
 
-We use **Litestream** for continuous, per-second replication to S3-compatible storage.
+We use a separate "Worker" application for background tasks to avoid blocking the main web server.
 
-1.  **Bucket Setup**: Create a bucket in Cloudflare R2 or Hetzner Object Storage.
-2.  **Env Vars**: Add these to Dokploy "Environment" tab:
-    - `LITESTREAM_ACCESS_KEY_ID`: `...`
-    - `LITESTREAM_SECRET_ACCESS_KEY`: `...`
-    - `LITESTREAM_BUCKET`: `cleverprices-backups`
-    - `LITESTREAM_ENDPOINT`: `https://...`
-3.  **Restore**: If the VPS disk is wiped, Litestream will automatically restore the DB from S3 on the first boot if the local folder is empty.
+1.  **Create App**: Create a new application named `worker`.
+    - **Source**: Same GitHub repo & branch.
+    - **Build Type**: `Dockerfile`.
+2.  **Environment**:
+    - `NODE_ENV=production`
+    - `IS_WORKER=true` (Important: Signals entrypoint to run worker mode)
+3.  **Volumes** (CRITICAL):
+    - Mount the **SAME** host volume as the main app:
+    - Host: `/etc/dokploy/volumes/cleverprices/data`
+    - Container: `/app/data`
+    - This ensures both apps see the same SQLite database.
 
 ---
 
-## 6. Automation (Dokploy Cron Jobs)
+## 6. Redis Service (Caching)
 
-Do **not** use GitHub Actions for "Write" jobs. Instead, use Dokploy's native **Cron Jobs** tab for better performance and reliability.
+1.  **Create Service**: Go to valid project -> Create Service -> **Redis**.
+2.  **Name**: `cleverprices-redis`
+3.  **Internal Network**: Note the container name (e.g., `cleverprices-redis-v7mm3u`).
+4.  **Connect**:
+    - In your Main App and Worker App, add env var:
+    - `REDIS_URL=redis://default:<password>@<internal-container-name>:6379`
 
-| Job Name         | Schedule             | Command                               |
-| :--------------- | :------------------- | :------------------------------------ |
-| **Price Update** | `0 * * * *` (Hourly) | `bun run update-prices`               |
-| **Enrichment**   | `*/15 * * * *` (15m) | `bun run worker:enrich de --limit=50` |
-| **Cache Warmer** | `5 * * * *` (Hourly) | `bun run warm-cache`                  |
-| **WAL Cleanup**  | `0 3 * * *` (3 AM)   | `bun run db:checkpoint`               |
+---
+
+## 7. Automation (Worker Cron)
+
+The `worker` service handles cron jobs internally via `node-cron` or simple loop if configured, but typically we trigger it via Dokploy Cron or internal scheduling.
+
+_Current Setup:_ The Worker container runs `npm run start:worker` which keeps the process alive for processing queues.
 
 ---
 
