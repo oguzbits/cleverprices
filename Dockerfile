@@ -47,6 +47,7 @@ COPY --from=builder /app/public ./public
 # Copy dependencies and source for scripts
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/src ./src
 
 # Copy the standalone build
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
