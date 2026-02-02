@@ -8,12 +8,14 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to Dokploy (Production)
+      - name: Deploy to Dokploy (Production & Worker)
         if: github.ref == 'refs/heads/main'
         env:
           WEBHOOK_URL: ${{ secrets.DOKPLOY_PRODUCTION_WEBHOOK_URL }}
+          WORKER_WEBHOOK_URL: ${{ secrets.DOKPLOY_WORKER_WEBHOOK_URL }}
         run: |
           curl -X POST "$WEBHOOK_URL"
+          curl -X POST "$WORKER_WEBHOOK_URL"
 
       - name: Deploy to Dokploy (Staging)
         if: github.ref == 'refs/heads/staging'
