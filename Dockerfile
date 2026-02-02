@@ -27,7 +27,7 @@ FROM base AS runner
 WORKDIR /app
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates sqlite wget libc6-compat nodejs
+RUN apk add --no-cache ca-certificates sqlite wget libc6-compat nodejs npm
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
