@@ -4,10 +4,10 @@ services:
     container_name: cleverprices
     restart: always
     ports:
-      - "3001:3001"
+      - "3000:3000"
     environment:
       - NODE_ENV=production
-      - PORT=3001
+      - PORT=3000
     # Mount the DB file if you want to update it without rebuilding (Optional)
     # volumes:
     #   - ./data/cleverprices-lite.db:/app/data/cleverprices-lite.db
