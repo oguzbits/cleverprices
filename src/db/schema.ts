@@ -97,7 +97,9 @@ export const products = sqliteTable(
 
     // Filtering & Sorting
     index("idx_products_technology").on(table.technology), // Sidebar filter (SSD, HDD, DDR5)
-    index("idx_products_capacity").on(table.normalizedCapacity), // "Price per GB" sorting
+    index("idx_products_capacity").on(table.capacity), // "Price per GB" sorting
+    index("idx_products_parent_asin").on(table.parentAsin), // Variant lookups
+    index("idx_products_enrichment_status").on(table.enrichmentStatus), // Category slug generation
   ],
 );
 

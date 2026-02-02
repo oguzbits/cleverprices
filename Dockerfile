@@ -30,6 +30,8 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
+# Optimize Node.js heap for 4GB VPS (Give 3GB to Node)
+ENV NODE_OPTIONS="--max-old-space-size=3072"
 
 # Create system group/user
 RUN addgroup --system --gid 1001 nodejs
