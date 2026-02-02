@@ -26,8 +26,9 @@ RUN bun run build
 FROM base AS runner
 WORKDIR /app
 
-# Install Litestream and sqlite3
-RUN apk add --no-cache ca-certificates sqlite wget
+# Install Litestream and dependencies
+RUN apk add --no-cache ca-certificates sqlite wget libc6-compat
+
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then L_ARCH="amd64"; elif [ "$ARCH" = "aarch64" ]; then L_ARCH="arm64"; fi && \
     wget https://github.com/benbjohnson/litestream/releases/download/v0.3.13/litestream-v0.3.13-linux-${L_ARCH}.tar.gz -O /tmp/litestream.tar.gz && \
@@ -54,16 +55,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/litestream.yml ./litestream.yml
 
+# Copy entrypoint script
+COPY --chown=nextjs:nodejs scripts/deploy/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
 
-# Run litestream to replicate in the background while running the app
-# Run litestream to replicate in the background if configured, otherwise start app directly
-CMD if [ -n "$LITESTREAM_BUCKET" ]; then \
-        echo "[Litestream] Starting replication..." && \
-        exec litestream replicate -config /app/litestream.yml -- bun server.js; \
-    else \
-        echo "[Litestream] Skipping replication (no bucket configured)." && \
-        exec bun server.js; \
-    fi
+# Use robust entrypoint script
+CMD ["/app/entrypoint.sh"]
