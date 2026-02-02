@@ -42,6 +42,21 @@ export const litePriceColumns = {
   lastUpdated: prices.lastUpdated,
 };
 
+// ULTRA-lightweight price columns for variant lists (No history blobs!)
+// This excludes historyJson which can be 90% of the payload size.
+export const superLitePriceColumns = {
+  id: prices.id,
+  productId: prices.productId,
+  country: prices.country,
+  price: prices.price,
+  usedPrice: prices.usedPrice,
+  // listPrice: prices.listPrice, // Often unused in variant buttons
+  // priceAvg90: prices.priceAvg90, // Unused in variant buttons? Keep if needed for "Good Price" badge
+  // pricePerUnit: prices.pricePerUnit, // Unused in variant buttons
+  currency: prices.currency,
+  lastUpdated: prices.lastUpdated,
+};
+
 // Define lightweight columns for list views to avoid fetching huge JSON/text blobs
 export const liteProductColumns = {
   id: products.id,
@@ -66,6 +81,7 @@ export const liteProductColumns = {
   monthlySold: products.monthlySold,
   parentAsin: products.parentAsin,
   variationAttributes: products.variationAttributes,
+  // specifications: products.specifications, // Often large, but needed for Identity
   specifications: products.specifications,
   officialSpecifications: products.officialSpecifications,
   officialTitle: products.officialTitle,
@@ -529,13 +545,13 @@ export async function getProductVariants(
 
     const ids = variantProducts.map((p) => p.id);
     const variantPrices = await db
-      .select(litePriceColumns)
+      .select(superLitePriceColumns) // [OPTIMIZATION] Use superLite
       .from(prices)
       .where(
         and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
       );
 
-    const pricesByProduct = indexPricesById(variantPrices);
+    const pricesByProduct = indexPricesById(variantPrices as any[]);
 
     return variantProducts
       .map((p) =>
@@ -608,13 +624,13 @@ export async function getProductFamilyMembers(
 
   const ids = familyProducts.map((p) => p.id);
   const familyPrices = await db
-    .select(litePriceColumns)
+    .select(superLitePriceColumns) // [OPTIMIZATION] Use superLite
     .from(prices)
     .where(
       and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
     );
 
-  const pricesByProduct = indexPricesById(familyPrices);
+  const pricesByProduct = indexPricesById(familyPrices as any[]);
 
   return familyProducts
     .map((p) =>
@@ -1284,8 +1300,7 @@ const getCachedDeals = unstable_cache(
 
       return results.map((r) => {
         const p = r.product;
-        const siblings =
-          p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
         return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
       });
     } catch (e) {
@@ -1398,8 +1413,9 @@ const getCachedPopular = unstable_cache(
 
       return prods
         .map((p) => {
-          const siblings =
-            p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+          const siblings = p.parentAsin
+            ? families.get(p.parentAsin) || [p]
+            : [p];
           return mapDbProduct(
             p as DbProduct,
             pricesByProduct.get(p.id!) || [],
@@ -1596,8 +1612,9 @@ const getCachedNew = unstable_cache(
 
       return prods
         .map((p) => {
-          const siblings =
-            p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
+          const siblings = p.parentAsin
+            ? families.get(p.parentAsin) || [p]
+            : [p];
           return mapDbProduct(
             p as DbProduct,
             pricesByProduct.get(p.id!) || [],
@@ -1771,7 +1788,7 @@ export async function getFilteredProducts(
         order = sortOrder(products.createdAt);
         break;
       case "popularityScore":
-    default:
+      default:
         // Production Desirability Approximation:
         // 1. Brand Prestige (Logically implied by sales rank but prioritized for stability)
         // 2. Sales Rank (Main indicator)

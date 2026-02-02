@@ -15,7 +15,7 @@ import {
 } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
 import { getFamilyIdentity } from "@/lib/product-families";
-import { getProductPriceHistory, Product } from "@/lib/product-registry";
+import { Product } from "@/lib/product-registry";
 import {
   getProductVariants,
   getSimilarProducts,
@@ -64,13 +64,9 @@ export async function IdealoProductPage({
   const category = getCategoryBySlug(product.category);
 
   // Check true variant count to prevent "Alle Varianten" view for singletons
-  // Even if URL is 900... (Hub), we fall back to single view if no siblings exist
-  const variants = await getProductVariants(product, countryCode);
-  // We consider it a group only if we have more than 1 item (itself + others, or multiple others)
-  // getProductVariants returns the list of siblings (including self usually if grouped by ASIN)
-  // If parentAsin is null, it returns [] or matched siblings.
-  // We check if we have actual variations to show.
-  const isParentView = initialIsParentView && variants.length > 1;
+  // [OPTIMIZATION] We trust the server-side redirection/detection (from page.tsx)
+  // to tell us if we are in Parent View (Hub). We do not verify count here to avoid blocking.
+  const isParentView = initialIsParentView;
 
   // UNIVERSAL IDENTITY RESOLUTION
   const identity = getProductIdentity(product);
@@ -113,10 +109,13 @@ export async function IdealoProductPage({
   ];
 
   // HUB PRICE HISTORY: If on Hub page, show history of the cheapest variant
+  // [OPTIMIZATION] Disabled to prevent blocking. We use the current product's history as fallback.
+  // Ideally, this should be moved to a streaming component "CachedPriceHistory".
   let chartHistory = product.priceHistory || [];
   let chartPrice = product.prices[countryCode];
   let chartTitle = product.title;
 
+  /*
   if (isParentView && variants.length > 0) {
     const cheapest = variants[0];
     const cheapestHistory = await getProductPriceHistory(
@@ -129,6 +128,7 @@ export async function IdealoProductPage({
       chartTitle = cheapest.title;
     }
   }
+  */
 
   return (
     <div className="bg-background min-h-screen">
