@@ -6,12 +6,12 @@ import { SITE_URL } from "../../src/lib/site-config";
 /**
  * CACHE WARMER SCRIPT
  *
- * This script simulates SSG (Static Site Generation) for the Vercel Free Plan.
+ * This script simulates SSG (Static Site Generation) for the production site.
  * It pings the most important URLs of the site to trigger Next.js 16 Component Caching.
  *
  * Since Next.js 16 with 'cacheComponents: true' saves the Rsc/HTML output
  * once rendered, running this script after a price update ensures that
- * users get SSG-level speeds (instant response from the Edge) on their first visit.
+ * users get instant response from the server on their first visit.
  */
 
 async function warmUrl(url: string) {

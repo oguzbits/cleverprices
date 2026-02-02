@@ -46,7 +46,7 @@ bun run worker:run
 
 ## 🏎️ Database & Algorithm Performance
 
-CleverPrices uses a highly optimized data layer to ensure sub-100ms response times even on the Vercel Free Tier:
+CleverPrices uses a highly optimized data layer to ensure sub-100ms response times on dedicated self-hosted infrastructure:
 
 - **O(1) Data Lookups** - Statically pre-computes category hierarchies and country metadata at module load.
 - **Efficient Indexing** - Custom SQL indexes on `sales_rank`, `created_at`, `country`, and `productId` ensure instantaneous sorting and filtering.
@@ -58,25 +58,25 @@ CleverPrices uses a highly optimized data layer to ensure sub-100ms response tim
 
 ---
 
-## ⚡ Built for Speed
+## ⚡ Built for Speed (Self-Hosted)
 
-CleverPrices is architected for maximum performance and efficiency, specifically optimized for the **Vercel Free Tier**:
+CleverPrices is architected for maximum performance and efficiency, running on **Hetzner Cloud (Dokploy)**:
 
-- **Server Components & Caching** - Category grids and cards are 100% Server Components. This reduced client-side JavaScript by ~80% and allows for aggressive Edge caching.
-- **Aggressive Field Pruning** - Heavy database fields (JSON specs, full price histories) are stripped before caching. This ensures category lists stay under the 2MB Vercel cache limit.
-- **Tiered ISR (Revalidation)** - Distinct revalidation cycles for different data (e.g., 6h for Products, 11h for Categories, 24h for Static pages) balance data freshness with build/compute costs.
+- **Zero Cold Starts** - Unlike Serverless (Vercel/Netlify), the application runs in a persistent Docker container. The database connection stays warm, and response times are consistently fast (50-100ms).
+- **Embedded Database (NVMe)** - The SQLite database (`lite.db`) is mounted directly from the server's NVMe SSD into the container. This eliminates network latency entirely for read operations.
+- **Server Components & Caching** - Category grids and cards are 100% Server Components. This reduced client-side JavaScript by ~80% and allows for aggressive caching.
+- **Tiered ISR (Revalidation)** - Distinct revalidation cycles for different data (e.g., 6h for Products, 11h for Categories, 24h for Static pages) balance data freshness with compute efficiency.
 - **Native CSS Carousels** - No heavy JS libraries for sliders. Uses native browser `scroll-snap` for smooth 60fps scrolling with zero initial delay.
 - **Amazon CDN Offloading** - Uses a custom Image Loader to request exact-sized images and custom quality levels directly from Amazon. Zero server-side resizing costs or latency.
-- **Edge Proxy Routing** - SEO redirects and legacy country enforcement happen at the network edge in ~10-20ms, bypassing the Node.js runtime entirely.
 
 ---
 
 ## Key Features
 
 - **German Market Focus** - Optimized for DE hardware pricing with support for unit price analysis (e.g., € per TB).
-- **SEO & Redirects** - Automatic Edge-level redirects for legacy country URLs (US, UK, CA, FR, ES, IT).
+- **SEO & Redirects** - Automatic redirects for legacy country URLs (US, UK, CA, FR, ES, IT).
 - **High Performance Caching** - Utilizes Next.js 16 "use cache" directive and Cache Components for extreme speed.
-- **Image Optimization** - Custom URL-based transformation (Size & Quality) to bypass Vercel limits.
+- **Image Optimization** - Custom URL-based transformation (Size & Quality).
 - **React Compiler** - Fully optimized with React 19 Compiler for minimal re-renders.
 - **URL-Based Filter State** - Shareable, bookmarkable filtered views using [nuqs](https://nuqs.47ng.com/).
 - **Modern MDX Blog** - Content-driven blog system using MDX with frontmatter support.

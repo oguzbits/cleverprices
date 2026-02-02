@@ -18,9 +18,44 @@ These workflows run automatically in GitHub to keep the site fresh without manua
 | Workflow         | Frequency | Description                                                                       |
 | :--------------- | :-------- | :-------------------------------------------------------------------------------- |
 | **Price Sync**   | Hourly    | Fetches Keepa prices, enriches products, and writes to Turso Cloud.               |
-| **Lite DB Sync** | 2x Daily  | Builds `lite.db`, uploads to Vercel Blob, and triggers a fresh Vercel deployment. |
 
-## 🔧 3. Data Management
+## 🚀 3. Self-Hosting (Hetzner + Dokploy)
+
+**Server IP:** `46.225.72.57`
+**Domain:** `cleverprices.com`
+**Dokploy Dashboard:** `http://46.225.72.57:3000`
+
+### Deploy & Updates
+
+| Command | Action | Description |
+| :--- | :--- | :--- |
+| **`bun run db:push-prod`** | **Push Data** | Generates local `lite.db` and uploads it to the production server via SCP. **Run this to update prices/products.** |
+| **`git push`** | **Deploy Code** | Pushing to `main` triggers a Dokploy build. The build is "DB-Safe" (ignores missing DB during build). |
+
+### 🛠️ Troubleshooting
+
+**1. SSH Access**
+```bash
+ssh root@46.225.72.57
+```
+
+**2. Check App Logs**
+```bash
+# In SSH:
+docker service logs cleverprices-mlaii0 --tail 50
+```
+*(Note: Service name `cleverprices-mlaii0` might change if you recreate the app. Use `docker service ls` to check.)*
+
+**3. Check Database on Server**
+```bash
+# In SSH:
+ls -lh /etc/dokploy/volumes/cleverprices/data/
+```
+
+**4. Restart Application**
+Go to Dokploy Dashboard -> Applications -> CleverPrices -> Stop / Start.
+
+## 🔧 4. Data Management
 
 | Command                                          | Description                                                                                     |
 | :----------------------------------------------- | :---------------------------------------------------------------------------------------------- |
@@ -32,7 +67,6 @@ These workflows run automatically in GitHub to keep the site fresh without manua
 ## 💡 Troubleshooting
 
 - **Search fails in Production?** Ensure `cleverprices-lite.db` was prepared with `DELETE` journal mode (run `bun run db:lite`).
-- **Data out of date?** Check: 1) GitHub Actions tab (is `Lite DB Sync` running?), 2) Vercel Cron Jobs (is it deploying?), 3) Vercel Blob (is the file there?).
+- **Data out of date?** Check if `bun run db:push-prod` ran successfully.
 - **Database "Locked"?** If local, restart the worker. If production, ensure `journal_mode=DELETE` was applied.
 - **Charts Empty?** Ensure the `price-updater` action is running and writing to Turso Cloud.
-- **Blob 404?** The `LITE_DB_BLOB_URL` or `BLOB_READ_WRITE_TOKEN` might be missing or incorrect.

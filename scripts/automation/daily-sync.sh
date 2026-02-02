@@ -21,7 +21,7 @@ bun run update-prices >> "$LOG_FILE" 2>&1
 # 2. Deploy updated data to Turso Cloud
 bun run db:deploy --delta --force >> "$LOG_FILE" 2>&1
 
-# 3. Warm the Vercel cache
+# 3. Warm the production cache (Optional)
 bun run warm-cache >> "$LOG_FILE" 2>&1
 
 echo "=== [$(date)] Daily Sync Finished ===" >> "$LOG_FILE"
