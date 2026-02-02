@@ -55,6 +55,15 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/litestream.yml ./litestream.yml
 
-# Production Runtime
-# Use a shell script directly in CMD for maximum observability
-CMD ["/bin/sh", "-c", "echo '[Docker] 🔍 STARTING INLINE DIAGNOSTICS...'; id; pwd; ls -F; env | grep -vE 'PASSWORD|TOKEN|SECRET|KEY' || true; if [ -n \"$LITESTREAM_BUCKET\" ] && [ -n \"$LITESTREAM_ACCESS_KEY_ID\" ]; then echo '[Docker] 🚀 Starting Litestream...'; litestream replicate -config /app/litestream.yml -exec 'node server.js'; else echo '[Docker] ⚠️ Starting Node directly...'; node server.js; fi || { EXIT_CODE=$?; echo \"[Docker] ❌ CRASHED with code $EXIT_CODE. Keeping alive...\"; sleep 1800; exit $EXIT_CODE; }"]
+# Copy startup script
+COPY --chown=nextjs:nodejs scripts/deploy/start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
+USER nextjs
+
+EXPOSE 3000
+
+# Use isolated startup script
+ENTRYPOINT ["/app/start.sh"]
+# Explicitly empty CMD to prevent Dokploy/Docker from appending defaults
+CMD []
