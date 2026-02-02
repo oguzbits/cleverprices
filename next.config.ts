@@ -560,16 +560,25 @@ const withMDX = createMDX({
 const configWithSentry = withSentryConfig(
   withBundleAnalyzer(withMDX(nextConfig)),
   {
+    // For all available options, see:
+    // https://github.com/getsentry/sentry-javascript/blob/master/packages/nextjs/src/config/types.ts
+
+    // Combined options for v8
     silent: true,
     org: "cleverprices",
-    project: "javascript-nextjs",
-  },
-  {
+    project: "cleverprices",
+
+    // Upload a larger set of source maps for prettier stack traces (enables access to symbols, etc.)
     widenClientFileUpload: true,
-    transpileClientSDK: true,
+
+    // Routes HTTP requests through Next.js to avoid ad-blockers
     tunnelRoute: "/monitoring",
-    hideSourceMaps: true,
+
+    // Automatically tree-shake Sentry logger statements to reduce bundle size
     disableLogger: true,
+
+    // Enables automatic instrumentation of Vercel Cron Jobs.
+    // See the [official documentation](https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/vercel-monitors/) for more information.
     automaticVercelMonitors: true,
   },
 );
