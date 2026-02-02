@@ -1,10 +1,14 @@
 #!/bin/sh
 set -e
 
-# Load environment variables from /app/.env if it exists (for local debugging)
-if [ -f /app/.env ]; then
-  export $(grep -v '^#' /app/.env | xargs)
-fi
+echo "[Entrypoint] 🔍 RUNNING DIAGNOSTICS..."
+echo "[Entrypoint] Current User: $(id)"
+echo "[Entrypoint] Working Directory: $(pwd)"
+echo "[Entrypoint] Filesystem check (Recursive):"
+ls -F -R /app
+
+echo "[Entrypoint] Environment check (Filtered):"
+env | grep -v "PASSWORD" | grep -v "TOKEN" | grep -v "SECRET" | grep -v "KEY"
 
 # Determine if Litestream should be used
 if [ -n "$LITESTREAM_BUCKET" ] && [ -n "$LITESTREAM_ACCESS_KEY_ID" ]; then

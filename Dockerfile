@@ -55,9 +55,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/litestream.yml ./litestream.yml
 
+# Copy entrypoint script
+COPY --chown=nextjs:nodejs scripts/deploy/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
 
-# Start the app directly with node (optimized for standalone)
-CMD ["node", "server.js"]
+# Use diagnostic entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
