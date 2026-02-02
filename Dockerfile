@@ -27,9 +27,12 @@ FROM base AS runner
 WORKDIR /app
 
 # Install Litestream and sqlite3
-RUN apk add --no-cache ca-certificates sqlite
-ADD https://github.com/benbjohnson/litestream/releases/download/v0.3.13/litestream-v0.3.13-linux-arm64-static.tar.gz /tmp/litestream.tar.gz
-RUN tar -C /usr/local/bin -xzf /tmp/litestream.tar.gz && rm /tmp/litestream.tar.gz
+RUN apk add --no-cache ca-certificates sqlite wget
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then L_ARCH="amd64"; elif [ "$ARCH" = "aarch64" ]; then L_ARCH="arm64"; fi && \
+    wget https://github.com/benbjohnson/litestream/releases/download/v0.3.13/litestream-v0.3.13-linux-${L_ARCH}.tar.gz -O /tmp/litestream.tar.gz && \
+    tar -C /usr/local/bin -xzf /tmp/litestream.tar.gz && \
+    rm /tmp/litestream.tar.gz
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
