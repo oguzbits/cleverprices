@@ -52,5 +52,8 @@ USER nextjs
 
 EXPOSE 3000
 
+ENV CACHE_BUST=1
+
+
 # Direct startup for maximum stability
 CMD ["node", "server.js"]
