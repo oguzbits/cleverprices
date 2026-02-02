@@ -8,11 +8,10 @@ fi
 
 # Determine if Litestream should be used
 if [ -n "$LITESTREAM_BUCKET" ] && [ -n "$LITESTREAM_ACCESS_KEY_ID" ]; then
-    echo "[Litestream] 🚀 Starting replication for cleverprices.db..."
-    # Start Litestream in the background and run the app
-    # We use 'exec' to ensure the app receives signals (like SIGTERM)
-    exec litestream replicate -config /app/litestream.yml -- bun server.js
+    echo "[Entrypoint] 🚀 Starting Litestream replication..."
+    # Start Litestream and the app
+    exec litestream replicate -config /app/litestream.yml -- node server.js
 else
-    echo "[Entrypoint] ⚠️ Litestream not configured (missing bucket or credentials). Starting app directly."
-    exec bun server.js
+    echo "[Entrypoint] ⚠️ Starting app directly with node (no Litestream)..."
+    exec node server.js
 fi

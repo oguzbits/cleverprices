@@ -27,7 +27,7 @@ FROM base AS runner
 WORKDIR /app
 
 # Install Litestream and dependencies
-RUN apk add --no-cache ca-certificates sqlite wget libc6-compat
+RUN apk add --no-cache ca-certificates sqlite wget libc6-compat nodejs
 
 RUN ARCH=$(uname -m) && \
     if [ "$ARCH" = "x86_64" ]; then L_ARCH="amd64"; elif [ "$ARCH" = "aarch64" ]; then L_ARCH="arm64"; fi && \
