@@ -13,15 +13,30 @@ export async function GET() {
     // Quick DB connectivity check
     await client.execute("SELECT 1");
 
-    // Quick Redis connectivity check
-    const { redis } = await import("@/lib/redis");
-    await redis.ping();
+    // Quick Redis connectivity check (LENIENT)
+    let redisStatus = "connected";
+    try {
+      const { redis } = await import("@/lib/redis");
+      // Use a short timeout for the ping
+      await Promise.race([
+        redis.ping(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), 2000),
+        ),
+      ]);
+    } catch (e) {
+      redisStatus = "error";
+      console.warn(
+        "[Health Check] Redis check failed, but continuing:",
+        e instanceof Error ? e.message : String(e),
+      );
+    }
 
     return NextResponse.json(
       {
         status: "healthy",
         db: "connected",
-        redis: "connected",
+        redis: redisStatus,
         latency: Date.now() - start,
         timestamp: new Date().toISOString(),
       },
@@ -32,6 +47,7 @@ export async function GET() {
       },
     );
   } catch (error: any) {
+    // Only return 503 if the core DATABASE is down
     return NextResponse.json(
       {
         status: "unhealthy",
