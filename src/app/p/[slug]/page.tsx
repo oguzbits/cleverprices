@@ -32,7 +32,8 @@ async function resolveProductFromRoute(slug: string) {
       if (!product) return null;
 
       // Enable Consensus Identity for the canonical Hub check
-      const { getProductVariants } = await import("@/lib/product-registry");
+      const { getProductVariants } =
+        await import("@/lib/server/cached-products");
       const variants = await getProductVariants(product, DEFAULT_COUNTRY);
 
       // SINGLETON CHECK: If this 'Hub' has no variants (just itself), redirect to the standard product page (200...)
@@ -262,7 +263,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     // ... rest of the logic uses product and isParentViewMode ...
     const isParentView = isParentViewMode;
-    const { getProductVariants } = await import("@/lib/product-registry");
+    const { getProductVariants } = await import("@/lib/server/cached-products");
     const siblings = isParentView
       ? await getProductVariants(product, countryCode)
       : [];
@@ -373,8 +374,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
     let consensusHubTitle: string | undefined = undefined;
     let consensusHubFullModel: string | undefined = undefined;
 
-    const { getCanonicalFamilyId, getProductById, getProductVariants } =
+    const { getCanonicalFamilyId, getProductById } =
       await import("@/lib/product-registry");
+    const { getProductVariants } = await import("@/lib/server/cached-products");
     const { getFamilyIdentity } = await import("@/lib/product-families");
 
     if (!parentViewMode) {

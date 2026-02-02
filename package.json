@@ -19,7 +19,7 @@
     "worker:run": "bun run scripts/automation/keepa-worker.ts",
     "worker:enrich": "DB_LOCAL=1 bun run scripts/import/enrich-products.ts de",
     "db:lite": "./scripts/database/prepare-lite-db.sh",
-    "db:push-prod": "scp data/cleverprices.db root@46.225.72.57:/etc/dokploy/volumes/cleverprices/data/cleverprices.db",
+    "db:push-prod": "scp data/cleverprices-lite.db root@46.225.72.57:/etc/dokploy/volumes/cleverprices/data/cleverprices-lite.db",
     "db:checkpoint": "sqlite3 data/cleverprices.db 'PRAGMA wal_checkpoint(TRUNCATE);'",
     "db:optimize": "sqlite3 data/cleverprices.db 'PRAGMA optimize;'",
     "docker:build": "docker build -t cleverprices .",

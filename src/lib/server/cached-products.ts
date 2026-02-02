@@ -10,6 +10,7 @@ import {
   getNewArrivals as getNewArrivalsSync,
   getNonEmptyCategorySlugs as getNonEmptyCategorySlugsSync,
   getProductBySlug as getProductBySlugSync,
+  getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
   type Product,
 } from "../product-registry";
@@ -97,6 +98,52 @@ async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
   }
 
   return product;
+}
+
+async function getCachedProductVariantsInternal(
+  product: Product,
+  countryCode: string,
+) {
+  // [TESTING] Cache Disabled
+  return getProductVariantsSync(product, countryCode);
+
+  /*
+  // Use parentAsin or slug for cache key stability
+  const idKey = product.parentAsin
+    ? `asin:${product.parentAsin}`
+    : `slug:${product.slug}`;
+  const cacheKey = `variants:${idKey}:${countryCode}`;
+
+  // 1. Try "Hot" Redis Cache
+  try {
+    const cached = await redis.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached) as Product[];
+    }
+  } catch (error) {
+    console.warn("Redis variants cache miss/error:", error);
+  }
+
+  // 2. Next.js native "use cache" layer
+  const fetcher = async () => {
+    "use cache";
+    cacheLife("product");
+    return getProductVariantsSync(product, countryCode);
+  };
+
+  const variants = await fetcher();
+
+  // 3. Populate Redis
+  if (variants && variants.length > 0) {
+    try {
+      await redis.set(cacheKey, JSON.stringify(variants), "EX", 3600); // 1 hour hot cache
+    } catch (e) {
+      // Ignore Redis set errors
+    }
+  }
+
+  return variants;
+  */
 }
 
 async function getCachedSimilarProducts(
@@ -232,4 +279,12 @@ export async function getSimilarProducts(
     countryCode,
   );
   return mergeLivePrices(products, countryCode);
+}
+
+export async function getProductVariants(
+  product: Product,
+  countryCode: string = "de",
+): Promise<Product[]> {
+  const variants = await getCachedProductVariantsInternal(product, countryCode);
+  return mergeLivePrices(variants, countryCode);
 }

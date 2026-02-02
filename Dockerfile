@@ -46,7 +46,11 @@ COPY --from=builder /app/public ./public
 
 # Copy the standalone build
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy automation scripts for post-deploy cache warming
+COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
+
 
 USER nextjs
 

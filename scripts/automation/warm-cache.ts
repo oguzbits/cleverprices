@@ -82,11 +82,19 @@ async function main() {
   console.log(`🔥 Warming ${urlsToWarm.length} high-priority URLs...\n`);
 
   // Batch requests to avoid overloading the server/database
-  // Using a larger batch for production warming
-  const BATCH_SIZE = 10;
+  // Optimized for 2-Core VPS: "Low and Slow" background processing
+  // 2 concurrent requests ensures CPU never spikes above ~50-60% usage from this script
+  const BATCH_SIZE = 2;
+  const BATCH_DELAY_MS = 500;
+
   for (let i = 0; i < urlsToWarm.length; i += BATCH_SIZE) {
     const batch = urlsToWarm.slice(i, i + BATCH_SIZE);
     await Promise.all(batch.map((url) => warmUrl(url)));
+
+    // Chill for a bit to let the CPU breathe for real users
+    if (i + BATCH_SIZE < urlsToWarm.length) {
+      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+    }
   }
 
   console.log(

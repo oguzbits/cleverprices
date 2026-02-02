@@ -16,7 +16,7 @@ export async function CachedVariantSelector({
   selectedCondition,
   parentSlug,
 }: ProductVariantSelectorProps) {
-  const { getProductVariants } = await import("@/lib/product-registry");
+  const { getProductVariants } = await import("@/lib/server/cached-products");
   let allVariants = await getProductVariants(product, countryCode);
 
   // Fallback: If getProductVariants returns empty (no siblings), we ensure the current product is in the list

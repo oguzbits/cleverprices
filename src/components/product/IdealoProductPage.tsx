@@ -15,12 +15,11 @@ import {
 } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
 import { getFamilyIdentity } from "@/lib/product-families";
+import { getProductPriceHistory, Product } from "@/lib/product-registry";
 import {
-  getProductPriceHistory,
   getProductVariants,
-  Product,
-} from "@/lib/product-registry";
-import { getSimilarProducts } from "@/lib/server/cached-products";
+  getSimilarProducts,
+} from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
