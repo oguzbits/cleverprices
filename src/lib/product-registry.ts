@@ -535,33 +535,45 @@ export async function getProductVariants(
   countryCode: string = "de",
 ): Promise<Product[]> {
   // 1. PRIMARY: Fetch by parentAsin (Ideal Path)
+  // 1. PRIMARY: Fetch by parentAsin (Ideal Path)
   const fetchByAsin = async (parentAsin: string) => {
-    const variantProducts = await db
-      .select(liteProductColumns)
+    // [OPTIMIZATION] Single Query JOIN strategy
+    // Combine Product + Prices in one go to reduce Turso round-trips.
+    const rows = await db
+      .select({
+        product: liteProductColumns,
+        price: superLitePriceColumns,
+      })
       .from(products)
+      .leftJoin(
+        prices,
+        and(eq(prices.productId, products.id), eq(prices.country, countryCode)),
+      )
       .where(eq(products.parentAsin, parentAsin));
 
-    if (variantProducts.length <= 1) return [];
+    if (rows.length <= 1) return [];
 
-    const ids = variantProducts.map((p) => p.id);
-    const variantPrices = await db
-      .select(superLitePriceColumns) // [OPTIMIZATION] Use superLite
-      .from(prices)
-      .where(
-        and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-      );
+    // Grouping: effectively replicate "LiteProduct + associated LitePrice" structure
+    // Since we join on (productId + country), each row is 1 product + 0/1 price.
+    // We map directly.
 
-    const pricesByProduct = indexPricesById(variantPrices as any[]);
+    // First, gather all "siblings" for consensus logic (we need the full list of products)
+    // We can deduplicate by ID since the join is 1:1 per country (mostly)
+    // But safely, let's map.
+    const siblings = rows.map((r) => r.product as DbProduct);
 
-    return variantProducts
-      .map((p) =>
-        mapDbProduct(
+    return rows
+      .map(({ product: p, price }) => {
+        // Construct array of prices expected by mapDbProduct
+        // If price is null (no price for this country), pass empty array.
+        const priceArray = price ? [price] : [];
+        return mapDbProduct(
           p as DbProduct,
-          pricesByProduct.get(p.id!) || [],
-          variantProducts as any[], // Pass siblings for consensus
+          priceArray as any[],
+          siblings,
           true,
-        ),
-      )
+        );
+      })
       .filter(
         (v) =>
           (v.prices[countryCode] || 0) > 0 ||
@@ -611,36 +623,33 @@ export async function getProductVariants(
  * Get all products in a family (sharing same parentAsin)
  * Used for the "Alle Varianten" hub page
  */
+// [OPTIMIZATION] Single Query JOIN strategy
 export async function getProductFamilyMembers(
   parentAsin: string,
   countryCode: string = "de",
 ): Promise<Product[]> {
-  const familyProducts = await db
-    .select(liteProductColumns)
+  const rows = await db
+    .select({
+      product: liteProductColumns,
+      price: superLitePriceColumns,
+    })
     .from(products)
+    .leftJoin(
+      prices,
+      and(eq(prices.productId, products.id), eq(prices.country, countryCode)),
+    )
     .where(eq(products.parentAsin, parentAsin));
 
-  if (familyProducts.length === 0) return [];
+  if (rows.length === 0) return [];
 
-  const ids = familyProducts.map((p) => p.id);
-  const familyPrices = await db
-    .select(superLitePriceColumns) // [OPTIMIZATION] Use superLite
-    .from(prices)
-    .where(
-      and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-    );
+  // Grouping & Mapping
+  const siblings = rows.map((r) => r.product as DbProduct);
 
-  const pricesByProduct = indexPricesById(familyPrices as any[]);
-
-  return familyProducts
-    .map((p) =>
-      mapDbProduct(
-        p as DbProduct,
-        pricesByProduct.get(p.id!) || [],
-        familyProducts as any[], // Pass siblings for consensus
-        true,
-      ),
-    )
+  return rows
+    .map(({ product: p, price }) => {
+      const priceArray = price ? [price] : [];
+      return mapDbProduct(p as DbProduct, priceArray as any[], siblings, true);
+    })
     .filter(
       (v) =>
         (v.prices[countryCode] || 0) > 0 ||
