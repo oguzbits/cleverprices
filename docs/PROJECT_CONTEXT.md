@@ -110,7 +110,7 @@
 
 ### 6. Analytics & SEO
 
-- **Analytics**: Vercel Analytics and Speed Insights.
+- **Analytics**: Web Analytics (Cookieless).
 - **SEO**:
   - Automated `sitemap.xml`.
   - Proper `robots.txt`.

@@ -66,7 +66,7 @@ Documented performance targets and resource budgets for CleverPrices.
 
 ---
 
-## Vercel Limits (Hobby)
+## Platform Limits (Docker/Node.js)
 
 | Resource             | Limit                     | Mitigation                        |
 | -------------------- | ------------------------- | --------------------------------- |
@@ -86,4 +86,4 @@ Documented performance targets and resource budgets for CleverPrices.
 | PageSpeed        | PageSpeed Insights    | Weekly                       |
 | Bundle Size      | @next/bundle-analyzer | Per deploy                   |
 | Turso Usage      | Turso Dashboard       | Daily (during quota concern) |
-| Vercel Analytics | Vercel Dashboard      | Weekly                       |
+| Dokploy Monitoring | Dokploy Dashboard     | Weekly                       |

@@ -1,16 +1,16 @@
 # Production Stability & Deployment Guide
 
-This document captures "hard-won" lessons learned while scaling CleverPrices to production on Vercel with a bundled SQLite database.
+This document captures "hard-won" lessons learned while scaling CleverPrices to production on Self-Hosted Docker (Hetzner) with a bundled SQLite database.
 
-## 1. SQLite on Vercel (Read-Only Filesystem)
+## 1. SQLite on Docker (Performance & Persistence)
 
-Vercel's execution environment is strictly read-only (except for `/tmp`). This has major implications for SQLite:
+When running SQLite in a containerized environment (Dokploy/Docker), the following rules apply:
 
 ### The `WAL` Mode Trap
 
 By default, modern SQLite uses **WAL (Write-Ahead Logging)** mode. This mode requires creating two sidecar files (`-wal` and `-shm`) next to the `.db` file upon opening.
 
-- **Symptom**: Search fails with "500 Internal Server Error" or "Read-Only Filesystem" errors in Vercel logs.
+- **Symptom**: Search fails with "500 Internal Server Error" or "Read-Only Filesystem" errors if the volume is not mounted correctly.
 - **Solution**: The bundled database must be forced into `DELETE` journal mode during the build step.
 - **Fix**: In `scripts/prepare-deploy.sh`, we use:
   ```bash
@@ -19,7 +19,7 @@ By default, modern SQLite uses **WAL (Write-Ahead Logging)** mode. This mode req
 
 ### Manual Verification
 
-On Vercel, always verify the database header and presence via a diagnostic route if issues arise:
+Always verify the database header and presence via the application logs if issues arise:
 
 ```typescript
 const stats = fs.statSync(dbPath);
@@ -73,8 +73,8 @@ For maximum autonomy and performance, the project uses a tiered data flow that s
 
 ### Tier 2: Production Lite-Sync (`lite-db-sync.yml`)
 
-- **Action**: A GitHub Action runs twice a day. It pulls data from Turso Cloud, generates a fresh `cleverprices-lite.db`, and **uploads it to Vercel Blob**.
-- **Deployment**: Vercel's scheduled deployment (Cron Jobs) triggers a build, which downloads the DB from Blob during `prebuild`.
+- **Action**: A `bun run db:push-prod` command builds the `lite.db` locally and uploads it via SCP to the server's persistent volume.
+- **Deployment**: Dokploy restarts the container (or the app picks up changes instantly if using WAL mode) to serve fresh data.
 - **Goal**: Keep the Git repo clean (no binary commits) while still bundling fresh data into each deployment.
 
 ### Quota Economics

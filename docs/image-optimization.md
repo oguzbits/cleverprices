@@ -1,12 +1,12 @@
 # Cost-Free Image Optimization Strategy
 
-This project uses a custom image optimization strategy to bypass Vercel's "Image Optimization" limits (which can get expensive or hit free tier caps quickly) while ensuring users still receive properly sized images.
+This project uses a custom image optimization strategy to bypass platform "Image Optimization" limits (which can get expensive or hit free tier caps quickly) while ensuring users still receive properly sized images.
 
 ## The Problem
 
-Default Next.js `<Image />` component relies on Vercel's server-side image optimization API to resize, crop, and compress images on the fly.
+Default Next.js `<Image />` component relies on server-side image optimization API to resize, crop, and compress images on the fly.
 
-- **Cost**: Vercel charges per 1,000 source images.
+- **Cost**: Cloud Platforms often charge per 1,000 source images.
 - **Limit**: Free tier has a hard limit (e.g., 5,000 transformations/month).
 - **Issue**: For an e-commerce site with thousands of products, simply browsing a category page can consume hundreds of optimization credits in minutes.
 
@@ -24,7 +24,7 @@ We implemented a **Custom Loader** (`src/lib/image-loader.ts`) that intercepts N
     - **Input**: `https://m.media-amazon.com/images/I/71Wj+Zc7cZL._AC_.jpg` requesting `width=300` and `quality=75`
     - **Logic**: It strips existing Amazon modifiers (like `._AC_`) and appends the requested parameters.
     - **Output**: `https://m.media-amazon.com/images/I/71Wj+Zc7cZL._SX300_QL75_.jpg`
-4.  **Serve**: The browser loads this resized image directly from Amazon's CDN. No traffic goes through Vercel's optimization servers.
+4.  **Serve**: The browser loads this resized image directly from Amazon's CDN. No traffic goes through the application server's optimization layer.
 
 ## Amazon URL Parameters
 
@@ -123,7 +123,7 @@ To maintain a balance between visual quality and performance, we use the followi
 
 ## Benefits
 
-- **Vercel Usage**: **0%** (for product images).
+- **Compute Usage**: **0%** (for product images).
 - **LCP Speed**: ~40% faster by limiting prioritized requests to the top 2 items.
 - **Initial Load Weight**: Zero KB for carousels until the user scrolls.
-- **Cost**: 100% Free (zero Vercel optimization credits consumed).
+- **Cost**: 100% Free (zero compute optimization credits consumed).

@@ -668,7 +668,7 @@ function indexPricesById<T extends PriceWithProductId>(
 
 import { cache } from "react";
 
-// Use React.cache for per-request deduplication (Vercel Best Practices: server-cache-react)
+// Use React.cache for per-request deduplication (Production Optimization: server-cache-react)
 export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
   stripHeavyData: boolean = true, // Default to true for category lists

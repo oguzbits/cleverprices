@@ -121,7 +121,7 @@ if (!isForce && !isDryRun) {
 | Turso Reads  | 500M/month            | liteColumns, keyset pagination |
 | Turso Writes | 10M/month             | Value-diff before writes       |
 | Keepa Tokens | 20/min, 1,200/hr cap  | Reserve 100 for enrichment     |
-| Vercel Exec  | 10s (def) / 60s (max) | Streaming + Suspense           |
+| Production Exec | 10s (def) / 60s (max) | Streaming + Suspense           |
 
 ---
 
@@ -144,7 +144,7 @@ Before writing code:
 | Domain        | Skill                                                                                    | Examples                                       |
 | ------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------- |
 | Database      | [drizzle-orm](file://.agent/skills/drizzle-orm/SKILL.md)                                 | lite-columns, keyset-pagination, value-diffing |
-| React/Next.js | [vercel-react-best-practices](file://.agent/skills/vercel-react-best-practices/SKILL.md) | Cache components                               |
+| React/Next.js | [nextjs-best-practices](file://.agent/skills/vercel-react-best-practices/SKILL.md) | Cache components                               |
 | Styling       | [tailwind-v4](file://.agent/skills/tailwind-v4/SKILL.md)                                 | No var() in class                              |
 | SEO           | [modern-seo](file://.agent/skills/modern-seo/SKILL.md)                                   | Titles, descriptions                           |
 | UX            | [web-design-guidelines](file://.agent/skills/web-design-guidelines/SKILL.md)             | Accessibility                                  |

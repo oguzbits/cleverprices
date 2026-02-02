@@ -166,7 +166,7 @@ To prevent accidental resource exhaustion or data loss, all management scripts f
 
 ## Lite DB Optimization
 
-For Vercel production, we use a "Lite" database that strips unused data:
+For Production, we use a "Lite" database that strips unused data:
 
 | What is Stripped                     | Typical Savings |
 | :----------------------------------- | --------------: |

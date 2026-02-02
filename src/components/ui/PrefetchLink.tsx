@@ -8,7 +8,7 @@ interface PrefetchLinkProps {
   href: string;
   children: ReactNode;
   className?: string;
-  /** Prefetch on hover/focus instead of viewport entry (Vercel Best Practices: bundle-preload) */
+  /** Prefetch on hover/focus instead of viewport entry (Next.js Best Practices: bundle-preload) */
   prefetchOnHover?: boolean;
 }
 

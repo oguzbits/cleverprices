@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 /**
  * Health Check Endpoint
- * Used by external monitors (UptimeRobot, Vercel Status, etc.)
+ * Used by external monitors (UptimeRobot, StatusPage, etc.)
  * Returns database connectivity status and basic metrics.
  */
 export async function GET() {

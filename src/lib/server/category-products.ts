@@ -101,7 +101,7 @@ function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
 
 /**
  * RE-USABLE CACHED LAYER: Localizes, scores, and PRUNES products in a category.
- * Pruning is essential to stay under Vercel's 2MB cache limit.
+ * Pruning is essential to stay under the 2MB cache limit.
  * Price is included but will be overwritten by the loader for live sync.
  */
 export async function getCachedLocalizedCategoryProducts(
@@ -472,7 +472,7 @@ export async function getCategoryProducts(
   // 1. Fetch ALL products for the category (Cached)
   // We use this "fat" fetch + in-memory filter/sort because the "Desirability Score"
   // (Prestige/Freshness/Commercial Value) is too complex for efficient SQL.
-  // Since categories have < 2000 items, this is fast and Vercel-safe (2MB limit).
+  // Since categories have < 2000 items, this is fast and safe (2MB limit).
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,

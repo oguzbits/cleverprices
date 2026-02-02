@@ -505,7 +505,7 @@ export async function IdealoProductPage({
 
 /**
  * --- CACHED COMPONENTS (Next.js 16 Granular Caching) ---
- * Each of these is rendered once and stored as static Rsc in the Vercel Data Cache.
+ * Each of these is rendered once and stored as static Rsc in the Data Cache.
  */
 
 // Live Price Chart that prefers fresh data from Keepa

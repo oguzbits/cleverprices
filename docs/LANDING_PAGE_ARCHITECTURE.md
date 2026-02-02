@@ -36,13 +36,13 @@ We use a multi-layered caching strategy to ensure sub-second loads:
 
 1.  **Worker**: Updates local DB prices every 15 minutes.
 2.  **Cloud Sync**: Deploys updates to Turso every 12 hours.
-3.  **Vercel Revalidation**: Triggered automatically every 11 hours.
+3.  **Production Revalidation**: Triggered automatically every 11 hours.
 
 ## Manual Force Update
 
 If you need to update the landing page _immediately_:
 
 ```bash
-# Redeploy on Vercel to clear the global CDN cache
+# Redeploy on Dokploy to clear the global CDN cache
 # OR run db:deploy to push local changes to cloud
 ```

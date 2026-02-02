@@ -246,8 +246,7 @@ export class KeepaDataSource implements DataSourceProvider {
     } catch (error) {
       console.warn("Keepa fetch failed:", error);
       // Log more details in production to debug "no data" issue
-      const isProduction =
-        process.env.VERCEL === "1" || process.env.NETLIFY === "true";
+      const isProduction = process.env.NODE_ENV === "production";
       if (isProduction) {
         console.error("Keepa Debug Error Details:", {
           message: error instanceof Error ? error.message : "Unknown error",

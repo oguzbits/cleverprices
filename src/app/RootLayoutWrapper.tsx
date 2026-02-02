@@ -60,7 +60,7 @@ export default function RootLayoutWrapper({
             <main className="flex-1">{children}</main>
             {!hideFooter && <Footer />}
           </div>
-          {/* Analytics deferred until after hydration (Vercel Best Practices: bundle-defer-third-party) */}
+          {/* Analytics deferred until after hydration (Next.js Best Practices: bundle-defer-third-party) */}
           <DeferredAnalytics />
         </NuqsProvider>
       </body>

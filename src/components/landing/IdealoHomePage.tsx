@@ -6,7 +6,7 @@ import dynamic from "next/dynamic";
 import { IdealoHero } from "./IdealoHero";
 import { IdealoSection } from "./IdealoSection";
 
-// Only dynamic import below-the-fold carousels (Vercel Best Practices: bundle-dynamic-imports)
+// Only dynamic import below-the-fold carousels (Next.js Best Practices: bundle-dynamic-imports)
 const DynamicProductCarousel = dynamic(
   () =>
     import("@/components/IdealoProductCarousel").then(
