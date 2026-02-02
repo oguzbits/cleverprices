@@ -131,11 +131,12 @@ function createDbClient(): Client {
       client.execute("PRAGMA busy_timeout = 5000").catch(() => {});
       client.execute("PRAGMA cache_size = -20000").catch(() => {}); // 20MB cache (entire DB fits!)
 
-      if (!isProductionEnvironment) {
-        // Dev-only: WAL mode is safe for local disk
-        client.execute("PRAGMA journal_mode = WAL").catch(() => {});
-        client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
-      } else {
+      // WAL mode is safe and highly recommended for persistent local disk (Hetzner/Docker)
+      // It allows concurrent reads and writes without locking.
+      client.execute("PRAGMA journal_mode = WAL").catch(() => {});
+      client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
+
+      if (isProductionEnvironment) {
         // Production-only: MMap allows the OS to treat the file like RAM
         client.execute("PRAGMA mmap_size = 20000000").catch(() => {});
       }
