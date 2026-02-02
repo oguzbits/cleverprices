@@ -44,11 +44,14 @@ RUN mkdir -p data && chown nextjs:nodejs data
 # Copy public assets
 COPY --from=builder /app/public ./public
 
+# Copy dependencies and source for scripts
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+
 # Copy the standalone build
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Copy automation scripts for post-deploy cache warming
+# Copy automation scripts for workers and backups
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
 
