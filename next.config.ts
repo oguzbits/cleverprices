@@ -7,6 +7,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  compress: false, // Offload compression to Traefik (Brotli)
   output: "standalone", // Required for Docker
   reactCompiler: true,
   cacheComponents: true, // Enable "use cache" directive for caching

@@ -129,17 +129,16 @@ function createDbClient(): Client {
     try {
       // Shared Boosters
       client.execute("PRAGMA busy_timeout = 5000").catch(() => {});
-      client.execute("PRAGMA cache_size = -20000").catch(() => {}); // 20MB cache (entire DB fits!)
+      client.execute("PRAGMA cache_size = -100000").catch(() => {}); // 100MB cache (Entire DB fits in RAM!)
 
       // WAL mode is safe and highly recommended for persistent local disk (Hetzner/Docker)
       // It allows concurrent reads and writes without locking.
       client.execute("PRAGMA journal_mode = WAL").catch(() => {});
       client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
 
-      if (isProductionEnvironment) {
-        // Production-only: MMap allows the OS to treat the file like RAM
-        client.execute("PRAGMA mmap_size = 20000000").catch(() => {});
-      }
+      // MMap allows the OS to treat the database file like RAM
+      // We set it to 100MB to cover the entire file size.
+      client.execute("PRAGMA mmap_size = 100000000").catch(() => {});
     } catch (e) {
       console.warn(
         "[DB] Failed to set performance PRAGMAs:",
