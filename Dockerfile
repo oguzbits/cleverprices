@@ -59,4 +59,11 @@ USER nextjs
 EXPOSE 3000
 
 # Run litestream to replicate in the background while running the app
-CMD ["litestream", "replicate", "-config", "/app/litestream.yml", "--", "bun", "server.js"]
+# Run litestream to replicate in the background if configured, otherwise start app directly
+CMD if [ -n "$LITESTREAM_BUCKET" ]; then \
+        echo "[Litestream] Starting replication..." && \
+        exec litestream replicate -config /app/litestream.yml -- bun server.js; \
+    else \
+        echo "[Litestream] Skipping replication (no bucket configured)." && \
+        exec bun server.js; \
+    fi
