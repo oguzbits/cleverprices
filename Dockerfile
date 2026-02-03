@@ -55,5 +55,5 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 USER nextjs
 EXPOSE 3000
 
-# Keep container alive forever so Cron Jobs have a home
-CMD ["tail", "-f", "/dev/null"]
+# Direct startup for maximum stability
+CMD ["node", "server.js"]
