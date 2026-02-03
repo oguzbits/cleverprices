@@ -1,4 +1,4 @@
-import { client, db } from "@/db";
+import { client, db, dbReady } from "@/db";
 import {
   prices,
   products,
@@ -196,6 +196,7 @@ export async function getProductById(
   id: number,
   _country = "de", // Parameter kept for signature compatibility
 ): Promise<Product | undefined> {
+  await dbReady;
   // Handle 200m offset from slugs
   const realId =
     id >= 900000000 ? id - 900000000 : id >= 200000000 ? id - 200000000 : id;
@@ -438,6 +439,7 @@ export async function getAllProductSlugs(): Promise<
  */
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   const fetchNonEmpty = async () => {
+    await dbReady;
     try {
       const results = await db
         .select({ category: products.category })
@@ -451,8 +453,28 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
         )
         .groupBy(products.category);
 
+      // SAFETY: If we have 0 categories in production, something is wrong (likely syncing).
+      // Throwing prevents caching a "no categories" state which leads to persistent 404s.
+      if (results.length === 0 && process.env.NODE_ENV === "production") {
+        throw new Error(
+          "No non-empty categories found. Database might be empty or syncing.",
+        );
+      }
+
       return results.map((r) => r.category);
     } catch (e) {
+      // Differentiate between build-time and runtime failures
+      const isBuild =
+        process.env.NEXT_PHASE === "phase-production-build" ||
+        process.env.BUILD_PHASE === "1";
+
+      if (!isBuild) {
+        console.error(
+          `[DB Error] getNonEmptyCategorySlugs failed: ${e instanceof Error ? e.message : String(e)}`,
+        );
+        throw e; // Rethrow at runtime to prevent poisoned cache
+      }
+
       // During Docker build, the DB volume is not yet mounted.
       // We return empty list to skip static generation of category pages during build.
       // They will be rendered at runtime via SSR/ISR once the volume is available.
@@ -699,6 +721,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   stripHeavyData: boolean = true, // Default to true for category lists
 ): Promise<Product[]> {
   const fetchProducts = async () => {
+    await dbReady;
     const prods = await db
       .select(liteProductColumns)
       .from(products)
@@ -765,6 +788,7 @@ const fetchProductBySlug = async (
   slug: string,
   _includeHistory: boolean = false, // History now comes from historyJson in prices
 ): Promise<Product | undefined> => {
+  await dbReady;
   const getProductAndPrices = async (targetSlug: string) => {
     const [p] = await db
       .select()
@@ -840,6 +864,7 @@ export const getProductBySlug = cache(async function getProductBySlug(
 const fetchProductByAsin = async (
   asin: string,
 ): Promise<Product | undefined> => {
+  await dbReady;
   const [p] = await db
     .select()
     .from(products)
@@ -1261,6 +1286,7 @@ export async function getProductsByBrand(
 
 const getCachedDeals = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
+    await dbReady;
     try {
       // Lean schema: use consolidated `price` column instead of amazonPrice/newPrice
       const whereConditions = [
@@ -1314,7 +1340,7 @@ const getCachedDeals = unstable_cache(
       });
     } catch (e) {
       console.warn(
-        "[Build Warning] Database missing in getCachedDeals. Returning empty.",
+        `[DB Warning] Failed to fetch deals: ${e instanceof Error ? e.message : String(e)}`,
       );
       return [];
     }
@@ -1331,6 +1357,7 @@ export async function getBestDeals(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
+  await dbReady;
   try {
     const isScript =
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
@@ -1367,7 +1394,7 @@ export async function getBestDeals(
     return getCachedDeals(limit, countryCode, condition);
   } catch (e) {
     console.warn(
-      "[Build Warning] Database missing in getBestDeals. Returning empty.",
+      `[DB Warning] Failed to fetch best deals: ${e instanceof Error ? e.message : String(e)}`,
     );
     return [];
   }
@@ -1375,6 +1402,7 @@ export async function getBestDeals(
 
 const getCachedPopular = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
+    await dbReady;
     try {
       const whereConditions = [];
       if (condition) {
@@ -1435,7 +1463,7 @@ const getCachedPopular = unstable_cache(
         .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
     } catch (e) {
       console.warn(
-        "[Build Warning] Database missing in getCachedPopular. Returning empty.",
+        `[DB Warning] Failed to fetch popular: ${e instanceof Error ? e.message : String(e)}`,
       );
       return [];
     }
@@ -1511,6 +1539,7 @@ export async function getDiverseMostPopular(
   itemsPerCategory: number = 10,
   countryCode: string = "de",
 ): Promise<Product[]> {
+  await dbReady;
   try {
     const result = await client.execute({
       sql: `
@@ -1570,7 +1599,7 @@ export async function getDiverseMostPopular(
       .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
   } catch (e) {
     console.warn(
-      "[Build Warning] Database missing in getDiverseMostPopular. Returning empty.",
+      `[DB Warning] Failed to fetch diverse popular: ${e instanceof Error ? e.message : String(e)}`,
     );
     return [];
   }
@@ -1578,6 +1607,7 @@ export async function getDiverseMostPopular(
 
 const getCachedNew = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
+    await dbReady;
     try {
       const whereConditions = [];
       if (condition) {
@@ -1634,7 +1664,7 @@ const getCachedNew = unstable_cache(
         .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
     } catch (e) {
       console.warn(
-        "[Build Warning] Database missing in getCachedNew. Returning empty.",
+        `[DB Warning] Failed to fetch new arrivals: ${e instanceof Error ? e.message : String(e)}`,
       );
       return [];
     }
@@ -1726,6 +1756,7 @@ export async function getFilteredProducts(
     offset?: number;
   },
 ): Promise<Product[]> {
+  await dbReady;
   try {
     const where: SQL[] = [
       eq(products.category, category),
@@ -1839,7 +1870,7 @@ export async function getFilteredProducts(
     });
   } catch (e) {
     console.warn(
-      "[Build Warning] Database missing in getFilteredProducts. Returning empty.",
+      `[DB Warning] Failed to fetch filtered products: ${e instanceof Error ? e.message : String(e)}`,
     );
     return [];
   }
@@ -1853,6 +1884,7 @@ export async function getFilteredProductsCount(
   countryCode: string,
   filters: any,
 ): Promise<number> {
+  await dbReady;
   const where: SQL[] = [
     eq(products.category, category),
     eq(prices.country, countryCode),

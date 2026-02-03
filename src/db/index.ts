@@ -169,29 +169,35 @@ export const dbReady: Promise<void> = (async () => {
     const isSync = isProductionEnvironment && process.env.DB_SYNC === "1";
 
     if (isSync) {
-      console.log("[DB] Initializing autonomous sync (500ms cutoff)...");
+      console.log("[DB] Initializing autonomous sync (3000ms cutoff)...");
 
       // 🛡️ Web Vitals Guard:
-      // We race the sync against a 500ms timer. If sync takes longer than 500ms,
-      // we resolve anyway and use the bundled Lite DB to avoid killing LCP/TTFB.
+      // We race the sync against a 3000ms timer. If sync takes longer,
+      // we resolve anyway and use the bundled Lite DB to avoid killing TTFB.
+      // 3s is a safe compromise for cold starts.
       const syncPromise = client.sync();
-      const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 500));
+      const timeoutPromise = new Promise((resolve) =>
+        setTimeout(resolve, 3000),
+      );
 
       await Promise.race([syncPromise, timeoutPromise]);
-      console.log("[DB] Ready (Fresh or Fallback-to-Lite reached)");
     }
 
-    if (process.env.NODE_ENV === "development") {
-      const result = await client.execute("SELECT count(*) as C FROM products");
-      console.log(`[DB DEBUG] Products count on startup: ${result.rows[0].C}`);
-    }
-  } catch (e) {
-    if (isProductionEnvironment) {
-      console.error(
-        "[DB ERROR] Client initialization failure:",
-        e instanceof Error ? e.message : String(e),
+    // Diagnostics in all environments (useful for Dokploy logs)
+    const result = await client.execute("SELECT count(*) as C FROM products");
+    const count = Number(result.rows[0].C);
+    console.log(`[DB] Initialization complete. Products count: ${count}`);
+
+    if (count === 0 && isProductionEnvironment) {
+      console.warn(
+        "[DB WARNING] Database is empty! Site will show empty state.",
       );
     }
+  } catch (e) {
+    console.error(
+      "[DB ERROR] Client initialization failure:",
+      e instanceof Error ? e.message : String(e),
+    );
   }
 })();
 
