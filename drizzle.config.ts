@@ -1,11 +1,11 @@
 import { defineConfig } from "drizzle-kit";
 
 /**
- * Drizzle Kit Configuration for Turso/libSQL
+ * Drizzle Kit Configuration for Local SQLite
  *
  * Supports:
- * - Production: Turso cloud database (TURSO_DATABASE_URL)
- * - Development: Local SQLite file with optional cloud sync
+ * - Production: Persistent local SQLite file (via Docker volume)
+ * - Development: Local SQLite file (./data/cleverprices.db)
  *
  * Usage:
  * - `bun run db:push` - Push schema to configured database

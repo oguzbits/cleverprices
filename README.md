@@ -24,7 +24,7 @@ CleverPrices is powered by an automated **Maintenance Engine** (GitHub Actions) 
 - **Price Updates**: Uses **Dynamic Scaling** (300-1000 items) based on token budget. Captures the "Daily Low" for long-term charts.
 - **Product Enrichment**: Multi-source engine (Icecat, eBay, Intel) back-fills high-quality technical specs. Uses **Smart Sinking** to maintain variant accuracy across ASIN families.
 - **Cache Warming**: Automatically triggers a `warm-cache` script after updates to ensure 100ms response times for users.
-- **Cloud-Native**: All maintenance scripts connect directly to the **Turso Cloud** via environment variables.
+- **Persistent Local DB**: All maintenance scripts connect directly to the local SQLite database mounted as a Docker volume.
 
 To run maintenance tasks manually:
 
@@ -32,8 +32,8 @@ To run maintenance tasks manually:
 # Update prices (Hourly batch)
 bun run update-prices
 
-# Pull latest data from Turso Cloud to Local
-bun run db:pull
+# Sync production data to local for debugging
+bun run db:pull-prod
 
 # Warm the Next.js cache manually
 bun run warm-cache
@@ -55,7 +55,7 @@ CleverPrices uses a highly optimized data layer to ensure sub-100ms response tim
 - **Parallel Flat Bulk** - Collapses thousands of individual history updates into parallelized waves. This maximizes bandwidth while staying under LibSQL's 32k parameter limit, reducing sync time from minutes to seconds.
 - **SQLite Resilience** - Implements a `withRetry` logic with exponential backoff and `PRAGMA busy_timeout = 5000` to handle concurrent write locks gracefully.
 - **FTS5 Full-Text Search** - Uses SQLite's native virtual tables for ultra-fast product prefix matching.
-- **Atomic Migrations** - Dedicated `db:migrate` scripts ensure schema consistency between local and cloud databases.
+- **Atomic Migrations** - Dedicated `db:migrate` scripts ensure schema consistency.
 
 ---
 
@@ -107,7 +107,7 @@ src/
 │   ├── server/           # Server-only logic (caching, scoring)
 │   └── countries.ts      # Legacy country config & redirects
 │
-└── db/                    # Database schema and client (SQLite/Turso)
+└── db/                    # Database schema and client (Local SQLite)
 ```
 
 ---
@@ -135,7 +135,7 @@ src/
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router, Cache Components)
 - **Engine**: [React 19](https://react.dev/) (React Compiler enabled)
-- **Database**: [Turso](https://turso.tech/) (SQLite at the edge)
+- **Database**: [SQLite](https://sqlite.org/) (Local-first persistence)
 - **Data Source**: [Keepa API](https://keepa.com/) (Amazon price data)
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
 - **Package Manager**: [Bun](https://bun.sh/)

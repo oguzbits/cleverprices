@@ -13,7 +13,8 @@
 | **React**          | 19.2.3  | Server Components, `'use cache'` directive                        |
 | **React Compiler** | Enabled | Handles `useMemo`, `useCallback`, `React.memo`                    |
 | **Tailwind CSS**   | 4.x     | No `var()` in className                                           |
-| **Drizzle ORM**    | 0.45.x  | SQLite with Turso/LibSQL                                          |
+| **Drizzle ORM**    | 0.45.x  | Local SQLite (Persistent Source of Truth)                         |
+| **Redis**          | Latest  | Memory-First Data Layer (Primary Fetch for Hot Data)              |
 | **Bun**            | Latest  | Primary Runtime and Package Manager (MANDATORY)                   |
 
 ---
@@ -55,6 +56,7 @@ All data operations MUST meet these complexity requirements:
 
 | Operation        | Max Complexity         | Example             |
 | ---------------- | ---------------------- | ------------------- |
+| Hot Read (Redis) | O(1)                   | Slug-based lookup   |
 | Table iteration  | O(N)                   | Keyset pagination   |
 | Index lookups    | O(log N)               | Indexed columns     |
 | Batch processing | O(N)                   | Bounded parallelism |
@@ -116,12 +118,11 @@ if (!isForce && !isDryRun) {
 
 ## 🔒 RESOURCE LIMITS
 
-| Resource     | Limit                 | Safety                         |
-| ------------ | --------------------- | ------------------------------ |
-| Turso Reads  | 500M/month            | liteColumns, keyset pagination |
-| Turso Writes | 10M/month             | Value-diff before writes       |
-| Keepa Tokens | 20/min, 1,200/hr cap  | Reserve 100 for enrichment     |
-| Production Exec | 10s (def) / 60s (max) | Streaming + Suspense           |
+| Resource        | Limit                 | Safety                 |
+| --------------- | --------------------- | ---------------------- |
+| DB Storage      | NVMe Capacity         | history compression    |
+| Keepa Tokens    | 20/min, 1,200/hr cap  | Reserve for enrichment |
+| Production Exec | 10s (def) / 60s (max) | Streaming + Suspense   |
 
 ---
 
@@ -141,12 +142,12 @@ Before writing code:
 
 ## 📚 SKILLS
 
-| Domain        | Skill                                                                                    | Examples                                       |
-| ------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| Database      | [drizzle-orm](file://.agent/skills/drizzle-orm/SKILL.md)                                 | lite-columns, keyset-pagination, value-diffing |
+| Domain        | Skill                                                                              | Examples                                       |
+| ------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Database      | [drizzle-orm](file://.agent/skills/drizzle-orm/SKILL.md)                           | lite-columns, keyset-pagination, value-diffing |
 | React/Next.js | [nextjs-best-practices](file://.agent/skills/vercel-react-best-practices/SKILL.md) | Cache components                               |
-| Styling       | [tailwind-v4](file://.agent/skills/tailwind-v4/SKILL.md)                                 | No var() in class                              |
-| SEO           | [modern-seo](file://.agent/skills/modern-seo/SKILL.md)                                   | Titles, descriptions                           |
-| UX            | [web-design-guidelines](file://.agent/skills/web-design-guidelines/SKILL.md)             | Accessibility                                  |
+| Styling       | [tailwind-v4](file://.agent/skills/tailwind-v4/SKILL.md)                           | No var() in class                              |
+| SEO           | [modern-seo](file://.agent/skills/modern-seo/SKILL.md)                             | Titles, descriptions                           |
+| UX            | [web-design-guidelines](file://.agent/skills/web-design-guidelines/SKILL.md)       | Accessibility                                  |
 
-**Turso Economics:** [docs/TURSO_OPTIMIZATION.md](file://docs/TURSO_OPTIMIZATION.md)
+**DB Performance:** [docs/SQLITE_OPTIMIZATION.md](file://docs/SQLITE_OPTIMIZATION.md)

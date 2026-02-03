@@ -51,11 +51,12 @@ async function updatePrices(country: CountryCode): Promise<void> {
     console.log("🧪 DRY RUN MODE: Database commits will be skipped.");
 
   const isStaleOnly = process.argv.includes("--stale");
-  const elevenHoursAgo = new Date(Date.now() - 11 * 60 * 60 * 1000);
+  const staleThresholdHours = 4; // Tightened from 11h for faster turnover
+  const staleThreshold = new Date(Date.now() - staleThresholdHours * 60 * 60 * 1000);
 
   // Robust argument parsing for --limit
   const limitArgIndex = process.argv.findIndex((a) => a.startsWith("--limit"));
-  let customLimit = 1000;
+  let customLimit = 2000; // Increased from 1000 to allow larger batches for small catalogs
   if (limitArgIndex !== -1) {
     const arg = process.argv[limitArgIndex];
     if (arg.includes("=")) {
@@ -90,7 +91,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
     )
     .where(
       isStaleOnly
-        ? or(isNull(prices.lastUpdated), lt(prices.lastUpdated, elevenHoursAgo))
+        ? or(isNull(prices.lastUpdated), lt(prices.lastUpdated, staleThreshold))
         : undefined,
     )
     .orderBy(asc(prices.lastUpdated))
@@ -110,7 +111,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
       and(eq(prices.productId, products.id), eq(prices.country, country)),
     )
     .where(
-      or(isNull(prices.lastUpdated), lt(prices.lastUpdated, elevenHoursAgo)),
+    .where(
+      or(isNull(prices.lastUpdated), lt(prices.lastUpdated, staleThreshold)),
     );
 
   const remainingAfterBatch = Math.max(
@@ -139,12 +141,9 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
   // Check tokens
   const status = await getTokenStatus();
-  const MIN_RESERVE_FOR_ENRICHMENT = 250;
-  const availableForUpdate = Math.max(
-    0,
-    status.tokensLeft - MIN_RESERVE_FOR_ENRICHMENT,
-  );
-  const maxProductsToFetch = Math.min(asins.length, availableForUpdate);
+  // We respect the limit passed from the caller (keepa-worker), 
+  // but we no longer sub-reserve tokens here as it causes double-throttling.
+  const maxProductsToFetch = Math.min(asins.length, status.tokensLeft - 50); // Keep small safety buffer
 
   if (maxProductsToFetch < asins.length) {
     console.log(
@@ -210,7 +209,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
             const rating = normalizeRating(kp.rating) ?? product.rating;
             const reviewCount = kp.reviewsLastSeenStatus ?? product.reviewCount;
 
-            // 1. Meta Update - Only if changed (Turso write optimization)
+            // 1. Meta Update - Only if changed (SQLite write optimization)
             const metaChanged =
               salesRank !== product.salesRank ||
               rating !== product.rating ||
@@ -251,10 +250,6 @@ async function updatePrices(country: CountryCode): Promise<void> {
             }
             */
 
-            const priceChanged =
-              bestPrice !== product.currentPrice ||
-              usedPrice !== product.currentUsedPrice;
-
             // 3. Update historyJson with today's price
             // Parse existing history (handles both legacy TEXT and compressed BLOB)
             let historyObj: Record<string, number> = parseHistoryBlob(
@@ -277,46 +272,40 @@ async function updatePrices(country: CountryCode): Promise<void> {
             const historyJson = compressHistory(JSON.stringify(historyObj));
 
             // 4. Price Upsert - Lean Schema
-            const isVeryFresh =
-              product.currentLastUpdated &&
-              now.getTime() - new Date(product.currentLastUpdated).getTime() <
-                24 * 60 * 60 * 1000;
+            // Always update lastUpdated if we fetched it, to avoid re-fetching in the same cycle.
+            const priceAvg90 = keepaPriceToDecimal(
+              kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
+            );
 
-            if (priceChanged || !isVeryFresh) {
-              const priceAvg90 = keepaPriceToDecimal(
-                kp.stats?.avg90?.[KEEPA_PRICE_TYPES.NEW],
-              );
-
-              sqlQueries.push(
-                db
-                  .insert(prices)
-                  .values({
-                    productId: product.id,
-                    country,
+            sqlQueries.push(
+              db
+                .insert(prices)
+                .values({
+                  productId: product.id,
+                  country,
+                  price: bestPrice,
+                  usedPrice,
+                  listPrice,
+                  priceAvg90,
+                  // pricePerUnit, (Keeping empty for now)
+                  historyJson,
+                  currency,
+                  source: "keepa",
+                  lastUpdated: now,
+                })
+                .onConflictDoUpdate({
+                  target: [prices.productId, prices.country],
+                  set: {
                     price: bestPrice,
                     usedPrice,
-                    listPrice,
-                    priceAvg90,
-                    // pricePerUnit, (Keeping empty for now)
+                    listPrice: listPrice ?? sql`${prices.listPrice}`,
+                    priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
+                    // pricePerUnit: pricePerUnit ?? sql`${prices.pricePerUnit}`,
                     historyJson,
-                    currency,
-                    source: "keepa",
                     lastUpdated: now,
-                  })
-                  .onConflictDoUpdate({
-                    target: [prices.productId, prices.country],
-                    set: {
-                      price: bestPrice,
-                      usedPrice,
-                      listPrice: listPrice ?? sql`${prices.listPrice}`,
-                      priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
-                      // pricePerUnit: pricePerUnit ?? sql`${prices.pricePerUnit}`,
-                      historyJson,
-                      lastUpdated: now,
-                    },
-                  }),
-              );
-            }
+                  },
+                }),
+            );
           }
 
           if (sqlQueries.length > 0 && !isDryRun) {

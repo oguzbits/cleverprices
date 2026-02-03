@@ -1,10 +1,10 @@
 ---
 name: drizzle-orm
 description: >
-  Drizzle ORM patterns for SQLite with Turso/LibSQL.
+  Drizzle ORM patterns for local SQLite combined with Redis caching.
   TRIGGERS: Any database query, schema change, or data sync operation.
-  CRITICAL: This project uses Turso with strict read/write quotas.
-version: "2.0.0"
+  CRITICAL: This project utilizes local-first SQLite as a persistent store and Redis as a memory-first read layer for high-speed delivery.
+version: "2.1.0"
 ---
 
 # Drizzle ORM Best Practices

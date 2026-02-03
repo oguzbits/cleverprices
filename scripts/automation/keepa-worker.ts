@@ -95,7 +95,7 @@ async function main() {
     }
 
     const now = Date.now();
-    const WORK_COOLDOWN = 10 * 60 * 1000; // Reduced to 10 minutes to safely align with 15m Dokploy schedule
+    const WORK_COOLDOWN = 5 * 60 * 1000; // Reduced to 5 minutes for tighter turnover
 
     let workPerformed = false;
 
@@ -114,10 +114,10 @@ async function main() {
       }
 
       // Dynamic Token Allocation
-      // We aim to use about 70-80% of our current burst capacity
-      // leaving room for multiple runs if refill is slow.
-      const priceLimit = Math.max(300, Math.min(tokensLeft - 200, 1000));
-      const enrichmentLimit = 200;
+      // For a 7k catalog, we can be much more aggressive.
+      // We aim to use most of our burst capacity for prices.
+      const priceLimit = Math.max(500, Math.min(tokensLeft - 100, 2000));
+      const enrichmentLimit = Math.min(tokensLeft - priceLimit, 200);
 
       const runCompliancePhase = async () => {
         console.log(
