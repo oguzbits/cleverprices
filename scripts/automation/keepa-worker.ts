@@ -28,8 +28,6 @@ async function main() {
   for (const arg of args) {
     if (arg === "--continuous" || arg === "-c") {
       isContinuous = true;
-    } else if (arg === "--no-sync") {
-      shouldSync = false;
     } else if (arg === "--silent" || arg === "-s") {
       silent = true;
     } else if (arg !== "-" && !arg.startsWith("--") && /^[a-z]{2}$/.test(arg)) {
@@ -129,7 +127,7 @@ async function main() {
           `bun run update-prices ${country} --stale --limit=${priceLimit}`,
           {
             stdio: "inherit",
-            env: { ...process.env, DB_LOCAL: shouldSync ? "0" : "1" },
+            env: { ...process.env, DB_LOCAL: "1" },
           },
         );
       };
@@ -144,7 +142,7 @@ async function main() {
               `bun run worker:enrich ${country} --limit=${enrichmentLimit}`,
               {
                 stdio: "inherit",
-                env: { ...process.env, DB_LOCAL: shouldSync ? "0" : "1" },
+                env: { ...process.env, DB_LOCAL: "1" },
               },
             );
           } catch (e) {
@@ -157,30 +155,10 @@ async function main() {
         }
       };
 
-      const runCloudSyncPhase = async () => {
-        console.log("\n☁️  Phase 3: Cloud Sync (Incremental)");
-        try {
-          // Use --delta for incremental sync
-          execSync(`bun run db:deploy --delta`, {
-            stdio: "inherit",
-          });
-          console.log("✅ Cloud sync successful.");
-        } catch (e) {
-          console.error("❌ Cloud sync failed:", e);
-        }
-      };
-
       // Execute phases
       try {
         await runCompliancePhase();
         await runEnrichmentPhase();
-        if (shouldSync) {
-          await runCloudSyncPhase();
-        } else {
-          console.log(
-            "\n⏭️  Skipping Phase 3: Cloud Sync (requested via --no-sync)",
-          );
-        }
 
         // Update Memory & Persist
         state.lastRun = Date.now();
