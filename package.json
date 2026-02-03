@@ -22,6 +22,7 @@
     "db:push-prod": "scp data/cleverprices.db root@46.225.72.57:/etc/dokploy/volumes/cleverprices/data/cleverprices.db",
     "db:checkpoint": "sqlite3 data/cleverprices.db 'PRAGMA wal_checkpoint(TRUNCATE);'",
     "db:backup": "node scripts/backup-db.mjs",
+    "db:backup-prod": "/usr/local/bin/node /app/scripts/backup-db.mjs > /app/data/backup.log 2>&1",
     "docker:build": "docker build -t cleverprices .",
     "import": "bun run scripts/import/import-from-csv.ts",
     "db:deploy": "bun run scripts/database/deploy-data.ts",
