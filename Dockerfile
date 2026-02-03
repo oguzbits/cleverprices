@@ -21,12 +21,13 @@ RUN bun run build
 
 # Stage 4: Runner (Standard Node for maximum stability)
 FROM node:20-alpine AS runner
+# Copy bun from official image to a global path
+COPY --from=oven/bun:1-alpine /usr/local/bin/bun /usr/local/bin/bun
 WORKDIR /app
 
-# Install Bun and other runtime dependencies
+# Install runtime dependencies
 RUN apk add --no-cache ca-certificates sqlite wget libc6-compat nodejs npm
-RUN curl -fsSL https://bun.sh/install | bash
-ENV PATH="/root/.bun/bin:$PATH"
+RUN chmod +x /usr/local/bin/bun
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
