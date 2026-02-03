@@ -61,10 +61,9 @@ function getDatabaseUrl(): string {
 function createDbClient(): Client {
   const url = getDatabaseUrl();
   const isRemote = url.startsWith("libsql://") || url.startsWith("https://");
+  let client: Client;
 
   // 1. ADVANCED: Autonomous Hybrid Mode (Embedded Replica)
-  // Activated only when DB_SYNC=1 is set.
-  // Uses bundled lite.db as base, syncs to /tmp, and reads are free/instant.
   if (
     isProductionEnvironment &&
     process.env.DB_SYNC === "1" &&
@@ -78,7 +77,6 @@ function createDbClient(): Client {
     const dbPath = path.join(process.cwd(), "data", "cleverprices.db");
     const replicaPath = path.join("/tmp", "cleverprices-replica.db");
 
-    // Copy base if it doesn't exist in tmp to avoid full sync
     if (!fs.existsSync(replicaPath) && fs.existsSync(dbPath)) {
       try {
         fs.copyFileSync(dbPath, replicaPath);
@@ -91,35 +89,36 @@ function createDbClient(): Client {
       }
     }
 
-    return createClient({
+    client = createClient({
       url: `file:${replicaPath}`,
       syncUrl: process.env.TURSO_DATABASE_URL,
       authToken: process.env.TURSO_AUTH_TOKEN,
     });
   }
-
   // 2. Production with local file: Use the persistent volume SQLite
-  if (isProductionEnvironment && url.startsWith("file:")) {
+  else if (isProductionEnvironment && url.startsWith("file:")) {
     console.log("[DB] Using persistent volume database: cleverprices.db");
-    return createClient({ url });
+    client = createClient({ url });
   }
-
   // 3. Remote connection to Turso (Cloud)
-  // Enabled if URL is remote OR explicitly requested via TURSO_AUTH_TOKEN with non-file URL
-  if (isRemote || (process.env.TURSO_AUTH_TOKEN && !url.startsWith("file:"))) {
+  else if (
+    isRemote ||
+    (process.env.TURSO_AUTH_TOKEN && !url.startsWith("file:"))
+  ) {
     if (!process.env.TURSO_AUTH_TOKEN) {
       throw new Error("TURSO_AUTH_TOKEN is required for remote connection");
     }
-    console.log("[DB] Connecting to Turso Cloud:", url.split("@")[0]); // Log URL without token
-    return createClient({
+    console.log("[DB] Connecting to Turso Cloud:", url.split("@")[0]);
+    client = createClient({
       url,
       authToken: process.env.TURSO_AUTH_TOKEN,
     });
   }
-
-  // 4. Local development & Production-File: Plain local SQLite
-  console.log("[DB] Using local SQLite:", url);
-  const client = createClient({ url });
+  // 4. Local development Fallback
+  else {
+    console.log("[DB] Using local SQLite:", url);
+    client = createClient({ url });
+  }
 
   // 🚀 PERFORMANCE BOOSTERS (In-Memory Speed)
   // For local files, we force SQLite to cache as much as possible in RAM.
@@ -127,18 +126,9 @@ function createDbClient(): Client {
     try {
       // Shared Boosters
       client.execute("PRAGMA busy_timeout = 5000").catch(() => {});
-
-      // CACHE: Use -200000 kb = ~200MB of RAM for page cache
-      // This is safe within our 2.5GB container limit
       client.execute("PRAGMA cache_size = -200000").catch(() => {});
-
-      // WAL mode is safe and highly recommended for persistent local disk (Hetzner/Docker)
-      // It allows concurrent reads and writes without locking.
       client.execute("PRAGMA journal_mode = WAL").catch(() => {});
       client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
-
-      // MMAP: Map 256MB of the DB file into RAM
-      // This covers the current 37MB DB + significant growth
       client.execute("PRAGMA mmap_size = 268435456").catch(() => {});
     } catch (e) {
       console.warn(
