@@ -59,5 +59,6 @@ new Upload({
 "
 
 echo "🧹 Cleaning up..."
+docker exec "$CONTAINER_ID" rm "/tmp/backup.db.gz"
 rm "$BACKUP_FILE"
 echo "✅ Backup sequence complete!"

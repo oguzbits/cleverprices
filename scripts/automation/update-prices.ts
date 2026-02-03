@@ -52,7 +52,9 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
   const isStaleOnly = process.argv.includes("--stale");
   const staleThresholdHours = 4; // Tightened from 11h for faster turnover
-  const staleThreshold = new Date(Date.now() - staleThresholdHours * 60 * 60 * 1000);
+  const staleThreshold = new Date(
+    Date.now() - staleThresholdHours * 60 * 60 * 1000,
+  );
 
   // Robust argument parsing for --limit
   const limitArgIndex = process.argv.findIndex((a) => a.startsWith("--limit"));
@@ -111,7 +113,6 @@ async function updatePrices(country: CountryCode): Promise<void> {
       and(eq(prices.productId, products.id), eq(prices.country, country)),
     )
     .where(
-    .where(
       or(isNull(prices.lastUpdated), lt(prices.lastUpdated, staleThreshold)),
     );
 
@@ -141,7 +142,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
   // Check tokens
   const status = await getTokenStatus();
-  // We respect the limit passed from the caller (keepa-worker), 
+  // We respect the limit passed from the caller (keepa-worker),
   // but we no longer sub-reserve tokens here as it causes double-throttling.
   const maxProductsToFetch = Math.min(asins.length, status.tokensLeft - 50); // Keep small safety buffer
 
@@ -335,7 +336,6 @@ async function updatePrices(country: CountryCode): Promise<void> {
   console.log(`✅ Updated: ${updated}`);
   console.log(`❌ Failed:  ${failed}`);
   console.log(`------------------------------`);
-
   if (process.env.WARM_CACHE === "true" && !isDryRun) {
     try {
       console.log("\n🔥 Triggering Cache Warmer...");
@@ -344,6 +344,18 @@ async function updatePrices(country: CountryCode): Promise<void> {
       console.error(
         "\n   ❌ Cache warming failed:",
         err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  // 🏁 Force Checkpoint: Truncate the WAL file to reclaim disk space immediately
+  if (!isDryRun) {
+    try {
+      await db.run(sql`PRAGMA wal_checkpoint(TRUNCATE);`);
+      console.log("💾 Database checkpoint complete (WAL truncated).");
+    } catch (err) {
+      console.warn(
+        "⚠️ Checkpoint failed (Database busy). Space will be reclaimed in the next pass.",
       );
     }
   }
