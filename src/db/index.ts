@@ -167,8 +167,11 @@ export const db: LibSQLDatabase<typeof schema> = drizzle(client, { schema });
 export const dbReady: Promise<void> = (async () => {
   try {
     const isSync = isProductionEnvironment && process.env.DB_SYNC === "1";
+    const isBuild =
+      process.env.NEXT_PHASE === "phase-production-build" ||
+      process.env.BUILD_PHASE === "1";
 
-    if (isSync) {
+    if (isSync && !isBuild) {
       console.log("[DB] Initializing autonomous sync (3000ms cutoff)...");
 
       // 🛡️ Web Vitals Guard:
@@ -181,6 +184,11 @@ export const dbReady: Promise<void> = (async () => {
       );
 
       await Promise.race([syncPromise, timeoutPromise]);
+    }
+
+    if (isBuild) {
+      console.log("[DB] Build phase detected. Skipping live diagnostics.");
+      return;
     }
 
     // Diagnostics in all environments (useful for Dokploy logs)

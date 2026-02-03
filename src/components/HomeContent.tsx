@@ -93,12 +93,15 @@ export default async function HomeContent({
   // SAFETY CHECK: If everything is empty, the database is likely in a bad state or still syncing.
   // We throw an error instead of returning empty lists to PREVENT caching this "broken" state.
   // Next.js will catch the error and won't cache the result, allowing a future request to succeed.
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build" || process.env.BUILD_PHASE === "1";
+  
   if (
     heroProducts.length === 0 &&
     bestsellers.length === 0 &&
     deals.length === 0 &&
     newArrivals.length === 0 &&
-    process.env.NODE_ENV === "production"
+    process.env.NODE_ENV === "production" &&
+    !isBuild
   ) {
     throw new Error(
       "Home page curated 0 products. Database might be empty or still syncing. Please reload in a few seconds.",
