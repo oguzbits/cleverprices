@@ -2,6 +2,7 @@ import { type Price as DbPrice, type Product as DbProduct } from "@/db/schema";
 import { parseHistoryBlob } from "../history-compression";
 import { getFamilyIdentity } from "../product-families";
 import { type LitePrice, type Product } from "../product-registry";
+import { type SiblingConsensus } from "./product-identity";
 import { calculateProductMetrics } from "./products";
 import { parseCapacityToGB, parseVariationAttributes } from "./variants";
 
@@ -30,6 +31,7 @@ export function mapDbProduct(
   pricesList: LitePrice[] | DbPrice[],
   siblings: any[] = [],
   stripHeavyData: boolean = false,
+  consensus?: SiblingConsensus,
 ): Product {
   const pricesObj: Record<string, number> = {};
   const pricesLastUpdatedObj: Record<string, string> = {};
@@ -223,17 +225,35 @@ export function mapDbProduct(
   };
 
   // Enforce canonical slug and standardized family title/subtitle using siblings consensus if available
-  const {
-    slug: canonicalSlug,
-    title: familyTitle,
-    variantSuffix,
-  } = getFamilyIdentity(item, siblings);
+  // If no siblings are provided (O(1) fetch), we trust the database slug/title as-is.
+  if (siblings && siblings.length > 0) {
+    const {
+      slug: canonicalSlug,
+      title: familyTitle,
+      variantSuffix,
+    } = getFamilyIdentity(item, siblings, consensus);
 
-  item.slug = canonicalSlug;
-  // User SSOT: Title must be the FULL descriptive title (Family + Variant)
-  // e.g. "Apple MacBook Air 13 M2" + "256GB Midnight"
-  item.title = variantSuffix ? `${familyTitle} ${variantSuffix}` : familyTitle;
-  item.subtitle = variantSuffix;
+    item.slug = canonicalSlug;
+    item.title = variantSuffix
+      ? `${familyTitle} ${variantSuffix}`
+      : familyTitle;
+    item.subtitle = variantSuffix;
+  } else {
+    // Standardize title/subtitle from internal data if possible.
+    // We MUST use getFamilyIdentity to get the canonical ID-prefixed slug
+    // to avoid infinite redirect loops in the page resolver.
+    const {
+      slug: canonicalSlug,
+      title: familyTitle,
+      variantSuffix,
+    } = getFamilyIdentity(item, [], consensus);
+
+    item.slug = canonicalSlug;
+    item.title = variantSuffix
+      ? `${familyTitle} ${variantSuffix}`
+      : familyTitle;
+    item.subtitle = variantSuffix;
+  }
 
   // Identity and titles are set. We strip huge blobs if requested to stay under cache limits.
   if (stripHeavyData) {

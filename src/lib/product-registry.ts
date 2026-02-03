@@ -25,6 +25,7 @@ import {
   CATEGORY_REVALIDATE_SECONDS,
   PRODUCT_REVALIDATE_SECONDS,
 } from "./site-config";
+import { calculateSiblingConsensus } from "./utils/product-identity";
 import { mapDbProduct } from "./utils/product-mapping";
 
 // Lightweight price columns - lean schema (Drizzle ORM skill: query-select-columns)
@@ -192,7 +193,7 @@ export type { LitePrice };
 // Re-export mapping logic for backward compatibility
 export { mapDbProduct, parseHistoryJson } from "./utils/product-mapping";
 
-export async function getProductById(
+export const getProductById = cache(async function getProductById(
   id: number,
   _country = "de", // Parameter kept for signature compatibility
 ): Promise<Product | undefined> {
@@ -209,31 +210,19 @@ export async function getProductById(
 
   if (!p) return undefined;
 
-  // Fetch all prices and siblings (for consensus identity resolution)
-  const [prs, siblings] = await Promise.all([
-    db.select().from(prices).where(eq(prices.productId, p.id)),
-    p.parentAsin
-      ? db
-          .select(liteProductColumns)
-          .from(products)
-          .where(eq(products.parentAsin, p.parentAsin))
-      : Promise.resolve([]),
-  ]);
+  // O(1) Fetch: Only fetch prices for the specific product.
+  // Sibling consensus is deferred to variant-specific pages or Hub fetches.
+  const prs = await db.select().from(prices).where(eq(prices.productId, p.id));
 
   // Use centralized mapping logic which correctly handles historyJson and identity
-  const product = mapDbProduct(
-    p as DbProduct,
-    prs as Price[],
-    siblings as any[],
-    false,
-  );
+  const product = mapDbProduct(p as DbProduct, prs as Price[], [], false);
 
   // Preserve the synthetic/offset ID if provided
   if (id >= 200000000) {
     return { ...product, id };
   }
   return product;
-}
+});
 
 /**
  * Get the stable canonical ID for a family (Smallest ID in the family).
@@ -552,7 +541,7 @@ export function extractAttributeGroups(
  * Get all variants for a product (products sharing the same parentAsin)
  * Returns products sorted by price (cheapest first)
  */
-export async function getProductVariants(
+export const getProductVariants = cache(async function getProductVariants(
   product: Product,
   countryCode: string = "de",
 ): Promise<Product[]> {
@@ -580,20 +569,18 @@ export async function getProductVariants(
     // We map directly.
 
     // First, gather all "siblings" for consensus logic (we need the full list of products)
-    // We can deduplicate by ID since the join is 1:1 per country (mostly)
-    // But safely, let's map.
     const siblings = rows.map((r) => r.product as DbProduct);
+    const consensus = calculateSiblingConsensus(siblings);
 
     return rows
       .map(({ product: p, price }) => {
-        // Construct array of prices expected by mapDbProduct
-        // If price is null (no price for this country), pass empty array.
         const priceArray = price ? [price] : [];
         return mapDbProduct(
           p as DbProduct,
           priceArray as any[],
           siblings,
           true,
+          consensus,
         );
       })
       .filter(
@@ -639,7 +626,7 @@ export async function getProductVariants(
   }
 
   return [];
-}
+});
 
 /**
  * Get all products in a family (sharing same parentAsin)
@@ -784,58 +771,56 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   )();
 });
 
-const fetchProductBySlug = async (
-  slug: string,
-  _includeHistory: boolean = false, // History now comes from historyJson in prices
-): Promise<Product | undefined> => {
-  await dbReady;
-  const getProductAndPrices = async (targetSlug: string) => {
-    const [p] = await db
-      .select()
-      .from(products)
-      .where(eq(products.slug, targetSlug))
-      .limit(1);
+const fetchProductBySlug = cache(
+  async (
+    slug: string,
+    _includeHistory: boolean = false, // History now comes from historyJson in prices
+  ): Promise<Product | undefined> => {
+    await dbReady;
+    const getProductAndPrices = async (targetSlug: string) => {
+      const [p] = await db
+        .select()
+        .from(products)
+        .where(eq(products.slug, targetSlug))
+        .limit(1);
 
-    if (!p) return undefined;
+      if (!p) return undefined;
 
-    const [prs, siblings] = await Promise.all([
-      db.select().from(prices).where(eq(prices.productId, p.id)),
-      p.parentAsin
-        ? db
-            .select(liteProductColumns)
-            .from(products)
-            .where(eq(products.parentAsin, p.parentAsin))
-        : Promise.resolve([]),
-    ]);
+      // O(1) Fetch: Only fetch prices for the specific product.
+      const prs = await db
+        .select()
+        .from(prices)
+        .where(eq(prices.productId, p.id));
 
-    return mapDbProduct(p as any, prs as any, siblings as any[]);
-  };
+      return mapDbProduct(p as any, prs as any, []);
+    };
 
-  // 1. Try ID-based match first (Robust path)
-  const idMatch = slug.match(/^(\d+)_-(.*)$/);
-  if (idMatch) {
-    const id = parseInt(idMatch[1]);
-    const p = await getProductById(id);
-    if (p) return p;
-  }
-
-  // 2. Try exact match (Legacy path)
-  let result = await getProductAndPrices(slug);
-
-  // If not found, try decoding the slug
-  if (!result) {
-    try {
-      const decoded = decodeURIComponent(slug);
-      if (decoded !== slug) {
-        result = await getProductAndPrices(decoded);
-      }
-    } catch (e) {
-      // Ignore decoding errors
+    // 1. Try ID-based match first (Robust path)
+    const idMatch = slug.match(/^(\d+)_-(.*)$/);
+    if (idMatch) {
+      const id = parseInt(idMatch[1]);
+      const p = await getProductById(id);
+      if (p) return p;
     }
-  }
 
-  return result;
-};
+    // 2. Try exact match (Legacy path)
+    let result = await getProductAndPrices(slug);
+
+    // If not found, try decoding the slug
+    if (!result) {
+      try {
+        const decoded = decodeURIComponent(slug);
+        if (decoded !== slug) {
+          result = await getProductAndPrices(decoded);
+        }
+      } catch (e) {
+        // Ignore decoding errors
+      }
+    }
+
+    return result;
+  },
+);
 
 // Note: getProductPriceHistory removed in lean schema.
 // Price history is now stored in prices.historyJson and parsed by mapDbProduct.

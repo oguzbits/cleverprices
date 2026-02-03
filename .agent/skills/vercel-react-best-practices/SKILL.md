@@ -93,7 +93,8 @@ export default async function ProductPage() {
 
 ### 3. Server-Side Performance (HIGH)
 
-- `server-cache-react` - Use React.cache() for per-request deduplication
+- `server-cache-react` - Use `react.cache()` for per-request deduplication of data fetching.
+- `server-deduplication` - Wrap shared logic (like `resolveProductFromRoute`) in `cache()` to prevent redundant metadata vs. page DB queries.
 
 ### 4. Resource-Aware Patterns (PROJECT-SPECIFIC)
 

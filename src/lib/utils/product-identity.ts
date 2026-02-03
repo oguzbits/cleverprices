@@ -40,6 +40,11 @@ function normalizeBrand(
   return brand;
 }
 
+export interface SiblingConsensus {
+  tokenCounts: Record<string, number>;
+  total: number;
+}
+
 export interface ProductIdentity {
   brand: string;
   model: string;
@@ -183,9 +188,29 @@ export const IDENTITY_CONFIG = {
   ],
 };
 
+/**
+ * SMART SIBLING CONSENSUS (DYNAMIC HUB RESOLUTION)
+ * Pre-calculates token frequencies across a family to identify variation-specific noise.
+ */
+export function calculateSiblingConsensus(siblings: any[]): SiblingConsensus {
+  const tokenCounts: Record<string, number> = {};
+  const total = siblings.length;
+
+  siblings.forEach((s) => {
+    const sTitle = (s.title || "").toLowerCase();
+    const tokens = new Set<string>(sTitle.split(/[^a-z0-9]+/));
+    tokens.forEach((t) => {
+      if (t.length > 1) tokenCounts[t] = (tokenCounts[t] || 0) + 1;
+    });
+  });
+
+  return { tokenCounts, total };
+}
+
 export function getProductIdentity(
   product: Partial<Product>,
   siblings: Partial<Product>[] = [],
+  consensus?: SiblingConsensus,
 ): ProductIdentity {
   const rawBrand = (product.brand || "").trim();
   const title = (product.title || "").trim();
@@ -425,17 +450,9 @@ export function getProductIdentity(
    * If a word appears in the current product but is MISSING in most siblings,
    * it's definitely a variation/noise and should be stripped from the model.
    */
-  if (siblings.length > 1) {
-    const tokenCounts: Record<string, number> = {};
-    const total = siblings.length;
-
-    siblings.forEach((s) => {
-      const sTitle = (s.title || "").toLowerCase();
-      const tokens = new Set(sTitle.split(/[^a-z0-9]+/));
-      tokens.forEach((t) => {
-        if (t.length > 1) tokenCounts[t] = (tokenCounts[t] || 0) + 1;
-      });
-    });
+  if (consensus || siblings.length > 1) {
+    const { tokenCounts, total } =
+      consensus || calculateSiblingConsensus(siblings);
 
     // Strategy: Any token in the CURRENT product that appears in less than 70%
     // of the family members is considered a variation-specific detail.

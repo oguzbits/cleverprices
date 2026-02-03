@@ -284,7 +284,9 @@ export async function getSimilarProducts(
 export async function getProductVariants(
   product: Product,
   countryCode: string = "de",
+  skipLiveMerge: boolean = false,
 ): Promise<Product[]> {
   const variants = await getCachedProductVariantsInternal(product, countryCode);
+  if (skipLiveMerge) return variants;
   return mergeLivePrices(variants, countryCode);
 }

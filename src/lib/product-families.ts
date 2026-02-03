@@ -1,5 +1,8 @@
 import type { Product } from "@/lib/product-registry";
-import { getProductIdentity } from "./utils/product-identity";
+import {
+  getProductIdentity,
+  type SiblingConsensus,
+} from "./utils/product-identity";
 
 /**
  * Single Source of Truth for "Which product represents the whole family?".
@@ -54,9 +57,10 @@ function normalizeAccents(s: string): string {
 export function getFamilyIdentity(
   representative: Product | Partial<Product>,
   allVariants: Product[] = [],
+  consensus?: SiblingConsensus,
 ): { slug: string; title: string; brand: string; variantSuffix: string } {
   // 1. Basic Identity (Contains normalized brand e.g. PlayStation -> Sony)
-  const identity = getProductIdentity(representative, allVariants);
+  const identity = getProductIdentity(representative, allVariants, consensus);
   const brand = identity.brand || "Generic";
   const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
@@ -115,7 +119,7 @@ export function getFamilyIdentity(
   // 6. ID-Based Prefixing
   // Format: [ID]_-text-slug
   let rawId = (syntheticId || representative.id || 0) % 100000000;
-  
+
   // Standardize to 9 digits:
   // Hubs: 900,000,000 + ID
   // Variants: 200,000,000 + ID

@@ -26,15 +26,15 @@ Documented performance targets and resource budgets for CleverPrices.
 
 ### Per-Operation Budget
 
-| Operation                      | Reads | Writes | Notes                        |
-| ------------------------------ | ----- | ------ | ---------------------------- |
-| `update-prices.ts` (per run)   | ~50K  | ~10K   | Value-diffing reduces writes |
-| `enrich-products.ts` (per run) | ~30K  | ~50K   | History inserts              |
-| `deploy-data.ts --delta`       | ~10K  | ~20K   | Incremental sync             |
-| `pull-data.ts`                 | ~2.5M | 0      | Full table pull (rare)       |
-| Homepage load                  | ~500  | 0      | Cached after first hit       |
-| Category page                  | ~1K   | 0      | Cached via ISR               |
-| Product page                   | ~100  | 0      | Cached via ISR               |
+| Operation                      | Reads | Writes | Notes                                  |
+| ------------------------------ | ----- | ------ | -------------------------------------- |
+| `update-prices.ts` (per run)   | ~50K  | ~10K   | Value-diffing reduces writes           |
+| `enrich-products.ts` (per run) | ~30K  | ~50K   | History inserts                        |
+| `deploy-data.ts --delta`       | ~10K  | ~20K   | Incremental sync                       |
+| `pull-data.ts`                 | ~2.5M | 0      | Full table pull (rare)                 |
+| Homepage load                  | ~500  | 0      | Cached after first hit                 |
+| Category page                  | ~1K   | 0      | Cached via ISR                         |
+| Product page                   | ~2-10 | 0      | O(1) indexed fetch + parallel variants |
 
 ### Monthly Projection
 
@@ -81,9 +81,9 @@ Documented performance targets and resource budgets for CleverPrices.
 
 ## Measurement Schedule
 
-| Metric           | Tool                  | Frequency                    |
-| ---------------- | --------------------- | ---------------------------- |
-| PageSpeed        | PageSpeed Insights    | Weekly                       |
-| Bundle Size      | @next/bundle-analyzer | Per deploy                   |
-| Turso Usage      | Turso Dashboard       | Daily (during quota concern) |
+| Metric             | Tool                  | Frequency                    |
+| ------------------ | --------------------- | ---------------------------- |
+| PageSpeed          | PageSpeed Insights    | Weekly                       |
+| Bundle Size        | @next/bundle-analyzer | Per deploy                   |
+| Turso Usage        | Turso Dashboard       | Daily (during quota concern) |
 | Dokploy Monitoring | Dokploy Dashboard     | Weekly                       |

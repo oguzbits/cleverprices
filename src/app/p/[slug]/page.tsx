@@ -16,11 +16,14 @@ import {
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { Metadata } from "next";
+import { cache } from "react";
 
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 
 // Universal Product Resolver (ID-based + Legacy Fallbacks)
-async function resolveProductFromRoute(slug: string) {
+const resolveProductFromRoute = cache(async function resolveProductFromRoute(
+  slug: string,
+) {
   // 1. New ID-Based Routing (e.g. 900123456_-apple-iphone)
   const idMatch = slug.match(/^(\d+)_-(.*)$/);
   if (idMatch) {
@@ -142,9 +145,9 @@ async function resolveProductFromRoute(slug: string) {
   }
 
   return null;
-}
+});
 
-interface Props {
+export interface Props {
   params: Promise<{
     slug: string;
   }>;
@@ -388,7 +391,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
       const [representative, allVariants] = await Promise.all([
         getProductById(canonicalRealId),
-        getProductVariants(product, countryCode),
+        getProductVariants(product, countryCode, true),
       ]);
 
       const familyIdentity = getFamilyIdentity(
@@ -400,7 +403,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       consensusHubFullModel = familyIdentity.title;
     } else {
       // We are ON the hub page. Still calculate consensus for the title consistency.
-      const allVariants = await getProductVariants(product, countryCode);
+      const allVariants = await getProductVariants(product, countryCode, true);
       const familyIdentity = getFamilyIdentity(product, allVariants);
       consensusHubTitle = familyIdentity.title;
       consensusHubFullModel = familyIdentity.title;
@@ -413,7 +416,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
       parentViewMode ||
       product.prices[countryCode] ||
       product.usedPrices?.[countryCode] ||
-      Object.values(product.prices).some((p) => p && p > 0) ||
+      Object.values(product.prices).some(
+        (p) => typeof p === "number" && p > 0,
+      ) ||
       (product.usedPrices &&
         Object.values(product.usedPrices).some((p) => p && p > 0));
     const hasMeaningfulTitle =

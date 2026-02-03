@@ -29,6 +29,7 @@ version: "2.0.0"
 | **Keyset Pagination**   | Large table iteration      | [Rule](rules/patterns-keyset-pagination.md) |
 | **Bounded Parallelism** | Batch operations           | [Rule](rules/patterns-batch.md)             |
 | **Value Diffing**       | Before any write           | [Rule](rules/patterns-resource-safety.md)   |
+| **O(1) Data Lookups**   | Single product pages       | [Rule](rules/patterns-product-identity.md)  |
 
 ---
 
