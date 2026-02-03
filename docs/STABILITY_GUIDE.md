@@ -51,11 +51,11 @@ For maximum query speed on the bundled Lite DB, CleverPrices uses several optimi
 
 These are configured in `src/db/index.ts`:
 
-| PRAGMA         | Value           | Benefit                                   |
-| :------------- | :-------------- | :---------------------------------------- |
-| `cache_size`   | `-20000` (20MB) | Fits entire 11MB DB in RAM                |
-| `mmap_size`    | `20000000`      | Memory-maps the file for OS-level caching |
-| `busy_timeout` | `5000`          | Prevents lock errors on concurrent access |
+| PRAGMA         | Value             | Benefit                                     |
+| :------------- | :---------------- | :------------------------------------------ |
+| `cache_size`   | `-200000` (200MB) | Huge buffer for repeat reads                |
+| `mmap_size`    | `268435456`       | Entire 40MB DB fits in Memory Map (No disk) |
+| `busy_timeout` | `5000`            | Prevents lock errors on concurrent access   |
 
 ### 9.2 Index Strategy
 
