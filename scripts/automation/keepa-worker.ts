@@ -232,6 +232,8 @@ main().catch((err) => {
   // We can't access 'notify' here because it's local to main.
   // We will re-implement a simple silent check here or rely on the process.argv
 
+  const isSilent =
+    process.argv.includes("--silent") || process.argv.includes("-s");
   if (!isSilent) {
     console.error(`[Fatal Error] ${err}`);
   }
