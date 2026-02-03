@@ -1,169 +1,49 @@
-import { createClient } from "@libsql/client";
-import { Database } from "bun:sqlite";
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
 
 /**
  * CleverPrices "db:pull" script
- * downloads all data from the Turso Cloud database to the local SQLite file.
- * This keeps the local development environment in sync with the automated GitHub Action updates.
+ * Syncs the production database to local for development.
  */
-
 async function pullData() {
   const isForce = process.argv.includes("--force");
-  const isDryRun = process.argv.includes("--dry-run");
+  const PROD_IP = "46.225.72.57";
+  const PROD_PATH = "/etc/dokploy/volumes/cleverprices/data/cleverprices.db";
+  const LOCAL_PATH = "./data/cleverprices.db";
 
-  console.log("🚀 Starting data pull from Turso Cloud to Local SQLite...");
+  console.log("🚀 Starting data sync from Production to Local...");
 
-  if (isDryRun) {
-    console.log(
-      "🔍 DRY RUN MODE: No data will be written to the local database.",
-    );
-  } else if (!isForce) {
+  if (!isForce && fs.existsSync(LOCAL_PATH)) {
     console.error("❌ ERROR: Data pull will overwrite your local database.");
-    console.log("   Please use --force to confirm, or --dry-run to test.");
+    console.log("   Please use --force to confirm.");
     process.exit(1);
   }
 
-  const dbUrl =
-    process.env.TURSO_DATABASE_URL?.replace("libsql://", "https://") || "";
-  const dbAuthToken = process.env.TURSO_AUTH_TOKEN;
-
-  if (!dbUrl || !dbAuthToken) {
-    console.error("❌ Missing TURSO credentials in environment.");
-    process.exit(1);
-  }
-
-  const cloudClient = createClient({ url: dbUrl, authToken: dbAuthToken });
-
-  console.log("📂 Opening local database: ./data/cleverprices.db");
-  // Ensure directory exists
-  const localDb = new Database("./data/cleverprices.db", { create: true });
-
-  // 1. Pre-Flight Safety Check
-  console.log("📡 verifying cloud connection...");
   try {
-    await cloudClient.execute("SELECT 1");
-    console.log("✅ Cloud connection verified.");
-  } catch (e) {
-    console.error("❌ CRITICAL ERROR: Could not connect to Turso Cloud.");
-    console.error("   Aborting pull to protect local data.");
-    console.error("   Error:", e);
+    // Ensure data directory exists
+    const dataDir = path.dirname(LOCAL_PATH);
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+
+    console.log(`📦 Pulling ${PROD_PATH}...`);
+
+    // Check if we can reach the server first
+    execSync(`scp root@${PROD_IP}:${PROD_PATH} ${LOCAL_PATH}`, {
+      stdio: "inherit",
+    });
+
+    console.log("\n✅ Database synced successfully!");
+
+    // Show stats
+    const stats = fs.statSync(LOCAL_PATH);
+    const sizeMb = (stats.size / 1024 / 1024).toFixed(2);
+    console.log(`📊 Local Database Size: ${sizeMb} MB`);
+  } catch (err: any) {
+    console.error("\n❌ Sync failed:", err.message);
     process.exit(1);
   }
-
-  // 2. Prepare Local Schema (Simple approach: we assume schema matches)
-  // We disable foreign keys temporarily for faster bulk inserts
-  localDb.run("PRAGMA foreign_keys = OFF;");
-
-  const tables = ["products", "prices"];
-
-  for (const table of tables) {
-    console.log(`\n📦 Processing table: ${table}...`);
-
-    // Clear local table
-    if (!isDryRun) {
-      localDb.run(`DELETE FROM ${table}`);
-    } else {
-      console.log(`   [DRY RUN] Would delete local rows in ${table}`);
-    }
-
-    // Get local columns to avoid "column doesn't exist" errors
-    const localInfo = localDb
-      .prepare(`PRAGMA table_info(${table})`)
-      .all() as any[];
-    const localCols = localInfo.map((c) => c.name.toLowerCase());
-
-    // Fetch from cloud in batches using Keyset Pagination (Seek Method)
-    // This prevents N^2 reads caused by OFFSET on large tables (like price_history with 900k+ rows)
-    let lastId = 0;
-    const limit = 1000;
-    let hasMore = true;
-    let totalPulled = 0;
-
-    while (hasMore) {
-      const result = await cloudClient.execute({
-        sql: `SELECT * FROM ${table} WHERE id > ? ORDER BY id ASC LIMIT ?`,
-        args: [lastId, limit],
-      });
-
-      if (result.rows.length === 0) {
-        hasMore = false;
-        break;
-      }
-
-      // Intersection of columns: only pull what exists locally
-      const cloudCols = result.columns;
-      const localColsSet = new Set(
-        localCols.map((c) => c.trim().toLowerCase()),
-      );
-
-      const validCols = cloudCols.filter((col) =>
-        localColsSet.has(col.trim().toLowerCase()),
-      );
-
-      if (totalPulled === 0) {
-        console.log(`🔍 Table ${table}:`);
-        console.log(`   - Local columns: ${localCols.length}`);
-        console.log(`   - Cloud columns: ${cloudCols.length}`);
-        console.log(`   - Valid (intersection): ${validCols.join(", ")}`);
-      }
-
-      const placeholders = validCols.map(() => "?").join(",");
-      const insertStmt = localDb.prepare(
-        `INSERT OR REPLACE INTO ${table} (${validCols.join(",")}) VALUES (${placeholders})`,
-      );
-
-      if (!isDryRun) {
-        localDb.transaction(() => {
-          for (const row of result.rows) {
-            try {
-              // Basic sanity check: if the table expects product_id, ensure we have it
-              if (localColsSet.has("product_id") && !row["product_id"]) {
-                // Only skip if it's actually missing from the source data
-                continue;
-              }
-
-              const values = validCols.map((col) => row[col]);
-              // @ts-ignore - Row data types from libsql are compatible with bun:sqlite
-              insertStmt.run(...(values as any[]));
-            } catch (e: any) {
-              console.error(`❌ Insert failed for row:`, JSON.stringify(row));
-              console.error(`Valid columns:`, validCols);
-              throw e; // Re-throw to abort transaction and script
-            }
-          }
-        })();
-      } else {
-        console.log(
-          `   [DRY RUN] Would pull ${result.rows.length} rows into local DB.`,
-        );
-      }
-
-      totalPulled += result.rows.length;
-      console.log(`   Fetched ${totalPulled} rows...`);
-
-      // Update lastId for the next batch
-      const lastRow = result.rows[result.rows.length - 1];
-      if (lastRow && typeof lastRow.id === "number") {
-        lastId = lastRow.id;
-      } else if (lastRow && typeof lastRow.id === "bigint") {
-        lastId = Number(lastRow.id);
-      }
-
-      if (result.rows.length < limit) {
-        hasMore = false;
-      }
-    }
-    console.log(`✅ Finished ${table}: ${totalPulled} rows restored locally.`);
-  }
-
-  localDb.run("PRAGMA foreign_keys = ON;");
-  localDb.close();
-
-  console.log("\n🏁 Data pull completed successfully!");
-  process.exit(0);
 }
 
-pullData().catch((err) => {
-  console.error("❌ Pull failed:", err);
-  process.exit(1);
-});
+pullData();

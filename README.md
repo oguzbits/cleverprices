@@ -32,6 +32,9 @@ To run maintenance tasks manually:
 # Update prices (Hourly batch)
 bun run update-prices
 
+# Push local data to production (Safe Hot-Swap)
+bun run db:push-prod
+
 # Sync production data to local for debugging
 bun run db:pull-prod
 
