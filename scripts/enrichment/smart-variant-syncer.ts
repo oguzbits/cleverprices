@@ -134,7 +134,31 @@ function titlesAreCompatible(titleA: string, titleB: string): boolean {
   for (const marker of markers) {
     const hasA = wordsA.includes(marker);
     const hasB = wordsB.includes(marker);
-    if (hasA !== hasB) return false; // One is 'Pro', other is not -> Incompatible
+    if (hasA !== hasB) return false;
+  }
+
+  // 1. Dynamic Alphanumeric Differentiators (e.g. 9a vs 9, 6s vs 6)
+  const getDifferentiators = (words: string[]) =>
+    words.filter((w) => /^\d+[a-z]{1,2}$/i.test(w));
+  const diffsA = getDifferentiators(wordsA);
+  const diffsB = getDifferentiators(wordsB);
+
+  // If one title has "9a" but the other doesn't, they are incompatible
+  for (const d of [...new Set([...diffsA, ...diffsB])]) {
+    const hasA = diffsA.includes(d);
+    const hasB = diffsB.includes(d);
+    if (hasA !== hasB) return false;
+  }
+
+  // 2. Numeric Version Check
+  const getVersions = (words: string[]) => words.filter((w) => /^\d+$/.test(w));
+  const versionsA = getVersions(wordsA);
+  const versionsB = getVersions(wordsB);
+
+  // If both have numbers but they don't share any, they are likely different generations
+  if (versionsA.length > 0 && versionsB.length > 0) {
+    const hasOverlap = versionsA.some((v) => versionsB.includes(v));
+    if (!hasOverlap) return false;
   }
 
   // Check shared core model (usually first 2-3 words)

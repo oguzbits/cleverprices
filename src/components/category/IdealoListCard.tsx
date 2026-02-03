@@ -113,7 +113,9 @@ export function IdealoListCard({
                     "mb-1 text-[14px] leading-[18px] font-bold text-[#2d2d2d]",
                   )}
                 >
-                  {product.title}
+                  {product.subtitle
+                    ? product.title.replace(product.subtitle, "").trim()
+                    : product.title}
                   {product.subtitle && (
                     <span className="ml-1.5 font-bold">{product.subtitle}</span>
                   )}

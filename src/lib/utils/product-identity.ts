@@ -85,7 +85,7 @@ function normalizeAccents(s: string): string {
  * QA Helper: Verifies if a candidate model name from specifications is
  * safe to use as an override for the main product title.
  */
-function verifySpecModel(
+export function verifySpecModel(
   candidate: string,
   originalTitle: string,
   brand: string,
@@ -118,17 +118,47 @@ function verifySpecModel(
   const candTokens = candLower
     .replace(brandLower, "")
     .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 1);
+    .filter((t) => t.length > 1 || /^\d+$/.test(t)); // Allow single-digit version numbers
   const titleTokens = titleLower
     .replace(brandLower, "")
     .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 1);
+    .filter((t) => t.length > 1 || /^\d+$/.test(t));
 
   const intersection = candTokens.filter((t) => titleTokens.includes(t));
 
   // Requirement: At least one substantial token or two short tokens must overlap
   const hasStrongOverlap =
     intersection.some((t) => t.length > 3) || intersection.length >= 2;
+
+  // 3. Contradiction Check: If candidate is a subset of title, but title has a more specific differentiator
+  // (e.g. title has "9a" but candidate has "9", or title has "Pro" but candidate doesn't)
+
+  // A. Dynamic Alphanumeric Differentiators (9a, 6s, Ti, XT, etc.)
+  const getDifferentiators = (tokens: string[]) =>
+    tokens.filter((t) => /^\d+[a-z]{1,2}$/i.test(t));
+  const diffsTitle = getDifferentiators(titleTokens);
+  const diffsCand = getDifferentiators(candTokens);
+
+  for (const d of diffsTitle) {
+    if (!diffsCand.includes(d)) {
+      // Title has a specific differentiator (e.g. 9a) that candidate is missing.
+      // If candidate has the base model (e.g. 9), it's a contradiction.
+      const base = d.replace(/[a-z]+$/i, "");
+      if (candTokens.includes(base)) return false;
+    }
+  }
+
+  // B. Numeric Version mismatch (e.g. Title says 15, Candidate says 14)
+  const getVersions = (tokens: string[]) =>
+    tokens.filter((t) => /^\d+$/.test(t));
+  const versionsTitle = getVersions(titleTokens);
+  const versionsCand = getVersions(candTokens);
+
+  // If both have numbers, they must share the core version
+  if (versionsTitle.length > 0 && versionsCand.length > 0) {
+    const hasOverlap = versionsTitle.some((v) => versionsCand.includes(v));
+    if (!hasOverlap) return false;
+  }
 
   // Special exception: If candidate is just a more specific version of a short title
   const isSuperSet =

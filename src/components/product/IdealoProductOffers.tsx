@@ -218,7 +218,10 @@ export async function IdealoProductOffers({
                   rel="noopener nofollow"
                   className="text-[12px] font-bold text-[#2d2d2d] underline decoration-[#dcdcdc] hover:no-underline"
                 >
-                  {offer.product?.title || product.title}
+                  {offer.product?.rawTitle ||
+                    offer.product?.title ||
+                    product.rawTitle ||
+                    product.title}
                 </a>
               </div>
 
@@ -230,7 +233,10 @@ export async function IdealoProductOffers({
                   rel="noopener nofollow"
                   className="line-clamp-4 block max-h-[4.8em] overflow-hidden text-[11px] leading-normal font-bold text-ellipsis text-[#2d2d2d] underline decoration-[#dcdcdc] transition-colors hover:no-underline min-[840px]:text-[12px]"
                 >
-                  {offer.product?.title || product.title}
+                  {offer.product?.rawTitle ||
+                    offer.product?.title ||
+                    product.rawTitle ||
+                    product.title}
                 </a>
               </div>
 

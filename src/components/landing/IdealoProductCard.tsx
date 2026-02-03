@@ -49,12 +49,7 @@ export function IdealoProductCard({
   countryCode = "de",
   priorityLoad = false,
 }: IdealoProductCardProps) {
-  // Robust slug check: If it already has the ID prefix (e.g. 200000000_-), use it as is.
-  const isFinalSlug = /^[29]\d+_-/.test(slug);
-  const href = isFinalSlug
-    ? `/p/${slug}`
-    : `/p/${(isVariantGroup ? 900000000 : 200000000) + (id || 0)}_-${slug.replace(/^[29]\d+_-/, "")}`;
-
+  const href = `/p/${slug.includes("_-") ? slug : `${(isVariantGroup ? 900000000 : 200000000) + (id || 0)}_-${slug}`}`;
   return (
     <div className="group border-idealo-border relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border bg-white transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[224px]">
       <PrefetchLink

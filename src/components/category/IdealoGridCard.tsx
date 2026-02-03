@@ -130,7 +130,9 @@ export function IdealoGridCard({
                     "mb-1 line-clamp-3 text-[14px] leading-[18px] font-bold hyphens-auto text-[#2d2d2d]",
                   )}
                 >
-                  {product.title}
+                  {product.subtitle
+                    ? product.title.replace(product.subtitle, "").trim()
+                    : product.title}
                   {product.subtitle && (
                     <span className="ml-1.5 font-bold">{product.subtitle}</span>
                   )}

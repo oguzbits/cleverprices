@@ -176,6 +176,7 @@ export function mapDbProduct(
     slug: p.slug,
     asin: p.asin,
     title: p.title,
+    rawTitle: p.title,
     category: p.category,
     image: p.imageUrl || "",
     affiliateUrl: stripHeavyData
@@ -234,9 +235,10 @@ export function mapDbProduct(
     } = getFamilyIdentity(item, siblings, consensus);
 
     item.slug = canonicalSlug;
-    item.title = variantSuffix
-      ? `${familyTitle} ${variantSuffix}`
-      : familyTitle;
+    item.title =
+      variantSuffix && !familyTitle.includes(variantSuffix)
+        ? `${familyTitle} ${variantSuffix}`
+        : familyTitle;
     item.subtitle = variantSuffix;
   } else {
     // Standardize title/subtitle from internal data if possible.
@@ -249,9 +251,10 @@ export function mapDbProduct(
     } = getFamilyIdentity(item, [], consensus);
 
     item.slug = canonicalSlug;
-    item.title = variantSuffix
-      ? `${familyTitle} ${variantSuffix}`
-      : familyTitle;
+    item.title =
+      variantSuffix && !familyTitle.includes(variantSuffix)
+        ? `${familyTitle} ${variantSuffix}`
+        : familyTitle;
     item.subtitle = variantSuffix;
   }
 

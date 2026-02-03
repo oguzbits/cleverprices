@@ -109,6 +109,7 @@ export interface Product {
   slug: string;
   asin: string;
   title: string;
+  rawTitle?: string;
   subtitle?: string;
   category: string;
   image?: string;
