@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
-const STATE_FILE = join(process.cwd(), "logs/worker-state.json");
+const STATE_FILE = join(process.cwd(), "data/worker-state.json");
 
 export interface WorkerState {
   lastRun: number;

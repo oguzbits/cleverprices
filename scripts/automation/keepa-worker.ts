@@ -39,17 +39,7 @@ async function main() {
 
   const notify = (message: string) => {
     if (silent) return;
-    try {
-      const safeMessage = message.replace(/"/g, '\\"');
-      // Synchronous execution ensures it finishes before we exit.
-      // Using timeout to prevent hanging if osascript stalls.
-      execSync(
-        `osascript -e 'display notification "${safeMessage}" with title "CleverPrices Worker" sound name "Glass"'`,
-        { stdio: "ignore", timeout: 1000 },
-      );
-    } catch (e) {
-      console.error("Notify failed:", e);
-    }
+    console.log(`[Notification] ${message}`);
   };
 
   // Graceful shutdown handlers
@@ -242,16 +232,8 @@ main().catch((err) => {
   // We can't access 'notify' here because it's local to main.
   // We will re-implement a simple silent check here or rely on the process.argv
 
-  const isSilent =
-    process.argv.includes("--silent") || process.argv.includes("-s");
   if (!isSilent) {
-    try {
-      const errorMessage = String(err).slice(0, 100).replace(/"/g, '\\"');
-      execSync(
-        `osascript -e 'display notification "Error: ${errorMessage}" with title "CleverPrices Worker Stopped" sound name "Glass"'`,
-        { stdio: "ignore" },
-      );
-    } catch (e) {}
+    console.error(`[Fatal Error] ${err}`);
   }
 
   process.exit(1);
