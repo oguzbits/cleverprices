@@ -36,9 +36,9 @@ export function saveWorkerState(state: Partial<WorkerState>) {
       ).toLocaleString();
     }
 
-    const logsDir = join(process.cwd(), "logs");
-    if (!existsSync(logsDir)) {
-      mkdirSync(logsDir, { recursive: true });
+    const stateDir = join(process.cwd(), "data");
+    if (!existsSync(stateDir)) {
+      mkdirSync(stateDir, { recursive: true });
     }
 
     writeFileSync(STATE_FILE, JSON.stringify(newState, null, 2));
