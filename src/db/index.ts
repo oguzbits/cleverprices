@@ -98,9 +98,9 @@ function createDbClient(): Client {
     });
   }
 
-  // 2. Production with bundled file: Use plain local SQLite (READ-ONLY)
+  // 2. Production with local file: Use the persistent volume SQLite
   if (isProductionEnvironment && url.startsWith("file:")) {
-    console.log("[DB] Using bundled LITE database (quota-safe)");
+    console.log("[DB] Using persistent volume database: cleverprices.db");
     return createClient({ url });
   }
 
