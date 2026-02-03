@@ -4,7 +4,6 @@ WORKDIR /app
 
 # Stage 2: Deps
 FROM base AS deps
-# Install libc6-compat for some native addons if needed
 RUN apk add --no-cache libc6-compat
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
@@ -14,20 +13,16 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Set environment for build
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
-
-# 1. Build Next.js
 RUN bun run build
 
-# Stage 4: Runner
-FROM base AS runner
+# Stage 4: Runner (Standard Node for maximum stability)
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install runtime dependencies
-RUN apk add --no-cache ca-certificates sqlite wget libc6-compat nodejs npm
+# Install native tools needed for DB and backups
+RUN apk add --no-cache ca-certificates sqlite wget libc6-compat
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -38,30 +33,22 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-# Ensure data directory exists for volumes
+# Ensure data directory exists
 RUN mkdir -p data && chown nextjs:nodejs data
 
-# Copy public assets
-COPY --from=builder /app/public ./public
-
-# Copy dependencies and source for scripts
+# 1. Copy full node_modules and src for secondary scripts (Workers/Backups)
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/src ./src
-
-# Copy the standalone build
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Copy automation scripts for workers and backups
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 
+# 2. Copy the Next.js website build
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
 USER nextjs
-
 EXPOSE 3000
 
-ENV CACHE_BUST=1
-
-
-# Direct startup for maximum stability
+# Website entry point
 CMD ["node", "server.js"]
