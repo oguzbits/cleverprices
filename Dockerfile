@@ -21,8 +21,10 @@ RUN bun run build
 FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install native tools needed for DB and backups
-RUN apk add --no-cache ca-certificates sqlite wget libc6-compat
+# Install Bun and other runtime dependencies
+RUN apk add --no-cache ca-certificates sqlite wget libc6-compat nodejs npm
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
