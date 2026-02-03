@@ -54,9 +54,10 @@ You can run these components manually via Dokploy or SSH.
 ```bash
 # Full worker cycle (Prices + Enrichment + Cache)
 bun /app/scripts/automation/keepa-worker.ts de
-```
 
----
+# Manual Database Backup to R2
+bun /app/scripts/automation/backup-r2.ts
+```
 
 ## 🛡️ Resilience Features
 
