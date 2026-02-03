@@ -95,7 +95,7 @@ async function main() {
     }
 
     const now = Date.now();
-    const WORK_COOLDOWN = 15 * 60 * 1000; // Reduced to 15 minutes to increase throughput
+    const WORK_COOLDOWN = 10 * 60 * 1000; // Reduced to 10 minutes to safely align with 15m Dokploy schedule
 
     let workPerformed = false;
 

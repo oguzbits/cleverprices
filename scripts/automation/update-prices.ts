@@ -101,9 +101,43 @@ async function updatePrices(country: CountryCode): Promise<void> {
     return;
   }
 
+  // ℹ️ Informational: Total Stale Queue Size
+  const totalStaleCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(products)
+    .leftJoin(
+      prices,
+      and(eq(prices.productId, products.id), eq(prices.country, country)),
+    )
+    .where(
+      or(isNull(prices.lastUpdated), lt(prices.lastUpdated, elevenHoursAgo)),
+    );
+
+  const remainingAfterBatch = Math.max(
+    0,
+    (totalStaleCount[0]?.count || 0) - targetProducts.length,
+  );
+
+  // ℹ️ Informational: Total Stale Queue Size
+  const totalStaleCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(products)
+    .leftJoin(
+      prices,
+      and(eq(prices.productId, products.id), eq(prices.country, country)),
+    )
+    .where(
+      or(isNull(prices.lastUpdated), lt(prices.lastUpdated, elevenHoursAgo)),
+    );
+
+  const remainingAfterBatch = Math.max(
+    0,
+    (totalStaleCount[0]?.count || 0) - targetProducts.length,
+  );
+
   const queryTime = ((performance.now() - queryStart) / 1000).toFixed(2);
   console.log(
-    `  Queue size: ${targetProducts.length} products (fetched in ${queryTime}s).`,
+    `  Queue size: ${targetProducts.length} products (fetched in ${queryTime}s). Total stale remaining: ${remainingAfterBatch}`,
   );
 
   const productMap = new Map(targetProducts.map((p) => [p.asin, p]));
