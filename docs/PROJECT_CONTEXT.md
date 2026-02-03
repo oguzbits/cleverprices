@@ -5,9 +5,9 @@
 - **Framework**: Next.js 16 (App Router) with React 19 Compiler.
 - **Styling**: Tailwind CSS 4 with `shadcn/ui` components.
 - **State**: URL-based state management via `nuqs`.
-- **Database**: Turso (SQLite) with Drizzle ORM.
-- **Data Source**: Keepa API (Primary) for automated price tracking.
-- **Performance**: Uses Next.js 16 `cacheComponents` ("use cache") and `experimental.optimizePackageImports`.
+- [x] **Database**: Local SQLite with Drizzle ORM.
+- [x] **Data Source**: Keepa API (Primary) for automated price tracking.
+- [x] **Performance**: Fully memory-mapped DB (256MB) + Next.js `cacheComponents`.
 
 ## 🚨 STRICT TECH CONSTRAINTS (DO NOT VIOLATE)
 
@@ -38,7 +38,7 @@
 
 ### 1. Data & Database Architecture
 
-- **Database**: SQLite (Turso) hosted at the edge.
+- **Database**: SQLite hosted locally on the server via Dokploy Persistent Volumes.
 - **Schema**:
   - `products`: Core product data (ASIN, GTIN, MPN, clean specs, timestamps).
   - `prices`: Current prices per country (Amazon, New, Used).
@@ -55,10 +55,9 @@
     - **eBay Browse API**: Secondary authority; uses GTIN and smart keyword matching.
     - **Raw Capture**: eBay results are stored as raw snapshots (`ebay_raw_data`) before mapping to ensure no data is lost during code updates.
     - **Smart Sinking**: Invariant specs (Brand, Model, CPU Family) are automatically propagated from "Lead" variants to all siblings via `scripts/enrichment/smart-variant-syncer.ts`.
-  - **Bulk Data Safety**: Implements manual chunking for large inserts to stay within SQLite/Turso parameter limits.
+  - **Bulk Data Safety**: Implements manual chunking for large inserts to stay within SQLite parameter limits.
   - **Cache Warming**: Automated warm-up of Next.js "use cache" layers after every sync.
-  - **Direct Cloud Access**: Scripts connect directly to Turso (Cloud) via `DATABASE_PATH` environment variable.
-  - **Reference**: See `.github/workflows/daily-maintenance.yml`.
+  - **Dokploy Persistence**: Uses a Docker volume mount at `/app/data` for the database.
 
 ### 1.1 Data Ingestion (Import Logic)
 

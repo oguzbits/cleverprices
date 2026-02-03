@@ -19,25 +19,16 @@ By default, modern SQLite uses **WAL (Write-Ahead Logging)** mode. This mode req
 
 ---
 
-## 6. Autonomous Architecture
+## 6. Local-First Architecture
 
-For maximum autonomy and performance, the project uses a streamlined data flow.
+CleverPrices uses a unified local-first architecture for maximum performance and low operational cost.
 
-### Tier 1: Hourly Cloud Update (`price-updater.yml`)
+### The Unified Database (`cleverprices.db`)
 
-- **Action**: A GitHub Action runs every hour, fetching Keepa prices and writing to the **Turso Cloud** (Source of Truth).
-- **Goal**: Keep the master database up-to-date with 100% hands-free automation.
-
-### Tier 2: Production Sync
-
-- **Action**: A `bun run db:push-prod` command uploads the local `cleverprices.db` to the server's persistent volume.
-- **Goal**: Keep the production server synchronized with the master data.
-
-### Quota Economics
-
-- **Writes**: Hourly writes to Turso Cloud (within 10M free tier).
-- **Reads**: Production users read from the local file ($0).
-- **Blob Storage**: Free tier (100GB egress/month).
+- **Location**: Persistent Docker volume mounted at `/app/data/cleverprices.db`.
+- **Writes**: Performed by the **Maintenance Worker** (Dokploy Cron Task).
+- **Reads**: Performed by the **Next.js Web Server** ($0 cost, near-zero latency).
+- **Backups**: Periodically synced to Cloudflare R2.
 
 ---
 
