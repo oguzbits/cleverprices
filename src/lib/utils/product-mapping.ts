@@ -39,14 +39,19 @@ export function mapDbProduct(
   const listPriceObj: Record<string, number> = {};
   const unitPriceObj: Record<string, number> = {};
   const usedPricesObj: Record<string, number> = {};
+  const warehousePricesObj: Record<string, number> = {};
   let historyData: { date: string; price: number }[] = [];
 
   if (pricesList) {
     pricesList.forEach((pr) => {
       const price = pr.price && pr.price > 0 ? pr.price : null;
       const usedPrice = pr.usedPrice && pr.usedPrice > 0 ? pr.usedPrice : null;
+      const warehousePrice =
+        "warehousePrice" in pr && pr.warehousePrice && pr.warehousePrice > 0
+          ? pr.warehousePrice
+          : null;
 
-      if ((price || usedPrice) && pr.country) {
+      if ((price || usedPrice || warehousePrice) && pr.country) {
         if (price) {
           pricesObj[pr.country] = price;
           if (pr.lastUpdated) {
@@ -61,6 +66,9 @@ export function mapDbProduct(
 
         if (usedPrice) {
           usedPricesObj[pr.country] = usedPrice;
+        }
+        if (warehousePrice) {
+          warehousePricesObj[pr.country] = warehousePrice;
         }
 
         // Parse historyJson from first price record
@@ -219,6 +227,7 @@ export function mapDbProduct(
     listPrice: listPriceObj,
     pricesPerUnit: unitPriceObj,
     usedPrices: usedPricesObj,
+    warehousePrices: warehousePricesObj,
     createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
     releaseDate,
     specificationsSource: p.specificationsSource,

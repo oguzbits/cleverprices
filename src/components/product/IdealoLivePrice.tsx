@@ -2,6 +2,7 @@ import { LegalPrice } from "@/components/ui/LegalPrice";
 import type { CountryCode } from "@/lib/countries";
 import { getLivePriceForProduct } from "@/lib/server/live-data";
 import { cn } from "@/lib/utils";
+import { getBestPrice } from "@/lib/utils/price-selection";
 
 interface IdealoLivePriceProps {
   productId: number;
@@ -23,12 +24,18 @@ export async function IdealoLivePrice({
   className = "text-idealo-text-primary text-[15px] font-extrabold",
   showAb = false,
 }: IdealoLivePriceProps & { priceType?: "new" | "used" }) {
-  // Fetch fresh price from the 1-minute cached source
   const live = await getLivePriceForProduct(productId, countryCode);
-  const bestPrice =
-    priceType === "used"
-      ? (live?.usedPrice ?? initialPrice)
-      : (live?.price ?? initialPrice);
+
+  const p = live?.price || 0;
+  const up = live?.usedPrice || 0;
+  const wp = (live as any)?.warehousePrice || 0;
+
+  const bestPrice = getBestPrice({
+    price: live?.price,
+    usedPrice: live?.usedPrice,
+    warehousePrice: (live as any)?.warehousePrice,
+    initialPrice,
+  });
 
   if (!bestPrice || bestPrice <= 0) {
     return (

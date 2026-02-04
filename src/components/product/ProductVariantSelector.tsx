@@ -2,6 +2,7 @@
 
 import { getFamilyIdentity } from "@/lib/product-families";
 import { cn } from "@/lib/utils";
+import { getBestPrice } from "@/lib/utils/price-selection";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import {
   extractAttributeGroups,
@@ -25,6 +26,7 @@ interface Product {
   variationAttributes?: string;
   prices: Record<string, number>;
   usedPrices?: Record<string, number>;
+  warehousePrices?: Record<string, number>;
   brand: string;
   specifications?: Record<string, any>;
   officialSpecifications?: Record<string, any>;
@@ -82,13 +84,27 @@ function VariantCard({
   }, [variant, isAllVariants]);
 
   // Price Logic: Show Used price if condition is 'used', otherwise New price
-  const isUsedMode = selectedCondition === "used";
-  const isRenewed = variant?.condition?.toLowerCase() === "renewed";
-  const price = isAllVariants
-    ? bestPrice
-    : isUsedMode && !isRenewed
-      ? variant?.usedPrices?.[countryCode]
-      : variant?.prices[countryCode];
+  const isUsedMode =
+    selectedCondition === "used" || selectedCondition === "renewed";
+  const isRenewed = (variant?.condition || "").toLowerCase() === "renewed";
+
+  const price = useMemo(() => {
+    if (isAllVariants) return bestPrice;
+    if (!variant) return 0;
+
+    const p = variant.prices[countryCode] || 0;
+    const up = variant.usedPrices?.[countryCode] || 0;
+
+    if (isUsedMode) {
+      if (isRenewed) {
+        if (p > 0 && up > 0) return Math.min(p, up);
+        return p || up;
+      }
+      return up;
+    }
+    // New mode
+    return isRenewed ? 0 : p;
+  }, [isAllVariants, bestPrice, variant, isUsedMode, isRenewed, countryCode]);
 
   const slug = variant?.slug;
 
@@ -474,6 +490,24 @@ export function ProductVariantSelector({
       ? "used"
       : "new";
 
+  // Shared price selector logic for consistency across all component facets
+  const getEffectivePrice = (p: Product) => {
+    const pricesVal = p.prices[countryCode] || 0;
+    const usedPricesVal = p.usedPrices?.[countryCode] || 0;
+    const isRenewed = (p.condition || "").toLowerCase() === "renewed";
+
+    // Unified logic selection!
+    const bestOverall = getBestPrice({
+      price: p.prices[countryCode],
+      usedPrice: usedPricesVal,
+      warehousePrice: p.warehousePrices?.[countryCode],
+    });
+
+    if (targetCondition === "new") return isRenewed ? 0 : pricesVal;
+
+    return bestOverall;
+  };
+
   const variants = useMemo(() => {
     const rawFiltered = normalizedAllVariants.filter((v) => {
       // HUB MODE FIX: Always show all unique configurations in Parent View.
@@ -507,16 +541,6 @@ export function ProductVariantSelector({
       if (!existing) {
         uniqueMap.set(key, v);
       } else {
-        // Prioritize 'Main' price (Renewed) over Warehouse for the card display if both exist for same spec
-        const getEffectivePrice = (p: NormalizedProduct) => {
-          if (targetCondition === "new") return p.prices[countryCode];
-          // Used Mode logic: Prioritize Renewed price
-          const isRenewed = (p.condition || "").toLowerCase() === "renewed";
-          return isRenewed
-            ? p.prices[countryCode]
-            : p.usedPrices?.[countryCode];
-        };
-
         const priceV = getEffectivePrice(v) || 0;
         const priceE = getEffectivePrice(existing) || 0;
 
@@ -568,14 +592,7 @@ export function ProductVariantSelector({
     const images: (string | undefined)[] = [];
 
     variants.forEach((v) => {
-      // Use Main price logic for used mode
-      const isRenewed = (v.condition || "").toLowerCase() === "renewed";
-      const p =
-        targetCondition === "used"
-          ? isRenewed
-            ? v.prices[countryCode]
-            : v.usedPrices?.[countryCode]
-          : v.prices[countryCode];
+      const p = getEffectivePrice(v);
 
       if (p && p > 0 && (min === Infinity || p < min)) {
         min = p;

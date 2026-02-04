@@ -170,16 +170,34 @@ export function getLocalizedProductData(
 
   // Return null if prices object is missing or if the specific country price is null or undefined
   if (!p.prices || p.prices[code] === null || p.prices[code] === undefined) {
-    return { price: null, title: p.title, asin: p.asin };
+    return {
+      price: null,
+      usedPrice: null,
+      warehousePrice: null,
+      title: p.title,
+      asin: p.asin,
+      parentAsin: undefined,
+      lastUpdated: undefined,
+    };
   }
 
   const price = p.prices[code];
+  const usedPrice = p.usedPrices?.[code] || null;
+  const warehousePrice = p.warehousePrices?.[code] || null;
   const title = p.title;
   const asin = p.asin;
   const parentAsin = p.parentAsin;
   const lastUpdated = p.pricesLastUpdated?.[code];
 
-  return { price, title, asin, parentAsin, lastUpdated };
+  return {
+    price,
+    usedPrice,
+    warehousePrice,
+    title,
+    asin,
+    parentAsin,
+    lastUpdated,
+  };
 }
 
 /**

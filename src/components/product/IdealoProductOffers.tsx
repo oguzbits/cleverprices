@@ -157,10 +157,16 @@ export async function IdealoProductOffers({
 
         let shouldReplace = false;
         if (vIsRenewed && !eIsRenewed) {
-          if (vPrice < ePrice + 5) shouldReplace = true;
+          // New option is Professional (Renewed/New)
+          // Default to it if current is Warehouse/Marketplace
+          shouldReplace = true;
         } else if (!vIsRenewed && eIsRenewed) {
-          if (vPrice < ePrice - 5) shouldReplace = true;
+          // Current is Professional, New is Marketplace/Warehouse
+          // Replace only if much cheaper
+          const bias = item.type === "warehouse" ? 50 : 20;
+          if (vPrice < ePrice - bias) shouldReplace = true;
         } else {
+          // Same types, take the cheaper one
           if (vPrice < ePrice) shouldReplace = true;
         }
 

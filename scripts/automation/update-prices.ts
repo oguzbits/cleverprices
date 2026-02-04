@@ -234,6 +234,9 @@ async function updatePrices(country: CountryCode): Promise<void> {
             const usedPrice = keepaPriceToDecimal(
               currentPrices[KEEPA_PRICE_TYPES.USED],
             );
+            const warehousePrice = keepaPriceToDecimal(
+              currentPrices[KEEPA_PRICE_TYPES.WAREHOUSE],
+            );
             const listPrice = keepaPriceToDecimal(
               currentPrices[KEEPA_PRICE_TYPES.LIST],
             );
@@ -286,6 +289,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   country,
                   price: bestPrice,
                   usedPrice,
+                  warehousePrice,
                   listPrice,
                   priceAvg90,
                   // pricePerUnit, (Keeping empty for now)
@@ -299,6 +303,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   set: {
                     price: bestPrice,
                     usedPrice,
+                    warehousePrice:
+                      warehousePrice ?? sql`${prices.warehousePrice}`,
                     listPrice: listPrice ?? sql`${prices.listPrice}`,
                     priceAvg90: priceAvg90 ?? sql`${prices.priceAvg90}`,
                     // pricePerUnit: pricePerUnit ?? sql`${prices.pricePerUnit}`,

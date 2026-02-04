@@ -168,10 +168,9 @@ export async function ConditionButtons({
 
             if (itemIsRenewed) {
               if (currentIsWarehouse) {
-                // If current is Warehouse, switch to Renewed if it's within 5€ of the Warehouse price
-                if (item.price < usedOverallPrice + 5) {
-                  shouldSwitch = true;
-                }
+                // If current is Warehouse, switch to Renewed (Professional)
+                // Professionals are always preferred over volatile Warehouse deals unless the gap is huge.
+                shouldSwitch = true;
               } else {
                 // Both are Renewed, take the cheaper one
                 if (item.price < usedOverallPrice) {
@@ -185,8 +184,8 @@ export async function ConditionButtons({
                   shouldSwitch = true;
                 }
               } else {
-                // Current is Renewed, switch to Warehouse only if it's MORE than 5€ cheaper
-                if (item.price < usedOverallPrice - 5) {
+                // Current is Renewed (Professional), switch to Warehouse only if it's >50€ cheaper
+                if (item.price < usedOverallPrice - 50) {
                   shouldSwitch = true;
                 }
               }

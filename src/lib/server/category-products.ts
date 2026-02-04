@@ -6,11 +6,10 @@ import {
   normalizeBrand,
   sortProducts,
 } from "@/lib/utils/category-utils";
-import {
-  calculateSavings,
-  getLocalizedProductData,
-} from "@/lib/utils/products";
+import { getLocalizedProductData } from "@/lib/utils/products";
 import { cacheLife } from "next/cache";
+import { getBestPrice } from "../utils/price-selection";
+import { calculateSavings } from "../utils/products";
 import { getLivePricesForProducts } from "./live-data";
 import { calculateDesirabilityScore } from "./scoring";
 
@@ -21,6 +20,8 @@ export interface LocalizedProduct {
   title: string;
   subtitle?: string;
   price: number;
+  usedPrice?: number;
+  warehousePrice?: number;
   pricePerUnit: number;
   popularityScore: number;
   savings: number;
@@ -122,8 +123,15 @@ export async function getCachedLocalizedCategoryProducts(
 
   return rawProducts
     .map((p) => {
-      const { price, title, asin, parentAsin, lastUpdated } =
-        getLocalizedProductData(p, countryCode);
+      const {
+        price,
+        usedPrice,
+        warehousePrice,
+        title,
+        asin,
+        parentAsin,
+        lastUpdated,
+      } = getLocalizedProductData(p, countryCode);
       // Filter out products with no valid price - they shouldn't appear in listings
       if (!price || price <= 0) return null;
 
@@ -266,6 +274,8 @@ export async function getCachedLocalizedCategoryProducts(
         title,
         subtitle: p.subtitle,
         price: price || 0,
+        usedPrice: usedPrice || undefined,
+        warehousePrice: warehousePrice || undefined,
         pricePerUnit,
         popularityScore,
         category: p.category,
@@ -312,8 +322,12 @@ async function mergeLivePricesIntoLocalized(
     const live = priceMap.get(p.id);
     if (!live) return p;
 
-    // Price changed! Recalculate dependencies
-    const newPrice = live.price;
+    // Unified logic selection!
+    const newPrice = getBestPrice({
+      price: live.price,
+      usedPrice: live.usedPrice,
+      warehousePrice: live.warehousePrice,
+    });
     const refPrice = live.priceAvg90 || 0;
     const savings = calculateSavings(newPrice, refPrice);
     const listPrice = savings > 0 ? refPrice : undefined;
@@ -337,6 +351,8 @@ async function mergeLivePricesIntoLocalized(
     return {
       ...p,
       price: newPrice,
+      usedPrice: live.usedPrice || undefined,
+      warehousePrice: live.warehousePrice || undefined,
       pricePerUnit,
       popularityScore,
       savings,

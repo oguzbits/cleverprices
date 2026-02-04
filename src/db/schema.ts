@@ -128,8 +128,11 @@ export const prices = sqliteTable(
     // Consolidated price (the "clever" price shown to users)
     price: real("price"),
 
-    // Used price (kept separate for user choice)
+    // Used price (Marketplace)
     usedPrice: real("used_price"),
+
+    // Warehouse price (Amazon returns - Volatile)
+    warehousePrice: real("warehouse_price"),
 
     // List price (MSRP/RRP)
     listPrice: real("list_price"),

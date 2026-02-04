@@ -3,6 +3,7 @@ import { prices } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { litePriceColumns, type Product } from "../product-registry";
+import { getBestPrice } from "../utils/price-selection";
 import { calculateProductMetrics, calculateSavings } from "../utils/products";
 
 /**
@@ -35,11 +36,14 @@ export async function getLivePricesForProducts(
     // Lean schema: price is already the consolidated "clever" price
     const price = p.price && p.price > 0 ? p.price : null;
     const usedPrice = p.usedPrice && p.usedPrice > 0 ? p.usedPrice : null;
+    const warehousePrice =
+      p.warehousePrice && p.warehousePrice > 0 ? p.warehousePrice : null;
 
-    if (price || usedPrice) {
+    if (price || usedPrice || warehousePrice) {
       priceMap.set(p.productId, {
         price,
         usedPrice,
+        warehousePrice,
         lastUpdated: p.lastUpdated,
         priceAvg90: p.priceAvg90,
         listPrice: p.listPrice,
@@ -81,14 +85,41 @@ export async function mergeLivePrices(
     if (!p.id) return p;
     const live = priceMap.get(p.id);
     if (live) {
-      const newPrice = live.price;
+      // Unified logic selection!
+      const newPrice = getBestPrice({
+        price: live.price,
+        usedPrice: live.usedPrice,
+        warehousePrice: live.warehousePrice,
+      });
+      const newUsedPrice = live.usedPrice || 0;
+      const newWarehousePrice = live.warehousePrice || 0;
       const refPrice = live.priceAvg90 || 0;
       const savings = calculateSavings(newPrice, refPrice);
+
+      // Force "Renewed" condition if title implies it (Amazon compliance & Consistency)
+      let condition = p.condition;
+      const titleLower = (p.title || "").toLowerCase();
+      if (
+        titleLower.includes("(generalüberholt)") ||
+        titleLower.includes("generalüberholt") ||
+        titleLower.includes("erneuert") ||
+        titleLower.includes("renewed") ||
+        titleLower.includes("refurbished") ||
+        titleLower.includes("b-ware")
+      ) {
+        condition = "Renewed";
+      }
 
       // Create a copy to avoid mutating cached object
       const updated = {
         ...p,
+        condition,
         prices: { ...p.prices, [countryCode]: newPrice },
+        usedPrices: { ...p.usedPrices, [countryCode]: newUsedPrice },
+        warehousePrices: {
+          ...p.warehousePrices,
+          [countryCode]: newWarehousePrice,
+        },
         pricesLastUpdated: {
           ...p.pricesLastUpdated,
           [countryCode]: new Date(live.lastUpdated).toISOString(),

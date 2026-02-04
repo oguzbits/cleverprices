@@ -33,8 +33,9 @@ export const litePriceColumns = {
   id: prices.id,
   productId: prices.productId,
   country: prices.country,
-  price: prices.price, // Consolidated "clever" price
+  price: prices.price,
   usedPrice: prices.usedPrice,
+  warehousePrice: prices.warehousePrice,
   listPrice: prices.listPrice,
   priceAvg90: prices.priceAvg90,
   pricePerUnit: prices.pricePerUnit,
@@ -51,6 +52,7 @@ export const superLitePriceColumns = {
   country: prices.country,
   price: prices.price,
   usedPrice: prices.usedPrice,
+  warehousePrice: prices.warehousePrice,
   // listPrice: prices.listPrice, // Often unused in variant buttons
   // priceAvg90: prices.priceAvg90, // Unused in variant buttons? Keep if needed for "Good Price" badge
   // pricePerUnit: prices.pricePerUnit, // Unused in variant buttons
@@ -116,6 +118,7 @@ export interface Product {
   affiliateUrl: string;
   prices: Record<string, number>;
   usedPrices?: Record<string, number>;
+  warehousePrices?: Record<string, number>;
   /**
    * Last updated timestamp per country price (ISO string)
    * Essential for Amazon compliance
@@ -181,6 +184,7 @@ type LitePrice = Pick<
   | "country"
   | "price"
   | "usedPrice"
+  | "warehousePrice"
   | "listPrice"
   | "priceAvg90"
   | "pricePerUnit"
