@@ -85,16 +85,22 @@ export async function mergeLivePrices(
     if (!p.id) return p;
     const live = priceMap.get(p.id);
     if (live) {
-      // Unified logic selection!
-      const newPrice = getBestPrice({
+      // FIX: Do NOT overwrite the raw "New Price" with the "Smart Price".
+      // Keep them separate so the UI knows the difference.
+      const rawNewPrice = live.price || 0;
+
+      const smartPrice = getBestPrice({
         price: live.price,
         usedPrice: live.usedPrice,
         warehousePrice: live.warehousePrice,
       });
+
       const newUsedPrice = live.usedPrice || 0;
       const newWarehousePrice = live.warehousePrice || 0;
       const refPrice = live.priceAvg90 || 0;
-      const savings = calculateSavings(newPrice, refPrice);
+
+      // Savings should be based on the best available price (Smart) vs Reference
+      const savings = calculateSavings(smartPrice, refPrice);
 
       // Force "Renewed" condition if title implies it (Amazon compliance & Consistency)
       let condition = p.condition;
@@ -114,7 +120,7 @@ export async function mergeLivePrices(
       const updated = {
         ...p,
         condition,
-        prices: { ...p.prices, [countryCode]: newPrice },
+        prices: { ...p.prices, [countryCode]: rawNewPrice }, // Store RAW New Price
         usedPrices: { ...p.usedPrices, [countryCode]: newUsedPrice },
         warehousePrices: {
           ...p.warehousePrices,

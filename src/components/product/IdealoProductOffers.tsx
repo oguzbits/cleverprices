@@ -117,6 +117,11 @@ export async function IdealoProductOffers({
       const mergedProduct =
         familyMembers.find((f) => f.id === product.id) || product;
       targets = [mergedProduct, ...identicalSiblings];
+    } else {
+      // Single Product (No Parent) - MUST also refresh prices to match "Neu ab"
+      const { mergeLivePrices } = await import("@/lib/server/live-data");
+      const [fresh] = await mergeLivePrices([product], countryCode);
+      targets = [fresh];
     }
 
     // Process all spec-identical targets (Prices are already merged)

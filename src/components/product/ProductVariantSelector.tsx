@@ -456,12 +456,19 @@ export function ProductVariantSelector({
         officialSpecs: v.officialSpecifications || v.specifications,
       });
 
+      // DATA INTEGRITY FIX:
+      // If this variant is the current product, use the fresh 'currentProduct' data
+      // (which has the correct prices from server prop) instead of the stale family fetch
+      const isCurrent =
+        v.id === currentProduct.id || v.asin === currentProduct.asin;
+      const source = isCurrent ? currentProduct : v;
+
       return {
-        ...v,
+        ...source,
         normalizedStr: normStr,
         normalizedAttrs: parseVariationAttributes(normStr),
         // Use v.slug directly as it is already canonicalized in the Parent (CachedVariantSelector)
-        variantSuffix: v.subtitle || "",
+        variantSuffix: source.subtitle || "",
       };
     });
     return normalizedVariants;
@@ -501,9 +508,8 @@ export function ProductVariantSelector({
       price: p.prices[countryCode],
       usedPrice: usedPricesVal,
       warehousePrice: p.warehousePrices?.[countryCode],
+      mode: targetCondition === "new" ? "new" : "used",
     });
-
-    if (targetCondition === "new") return isRenewed ? 0 : pricesVal;
 
     return bestOverall;
   };

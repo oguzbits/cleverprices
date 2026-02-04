@@ -8,17 +8,30 @@ export function getBestPrice({
   usedPrice,
   warehousePrice,
   initialPrice,
+  mode = "smart",
 }: {
   price?: number | null;
   usedPrice?: number | null;
   warehousePrice?: number | null;
   initialPrice?: number | null;
+  mode?: "smart" | "new" | "used";
 }): number {
   const p = price || 0;
   const up = usedPrice || 0;
   const wp = warehousePrice || 0;
 
-  // 1. Start with the most stable price (Professional New or Renewed)
+  // Mode 1: New - Strictly professional/stable new stock
+  if (mode === "new") {
+    return p || initialPrice || 0;
+  }
+
+  // Mode 2: Used - Strictly the best used price (Marketplace or Warehouse)
+  if (mode === "used") {
+    if (up > 0 && wp > 0) return Math.min(up, wp);
+    return up || wp || 0;
+  }
+
+  // 3. Smart Logic (Stability Bias)
   let selected = p;
 
   // 2. Consider professional marketplace (up) if significantly cheaper (>20€ difference)
