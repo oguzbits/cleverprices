@@ -9,10 +9,17 @@ import path from "path";
 async function pullData() {
   const isForce = process.argv.includes("--force");
   const PROD_IP = "46.225.72.57";
-  const PROD_PATH = "/etc/dokploy/volumes/cleverprices/data/cleverprices.db";
   const LOCAL_PATH = "./data/cleverprices.db";
 
-  console.log("🚀 Starting data sync from Production to Local...");
+  const APP_NAME = "cleverprices-mlaii0"; // From Dokploy dashboard
+  const TEMP_BACKUP_NAME = "cleverprices-backup.db";
+
+  // NOTE: This assumes the standard Dokploy volume mapping:
+  // Host: /etc/dokploy/volumes/cleverprices/data -> Container: /app/data
+  const HOST_DATA_DIR = "/etc/dokploy/volumes/cleverprices/data";
+  const CONTAINER_DATA_DIR = "/app/data";
+
+  console.log("🚀 Starting SAFE data sync from Production to Local...");
 
   if (!isForce && fs.existsSync(LOCAL_PATH)) {
     console.error("❌ ERROR: Data pull will overwrite your local database.");
@@ -21,20 +28,46 @@ async function pullData() {
   }
 
   try {
-    // Ensure data directory exists
+    // Ensure local data directory exists
     const dataDir = path.dirname(LOCAL_PATH);
     if (!fs.existsSync(dataDir)) {
       fs.mkdirSync(dataDir, { recursive: true });
     }
 
-    console.log(`📦 Pulling ${PROD_PATH}...`);
+    console.log(`🔍 Finding container for ${APP_NAME}...`);
+    // 1. Get Container ID
+    const containerId = execSync(
+      `ssh root@${PROD_IP} "docker ps --format '{{.ID}}' --filter 'name=${APP_NAME}' | head -n 1"`,
+    )
+      .toString()
+      .trim();
 
-    // Check if we can reach the server first
-    execSync(`scp root@${PROD_IP}:${PROD_PATH} ${LOCAL_PATH}`, {
-      stdio: "inherit",
-    });
+    if (!containerId) {
+      throw new Error(`Could not find running container for ${APP_NAME}`);
+    }
+    console.log(`   Container ID: ${containerId}`);
 
-    console.log("\n✅ Database synced successfully!");
+    // 2. Create reliable snapshot using VACUUM INTO
+    console.log("📸 Creating atomic database snapshot (Hot Backup)...");
+    execSync(
+      `ssh root@${PROD_IP} "docker exec ${containerId} sqlite3 ${CONTAINER_DATA_DIR}/cleverprices.db \\"VACUUM INTO '${CONTAINER_DATA_DIR}/${TEMP_BACKUP_NAME}'\\""`,
+      { stdio: "inherit" },
+    );
+
+    // 3. Download the snapshot
+    console.log(`⬇️  Downloading snapshot...`);
+    execSync(
+      `scp root@${PROD_IP}:${HOST_DATA_DIR}/${TEMP_BACKUP_NAME} ${LOCAL_PATH}`,
+      {
+        stdio: "inherit",
+      },
+    );
+
+    // 4. Clean up remote snapshot
+    console.log("Pw Cleaning up remote snapshot...");
+    execSync(`ssh root@${PROD_IP} "rm ${HOST_DATA_DIR}/${TEMP_BACKUP_NAME}"`);
+
+    console.log("\n✅ Database synced successfully & safely!");
 
     // Show stats
     const stats = fs.statSync(LOCAL_PATH);
