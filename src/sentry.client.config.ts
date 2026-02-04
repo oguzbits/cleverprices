@@ -10,21 +10,5 @@ init({
   tracesSampleRate: 0.05,
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
-  // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: true,
-
-  replaysOnErrorSampleRate: 0.1,
-
-  // This sets the sample rate to be 10%. You may want this to be 100% while
-  // in development and sample at a lower rate in production
-  replaysSessionSampleRate: 0.01,
-
-  // You can remove this option if you're not planning to use the Sentry browser profiling integration
-  integrations: [
-    replayIntegration({
-      // Additional Replay configuration goes in here, for example:
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-  ],
 });
