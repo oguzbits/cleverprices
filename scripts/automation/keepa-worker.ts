@@ -203,12 +203,18 @@ async function main() {
 // Global notify placeholder
 let globalNotify = (msg: string) => {};
 
+import * as Sentry from "@sentry/nextjs";
+
+Sentry.init({
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  tracesSampleRate: 1.0,
+});
+
 // We need to wrap the whole thing to share scope properly or just duplicate logic.
 // Simplest is to just put the runner logic in the main function.
-main().catch((err) => {
+main().catch(async (err) => {
   console.error(err);
-  // We can't access 'notify' here because it's local to main.
-  // We will re-implement a simple silent check here or rely on the process.argv
+  Sentry.captureException(err);
 
   const isSilent =
     process.argv.includes("--silent") || process.argv.includes("-s");
@@ -216,5 +222,7 @@ main().catch((err) => {
     console.error(`[Fatal Error] ${err}`);
   }
 
+  // Ensure Sentry flushes before exiting
+  await Sentry.flush(2000);
   process.exit(1);
 });
