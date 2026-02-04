@@ -25,11 +25,19 @@ export default async function HomeContent({
   const countryCode = countryConfig?.code || country;
 
   // Fetch enough data for curation with margin for filtering
-  const [rawDeals, rawPopular, rawNew] = await Promise.all([
-    getBestDeals(40, countryCode, "New"),
-    getDiverseMostPopular(8, countryCode), // Candidates from every category
-    getNewArrivals(100, countryCode, "New"),
-  ]);
+  let rawDeals: any[] = [];
+  let rawPopular: any[] = [];
+  let rawNew: any[] = [];
+
+  try {
+    [rawDeals, rawPopular, rawNew] = await Promise.all([
+      getBestDeals(40, countryCode, "New").catch(() => []),
+      getDiverseMostPopular(8, countryCode).catch(() => []),
+      getNewArrivals(100, countryCode, "New").catch(() => []),
+    ]);
+  } catch (error) {
+    console.error("Critical error fetching home page data:", error);
+  }
 
   // Global duplicate tracker across ALL sections
   const globalSeen = new Set<string>();
@@ -93,8 +101,10 @@ export default async function HomeContent({
   // SAFETY CHECK: If everything is empty, the database is likely in a bad state or still syncing.
   // We throw an error instead of returning empty lists to PREVENT caching this "broken" state.
   // Next.js will catch the error and won't cache the result, allowing a future request to succeed.
-  const isBuild = process.env.NEXT_PHASE === "phase-production-build" || process.env.BUILD_PHASE === "1";
-  
+  const isBuild =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.BUILD_PHASE === "1";
+
   if (
     heroProducts.length === 0 &&
     bestsellers.length === 0 &&
@@ -103,9 +113,18 @@ export default async function HomeContent({
     process.env.NODE_ENV === "production" &&
     !isBuild
   ) {
+    console.error("Home page curated 0 products. DB empty or query timeout.");
     throw new Error(
       "Home page curated 0 products. Database might be empty or still syncing. Please reload in a few seconds.",
     );
+  }
+
+  // Diagnostic logging for intermittent carousel issues
+  if (process.env.NODE_ENV === "production" && !isBuild) {
+    if (heroProducts.length === 0) console.warn("Hero section is empty.");
+    if (deals.length === 0) console.warn("Deals section is empty.");
+    if (newArrivals.length === 0)
+      console.warn("New arrivals section is empty.");
   }
 
   return (
