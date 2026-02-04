@@ -16,9 +16,10 @@ export default function SentryTestPage() {
         <button
           onClick={() => {
             console.log("Triggering client-side error...");
+            alert("Triggering error! Check console and Sentry.");
             throw new Error("Sentry Test: Client-side crash");
           }}
-          className="rounded-xl bg-red-600 px-6 py-4 font-semibold shadow-lg shadow-red-900/20 transition-colors hover:bg-red-500"
+          className="cursor-pointer rounded-xl bg-red-600 px-6 py-4 font-semibold shadow-lg shadow-red-900/20 transition-colors hover:bg-red-500"
         >
           💥 Trigger Client Error
         </button>
@@ -28,7 +29,7 @@ export default function SentryTestPage() {
             Sentry.captureMessage("Sentry Test: Custom Message", "info");
             alert("Sent info message to Sentry!");
           }}
-          className="rounded-xl bg-blue-600 px-6 py-4 font-semibold shadow-lg shadow-blue-900/20 transition-colors hover:bg-blue-500"
+          className="cursor-pointer rounded-xl bg-blue-600 px-6 py-4 font-semibold shadow-lg shadow-blue-900/20 transition-colors hover:bg-blue-500"
         >
           📩 Send Test Message
         </button>
@@ -41,7 +42,7 @@ export default function SentryTestPage() {
               "TIP: Visit an invalid URL (e.g. /p/invalid-id) to trigger a 404 or backend log.",
             );
           }}
-          className="rounded-xl border border-zinc-700 bg-zinc-800 px-6 py-4 font-semibold transition-colors hover:bg-zinc-700"
+          className="cursor-pointer rounded-xl border border-zinc-700 bg-zinc-800 px-6 py-4 font-semibold transition-colors hover:bg-zinc-700"
         >
           🔍 Verification Tip
         </button>
