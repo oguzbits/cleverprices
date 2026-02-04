@@ -56,11 +56,28 @@ async function runBackup() {
   const backupName = `backup-${timestamp}.db.gz`;
 
   try {
-    // 3. Compression Phase (Bun + Zlib)
-    console.log("[Backup] 📦 Compressing database...");
-    const fileBuffer = readFileSync(dbPath);
+    // 3. Safe Snapshot Phase (VACUUM INTO)
+    console.log("[Backup] 📸 Creating atomic snapshot...");
+    const tempBackupPath = join(
+      process.cwd(),
+      "data",
+      `temp-backup-${Date.now()}.db`,
+    );
+
+    // Use the `sqlite3` CLI tool which works reliably even if the app is writing
+    const { execSync } = require("child_process");
+    execSync(`sqlite3 "${dbPath}" "VACUUM INTO '${tempBackupPath}'"`);
+
+    // 4. Compression Phase (Bun + Zlib)
+    console.log("[Backup] 📦 Compressing snapshot...");
+    const fileBuffer = readFileSync(tempBackupPath);
     const compressedBuffer = gzipSync(fileBuffer);
     const sizeMb = (compressedBuffer.length / 1024 / 1024).toFixed(2);
+
+    // Clean up temp file immediately
+    const { unlinkSync } = require("fs");
+    unlinkSync(tempBackupPath);
+
     console.log(`[Backup] ✅ Compression complete (${sizeMb} MB)`);
 
     // 4. Upload Phase
