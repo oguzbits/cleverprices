@@ -1,4 +1,5 @@
 import RootLayoutWrapper from "@/app/RootLayoutWrapper";
+
 import { siteMetadata } from "@/lib/metadata";
 import { Metadata, Viewport } from "next";
 
