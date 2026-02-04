@@ -104,26 +104,9 @@ async function updatePrices(country: CountryCode): Promise<void> {
     return;
   }
 
-  // ℹ️ Informational: Total Stale Queue Size
-  const totalStaleCount = await db
-    .select({ count: sql<number>`count(*)` })
-    .from(products)
-    .leftJoin(
-      prices,
-      and(eq(prices.productId, products.id), eq(prices.country, country)),
-    )
-    .where(
-      or(isNull(prices.lastUpdated), lt(prices.lastUpdated, staleThreshold)),
-    );
-
-  const remainingAfterBatch = Math.max(
-    0,
-    (totalStaleCount[0]?.count || 0) - targetProducts.length,
-  );
-
   const queryTime = ((performance.now() - queryStart) / 1000).toFixed(2);
   console.log(
-    `  Queue size: ${targetProducts.length} products (fetched in ${queryTime}s). Total stale remaining: ${remainingAfterBatch}`,
+    `  Queue size: ${targetProducts.length} products (fetched in ${queryTime}s).`,
   );
 
   const productMap = new Map(targetProducts.map((p) => [p.asin, p]));
@@ -344,8 +327,8 @@ async function updatePrices(country: CountryCode): Promise<void> {
   console.log(`------------------------------`);
   if (process.env.WARM_CACHE === "true" && !isDryRun) {
     try {
-      console.log("\n🔥 Triggering Cache Warmer...");
-      execSync(`bun run warm-cache`, { stdio: "inherit" });
+      console.log("\n🔥 Triggering Cache Warmer (Lite Mode)...");
+      execSync(`bun run warm-cache --lite`, { stdio: "inherit" });
     } catch (err) {
       console.error(
         "\n   ❌ Cache warming failed:",

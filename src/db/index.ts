@@ -79,15 +79,7 @@ export const dbReady: Promise<void> = (async () => {
     }
 
     // Diagnostics (useful for Dokploy logs)
-    const result = await client.execute("SELECT count(*) as C FROM products");
-    const count = Number(result.rows[0].C);
-    console.log(`[DB] Initialization complete. Products count: ${count}`);
-
-    if (count === 0 && isProductionEnvironment) {
-      console.warn(
-        "[DB WARNING] Database is empty! Site will show empty state.",
-      );
-    }
+    // console.log(`[DB] Initialization complete. Products counted via lazy query if needed.`);
   } catch (e) {
     console.error(
       "[DB ERROR] Client initialization failure:",

@@ -95,7 +95,7 @@ async function main() {
     }
 
     const now = Date.now();
-    const WORK_COOLDOWN = 5 * 60 * 1000; // Reduced to 5 minutes for tighter turnover
+    const WORK_COOLDOWN = 30 * 60 * 1000; // Increased to 30 minutes to reduce background noise
 
     let workPerformed = false;
 
