@@ -13,10 +13,21 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
 ARG BUILD_PHASE=0
 ENV BUILD_PHASE=$BUILD_PHASE
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+
+# Sentry Build-Time Configuration
+ARG NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
+
+# Suppress Turbopack warning during build (optional, but good for cleanliness)
+ENV SENTRY_SUPPRESS_TURBOPACK_WARNING=1
+
 RUN bun run build
 
 # Stage 4: Runner (Standard Node for maximum stability)
