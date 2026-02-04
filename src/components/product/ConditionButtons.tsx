@@ -82,10 +82,14 @@ export async function ConditionButtons({
 
   // 1. Scan the family
   if (product.parentAsin) {
-    const familyMembers = await getProductFamilyMembers(
+    let familyMembers = await getProductFamilyMembers(
       product.parentAsin,
       countryCode,
     );
+
+    // [CRITICAL] Overlay fresh prices from the fast-cache prices table (1-min)
+    const { mergeLivePrices } = await import("@/lib/server/live-data");
+    familyMembers = await mergeLivePrices(familyMembers, countryCode);
     const normalizedCurAttrs = normalizeVariantAttributes(product);
     const category = product.category || "";
 
@@ -147,6 +151,7 @@ export async function ConditionButtons({
         } else {
           const currentIsWarehouse = usedOverallType === "warehouse";
           const itemIsRenewed = item.type === "renewed";
+          const itemIsWarehouse = item.type === "warehouse";
 
           if (isParentView) {
             // Overall summary (e.g. "Alle Varianten") always shows absolute minimum
@@ -158,28 +163,41 @@ export async function ConditionButtons({
               usedOverallType = item.type;
             }
           } else {
-            // SPEC-SPECIFIC View
+            // SPEC-SPECIFIC View: Prefer Renewed if within 5€ margin
+            let shouldSwitch = false;
+
             if (itemIsRenewed) {
-              if (
-                usedOverallPrice === 0 ||
-                item.price < usedOverallPrice + 5 || // Prefer Renewed even if up to 5€ more expensive
-                currentIsWarehouse
-              ) {
-                usedOverallPrice = item.price;
-                const { slug } = getFamilyIdentity(m as any, familyMembers);
-                usedOverallSlug = slug;
-                bestUsedOverallProductId = item.id;
-                usedOverallType = item.type;
+              if (currentIsWarehouse) {
+                // If current is Warehouse, switch to Renewed if it's within 5€ of the Warehouse price
+                if (item.price < usedOverallPrice + 5) {
+                  shouldSwitch = true;
+                }
+              } else {
+                // Both are Renewed, take the cheaper one
+                if (item.price < usedOverallPrice) {
+                  shouldSwitch = true;
+                }
               }
-            } else if (currentIsWarehouse) {
-              // Only update Warehouse if it's strictly cheaper than existing Warehouse
-              if (item.price < usedOverallPrice) {
-                usedOverallPrice = item.price;
-                const { slug } = getFamilyIdentity(m as any, familyMembers);
-                usedOverallSlug = slug;
-                bestUsedOverallProductId = item.id;
-                usedOverallType = item.type;
+            } else if (itemIsWarehouse) {
+              if (currentIsWarehouse) {
+                // Both are Warehouse, take the cheaper one
+                if (item.price < usedOverallPrice) {
+                  shouldSwitch = true;
+                }
+              } else {
+                // Current is Renewed, switch to Warehouse only if it's MORE than 5€ cheaper
+                if (item.price < usedOverallPrice - 5) {
+                  shouldSwitch = true;
+                }
               }
+            }
+
+            if (shouldSwitch) {
+              usedOverallPrice = item.price;
+              const { slug } = getFamilyIdentity(m as any, familyMembers);
+              usedOverallSlug = slug;
+              bestUsedOverallProductId = item.id;
+              usedOverallType = item.type;
             }
           }
         }

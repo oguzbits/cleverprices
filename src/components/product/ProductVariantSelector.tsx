@@ -520,9 +520,30 @@ export function ProductVariantSelector({
         const priceV = getEffectivePrice(v) || 0;
         const priceE = getEffectivePrice(existing) || 0;
 
-        // Replace if: new has price and existing doesn't, OR new is cheaper than existing
-        if (priceV > 0 && (priceE === 0 || priceV < priceE)) {
-          uniqueMap.set(key, v);
+        if (priceV > 0) {
+          if (priceE === 0) {
+            uniqueMap.set(key, v);
+          } else {
+            const vIsRenewed = (v.condition || "").toLowerCase() === "renewed";
+            const eIsRenewed =
+              (existing.condition || "").toLowerCase() === "renewed";
+
+            let shouldReplace = false;
+            if (vIsRenewed && !eIsRenewed) {
+              // Switch to Renewed if it's within 5€ of the current Warehouse price
+              if (priceV < priceE + 5) shouldReplace = true;
+            } else if (!vIsRenewed && eIsRenewed) {
+              // Current is Renewed, only switch to Warehouse if it's MORE than 5€ cheaper
+              if (priceV < priceE - 5) shouldReplace = true;
+            } else {
+              // Same type, take the cheaper one
+              if (priceV < priceE) shouldReplace = true;
+            }
+
+            if (shouldReplace) {
+              uniqueMap.set(key, v);
+            }
+          }
         }
       }
     });

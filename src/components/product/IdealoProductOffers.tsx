@@ -8,8 +8,6 @@ import { getProductFamilyMembers, type Product } from "@/lib/product-registry";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Star } from "lucide-react";
 
-import { getLivePriceForProduct } from "@/lib/server/live-data";
-
 interface OffersListProps {
   product: Product;
   productId: number; // Added to avoid needing the full product object in some cases
@@ -47,10 +45,14 @@ export async function IdealoProductOffers({
     selectedCondition === "used" || selectedCondition === "renewed";
 
   if (isParentView && product.parentAsin) {
-    const familyMembers = await getProductFamilyMembers(
+    let familyMembers = await getProductFamilyMembers(
       product.parentAsin,
       countryCode,
     );
+
+    // [CRITICAL] Overlay fresh prices (1-min) for consistency with buttons/cards
+    const { mergeLivePrices } = await import("@/lib/server/live-data");
+    familyMembers = await mergeLivePrices(familyMembers, countryCode);
 
     let minPrice = Infinity;
     let bestItem: {
@@ -95,40 +97,44 @@ export async function IdealoProductOffers({
     let targets = [product];
 
     if (product.parentAsin) {
-      const familyMembers = await getProductFamilyMembers(
+      let familyMembers = await getProductFamilyMembers(
         product.parentAsin,
         countryCode,
       );
+
+      // [CRITICAL] Overlay fresh prices (1-min) for consistency
+      const { mergeLivePrices } = await import("@/lib/server/live-data");
+      familyMembers = await mergeLivePrices(familyMembers, countryCode);
+
       const curAttrs = product.variationAttributes?.toLowerCase().trim();
       const identicalSiblings = familyMembers.filter(
         (m) =>
           m.id !== product.id &&
           m.variationAttributes?.toLowerCase().trim() === curAttrs,
       );
-      targets = [...targets, ...identicalSiblings];
+      // Main product is also merged if it was in the family fetch,
+      // otherwise we ensure we use the merged version of p.id === product.id
+      const mergedProduct =
+        familyMembers.find((f) => f.id === product.id) || product;
+      targets = [mergedProduct, ...identicalSiblings];
     }
 
-    // Process all spec-identical targets
+    // Process all spec-identical targets (Prices are already merged)
     for (const p of targets) {
-      const isMain = p.id === product.id;
-      const live = isMain
-        ? await getLivePriceForProduct(p.id!, countryCode)
-        : null;
-
       if (isUsedTrack) {
         const cond = (p.condition || "").toLowerCase();
         if (cond === "renewed") {
-          const pr = live?.price ?? p.prices[countryCode];
+          const pr = p.prices[countryCode];
           if (pr)
             productsToShow.push({ product: p, price: pr, type: "renewed" });
         }
-        const up = live?.usedPrice ?? p.usedPrices?.[countryCode];
+        const up = p.usedPrices?.[countryCode];
         if (up)
           productsToShow.push({ product: p, price: up, type: "warehouse" });
       } else {
         const cond = (p.condition || "").toLowerCase();
         if (cond !== "renewed" && cond !== "used") {
-          const pr = live?.price ?? p.prices[countryCode];
+          const pr = p.prices[countryCode];
           if (pr) productsToShow.push({ product: p, price: pr, type: "new" });
         }
       }
@@ -136,11 +142,29 @@ export async function IdealoProductOffers({
 
     // DEDUPLICATE: Only show the single best offer for this specific variant spec
     if (productsToShow.length > 1) {
-      let min = Infinity;
       let best: (typeof productsToShow)[0] | null = null;
       productsToShow.forEach((item) => {
-        if (item.price && (min === Infinity || item.price < min)) {
-          min = item.price;
+        if (!item.price) return;
+        if (!best) {
+          best = item;
+          return;
+        }
+
+        const vPrice = item.price;
+        const ePrice = best.price!;
+        const vIsRenewed = item.type === "renewed";
+        const eIsRenewed = best.type === "renewed";
+
+        let shouldReplace = false;
+        if (vIsRenewed && !eIsRenewed) {
+          if (vPrice < ePrice + 5) shouldReplace = true;
+        } else if (!vIsRenewed && eIsRenewed) {
+          if (vPrice < ePrice - 5) shouldReplace = true;
+        } else {
+          if (vPrice < ePrice) shouldReplace = true;
+        }
+
+        if (shouldReplace) {
           best = item;
         }
       });

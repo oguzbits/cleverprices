@@ -19,16 +19,23 @@ export async function CachedVariantSelector({
   let allVariants = await getProductVariants(product, countryCode);
 
   // Fallback: If getProductVariants returns empty (no siblings), we ensure the current product is in the list
-  // so that we can check length <= 1 properly.
   if (allVariants.length === 0) {
     allVariants = [product];
   }
+
+  // [CRITICAL] Overlay fresh prices (1-min) for consistency across components
+  const { mergeLivePrices } = await import("@/lib/server/live-data");
+  allVariants = await mergeLivePrices(allVariants, countryCode);
+
+  // Find the merged version of the current product to ensure consistency
+  const currentMergedProduct =
+    allVariants.find((v) => v.id === product.id) || product;
 
   if (allVariants.length <= 1) return null;
 
   return (
     <ProductVariantSelector
-      currentProduct={product}
+      currentProduct={currentMergedProduct}
       variants={allVariants as any[]}
       countryCode={countryCode}
       isParentView={isParentView}
