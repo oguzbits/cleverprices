@@ -575,7 +575,7 @@ const configWithSentry = withSentryConfig(
     tunnelRoute: "/monitoring",
 
     // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
+    disableLogger: false,
 
     // Enables automatic instrumentation of Vercel Cron Jobs.
     // See the [official documentation](https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/vercel-monitors/) for more information.
