@@ -105,68 +105,70 @@ const nextConfig: NextConfig = {
       // Legacy Product URL Redirects (Top Traffic Recovery)
       {
         source: "/p/wd-black-sn850x-2tb",
-        destination: "/p/sandisk-technologies-inc-wd-black-sn850x-2tb-z3qh",
+        destination:
+          "/p/200006395_-wd-black-sn850x-interne-2tb-sandisk-technologies-inc-z3qh",
         permanent: true,
       },
       {
         source: "/p/samsung-990-pro-2tb",
-        destination: "/p/samsung-990-pro-schwarz-2tb-dkkg",
+        destination: "/p/200006341_-990-pro-1stueck-samsung-dkkg",
         permanent: true,
       },
       {
         source:
           "/p/intel-intel-core-i7-12700kf-12-generation-desktop-prozessor-basistakt-36ghz-turboboost-50ghz-b09gyjj1pt",
         destination:
-          "/p/intel-core-i7-12700kf-12-generation-desktop-128gb-j1pt",
+          "/p/200001288_-core-i7-12700kf-12-generation-desktop-intel-j1pt",
         permanent: true,
       },
       {
         source:
           "/p/sony-sony-bravia-7-qled-xr-l-mini-led-75-zoll-4k-hdr-google-smart-tv-2024-gaming-funktionen-i-b0d1vv4pzj",
-        destination:
-          "/p/sony-bravia-7-qled-xr-l-mini-led-75-zoll-4k-75zoll-4pzj",
+        destination: "/p/200000554_-bravia-7-qled-sony-4pzj",
         permanent: true,
       },
       {
         source:
           "/p/sony-sony-wh-1000xm5-kabelloser-premium-kopfhrer-mit-noise-cancelling-bluetooth-kristallklare-anr-b0bxm22x99",
         destination:
-          "/p/sony-kabelloser-premium-kopfh-rer-mit-noise-1stück-2x99",
+          "/p/200005539_-wh-1000xm5-kabelloser-premium-kopfhoerer-mit-1stueck-sony-2x99",
         permanent: true,
       },
       {
         source:
           "/p/samsung-samsung-galaxy-s25-ultra-ai-smartphone-mit-galaxy-ai-ohne-vertrag-handy-mit-android-12-gb-b0dpn99s7q",
-        destination: "/p/samsung-galaxy-s25-ultra-ai-smartphone-mit-12gb-9s7q",
+        destination: "/p/200003255_-galaxy-s25-ultra-mit-galaxy-samsung-9s7q",
         permanent: true,
       },
       {
         source:
           "/p/intel-intel-core-i7-9700f-prozessor-12m-cache-bis-zu-470-ghz-b07rylfg3d",
-        destination: "/p/intel-core-i7-9700f-prozessor-12m-cache-bis-fg3d",
+        destination: "/p/200001304_-core-i7-9700f-intel-fg3d",
         permanent: true,
       },
       {
         source: "/p/motorola-motorola-handy-moto-g86-5g-256gb-b0f7rtgckm",
-        destination: "/p/motorola-handy-moto-g86-5g-256gb-gckm",
+        destination: "/p/200003921_-moto-g86-5g-motorola-gckm",
         permanent: true,
       },
       {
         source:
           "/p/playstation-playstation5-digital-edition-bundle-mit-zweitem-dualsense-wireless-controller-b0cqmf3vjk",
-        destination: "/p/playstation-5-digital-edition-bundle-mit-3vjk",
+        destination: "/p/200001430_-playstation-5-sony-3vjk",
         permanent: true,
       },
       {
         source:
           "/p/intel-intel-core-ultra-7-desktop-prozessor-265-20-kerne-8-p-cores-12-e-cores-bis-zu-53-ghz-b0dtryq6b1",
-        destination: "/p/intel-core-ultra-7-desktop-prozessor-265-20-q6b1",
+        destination:
+          "/p/200001314_-core-ultra-7-desktop-prozessor-265-20-kerne-intel-q6b1",
         permanent: true,
       },
       {
         source:
           "/p/intel-intel-core-i9-12900k-12-generation-desktop-prozessor-basistakt-32ghz-turboboost-52ghz-b09gylb4j6",
-        destination: "/p/intel-core-i9-12900k-12-generation-desktop-128gb-b4j6",
+        destination:
+          "/p/200001303_-core-i9-12900k-12-generation-desktop-intel-b4j6",
         permanent: true,
       },
 
@@ -499,12 +501,6 @@ const nextConfig: NextConfig = {
         destination: "/network-switches",
         permanent: true,
       },
-      {
-        source: "/de/electronics/:path*",
-        destination: "/:path*",
-        permanent: true,
-      },
-
       // Generic country Prefix Stripping (Catch-all for de/ca/fr/uk/it)
       { source: "/de/:path*", destination: "/:path*", permanent: true },
       { source: "/ca/:path*", destination: "/:path*", permanent: true },
