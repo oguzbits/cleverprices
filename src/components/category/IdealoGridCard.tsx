@@ -103,7 +103,7 @@ export function IdealoGridCard({
               loading={priority ? undefined : "lazy"}
               // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
               fetchPriority={priority ? "high" : "low"}
-              className="object-contain p-2"
+              className="object-contain p-2 mix-blend-multiply"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 168px"
               quality={50}
               style={{ objectFit: "contain" }}
