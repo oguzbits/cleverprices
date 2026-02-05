@@ -12,7 +12,8 @@ COPY package.json bun.lock ./
 ENV PUPPETEER_SKIP_DOWNLOAD=true
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-RUN bun install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.bun/install/cache \
+    bun install --frozen-lockfile
 
 # Stage 3: Builder
 FROM base AS builder
@@ -32,7 +33,8 @@ ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 ARG SENTRY_AUTH_TOKEN
 ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 
-RUN BUILD_PHASE=1 bun run build
+RUN --mount=type=cache,target=/app/.next/cache \
+    BUILD_PHASE=1 bun run build
 
 # Stage 4: Production Runner (Unified & Optimized)
 FROM base AS worker-runner
