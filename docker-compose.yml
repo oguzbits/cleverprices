@@ -1,13 +1,26 @@
 services:
-  app:
-    build: .
-    container_name: cleverprices
+  web:
+    build:
+      context: .
+      target: runner
+    container_name: cleverprices-web
     restart: always
     ports:
       - "3000:3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
-    # Mount the DB file if you want to update it without rebuilding (Optional)
-    # volumes:
-    #   - ./data/cleverprices.db:/app/data/cleverprices.db
+    volumes:
+      - /etc/dokploy/volumes/cleverprices/data:/app/data
+
+  worker:
+    build:
+      context: .
+      target: worker-runner
+    container_name: cleverprices-worker
+    restart: always
+    # No ports exposed for the worker
+    environment:
+      - NODE_ENV=production
+    volumes:
+      - /etc/dokploy/volumes/cleverprices/data:/app/data

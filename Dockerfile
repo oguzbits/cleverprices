@@ -93,12 +93,18 @@ COPY --from=builder --chown=nextjs:nodejs /app/src ./src
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nodejs /app/data ./data
 
+# Setup for Web Server (allows consolidation)
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
 # Setup user
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs && \
     chown -R nextjs:nodejs /app
 
 USER nextjs
+EXPOSE 3000
 
-# Default command for worker role
-CMD ["bun", "run", "scripts/automation/keepa-worker.ts"]
+# Default command: Start the web server to keep the container alive for schedules
+CMD ["bun", "server.js"]
