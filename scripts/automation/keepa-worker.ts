@@ -96,7 +96,7 @@ async function main() {
     }
 
     const now = Date.now();
-    const WORK_COOLDOWN = 30 * 60 * 1000; // Increased to 30 minutes to reduce background noise
+    const WORK_COOLDOWN = 15 * 60 * 1000; // Decreased to 15 minutes
 
     // Server Load Check (Prevent worker from hitting CPU if build/other maintenance is running)
     const load1 = os.loadavg()[0];
