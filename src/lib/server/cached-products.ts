@@ -99,7 +99,7 @@ async function getCachedSimilarProducts(
     countryCode,
   );
 }
-export async function getAllProductSlugs(): Promise<
+export async function getAllProductSlugs(limit?: number): Promise<
   {
     id: number;
     slug: string;
@@ -108,7 +108,7 @@ export async function getAllProductSlugs(): Promise<
     updatedAt: Date;
   }[]
 > {
-  return getAllProductSlugsSync();
+  return getAllProductSlugsSync(limit);
 }
 
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {

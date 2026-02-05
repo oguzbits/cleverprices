@@ -11,6 +11,7 @@
 
 import { execSync } from "child_process";
 import { sql } from "drizzle-orm";
+import os from "os";
 import { db, products } from "../../src/db";
 import type { CountryCode } from "../../src/lib/countries";
 import { getTokenStatus } from "../../src/lib/keepa/product-discovery";
@@ -96,6 +97,19 @@ async function main() {
 
     const now = Date.now();
     const WORK_COOLDOWN = 30 * 60 * 1000; // Increased to 30 minutes to reduce background noise
+
+    // Server Load Check (Prevent worker from hitting CPU if build/other maintenance is running)
+    const load1 = os.loadavg()[0];
+    const cpus = os.cpus().length;
+    const LOAD_THRESHOLD = cpus * 0.9; // 90% utilization threshold
+
+    if (load1 > LOAD_THRESHOLD) {
+      console.log(
+        `🛰️ Server Load High (${load1.toFixed(2)} / ${cpus} CPUs). Worker is chilling to save resources...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, 60000)); // Sleep 1m
+      continue;
+    }
 
     let workPerformed = false;
 

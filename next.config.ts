@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   // Enable experimental features for better performance
   experimental: {
+    // Limit build workers and CPU usage to prevent server overload during deployment
+    // (Recommended for single-server VPS setups)
+    workerThreads: false,
+    cpus: 1,
     optimizePackageImports: [
       "lucide-react",
       "@radix-ui/react-accordion",
@@ -574,5 +578,14 @@ const configWithSentry = withSentryConfig(
     automaticVercelMonitors: true,
   },
 );
+
+const isBuild =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.BUILD_PHASE === "1";
+if (isBuild) {
+  console.log(
+    "🛠️  CLEVERPRICES BUILD PHASE DETECTED - Applying build-time constraints...",
+  );
+}
 
 export default configWithSentry;

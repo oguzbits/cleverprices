@@ -157,7 +157,8 @@ export interface Props {
 }
 // Generate static params for all products (Germany only)
 export async function generateStaticParams() {
-  const products = await getAllProductSlugs();
+  // Fetch only top 100 products for pre-generation to keep build times manageable
+  const products = await getAllProductSlugs(100);
 
   // Cache Components requires at least one result
   // If no products in DB yet, return a placeholder that will 404
@@ -165,9 +166,7 @@ export async function generateStaticParams() {
     return [{ slug: "[slug]" }];
   }
 
-  // Limit to top 100 products by updatedAt to keep deployment size manageable
-  // Modern Next.js will generate the rest on-demand and cache them
-  return products.slice(0, 100).map((product) => ({
+  return products.map((product) => ({
     slug: product.slug,
   }));
 }

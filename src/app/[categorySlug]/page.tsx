@@ -44,6 +44,7 @@ export async function generateStaticParams() {
 
   const categories = Object.values(allCategories).filter((c) => !c.hidden);
 
+  // Limit pre-generation to top 20 categories to keep build times low on VPS
   return categories
     .filter((c) => {
       const children = getChildCategories(c.slug);
@@ -54,6 +55,7 @@ export async function generateStaticParams() {
       // Child: include if non-empty
       return nonEmptySlugs.includes(c.slug);
     })
+    .slice(0, 20)
     .map((c) => ({ categorySlug: c.slug }));
 }
 

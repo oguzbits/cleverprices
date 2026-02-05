@@ -372,7 +372,7 @@ export async function findProductBySyntheticId(
   };
 }
 
-export async function getAllProductSlugs(): Promise<
+export async function getAllProductSlugs(limit?: number): Promise<
   {
     id: number;
     slug: string;
@@ -382,7 +382,7 @@ export async function getAllProductSlugs(): Promise<
   }[]
 > {
   try {
-    const allProducts = await db
+    let query = db
       .select({
         id: products.id,
         slug: products.slug,
@@ -394,6 +394,13 @@ export async function getAllProductSlugs(): Promise<
         updatedAt: products.updatedAt,
       })
       .from(products);
+
+    if (limit) {
+      // @ts-ignore - Drizzle limit works
+      query = query.limit(limit);
+    }
+
+    const allProducts = await query;
 
     // OPTIMIZATION: Index products by parentAsin for fast sibling lookup
     // This avoids O(N^2) in getFamilyIdentity when processing thousands of products.
