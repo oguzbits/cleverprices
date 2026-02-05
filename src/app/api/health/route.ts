@@ -32,11 +32,43 @@ export async function GET() {
       );
     }
 
+    // Storage check (Database size)
+    let storage: any = { status: "unknown" };
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+
+      const dataDir = path.join(process.cwd(), "data");
+      if (fs.existsSync(dataDir)) {
+        const files = fs.readdirSync(dataDir);
+        const stats = files.map((file) => {
+          const filePath = path.join(dataDir, file);
+          const s = fs.statSync(filePath);
+          return { name: file, sizeMb: (s.size / (1024 * 1024)).toFixed(2) };
+        });
+
+        const totalSizeMb = stats
+          .reduce((acc, f) => acc + parseFloat(f.sizeMb), 0)
+          .toFixed(2);
+
+        storage = {
+          status: "available",
+          totalSizeMb,
+          files: stats
+            .sort((a, b) => parseFloat(b.sizeMb) - parseFloat(a.sizeMb))
+            .slice(0, 5), // Top 5 largest files
+        };
+      }
+    } catch (e) {
+      storage = { status: "error", error: String(e) };
+    }
+
     return NextResponse.json(
       {
         status: "healthy",
         db: "connected",
         redis: redisStatus,
+        storage,
         latency: Date.now() - start,
         timestamp: new Date().toISOString(),
       },
