@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
   // Configure MDX file extensions
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   experimental: {
+    workerThreads: false,
+    cpus: 1,
     optimizePackageImports: [
       "lucide-react",
       "mdx",
