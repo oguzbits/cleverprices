@@ -862,7 +862,10 @@ export function ProductVariantSelector({
 
 export function ProductVariantSelectorSkeleton() {
   return (
-    <div className="mt-4 mb-4 animate-pulse">
+    <div className="mt-4 mb-6 animate-pulse">
+      {/* Title Skeleton */}
+      <div className="mb-2 h-4 w-32 rounded bg-gray-200" />
+
       <div className="flex gap-2.5 overflow-hidden pt-1">
         {[1, 2, 3, 4, 5].map((i) => (
           <div
