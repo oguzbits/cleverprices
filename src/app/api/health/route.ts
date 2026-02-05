@@ -6,8 +6,6 @@ import { NextResponse } from "next/server";
  * Used by external monitors (UptimeRobot, StatusPage, etc.)
  * Returns database connectivity status and basic metrics.
  */
-export const dynamic = "force-dynamic";
-
 export async function GET() {
   const start = Date.now();
 
