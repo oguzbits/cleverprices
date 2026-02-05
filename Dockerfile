@@ -6,6 +6,11 @@ WORKDIR /app
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 COPY package.json bun.lock ./
+
+# Skip heavy Chromium download during build
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
 RUN bun install --frozen-lockfile
 
 # Stage 3: Builder
