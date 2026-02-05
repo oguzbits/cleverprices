@@ -61,7 +61,7 @@ export async function IdealoProductPage({
   parentTitle: passedParentTitle,
   parentFullModel: passedFullModel,
 }: IdealoProductPageProps) {
-  const category = getCategoryBySlug(product.category);
+  const category = await getCategoryBySlug(product.category);
 
   // Check true variant count to prevent "Alle Varianten" view for singletons
   // [OPTIMIZATION] We trust the server-side redirection/detection (from page.tsx)

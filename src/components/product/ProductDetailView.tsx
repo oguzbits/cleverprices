@@ -43,7 +43,7 @@ export async function ProductDetailView({
   unifiedProduct,
 }: ProductDetailViewProps) {
   const countryConfig = getCountryByCode(countryCode);
-  const category = getCategoryBySlug(product.category);
+  const category = await getCategoryBySlug(product.category);
 
   // Get similar products
   const similarProducts = await getSimilarProducts(product, 4, countryCode);

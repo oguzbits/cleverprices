@@ -4,7 +4,7 @@
  */
 
 import {
-  getCategoryBySlug,
+  allCategories,
   getParentCategory,
   type CategorySlug,
 } from "@/lib/categories";
@@ -33,7 +33,7 @@ export function buildCategoryBreadcrumbs(
   }
 
   // Add current category
-  const category = getCategoryBySlug(categorySlug);
+  const category = allCategories[categorySlug];
   if (category) {
     breadcrumbs.push({
       name: category.name,
@@ -51,7 +51,7 @@ export function buildParentBreadcrumbs(
   parentSlug: CategorySlug,
   countryCode: CountryCode,
 ): BreadcrumbItem[] {
-  const parent = getCategoryBySlug(parentSlug);
+  const parent = allCategories[parentSlug];
 
   return [
     { name: "Home", href: "/" },
