@@ -25,6 +25,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 # Sentry Build-Time Configuration
+# Create data directory for build-time DB analysis fallback
+RUN mkdir -p data
 ARG NEXT_PUBLIC_SENTRY_DSN
 ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 ARG SENTRY_AUTH_TOKEN
@@ -33,7 +35,7 @@ ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 # Suppress Turbopack warning during build (optional, but good for cleanliness)
 ENV SENTRY_SUPPRESS_TURBOPACK_WARNING=1
 
-RUN bun run build
+RUN BUILD_PHASE=1 bun run build
 
 # Stage 4: Runner (Standard Node for maximum stability)
 FROM node:20-alpine AS runner

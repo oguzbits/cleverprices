@@ -17,6 +17,15 @@ const isProductionEnvironment = process.env.NODE_ENV === "production";
 
 // Determine database URL
 function getDatabaseUrl(): string {
+  // Check if we are in a build phase
+  const isBuild =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.BUILD_PHASE === "1";
+
+  if (isBuild) {
+    return "file::memory:?cache=shared";
+  }
+
   // 1. Explicit path (useful for scripts/testing)
   if (process.env.DB_PATH) {
     return `file:${process.env.DB_PATH}`;
