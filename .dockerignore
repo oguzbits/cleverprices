@@ -26,6 +26,6 @@
 *.log
 .env*
 
-# Keep data directory but ignore backups
-/data/*.backup
+# Keep data directory but ignore backups and the database itself
+/data/
 /logs/
