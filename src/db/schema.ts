@@ -100,6 +100,7 @@ export const products = sqliteTable(
     index("idx_products_capacity").on(table.capacity), // "Price per GB" sorting
     index("idx_products_parent_asin").on(table.parentAsin), // Variant lookups
     index("idx_products_enrichment_status").on(table.enrichmentStatus), // Category slug generation
+    index("idx_products_missing_specs").on(table.missingSpecs), // Help background workers find products to enrich
   ],
 );
 
@@ -167,6 +168,10 @@ export const prices = sqliteTable(
     index("idx_prices_country").on(table.country),
     index("idx_prices_product_id").on(table.productId),
     index("idx_prices_last_updated").on(table.lastUpdated),
+    index("idx_prices_price_val").on(table.price), // Optimize "Sort by Price"
+    index("idx_prices_unit_val").on(table.pricePerUnit), // Optimize "Sort by Price per GB"
+    index("idx_prices_country_price").on(table.country, table.price), // Composite for instant sorting in market
+    index("idx_prices_country_unit").on(table.country, table.pricePerUnit), // Composite for price-per-unit in market
   ],
 );
 

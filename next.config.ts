@@ -13,14 +13,12 @@ const nextConfig: NextConfig = {
   cacheComponents: true, // Enable "use cache" directive for caching
   // Configure MDX file extensions
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
-  // Enable experimental features for better performance
   experimental: {
-    // Limit build workers and CPU usage to prevent server overload during deployment
-    // (Recommended for single-server VPS setups)
     workerThreads: false,
     cpus: 1,
     optimizePackageImports: [
       "lucide-react",
+      "mdx",
       "@radix-ui/react-accordion",
       "@radix-ui/react-avatar",
       "@radix-ui/react-checkbox",
