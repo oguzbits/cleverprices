@@ -95,7 +95,7 @@ export const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
             msOverflowStyle: "none",
             scrollPaddingLeft: "1rem",
             scrollPaddingRight: "1rem",
-            touchAction: "pan-y",
+            touchAction: "pan-x pan-y",
             overscrollBehavior: "contain auto",
             overflowY: "hidden",
             WebkitOverflowScrolling: "touch",
