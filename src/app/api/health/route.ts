@@ -32,35 +32,30 @@ export async function GET() {
       );
     }
 
-    // Storage check (Database size)
-    let storage: any = { status: "unknown" };
+    // Aggressive Global Storage Audit
+    let storageAudit: any = { status: "unknown" };
     try {
       const fs = await import("fs");
       const path = await import("path");
+      const { execSync } = await import("child_process");
 
-      const dataDir = path.join(process.cwd(), "data");
-      if (fs.existsSync(dataDir)) {
-        const files = fs.readdirSync(dataDir);
-        const stats = files.map((file) => {
-          const filePath = path.join(dataDir, file);
-          const s = fs.statSync(filePath);
-          return { name: file, sizeMb: (s.size / (1024 * 1024)).toFixed(2) };
-        });
+      // Use du to find where the space is really going
+      const rootAudit = execSync("du -d 1 -h /app | sort -hr").toString();
+      const dataAudit = fs.existsSync("/app/data")
+        ? execSync("ls -lh /app/data").toString()
+        : "data dir missing";
 
-        const totalSizeMb = stats
-          .reduce((acc, f) => acc + parseFloat(f.sizeMb), 0)
-          .toFixed(2);
+      const tmpAudit = execSync("du -sh /tmp").toString();
 
-        storage = {
-          status: "available",
-          totalSizeMb,
-          files: stats
-            .sort((a, b) => parseFloat(b.sizeMb) - parseFloat(a.sizeMb))
-            .slice(0, 5), // Top 5 largest files
-        };
-      }
+      storageAudit = {
+        status: "available",
+        summary: rootAudit.split("\n").filter(Boolean),
+        dataDir: dataAudit.split("\n").filter(Boolean),
+        tmpDir: tmpAudit,
+        cwd: process.cwd(),
+      };
     } catch (e) {
-      storage = { status: "error", error: String(e) };
+      storageAudit = { status: "error", error: String(e) };
     }
 
     return NextResponse.json(
@@ -68,7 +63,7 @@ export async function GET() {
         status: "healthy",
         db: "connected",
         redis: redisStatus,
-        storage,
+        storageAudit,
         latency: Date.now() - start,
         timestamp: new Date().toISOString(),
       },
