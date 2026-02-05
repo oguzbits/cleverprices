@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+import { cache } from "react";
 import { CATEGORY_MAP } from "./category-definitions";
 import {
   CategoryData as BaseCategoryData,
@@ -52,10 +53,21 @@ export function getCategoryHierarchy(): CategoryHierarchy[] {
   return _cachedHierarchy;
 }
 
-// Get category by slug
-export function getCategoryBySlug(slug: string): Category | undefined {
-  return allCategories[slug as CategorySlug];
-}
+export const getCategoryBySlug = cache(
+  async (
+    slug: string,
+  ): Promise<(Category & { breadcrumbs: Category[] }) | undefined> => {
+    const category = allCategories[slug as CategorySlug];
+
+    if (!category) return undefined;
+
+    // Enhance with breadcrumbs
+    return {
+      ...category,
+      breadcrumbs: getBreadcrumbs(slug as CategorySlug),
+    };
+  },
+);
 
 // Get parent category for a given category
 export function getParentCategory(

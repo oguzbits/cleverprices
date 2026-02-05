@@ -233,13 +233,14 @@ export const getProductById = cache(async function getProductById(
  * Get the stable canonical ID for a family (Smallest ID in the family).
  * This ensures all variants point to the same Hub ID regardless of price/condition.
  */
-export async function getCanonicalFamilyId(
+export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
   parentAsin: string | undefined,
   currentId: number,
 ): Promise<number> {
   if (!parentAsin) return currentId;
 
   const fetchCanonicalId = async () => {
+    await dbReady;
     const [result] = await db
       .select({ id: products.id })
       .from(products)
@@ -254,7 +255,7 @@ export async function getCanonicalFamilyId(
     revalidate: PRODUCT_REVALIDATE_SECONDS,
     tags: ["canonical-id"],
   })();
-}
+});
 
 /**
  * Fetch only price history for a specific product and country.
@@ -719,6 +720,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
   stripHeavyData: boolean = true, // Default to true for category lists
 ): Promise<Product[]> {
+  if (!category) return [];
   const fetchProducts = async () => {
     await dbReady;
     const prods = await db
@@ -788,6 +790,7 @@ const fetchProductBySlug = cache(
     slug: string,
     _includeHistory: boolean = false, // History now comes from historyJson in prices
   ): Promise<Product | undefined> => {
+    if (!slug) return undefined;
     await dbReady;
     const getProductAndPrices = async (targetSlug: string) => {
       const [p] = await db
@@ -950,111 +953,110 @@ export async function findProductSlugByAsinSuffix(
   return undefined;
 }
 
-/**
- * Find a product by Parent ASIN suffix.
- * Used for neutral parent slugs (e.g. apple-iphone-15-[parent-suffix]).
- */
-export async function findProductByParentAsinSuffix(
-  slug: string,
-): Promise<Product | undefined> {
-  const shortSuffixMatch = slug.match(/-([a-z0-9]{3,4})-?$/i);
-  if (!shortSuffixMatch) return undefined;
+export const findProductByParentAsinSuffix = cache(
+  async function findProductByParentAsinSuffix(
+    slug: string,
+  ): Promise<Product | undefined> {
+    if (!slug) return undefined;
+    const shortSuffixMatch = slug.match(/-([a-z0-9]{3,4})-?$/i);
+    if (!shortSuffixMatch) return undefined;
 
-  const suffix = shortSuffixMatch[1].toUpperCase();
-  const prefix = slug.slice(0, slug.lastIndexOf("-"));
-  const keywords = prefix
-    .split("-")
-    .filter((k) => k.length >= 2)
-    .slice(0, 3); // Take first 3 meaningful tokens (e.g. apple, iphone, 17)
+    const suffix = shortSuffixMatch[1].toUpperCase();
+    const prefix = slug.slice(0, slug.lastIndexOf("-"));
+    const keywords = prefix
+      .split("-")
+      .filter((k) => k.length >= 2)
+      .slice(0, 3); // Take first 3 meaningful tokens (e.g. apple, iphone, 17)
 
-  // Search by parent_asin suffix + title keywords to avoid collision (e.g. s25 vs s24)
-  // We use OR to handle both exact suffix and cases where it ends with a dash (common in FAM- slugs)
-  const conditions = [
-    or(
-      like(products.parentAsin, `%${suffix}`),
-      like(products.parentAsin, `%${suffix}-`),
-    ),
-  ] as (SQL | undefined)[];
-
-  // Apply keyword filters if any found
-  for (const k of keywords) {
-    conditions.push(like(products.title, `%${k}%`));
-  }
-
-  console.log(
-    `[ParentLookup] Debug: slug=${slug}, suffix=${suffix}, keywords=${keywords.join(",")}`,
-  );
-
-  // Join with prices to ensure we pick a child that actually exists and has a price
-  // This prevents 404s if the first matching substring happens to be an unavailable product
-  const candidates = await db
-    .select({
-      ...liteProductColumns,
-      price: prices.price,
-    })
-    .from(products)
-    .innerJoin(prices, eq(products.id, prices.productId))
-    .where(
-      and(
-        ...conditions,
-        eq(prices.country, "de"), // Default to DE for resolving parent
-        gt(prices.price, 0),
+    // Search by parent_asin suffix + title keywords to avoid collision (e.g. s25 vs s24)
+    // We use OR to handle both exact suffix and cases where it ends with a dash (common in FAM- slugs)
+    const conditions = [
+      or(
+        like(products.parentAsin, `%${suffix}`),
+        like(products.parentAsin, `%${suffix}-`),
       ),
-    )
-    .orderBy(desc(prices.price)) // Pick expensive one (usually fully specced) or any valid one
-    .limit(10); // Fetch multiple candidates to resolve collisions
+    ] as (SQL | undefined)[];
 
-  if (candidates.length === 0) return undefined;
-
-  // Scoring Logic to resolve collisions (e.g. "Pro" suffix matching "Pro Max" parent)
-  // We check for "Ghost Keywords" - words in the title that are NOT in the slug.
-  const diffKeywords = ["max", "pro", "plus", "ultra", "mini", "lite", "fe"];
-  const slugLower = slug.toLowerCase();
-
-  const scoredCandidates = candidates.map((c) => {
-    let score = 100;
-    const titleLower = c.title.toLowerCase();
-
-    // Check for differentiation keywords
-    for (const kw of diffKeywords) {
-      // 1. Ghost Keyword Check: Title has it, Slug misses it (Pro Max matching Pro query)
-      if (titleLower.includes(kw) && !slugLower.includes(kw)) {
-        score -= 1000;
-      }
-
-      // 2. Missing Keyword Check: Slug has it, Title misses it (Pro matching Pro Max query)
-      if (slugLower.includes(kw) && !titleLower.includes(kw)) {
-        score -= 1000;
-      }
+    // Apply keyword filters if any found
+    for (const k of keywords) {
+      conditions.push(like(products.title, `%${k}%`));
     }
 
-    // Tiny boost for shorter titles (usually closer to base model) if scores equal
-    score -= c.title.length * 0.01;
+    console.log(
+      `[ParentLookup] Debug: slug=${slug}, suffix=${suffix}, keywords=${keywords.join(",")}`,
+    );
 
-    return { product: c, score };
-  });
+    // Join with prices to ensure we pick a child that actually exists and has a price
+    // This prevents 404s if the first matching substring happens to be an unavailable product
+    const candidates = await db
+      .select({
+        ...liteProductColumns,
+        price: prices.price,
+      })
+      .from(products)
+      .innerJoin(prices, eq(products.id, prices.productId))
+      .where(
+        and(
+          ...conditions,
+          eq(prices.country, "de"), // Default to DE for resolving parent
+          gt(prices.price, 0),
+        ),
+      )
+      .orderBy(desc(prices.price)) // Pick expensive one (usually fully specced) or any valid one
+      .limit(10); // Fetch multiple candidates to resolve collisions
 
-  // Sort by score descending
-  scoredCandidates.sort((a, b) => b.score - a.score);
+    if (candidates.length === 0) return undefined;
 
-  const bestMatch = scoredCandidates[0];
-  const p = bestMatch.score > -500 ? bestMatch.product : candidates[0]; // Fallback if all bad
+    // Scoring Logic to resolve collisions (e.g. "Pro" suffix matching "Pro Max" parent)
+    // We check for "Ghost Keywords" - words in the title that are NOT in the slug.
+    const diffKeywords = ["max", "pro", "plus", "ultra", "mini", "lite", "fe"];
+    const slugLower = slug.toLowerCase();
 
-  console.log(
-    `[ParentLookup] Resolved ${slug} to ${p.title.slice(0, 30)}... (Score: ${bestMatch.score}, Suffix: ${suffix})`,
-  );
+    const scoredCandidates = candidates.map((c) => {
+      let score = 100;
+      const titleLower = c.title.toLowerCase();
 
-  if (!p) return undefined;
+      // Check for differentiation keywords
+      for (const kw of diffKeywords) {
+        // 1. Ghost Keyword Check: Title has it, Slug misses it (Pro Max matching Pro query)
+        if (titleLower.includes(kw) && !slugLower.includes(kw)) {
+          score -= 1000;
+        }
 
-  // IMPORTANT: We found a child, but we mark it as parent view
-  const prs = await db
-    .select(litePriceColumns)
-    .from(prices)
-    .where(eq(prices.productId, p.id));
+        // 2. Missing Keyword Check: Slug has it, Title misses it (Pro matching Pro Max query)
+        if (slugLower.includes(kw) && !titleLower.includes(kw)) {
+          score -= 1000;
+        }
+      }
 
-  const product = mapDbProduct(p as unknown as DbProduct, prs);
-  return { ...product, isParentView: true };
-}
+      // Tiny boost for shorter titles (usually closer to base model) if scores equal
+      score -= c.title.length * 0.01;
+
+      return { product: c, score };
+    });
+
+    // Sort by score descending
+    scoredCandidates.sort((a, b) => b.score - a.score);
+
+    const bestMatch = scoredCandidates[0];
+    const p = bestMatch.score > -500 ? bestMatch.product : candidates[0]; // Fallback if all bad
+
+    console.log(
+      `[ParentLookup] Resolved ${slug} to ${p.title.slice(0, 30)}... (Score: ${bestMatch.score}, Suffix: ${suffix})`,
+    );
+
+    if (!p) return undefined;
+
+    // IMPORTANT: We found a child, but we mark it as parent view
+    const prs = await db
+      .select(litePriceColumns)
+      .from(prices)
+      .where(eq(prices.productId, p.id));
+
+    const product = mapDbProduct(p as unknown as DbProduct, prs);
+    return { ...product, isParentView: true };
+  },
+);
 
 const fetchSimilarProducts = async (
   category: string,
@@ -1088,6 +1090,7 @@ export const getSimilarProducts = cache(async function getSimilarProducts(
   limit: number = 4,
   countryCode: string = "de",
 ): Promise<Product[]> {
+  if (!product) return [];
   const isScript =
     typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
 
@@ -1238,10 +1241,11 @@ export async function searchProducts(
   }
 }
 
-export async function getProductsByBrand(
+export const getProductsByBrand = cache(async function getProductsByBrand(
   brand: string,
   excludeSlug?: string,
 ): Promise<Product[]> {
+  if (!brand) return [];
   const prods = await db
     .select(liteProductColumns)
     .from(products)
@@ -1279,7 +1283,7 @@ export async function getProductsByBrand(
       siblings,
     );
   });
-}
+});
 
 const getCachedDeals = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
@@ -1349,7 +1353,7 @@ const getCachedDeals = unstable_cache(
   },
 );
 
-export async function getBestDeals(
+export const getBestDeals = cache(async function getBestDeals(
   limit: number = 8,
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
@@ -1395,7 +1399,7 @@ export async function getBestDeals(
     );
     return [];
   }
-}
+});
 
 const getCachedPopular = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
@@ -1472,7 +1476,7 @@ const getCachedPopular = unstable_cache(
   },
 );
 
-export async function getMostPopular(
+export const getMostPopular = cache(async function getMostPopular(
   limit: number = 8,
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
@@ -1525,21 +1529,19 @@ export async function getMostPopular(
     );
     return [];
   }
-}
+});
 
 /**
  * FETCHING OPTIMIZATION: Get a diverse set of popular products (Top N per category)
  * This uses a SQL Window Function to ensure we get candidates from all categories
  * instead of just 200 items from the most popular category.
  */
-export async function getDiverseMostPopular(
-  itemsPerCategory: number = 10,
-  countryCode: string = "de",
-): Promise<Product[]> {
-  await dbReady;
-  try {
-    const result = await client.execute({
-      sql: `
+const fetchDiversePopular = unstable_cache(
+  async (itemsPerCategory: number, countryCode: string) => {
+    await dbReady;
+    try {
+      const result = await client.execute({
+        sql: `
     WITH RankedProducts AS (
       SELECT 
         id,
@@ -1553,54 +1555,80 @@ export async function getDiverseMostPopular(
     )
     SELECT id FROM RankedProducts WHERE rank <= ?
   `,
-      args: [itemsPerCategory],
-    });
-    const ids = result.rows.map((r: any) => Number(r.id));
+        args: [itemsPerCategory],
+      });
+      const ids = result.rows.map((r: any) => Number(r.id));
 
-    if (ids.length === 0) return [];
+      if (ids.length === 0) return [];
 
-    // 2. Fetch full (lite) data for these specific IDs
-    const prods = await db
-      .select(liteProductColumns)
-      .from(products)
-      .where(inArray(products.id, ids));
+      // 2. Fetch full (lite) data for these specific IDs
+      const prods = await db
+        .select(liteProductColumns)
+        .from(products)
+        .where(inArray(products.id, ids));
 
-    const prs = await db
-      .select(litePriceColumns)
-      .from(prices)
-      .where(
-        and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-      );
-
-    const pricesByProduct = indexPricesById(prs);
-
-    // Group by parentAsin
-    const families = new Map<string, any[]>();
-    for (const p of prods) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
-      }
-    }
-
-    return prods
-      .map((p) => {
-        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-        return mapDbProduct(
-          p as DbProduct,
-          pricesByProduct.get(p.id!) || [],
-          siblings, // Pass true siblings
-          true, // Strip heavy data (Home curation doesn't need specs)
+      const prs = await db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(
+          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
         );
-      })
-      .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
-  } catch (e) {
-    console.warn(
-      `[DB Warning] Failed to fetch diverse popular: ${e instanceof Error ? e.message : String(e)}`,
-    );
+
+      const pricesByProduct = indexPricesById(prs);
+
+      // Group by parentAsin
+      const families = new Map<string, any[]>();
+      for (const p of prods) {
+        if (p.parentAsin) {
+          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+          families.get(p.parentAsin)!.push(p);
+        }
+      }
+
+      return prods
+        .map((p) => {
+          const siblings = p.parentAsin
+            ? families.get(p.parentAsin) || [p]
+            : [p];
+          return mapDbProduct(
+            p as DbProduct,
+            pricesByProduct.get(p.id!) || [],
+            siblings, // Pass true siblings
+            true, // Strip heavy data (Home curation doesn't need specs)
+          );
+        })
+        .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
+    } catch (e) {
+      console.warn(
+        `[DB Warning] Failed to fetch diverse popular: ${e instanceof Error ? e.message : String(e)}`,
+      );
+      return [];
+    }
+  },
+  ["diverse-popular-v13"],
+  {
+    revalidate: CATEGORY_REVALIDATE_SECONDS,
+    tags: ["products", "popular", "diverse"],
+  },
+);
+
+export const getDiverseMostPopular = cache(async function getDiverseMostPopular(
+  itemsPerCategory: number = 10,
+  countryCode: string = "de",
+): Promise<Product[]> {
+  const isScript =
+    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
+
+  if (isScript) {
+    // Scripts (non-Next.js) can't use unstable_cache
+    // We would need to duplicate the logic or export the inner manual fetcher if needed.
+    // For now returning empty or we could refactor further.
+    // But scripts usually don't call this function.
     return [];
   }
-}
+
+  return fetchDiversePopular(itemsPerCategory, countryCode);
+});
 
 const getCachedNew = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {

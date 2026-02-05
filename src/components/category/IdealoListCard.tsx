@@ -71,9 +71,12 @@ export function IdealoListCard({
         <div
           className={cn(
             "sr-resultItemTile__imageSection sr-resultItemTile__imageSection--LIST",
-            "relative flex h-[140px] w-[168px] items-center justify-center bg-white",
+            "relative flex h-[140px] w-[168px] items-center justify-center overflow-hidden bg-white",
           )}
         >
+          {/* Shimmer overlay */}
+          <div className="animate-shimmer pointer-events-none absolute inset-0" />
+
           {product.image ? (
             <Image
               src={product.image}

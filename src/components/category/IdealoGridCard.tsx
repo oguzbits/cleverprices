@@ -88,9 +88,12 @@ export function IdealoGridCard({
         <div
           className={cn(
             "sr-resultItemTile__imageSection resultItemTile__imageSection--GRID",
-            "relative flex h-[140px] items-center justify-center bg-white",
+            "relative flex h-[140px] items-center justify-center overflow-hidden bg-[#f5f5f5]",
           )}
         >
+          {/* Shimmer overlay */}
+          <div className="animate-shimmer pointer-events-none absolute inset-0" />
+
           {product.image ? (
             <Image
               src={product.image}

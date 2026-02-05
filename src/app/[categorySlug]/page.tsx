@@ -61,7 +61,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { categorySlug } = await params;
-  const category = getCategoryBySlug(categorySlug);
+  const category = await getCategoryBySlug(categorySlug);
   if (!category) return { title: "Kategorie nicht gefunden" };
 
   // Check if category is empty
@@ -113,7 +113,7 @@ export default async function DedicatedCategoryPage({
   searchParams,
 }: Props) {
   const { categorySlug } = await params;
-  const category = getCategoryBySlug(categorySlug);
+  const category = await getCategoryBySlug(categorySlug);
 
   if (!category) notFound();
 

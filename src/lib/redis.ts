@@ -26,6 +26,14 @@ const createRedis = () => {
     }
   });
 
+  // [OPTIMIZATION] Configure eviction policy to prevent OOM
+  // This ensures Redis drops old keys instead of crashing when full
+  if (process.env.NODE_ENV === "production") {
+    client.config("SET", "maxmemory-policy", "allkeys-lru").catch(() => {
+      // Ignore config errors if user lacks permission (e.g. managed redis)
+    });
+  }
+
   return client;
 };
 
