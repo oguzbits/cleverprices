@@ -28,6 +28,7 @@ interface IdealoProductCarouselProps {
   countryCode?: CountryCode;
   /** Enable priority loading for first images (count depends on viewport) */
   priorityImages?: boolean;
+  livePriceMap?: Map<number, any>;
 }
 
 export function IdealoProductCarousel({
@@ -36,6 +37,7 @@ export function IdealoProductCarousel({
   className,
   countryCode,
   priorityImages = false,
+  livePriceMap,
 }: IdealoProductCarouselProps) {
   if (products.length === 0) {
     return (
@@ -78,6 +80,7 @@ export function IdealoProductCarousel({
           isVariantGroup={product.isVariantGroup}
           countryCode={countryCode}
           priorityLoad={priorityImages && index < 2}
+          livePriceData={product.id ? livePriceMap?.get(product.id) : undefined}
         />
       ))}
     </CarouselContainer>

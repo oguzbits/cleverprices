@@ -5,7 +5,6 @@ import {
   ProductSchema,
 } from "@/components/seo/ProductSchema";
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
-import { LazySection } from "@/components/ui/LazySection";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import {
   allCategories,
@@ -28,21 +27,19 @@ import { Package } from "lucide-react";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
-import React, { Suspense } from "react";
+import React from "react";
 import { CachedVariantSelector } from "./CachedVariantSelector";
 import { ConditionButtons } from "./ConditionButtons";
 import { IdealoLivePrice } from "./IdealoLivePrice";
 import { IdealoPriceChart } from "./IdealoPriceChart";
-import {
-  IdealoProductOffers,
-  IdealoProductOffersSkeleton,
-} from "./IdealoProductOffers";
+import { IdealoProductOffers } from "./IdealoProductOffers";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
 import { SpecificationsTable } from "./SpecificationsTable";
 
 interface IdealoProductPageProps {
   product: Product;
+  variants?: Product[]; // Pre-merged variants from server
   countryCode: CountryCode;
   selectedCondition?: "new" | "used" | "renewed";
   isParentView?: boolean;
@@ -53,6 +50,7 @@ interface IdealoProductPageProps {
 
 export async function IdealoProductPage({
   product,
+  variants,
   countryCode,
   selectedCondition,
   isParentView: initialIsParentView = false,
@@ -129,6 +127,12 @@ export async function IdealoProductPage({
   }
   */
 
+  const livePriceData = {
+    price: product.prices[countryCode] || null,
+    usedPrice: product.usedPrices?.[countryCode] || null,
+    warehousePrice: product.warehousePrices?.[countryCode] || null,
+  };
+
   return (
     <div className="bg-background min-h-screen">
       <ProductSchema
@@ -197,6 +201,7 @@ export async function IdealoProductPage({
                       countryCode={countryCode}
                       initialPrice={product.prices[countryCode]}
                       className="text-[28px] font-black text-[#2d2d2d]"
+                      livePriceData={livePriceData}
                     />
                   </div>
 
@@ -375,6 +380,7 @@ export async function IdealoProductPage({
                   <ComponentErrorBoundary name="VariantSelector">
                     <CachedVariantSelector
                       product={product}
+                      variants={variants}
                       countryCode={countryCode}
                       isParentView={isParentView}
                       selectedCondition={effectiveCondition}
@@ -414,64 +420,41 @@ export async function IdealoProductPage({
               className="text-idealo-text-primary order-1 mb-[45px] hidden min-w-0 text-[14px] leading-[16px] xl:block xl:w-1/4 xl:pr-[15px]"
             >
               <ComponentErrorBoundary name="SidebarSimilarProducts">
-                <Suspense
-                  fallback={
-                    <div className="bg-muted h-[400px] w-full animate-pulse rounded" />
-                  }
-                >
-                  <CachedSidebarSimilarProducts
-                    product={product}
-                    countryCode={countryCode}
-                  />
-                </Suspense>
+                <CachedSidebarSimilarProducts
+                  product={product}
+                  countryCode={countryCode}
+                />
               </ComponentErrorBoundary>
             </aside>
 
             {/* Offers Section (DB only) */}
             <ComponentErrorBoundary name="ProductOffers">
-              <Suspense fallback={<IdealoProductOffersSkeleton />}>
-                <IdealoProductOffers
-                  product={product}
-                  productId={product.id!}
-                  countryCode={countryCode}
-                  selectedCondition={effectiveCondition}
-                  isParentView={isParentView}
-                />
-              </Suspense>
+              <IdealoProductOffers
+                product={product}
+                productId={product.id!}
+                countryCode={countryCode}
+                selectedCondition={effectiveCondition}
+                isParentView={isParentView}
+                variants={variants}
+              />
             </ComponentErrorBoundary>
           </div>
 
-          {/* Specifications Table (Bottom) */}
           <div id="datasheet" className="scroll-mt-[10vh]">
             <ComponentErrorBoundary name="Specifications">
-              <Suspense
-                fallback={
-                  <div className="bg-muted h-[300px] w-full animate-pulse rounded" />
-                }
-              >
-                <CachedSpecifications
-                  product={product}
-                  selectedCondition={effectiveCondition}
-                  isHubMode={isParentView}
-                />
-              </Suspense>
+              <CachedSpecifications
+                product={product}
+                selectedCondition={effectiveCondition}
+                isHubMode={isParentView}
+              />
             </ComponentErrorBoundary>
           </div>
 
-          {/* Similar Products Carousel */}
           <ComponentErrorBoundary name="SimilarCarousel">
-            <Suspense
-              fallback={
-                <div className="h-[400px] w-full animate-pulse rounded bg-gray-50" />
-              }
-            >
-              <LazySection placeholderHeight="400px" rootMargin="0px">
-                <CachedSimilarCarousel
-                  product={product}
-                  countryCode={countryCode}
-                />
-              </LazySection>
-            </Suspense>
+            <CachedSimilarCarousel
+              product={product}
+              countryCode={countryCode}
+            />
           </ComponentErrorBoundary>
         </div>
       </div>

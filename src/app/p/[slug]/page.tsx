@@ -8,6 +8,7 @@ import {
   findProductBySyntheticId,
   findProductSlugByAsinSuffix, // New
   getProductById, // New
+  type Product,
 } from "@/lib/product-registry";
 import {
   getAllProductSlugs,
@@ -371,74 +372,101 @@ export default async function ProductPage({ params, searchParams }: Props) {
       notFound();
     }
 
+    const { getCanonicalFamilyId, getProductById } =
+      await import("@/lib/product-registry");
+    const { getProductVariants } = await import("@/lib/server/cached-products");
+    const { getFamilyIdentity } = await import("@/lib/product-families");
+    const { mergeLivePrices } = await import("@/lib/server/live-data");
+
+    // 1. Parallelize data fetching: Canonical Hub, Variants
+    const [canonicalRealId, allVariantsRaw] = await Promise.all([
+      !parentViewMode
+        ? getCanonicalFamilyId(
+            product.parentAsin,
+            (product.id || 0) % 100000000,
+          )
+        : Promise.resolve(null),
+      getProductVariants(product, countryCode, true),
+    ]);
+
+    // 2. Batch merge live prices for ONLY the items we really need (main + variants)
+    // We merge them all at once to minimize database round-trips
+    const [mergedMainProduct, ...mergedVariants] = await mergeLivePrices(
+      [product, ...allVariantsRaw],
+      countryCode,
+    );
+
     // STABLE HUB RESOLUTION: Ensure "Alle Varianten" always points to the same ID
     let canonicalHubSlug: string | undefined = undefined;
     let consensusHubTitle: string | undefined = undefined;
     let consensusHubFullModel: string | undefined = undefined;
 
-    const { getCanonicalFamilyId, getProductById } =
-      await import("@/lib/product-registry");
-    const { getProductVariants } = await import("@/lib/server/cached-products");
-    const { getFamilyIdentity } = await import("@/lib/product-families");
-
-    if (!parentViewMode) {
-      const canonicalRealId = await getCanonicalFamilyId(
-        product.parentAsin,
-        (product.id || 0) % 100000000,
-      );
+    if (!parentViewMode && canonicalRealId !== null) {
       const syntheticId = 900000000 + canonicalRealId;
 
-      const [representative, allVariants] = await Promise.all([
-        getProductById(canonicalRealId),
-        getProductVariants(product, countryCode, true),
-      ]);
+      // 4. Determine representative (Hub Price)
+      // If we are in HUB mode, the representative is the canonical variant.
+      // Usually it's in allVariantsRaw, but if not, we fetch it and merge its price.
+      let representativeFound = mergedVariants.find(
+        (v) => v.id === canonicalRealId,
+      );
+      let representative: Product;
+
+      if (representativeFound) {
+        representative = representativeFound;
+      } else if (canonicalRealId) {
+        const fetched = await getProductById(canonicalRealId);
+        if (fetched) {
+          const [merged] = await mergeLivePrices([fetched], countryCode);
+          representative = merged;
+        } else {
+          representative = mergedMainProduct;
+        }
+      } else {
+        representative = mergedMainProduct;
+      }
 
       const familyIdentity = getFamilyIdentity(
-        { ...(representative || product), id: syntheticId },
-        allVariants,
+        { ...representative, id: syntheticId },
+        mergedVariants,
       );
       canonicalHubSlug = familyIdentity.slug;
       consensusHubTitle = familyIdentity.title;
       consensusHubFullModel = familyIdentity.title;
-    } else {
-      // We are ON the hub page. Still calculate consensus for the title consistency.
-      const allVariants = await getProductVariants(product, countryCode, true);
-      const familyIdentity = getFamilyIdentity(product, allVariants);
+    } else if (parentViewMode) {
+      // We are ON the hub page.
+      const familyIdentity = getFamilyIdentity(
+        mergedMainProduct,
+        mergedVariants,
+      );
       consensusHubTitle = familyIdentity.title;
       consensusHubFullModel = familyIdentity.title;
     }
 
     // GSC Fix: Return 404 for products with insufficient data (prevents soft 404)
-    // EXCEPTION: Hub pages (parentViewMode) are valid containers even if the main rep has no price,
-    // as long as they have variants (which is guaranteed by resolveProductFromRoute logic).
     const hasPrice =
       parentViewMode ||
-      product.prices[countryCode] ||
-      product.usedPrices?.[countryCode] ||
-      Object.values(product.prices).some(
+      mergedMainProduct.prices[countryCode] ||
+      mergedMainProduct.usedPrices?.[countryCode] ||
+      Object.values(mergedMainProduct.prices).some(
         (p) => typeof p === "number" && p > 0,
       ) ||
-      (product.usedPrices &&
-        Object.values(product.usedPrices).some((p) => p && p > 0));
+      (mergedMainProduct.usedPrices &&
+        Object.values(mergedMainProduct.usedPrices).some((p) => p && p > 0));
+
     const hasMeaningfulTitle =
-      product.title &&
-      product.title.length > 10 &&
-      product.title !== product.asin;
+      mergedMainProduct.title &&
+      mergedMainProduct.title.length > 10 &&
+      mergedMainProduct.title !== mergedMainProduct.asin;
 
     if (!hasPrice || !hasMeaningfulTitle) {
       notFound();
     }
 
-    // 2. Prepare slow live data as a Promise (Non-blocking)
-    const isBuild =
-      process.env.CI === "true" ||
-      process.env.CI === "1" ||
-      process.env.NEXT_PHASE === "phase-production-build";
-
     // 4. Render immediately!
     return (
       <IdealoProductPage
-        product={product}
+        product={mergedMainProduct}
         countryCode={countryCode}
         selectedCondition={condition as any}
         isParentView={parentViewMode}

@@ -127,17 +127,34 @@ export default async function HomeContent({
       console.warn("New arrivals section is empty.");
   }
 
+  // 5. Batch fetch live prices for all visible products
+  const allHomeProductIds = [
+    ...heroProducts.map((p) => p.id),
+    ...bestsellers.map((p) => p.id),
+    ...deals.map((p) => p.id),
+    ...newArrivals.map((p) => p.id),
+  ]
+    .filter(Boolean)
+    .filter((id) => typeof id === "number") as number[];
+
+  const { getLivePricesForProducts } = await import("@/lib/server/live-data");
+  const livePriceMap = await getLivePricesForProducts(
+    allHomeProductIds,
+    countryCode,
+  );
+
   return (
     <>
       <OrganizationSchema />
       <WebSiteSchema />
 
       <IdealoHomePage
-        popular={heroProducts}
-        deals={deals}
-        bestsellers={bestsellers}
-        newArrivals={newArrivals}
+        popular={heroProducts as any}
+        deals={deals as any}
+        bestsellers={bestsellers as any}
+        newArrivals={newArrivals as any}
         country={countryCode}
+        livePriceMap={livePriceMap}
       />
     </>
   );

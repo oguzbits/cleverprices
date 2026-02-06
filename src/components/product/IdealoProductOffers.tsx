@@ -10,27 +10,20 @@ import { Star } from "lucide-react";
 
 interface OffersListProps {
   product: Product;
-  productId: number; // Added to avoid needing the full product object in some cases
+  productId: number;
   countryCode: CountryCode;
   selectedCondition?: "new" | "used" | "renewed";
-  initialPrice?: number; // Pass the cached price as fallback
+  initialPrice?: number;
   isParentView?: boolean;
+  variants?: Product[]; // Pre-merged variants from server
 }
 
-/**
- * Component for the "Above the Fold" price tag.
- * Fetches fresh price and shows initial price as fallback/during revalidation.
- */
-
-/**
- * Streaming component for Product Offers.
- * This can be used with Suspense to prevent blocking the main page render.
- */
 export async function IdealoProductOffers({
   product,
   countryCode,
   selectedCondition = "new",
   isParentView = false,
+  variants: passedVariants,
 }: OffersListProps) {
   const countryConfig = getCountryByCode(countryCode);
 
@@ -45,14 +38,15 @@ export async function IdealoProductOffers({
     selectedCondition === "used" || selectedCondition === "renewed";
 
   if (isParentView && product.parentAsin) {
-    let familyMembers = await getProductFamilyMembers(
-      product.parentAsin,
-      countryCode,
-    );
+    let familyMembers =
+      passedVariants ||
+      (await getProductFamilyMembers(product.parentAsin, countryCode));
 
-    // [CRITICAL] Overlay fresh prices (1-min) for consistency with buttons/cards
-    const { mergeLivePrices } = await import("@/lib/server/live-data");
-    familyMembers = await mergeLivePrices(familyMembers, countryCode);
+    // Only merge if not already passed (pre-merged)
+    if (!passedVariants) {
+      const { mergeLivePrices } = await import("@/lib/server/live-data");
+      familyMembers = await mergeLivePrices(familyMembers, countryCode);
+    }
 
     let minPrice = Infinity;
     let bestItem: {
@@ -62,9 +56,9 @@ export async function IdealoProductOffers({
     } | null = null;
 
     familyMembers.forEach((m) => {
+      // ... (rest of the logic remains same)
       if (isUsedTrack) {
         const cond = (m.condition || "").toLowerCase();
-        // Option A: Renewed main listing
         const rp = m.prices[countryCode];
         if (cond === "renewed" && rp && rp > 0) {
           if (rp < minPrice) {
@@ -72,7 +66,6 @@ export async function IdealoProductOffers({
             bestItem = { product: m, price: rp, type: "renewed" };
           }
         }
-        // Option B: Warehouse used deals on this ASIN
         const wp = m.usedPrices?.[countryCode];
         if (wp && wp > 0) {
           if (wp < minPrice) {
@@ -81,7 +74,6 @@ export async function IdealoProductOffers({
           }
         }
       } else {
-        // New mode: Only show non-renewed listings primary prices
         const p = m.prices[countryCode];
         if ((m.condition || "").toLowerCase() !== "renewed" && p && p > 0) {
           if (p < minPrice) {
@@ -97,14 +89,15 @@ export async function IdealoProductOffers({
     let targets = [product];
 
     if (product.parentAsin) {
-      let familyMembers = await getProductFamilyMembers(
-        product.parentAsin,
-        countryCode,
-      );
+      let familyMembers =
+        passedVariants ||
+        (await getProductFamilyMembers(product.parentAsin, countryCode));
 
-      // [CRITICAL] Overlay fresh prices (1-min) for consistency
-      const { mergeLivePrices } = await import("@/lib/server/live-data");
-      familyMembers = await mergeLivePrices(familyMembers, countryCode);
+      // Only merge if not passed
+      if (!passedVariants) {
+        const { mergeLivePrices } = await import("@/lib/server/live-data");
+        familyMembers = await mergeLivePrices(familyMembers, countryCode);
+      }
 
       const curAttrs = product.variationAttributes?.toLowerCase().trim();
       const identicalSiblings = familyMembers.filter(
@@ -112,16 +105,16 @@ export async function IdealoProductOffers({
           m.id !== product.id &&
           m.variationAttributes?.toLowerCase().trim() === curAttrs,
       );
-      // Main product is also merged if it was in the family fetch,
-      // otherwise we ensure we use the merged version of p.id === product.id
       const mergedProduct =
         familyMembers.find((f) => f.id === product.id) || product;
       targets = [mergedProduct, ...identicalSiblings];
-    } else {
-      // Single Product (No Parent) - MUST also refresh prices to match "Neu ab"
+    } else if (!passedVariants) {
+      // Single Product (No Parent) - MUST refreshed prices to match "Neu ab" if not passed
       const { mergeLivePrices } = await import("@/lib/server/live-data");
       const [fresh] = await mergeLivePrices([product], countryCode);
       targets = [fresh];
+    } else {
+      targets = [product];
     }
 
     // Process all spec-identical targets (Prices are already merged)

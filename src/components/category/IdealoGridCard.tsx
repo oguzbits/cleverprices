@@ -25,11 +25,7 @@ import Image from "next/image";
 import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatTechText } from "@/lib/utils/formatting";
 import { isProductBestseller } from "@/lib/utils/products";
-import { Suspense } from "react";
-import {
-  IdealoLivePrice,
-  IdealoLivePriceSkeleton,
-} from "../product/IdealoLivePrice";
+import { IdealoLivePrice } from "../product/IdealoLivePrice";
 import { IdealoStarRating } from "./IdealoStarRating";
 
 interface IdealoGridCardProps {
@@ -37,6 +33,7 @@ interface IdealoGridCardProps {
   countryCode: CountryCode;
   className?: string;
   priority?: boolean;
+  livePriceData?: any;
 }
 
 export function IdealoGridCard({
@@ -44,6 +41,7 @@ export function IdealoGridCard({
   countryCode,
   className,
   priority = false,
+  livePriceData,
 }: IdealoGridCardProps) {
   const countryConfig = getCountryByCode(countryCode);
 
@@ -182,17 +180,14 @@ export function IdealoGridCard({
                 {formatCurrency(product.listPrice, countryCode)}
               </div>
             )}
-            <Suspense
-              fallback={<IdealoLivePriceSkeleton className="h-7 w-24" />}
-            >
-              <IdealoLivePrice
-                productId={product.id!}
-                countryCode={countryCode}
-                initialPrice={product.price}
-                showAb={product.isVariantGroup}
-                className="text-primary text-[20px]"
-              />
-            </Suspense>
+            <IdealoLivePrice
+              productId={product.id!}
+              countryCode={countryCode}
+              initialPrice={product.price}
+              showAb={product.isVariantGroup}
+              className="text-primary text-[20px]"
+              livePriceData={livePriceData}
+            />
           </div>
 
           {/* ============================================ */}

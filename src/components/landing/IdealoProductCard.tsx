@@ -1,12 +1,8 @@
-import {
-  IdealoLivePrice,
-  IdealoLivePriceSkeleton,
-} from "@/components/product/IdealoLivePrice";
+import { IdealoLivePrice } from "@/components/product/IdealoLivePrice";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
-import { Suspense } from "react";
 import { IdealoStarRating } from "../category/IdealoStarRating";
 
 export interface IdealoProductCardProps {
@@ -28,6 +24,7 @@ export interface IdealoProductCardProps {
   isVariantGroup?: boolean;
   countryCode?: string;
   priorityLoad?: boolean;
+  livePriceData?: any;
 }
 
 export function IdealoProductCard({
@@ -48,6 +45,7 @@ export function IdealoProductCard({
   isVariantGroup,
   countryCode = "de",
   priorityLoad = false,
+  livePriceData,
 }: IdealoProductCardProps) {
   const href = `/p/${slug.includes("_-") ? slug : `${(isVariantGroup ? 900000000 : 200000000) + (id || 0)}_-${slug}`}`;
   return (
@@ -145,17 +143,14 @@ export function IdealoProductCard({
 
             {/* Price Display: Live (Server Component) or Static */}
             {id ? (
-              <Suspense
-                fallback={<IdealoLivePriceSkeleton className="h-6 w-20" />}
-              >
-                <IdealoLivePrice
-                  productId={id}
-                  countryCode={countryCode as any}
-                  initialPrice={price}
-                  showAb
-                  className="text-primary text-[20px] leading-none font-bold"
-                />
-              </Suspense>
+              <IdealoLivePrice
+                productId={id}
+                countryCode={countryCode as any}
+                initialPrice={price}
+                showAb
+                className="text-primary text-[20px] leading-none font-bold"
+                livePriceData={livePriceData}
+              />
             ) : (
               <LegalPrice
                 price={price}

@@ -30,7 +30,6 @@ import { formatTechText } from "@/lib/utils/formatting";
 
 // Sub-components
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
-import { Suspense } from "react";
 import {
   AsyncFilterPanel,
   AsyncProductList,
@@ -100,17 +99,11 @@ export async function IdealoCategoryPage({
           {/* TOP BAR - Suspense Wrapper */}
           {/* ============================================ */}
           <ComponentErrorBoundary name="CategoryTopBar">
-            <Suspense
-              fallback={
-                <div className="bg-secondary mb-4 flex h-[60px] animate-pulse items-center justify-between rounded" />
-              }
-            >
-              <AsyncTopBar
-                categoryName={formatTechText(category.name)}
-                searchParams={searchParams}
-                productDataPromise={productDataPromise}
-              />
-            </Suspense>
+            <AsyncTopBar
+              categoryName={formatTechText(category.name)}
+              searchParams={searchParams}
+              productDataPromise={productDataPromise}
+            />
           </ComponentErrorBoundary>
         </div>
 
@@ -126,43 +119,20 @@ export async function IdealoCategoryPage({
         >
           {/* FILTERS (Sidebar) */}
           <ComponentErrorBoundary name="CategoryFilters">
-            <Suspense
-              fallback={
-                <aside className="sr-filterBar hidden w-full min-[840px]:block min-[840px]:max-w-[33.33333%] min-[840px]:basis-[33.33333%] min-[960px]:max-w-[25%] min-[960px]:basis-[25%]">
-                  <div className="bg-muted h-[600px] animate-pulse rounded" />
-                </aside>
-              }
-            >
-              <AsyncFilterPanel
-                category={category}
-                productDataPromise={productDataPromise}
-              />
-            </Suspense>
+            <AsyncFilterPanel
+              category={category}
+              productDataPromise={productDataPromise}
+            />
           </ComponentErrorBoundary>
 
           {/* PRODUCT LIST */}
           <ComponentErrorBoundary name="CategoryProductList">
-            <Suspense
-              fallback={
-                <div className="relative w-full pr-0 pl-0 min-[840px]:max-w-[66.66667%] min-[840px]:basis-[66.66667%] min-[840px]:pl-[15px] min-[960px]:max-w-[75%] min-[960px]:basis-[75%]">
-                  <div className="grid grid-cols-2 gap-4 min-[640px]:grid-cols-3 min-[1024px]:grid-cols-4">
-                    {[...Array(8)].map((_, i) => (
-                      <div
-                        key={i}
-                        className="bg-card h-[380px] animate-pulse rounded"
-                      />
-                    ))}
-                  </div>
-                </div>
-              }
-            >
-              <AsyncProductList
-                category={category}
-                countryCode={countryCode}
-                searchParams={searchParams}
-                productDataPromise={productDataPromise}
-              />
-            </Suspense>
+            <AsyncProductList
+              category={category}
+              countryCode={countryCode}
+              searchParams={searchParams}
+              productDataPromise={productDataPromise}
+            />
           </ComponentErrorBoundary>
         </div>
       </div>

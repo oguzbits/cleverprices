@@ -9,11 +9,7 @@ import {
   type CategorySlug,
 } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
-import {
-  getCategoryBestsellers,
-  getCategoryDeals,
-  getCategoryNewProducts,
-} from "@/lib/data/parentCategoryData";
+import { getParentCategoryData } from "@/lib/data/parentCategoryData";
 import {
   generateKeywords,
   getAlternateLanguages,
@@ -132,33 +128,11 @@ export default async function DedicatedCategoryPage({
 
     // If it's a hub (has children), show the parent view with product sections
     if (childCategories.length > 0) {
-      // Fetch products for internal linking sections (Sequentially to allow for exclusion)
-      const bestsellers = await getCategoryBestsellers(
+      // Fetch products for internal linking sections (Optimized single round trip)
+      const { bestsellers, newProducts, deals } = await getParentCategoryData(
         categorySlug as CategorySlug,
-        24,
         DEFAULT_COUNTRY,
-      ).catch(() => []);
-
-      const excludeForNew = bestsellers.map((p: any) => p.id).filter(Boolean);
-      const newProducts = await getCategoryNewProducts(
-        categorySlug as CategorySlug,
-        8,
-        DEFAULT_COUNTRY,
-        2,
-        excludeForNew,
-      ).catch(() => []);
-
-      const excludeForDeals = [
-        ...excludeForNew,
-        ...newProducts.map((p: any) => p.id).filter(Boolean),
-      ];
-      const deals = await getCategoryDeals(
-        categorySlug as CategorySlug,
-        8,
-        DEFAULT_COUNTRY,
-        2,
-        excludeForDeals,
-      ).catch(() => []);
+      ).catch(() => ({ bestsellers: [], newProducts: [], deals: [] }));
 
       // Transform products to LeanProduct format for consistent card styling
       const transformProduct = (p: any) => ({

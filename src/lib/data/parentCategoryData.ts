@@ -324,6 +324,166 @@ export async function getCategoryDeals(
 }
 
 /**
+ * Get all sections for a parent category page in a single round trip.
+ * Eliminates redundant fetching and price merging.
+ */
+export async function getParentCategoryData(
+  parentSlug: CategorySlug,
+  countryCode: string = "de",
+): Promise<{
+  bestsellers: Product[];
+  newProducts: Product[];
+  deals: Product[];
+}> {
+  const childCategories = getChildCategories(parentSlug);
+
+  // 1. Fetch ALL products for ALL child categories ONCE
+  const productPromises = childCategories.map((child) =>
+    getProductsByCategory(child.slug),
+  );
+  const productArrays = await Promise.all(productPromises);
+  const allProductsRaw = productArrays.flat();
+
+  // 2. Merge live prices ONCE for the entire set
+  const allProducts = await mergeLivePrices(allProductsRaw, countryCode);
+
+  // 3. Filter for valid products
+  const validProducts = allProducts.filter(
+    (p) => p.prices[countryCode] !== undefined && p.prices[countryCode] > 0,
+  );
+
+  // Helper for diversity
+  const filterSection = (
+    products: Product[],
+    limit: number,
+    excludeIds: number[],
+    maxPerBrand: number = 2,
+    maxPerCategory: number = 3,
+  ) => {
+    const brandCounts = new Map<string, number>();
+    const categoryCounts = new Map<string, number>();
+    const seenGroups = new Set<string>();
+    const result: Product[] = [];
+
+    for (const product of products) {
+      if (excludeIds.includes(product.id!)) continue;
+      const brand = product.brand.toLowerCase();
+      const category = product.category;
+      const groupKey = getProductGroupKey(product);
+
+      if (seenGroups.has(groupKey)) continue;
+
+      if (
+        (brandCounts.get(brand) || 0) < maxPerBrand &&
+        (categoryCounts.get(category) || 0) < maxPerCategory
+      ) {
+        result.push(product);
+        brandCounts.set(brand, (brandCounts.get(brand) || 0) + 1);
+        categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+        seenGroups.add(groupKey);
+        if (result.length >= limit) break;
+      }
+    }
+    return result;
+  };
+
+  // 4. Calculate Bestsellers
+  const bestsellersSorted = [...validProducts].sort((a, b) => {
+    const scoreA = calculateDesirabilityScore(
+      a,
+      a.prices[countryCode] || 0,
+      a.title,
+      "landing",
+    ).popularityScore;
+    const scoreB = calculateDesirabilityScore(
+      b,
+      b.prices[countryCode] || 0,
+      b.title,
+      "landing",
+    ).popularityScore;
+    return scoreB - scoreA;
+  });
+  const bestsellers = filterSection(bestsellersSorted, 24, []);
+  const bestsellerIds = bestsellers.map((p) => p.id!);
+
+  // 5. Calculate New Products
+  const newSorted = [...validProducts]
+    .filter((p) => {
+      const titleMatch = p.title.match(/\b(20[12][0-9])\b/);
+      const yearFromTitle = titleMatch ? parseInt(titleMatch[1]) : 0;
+      const yearFromDate = p.createdAt
+        ? new Date(p.createdAt).getFullYear()
+        : 0;
+      const productYear = Math.max(yearFromTitle, yearFromDate);
+      return (
+        p.prices[countryCode] >= 30 &&
+        !(productYear > 0 && productYear < CURRENT_YEAR - 1)
+      );
+    })
+    .sort((a, b) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      if (Math.abs(dateB - dateA) > 1000 * 60 * 60 * 24 * 30)
+        return dateB - dateA;
+      const scoreA = calculateDesirabilityScore(
+        a,
+        a.prices[countryCode] || 0,
+        a.title,
+        "landing",
+      ).popularityScore;
+      const scoreB = calculateDesirabilityScore(
+        b,
+        b.prices[countryCode] || 0,
+        b.title,
+        "landing",
+      ).popularityScore;
+      return scoreB - scoreA;
+    });
+  const newProducts = filterSection(newSorted, 8, bestsellerIds, 2, 2);
+  const newIds = newProducts.map((p) => p.id!);
+
+  // 6. Calculate Deals
+  const dealsSorted = [...validProducts]
+    .filter((p) => {
+      const price = p.prices[countryCode];
+      return price >= 30 && calculateProductDiscount(p, countryCode) >= 5;
+    })
+    .sort((a, b) => {
+      const discountA = calculateProductDiscount(a, countryCode);
+      const discountB = calculateProductDiscount(b, countryCode);
+      const scoreA =
+        calculateDesirabilityScore(
+          a,
+          a.prices[countryCode] || 0,
+          a.title,
+          "landing",
+        ).popularityScore *
+        (discountA / 100);
+      const scoreB =
+        calculateDesirabilityScore(
+          b,
+          b.prices[countryCode] || 0,
+          b.title,
+          "landing",
+        ).popularityScore *
+        (discountB / 100);
+      return scoreB - scoreA;
+    });
+  const deals = filterSection(
+    dealsSorted,
+    8,
+    [...bestsellerIds, ...newIds],
+    2,
+    3,
+  );
+  deals.forEach((p) => {
+    p.savings = calculateProductDiscount(p, countryCode) / 100;
+  });
+
+  return { bestsellers, newProducts, deals };
+}
+
+/**
  * Get total product count for a parent category (sum of all child categories).
  */
 export async function getCategoryProductCount(

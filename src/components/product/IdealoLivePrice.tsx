@@ -22,8 +22,17 @@ export async function IdealoLivePrice({
   priceType = "new",
   className = "text-idealo-text-primary text-[15px] font-extrabold",
   showAb = false,
-}: IdealoLivePriceProps & { priceType?: "new" | "used" }) {
-  const live = await getLivePriceForProduct(productId, countryCode);
+  livePriceData,
+}: IdealoLivePriceProps & {
+  priceType?: "new" | "used";
+  livePriceData?: {
+    price: number | null;
+    usedPrice: number | null;
+    warehousePrice: number | null;
+  };
+}) {
+  const live =
+    livePriceData || (await getLivePriceForProduct(productId, countryCode));
 
   const p = live?.price || 0;
   const up = live?.usedPrice || 0;

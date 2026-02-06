@@ -11,9 +11,10 @@ interface Product {
 
 interface IdealoHeroProps {
   products: Product[];
+  livePriceMap?: Map<number, any>;
 }
 
-export function IdealoHero({ products }: IdealoHeroProps) {
+export function IdealoHero({ products, livePriceMap }: IdealoHeroProps) {
   // Show first 8 products in hero carousel
   const heroProducts = products.slice(0, 8);
 
@@ -24,8 +25,9 @@ export function IdealoHero({ products }: IdealoHeroProps) {
         <div className="min-w-0 flex-1 overflow-hidden rounded-[6px]">
           <IdealoProductCarousel
             title="Beliebte Produkte"
-            products={heroProducts}
+            products={heroProducts as any}
             priorityImages
+            livePriceMap={livePriceMap}
           />
         </div>
       ) : (

@@ -34,6 +34,7 @@ interface IdealoHomePageProps {
   bestsellers: Product[];
   newArrivals: Product[];
   country: string;
+  livePriceMap?: Map<number, any>;
 }
 
 export function IdealoHomePage({
@@ -42,6 +43,7 @@ export function IdealoHomePage({
   bestsellers,
   newArrivals,
   country,
+  livePriceMap,
 }: IdealoHomePageProps) {
   // Handle empty state if all lists are empty
   if (
@@ -72,7 +74,7 @@ export function IdealoHomePage({
       {/* Hero Section - light blue bg - Critical, so we keep regular import or direct usage */}
       {popular.length > 0 ? (
         <IdealoSection variant="lightBlue">
-          <IdealoHero products={popular} />
+          <IdealoHero products={popular} livePriceMap={livePriceMap} />
         </IdealoSection>
       ) : null}
 
@@ -80,7 +82,11 @@ export function IdealoHomePage({
       {bestsellers.length > 0 ? (
         <LazySection placeholderHeight="400px" rootMargin="0px">
           <IdealoSection variant="white">
-            <IdealoProductCarousel title="Bestseller" products={bestsellers} />
+            <IdealoProductCarousel
+              title="Bestseller"
+              products={bestsellers}
+              livePriceMap={livePriceMap}
+            />
           </IdealoSection>
         </LazySection>
       ) : null}
@@ -92,6 +98,7 @@ export function IdealoHomePage({
             <DynamicProductCarousel
               title="Aktuelle Deals für dich"
               products={deals}
+              livePriceMap={livePriceMap}
             />
           </IdealoSection>
         </LazySection>
@@ -101,7 +108,11 @@ export function IdealoHomePage({
       {newArrivals.length > 0 ? (
         <LazySection placeholderHeight="400px" rootMargin="0px">
           <IdealoSection variant="white">
-            <DynamicProductCarousel title="Neuheiten" products={newArrivals} />
+            <DynamicProductCarousel
+              title="Neuheiten"
+              products={newArrivals}
+              livePriceMap={livePriceMap}
+            />
           </IdealoSection>
         </LazySection>
       ) : null}

@@ -4,8 +4,7 @@ import { cn } from "@/lib/utils";
 import { normalizeVariantAttributes } from "@/lib/utils/variants";
 import { Check } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
-import { IdealoLivePrice, IdealoLivePriceSkeleton } from "./IdealoLivePrice";
+import { IdealoLivePrice } from "./IdealoLivePrice";
 
 interface ConditionButtonsProps {
   product: Product;
@@ -243,16 +242,12 @@ export async function ConditionButtons({
             </div>
           </div>
           <div className="text-idealo-text-primary text-[15px] font-extrabold">
-            <Suspense
-              fallback={<IdealoLivePriceSkeleton className="h-5 w-16" />}
-            >
-              <IdealoLivePrice
-                productId={bestNewProductId}
-                countryCode={countryCode as any}
-                initialPrice={newPrice}
-                priceType="new"
-              />
-            </Suspense>
+            <IdealoLivePrice
+              productId={bestNewProductId}
+              countryCode={countryCode as any}
+              initialPrice={newPrice}
+              priceType="new"
+            />
           </div>
         </Link>
       )}
@@ -279,16 +274,12 @@ export async function ConditionButtons({
             </div>
           </div>
           <div className="text-idealo-text-primary text-[15px] font-extrabold">
-            <Suspense
-              fallback={<IdealoLivePriceSkeleton className="h-5 w-16" />}
-            >
-              <IdealoLivePrice
-                productId={bestUsedOverallProductId}
-                countryCode={countryCode as any}
-                initialPrice={usedOverallPrice}
-                priceType={usedOverallType === "renewed" ? "new" : "used"}
-              />
-            </Suspense>
+            <IdealoLivePrice
+              productId={bestUsedOverallProductId}
+              countryCode={countryCode as any}
+              initialPrice={usedOverallPrice}
+              priceType={usedOverallType === "renewed" ? "new" : "used"}
+            />
           </div>
         </Link>
       )}

@@ -15,6 +15,7 @@ interface IdealoResultListProps {
   countryCode: CountryCode;
   viewMode: "grid" | "list";
   className?: string;
+  livePrices?: Map<number, any>;
 }
 
 export function IdealoResultList({
@@ -22,6 +23,7 @@ export function IdealoResultList({
   countryCode,
   viewMode,
   className,
+  livePrices,
 }: IdealoResultListProps) {
   if (products.length === 0) {
     return (
@@ -48,6 +50,7 @@ export function IdealoResultList({
             product={product}
             countryCode={countryCode}
             priority={index < 2}
+            livePriceData={livePrices?.get(product.id || 0)}
           />
         ))}
       </div>
@@ -73,6 +76,7 @@ export function IdealoResultList({
           product={product}
           countryCode={countryCode}
           priority={index < 2}
+          livePriceData={livePrices?.get(product.id || 0)}
         />
       ))}
     </div>

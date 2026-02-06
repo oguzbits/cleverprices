@@ -6,7 +6,7 @@ import { Category, CategorySlug, getChildCategories } from "@/lib/categories";
 import { getCategoryFAQs } from "@/lib/category-faqs";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { FilterParams } from "@/lib/server/category-products";
-import { getUniqueFieldValues } from "@/lib/utils/category-utils";
+import { getLivePricesForProducts } from "@/lib/server/live-data";
 import { formatTechText } from "@/lib/utils/formatting";
 import { X } from "lucide-react";
 import Link from "next/link";
@@ -87,7 +87,7 @@ export async function AsyncFilterPanel({
   // category-products.ts returns `filterCounts` calculated from `localizedProducts` (the result of getCached localizedCategoryProducts).
 
   // Actually, `getCategoryProducts` returns `filterCounts` based on the *result set* if it was just returning filtered prods?
-  // No, `getCategoryProducts` calculates counts from `localizedProducts` (which is ALL products in category) then filters.
+  // No, `getCategoryProducts` calculates counts from `localizedProducts` (ALL products in category) then filters.
   // Wait, let's re-read `category-products.ts`.
   // `localizedProducts` = CACHED ALL PRODUCTS.
   // `filtered` = filtered subset.
@@ -148,12 +148,12 @@ export async function AsyncProductList({
       if (group.options) {
         filterGroupOptions[group.field] = group.options;
       } else {
-         // Use keys from filterCounts to get available options
-         const options = Object.keys(filterCounts[group.field] || {});
-         filterGroupOptions[group.field] =
-           group.field === "capacity"
-             ? options.sort((a, b) => parseFloat(a) - parseFloat(b))
-             : options.sort();
+        // Use keys from filterCounts to get available options
+        const options = Object.keys(filterCounts[group.field] || {});
+        filterGroupOptions[group.field] =
+          group.field === "capacity"
+            ? options.sort((a, b) => parseFloat(a) - parseFloat(b))
+            : options.sort();
       }
     });
   }
@@ -162,6 +162,12 @@ export async function AsyncProductList({
   const relatedCategories = getChildCategories(
     (category.parent as CategorySlug) || ("elektroartikel" as CategorySlug),
   ).filter((c) => c.slug !== category.slug);
+
+  // Fetch live prices in batch
+  const livePrices = await getLivePricesForProducts(
+    products.map((p: any) => p.id!).filter(Boolean),
+    countryCode,
+  );
 
   if (!hasProducts) {
     return (
@@ -284,6 +290,7 @@ export async function AsyncProductList({
         products={products}
         countryCode={countryCode as any}
         viewMode={viewMode as "grid" | "list"}
+        livePrices={livePrices}
       />
 
       {pagination && (

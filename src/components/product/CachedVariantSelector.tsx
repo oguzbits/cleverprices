@@ -2,6 +2,7 @@ import { ProductVariantSelector } from "./ProductVariantSelector";
 
 interface ProductVariantSelectorProps {
   product: any;
+  variants?: any[]; // Pre-merged variants from server
   countryCode: string;
   isParentView?: boolean;
   selectedCondition?: "new" | "used" | "renewed";
@@ -10,22 +11,27 @@ interface ProductVariantSelectorProps {
 
 export async function CachedVariantSelector({
   product,
+  variants: passedVariants,
   countryCode,
   isParentView,
   selectedCondition,
   parentSlug,
 }: ProductVariantSelectorProps) {
-  const { getProductVariants } = await import("@/lib/server/cached-products");
-  let allVariants = await getProductVariants(product, countryCode);
+  let allVariants = passedVariants || [];
 
-  // Fallback: If getProductVariants returns empty (no siblings), we ensure the current product is in the list
-  if (allVariants.length === 0) {
-    allVariants = [product];
+  if (!passedVariants) {
+    const { getProductVariants } = await import("@/lib/server/cached-products");
+    allVariants = await getProductVariants(product, countryCode);
+
+    // Fallback: If getProductVariants returns empty (no siblings), we ensure the current product is in the list
+    if (allVariants.length === 0) {
+      allVariants = [product];
+    }
+
+    // [CRITICAL] Overlay fresh prices (1-min) for consistency across components
+    const { mergeLivePrices } = await import("@/lib/server/live-data");
+    allVariants = await mergeLivePrices(allVariants, countryCode);
   }
-
-  // [CRITICAL] Overlay fresh prices (1-min) for consistency across components
-  const { mergeLivePrices } = await import("@/lib/server/live-data");
-  allVariants = await mergeLivePrices(allVariants, countryCode);
 
   // Find the merged version of the current product to ensure consistency
   const currentMergedProduct =
