@@ -510,8 +510,14 @@ export function getProductIdentity(
 
   // Subtract all words found in variant attributes
   Object.entries(variantMap).forEach(([k, v]) => {
-    // skip subtraction for Identity-defining keys (Model, Name, Series, etc.)
-    if (IDENTITY_CONFIG.IDENTITY_KEYS.includes(k.toLowerCase())) return;
+    // skip subtraction for core model-defining keys (Model, Name, Series, etc.)
+    // but ALLOW subtraction for variant traits like Color/Size to keep model names clean
+    const lowerKey = k.toLowerCase();
+    const isCoreIdentityKey =
+      /model|name|series|serie|family|familie|bezeichnung|style/.test(lowerKey);
+
+    if (isCoreIdentityKey && IDENTITY_CONFIG.IDENTITY_KEYS.includes(lowerKey))
+      return;
 
     if (typeof v === "string") {
       v.toLowerCase()
