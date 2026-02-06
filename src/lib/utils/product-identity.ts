@@ -160,6 +160,28 @@ export function verifySpecModel(
     if (!hasOverlap) return false;
   }
 
+  // C. Series/Tier Mismatch (Avoid "Ultra" overriding "SE", or "Pro" overriding "Air")
+  const TIER_CONTRADICTIONS = [
+    ["ultra", "se", "fe", "plus", "lite"], // High-end vs budget/entry
+    ["pro", "air"], // Laptop specific
+    ["plus", "max", "pro", "ultra"], // Large/High-end variants (usually distinct)
+  ];
+
+  for (const group of TIER_CONTRADICTIONS) {
+    const titleTiers = group.filter((t) => titleTokens.includes(t));
+    const candTiers = group.filter((t) => candTokens.includes(t));
+
+    // If both title and candidate mention different tiers from the same contradiction group,
+    // they are likely different products.
+    if (
+      titleTiers.length > 0 &&
+      candTiers.length > 0 &&
+      !titleTiers.some((t) => candTiers.includes(t))
+    ) {
+      return false;
+    }
+  }
+
   // Special exception: If candidate is just a more specific version of a short title
   const isSuperSet =
     candTokens.length > 0 && titleTokens.every((t) => candTokens.includes(t));

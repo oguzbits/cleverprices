@@ -53,6 +53,11 @@ version: "2.1.0"
 
 - [Upsert](rules/patterns-upsert.md)
 - [Batch Inserts](rules/patterns-batch.md)
+
+### Maintenance & Sync
+
+- [Safe Database Sync (WAL/SHM Precautions)](file:///Users/oguz/Desktop/Dev/cleverprices/.agent/skills/drizzle-orm/rules/maintenance-db-sync.md)
+- [Backup Strategies](file:///Users/oguz/Desktop/Dev/cleverprices/.agent/skills/drizzle-orm/rules/backups.md)
 - [Turso Latency](rules/patterns-turso-latency.md)
 - [Transactions](rules/patterns-transactions.md)
 - [Resource Safety](rules/patterns-resource-safety.md) - CRITICAL
