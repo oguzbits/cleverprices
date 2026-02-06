@@ -47,7 +47,7 @@ export function IdealoProductCard({
   priorityLoad = false,
   livePriceData,
 }: IdealoProductCardProps) {
-  const href = `/p/${slug.includes("_-") ? slug : `${(isVariantGroup ? 900000000 : 200000000) + (id || 0)}_-${slug}`}`;
+  const href = `/p/${slug}`;
   return (
     <div className="group border-idealo-border relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border bg-white transition-shadow hover:shadow-lg sm:h-[327px] sm:w-[224px]">
       <PrefetchLink

@@ -406,7 +406,7 @@ export async function ProductDetailView({
                 {similarProducts.slice(0, 3).map((p) => (
                   <Link
                     key={p.slug}
-                    href={`/p/${p.slug.includes("_-") ? p.slug : `${200000000 + (p.id || 0)}_-${p.slug}`}`}
+                    href={`/p/${p.slug}`}
                     className="group flex items-center gap-4 p-4 no-underline transition-colors hover:bg-zinc-50"
                   >
                     <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-zinc-100 bg-white p-1 shadow-sm">

@@ -56,7 +56,7 @@ export function IdealoListCard({
   return (
     <div className={cn("sr-resultList__item", "-mb-px", className)}>
       <PrefetchLink
-        href={`/p/${product.slug.includes("_-") ? product.slug : `${(product.isVariantGroup ? 900000000 : 200000000) + (product.id || 0)}_-${product.slug}`}`}
+        href={`/p/${product.slug}`}
         className={cn(
           "sr-resultItemTile sr-resultItemTile--LIST",
           "relative flex flex-row items-stretch",

@@ -39,7 +39,7 @@ export function SimilarProducts({
         return (
           <Link
             key={product.slug}
-            href={`/p/${product.slug.includes("_-") ? product.slug : `${200000000 + (product.id || 0)}_-${product.slug}`}`}
+            href={`/p/${product.slug}`}
             className="group no-underline"
           >
             <Card className="h-full transition-shadow hover:shadow-md">
@@ -123,7 +123,7 @@ export function SimilarProductsCompact({
         return (
           <li key={product.slug}>
             <Link
-              href={`/p/${product.slug.includes("_-") ? product.slug : `${200000000 + (product.id || 0)}_-${product.slug}`}`}
+              href={`/p/${product.slug}`}
               className="hover:bg-muted flex items-center gap-3 rounded-md p-2 transition-colors"
             >
               {/* Thumbnail */}

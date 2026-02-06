@@ -286,11 +286,7 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   <CommandItem
                     key={product.slug}
                     value={`product-${product.slug}`}
-                    onSelect={() =>
-                      handleSelect(
-                        `/p/${product.slug.includes("_-") ? product.slug : `${(product.isVariantGroup ? 900000000 : 200000000) + (product.id || 0)}_-${product.slug}`}`,
-                      )
-                    }
+                    onSelect={() => handleSelect(`/p/${product.slug}`)}
                     className="cursor-pointer py-2.5"
                   >
                     <div className="flex w-full items-baseline gap-2 truncate">

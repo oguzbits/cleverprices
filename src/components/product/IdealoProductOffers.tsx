@@ -190,7 +190,7 @@ export async function IdealoProductOffers({
         price: price,
         currency: countryConfig?.currency || "EUR",
         displayPrice: formatCurrency(price, countryCode),
-        affiliateLink: `/out/${p.slug.match(/^\d+_-/) ? p.slug : `${p.id}_-${p.slug}`}`,
+        affiliateLink: `/out/${p.slug}`,
         condition:
           type === "renewed" || type === "warehouse"
             ? "used"

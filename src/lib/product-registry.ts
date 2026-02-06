@@ -215,12 +215,24 @@ export const getProductById = cache(async function getProductById(
 
   if (!p) return undefined;
 
-  // O(1) Fetch: Only fetch prices for the specific product.
-  // Sibling consensus is deferred to variant-specific pages or Hub fetches.
-  const prs = await db.select().from(prices).where(eq(prices.productId, p.id));
+  // [CONSISTENCY FIX] Fetch prices and siblings together to maintain slug consensus
+  const [prs, siblings] = await Promise.all([
+    db.select().from(prices).where(eq(prices.productId, p.id)),
+    p.parentAsin
+      ? db
+          .select(liteProductColumns)
+          .from(products)
+          .where(eq(products.parentAsin, p.parentAsin))
+      : Promise.resolve([]),
+  ]);
 
   // Use centralized mapping logic which correctly handles historyJson and identity
-  const product = mapDbProduct(p as DbProduct, prs as Price[], [], false);
+  const product = mapDbProduct(
+    p as DbProduct,
+    prs as Price[],
+    siblings as any[],
+    false,
+  );
 
   // Preserve the synthetic/offset ID if provided
   if (id >= 200000000) {
@@ -702,6 +714,52 @@ function indexPricesById<T extends PriceWithProductId>(
   return map;
 }
 
+/**
+ * [CONSISTENCY FIX] Ensures that listing views see the same siblings as the product page.
+ * This prevents slug mismatches and unnecessary redirects.
+ */
+async function enrichWithFullSiblings(
+  prods: any[],
+  pricesByProduct: Map<number, LitePrice[]>,
+  countryCode: string,
+  stripHeavyData: boolean = true,
+): Promise<Product[]> {
+  if (prods.length === 0) return [];
+
+  const parentAsins = [
+    ...new Set(prods.map((p) => p.parentAsin).filter(Boolean)),
+  ];
+
+  let allSiblings: any[] = [];
+  if (parentAsins.length > 0) {
+    allSiblings = await db
+      .select(liteProductColumns)
+      .from(products)
+      .where(inArray(products.parentAsin, parentAsins as string[]));
+  }
+
+  const siblingsByParent = new Map<string, any[]>();
+  for (const s of allSiblings) {
+    if (s.parentAsin) {
+      if (!siblingsByParent.has(s.parentAsin))
+        siblingsByParent.set(s.parentAsin, []);
+      siblingsByParent.get(s.parentAsin)!.push(s);
+    }
+  }
+
+  return prods.map((p) => {
+    const siblings = p.parentAsin
+      ? siblingsByParent.get(p.parentAsin) || [p]
+      : [p];
+    return mapDbProduct(
+      p as DbProduct,
+      pricesByProduct.get(p.id!) || [],
+      siblings,
+      stripHeavyData,
+    );
+  });
+}
+
 import { cache } from "react";
 
 // Use React.cache for per-request deduplication (Production Optimization: server-cache-react)
@@ -726,32 +784,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 
     const pricesByProduct = indexPricesById(prs);
 
-    // Group by parentAsin for correct sibling consensus
-    const families = new Map<string, any[]>();
-    for (const p of prods) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
-      }
-    }
-
-    return prods.map((p) => {
-      // Use true siblings if part of a family, otherwise just self
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-
-      const mapped = mapDbProduct(
-        p as DbProduct,
-        pricesByProduct.get(p.id!) || [],
-        siblings, // CORRECTED: Pass true siblings
-        stripHeavyData,
-      );
-
-      // ALWAYS strip extremely heavy fields for category lists to stay under 2MB cache limit.
-      // These are only needed on the single product page fetched via getProductBySlug.
-      mapped.features = [];
-
-      return mapped;
-    });
+    return enrichWithFullSiblings(prods, pricesByProduct, "de", stripHeavyData);
   };
 
   // Skip cache if we're not in a Next.js environment (e.g. running scripts)
@@ -1181,15 +1214,12 @@ export async function searchProducts(
       }
     }
 
-    return sortedProds.map((p) => {
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(
-        p as DbProduct,
-        pricesByProduct.get(p.id!) || [],
-        siblings, // Corrected siblings
-        true, // Strip heavy data for search results
-      );
-    });
+    return enrichWithFullSiblings(
+      sortedProds,
+      pricesByProduct,
+      "de", // Base country for search resolution
+      true,
+    );
   } catch (error) {
     console.error("FTS Search Error:", error);
     // Fallback to basic search if FTS fails for some reason
@@ -1218,15 +1248,12 @@ export async function searchProducts(
       }
     }
 
-    return fallbackProds.map((p) => {
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(
-        p as DbProduct,
-        fallbackPricesByProduct.get(p.id!) || [],
-        siblings, // Corrected siblings
-        true, // Strip heavy data for search results (fallback)
-      );
-    });
+    return enrichWithFullSiblings(
+      fallbackProds,
+      fallbackPricesByProduct,
+      "de",
+      true,
+    );
   }
 }
 
@@ -1264,14 +1291,7 @@ export const getProductsByBrand = cache(async function getProductsByBrand(
     }
   }
 
-  return prods.map((p) => {
-    const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-    return mapDbProduct(
-      p as DbProduct,
-      pricesByProduct.get(p.id!) || [],
-      siblings,
-    );
-  });
+  return enrichWithFullSiblings(prods, pricesByProduct, "de", false);
 });
 
 const getCachedDeals = unstable_cache(
@@ -1313,21 +1333,8 @@ const getCachedDeals = unstable_cache(
         .limit(limit);
 
       const prods = results.map((r) => r.product);
-
-      // Group by parentAsin for correct sibling consensus
-      const families = new Map<string, any[]>();
-      for (const p of prods) {
-        if (p.parentAsin) {
-          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-          families.get(p.parentAsin)!.push(p);
-        }
-      }
-
-      return results.map((r) => {
-        const p = r.product;
-        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-        return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
-      });
+      const pricesByProduct = indexPricesById(results.map((r) => r.price));
+      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     } catch (e) {
       console.warn(
         `[DB Warning] Failed to fetch deals: ${e instanceof Error ? e.message : String(e)}`,
@@ -1335,10 +1342,10 @@ const getCachedDeals = unstable_cache(
       return [];
     }
   },
-  ["best-deals-v13"],
+  ["best-deals-v14"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "deals", "v13"],
+    tags: ["products", "deals", "v14"],
   },
 );
 
@@ -1365,21 +1372,8 @@ export const getBestDeals = cache(async function getBestDeals(
         )
         .limit(limit);
       const prods = results.map((r) => r.product);
-
-      // Group by parentAsin
-      const families = new Map<string, any[]>();
-      for (const p of prods) {
-        if (p.parentAsin) {
-          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-          families.get(p.parentAsin)!.push(p);
-        }
-      }
-
-      return results.map((r) => {
-        const p = r.product;
-        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-        return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
-      });
+      const pricesByProduct = indexPricesById(results.map((r) => r.price));
+      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     }
     return getCachedDeals(limit, countryCode, condition);
   } catch (e) {
@@ -1438,19 +1432,7 @@ const getCachedPopular = unstable_cache(
         }
       }
 
-      return prods
-        .map((p) => {
-          const siblings = p.parentAsin
-            ? families.get(p.parentAsin) || [p]
-            : [p];
-          return mapDbProduct(
-            p as DbProduct,
-            pricesByProduct.get(p.id!) || [],
-            siblings, // Pass true siblings
-            true,
-          );
-        })
-        .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
+      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     } catch (e) {
       console.warn(
         `[DB Warning] Failed to fetch popular: ${e instanceof Error ? e.message : String(e)}`,
@@ -1458,10 +1440,10 @@ const getCachedPopular = unstable_cache(
       return [];
     }
   },
-  ["popular-deals-v13"],
+  ["popular-deals-v14"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "v13"],
+    tags: ["products", "popular", "v14"],
   },
 );
 
@@ -1501,15 +1483,7 @@ export const getMostPopular = cache(async function getMostPopular(
         }
       }
 
-      return prods.map((p) => {
-        const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-        return mapDbProduct(
-          p as DbProduct,
-          pricesByProduct.get(p.id!) || [],
-          siblings,
-          true,
-        );
-      });
+      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     }
     return getCachedPopular(limit, countryCode, condition);
   } catch (e) {
@@ -1574,19 +1548,7 @@ const fetchDiversePopular = unstable_cache(
         }
       }
 
-      return prods
-        .map((p) => {
-          const siblings = p.parentAsin
-            ? families.get(p.parentAsin) || [p]
-            : [p];
-          return mapDbProduct(
-            p as DbProduct,
-            pricesByProduct.get(p.id!) || [],
-            siblings, // Pass true siblings
-            true, // Strip heavy data (Home curation doesn't need specs)
-          );
-        })
-        .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
+      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     } catch (e) {
       console.warn(
         `[DB Warning] Failed to fetch diverse popular: ${e instanceof Error ? e.message : String(e)}`,
@@ -1594,10 +1556,10 @@ const fetchDiversePopular = unstable_cache(
       return [];
     }
   },
-  ["diverse-popular-v13"],
+  ["diverse-popular-v14"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "diverse"],
+    tags: ["products", "popular", "diverse", "v14"],
   },
 );
 
@@ -1663,19 +1625,7 @@ const getCachedNew = unstable_cache(
         }
       }
 
-      return prods
-        .map((p) => {
-          const siblings = p.parentAsin
-            ? families.get(p.parentAsin) || [p]
-            : [p];
-          return mapDbProduct(
-            p as DbProduct,
-            pricesByProduct.get(p.id!) || [],
-            siblings, // Pass siblings for consensus
-            true,
-          );
-        })
-        .filter((p) => p.prices[countryCode] && p.prices[countryCode] > 0);
+      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     } catch (e) {
       console.warn(
         `[DB Warning] Failed to fetch new arrivals: ${e instanceof Error ? e.message : String(e)}`,
@@ -1683,10 +1633,10 @@ const getCachedNew = unstable_cache(
       return [];
     }
   },
-  ["new-arrivals-v13"],
+  ["new-arrivals-v14"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "new", "v13"],
+    tags: ["products", "new", "v14"],
   },
 );
 
@@ -1868,20 +1818,8 @@ export async function getFilteredProducts(
 
     const prods = results.map((r) => r.product);
 
-    // Group by parentAsin for correct sibling consensus
-    const families = new Map<string, any[]>();
-    for (const p of prods) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
-      }
-    }
-
-    return results.map((r) => {
-      const p = r.product;
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
-      return mapDbProduct(r.product as DbProduct, [r.price], siblings, true);
-    });
+    const pricesByProduct = indexPricesById(results.map((r) => r.price));
+    return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
   } catch (e) {
     console.warn(
       `[DB Warning] Failed to fetch filtered products: ${e instanceof Error ? e.message : String(e)}`,
