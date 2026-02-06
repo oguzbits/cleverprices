@@ -23,8 +23,28 @@ async function deployData() {
     process.exit(1);
   }
 
+  // SAFEGUARD: Require specific environment variable to prevent accidental Agent usage
+  const SAFETY_KEY = "I_UNDERSTAND_THIS_WIPES_PRODUCTION_DATA";
+  if (process.env.DANGEROUSLY_FORCE_DB_PUSH !== SAFETY_KEY) {
+    console.error("\n⛔️ SECURITY ERROR: Script execution blocked.");
+    console.error(
+      "   This script overwrites the PRODUCTION database with local data.",
+    );
+    console.error(
+      "   It effectively wipes all new user data, orders, or changes on production.",
+    );
+    console.error("\n   To confirm you really want to do this, you must set:");
+    console.error(`   export DANGEROUSLY_FORCE_DB_PUSH="${SAFETY_KEY}"`);
+    console.error(
+      "\n   Agents are strictly forbidden from setting this variable automatically.",
+    );
+    process.exit(1);
+  }
+
   if (!isForce) {
-    console.warn("⚠️  Warning: This will overwrite the production database.");
+    console.warn(
+      "⚠️  Final Warning: This will overwrite the production database.",
+    );
     console.log("   Please use --force to confirm.");
     process.exit(1);
   }

@@ -16,7 +16,7 @@
     "worker:local": "DB_LOCAL=1 bun run scripts/automation/keepa-worker.ts de -c",
     "worker:run": "bun run scripts/automation/keepa-worker.ts",
     "worker:enrich": "DB_LOCAL=1 bun run scripts/import/enrich-products.ts de",
-    "db:push-prod": "bun run scripts/database/deploy-data.ts",
+    "db:DANGEROUS-overwrite-prod": "bun run scripts/database/deploy-data.ts",
     "db:pull-prod": "bun run scripts/database/pull-data.ts",
     "db:checkpoint": "sqlite3 data/cleverprices.db 'PRAGMA wal_checkpoint(TRUNCATE);'",
     "db:backup": "bun run scripts/automation/backup-r2.ts",
