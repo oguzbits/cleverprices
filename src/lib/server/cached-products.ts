@@ -134,7 +134,7 @@ export async function getBestDeals(
     limit,
     countryCode,
     condition,
-    "v5",
+    "v6",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -148,7 +148,7 @@ export async function getMostPopular(
     limit,
     countryCode,
     condition,
-    "v5",
+    "v6",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -162,7 +162,7 @@ export async function getNewArrivals(
     limit,
     countryCode,
     condition,
-    "v5",
+    "v6",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -174,7 +174,7 @@ export async function getDiverseMostPopular(
   const products = await getCachedDiverseMostPopular(
     itemsPerCategory,
     countryCode,
-    "v5",
+    "v6",
   );
   return mergeLivePrices(products, countryCode);
 }

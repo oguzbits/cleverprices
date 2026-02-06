@@ -2,7 +2,7 @@ import { type Price as DbPrice, type Product as DbProduct } from "@/db/schema";
 import { parseHistoryBlob } from "../history-compression";
 import { getFamilyIdentity } from "../product-families";
 import { type LitePrice, type Product } from "../product-registry";
-import { type SiblingConsensus } from "./product-identity";
+import { type SiblingConsensus, IDENTITY_CONFIG } from "./product-identity";
 import { calculateProductMetrics } from "./products";
 import { parseCapacityToGB, parseVariationAttributes } from "./variants";
 
@@ -84,25 +84,28 @@ export function mapDbProduct(
     });
   }
 
-  // [PERFORMANCE] Optimization: Skip heavy JSON parsing if we just need basic variant data (carousel/listing)
-  // We only need variationAttributes to determine identity/slug/title.
-  const needsSpecsForIdentity = !p.variationAttributes && !stripHeavyData;
-  const parsedSpecs =
-    needsSpecsForIdentity && p.specifications
-      ? JSON.parse(p.specifications)
-      : {};
-  const parsedOfficialSpecs =
-    needsSpecsForIdentity && p.officialSpecifications
-      ? JSON.parse(p.officialSpecifications)
-      : undefined;
+  // [PERFORMANCE] Optimization: Two-tier specifications parsing.
+  // Tier 1 (Identity): Extract only keys needed for slugs/identity repairing. High performance.
+  // Tier 2 (Display): Parse full JSON only when NOT stripping heavy data (PDP view).
 
-  // --- TECH DATA REPAIR LAYER (Skip for variants/lean lists) ---
-  let rawSpecs = stripHeavyData ? {} : { ...parsedSpecs };
+  const parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
+  const parsedOfficialSpecs = p.officialSpecifications
+    ? JSON.parse(p.officialSpecifications)
+    : undefined;
+
+  // For identity logic, we use a merged set of identity-critical keys.
+  const identitySpecs = {
+    ...IDENTITY_CONFIG.getIdentitySpecs(p.specifications),
+    ...IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications),
+  };
+
+  // --- TECH DATA REPAIR LAYER ---
+  // We use identitySpecs for repairs to ensure slugs are deterministic even in "lite" mode.
+  let rawSpecs = stripHeavyData ? identitySpecs : { ...parsedSpecs };
   if (
-    !stripHeavyData &&
-    (p.category === "smartphones" ||
-      p.category === "tablets" ||
-      p.category === "notebooks")
+    p.category === "smartphones" ||
+    p.category === "tablets" ||
+    p.category === "notebooks"
   ) {
     const vMap = parseVariationAttributes(p.variationAttributes || "");
     const attrStorage =

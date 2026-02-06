@@ -215,7 +215,42 @@ export const IDENTITY_CONFIG = {
     "family",
     "familie",
     "style",
+    "color",
+    "farbe",
+    "produktfarbe",
+    "size",
+    "bildschirmdiagonale",
+    "zoll",
+    "inch",
+    "socket",
+    "sockel",
+    "socket-typ",
+    "formfaktor",
+    "form factor",
   ],
+
+  /**
+   * Performance-optimized extractor for identity-critical keys only.
+   * Prevents full heavy JSON parsing in loops while ensuring identity stability.
+   */
+  getIdentitySpecs: (
+    jsonStr: string | null | Record<string, any>,
+  ): Record<string, any> => {
+    if (!jsonStr) return {};
+    try {
+      const full = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+      const identity: Record<string, any> = {};
+      const keys = IDENTITY_CONFIG.IDENTITY_KEYS;
+      for (const key of keys) {
+        // Case-insensitive lookup for robustness
+        const foundKey = Object.keys(full).find((k) => k.toLowerCase() === key);
+        if (foundKey) identity[foundKey] = full[foundKey];
+      }
+      return identity;
+    } catch {
+      return {};
+    }
+  },
 };
 
 /**
