@@ -73,10 +73,11 @@ async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
 async function getCachedProductVariantsInternal(
   product: Product,
   countryCode: string,
+  skipFullMapping: boolean = false,
 ) {
   "use cache";
   cacheLife("product");
-  return getProductVariantsSync(product, countryCode);
+  return getProductVariantsSync(product, countryCode, skipFullMapping);
 }
 
 async function getCachedSimilarProducts(
@@ -218,8 +219,13 @@ export async function getProductVariants(
   product: Product,
   countryCode: string = "de",
   skipLiveMerge: boolean = false,
+  skipFullMapping: boolean = false,
 ): Promise<Product[]> {
-  const variants = await getCachedProductVariantsInternal(product, countryCode);
+  const variants = await getCachedProductVariantsInternal(
+    product,
+    countryCode,
+    skipFullMapping,
+  );
   if (skipLiveMerge) return variants;
   return mergeLivePrices(variants, countryCode);
 }

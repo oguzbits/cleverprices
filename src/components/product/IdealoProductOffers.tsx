@@ -91,7 +91,11 @@ export async function IdealoProductOffers({
     if (product.parentAsin) {
       let familyMembers =
         passedVariants ||
-        (await getProductFamilyMembers(product.parentAsin, countryCode));
+        (await getProductFamilyMembers(
+          product.parentAsin,
+          countryCode,
+          true, // skipFullMapping
+        ));
 
       // Only merge if not passed
       if (!passedVariants) {

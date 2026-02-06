@@ -386,7 +386,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
             (product.id || 0) % 100000000,
           )
         : Promise.resolve(null),
-      getProductVariants(product, countryCode, true),
+      getProductVariants(product, countryCode, true, true),
     ]);
 
     // 2. Batch merge live prices for ONLY the items we really need (main + variants)

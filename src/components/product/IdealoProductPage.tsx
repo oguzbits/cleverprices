@@ -397,6 +397,7 @@ export async function IdealoProductPage({
                     effectiveCondition={effectiveCondition}
                     isParentView={isParentView}
                     parentSlug={parentSlug}
+                    variants={variants}
                   />
                 </div>
               </div>

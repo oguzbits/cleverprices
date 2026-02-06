@@ -557,15 +557,28 @@ export function extractAttributeGroups(
 export const getProductVariants = cache(async function getProductVariants(
   product: Product,
   countryCode: string = "de",
+  skipLiveMerge: boolean = false, // Added back to match usage
+  skipFullMapping: boolean = false, // If true, skips expensive consensus/identity logic
 ): Promise<Product[]> {
   // 1. PRIMARY: Fetch by parentAsin (Ideal Path)
-  // 1. PRIMARY: Fetch by parentAsin (Ideal Path)
   const fetchByAsin = async (parentAsin: string) => {
-    // [OPTIMIZATION] Single Query JOIN strategy
-    // Combine Product + Prices in one go to reduce Turso round-trips.
+    // [OPTIMIZATION] Single Query JOIN strategy using LEAN columns
+    const columnsToUse = skipFullMapping
+      ? {
+          id: products.id,
+          asin: products.asin,
+          slug: products.slug,
+          title: products.title,
+          parentAsin: products.parentAsin,
+          imageUrl: products.imageUrl,
+          variationAttributes: products.variationAttributes,
+          condition: products.condition,
+        }
+      : liteProductColumns;
+
     const rows = await db
       .select({
-        product: liteProductColumns,
+        product: columnsToUse,
         price: superLitePriceColumns,
       })
       .from(products)
@@ -578,12 +591,12 @@ export const getProductVariants = cache(async function getProductVariants(
     if (rows.length <= 1) return [];
 
     // Grouping: effectively replicate "LiteProduct + associated LitePrice" structure
-    // Since we join on (productId + country), each row is 1 product + 0/1 price.
-    // We map directly.
-
-    // First, gather all "siblings" for consensus logic (we need the full list of products)
     const siblings = rows.map((r) => r.product as DbProduct);
-    const consensus = calculateSiblingConsensus(siblings);
+
+    // Skip consensus if lean mode is requested (huge speedup for many variants)
+    const consensus = skipFullMapping
+      ? undefined
+      : calculateSiblingConsensus(siblings);
 
     return rows
       .map(({ product: p, price }) => {
@@ -592,7 +605,7 @@ export const getProductVariants = cache(async function getProductVariants(
           p as DbProduct,
           priceArray as any[],
           siblings,
-          true,
+          skipFullMapping, // Also strip heavy data if lean
           consensus,
         );
       })
@@ -612,7 +625,6 @@ export const getProductVariants = cache(async function getProductVariants(
   }
 
   // 2. SECONDARY: Smart Fallback by Model Identity (RECOVERY)
-  // Used for products missing parentAsin or when current product IS the parent
   const { getProductIdentity } = await import("./utils/product-identity");
   const identity = getProductIdentity(product);
   const targetModelKey = identity.model
@@ -620,8 +632,6 @@ export const getProductVariants = cache(async function getProductVariants(
     .replace(/[^a-z0-9]+/g, "-");
 
   if (targetModelKey && targetModelKey.length > 2) {
-    // In-registry call to get products in same category
-    // Note: getProductsByCategory might be expensive if many products
     const siblings = await getProductsByCategory(product.category, true);
 
     const matched = siblings.filter((s) => {
@@ -646,43 +656,22 @@ export const getProductVariants = cache(async function getProductVariants(
  * Used for the "Alle Varianten" hub page
  */
 // [OPTIMIZATION] Single Query JOIN strategy
-export async function getProductFamilyMembers(
-  parentAsin: string,
-  countryCode: string = "de",
-): Promise<Product[]> {
-  const rows = await db
-    .select({
-      product: liteProductColumns,
-      price: superLitePriceColumns,
-    })
-    .from(products)
-    .leftJoin(
-      prices,
-      and(eq(prices.productId, products.id), eq(prices.country, countryCode)),
-    )
-    .where(eq(products.parentAsin, parentAsin));
-
-  if (rows.length === 0) return [];
-
-  // Grouping & Mapping
-  const siblings = rows.map((r) => r.product as DbProduct);
-
-  return rows
-    .map(({ product: p, price }) => {
-      const priceArray = price ? [price] : [];
-      return mapDbProduct(p as DbProduct, priceArray as any[], siblings, true);
-    })
-    .filter(
-      (v) =>
-        (v.prices[countryCode] || 0) > 0 ||
-        (v.usedPrices?.[countryCode] || 0) > 0,
-    )
-    .sort((a, b) => {
-      const pA = a.prices[countryCode] || a.usedPrices?.[countryCode] || 0;
-      const pB = b.prices[countryCode] || b.usedPrices?.[countryCode] || 0;
-      return pA - pB;
-    });
-}
+export const getProductFamilyMembers = cache(
+  async function getProductFamilyMembers(
+    parentAsin: string,
+    countryCode: string = "de",
+    skipFullMapping: boolean = false,
+  ): Promise<Product[]> {
+    // Use the optimized variant fetcher by passing a synthetic product with just the parentAsin
+    const syntheticProduct = { parentAsin } as Product;
+    return getProductVariants(
+      syntheticProduct,
+      countryCode,
+      false,
+      skipFullMapping,
+    );
+  },
+);
 
 export async function getAllProducts(): Promise<Product[]> {
   const allProducts = await db.select(liteProductColumns).from(products);

@@ -12,6 +12,7 @@ interface ConditionButtonsProps {
   effectiveCondition: "new" | "used" | "renewed";
   isParentView?: boolean;
   parentSlug?: string;
+  variants?: Product[];
 }
 
 export async function ConditionButtons({
@@ -20,6 +21,7 @@ export async function ConditionButtons({
   effectiveCondition,
   isParentView,
   parentSlug,
+  variants: passedVariants,
 }: ConditionButtonsProps) {
   // Normalize current condition
   const currentCond = (product.condition || "").toLowerCase();
@@ -81,14 +83,19 @@ export async function ConditionButtons({
 
   // 1. Scan the family
   if (product.parentAsin) {
-    let familyMembers = await getProductFamilyMembers(
-      product.parentAsin,
-      countryCode,
-    );
+    let familyMembers =
+      passedVariants ||
+      (await getProductFamilyMembers(
+        product.parentAsin,
+        countryCode,
+        true, // skipFullMapping
+      ));
 
     // [CRITICAL] Overlay fresh prices from the fast-cache prices table (1-min)
-    const { mergeLivePrices } = await import("@/lib/server/live-data");
-    familyMembers = await mergeLivePrices(familyMembers, countryCode);
+    if (!passedVariants) {
+      const { mergeLivePrices } = await import("@/lib/server/live-data");
+      familyMembers = await mergeLivePrices(familyMembers, countryCode);
+    }
     const normalizedCurAttrs = normalizeVariantAttributes(product);
     const category = product.category || "";
 

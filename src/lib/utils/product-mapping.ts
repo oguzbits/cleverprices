@@ -84,6 +84,54 @@ export function mapDbProduct(
     });
   }
 
+  // --- PERFORMANCE: Skip expensive parsing/repair for variants ---
+  if (stripHeavyData) {
+    const item: Product = {
+      id: p.id,
+      slug: p.slug,
+      asin: p.asin,
+      title: p.title,
+      category: p.category,
+      image: p.imageUrl || "",
+      affiliateUrl: "",
+      prices: pricesObj,
+      pricesLastUpdated: {},
+      capacity: p.capacity || 0,
+      capacityUnit: (p.capacityUnit as any) || "GB",
+      normalizedCapacity: p.normalizedCapacity || 0,
+      formFactor: "",
+      technology: p.technology || "",
+      condition:
+        p.title.includes("(Generalüberholt)") ||
+        p.title.includes("erneuert") ||
+        p.title.includes("Renewed")
+          ? "Renewed"
+          : (p.condition as any) === "Used"
+            ? "Used"
+            : "New",
+      brand: p.brand || "Generic",
+      parentAsin: p.parentAsin || undefined,
+      variationAttributes: p.variationAttributes || undefined,
+      specifications: {},
+      features: [],
+      priceHistory: [],
+      rating: p.rating || 0,
+      reviewCount: p.reviewCount || 0,
+      usedPrices: usedPricesObj,
+      warehousePrices: warehousePricesObj,
+      enrichmentStatus: p.enrichmentStatus as any,
+    };
+
+    // For variants, we only need a quick slug/title resolution
+    const { slug: canonicalSlug } = getFamilyIdentity(
+      item,
+      siblings,
+      consensus,
+    );
+    item.slug = canonicalSlug;
+    return item;
+  }
+
   // Pre-parse specifications for identity logic (CRITICAL: Needed even if stripHeavyData is true)
   const parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
   const parsedOfficialSpecs = p.officialSpecifications
