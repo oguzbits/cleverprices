@@ -378,27 +378,42 @@ export async function IdealoProductPage({
                 {/* Variant Selector (scoped to selected condition) - Always render now, let it decide */}
                 <div className="mt-4 w-full max-w-full overflow-hidden">
                   <ComponentErrorBoundary name="VariantSelector">
-                    <CachedVariantSelector
-                      product={product}
-                      variants={variants}
-                      countryCode={countryCode}
-                      isParentView={isParentView}
-                      selectedCondition={effectiveCondition}
-                      parentSlug={parentSlug}
-                    />
+                    <React.Suspense
+                      fallback={
+                        <div className="h-20 w-full animate-pulse rounded bg-gray-100" />
+                      }
+                    >
+                      <CachedVariantSelector
+                        product={product}
+                        variants={variants}
+                        countryCode={countryCode}
+                        isParentView={isParentView}
+                        selectedCondition={effectiveCondition}
+                        parentSlug={parentSlug}
+                      />
+                    </React.Suspense>
                   </ComponentErrorBoundary>
                 </div>
 
                 {/* Condition Buttons */}
                 <div className="mt-6 flex flex-wrap gap-2.5">
-                  <ConditionButtons
-                    product={product}
-                    countryCode={countryCode}
-                    effectiveCondition={effectiveCondition}
-                    isParentView={isParentView}
-                    parentSlug={parentSlug}
-                    variants={variants}
-                  />
+                  <React.Suspense
+                    fallback={
+                      <div className="flex gap-2.5">
+                        <div className="h-[44px] w-[140px] animate-pulse rounded bg-gray-100" />
+                        <div className="h-[44px] w-[140px] animate-pulse rounded bg-gray-100" />
+                      </div>
+                    }
+                  >
+                    <ConditionButtons
+                      product={product}
+                      countryCode={countryCode}
+                      effectiveCondition={effectiveCondition}
+                      isParentView={isParentView}
+                      parentSlug={parentSlug}
+                      variants={variants}
+                    />
+                  </React.Suspense>
                 </div>
               </div>
             </div>

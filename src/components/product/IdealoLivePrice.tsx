@@ -50,8 +50,14 @@ export async function IdealoLivePrice({
     // Used Mode
     const up = live?.usedPrice || 0;
     const wp = (live as any)?.warehousePrice || 0;
-    if (up > 0 && wp > 0) bestPrice = Math.min(up, wp);
-    else bestPrice = up || wp || 0;
+    // If we have live data, use the best of used/warehouse
+    if (up > 0 || wp > 0) {
+      if (up > 0 && wp > 0) bestPrice = Math.min(up, wp);
+      else bestPrice = up || wp;
+    } else {
+      // Fallback to initialPrice passed from parent prop (which for used might be usedPrice)
+      bestPrice = initialPrice || 0;
+    }
   }
 
   if (!bestPrice || bestPrice <= 0) {
