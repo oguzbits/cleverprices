@@ -61,9 +61,8 @@ export async function IdealoCategoryPage({
     Icon: getCategoryIcon(crumb.slug),
   }));
 
-  // 1. Start fetching immediately (Waterfall elimination)
-  // This Promise is passed to children to unwrap
-  const productDataPromise = getCategoryProducts(
+  // 1. Fetch data immediately (Awaiting at top-level for layout stability)
+  const productData = await getCategoryProducts(
     category.slug,
     countryCode,
     searchParams,
@@ -96,13 +95,13 @@ export async function IdealoCategoryPage({
           </div>
 
           {/* ============================================ */}
-          {/* TOP BAR - Suspense Wrapper */}
+          {/* TOP BAR */}
           {/* ============================================ */}
           <ComponentErrorBoundary name="CategoryTopBar">
             <AsyncTopBar
               categoryName={formatTechText(category.name)}
               searchParams={searchParams}
-              productDataPromise={productDataPromise}
+              productDataPromise={Promise.resolve(productData)}
             />
           </ComponentErrorBoundary>
         </div>
@@ -121,7 +120,7 @@ export async function IdealoCategoryPage({
           <ComponentErrorBoundary name="CategoryFilters">
             <AsyncFilterPanel
               category={category}
-              productDataPromise={productDataPromise}
+              productDataPromise={Promise.resolve(productData)}
             />
           </ComponentErrorBoundary>
 
@@ -131,7 +130,7 @@ export async function IdealoCategoryPage({
               category={category}
               countryCode={countryCode}
               searchParams={searchParams}
-              productDataPromise={productDataPromise}
+              productDataPromise={Promise.resolve(productData)}
             />
           </ComponentErrorBoundary>
         </div>

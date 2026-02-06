@@ -84,55 +84,7 @@ export function mapDbProduct(
     });
   }
 
-  // --- PERFORMANCE: Skip expensive parsing/repair for variants ---
-  if (stripHeavyData) {
-    const item: Product = {
-      id: p.id,
-      slug: p.slug,
-      asin: p.asin,
-      title: p.title,
-      category: p.category,
-      image: p.imageUrl || "",
-      affiliateUrl: "",
-      prices: pricesObj,
-      pricesLastUpdated: {},
-      capacity: p.capacity || 0,
-      capacityUnit: (p.capacityUnit as any) || "GB",
-      normalizedCapacity: p.normalizedCapacity || 0,
-      formFactor: "",
-      technology: p.technology || "",
-      condition:
-        p.title.includes("(Generalüberholt)") ||
-        p.title.includes("erneuert") ||
-        p.title.includes("Renewed")
-          ? "Renewed"
-          : (p.condition as any) === "Used"
-            ? "Used"
-            : "New",
-      brand: p.brand || "Generic",
-      parentAsin: p.parentAsin || undefined,
-      variationAttributes: p.variationAttributes || undefined,
-      specifications: {},
-      features: [],
-      priceHistory: [],
-      rating: p.rating || 0,
-      reviewCount: p.reviewCount || 0,
-      usedPrices: usedPricesObj,
-      warehousePrices: warehousePricesObj,
-      enrichmentStatus: p.enrichmentStatus as any,
-    };
-
-    // For variants, we only need a quick slug/title resolution
-    const { slug: canonicalSlug } = getFamilyIdentity(
-      item,
-      siblings,
-      consensus,
-    );
-    item.slug = canonicalSlug;
-    return item;
-  }
-
-  // Pre-parse specifications for identity logic (CRITICAL: Needed even if stripHeavyData is true)
+  // Pre-parse specifications for identity logic (CRITICAL: Needed for canonical slug/title resolution)
   const parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
   const parsedOfficialSpecs = p.officialSpecifications
     ? JSON.parse(p.officialSpecifications)
@@ -260,8 +212,8 @@ export function mapDbProduct(
     manufacturer: stripHeavyData ? undefined : p.manufacturer || undefined,
     parentAsin: p.parentAsin || undefined,
     variationAttributes: p.variationAttributes || undefined,
-    specifications: stripHeavyData ? {} : rawSpecs,
-    officialSpecifications: parsedOfficialSpecs, // Passed to identify logic below
+    specifications: rawSpecs, // Kept briefly for identity logic
+    officialSpecifications: parsedOfficialSpecs,
     officialTitle: p.officialTitle,
     features: [],
     priceHistory: stripHeavyData ? [] : historyData,
@@ -283,42 +235,26 @@ export function mapDbProduct(
   };
 
   // Enforce canonical slug and standardized family title/subtitle using siblings consensus if available
-  // If no siblings are provided (O(1) fetch), we trust the database slug/title as-is.
-  if (siblings && siblings.length > 0) {
-    const {
-      slug: canonicalSlug,
-      title: familyTitle,
-      variantSuffix,
-    } = getFamilyIdentity(item, siblings, consensus);
+  const {
+    slug: canonicalSlug,
+    title: familyTitle,
+    variantSuffix,
+  } = getFamilyIdentity(item, siblings || [], consensus);
 
-    item.slug = canonicalSlug;
-    item.title =
-      variantSuffix && !familyTitle.includes(variantSuffix)
-        ? `${familyTitle} ${variantSuffix}`
-        : familyTitle;
-    item.subtitle = variantSuffix;
-  } else {
-    // Standardize title/subtitle from internal data if possible.
-    // We MUST use getFamilyIdentity to get the canonical ID-prefixed slug
-    // to avoid infinite redirect loops in the page resolver.
-    const {
-      slug: canonicalSlug,
-      title: familyTitle,
-      variantSuffix,
-    } = getFamilyIdentity(item, [], consensus);
-
-    item.slug = canonicalSlug;
-    item.title =
-      variantSuffix && !familyTitle.includes(variantSuffix)
-        ? `${familyTitle} ${variantSuffix}`
-        : familyTitle;
-    item.subtitle = variantSuffix;
-  }
+  item.slug = canonicalSlug;
+  item.title =
+    variantSuffix && !familyTitle.includes(variantSuffix)
+      ? `${familyTitle} ${variantSuffix}`
+      : familyTitle;
+  item.subtitle = variantSuffix;
 
   // Identity and titles are set. We strip huge blobs if requested to stay under cache limits.
   if (stripHeavyData) {
+    item.specifications = {};
     delete (item as any).officialSpecifications;
   }
+
+  return calculateProductMetrics(item) as Product;
 
   return calculateProductMetrics(item) as Product;
 }
