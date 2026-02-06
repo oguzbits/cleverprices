@@ -84,19 +84,25 @@ export function mapDbProduct(
     });
   }
 
-  // Pre-parse specifications for identity logic (CRITICAL: Needed for canonical slug/title resolution)
-  const parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
-  const parsedOfficialSpecs = p.officialSpecifications
-    ? JSON.parse(p.officialSpecifications)
-    : undefined;
+  // [PERFORMANCE] Optimization: Skip heavy JSON parsing if we just need basic variant data (carousel/listing)
+  // We only need variationAttributes to determine identity/slug/title.
+  const needsSpecsForIdentity = !p.variationAttributes && !stripHeavyData;
+  const parsedSpecs =
+    needsSpecsForIdentity && p.specifications
+      ? JSON.parse(p.specifications)
+      : {};
+  const parsedOfficialSpecs =
+    needsSpecsForIdentity && p.officialSpecifications
+      ? JSON.parse(p.officialSpecifications)
+      : undefined;
 
-  // --- TECH DATA REPAIR LAYER ---
-  // Fix corrupted/misaligned specifications from the DB
-  let rawSpecs = { ...parsedSpecs };
+  // --- TECH DATA REPAIR LAYER (Skip for variants/lean lists) ---
+  let rawSpecs = stripHeavyData ? {} : { ...parsedSpecs };
   if (
-    p.category === "smartphones" ||
-    p.category === "tablets" ||
-    p.category === "notebooks"
+    !stripHeavyData &&
+    (p.category === "smartphones" ||
+      p.category === "tablets" ||
+      p.category === "notebooks")
   ) {
     const vMap = parseVariationAttributes(p.variationAttributes || "");
     const attrStorage =
@@ -252,9 +258,8 @@ export function mapDbProduct(
   if (stripHeavyData) {
     item.specifications = {};
     delete (item as any).officialSpecifications;
+    return item; // SKIP calculateProductMetrics for extreme speed in lists
   }
-
-  return calculateProductMetrics(item) as Product;
 
   return calculateProductMetrics(item) as Product;
 }

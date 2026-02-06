@@ -377,16 +377,18 @@ export default async function ProductPage({ params, searchParams }: Props) {
     const { getProductVariants } = await import("@/lib/server/cached-products");
     const { getFamilyIdentity } = await import("@/lib/product-families");
     const { mergeLivePrices } = await import("@/lib/server/live-data");
+    const { getCategoryBySlug } = await import("@/lib/categories");
 
-    // 1. Parallelize data fetching: Canonical Hub, Variants
-    const [canonicalRealId, allVariantsRaw] = await Promise.all([
+    // 1. Parallelize ALL essential data fetching (Category, Variants, Canonical Hub)
+    const [category, canonicalRealId, allVariantsRaw] = await Promise.all([
+      getCategoryBySlug(product.category),
       !parentViewMode
         ? getCanonicalFamilyId(
             product.parentAsin,
             (product.id || 0) % 100000000,
           )
         : Promise.resolve(null),
-      getProductVariants(product, countryCode, true, true),
+      getProductVariants(product, countryCode, true, true), // Lean Fetch
     ]);
 
     // 2. Batch merge live prices for ONLY the items we really need (main + variants)
@@ -463,10 +465,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
       notFound();
     }
 
-    // 4. Render immediately!
+    // 4. Render immediately with all pre-resolved data
     return (
       <IdealoProductPage
         product={mergedMainProduct}
+        variants={mergedVariants}
+        category={category}
         countryCode={countryCode}
         selectedCondition={condition as any}
         isParentView={parentViewMode}

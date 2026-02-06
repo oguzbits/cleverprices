@@ -8,7 +8,6 @@ import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import {
   allCategories,
-  getCategoryBySlug,
   getCategoryPath,
   type CategorySlug,
 } from "@/lib/categories";
@@ -40,6 +39,7 @@ import { SpecificationsTable } from "./SpecificationsTable";
 interface IdealoProductPageProps {
   product: Product;
   variants?: Product[]; // Pre-merged variants from server
+  category?: any; // Pre-resolved category
   countryCode: CountryCode;
   selectedCondition?: "new" | "used" | "renewed";
   isParentView?: boolean;
@@ -50,7 +50,8 @@ interface IdealoProductPageProps {
 
 export async function IdealoProductPage({
   product,
-  variants,
+  variants = [],
+  category,
   countryCode,
   selectedCondition,
   isParentView: initialIsParentView = false,
@@ -58,8 +59,6 @@ export async function IdealoProductPage({
   parentTitle: passedParentTitle,
   parentFullModel: passedFullModel,
 }: IdealoProductPageProps) {
-  const category = await getCategoryBySlug(product.category);
-
   // Check true variant count to prevent "Alle Varianten" view for singletons
   // [OPTIMIZATION] We trust the server-side redirection/detection (from page.tsx)
   // to tell us if we are in Parent View (Hub). We do not verify count here to avoid blocking.
@@ -175,6 +174,7 @@ export async function IdealoProductPage({
                     <ParentHeroImage
                       product={product}
                       countryCode={countryCode}
+                      variants={variants}
                     />
                   ) : product.image ? (
                     <Image
@@ -591,11 +591,14 @@ async function CachedSimilarCarousel({
 async function ParentHeroImage({
   product,
   countryCode,
+  variants: passedVariants,
 }: {
   product: Product;
   countryCode: string;
+  variants?: Product[];
 }) {
-  const variants = await getProductVariants(product, countryCode);
+  const variants =
+    passedVariants || (await getProductVariants(product, countryCode));
   const uniqueImages: string[] = [];
   variants.forEach((v) => {
     if (v.image && !uniqueImages.includes(v.image)) {

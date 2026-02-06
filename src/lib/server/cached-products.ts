@@ -71,13 +71,18 @@ async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
 }
 
 async function getCachedProductVariantsInternal(
-  product: Product,
+  parentAsin: string,
   countryCode: string,
   skipFullMapping: boolean = false,
 ) {
   "use cache";
   cacheLife("product");
-  return getProductVariantsSync(product, countryCode, skipFullMapping);
+  // We need a dummy product to start the registry fetch
+  return getProductVariantsSync(
+    { parentAsin } as Product,
+    countryCode,
+    skipFullMapping,
+  );
 }
 
 async function getCachedSimilarProducts(
@@ -221,8 +226,10 @@ export async function getProductVariants(
   skipLiveMerge: boolean = false,
   skipFullMapping: boolean = false,
 ): Promise<Product[]> {
+  if (!product.parentAsin) return [product];
+
   const variants = await getCachedProductVariantsInternal(
-    product,
+    product.parentAsin,
     countryCode,
     skipFullMapping,
   );

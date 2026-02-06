@@ -137,6 +137,10 @@ export async function mergeLivePrices(
       };
 
       // Recalculate derived metrics (like savings) based on new prices
+      // [PERFORMANCE] Skip for lean variants (listing/carousel) to save CPU
+      if (!p.specifications || Object.keys(p.specifications).length === 0) {
+        return updated as Product;
+      }
       return calculateProductMetrics(updated as any) as Product;
     }
     return p;
