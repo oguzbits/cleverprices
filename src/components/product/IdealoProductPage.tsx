@@ -31,7 +31,7 @@ import Link from "next/link";
 import React, { Suspense } from "react";
 import { CachedVariantSelector } from "./CachedVariantSelector";
 import { ConditionButtons } from "./ConditionButtons";
-import { IdealoLivePrice, IdealoLivePriceSkeleton } from "./IdealoLivePrice";
+import { IdealoLivePrice } from "./IdealoLivePrice";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import {
   IdealoProductOffers,
@@ -39,7 +39,6 @@ import {
 } from "./IdealoProductOffers";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
-import { ProductVariantSelectorSkeleton } from "./ProductVariantSelector";
 import { SpecificationsTable } from "./SpecificationsTable";
 
 interface IdealoProductPageProps {
@@ -169,18 +168,10 @@ export async function IdealoProductPage({
                 )}
                 <div className="bg-card relative mx-auto flex aspect-square w-full max-w-[265px] items-center justify-center overflow-hidden rounded-lg">
                   {isParentView ? (
-                    <Suspense
-                      fallback={
-                        <div className="flex h-full w-full items-center justify-center bg-gray-50">
-                          <Package className="h-12 w-12 text-gray-200" />
-                        </div>
-                      }
-                    >
-                      <ParentHeroImage
-                        product={product}
-                        countryCode={countryCode}
-                      />
-                    </Suspense>
+                    <ParentHeroImage
+                      product={product}
+                      countryCode={countryCode}
+                    />
                   ) : product.image ? (
                     <Image
                       src={product.image}
@@ -201,18 +192,12 @@ export async function IdealoProductPage({
                 {/* Mobile: Big Price & Button Display */}
                 <div className="flex flex-col items-center lg:hidden">
                   <div className="mb-4 text-[24px] font-extrabold text-[#2d2d2d]">
-                    <Suspense
-                      fallback={
-                        <IdealoLivePriceSkeleton className="h-8 w-24" />
-                      }
-                    >
-                      <IdealoLivePrice
-                        productId={product.id!}
-                        countryCode={countryCode}
-                        initialPrice={product.prices[countryCode]}
-                        className="text-[28px] font-black text-[#2d2d2d]"
-                      />
-                    </Suspense>
+                    <IdealoLivePrice
+                      productId={product.id!}
+                      countryCode={countryCode}
+                      initialPrice={product.prices[countryCode]}
+                      className="text-[28px] font-black text-[#2d2d2d]"
+                    />
                   </div>
 
                   <a
@@ -388,33 +373,25 @@ export async function IdealoProductPage({
                 {/* Variant Selector (scoped to selected condition) - Always render now, let it decide */}
                 <div className="mt-4 w-full max-w-full overflow-hidden">
                   <ComponentErrorBoundary name="VariantSelector">
-                    <Suspense fallback={<ProductVariantSelectorSkeleton />}>
-                      <CachedVariantSelector
-                        product={product}
-                        countryCode={countryCode}
-                        isParentView={isParentView}
-                        selectedCondition={effectiveCondition}
-                        parentSlug={parentSlug}
-                      />
-                    </Suspense>
+                    <CachedVariantSelector
+                      product={product}
+                      countryCode={countryCode}
+                      isParentView={isParentView}
+                      selectedCondition={effectiveCondition}
+                      parentSlug={parentSlug}
+                    />
                   </ComponentErrorBoundary>
                 </div>
 
                 {/* Condition Buttons */}
                 <div className="mt-6 flex flex-wrap gap-2.5">
-                  <Suspense
-                    fallback={
-                      <div className="h-14 w-full animate-pulse bg-gray-100" />
-                    }
-                  >
-                    <ConditionButtons
-                      product={product}
-                      countryCode={countryCode}
-                      effectiveCondition={effectiveCondition}
-                      isParentView={isParentView}
-                      parentSlug={parentSlug}
-                    />
-                  </Suspense>
+                  <ConditionButtons
+                    product={product}
+                    countryCode={countryCode}
+                    effectiveCondition={effectiveCondition}
+                    isParentView={isParentView}
+                    parentSlug={parentSlug}
+                  />
                 </div>
               </div>
             </div>
