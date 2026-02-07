@@ -68,10 +68,10 @@ export const products = sqliteTable(
     completenessScore: integer("completeness_score").default(0), // 0-100
     missingSpecs: text("missing_specs").default("[]"), // JSON list of missing keys
 
-    // Enrichment Tracking (Icecat)
+    // Enrichment Tracking (Icecat / eBay)
     icecatId: integer("icecat_id"), // Mapped ID from external source
     enrichmentStatus: text("enrichment_status").default("pending"), // pending | processed | not_found | error
-    specificationsSource: text("specifications_source"), // "icecat", "intel", "keepa_ai", "google"
+    specificationsSource: text("specifications_source"), // "icecat", "intel", "ebay" (others removed)
     lastEnrichedAt: integer("last_enriched_at", { mode: "timestamp" }),
 
     // Timestamps

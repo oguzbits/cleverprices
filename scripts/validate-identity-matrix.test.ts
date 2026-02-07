@@ -242,7 +242,12 @@ describe("Validation Matrix", () => {
     report += "|---|---|---|---|---|---|\n";
 
     TEST_MATRIX.forEach((item) => {
-      const product = mockProduct(item.cat, item.brand, item.title, item.attrs);
+      const product = mockProduct(
+        item.cat,
+        item.brand,
+        item.title,
+        item.attrs as Record<string, string>,
+      );
       const { slug, title, brand } = getFamilyIdentity(product, []);
 
       // Validation Rules

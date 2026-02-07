@@ -47,14 +47,13 @@
 - **Enrichment Buckets (Products table)**:
   - `official_specifications`: Validated technical data from Icecat/eBay/Intel.
   - `ebay_raw_data`: Full raw JSON snapshots from eBay API for future "mass remapping" and data analysis.
-  - `keepa_features`: Raw Amazon description bullets for LLM-based scavenging.
+  - `keepa_features`: Raw Amazon description bullets.
 - **Sync Strategy**:
   - **Automated Engine**: GitHub Action (`daily-maintenance.yml`) runs **hourly**.
   - **Price Refresh**: Batches of 500 products (stale-first) per hour.
   - **Multi-Source Enrichment**:
     - **Icecat**: Primary authority for technical sheets.
-    - **eBay Browse API**: Secondary authority; uses GTIN and smart keyword matching.
-    - **Raw Capture**: eBay results are stored as raw snapshots (`ebay_raw_data`) before mapping to ensure no data is lost during code updates.
+    - **eBay Browse API**: Secondary authority; uses GTIN and smart keyword matching. (Raw eBay results are stored as snapshots).
     - **Smart Sinking**: Invariant specs (Brand, Model, CPU Family) are automatically propagated from "Lead" variants to all siblings via `scripts/enrichment/smart-variant-syncer.ts`.
   - **Bulk Data Safety**: Implements manual chunking for large inserts to stay within SQLite parameter limits.
   - **Cache Warming**: Automated warm-up of Next.js "use cache" layers after every sync.
