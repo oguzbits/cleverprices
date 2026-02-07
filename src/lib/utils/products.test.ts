@@ -117,6 +117,26 @@ describe("products utility", () => {
       };
       expect(calculateProductDiscount(product, "de")).toBe(0);
     });
+
+    it("should NOT be affected by cheaper warehouse deals", () => {
+      const product = {
+        prices: { de: 80 },
+        warehousePrices: { de: 40 }, // Extremely cheap warehouse deal
+        priceAvg90: { de: 100 },
+      };
+      // Should still be based on the NEW price (80 vs 100 => 20%)
+      expect(calculateProductDiscount(product, "de")).toBe(20);
+    });
+
+    it("should return 0 if new price is not a deal, even if used is a 'steal'", () => {
+      const product = {
+        prices: { de: 100 },
+        usedPrices: { de: 50 },
+        priceAvg90: { de: 100 },
+      };
+      // Used price (50) is 50% off avg (100), but we only care about new price (100)
+      expect(calculateProductDiscount(product, "de")).toBe(0);
+    });
   });
 
   describe("isProductBestseller", () => {

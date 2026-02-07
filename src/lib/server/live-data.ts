@@ -4,7 +4,10 @@ import { and, eq, inArray } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { litePriceColumns, type Product } from "../product-registry";
 import { getBestPrice } from "../utils/price-selection";
-import { calculateProductMetrics, calculateSavings } from "../utils/products";
+import {
+  calculateProductMetrics,
+  calculateProductSavings,
+} from "../utils/products";
 
 /**
  * Fetches the latest prices for a set of product IDs.
@@ -99,12 +102,13 @@ export async function mergeLivePrices(
       const newWarehousePrice = live.warehousePrice || 0;
       const refPrice = live.priceAvg90 || 0;
 
-      // Savings should only be calculated if the BEST price is the NEW price.
-      // Comparing a Used/Warehouse price to a New 90-day average leads to misleadingly high discounts.
-      const isNewPriceBest = smartPrice === rawNewPrice && rawNewPrice > 0;
-      const savings = isNewPriceBest
-        ? calculateSavings(smartPrice, refPrice)
-        : 0;
+      // Unified savings calculation
+      const savings = calculateProductSavings({
+        price: rawNewPrice,
+        usedPrice: newUsedPrice,
+        warehousePrice: newWarehousePrice,
+        avg90: refPrice,
+      });
 
       // Force "Renewed" condition if title implies it (Amazon compliance & Consistency)
       let condition = p.condition;

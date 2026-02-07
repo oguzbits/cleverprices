@@ -245,11 +245,17 @@ export function calculateProductDiscount(
   countryCode: string,
 ): number {
   const code = countryCode.toLowerCase();
-  const currentPrice = p.prices?.[code];
-  if (!currentPrice || currentPrice <= 0) return 0;
-
+  const price = p.prices?.[code] || 0;
+  const usedPrice = p.usedPrices?.[code] || 0;
+  const warehousePrice = p.warehousePrices?.[code] || 0;
   const avg90 = p.priceAvg90?.[code] || 0;
-  const savings = calculateSavings(currentPrice, avg90);
+
+  const savings = calculateProductSavings({
+    price,
+    usedPrice,
+    warehousePrice,
+    avg90,
+  });
 
   return Math.round(savings * 100);
 }
@@ -267,6 +273,35 @@ export function calculateSavings(currentPrice: number, avg90: number): number {
 
   // Sanity check for bad data (e.g. outlier price drops > 80% are likely errors)
   if (savings > 0.8) return 0;
+
+  return savings;
+}
+
+/**
+ * NEW CENTRALIZED SOURCE OF TRUTH FOR SAVINGS
+ * Calculates savings only if the best price is the "New" price.
+ * Comparing Used/Warehouse prices to a New 90-day avg leads to misleadingly high discounts.
+ */
+export function calculateProductSavings({
+  price,
+  usedPrice,
+  warehousePrice,
+  avg90,
+}: {
+  price?: number | null;
+  usedPrice?: number | null;
+  warehousePrice?: number | null;
+  avg90?: number | null;
+}): number {
+  if (!price || !avg90 || price <= 0 || avg90 <= 0) return 0;
+
+  const up = usedPrice || 0;
+  const wp = warehousePrice || 0;
+
+  // We only show a "Deal" if the standard new price is a deal.
+  // If a used item is the cheapest, we still evaluate if the NEW price would be a deal.
+  // This prevents fake discounts based on condition.
+  const savings = calculateSavings(price, avg90);
 
   return savings;
 }

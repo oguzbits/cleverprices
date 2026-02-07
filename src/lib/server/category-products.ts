@@ -9,7 +9,7 @@ import {
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { cacheLife } from "next/cache";
 import { getBestPrice } from "../utils/price-selection";
-import { calculateSavings } from "../utils/products";
+import { calculateProductSavings } from "../utils/products";
 import { getLivePricesForProducts } from "./live-data";
 import { calculateDesirabilityScore } from "./scoring";
 
@@ -166,7 +166,12 @@ export async function getCachedLocalizedCategoryProducts(
       );
 
       const refPrice = p.priceAvg90?.[countryCode] || 0;
-      const savings = calculateSavings(price || 0, refPrice);
+      const savings = calculateProductSavings({
+        price: price || 0,
+        usedPrice: usedPrice || 0,
+        warehousePrice: warehousePrice || 0,
+        avg90: refPrice,
+      });
       const displayListPrice = savings > 0 ? refPrice : undefined;
 
       // 3. Storage Capacity Extraction
@@ -329,7 +334,12 @@ async function mergeLivePricesIntoLocalized(
       warehousePrice: live.warehousePrice,
     });
     const refPrice = live.priceAvg90 || 0;
-    const savings = calculateSavings(newPrice, refPrice);
+    const savings = calculateProductSavings({
+      price: live.price,
+      usedPrice: live.usedPrice,
+      warehousePrice: live.warehousePrice,
+      avg90: refPrice,
+    });
     const listPrice = savings > 0 ? refPrice : undefined;
 
     const capacityMB =
