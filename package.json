@@ -26,7 +26,9 @@
     "import": "bun run scripts/import/import-from-csv.ts",
     "warm-cache": "bun run scripts/automation/warm-cache.ts",
     "update-prices": "bun run scripts/automation/update-prices.ts",
-    "category:validate": "bun run scripts/maintenance/validate-categories.ts",
+    "category:audit": "bun run scripts/maintenance/validate-categories.ts",
+    "sif:audit": "bun run scripts/maintenance/bulk-source-audit.ts",
+    "quality:report": "bun run scripts/maintenance/generate-quality-report.ts",
     "slugs:fix": "bun run scripts/maintenance/regenerate-slugs.ts",
     "test:e2e": "playwright test"
   },

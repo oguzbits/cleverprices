@@ -8,6 +8,7 @@ import {
   getProductIdentity,
 } from "../../src/lib/utils/product-identity";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
+import { auditSourceIntegrity } from "../maintenance/source-auditor";
 
 /**
  * Icecat CLI Enricher
@@ -38,6 +39,14 @@ class IcecatEnricher {
 
     for (const product of targets) {
       try {
+        // Source Integrity Firewall (SIF)
+        const sourceIntegrity = await auditSourceIntegrity(product.id);
+        if (!sourceIntegrity.isTrusted) {
+          console.log(
+            `🛡️  [SIF] Source Untrusted for ID ${product.id}: ${sourceIntegrity.violations.join(", ")}`,
+          );
+        }
+
         console.log(
           `🔍 Checking Icecat for: ${product.title} (${product.gtin || product.mpn})`,
         );
@@ -56,6 +65,16 @@ class IcecatEnricher {
 
         if (!icecatData || !icecatData.specifications) {
           console.log("❌ Not found on Icecat.");
+
+          if (!sourceIntegrity.isTrusted) {
+            console.log(
+              "🛡️  [SIF] Marking as untrusted_source due to poor raw data.",
+            );
+            await db
+              .update(products)
+              .set({ enrichmentStatus: "untrusted_source" })
+              .where(eq(products.id, product.id));
+          }
           continue;
         }
 

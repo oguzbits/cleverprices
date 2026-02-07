@@ -134,6 +134,7 @@ src/
 ## Documentation
 
 - **[PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)** - Key features, architecture, and edge cases.
+- **[DATA_INTEGRITY.md](docs/DATA_INTEGRITY.md)** - **New.** SIF Firewall, DQA Golden Schemas, and Health Scoring.
 - **[WORKER.md](docs/WORKER.md)** - Maintainance, price updates, and cloud sync.
 - **[image-optimization.md](docs/image-optimization.md)** - Custom Amazon CDN optimization strategy.
 

@@ -85,6 +85,85 @@ export const CATEGORY_SCHEMAS: Record<string, CategorySchema> = {
       Speichertaktfrequenz: { required: true, weight: 8, patterns: [/MHz$/i] },
     },
   },
+  notebooks: {
+    minRequiredScore: 70,
+    attributes: {
+      Marke: { required: true, weight: 10 },
+      Prozessor: { required: true, weight: 10 },
+      "Arbeitsspeicher-Größe": {
+        required: true,
+        weight: 8,
+        patterns: [/GB$/i],
+      },
+      Festplattenkapazität: {
+        required: true,
+        weight: 8,
+        patterns: [/GB$/i, /TB$/i],
+      },
+      Bildschirmgröße: {
+        required: true,
+        weight: 8,
+        patterns: [/Zoll$/i, /"$/i],
+      },
+      Betriebssystem: { required: true, weight: 5 },
+    },
+  },
+  gpu: {
+    minRequiredScore: 80,
+    attributes: {
+      Marke: { required: true, weight: 10 },
+      Chipsatz: { required: true, weight: 10 },
+      Speichergröße: { required: true, weight: 10, patterns: [/GB$/i] },
+      Schnittstelle: { required: true, weight: 8 },
+    },
+  },
+  monitors: {
+    minRequiredScore: 70,
+    attributes: {
+      Marke: { required: true, weight: 10 },
+      Bildschirmdiagonale: {
+        required: true,
+        weight: 10,
+        patterns: [/cm$/i, /Zoll$/i],
+      },
+      "Maximale Auflösung": { required: true, weight: 10 },
+      Panel: { required: false, weight: 5 },
+      "Reaktionszeit (G-to-G)": { required: false, weight: 5 },
+    },
+  },
+  tablets: {
+    minRequiredScore: 70,
+    attributes: {
+      Marke: { required: true, weight: 10 },
+      Modell: { required: true, weight: 10 },
+      "RAM-Kapazität": { required: true, weight: 8, patterns: [/GB$/i] },
+      "Interne Speicherkapazität": {
+        required: true,
+        weight: 8,
+        patterns: [/GB$/i, /TB$/i],
+      },
+      Bildschirmdiagonale: {
+        required: true,
+        weight: 5,
+        patterns: [/cm$/i, /Zoll$/i],
+      },
+      Betriebssystem: { required: true, weight: 5 },
+    },
+  },
+  tvs: {
+    minRequiredScore: 70,
+    attributes: {
+      Marke: { required: true, weight: 10 },
+      Bildschirmdiagonale: {
+        required: true,
+        weight: 10,
+        patterns: [/cm$/i, /Zoll$/i],
+      },
+      "HD-Typ": { required: true, weight: 10 },
+      "Display-Technologie": { required: true, weight: 10 },
+      "Smart-TV": { required: false, weight: 5 },
+    },
+  },
 };
 
 /**

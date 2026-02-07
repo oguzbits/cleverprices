@@ -65,6 +65,8 @@ Go to Dokploy Dashboard -> Applications -> CleverPrices -> Stop / Start.
 | :----------------------------------------------- | :---------------------------------------------------------------------------------------------- |
 | `bun run scripts/import-from-csv.ts <file>`      | Imports/Updates products from a Keepa CSV export. Logic prioritizes Amazon structured data.     |
 | `bun run scripts/validate-categories.ts`         | Audits the database for categorization errors (e.g. Headphones in SSDs) and reports violations. |
+| `bun run sif:audit <category>`                   | **New.** Audits a category for Source Integrity violations (Bleed/Pollution).                   |
+| `bun run quality:report`                         | **New.** Generates a Data Quality & Coverage report for all categories.                         |
 | `bun scripts/enrichment/ebay-enricher.ts <N>`    | Fetches high-quality technical specs from eBay (Limit N units). Stays under daily API quotas.   |
 | `bun scripts/enrichment/smart-variant-syncer.ts` | Propagates clean specs from "Lead" products to all variants in the same ASIN family.            |
 

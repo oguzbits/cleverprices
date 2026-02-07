@@ -17,13 +17,14 @@ The worker triggers `scripts/automation/keepa-worker.ts`.
 - **Write Economy (Smart Updates)**: Uses **Value-Based Diffing**—it fetches current prices and only performs a write if the price, sales rank, or metadata has actually changed.
 - **Target**: Updates the `currentPrice`, `priceAvg30`, and `priceAvg90` in the local SQLite database.
 
-### Phase 2: Product Enrichment
+### Phase 2: Product Enrichment & Integrity
 
-Immediately following the price updates, metadata enrichment runs using the local Icecat Index.
+Immediately following the price updates, metadata enrichment runs using the multi-source engine (Icecat, eBay, Intel).
 
+- **Integrity Firewall (SIF)**: Before enrichment, products undergo a Source Integrity Audit for "Translation Bleed" or tech pollution. Untrusted data is automatically blocked from the UI.
 - **Dynamic Scaling**: Uses remaining tokens or local indexes to fetch rich metadata.
 - **Probabilistic Enrichment (PEF)**: Uses **Token Entropy** and **Sibling Consensus** to block variant leakage (e.g., preventing a 'Pro' spec from leaking into a base model).
-- **DQA Quality Gate**: Every enriched product receives a health score (0-100). If it falls below the category threshold (Smartphones: 70), it is flagged for `manual_review` instead of going live.
+- **DQA Golden Schemas**: Every enriched product receives a health score (0-100). If it falls below the category threshold (e.g., Smartphones: 70), it is flagged for `manual_review` or suppressed from Hub views.
 - **Manual Chunking**: Database insertions are chunked to stay within SQLite limits.
 
 ### Phase 3: Cache Warming

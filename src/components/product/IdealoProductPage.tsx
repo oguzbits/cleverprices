@@ -273,7 +273,9 @@ export async function IdealoProductPage({
                       ? typeof product.officialSpecifications === "string"
                         ? JSON.parse(product.officialSpecifications)
                         : product.officialSpecifications
-                      : product.specifications) || {},
+                      : product.enrichmentStatus === "untrusted_source"
+                        ? {}
+                        : product.specifications) || {},
                   )
                     .filter(([key, value]) => {
                       if (!isParentView) return true;

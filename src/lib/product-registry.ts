@@ -171,6 +171,7 @@ export interface Product {
     | "error"
     | "optimized"
     | "scavenged"
+    | "untrusted_source"
     | null;
   completenessScore?: number | null;
   missingSpecs?: string | null;

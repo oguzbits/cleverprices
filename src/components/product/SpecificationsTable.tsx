@@ -41,13 +41,19 @@ export function SpecificationsTable({
       rawSpecs = s;
       isOfficialData = true;
       sourceLabel = product.specificationsSource || s.Source || "Unknown";
-    } else if (product.specifications) {
+    } else if (
+      product.specifications &&
+      product.enrichmentStatus !== "untrusted_source"
+    ) {
       const parsed =
         typeof product.specifications === "string"
           ? JSON.parse(product.specifications)
           : product.specifications;
       rawSpecs = parsed || {};
       sourceLabel = "Legacy";
+    } else if (product.enrichmentStatus === "untrusted_source") {
+      sourceLabel = "Untrusted";
+      rawSpecs = {}; // Wipe polluted data from UI
     }
 
     // LIST OF ATTRIBUTES TO ALWAYS HIDE IF THEY ARE VARIANTS
@@ -368,6 +374,15 @@ export function SpecificationsTable({
           (isOfficial ? (
             // DEBUG MODE: Show granular source info
             (() => {
+              // Priority 0: Untrusted / Blocked
+              if (source === "Untrusted") {
+                return (
+                  <div className="flex items-center gap-1.5 rounded-full border border-red-600 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    Untrusted Source (Blocked)
+                  </div>
+                );
+              }
               // Priority 1: Intel Source
               if (source === "Intel" && specs.Method === "Scraped") {
                 return (
