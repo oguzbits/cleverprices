@@ -82,6 +82,15 @@ function normalizeAccents(s: string): string {
 }
 
 /**
+ * Standardizes tokenization for consistent identity matching.
+ */
+export function getCleanTokens(s: string): string[] {
+  return normalizeAccents(s.toLowerCase())
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length > 1 || /^\d+$/.test(t));
+}
+
+/**
  * QA Helper: Verifies if a candidate model name from specifications is
  * safe to use as an override for the main product title.
  */
@@ -284,14 +293,44 @@ export function calculateSiblingConsensus(siblings: any[]): SiblingConsensus {
   const total = siblings.length;
 
   siblings.forEach((s) => {
-    const sTitle = (s.title || "").toLowerCase();
-    const tokens = new Set<string>(sTitle.split(/[^a-z0-9]+/));
-    tokens.forEach((t) => {
-      if (t.length > 1) tokenCounts[t] = (tokenCounts[t] || 0) + 1;
+    // 1. Process Titles
+    const titleTokens = new Set<string>(getCleanTokens(s.title || ""));
+    titleTokens.forEach((t) => {
+      tokenCounts[t] = (tokenCounts[t] || 0) + 1;
+    });
+
+    // 2. Process Specifications (if available) - Helps find common traits
+    const specs = s.officialSpecifications
+      ? typeof s.officialSpecifications === "string"
+        ? JSON.parse(s.officialSpecifications)
+        : s.officialSpecifications
+      : s.specifications || {};
+
+    const specValues = Object.values(specs)
+      .filter((v) => typeof v === "string" && v.length < 50)
+      .join(" ");
+
+    const specTokens = new Set<string>(getCleanTokens(specValues));
+    specTokens.forEach((t) => {
+      tokenCounts[t] = (tokenCounts[t] || 0) + 1;
     });
   });
 
   return { tokenCounts, total };
+}
+
+/**
+ * Checks if a token is a global constant in the sibling family (Identity Token)
+ * or a variable trait (Variation Token).
+ */
+export function isIdentityToken(
+  token: string,
+  consensus: SiblingConsensus,
+): boolean {
+  if (consensus.total <= 1) return true; // Can't tell without siblings
+  const freq =
+    (consensus.tokenCounts[token.toLowerCase()] || 0) / consensus.total;
+  return freq >= 0.7; // Appears in 70% of siblings
 }
 
 export function getProductIdentity(

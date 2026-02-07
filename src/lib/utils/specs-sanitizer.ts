@@ -1,3 +1,23 @@
+import { normalizeBrandName } from "./brand-mapping";
+import { getCleanTokens, SiblingConsensus } from "./product-identity";
+
+// Tokens that statistically indicate a variation/tier jump in consumer electronics
+const VARIANT_MARKER_TOKENS = new Set([
+  "pro",
+  "plus",
+  "ultra",
+  "max",
+  "mini",
+  "lite",
+  "se",
+  "fe",
+  "air",
+  "edge",
+  "neo",
+  "premium",
+  "pro+",
+  "max+",
+]);
 const GENERIC_VALUE_BLACKLIST = [
   "handy",
   "smartphone",
@@ -90,31 +110,117 @@ export function sanitizeSpecValue(
 }
 
 /**
+ * Probabilistic Enrichment Guard (PEF Stage 1 & 2)
+ *
+ * Prevents "bad" data from leaking into the database by checking if
+ * the incoming specification value contradicts the established product identity.
+ */
+export function enrichmentGuard(
+  key: string,
+  value: string,
+  productIdentity: {
+    title: string;
+    brand: string;
+    model: string;
+  },
+  consensus?: SiblingConsensus,
+): boolean {
+  if (!value || typeof value !== "string") return true;
+
+  const identityTokens = new Set(getCleanTokens(productIdentity.title));
+  const valueTokens = getCleanTokens(value);
+
+  // 1. Identity Contradiction (Stage 1)
+  // If the enrichment value contains tokens that are known "Variant Markers"
+  // but those markers are ABSENT in the marketplace identity, it's highly likely a leak.
+  for (const token of valueTokens) {
+    if (VARIANT_MARKER_TOKENS.has(token) && !identityTokens.has(token)) {
+      return false;
+    }
+  }
+
+  // 2. Sibling Consensus (Stage 2)
+  // If we have a sibling family, check if this specific value is a statistical outlier.
+  if (consensus && consensus.total > 2) {
+    const rareTokens = valueTokens.filter((token) => {
+      const freq = (consensus.tokenCounts[token] || 0) / consensus.total;
+      return freq < 0.15; // Token appears in less than 15% of the family
+    });
+
+    // If the value contains rare tokens that aren't in our title, it's suspicious.
+    if (rareTokens.length > 0) {
+      const hasSafeOverride = rareTokens.every((t) => identityTokens.has(t));
+      if (!hasSafeOverride) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+/**
  * Sanitizes an entire record of specs.
  */
 export function sanitizeSpecs(
   specs: Record<string, any>,
-  brand?: string,
+  productIdentity?: {
+    title: string;
+    brand: string;
+    model: string;
+  },
+  consensus?: SiblingConsensus,
 ): Record<string, any> {
   const sanitized: Record<string, any> = {};
 
   Object.entries(specs).forEach(([k, v]) => {
-    const cleanKey = decodeEntities(k);
+    let cleanKey = decodeEntities(k);
+
     if (typeof v === "string") {
-      const clean = sanitizeSpecValue(cleanKey, decodeEntities(v), brand);
+      let decodedVal = decodeEntities(v);
+
+      // Brand Normalization in Values
+      if (
+        cleanKey.toLowerCase() === "marke" ||
+        cleanKey.toLowerCase() === "brand"
+      ) {
+        decodedVal = normalizeBrandName(decodedVal);
+      }
+
+      const clean = sanitizeSpecValue(
+        cleanKey,
+        decodedVal,
+        productIdentity?.brand || undefined,
+      );
+
+      // Security Guard: Check for identity contradictions or statistical outliers
+      if (productIdentity && clean) {
+        const isSafe = enrichmentGuard(
+          cleanKey,
+          String(clean),
+          productIdentity,
+          consensus,
+        );
+        if (!isSafe) {
+          console.warn(
+            `[Enrichment Guard] Blocked attribute leak: ${cleanKey} = ${clean}`,
+          );
+          return;
+        }
+      }
+
       if (clean) sanitized[cleanKey] = clean;
     } else if (v !== null && v !== undefined) {
       sanitized[cleanKey] = v;
     }
   });
 
-  // 2. Cross-field redundancy check: Drop "Style" if it's already covered by other fields
+  // Cross-field redundancy check: Drop "Style" if it's already covered by other fields
   if (sanitized["Style"]) {
     const styleVal = String(sanitized["Style"]).toLowerCase();
     const isRedundant = Object.entries(sanitized).some(([k, v]) => {
       if (k === "Style") return false;
       const otherVal = String(v).toLowerCase();
-      // If Style says "16 GB Gemeinsamer Arbeitsspeicher" and RAM says "16 GB"
       return styleVal.includes(otherVal) || otherVal.includes(styleVal);
     });
 

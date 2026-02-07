@@ -22,6 +22,9 @@ export function parseHistoryJson(
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+// Systemic enrichment guards now handle data anomalies at ingestion time.
+// Hard-coded runtime repairs removed.
+
 /**
  * mapDbProduct: Pure logic to transform DB records into Product interface.
  * Standardizes slugs and populates history.

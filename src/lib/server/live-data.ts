@@ -99,8 +99,12 @@ export async function mergeLivePrices(
       const newWarehousePrice = live.warehousePrice || 0;
       const refPrice = live.priceAvg90 || 0;
 
-      // Savings should be based on the best available price (Smart) vs Reference
-      const savings = calculateSavings(smartPrice, refPrice);
+      // Savings should only be calculated if the BEST price is the NEW price.
+      // Comparing a Used/Warehouse price to a New 90-day average leads to misleadingly high discounts.
+      const isNewPriceBest = smartPrice === rawNewPrice && rawNewPrice > 0;
+      const savings = isNewPriceBest
+        ? calculateSavings(smartPrice, refPrice)
+        : 0;
 
       // Force "Renewed" condition if title implies it (Amazon compliance & Consistency)
       let condition = p.condition;

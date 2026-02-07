@@ -12,7 +12,7 @@ async function deployData() {
 
   // NOTE: Dokploy volume mapping
   const HOST_DATA_DIR = "/etc/dokploy/volumes/cleverprices/data";
-  const LOCAL_PATH = "./data/cleverprices.db";
+  const LOCAL_PATH = process.env.LOCAL_DB_OVERRIDE || "./data/cleverprices.db";
   const REMOTE_PATH_NEW = `${HOST_DATA_DIR}/cleverprices.db.new`;
   const REMOTE_PATH_TARGET = `${HOST_DATA_DIR}/cleverprices.db`;
 
