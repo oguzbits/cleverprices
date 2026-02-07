@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db, products } from "../../src/db";
+import { getProductIdentity } from "../../src/lib/utils/product-identity";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
 import { normalizeVariantAttributes } from "../../src/lib/utils/variants";
 
@@ -43,7 +44,13 @@ async function cleanupProductAttributes() {
     if (product.officialSpecifications) {
       try {
         const specs = JSON.parse(product.officialSpecifications);
-        const sanitized = sanitizeSpecs(specs, product.brand || undefined);
+        const identity = getProductIdentity(product as any);
+        const identityContext = {
+          title: product.title || "",
+          brand: product.brand || "",
+          model: identity.model,
+        };
+        const sanitized = sanitizeSpecs(specs, identityContext);
         const sanitizedStr = JSON.stringify(sanitized);
 
         if (sanitizedStr !== product.officialSpecifications) {

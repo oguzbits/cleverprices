@@ -427,7 +427,12 @@ export class EbayEnricher {
           }
         }
 
-        const sanitized = sanitizeSpecs(rawSpecs, product.brand || undefined);
+        const identityContext = {
+          title: product.title || "",
+          brand: product.brand || "",
+          model: product.title, // Basic fallback
+        };
+        const sanitized = sanitizeSpecs(rawSpecs, identityContext);
 
         if (Object.keys(sanitized).length >= 1) {
           const source = ebayData.isSearchMatch ? "ebay-search" : "ebay";

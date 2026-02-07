@@ -23,6 +23,7 @@ export const products = sqliteTable(
     gtin: text("gtin"), // EAN-13 or UPC-12 for multi-source matching
     mpn: text("mpn"), // Manufacturer Part Number
     slug: text("slug").notNull().unique(),
+    canonicalId: integer("canonical_id"), // Grouping ID for variants/duplicates/semantic-clones
 
     // Basic Info
     title: text("title").notNull(),
@@ -89,6 +90,7 @@ export const products = sqliteTable(
     index("idx_products_asin").on(table.asin),
     index("idx_products_gtin").on(table.gtin),
     index("idx_products_created_at").on(table.createdAt),
+    index("idx_products_canonical_id").on(table.canonicalId), // Fast lookup for clustered families
 
     // Popularity & Ranking
     index("idx_products_sales_rank").on(table.salesRank),

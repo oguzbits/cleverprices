@@ -19,7 +19,15 @@ async function forceiPhone() {
     const icecatData = await source.fetchProductByGtin(product.gtin!, "de");
 
     if (icecatData && icecatData.specifications) {
-      const sanitized = sanitizeSpecs(icecatData.specifications, "Apple");
+      const identityContext = {
+        title: product.title || "",
+        brand: "Apple",
+        model: product.title.replace(/iPhone\s*/i, "").trim(),
+      };
+      const sanitized = sanitizeSpecs(
+        icecatData.specifications,
+        identityContext,
+      );
       console.log(`✅ Success! Found ${Object.keys(sanitized).length} fields.`);
 
       await db

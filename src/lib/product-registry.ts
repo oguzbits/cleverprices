@@ -97,6 +97,7 @@ export const liteProductColumns = {
   completenessScore: products.completenessScore,
   missingSpecs: products.missingSpecs,
   lastEnrichedAt: products.lastEnrichedAt,
+  canonicalId: products.canonicalId,
   createdAt: products.createdAt,
   updatedAt: products.updatedAt,
 };
@@ -176,6 +177,7 @@ export interface Product {
   completenessScore?: number | null;
   missingSpecs?: string | null;
   lastEnrichedAt?: Date | null;
+  canonicalId?: number | null;
 }
 
 // Lite price type for optimized queries (lean schema)

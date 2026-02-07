@@ -34,7 +34,13 @@ async function enrichOne(id: number) {
       }
     }
 
-    const sanitized = sanitizeSpecs(rawSpecs, product.brand || undefined);
+    const identityContext = {
+      title: product.title || "",
+      brand: product.brand || "",
+      model: product.title, // Simple fallback for targeted enrichment
+    };
+
+    const sanitized = sanitizeSpecs(rawSpecs, identityContext);
     console.log("✅ Results:", sanitized);
   } catch (e: any) {
     console.error("❌ Error during manual enrichment:", e.message);
