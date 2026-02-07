@@ -273,7 +273,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const isParentView = isParentViewMode;
     const { getProductVariants } = await import("@/lib/server/cached-products");
     const siblings = isParentView
-      ? await getProductVariants(product, countryCode)
+      ? await getProductVariants(product, countryCode, true, true) // LEAN Fetch for Metadata
       : [];
     const identity = getProductIdentity(product, siblings);
 
@@ -383,24 +383,24 @@ export default async function ProductPage({ params, searchParams }: Props) {
       notFound();
     }
 
-    const { getCanonicalFamilyId, getProductById } =
-      await import("@/lib/product-registry");
+    const { getProductById } = await import("@/lib/product-registry");
     const { getProductVariants } = await import("@/lib/server/cached-products");
     const { getFamilyIdentity } = await import("@/lib/product-families");
     const { mergeLivePrices } = await import("@/lib/server/live-data");
     const { getCategoryBySlug } = await import("@/lib/categories");
 
-    // 1. Parallelize ALL essential data fetching (Category, Variants, Canonical Hub)
-    const [category, canonicalRealId, allVariantsRaw] = await Promise.all([
+    // 1. Parallelize ALL essential data fetching (Category, Variants)
+    const [category, allVariantsRaw] = await Promise.all([
       getCategoryBySlug(product.category),
-      !parentViewMode
-        ? getCanonicalFamilyId(
-            product.parentAsin,
-            (product.id || 0) % 100000000,
-          )
-        : Promise.resolve(null),
       getProductVariants(product, countryCode, true, true), // Lean Fetch
     ]);
+
+    // 2. Identify the Canonical Variant ID locally from siblings (saves a DB query)
+    const canonicalRealId =
+      allVariantsRaw.length > 0
+        ? [...allVariantsRaw].sort((a, b) => (a.id || 0) - (b.id || 0))[0]
+            ?.id || null
+        : product.id || null;
 
     // 2. Batch merge live prices for ONLY the items we really need (main + variants)
     // We merge them all at once to minimize database round-trips

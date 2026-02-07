@@ -581,10 +581,14 @@ export const getProductVariants = cache(async function getProductVariants(
           asin: products.asin,
           slug: products.slug,
           title: products.title,
+          brand: products.brand,
+          mpn: products.mpn,
           parentAsin: products.parentAsin,
           imageUrl: products.imageUrl,
           variationAttributes: products.variationAttributes,
           condition: products.condition,
+          specifications: products.specifications,
+          officialSpecifications: products.officialSpecifications,
         }
       : liteProductColumns;
 
