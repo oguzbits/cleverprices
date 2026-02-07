@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import { Database } from "bun:sqlite";
 import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
@@ -37,6 +37,12 @@ async function hybridSync() {
 
     if (!containerId) throw new Error("Could not find running containers.");
 
+    // Ensure the remote path is clear (VACUUM INTO requires target to NOT exist)
+    console.log(`🧹 Cleaning remote path...`);
+    execSync(
+      `ssh root@${PROD_IP} "rm -f ${HOST_DATA_DIR}/${REMOTE_BACKUP_NAME}"`,
+    );
+
     execSync(
       `ssh root@${PROD_IP} "docker exec ${containerId} sqlite3 ${CONTAINER_DATA_DIR}/cleverprices.db \\"VACUUM INTO '${CONTAINER_DATA_DIR}/${REMOTE_BACKUP_NAME}'\\""`,
       { stdio: "inherit" },
@@ -59,7 +65,7 @@ async function hybridSync() {
 
     // Attach the local database
     const absoluteLocalPath = path.resolve(LOCAL_DB);
-    db.prepare(`ATTACH DATABASE '${absoluteLocalPath}' AS local_db`).run();
+    db.run(`ATTACH DATABASE '${absoluteLocalPath}' AS local_db`);
 
     console.log("   Updating Specifications & Enrichment Status...");
 
@@ -83,7 +89,7 @@ async function hybridSync() {
     console.log(`   ✅ Merged ${result.changes} products successfully!`);
 
     // Cleanup
-    db.prepare("DETACH DATABASE local_db").run();
+    db.run("DETACH DATABASE local_db");
     db.close();
 
     // 4. Cleanup Remote

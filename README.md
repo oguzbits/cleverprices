@@ -35,6 +35,9 @@ bun run update-prices
 # Push local data to production (Safe Hot-Swap)
 bun run db:push-prod
 
+# Hybrid Push (Preserves Prod Prices, Syncs Local Specs)
+bun run db:push-hybrid
+
 # Sync production data to local for debugging
 bun run db:pull-prod
 
@@ -59,6 +62,8 @@ CleverPrices uses a highly optimized data layer to ensure sub-100ms response tim
 - **SQLite Resilience** - Implements a `withRetry` logic with exponential backoff and `PRAGMA busy_timeout = 5000` to handle concurrent write locks gracefully.
 - **FTS5 Full-Text Search** - Uses SQLite's native virtual tables for ultra-fast product prefix matching.
 - **Atomic Migrations** - Dedicated `db:migrate` scripts ensure schema consistency.
+- **Enterprise DQA Suite** - Implements "Golden Schemas" and automated health scoring (0-100) per category.
+- **Probabilistic Enrichment (PEF)** - Multi-stage logic (Token Entropy & Sibling Consensus) prevents variant leakage without hard-coded rules.
 
 ---
 

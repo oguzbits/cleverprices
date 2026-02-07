@@ -19,12 +19,12 @@ The worker triggers `scripts/automation/keepa-worker.ts`.
 
 ### Phase 2: Product Enrichment
 
-Immediately following the price updates, metadata enrichment runs.
+Immediately following the price updates, metadata enrichment runs using the local Icecat Index.
 
-- **Dynamic Scaling**: Uses remaining tokens to fetch rich metadata.
-- **History Seeding**: Fetches the full historical curve from Keepa and back-fills the `price_history` table.
-- **Safety Protocol**: Prevents accidental double-writing of historical data.
-- **Manual Chunking**: History insertions are manually chunked (3,000 rows/chunk) to stay within `SQLITE_MAX_VARIABLE_NUMBER` limits.
+- **Dynamic Scaling**: Uses remaining tokens or local indexes to fetch rich metadata.
+- **Probabilistic Enrichment (PEF)**: Uses **Token Entropy** and **Sibling Consensus** to block variant leakage (e.g., preventing a 'Pro' spec from leaking into a base model).
+- **DQA Quality Gate**: Every enriched product receives a health score (0-100). If it falls below the category threshold (Smartphones: 70), it is flagged for `manual_review` instead of going live.
+- **Manual Chunking**: Database insertions are chunked to stay within SQLite limits.
 
 ### Phase 3: Cache Warming
 
