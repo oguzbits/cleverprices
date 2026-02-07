@@ -77,9 +77,10 @@ async function deployData() {
     }
 
     // 3. Swap Files (Atomic Move) + Cleanup WAL
-    // We delete WAL/SHM to force SQLite to start fresh from the main DB file
+    // We chown to 1001:1001 because the Dockerfile defines the 'nextjs' user with UID 1001
+    // We set 644 to ensure the file is writable by the owner
     console.log(`\n🔄 Step 3: Swapping Database Files...`);
-    const swapCmd = `ssh root@${PROD_IP} "mv ${REMOTE_PATH_NEW} ${REMOTE_PATH_TARGET} && rm -f ${HOST_DATA_DIR}/cleverprices.db-wal ${HOST_DATA_DIR}/cleverprices.db-shm"`;
+    const swapCmd = `ssh root@${PROD_IP} "mv ${REMOTE_PATH_NEW} ${REMOTE_PATH_TARGET} && chown 1001:1001 ${REMOTE_PATH_TARGET} && chmod 644 ${REMOTE_PATH_TARGET} && rm -f ${HOST_DATA_DIR}/cleverprices.db-wal ${HOST_DATA_DIR}/cleverprices.db-shm"`;
     execSync(swapCmd, { stdio: "inherit" });
 
     // 4. Start App
