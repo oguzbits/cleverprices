@@ -1,0 +1,3080 @@
+[
+  {
+    "slug": "best-tvs-under-500-euro",
+    "title": "Die besten Fernseher unter 500 Euro (2025)",
+    "category": "tvs",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 117
+  },
+  {
+    "slug": "best-tvs-under-1000-euro",
+    "title": "Die besten Fernseher unter 1000 Euro (2025)",
+    "category": "tvs",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 254
+  },
+  {
+    "slug": "best-tvs-under-1500-euro",
+    "title": "Die besten Fernseher unter 1500 Euro (2025)",
+    "category": "tvs",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 300
+  },
+  {
+    "slug": "best-tvs-under-2000-euro",
+    "title": "Die besten Fernseher unter 2000 Euro (2025)",
+    "category": "tvs",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 322
+  },
+  {
+    "slug": "best-hisense-tvs",
+    "title": "Beste Hisense Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "Hisense"
+    },
+    "productCount": 47
+  },
+  {
+    "slug": "best-lg-tvs",
+    "title": "Beste LG Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "LG"
+    },
+    "productCount": 66
+  },
+  {
+    "slug": "best-panasonic-tvs",
+    "title": "Beste Panasonic Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "Panasonic"
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-philips-tvs",
+    "title": "Beste Philips Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "Philips"
+    },
+    "productCount": 34
+  },
+  {
+    "slug": "best-samsung-tvs",
+    "title": "Beste Samsung Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "Samsung"
+    },
+    "productCount": 105
+  },
+  {
+    "slug": "best-sony-tvs",
+    "title": "Beste Sony Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "Sony"
+    },
+    "productCount": 26
+  },
+  {
+    "slug": "best-tcl-tvs",
+    "title": "Beste TCL Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "TCL"
+    },
+    "productCount": 46
+  },
+  {
+    "slug": "best-toshiba-tvs",
+    "title": "Beste TOSHIBA Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "TOSHIBA"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-xiaomi-tvs",
+    "title": "Beste XIAOMI Fernseher: Kaufberatung & Vergleich",
+    "category": "tvs",
+    "filters": {
+      "brand": "XIAOMI"
+    },
+    "productCount": 17
+  },
+  {
+    "slug": "best-headphones-under-100-euro",
+    "title": "Die besten Kopfhörer unter 100 Euro (2025)",
+    "category": "headphones",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 145
+  },
+  {
+    "slug": "best-headphones-under-200-euro",
+    "title": "Die besten Kopfhörer unter 200 Euro (2025)",
+    "category": "headphones",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 225
+  },
+  {
+    "slug": "best-headphones-under-300-euro",
+    "title": "Die besten Kopfhörer unter 300 Euro (2025)",
+    "category": "headphones",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 274
+  },
+  {
+    "slug": "best-headphones-under-500-euro",
+    "title": "Die besten Kopfhörer unter 500 Euro (2025)",
+    "category": "headphones",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 298
+  },
+  {
+    "slug": "best-headphones-under-1000-euro",
+    "title": "Die besten Kopfhörer unter 1000 Euro (2025)",
+    "category": "headphones",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 302
+  },
+  {
+    "slug": "best-headphones-under-1500-euro",
+    "title": "Die besten Kopfhörer unter 1500 Euro (2025)",
+    "category": "headphones",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 302
+  },
+  {
+    "slug": "best-headphones-under-2000-euro",
+    "title": "Die besten Kopfhörer unter 2000 Euro (2025)",
+    "category": "headphones",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 302
+  },
+  {
+    "slug": "best-beats-headphones",
+    "title": "Beste Beats Kopfhörer: Kaufberatung & Vergleich",
+    "category": "headphones",
+    "filters": {
+      "brand": "Beats"
+    },
+    "productCount": 21
+  },
+  {
+    "slug": "best-bose-headphones",
+    "title": "Beste Bose Kopfhörer: Kaufberatung & Vergleich",
+    "category": "headphones",
+    "filters": {
+      "brand": "Bose"
+    },
+    "productCount": 26
+  },
+  {
+    "slug": "best-bowers---wilkins-headphones",
+    "title": "Beste Bowers & Wilkins Kopfhörer: Kaufberatung & Vergleich",
+    "category": "headphones",
+    "filters": {
+      "brand": "Bowers & Wilkins"
+    },
+    "productCount": 14
+  },
+  {
+    "slug": "best-jbl-headphones",
+    "title": "Beste JBL Kopfhörer: Kaufberatung & Vergleich",
+    "category": "headphones",
+    "filters": {
+      "brand": "JBL"
+    },
+    "productCount": 62
+  },
+  {
+    "slug": "best-linsoul-headphones",
+    "title": "Beste LINSOUL Kopfhörer: Kaufberatung & Vergleich",
+    "category": "headphones",
+    "filters": {
+      "brand": "LINSOUL"
+    },
+    "productCount": 14
+  },
+  {
+    "slug": "best-samsung-headphones",
+    "title": "Beste Samsung Kopfhörer: Kaufberatung & Vergleich",
+    "category": "headphones",
+    "filters": {
+      "brand": "Samsung"
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-sony-headphones",
+    "title": "Beste Sony Kopfhörer: Kaufberatung & Vergleich",
+    "category": "headphones",
+    "filters": {
+      "brand": "Sony"
+    },
+    "productCount": 19
+  },
+  {
+    "slug": "best-soundcore-headphones",
+    "title": "Beste soundcore Kopfhörer: Kaufberatung & Vergleich",
+    "category": "headphones",
+    "filters": {
+      "brand": "soundcore"
+    },
+    "productCount": 30
+  },
+  {
+    "slug": "best-notebooks-under-200-euro",
+    "title": "Die besten Notebooks unter 200 Euro (2025)",
+    "category": "notebooks",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 18
+  },
+  {
+    "slug": "best-notebooks-under-300-euro",
+    "title": "Die besten Notebooks unter 300 Euro (2025)",
+    "category": "notebooks",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 36
+  },
+  {
+    "slug": "best-notebooks-under-500-euro",
+    "title": "Die besten Notebooks unter 500 Euro (2025)",
+    "category": "notebooks",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 112
+  },
+  {
+    "slug": "best-notebooks-under-1000-euro",
+    "title": "Die besten Notebooks unter 1000 Euro (2025)",
+    "category": "notebooks",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 281
+  },
+  {
+    "slug": "best-notebooks-under-1500-euro",
+    "title": "Die besten Notebooks unter 1500 Euro (2025)",
+    "category": "notebooks",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 412
+  },
+  {
+    "slug": "best-notebooks-under-2000-euro",
+    "title": "Die besten Notebooks unter 2000 Euro (2025)",
+    "category": "notebooks",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 466
+  },
+  {
+    "slug": "best-acemagic-notebooks",
+    "title": "Beste ACEMAGIC Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "ACEMAGIC"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-asus-notebooks",
+    "title": "Beste ASUS Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "ASUS"
+    },
+    "productCount": 64
+  },
+  {
+    "slug": "best-apple-notebooks",
+    "title": "Beste Apple Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "Apple"
+    },
+    "productCount": 62
+  },
+  {
+    "slug": "best-dell-notebooks",
+    "title": "Beste Dell Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "Dell"
+    },
+    "productCount": 24
+  },
+  {
+    "slug": "best-hp-notebooks",
+    "title": "Beste HP Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "HP"
+    },
+    "productCount": 106
+  },
+  {
+    "slug": "best-jodabook-notebooks",
+    "title": "Beste JodaBook Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "JodaBook"
+    },
+    "productCount": 54
+  },
+  {
+    "slug": "best-kingspec-notebooks",
+    "title": "Beste KingSpec Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "KingSpec"
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-lenovo-notebooks",
+    "title": "Beste Lenovo Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "Lenovo"
+    },
+    "productCount": 105
+  },
+  {
+    "slug": "best-medion-notebooks",
+    "title": "Beste MEDION Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "MEDION"
+    },
+    "productCount": 24
+  },
+  {
+    "slug": "best-msi-notebooks",
+    "title": "Beste MSI Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "MSI"
+    },
+    "productCount": 29
+  },
+  {
+    "slug": "best-microsoft-notebooks",
+    "title": "Beste Microsoft Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "Microsoft"
+    },
+    "productCount": 22
+  },
+  {
+    "slug": "best-seagate-notebooks",
+    "title": "Beste Seagate Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "Seagate"
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-acer-notebooks",
+    "title": "Beste acer Notebooks: Kaufberatung & Vergleich",
+    "category": "notebooks",
+    "filters": {
+      "brand": "acer"
+    },
+    "productCount": 63
+  },
+  {
+    "slug": "best-tablets-under-200-euro",
+    "title": "Die besten Tablets unter 200 Euro (2025)",
+    "category": "tablets",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-tablets-under-300-euro",
+    "title": "Die besten Tablets unter 300 Euro (2025)",
+    "category": "tablets",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 26
+  },
+  {
+    "slug": "best-tablets-under-500-euro",
+    "title": "Die besten Tablets unter 500 Euro (2025)",
+    "category": "tablets",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 42
+  },
+  {
+    "slug": "best-tablets-under-1000-euro",
+    "title": "Die besten Tablets unter 1000 Euro (2025)",
+    "category": "tablets",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 86
+  },
+  {
+    "slug": "best-tablets-under-1500-euro",
+    "title": "Die besten Tablets unter 1500 Euro (2025)",
+    "category": "tablets",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 122
+  },
+  {
+    "slug": "best-tablets-under-2000-euro",
+    "title": "Die besten Tablets unter 2000 Euro (2025)",
+    "category": "tablets",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 134
+  },
+  {
+    "slug": "best-apple-tablets",
+    "title": "Beste Apple Tablets: Kaufberatung & Vergleich",
+    "category": "tablets",
+    "filters": {
+      "brand": "Apple"
+    },
+    "productCount": 134
+  },
+  {
+    "slug": "best-samsung-tablets",
+    "title": "Beste Samsung Tablets: Kaufberatung & Vergleich",
+    "category": "tablets",
+    "filters": {
+      "brand": "Samsung"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-xiaomi-tablets",
+    "title": "Beste XIAOMI Tablets: Kaufberatung & Vergleich",
+    "category": "tablets",
+    "filters": {
+      "brand": "XIAOMI"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-monitors-under-200-euro",
+    "title": "Die besten Monitore unter 200 Euro (2025)",
+    "category": "monitors",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 186
+  },
+  {
+    "slug": "best-monitors-under-300-euro",
+    "title": "Die besten Monitore unter 300 Euro (2025)",
+    "category": "monitors",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 269
+  },
+  {
+    "slug": "best-monitors-under-500-euro",
+    "title": "Die besten Monitore unter 500 Euro (2025)",
+    "category": "monitors",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 317
+  },
+  {
+    "slug": "best-monitors-under-1000-euro",
+    "title": "Die besten Monitore unter 1000 Euro (2025)",
+    "category": "monitors",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 362
+  },
+  {
+    "slug": "best-monitors-under-1500-euro",
+    "title": "Die besten Monitore unter 1500 Euro (2025)",
+    "category": "monitors",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 367
+  },
+  {
+    "slug": "best-monitors-under-2000-euro",
+    "title": "Die besten Monitore unter 2000 Euro (2025)",
+    "category": "monitors",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 368
+  },
+  {
+    "slug": "best-aoc-monitors",
+    "title": "Beste AOC Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "AOC"
+    },
+    "productCount": 44
+  },
+  {
+    "slug": "best-asus-monitors",
+    "title": "Beste ASUS Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "ASUS"
+    },
+    "productCount": 73
+  },
+  {
+    "slug": "best-amzfast-monitors",
+    "title": "Beste Amzfast Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "Amzfast"
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-benq-monitors",
+    "title": "Beste BenQ Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "BenQ"
+    },
+    "productCount": 29
+  },
+  {
+    "slug": "best-dell-monitors",
+    "title": "Beste Dell Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "Dell"
+    },
+    "productCount": 24
+  },
+  {
+    "slug": "best-lenovo-monitors",
+    "title": "Beste Lenovo Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "Lenovo"
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-msi-monitors",
+    "title": "Beste MSI Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "MSI"
+    },
+    "productCount": 34
+  },
+  {
+    "slug": "best-philips-monitors",
+    "title": "Beste Philips Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "Philips"
+    },
+    "productCount": 25
+  },
+  {
+    "slug": "best-samsung-monitors",
+    "title": "Beste Samsung Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "Samsung"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-acer-monitors",
+    "title": "Beste acer Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "acer"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-iiyama-monitors",
+    "title": "Beste iiyama Monitore: Kaufberatung & Vergleich",
+    "category": "monitors",
+    "filters": {
+      "brand": "iiyama"
+    },
+    "productCount": 36
+  },
+  {
+    "slug": "best-speakers-under-100-euro",
+    "title": "Die besten Lautsprecher unter 100 Euro (2025)",
+    "category": "speakers",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 21
+  },
+  {
+    "slug": "best-speakers-under-200-euro",
+    "title": "Die besten Lautsprecher unter 200 Euro (2025)",
+    "category": "speakers",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 42
+  },
+  {
+    "slug": "best-speakers-under-300-euro",
+    "title": "Die besten Lautsprecher unter 300 Euro (2025)",
+    "category": "speakers",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 46
+  },
+  {
+    "slug": "best-speakers-under-500-euro",
+    "title": "Die besten Lautsprecher unter 500 Euro (2025)",
+    "category": "speakers",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 52
+  },
+  {
+    "slug": "best-speakers-under-1000-euro",
+    "title": "Die besten Lautsprecher unter 1000 Euro (2025)",
+    "category": "speakers",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 53
+  },
+  {
+    "slug": "best-speakers-under-1500-euro",
+    "title": "Die besten Lautsprecher unter 1500 Euro (2025)",
+    "category": "speakers",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 53
+  },
+  {
+    "slug": "best-speakers-under-2000-euro",
+    "title": "Die besten Lautsprecher unter 2000 Euro (2025)",
+    "category": "speakers",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 53
+  },
+  {
+    "slug": "best-amazon-speakers",
+    "title": "Beste Amazon Lautsprecher: Kaufberatung & Vergleich",
+    "category": "speakers",
+    "filters": {
+      "brand": "Amazon"
+    },
+    "productCount": 30
+  },
+  {
+    "slug": "best-multifunktionsdrucker-under-100-euro",
+    "title": "Die besten Multifunktionsdrucker unter 100 Euro (2025)",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-multifunktionsdrucker-under-200-euro",
+    "title": "Die besten Multifunktionsdrucker unter 200 Euro (2025)",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 33
+  },
+  {
+    "slug": "best-multifunktionsdrucker-under-300-euro",
+    "title": "Die besten Multifunktionsdrucker unter 300 Euro (2025)",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 46
+  },
+  {
+    "slug": "best-multifunktionsdrucker-under-500-euro",
+    "title": "Die besten Multifunktionsdrucker unter 500 Euro (2025)",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 60
+  },
+  {
+    "slug": "best-multifunktionsdrucker-under-1000-euro",
+    "title": "Die besten Multifunktionsdrucker unter 1000 Euro (2025)",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 65
+  },
+  {
+    "slug": "best-multifunktionsdrucker-under-1500-euro",
+    "title": "Die besten Multifunktionsdrucker unter 1500 Euro (2025)",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 67
+  },
+  {
+    "slug": "best-multifunktionsdrucker-under-2000-euro",
+    "title": "Die besten Multifunktionsdrucker unter 2000 Euro (2025)",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 67
+  },
+  {
+    "slug": "best-brother-multifunktionsdrucker",
+    "title": "Beste Brother Multifunktionsdrucker: Kaufberatung & Vergleich",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "brand": "Brother"
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-canon-multifunktionsdrucker",
+    "title": "Beste Canon Multifunktionsdrucker: Kaufberatung & Vergleich",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "brand": "Canon"
+    },
+    "productCount": 29
+  },
+  {
+    "slug": "best-epson-multifunktionsdrucker",
+    "title": "Beste Epson Multifunktionsdrucker: Kaufberatung & Vergleich",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "brand": "Epson"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-hp-multifunktionsdrucker",
+    "title": "Beste HP Multifunktionsdrucker: Kaufberatung & Vergleich",
+    "category": "multifunktionsdrucker",
+    "filters": {
+      "brand": "HP"
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-routers-under-100-euro",
+    "title": "Die besten Router unter 100 Euro (2025)",
+    "category": "routers",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-routers-under-200-euro",
+    "title": "Die besten Router unter 200 Euro (2025)",
+    "category": "routers",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 98
+  },
+  {
+    "slug": "best-routers-under-300-euro",
+    "title": "Die besten Router unter 300 Euro (2025)",
+    "category": "routers",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 116
+  },
+  {
+    "slug": "best-routers-under-500-euro",
+    "title": "Die besten Router unter 500 Euro (2025)",
+    "category": "routers",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 125
+  },
+  {
+    "slug": "best-routers-under-1000-euro",
+    "title": "Die besten Router unter 1000 Euro (2025)",
+    "category": "routers",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 129
+  },
+  {
+    "slug": "best-routers-under-1500-euro",
+    "title": "Die besten Router unter 1500 Euro (2025)",
+    "category": "routers",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 129
+  },
+  {
+    "slug": "best-routers-under-2000-euro",
+    "title": "Die besten Router unter 2000 Euro (2025)",
+    "category": "routers",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 129
+  },
+  {
+    "slug": "best-asus-routers",
+    "title": "Beste ASUS Router: Kaufberatung & Vergleich",
+    "category": "routers",
+    "filters": {
+      "brand": "ASUS"
+    },
+    "productCount": 37
+  },
+  {
+    "slug": "best-fritz--routers",
+    "title": "Beste FRITZ! Router: Kaufberatung & Vergleich",
+    "category": "routers",
+    "filters": {
+      "brand": "FRITZ!"
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-tp-link-routers",
+    "title": "Beste TP-Link Router: Kaufberatung & Vergleich",
+    "category": "routers",
+    "filters": {
+      "brand": "TP-Link"
+    },
+    "productCount": 39
+  },
+  {
+    "slug": "best-systemkameras-under-1000-euro",
+    "title": "Die besten Systemkameras unter 1000 Euro (2025)",
+    "category": "systemkameras",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 31
+  },
+  {
+    "slug": "best-systemkameras-under-1500-euro",
+    "title": "Die besten Systemkameras unter 1500 Euro (2025)",
+    "category": "systemkameras",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 54
+  },
+  {
+    "slug": "best-systemkameras-under-2000-euro",
+    "title": "Die besten Systemkameras unter 2000 Euro (2025)",
+    "category": "systemkameras",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 76
+  },
+  {
+    "slug": "best-canon-systemkameras",
+    "title": "Beste Canon Systemkameras: Kaufberatung & Vergleich",
+    "category": "systemkameras",
+    "filters": {
+      "brand": "Canon"
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-nikon-systemkameras",
+    "title": "Beste Nikon Systemkameras: Kaufberatung & Vergleich",
+    "category": "systemkameras",
+    "filters": {
+      "brand": "Nikon"
+    },
+    "productCount": 25
+  },
+  {
+    "slug": "best-panasonic-systemkameras",
+    "title": "Beste Panasonic Systemkameras: Kaufberatung & Vergleich",
+    "category": "systemkameras",
+    "filters": {
+      "brand": "Panasonic"
+    },
+    "productCount": 18
+  },
+  {
+    "slug": "best-sony-systemkameras",
+    "title": "Beste Sony Systemkameras: Kaufberatung & Vergleich",
+    "category": "systemkameras",
+    "filters": {
+      "brand": "Sony"
+    },
+    "productCount": 21
+  },
+  {
+    "slug": "best-soundbars-under-100-euro",
+    "title": "Die besten Soundbars unter 100 Euro (2025)",
+    "category": "soundbars",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-soundbars-under-200-euro",
+    "title": "Die besten Soundbars unter 200 Euro (2025)",
+    "category": "soundbars",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 30
+  },
+  {
+    "slug": "best-soundbars-under-300-euro",
+    "title": "Die besten Soundbars unter 300 Euro (2025)",
+    "category": "soundbars",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 41
+  },
+  {
+    "slug": "best-soundbars-under-500-euro",
+    "title": "Die besten Soundbars unter 500 Euro (2025)",
+    "category": "soundbars",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 46
+  },
+  {
+    "slug": "best-soundbars-under-1000-euro",
+    "title": "Die besten Soundbars unter 1000 Euro (2025)",
+    "category": "soundbars",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 54
+  },
+  {
+    "slug": "best-soundbars-under-1500-euro",
+    "title": "Die besten Soundbars unter 1500 Euro (2025)",
+    "category": "soundbars",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 54
+  },
+  {
+    "slug": "best-soundbars-under-2000-euro",
+    "title": "Die besten Soundbars unter 2000 Euro (2025)",
+    "category": "soundbars",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 54
+  },
+  {
+    "slug": "best-hard-drives-under-100-euro",
+    "title": "Die besten Festplatten unter 100 Euro (2025)",
+    "category": "hard-drives",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-hard-drives-under-200-euro",
+    "title": "Die besten Festplatten unter 200 Euro (2025)",
+    "category": "hard-drives",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 72
+  },
+  {
+    "slug": "best-hard-drives-under-300-euro",
+    "title": "Die besten Festplatten unter 300 Euro (2025)",
+    "category": "hard-drives",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 95
+  },
+  {
+    "slug": "best-hard-drives-under-500-euro",
+    "title": "Die besten Festplatten unter 500 Euro (2025)",
+    "category": "hard-drives",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 131
+  },
+  {
+    "slug": "best-hard-drives-under-1000-euro",
+    "title": "Die besten Festplatten unter 1000 Euro (2025)",
+    "category": "hard-drives",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 145
+  },
+  {
+    "slug": "best-hard-drives-under-1500-euro",
+    "title": "Die besten Festplatten unter 1500 Euro (2025)",
+    "category": "hard-drives",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 146
+  },
+  {
+    "slug": "best-hard-drives-under-2000-euro",
+    "title": "Die besten Festplatten unter 2000 Euro (2025)",
+    "category": "hard-drives",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 146
+  },
+  {
+    "slug": "best-seagate-hard-drives",
+    "title": "Beste Seagate Festplatten: Kaufberatung & Vergleich",
+    "category": "hard-drives",
+    "filters": {
+      "brand": "Seagate"
+    },
+    "productCount": 76
+  },
+  {
+    "slug": "best-toshiba-hard-drives",
+    "title": "Beste TOSHIBA Festplatten: Kaufberatung & Vergleich",
+    "category": "hard-drives",
+    "filters": {
+      "brand": "TOSHIBA"
+    },
+    "productCount": 22
+  },
+  {
+    "slug": "best-western-digital-hard-drives",
+    "title": "Beste Western Digital Festplatten: Kaufberatung & Vergleich",
+    "category": "hard-drives",
+    "filters": {
+      "brand": "Western Digital"
+    },
+    "productCount": 77
+  },
+  {
+    "slug": "best-gpu-under-100-euro",
+    "title": "Die besten Grafikkarten unter 100 Euro (2025)",
+    "category": "gpu",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 20
+  },
+  {
+    "slug": "best-gpu-under-200-euro",
+    "title": "Die besten Grafikkarten unter 200 Euro (2025)",
+    "category": "gpu",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 52
+  },
+  {
+    "slug": "best-gpu-under-300-euro",
+    "title": "Die besten Grafikkarten unter 300 Euro (2025)",
+    "category": "gpu",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 96
+  },
+  {
+    "slug": "best-gpu-under-500-euro",
+    "title": "Die besten Grafikkarten unter 500 Euro (2025)",
+    "category": "gpu",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 192
+  },
+  {
+    "slug": "best-gpu-under-1000-euro",
+    "title": "Die besten Grafikkarten unter 1000 Euro (2025)",
+    "category": "gpu",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 309
+  },
+  {
+    "slug": "best-gpu-under-1500-euro",
+    "title": "Die besten Grafikkarten unter 1500 Euro (2025)",
+    "category": "gpu",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 358
+  },
+  {
+    "slug": "best-gpu-under-2000-euro",
+    "title": "Die besten Grafikkarten unter 2000 Euro (2025)",
+    "category": "gpu",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 383
+  },
+  {
+    "slug": "best-asrock-gpu",
+    "title": "Beste ASRock Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "ASRock"
+    },
+    "productCount": 21
+  },
+  {
+    "slug": "best-asus-gpu",
+    "title": "Beste ASUS Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "ASUS"
+    },
+    "productCount": 131
+  },
+  {
+    "slug": "best-gigabyte-gpu",
+    "title": "Beste Gigabyte Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "Gigabyte"
+    },
+    "productCount": 90
+  },
+  {
+    "slug": "best-msi-gpu",
+    "title": "Beste MSI Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "MSI"
+    },
+    "productCount": 81
+  },
+  {
+    "slug": "best-pny-gpu",
+    "title": "Beste PNY Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "PNY"
+    },
+    "productCount": 41
+  },
+  {
+    "slug": "best-sapphire-gpu",
+    "title": "Beste Sapphire Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "Sapphire"
+    },
+    "productCount": 23
+  },
+  {
+    "slug": "best-xfx-gpu",
+    "title": "Beste XFX Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "XFX"
+    },
+    "productCount": 34
+  },
+  {
+    "slug": "best-zotac-gpu",
+    "title": "Beste ZOTAC Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "ZOTAC"
+    },
+    "productCount": 25
+  },
+  {
+    "slug": "best-maxsun-gpu",
+    "title": "Beste maxsun Grafikkarten: Kaufberatung & Vergleich",
+    "category": "gpu",
+    "filters": {
+      "brand": "maxsun"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-motherboards-under-100-euro",
+    "title": "Die besten Mainboards unter 100 Euro (2025)",
+    "category": "motherboards",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-motherboards-under-200-euro",
+    "title": "Die besten Mainboards unter 200 Euro (2025)",
+    "category": "motherboards",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 74
+  },
+  {
+    "slug": "best-motherboards-under-300-euro",
+    "title": "Die besten Mainboards unter 300 Euro (2025)",
+    "category": "motherboards",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 105
+  },
+  {
+    "slug": "best-motherboards-under-500-euro",
+    "title": "Die besten Mainboards unter 500 Euro (2025)",
+    "category": "motherboards",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 117
+  },
+  {
+    "slug": "best-motherboards-under-1000-euro",
+    "title": "Die besten Mainboards unter 1000 Euro (2025)",
+    "category": "motherboards",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 124
+  },
+  {
+    "slug": "best-motherboards-under-1500-euro",
+    "title": "Die besten Mainboards unter 1500 Euro (2025)",
+    "category": "motherboards",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 124
+  },
+  {
+    "slug": "best-motherboards-under-2000-euro",
+    "title": "Die besten Mainboards unter 2000 Euro (2025)",
+    "category": "motherboards",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 124
+  },
+  {
+    "slug": "best-asus-motherboards",
+    "title": "Beste ASUS Mainboards: Kaufberatung & Vergleich",
+    "category": "motherboards",
+    "filters": {
+      "brand": "ASUS"
+    },
+    "productCount": 50
+  },
+  {
+    "slug": "best-gigabyte-motherboards",
+    "title": "Beste Gigabyte Mainboards: Kaufberatung & Vergleich",
+    "category": "motherboards",
+    "filters": {
+      "brand": "Gigabyte"
+    },
+    "productCount": 17
+  },
+  {
+    "slug": "best-msi-motherboards",
+    "title": "Beste MSI Mainboards: Kaufberatung & Vergleich",
+    "category": "motherboards",
+    "filters": {
+      "brand": "MSI"
+    },
+    "productCount": 53
+  },
+  {
+    "slug": "best-ram-under-100-euro",
+    "title": "Die besten Arbeitsspeicher unter 100 Euro (2025)",
+    "category": "ram",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 23
+  },
+  {
+    "slug": "best-ram-under-200-euro",
+    "title": "Die besten Arbeitsspeicher unter 200 Euro (2025)",
+    "category": "ram",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 82
+  },
+  {
+    "slug": "best-ram-under-300-euro",
+    "title": "Die besten Arbeitsspeicher unter 300 Euro (2025)",
+    "category": "ram",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 124
+  },
+  {
+    "slug": "best-ram-under-500-euro",
+    "title": "Die besten Arbeitsspeicher unter 500 Euro (2025)",
+    "category": "ram",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 174
+  },
+  {
+    "slug": "best-ram-under-1000-euro",
+    "title": "Die besten Arbeitsspeicher unter 1000 Euro (2025)",
+    "category": "ram",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 221
+  },
+  {
+    "slug": "best-ram-under-1500-euro",
+    "title": "Die besten Arbeitsspeicher unter 1500 Euro (2025)",
+    "category": "ram",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 230
+  },
+  {
+    "slug": "best-ram-under-2000-euro",
+    "title": "Die besten Arbeitsspeicher unter 2000 Euro (2025)",
+    "category": "ram",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 233
+  },
+  {
+    "slug": "best-corsair-ram",
+    "title": "Beste Corsair Arbeitsspeicher: Kaufberatung & Vergleich",
+    "category": "ram",
+    "filters": {
+      "brand": "Corsair"
+    },
+    "productCount": 52
+  },
+  {
+    "slug": "best-crucial-ram",
+    "title": "Beste Crucial Arbeitsspeicher: Kaufberatung & Vergleich",
+    "category": "ram",
+    "filters": {
+      "brand": "Crucial"
+    },
+    "productCount": 80
+  },
+  {
+    "slug": "best-integral-ram",
+    "title": "Beste Integral Arbeitsspeicher: Kaufberatung & Vergleich",
+    "category": "ram",
+    "filters": {
+      "brand": "Integral"
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-kingston-ram",
+    "title": "Beste Kingston Arbeitsspeicher: Kaufberatung & Vergleich",
+    "category": "ram",
+    "filters": {
+      "brand": "Kingston"
+    },
+    "productCount": 48
+  },
+  {
+    "slug": "best-lexar-ram",
+    "title": "Beste Lexar Arbeitsspeicher: Kaufberatung & Vergleich",
+    "category": "ram",
+    "filters": {
+      "brand": "Lexar"
+    },
+    "productCount": 27
+  },
+  {
+    "slug": "best-patriot-memory-ram",
+    "title": "Beste Patriot Memory Arbeitsspeicher: Kaufberatung & Vergleich",
+    "category": "ram",
+    "filters": {
+      "brand": "Patriot Memory"
+    },
+    "productCount": 37
+  },
+  {
+    "slug": "best-timetec-ram",
+    "title": "Beste Timetec Arbeitsspeicher: Kaufberatung & Vergleich",
+    "category": "ram",
+    "filters": {
+      "brand": "Timetec"
+    },
+    "productCount": 29
+  },
+  {
+    "slug": "best-pc-cases-under-100-euro",
+    "title": "Die besten PC-Gehäuse unter 100 Euro (2025)",
+    "category": "pc-cases",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 40
+  },
+  {
+    "slug": "best-pc-cases-under-200-euro",
+    "title": "Die besten PC-Gehäuse unter 200 Euro (2025)",
+    "category": "pc-cases",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 67
+  },
+  {
+    "slug": "best-pc-cases-under-300-euro",
+    "title": "Die besten PC-Gehäuse unter 300 Euro (2025)",
+    "category": "pc-cases",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-pc-cases-under-500-euro",
+    "title": "Die besten PC-Gehäuse unter 500 Euro (2025)",
+    "category": "pc-cases",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-pc-cases-under-1000-euro",
+    "title": "Die besten PC-Gehäuse unter 1000 Euro (2025)",
+    "category": "pc-cases",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-pc-cases-under-1500-euro",
+    "title": "Die besten PC-Gehäuse unter 1500 Euro (2025)",
+    "category": "pc-cases",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-pc-cases-under-2000-euro",
+    "title": "Die besten PC-Gehäuse unter 2000 Euro (2025)",
+    "category": "pc-cases",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-mars-gaming-pc-cases",
+    "title": "Beste Mars Gaming PC-Gehäuse: Kaufberatung & Vergleich",
+    "category": "pc-cases",
+    "filters": {
+      "brand": "Mars Gaming"
+    },
+    "productCount": 28
+  },
+  {
+    "slug": "best-nzxt-pc-cases",
+    "title": "Beste NZXT PC-Gehäuse: Kaufberatung & Vergleich",
+    "category": "pc-cases",
+    "filters": {
+      "brand": "NZXT"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-power-supplies-under-100-euro",
+    "title": "Die besten Netzteile unter 100 Euro (2025)",
+    "category": "power-supplies",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-power-supplies-under-200-euro",
+    "title": "Die besten Netzteile unter 200 Euro (2025)",
+    "category": "power-supplies",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 51
+  },
+  {
+    "slug": "best-power-supplies-under-300-euro",
+    "title": "Die besten Netzteile unter 300 Euro (2025)",
+    "category": "power-supplies",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 62
+  },
+  {
+    "slug": "best-power-supplies-under-500-euro",
+    "title": "Die besten Netzteile unter 500 Euro (2025)",
+    "category": "power-supplies",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 65
+  },
+  {
+    "slug": "best-power-supplies-under-1000-euro",
+    "title": "Die besten Netzteile unter 1000 Euro (2025)",
+    "category": "power-supplies",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 65
+  },
+  {
+    "slug": "best-power-supplies-under-1500-euro",
+    "title": "Die besten Netzteile unter 1500 Euro (2025)",
+    "category": "power-supplies",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 65
+  },
+  {
+    "slug": "best-power-supplies-under-2000-euro",
+    "title": "Die besten Netzteile unter 2000 Euro (2025)",
+    "category": "power-supplies",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 65
+  },
+  {
+    "slug": "best-asus-power-supplies",
+    "title": "Beste ASUS Netzteile: Kaufberatung & Vergleich",
+    "category": "power-supplies",
+    "filters": {
+      "brand": "ASUS"
+    },
+    "productCount": 25
+  },
+  {
+    "slug": "best-corsair-power-supplies",
+    "title": "Beste Corsair Netzteile: Kaufberatung & Vergleich",
+    "category": "power-supplies",
+    "filters": {
+      "brand": "Corsair"
+    },
+    "productCount": 18
+  },
+  {
+    "slug": "best-be-quiet--power-supplies",
+    "title": "Beste be quiet! Netzteile: Kaufberatung & Vergleich",
+    "category": "power-supplies",
+    "filters": {
+      "brand": "be quiet!"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-cpu-coolers-under-100-euro",
+    "title": "Die besten CPU-Kühler unter 100 Euro (2025)",
+    "category": "cpu-coolers",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 35
+  },
+  {
+    "slug": "best-cpu-coolers-under-200-euro",
+    "title": "Die besten CPU-Kühler unter 200 Euro (2025)",
+    "category": "cpu-coolers",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 38
+  },
+  {
+    "slug": "best-cpu-coolers-under-300-euro",
+    "title": "Die besten CPU-Kühler unter 300 Euro (2025)",
+    "category": "cpu-coolers",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 39
+  },
+  {
+    "slug": "best-cpu-coolers-under-500-euro",
+    "title": "Die besten CPU-Kühler unter 500 Euro (2025)",
+    "category": "cpu-coolers",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 39
+  },
+  {
+    "slug": "best-cpu-coolers-under-1000-euro",
+    "title": "Die besten CPU-Kühler unter 1000 Euro (2025)",
+    "category": "cpu-coolers",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 39
+  },
+  {
+    "slug": "best-cpu-coolers-under-1500-euro",
+    "title": "Die besten CPU-Kühler unter 1500 Euro (2025)",
+    "category": "cpu-coolers",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 39
+  },
+  {
+    "slug": "best-cpu-coolers-under-2000-euro",
+    "title": "Die besten CPU-Kühler unter 2000 Euro (2025)",
+    "category": "cpu-coolers",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 39
+  },
+  {
+    "slug": "best-thermalright-cpu-coolers",
+    "title": "Beste THERMALRIGHT CPU-Kühler: Kaufberatung & Vergleich",
+    "category": "cpu-coolers",
+    "filters": {
+      "brand": "THERMALRIGHT"
+    },
+    "productCount": 18
+  },
+  {
+    "slug": "best-be-quiet--cpu-coolers",
+    "title": "Beste be quiet! CPU-Kühler: Kaufberatung & Vergleich",
+    "category": "cpu-coolers",
+    "filters": {
+      "brand": "be quiet!"
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-ssds-under-100-euro",
+    "title": "Die besten SSDs unter 100 Euro (2025)",
+    "category": "ssds",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 125
+  },
+  {
+    "slug": "best-ssds-under-200-euro",
+    "title": "Die besten SSDs unter 200 Euro (2025)",
+    "category": "ssds",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 307
+  },
+  {
+    "slug": "best-ssds-under-300-euro",
+    "title": "Die besten SSDs unter 300 Euro (2025)",
+    "category": "ssds",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 438
+  },
+  {
+    "slug": "best-ssds-under-500-euro",
+    "title": "Die besten SSDs unter 500 Euro (2025)",
+    "category": "ssds",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 508
+  },
+  {
+    "slug": "best-ssds-under-1000-euro",
+    "title": "Die besten SSDs unter 1000 Euro (2025)",
+    "category": "ssds",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 522
+  },
+  {
+    "slug": "best-ssds-under-1500-euro",
+    "title": "Die besten SSDs unter 1500 Euro (2025)",
+    "category": "ssds",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 523
+  },
+  {
+    "slug": "best-ssds-under-2000-euro",
+    "title": "Die besten SSDs unter 2000 Euro (2025)",
+    "category": "ssds",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 523
+  },
+  {
+    "slug": "best-crucial-ssds",
+    "title": "Beste Crucial SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Crucial"
+    },
+    "productCount": 50
+  },
+  {
+    "slug": "best-ediloca-ssds",
+    "title": "Beste Ediloca SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Ediloca"
+    },
+    "productCount": 20
+  },
+  {
+    "slug": "best-fikwot-ssds",
+    "title": "Beste Fikwot SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Fikwot"
+    },
+    "productCount": 26
+  },
+  {
+    "slug": "best-intenso-ssds",
+    "title": "Beste Intenso SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Intenso"
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-kingspec-ssds",
+    "title": "Beste KingSpec SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "KingSpec"
+    },
+    "productCount": 20
+  },
+  {
+    "slug": "best-kingston-ssds",
+    "title": "Beste Kingston SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Kingston"
+    },
+    "productCount": 27
+  },
+  {
+    "slug": "best-lexar-ssds",
+    "title": "Beste Lexar SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Lexar"
+    },
+    "productCount": 32
+  },
+  {
+    "slug": "best-patriot-memory-ssds",
+    "title": "Beste Patriot Memory SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Patriot Memory"
+    },
+    "productCount": 21
+  },
+  {
+    "slug": "best-sp-silicon-power-ssds",
+    "title": "Beste SP Silicon Power SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "SP Silicon Power"
+    },
+    "productCount": 18
+  },
+  {
+    "slug": "best-samsung-ssds",
+    "title": "Beste Samsung SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Samsung"
+    },
+    "productCount": 48
+  },
+  {
+    "slug": "best-sandisk-ssds",
+    "title": "Beste SanDisk SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "SanDisk"
+    },
+    "productCount": 47
+  },
+  {
+    "slug": "best-verbatim-ssds",
+    "title": "Beste Verbatim SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Verbatim"
+    },
+    "productCount": 14
+  },
+  {
+    "slug": "best-wd-ssds",
+    "title": "Beste WD SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "WD"
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-wd-black-ssds",
+    "title": "Beste WD_BLACK SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "WD_BLACK"
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-western-digital-ssds",
+    "title": "Beste Western Digital SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "Western Digital"
+    },
+    "productCount": 50
+  },
+  {
+    "slug": "best-acer-ssds",
+    "title": "Beste acer SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "acer"
+    },
+    "productCount": 17
+  },
+  {
+    "slug": "best-fanxiang-ssds",
+    "title": "Beste fanxiang SSDs: Kaufberatung & Vergleich",
+    "category": "ssds",
+    "filters": {
+      "brand": "fanxiang"
+    },
+    "productCount": 37
+  },
+  {
+    "slug": "best-smartphones-under-200-euro",
+    "title": "Die besten Smartphones unter 200 Euro (2025)",
+    "category": "smartphones",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 102
+  },
+  {
+    "slug": "best-smartphones-under-300-euro",
+    "title": "Die besten Smartphones unter 300 Euro (2025)",
+    "category": "smartphones",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 283
+  },
+  {
+    "slug": "best-smartphones-under-500-euro",
+    "title": "Die besten Smartphones unter 500 Euro (2025)",
+    "category": "smartphones",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 478
+  },
+  {
+    "slug": "best-smartphones-under-1000-euro",
+    "title": "Die besten Smartphones unter 1000 Euro (2025)",
+    "category": "smartphones",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 730
+  },
+  {
+    "slug": "best-smartphones-under-1500-euro",
+    "title": "Die besten Smartphones unter 1500 Euro (2025)",
+    "category": "smartphones",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 838
+  },
+  {
+    "slug": "best-smartphones-under-2000-euro",
+    "title": "Die besten Smartphones unter 2000 Euro (2025)",
+    "category": "smartphones",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 865
+  },
+  {
+    "slug": "best-apple-smartphones",
+    "title": "Beste Apple Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "Apple"
+    },
+    "productCount": 290
+  },
+  {
+    "slug": "best-doogee-smartphones",
+    "title": "Beste DOOGEE Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "DOOGEE"
+    },
+    "productCount": 17
+  },
+  {
+    "slug": "best-google-smartphones",
+    "title": "Beste Google Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "Google"
+    },
+    "productCount": 64
+  },
+  {
+    "slug": "best-motorola-smartphones",
+    "title": "Beste Motorola Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "Motorola"
+    },
+    "productCount": 38
+  },
+  {
+    "slug": "best-nothing-smartphones",
+    "title": "Beste Nothing Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "Nothing"
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-oukitel-smartphones",
+    "title": "Beste OUKITEL Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "OUKITEL"
+    },
+    "productCount": 17
+  },
+  {
+    "slug": "best-redmagic-smartphones",
+    "title": "Beste REDMAGIC Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "REDMAGIC"
+    },
+    "productCount": 14
+  },
+  {
+    "slug": "best-samsung-smartphones",
+    "title": "Beste Samsung Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "Samsung"
+    },
+    "productCount": 451
+  },
+  {
+    "slug": "best-xiaomi-smartphones",
+    "title": "Beste XIAOMI Smartphones: Kaufberatung & Vergleich",
+    "category": "smartphones",
+    "filters": {
+      "brand": "XIAOMI"
+    },
+    "productCount": 145
+  },
+  {
+    "slug": "best-smartwatches-under-100-euro",
+    "title": "Die besten Smartwatches unter 100 Euro (2025)",
+    "category": "smartwatches",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 33
+  },
+  {
+    "slug": "best-smartwatches-under-200-euro",
+    "title": "Die besten Smartwatches unter 200 Euro (2025)",
+    "category": "smartwatches",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 79
+  },
+  {
+    "slug": "best-smartwatches-under-300-euro",
+    "title": "Die besten Smartwatches unter 300 Euro (2025)",
+    "category": "smartwatches",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 153
+  },
+  {
+    "slug": "best-smartwatches-under-500-euro",
+    "title": "Die besten Smartwatches unter 500 Euro (2025)",
+    "category": "smartwatches",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 259
+  },
+  {
+    "slug": "best-smartwatches-under-1000-euro",
+    "title": "Die besten Smartwatches unter 1000 Euro (2025)",
+    "category": "smartwatches",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 279
+  },
+  {
+    "slug": "best-smartwatches-under-1500-euro",
+    "title": "Die besten Smartwatches unter 1500 Euro (2025)",
+    "category": "smartwatches",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 280
+  },
+  {
+    "slug": "best-smartwatches-under-2000-euro",
+    "title": "Die besten Smartwatches unter 2000 Euro (2025)",
+    "category": "smartwatches",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 280
+  },
+  {
+    "slug": "best-amazfit-smartwatches",
+    "title": "Beste Amazfit Smartwatches: Kaufberatung & Vergleich",
+    "category": "smartwatches",
+    "filters": {
+      "brand": "Amazfit"
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-apple-smartwatches",
+    "title": "Beste Apple Smartwatches: Kaufberatung & Vergleich",
+    "category": "smartwatches",
+    "filters": {
+      "brand": "Apple"
+    },
+    "productCount": 76
+  },
+  {
+    "slug": "best-garmin-smartwatches",
+    "title": "Beste Garmin Smartwatches: Kaufberatung & Vergleich",
+    "category": "smartwatches",
+    "filters": {
+      "brand": "Garmin"
+    },
+    "productCount": 41
+  },
+  {
+    "slug": "best-google-smartwatches",
+    "title": "Beste Google Smartwatches: Kaufberatung & Vergleich",
+    "category": "smartwatches",
+    "filters": {
+      "brand": "Google"
+    },
+    "productCount": 17
+  },
+  {
+    "slug": "best-huawei-smartwatches",
+    "title": "Beste HUAWEI Smartwatches: Kaufberatung & Vergleich",
+    "category": "smartwatches",
+    "filters": {
+      "brand": "HUAWEI"
+    },
+    "productCount": 47
+  },
+  {
+    "slug": "best-ringconn-smartwatches",
+    "title": "Beste RingConn Smartwatches: Kaufberatung & Vergleich",
+    "category": "smartwatches",
+    "filters": {
+      "brand": "RingConn"
+    },
+    "productCount": 43
+  },
+  {
+    "slug": "best-samsung-smartwatches",
+    "title": "Beste Samsung Smartwatches: Kaufberatung & Vergleich",
+    "category": "smartwatches",
+    "filters": {
+      "brand": "Samsung"
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-consoles-under-500-euro",
+    "title": "Die besten Spielekonsolen unter 500 Euro (2025)",
+    "category": "consoles",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-consoles-under-1000-euro",
+    "title": "Die besten Spielekonsolen unter 1000 Euro (2025)",
+    "category": "consoles",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 26
+  },
+  {
+    "slug": "best-consoles-under-1500-euro",
+    "title": "Die besten Spielekonsolen unter 1500 Euro (2025)",
+    "category": "consoles",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 27
+  },
+  {
+    "slug": "best-consoles-under-2000-euro",
+    "title": "Die besten Spielekonsolen unter 2000 Euro (2025)",
+    "category": "consoles",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 27
+  },
+  {
+    "slug": "best-nintendo-consoles",
+    "title": "Beste Nintendo Spielekonsolen: Kaufberatung & Vergleich",
+    "category": "consoles",
+    "filters": {
+      "brand": "Nintendo"
+    },
+    "productCount": 16
+  },
+  {
+    "slug": "best-cameras-under-1000-euro",
+    "title": "Die besten Digitalkameras unter 1000 Euro (2025)",
+    "category": "cameras",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-cameras-under-1500-euro",
+    "title": "Die besten Digitalkameras unter 1500 Euro (2025)",
+    "category": "cameras",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 17
+  },
+  {
+    "slug": "best-cameras-under-2000-euro",
+    "title": "Die besten Digitalkameras unter 2000 Euro (2025)",
+    "category": "cameras",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 18
+  },
+  {
+    "slug": "best-canon-cameras",
+    "title": "Beste Canon Digitalkameras: Kaufberatung & Vergleich",
+    "category": "cameras",
+    "filters": {
+      "brand": "Canon"
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-keyboards-under-100-euro",
+    "title": "Die besten Tastaturen unter 100 Euro (2025)",
+    "category": "keyboards",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 76
+  },
+  {
+    "slug": "best-keyboards-under-200-euro",
+    "title": "Die besten Tastaturen unter 200 Euro (2025)",
+    "category": "keyboards",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 93
+  },
+  {
+    "slug": "best-keyboards-under-300-euro",
+    "title": "Die besten Tastaturen unter 300 Euro (2025)",
+    "category": "keyboards",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 98
+  },
+  {
+    "slug": "best-keyboards-under-500-euro",
+    "title": "Die besten Tastaturen unter 500 Euro (2025)",
+    "category": "keyboards",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 98
+  },
+  {
+    "slug": "best-keyboards-under-1000-euro",
+    "title": "Die besten Tastaturen unter 1000 Euro (2025)",
+    "category": "keyboards",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 98
+  },
+  {
+    "slug": "best-keyboards-under-1500-euro",
+    "title": "Die besten Tastaturen unter 1500 Euro (2025)",
+    "category": "keyboards",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 98
+  },
+  {
+    "slug": "best-keyboards-under-2000-euro",
+    "title": "Die besten Tastaturen unter 2000 Euro (2025)",
+    "category": "keyboards",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 98
+  },
+  {
+    "slug": "best-apple-keyboards",
+    "title": "Beste Apple Tastaturen: Kaufberatung & Vergleich",
+    "category": "keyboards",
+    "filters": {
+      "brand": "Apple"
+    },
+    "productCount": 13
+  },
+  {
+    "slug": "best-cherry-keyboards",
+    "title": "Beste CHERRY Tastaturen: Kaufberatung & Vergleich",
+    "category": "keyboards",
+    "filters": {
+      "brand": "CHERRY"
+    },
+    "productCount": 42
+  },
+  {
+    "slug": "best-mice-under-100-euro",
+    "title": "Die besten Mäuse unter 100 Euro (2025)",
+    "category": "mice",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 102
+  },
+  {
+    "slug": "best-mice-under-200-euro",
+    "title": "Die besten Mäuse unter 200 Euro (2025)",
+    "category": "mice",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 114
+  },
+  {
+    "slug": "best-mice-under-300-euro",
+    "title": "Die besten Mäuse unter 300 Euro (2025)",
+    "category": "mice",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 114
+  },
+  {
+    "slug": "best-mice-under-500-euro",
+    "title": "Die besten Mäuse unter 500 Euro (2025)",
+    "category": "mice",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 114
+  },
+  {
+    "slug": "best-mice-under-1000-euro",
+    "title": "Die besten Mäuse unter 1000 Euro (2025)",
+    "category": "mice",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 114
+  },
+  {
+    "slug": "best-mice-under-1500-euro",
+    "title": "Die besten Mäuse unter 1500 Euro (2025)",
+    "category": "mice",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 114
+  },
+  {
+    "slug": "best-mice-under-2000-euro",
+    "title": "Die besten Mäuse unter 2000 Euro (2025)",
+    "category": "mice",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 114
+  },
+  {
+    "slug": "best-logitech-mice",
+    "title": "Beste Logitech Mäuse: Kaufberatung & Vergleich",
+    "category": "mice",
+    "filters": {
+      "brand": "Logitech"
+    },
+    "productCount": 29
+  },
+  {
+    "slug": "best-razer-mice",
+    "title": "Beste Razer Mäuse: Kaufberatung & Vergleich",
+    "category": "mice",
+    "filters": {
+      "brand": "Razer"
+    },
+    "productCount": 19
+  },
+  {
+    "slug": "best-external-storage-under-100-euro",
+    "title": "Die besten Externe Speicher unter 100 Euro (2025)",
+    "category": "external-storage",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 60
+  },
+  {
+    "slug": "best-external-storage-under-200-euro",
+    "title": "Die besten Externe Speicher unter 200 Euro (2025)",
+    "category": "external-storage",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 143
+  },
+  {
+    "slug": "best-external-storage-under-300-euro",
+    "title": "Die besten Externe Speicher unter 300 Euro (2025)",
+    "category": "external-storage",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 170
+  },
+  {
+    "slug": "best-external-storage-under-500-euro",
+    "title": "Die besten Externe Speicher unter 500 Euro (2025)",
+    "category": "external-storage",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 185
+  },
+  {
+    "slug": "best-external-storage-under-1000-euro",
+    "title": "Die besten Externe Speicher unter 1000 Euro (2025)",
+    "category": "external-storage",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 187
+  },
+  {
+    "slug": "best-external-storage-under-1500-euro",
+    "title": "Die besten Externe Speicher unter 1500 Euro (2025)",
+    "category": "external-storage",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 188
+  },
+  {
+    "slug": "best-external-storage-under-2000-euro",
+    "title": "Die besten Externe Speicher unter 2000 Euro (2025)",
+    "category": "external-storage",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 188
+  },
+  {
+    "slug": "best-crucial-external-storage",
+    "title": "Beste Crucial Externe Speicher: Kaufberatung & Vergleich",
+    "category": "external-storage",
+    "filters": {
+      "brand": "Crucial"
+    },
+    "productCount": 20
+  },
+  {
+    "slug": "best-intenso-external-storage",
+    "title": "Beste Intenso Externe Speicher: Kaufberatung & Vergleich",
+    "category": "external-storage",
+    "filters": {
+      "brand": "Intenso"
+    },
+    "productCount": 18
+  },
+  {
+    "slug": "best-seagate-external-storage",
+    "title": "Beste Seagate Externe Speicher: Kaufberatung & Vergleich",
+    "category": "external-storage",
+    "filters": {
+      "brand": "Seagate"
+    },
+    "productCount": 21
+  },
+  {
+    "slug": "best-wd-external-storage",
+    "title": "Beste WD Externe Speicher: Kaufberatung & Vergleich",
+    "category": "external-storage",
+    "filters": {
+      "brand": "WD"
+    },
+    "productCount": 47
+  },
+  {
+    "slug": "best-speicherkarten-under-100-euro",
+    "title": "Die besten Speicherkarten unter 100 Euro (2025)",
+    "category": "speicherkarten",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 97
+  },
+  {
+    "slug": "best-speicherkarten-under-200-euro",
+    "title": "Die besten Speicherkarten unter 200 Euro (2025)",
+    "category": "speicherkarten",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 119
+  },
+  {
+    "slug": "best-speicherkarten-under-300-euro",
+    "title": "Die besten Speicherkarten unter 300 Euro (2025)",
+    "category": "speicherkarten",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 126
+  },
+  {
+    "slug": "best-speicherkarten-under-500-euro",
+    "title": "Die besten Speicherkarten unter 500 Euro (2025)",
+    "category": "speicherkarten",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 129
+  },
+  {
+    "slug": "best-speicherkarten-under-1000-euro",
+    "title": "Die besten Speicherkarten unter 1000 Euro (2025)",
+    "category": "speicherkarten",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 130
+  },
+  {
+    "slug": "best-speicherkarten-under-1500-euro",
+    "title": "Die besten Speicherkarten unter 1500 Euro (2025)",
+    "category": "speicherkarten",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 130
+  },
+  {
+    "slug": "best-speicherkarten-under-2000-euro",
+    "title": "Die besten Speicherkarten unter 2000 Euro (2025)",
+    "category": "speicherkarten",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 130
+  },
+  {
+    "slug": "best-kootion-speicherkarten",
+    "title": "Beste KOOTION Speicherkarten: Kaufberatung & Vergleich",
+    "category": "speicherkarten",
+    "filters": {
+      "brand": "KOOTION"
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-lexar-speicherkarten",
+    "title": "Beste Lexar Speicherkarten: Kaufberatung & Vergleich",
+    "category": "speicherkarten",
+    "filters": {
+      "brand": "Lexar"
+    },
+    "productCount": 41
+  },
+  {
+    "slug": "best-sandisk-speicherkarten",
+    "title": "Beste SanDisk Speicherkarten: Kaufberatung & Vergleich",
+    "category": "speicherkarten",
+    "filters": {
+      "brand": "SanDisk"
+    },
+    "productCount": 38
+  },
+  {
+    "slug": "best-cables-under-100-euro",
+    "title": "Die besten Kabel & Adapter unter 100 Euro (2025)",
+    "category": "cables",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 177
+  },
+  {
+    "slug": "best-cables-under-200-euro",
+    "title": "Die besten Kabel & Adapter unter 200 Euro (2025)",
+    "category": "cables",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 211
+  },
+  {
+    "slug": "best-cables-under-300-euro",
+    "title": "Die besten Kabel & Adapter unter 300 Euro (2025)",
+    "category": "cables",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 223
+  },
+  {
+    "slug": "best-cables-under-500-euro",
+    "title": "Die besten Kabel & Adapter unter 500 Euro (2025)",
+    "category": "cables",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 225
+  },
+  {
+    "slug": "best-cables-under-1000-euro",
+    "title": "Die besten Kabel & Adapter unter 1000 Euro (2025)",
+    "category": "cables",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 226
+  },
+  {
+    "slug": "best-cables-under-1500-euro",
+    "title": "Die besten Kabel & Adapter unter 1500 Euro (2025)",
+    "category": "cables",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 227
+  },
+  {
+    "slug": "best-cables-under-2000-euro",
+    "title": "Die besten Kabel & Adapter unter 2000 Euro (2025)",
+    "category": "cables",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 230
+  },
+  {
+    "slug": "best-lexar-cables",
+    "title": "Beste Lexar Kabel & Adapter: Kaufberatung & Vergleich",
+    "category": "cables",
+    "filters": {
+      "brand": "Lexar"
+    },
+    "productCount": 25
+  },
+  {
+    "slug": "best-samsung-cables",
+    "title": "Beste Samsung Kabel & Adapter: Kaufberatung & Vergleich",
+    "category": "cables",
+    "filters": {
+      "brand": "Samsung"
+    },
+    "productCount": 17
+  },
+  {
+    "slug": "best-sandisk-cables",
+    "title": "Beste SanDisk Kabel & Adapter: Kaufberatung & Vergleich",
+    "category": "cables",
+    "filters": {
+      "brand": "SanDisk"
+    },
+    "productCount": 53
+  },
+  {
+    "slug": "best-cpu-under-100-euro",
+    "title": "Die besten Prozessoren unter 100 Euro (2025)",
+    "category": "cpu",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 14
+  },
+  {
+    "slug": "best-cpu-under-200-euro",
+    "title": "Die besten Prozessoren unter 200 Euro (2025)",
+    "category": "cpu",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 46
+  },
+  {
+    "slug": "best-cpu-under-300-euro",
+    "title": "Die besten Prozessoren unter 300 Euro (2025)",
+    "category": "cpu",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 84
+  },
+  {
+    "slug": "best-cpu-under-500-euro",
+    "title": "Die besten Prozessoren unter 500 Euro (2025)",
+    "category": "cpu",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 122
+  },
+  {
+    "slug": "best-cpu-under-1000-euro",
+    "title": "Die besten Prozessoren unter 1000 Euro (2025)",
+    "category": "cpu",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 133
+  },
+  {
+    "slug": "best-cpu-under-1500-euro",
+    "title": "Die besten Prozessoren unter 1500 Euro (2025)",
+    "category": "cpu",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 133
+  },
+  {
+    "slug": "best-cpu-under-2000-euro",
+    "title": "Die besten Prozessoren unter 2000 Euro (2025)",
+    "category": "cpu",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 134
+  },
+  {
+    "slug": "best-amd-cpu",
+    "title": "Beste AMD Prozessoren: Kaufberatung & Vergleich",
+    "category": "cpu",
+    "filters": {
+      "brand": "AMD"
+    },
+    "productCount": 42
+  },
+  {
+    "slug": "best-intel-cpu",
+    "title": "Beste Intel Prozessoren: Kaufberatung & Vergleich",
+    "category": "cpu",
+    "filters": {
+      "brand": "Intel"
+    },
+    "productCount": 101
+  },
+  {
+    "slug": "best-3d-drucker-under-500-euro",
+    "title": "Die besten 3D-Drucker unter 500 Euro (2025)",
+    "category": "3d-drucker",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 23
+  },
+  {
+    "slug": "best-3d-drucker-under-1000-euro",
+    "title": "Die besten 3D-Drucker unter 1000 Euro (2025)",
+    "category": "3d-drucker",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 31
+  },
+  {
+    "slug": "best-3d-drucker-under-1500-euro",
+    "title": "Die besten 3D-Drucker unter 1500 Euro (2025)",
+    "category": "3d-drucker",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 35
+  },
+  {
+    "slug": "best-3d-drucker-under-2000-euro",
+    "title": "Die besten 3D-Drucker unter 2000 Euro (2025)",
+    "category": "3d-drucker",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 35
+  },
+  {
+    "slug": "best-anycubic-3d-drucker",
+    "title": "Beste ANYCUBIC 3D-Drucker: Kaufberatung & Vergleich",
+    "category": "3d-drucker",
+    "filters": {
+      "brand": "ANYCUBIC"
+    },
+    "productCount": 24
+  },
+  {
+    "slug": "best-creality-3d-drucker",
+    "title": "Beste Creality 3D-Drucker: Kaufberatung & Vergleich",
+    "category": "3d-drucker",
+    "filters": {
+      "brand": "Creality"
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-laserdrucker-under-200-euro",
+    "title": "Die besten Laserdrucker unter 200 Euro (2025)",
+    "category": "laserdrucker",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 26
+  },
+  {
+    "slug": "best-laserdrucker-under-300-euro",
+    "title": "Die besten Laserdrucker unter 300 Euro (2025)",
+    "category": "laserdrucker",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 45
+  },
+  {
+    "slug": "best-laserdrucker-under-500-euro",
+    "title": "Die besten Laserdrucker unter 500 Euro (2025)",
+    "category": "laserdrucker",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 58
+  },
+  {
+    "slug": "best-laserdrucker-under-1000-euro",
+    "title": "Die besten Laserdrucker unter 1000 Euro (2025)",
+    "category": "laserdrucker",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 61
+  },
+  {
+    "slug": "best-laserdrucker-under-1500-euro",
+    "title": "Die besten Laserdrucker unter 1500 Euro (2025)",
+    "category": "laserdrucker",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 62
+  },
+  {
+    "slug": "best-laserdrucker-under-2000-euro",
+    "title": "Die besten Laserdrucker unter 2000 Euro (2025)",
+    "category": "laserdrucker",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 62
+  },
+  {
+    "slug": "best-hp-laserdrucker",
+    "title": "Beste HP Laserdrucker: Kaufberatung & Vergleich",
+    "category": "laserdrucker",
+    "filters": {
+      "brand": "HP"
+    },
+    "productCount": 30
+  },
+  {
+    "slug": "best-kyocera-laserdrucker",
+    "title": "Beste Kyocera Laserdrucker: Kaufberatung & Vergleich",
+    "category": "laserdrucker",
+    "filters": {
+      "brand": "Kyocera"
+    },
+    "productCount": 12
+  },
+  {
+    "slug": "best-kompaktkameras-under-300-euro",
+    "title": "Die besten Kompaktkameras unter 300 Euro (2025)",
+    "category": "kompaktkameras",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 15
+  },
+  {
+    "slug": "best-kompaktkameras-under-500-euro",
+    "title": "Die besten Kompaktkameras unter 500 Euro (2025)",
+    "category": "kompaktkameras",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 25
+  },
+  {
+    "slug": "best-kompaktkameras-under-1000-euro",
+    "title": "Die besten Kompaktkameras unter 1000 Euro (2025)",
+    "category": "kompaktkameras",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 38
+  },
+  {
+    "slug": "best-kompaktkameras-under-1500-euro",
+    "title": "Die besten Kompaktkameras unter 1500 Euro (2025)",
+    "category": "kompaktkameras",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 49
+  },
+  {
+    "slug": "best-kompaktkameras-under-2000-euro",
+    "title": "Die besten Kompaktkameras unter 2000 Euro (2025)",
+    "category": "kompaktkameras",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 49
+  },
+  {
+    "slug": "best-games-under-100-euro",
+    "title": "Die besten Games unter 100 Euro (2025)",
+    "category": "games",
+    "filters": {
+      "maxPrice": 100
+    },
+    "productCount": 63
+  },
+  {
+    "slug": "best-games-under-200-euro",
+    "title": "Die besten Games unter 200 Euro (2025)",
+    "category": "games",
+    "filters": {
+      "maxPrice": 200
+    },
+    "productCount": 67
+  },
+  {
+    "slug": "best-games-under-300-euro",
+    "title": "Die besten Games unter 300 Euro (2025)",
+    "category": "games",
+    "filters": {
+      "maxPrice": 300
+    },
+    "productCount": 67
+  },
+  {
+    "slug": "best-games-under-500-euro",
+    "title": "Die besten Games unter 500 Euro (2025)",
+    "category": "games",
+    "filters": {
+      "maxPrice": 500
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-games-under-1000-euro",
+    "title": "Die besten Games unter 1000 Euro (2025)",
+    "category": "games",
+    "filters": {
+      "maxPrice": 1000
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-games-under-1500-euro",
+    "title": "Die besten Games unter 1500 Euro (2025)",
+    "category": "games",
+    "filters": {
+      "maxPrice": 1500
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-games-under-2000-euro",
+    "title": "Die besten Games unter 2000 Euro (2025)",
+    "category": "games",
+    "filters": {
+      "maxPrice": 2000
+    },
+    "productCount": 68
+  },
+  {
+    "slug": "best-nintendo-games",
+    "title": "Beste Nintendo Games: Kaufberatung & Vergleich",
+    "category": "games",
+    "filters": {
+      "brand": "Nintendo"
+    },
+    "productCount": 37
+  },
+  {
+    "slug": "best-playstation-games",
+    "title": "Beste Playstation Games: Kaufberatung & Vergleich",
+    "category": "games",
+    "filters": {
+      "brand": "Playstation"
+    },
+    "productCount": 16
+  }
+]

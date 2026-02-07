@@ -35,6 +35,7 @@ import {
   AsyncProductList,
   AsyncTopBar,
 } from "./AsyncComponents";
+import { NicheLinks } from "./NicheLinks";
 
 // FAQ components for SEO
 
@@ -134,6 +135,11 @@ export async function IdealoCategoryPage({
             />
           </ComponentErrorBoundary>
         </div>
+
+        {/* ============================================ */}
+        {/* SEO NICHES / POPULAR SEARCHES */}
+        {/* ============================================ */}
+        <NicheLinks categorySlug={category.slug} />
       </div>
     </div>
   );
