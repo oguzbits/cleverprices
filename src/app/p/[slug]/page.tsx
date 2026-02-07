@@ -38,7 +38,12 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
       // Enable Consensus Identity for the canonical Hub check
       const { getProductVariants } =
         await import("@/lib/server/cached-products");
-      const variants = await getProductVariants(product, DEFAULT_COUNTRY);
+      const variants = await getProductVariants(
+        product,
+        DEFAULT_COUNTRY,
+        true,
+        true,
+      );
 
       // SINGLETON CHECK: If this 'Hub' has no variants (just itself), redirect to the standard product page (200...)
       if (variants.length <= 1) {
@@ -351,10 +356,15 @@ export default async function ProductPage({ params, searchParams }: Props) {
   }
 
   try {
+    const startTime = performance.now();
+    const { logPDPPerformance } =
+      await import("@/lib/server/performance-registry");
+
     // 1. Fetch essential DB data (Lightning Fast)
     const resolution = await resolveProductFromRoute(slug);
 
     if (resolution?.redirect) {
+      logPDPPerformance(slug, startTime);
       console.log(
         `[SEO Redirect] ${resolution.isPermanent ? "301/308" : "302/307"} ${slug} -> ${resolution.redirect}`,
       );
@@ -369,6 +379,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
     const parentViewMode = resolution?.isParentView || false;
 
     if (!product) {
+      logPDPPerformance(slug, startTime);
       notFound();
     }
 
@@ -462,8 +473,11 @@ export default async function ProductPage({ params, searchParams }: Props) {
       mergedMainProduct.title !== mergedMainProduct.asin;
 
     if (!hasPrice || !hasMeaningfulTitle) {
+      logPDPPerformance(slug, startTime);
       notFound();
     }
+
+    logPDPPerformance(slug, startTime);
 
     // 4. Render immediately with all pre-resolved data
     return (

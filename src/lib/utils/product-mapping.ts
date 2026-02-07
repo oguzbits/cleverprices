@@ -85,23 +85,36 @@ export function mapDbProduct(
   }
 
   // [PERFORMANCE] Optimization: Two-tier specifications parsing.
-  // Tier 1 (Identity): Extract only keys needed for slugs/identity repairing. High performance.
-  // Tier 2 (Display): Parse full JSON only when NOT stripping heavy data (PDP view).
+  // We only parse the full JSON if we actually need it (non-lite mode).
+  // Otherwise, we only extract identity-critical keys.
 
-  const parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
-  const parsedOfficialSpecs = p.officialSpecifications
-    ? JSON.parse(p.officialSpecifications)
-    : undefined;
+  let identitySpecs: Record<string, any> = {};
+  let parsedSpecs: Record<string, any> = {};
+  let parsedOfficialSpecs: Record<string, any> | undefined = undefined;
 
-  // For identity logic, we use a merged set of identity-critical keys.
-  const identitySpecs = {
-    ...IDENTITY_CONFIG.getIdentitySpecs(p.specifications),
-    ...IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications),
-  };
+  if (stripHeavyData) {
+    // Lite mode: skip full parsing, only extract identity keys
+    identitySpecs = {
+      ...IDENTITY_CONFIG.getIdentitySpecs(p.specifications),
+      ...IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications),
+    };
+  } else {
+    // Full mode: parse everything
+    parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
+    parsedOfficialSpecs = p.officialSpecifications
+      ? JSON.parse(p.officialSpecifications)
+      : undefined;
+
+    identitySpecs = {
+      ...IDENTITY_CONFIG.getIdentitySpecs(parsedSpecs),
+      ...IDENTITY_CONFIG.getIdentitySpecs(parsedOfficialSpecs || null),
+    };
+  }
 
   // --- TECH DATA REPAIR LAYER ---
   // We use identitySpecs for repairs to ensure slugs are deterministic even in "lite" mode.
   let rawSpecs = stripHeavyData ? identitySpecs : { ...parsedSpecs };
+
   if (
     p.category === "smartphones" ||
     p.category === "tablets" ||
