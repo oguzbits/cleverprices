@@ -27,5 +27,8 @@
 .env*
 
 # Keep data directory but ignore backups and the database itself
-/data/
+# Keep data directory but ignore backups and the database itself
+/data/*
+!/data/niche-manifest.json
+
 /logs/
