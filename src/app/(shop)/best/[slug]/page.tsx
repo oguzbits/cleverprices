@@ -50,7 +50,13 @@ export default async function BestNichePage({ params }: Props) {
     searchParams.maxPrice = niche.filters.maxPrice.toString();
   }
   if (niche.filters.brand) {
-    searchParams.brands = niche.filters.brand;
+    searchParams.brand = niche.filters.brand;
+  }
+
+  // Lock filters that are defined in the niche
+  const lockedFilters: string[] = [];
+  if (niche.filters.brand) {
+    lockedFilters.push("brand");
   }
 
   return (
@@ -62,6 +68,7 @@ export default async function BestNichePage({ params }: Props) {
         }}
         countryCode={DEFAULT_COUNTRY}
         searchParams={searchParams}
+        lockedFilters={lockedFilters}
       />
     </div>
   );

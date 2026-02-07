@@ -10,9 +10,7 @@ const nextConfig: NextConfig = {
   compress: false, // Offload compression to Traefik (Brotli)
   output: "standalone", // Required for Docker
   reactCompiler: true,
-  cacheComponents: true, // Enable "use cache" directive for caching
-  // Configure MDX file extensions
-  pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
+  cacheComponents: true,
   experimental: {
     workerThreads: false,
     cpus: 1,
@@ -35,44 +33,45 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-tabs",
       "@radix-ui/react-tooltip",
     ],
+    cacheLife: {
+      category: {
+        stale: 3600, // 1 hour
+        revalidate: 3600,
+        expire: 86400, // 24 hours
+      },
+      product: {
+        stale: 3600, // 1 hour
+        revalidate: 3600,
+        expire: 86400, // 24 hours
+      },
+      static: {
+        stale: 86400, // 24 hours
+        revalidate: 86400,
+        expire: 2592000, // 30 days
+      },
+      // Short-lived cache for dynamic data like prices
+      dynamic: {
+        stale: 900, // 15 minutes
+        revalidate: 900,
+        expire: 3600, // 1 hour
+      },
+      // Very fast cache for highly volatile data
+      fast: {
+        stale: 60, // 1 minute
+        revalidate: 60,
+        expire: 300, // 5 minutes
+      },
+      // Keep legacy name for backward compatibility during migration
+      prices: {
+        stale: 1800, // 30 minutes
+        revalidate: 1800,
+        expire: 7200, // 2 hours
+      },
+    },
   },
+  // Configure MDX file extensions
+  pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   poweredByHeader: false,
-  // Cache Life Profiles for Next.js 16 "use cache"
-  cacheLife: {
-    category: {
-      stale: 3600, // 1 hour
-      revalidate: 3600,
-      expire: 86400, // 24 hours
-    },
-    product: {
-      stale: 3600, // 1 hour
-      revalidate: 3600,
-      expire: 86400, // 24 hours
-    },
-    static: {
-      stale: 86400, // 24 hours
-      revalidate: 86400,
-      expire: 2592000, // 30 days
-    },
-    // Short-lived cache for dynamic data like prices
-    dynamic: {
-      stale: 900, // 15 minutes
-      revalidate: 900,
-      expire: 3600, // 1 hour
-    },
-    // Very fast cache for highly volatile data
-    fast: {
-      stale: 60, // 1 minute
-      revalidate: 60,
-      expire: 300, // 5 minutes
-    },
-    // Keep legacy name for backward compatibility during migration
-    prices: {
-      stale: 1800, // 30 minutes
-      revalidate: 1800,
-      expire: 7200, // 2 hours
-    },
-  },
   // Optimize images
   images: {
     loader: "custom",

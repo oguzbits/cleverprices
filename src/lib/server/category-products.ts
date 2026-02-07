@@ -477,6 +477,7 @@ export async function getCategoryProducts(
     const value = filterParams[key as keyof FilterParams];
     if (value === true || value === false) return;
     if (value) {
+      // Normalize to array for consistent filtering logic
       filters[key] = Array.isArray(value)
         ? value
         : (value as string).split(",");

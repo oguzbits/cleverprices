@@ -46,11 +46,13 @@ export async function AsyncTopBar({
 interface AsyncFilterPanelProps {
   category: Omit<Category, "icon">;
   productDataPromise: Promise<any>;
+  lockedFilters?: string[];
 }
 
 export async function AsyncFilterPanel({
   category,
   productDataPromise,
+  lockedFilters,
 }: AsyncFilterPanelProps) {
   const filteredData = await productDataPromise;
 
@@ -106,6 +108,7 @@ export async function AsyncFilterPanel({
         maxPriceInCategory={maxPriceInCategory}
         priceRanges={priceRanges}
         filterGroups={category.filterGroups}
+        lockedFilters={lockedFilters}
       />
     </aside>
   );

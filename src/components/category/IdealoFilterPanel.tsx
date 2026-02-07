@@ -25,6 +25,7 @@ interface IdealoFilterBarProps {
   minPriceInCategory?: number;
   maxPriceInCategory?: number;
   filterGroups?: FilterGroup[];
+  lockedFilters?: string[];
 }
 
 // ============================================
@@ -239,6 +240,7 @@ export function IdealoFilterPanel({
   minPriceInCategory = 0,
   maxPriceInCategory = 1000,
   filterGroups = [],
+  lockedFilters = [],
 }: IdealoFilterBarProps) {
   const [filters, setFilters] = useFilters();
 
@@ -432,6 +434,8 @@ export function IdealoFilterPanel({
 
         {/* DYNAMIC FILTER GROUPS */}
         {filterGroups?.map((group) => {
+          if (lockedFilters.includes(group.field)) return null;
+
           let options = optionsMap[group.field] || [];
 
           // SPECIAL SORTING FOR BRANDS

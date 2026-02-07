@@ -45,6 +45,7 @@ interface Props {
   category: Omit<Category, "icon">;
   countryCode: CountryCode;
   searchParams: FilterParams;
+  lockedFilters?: string[];
 }
 
 /**
@@ -55,6 +56,7 @@ export async function IdealoCategoryPage({
   category,
   countryCode,
   searchParams,
+  lockedFilters,
 }: Props) {
   const categorySlug = category.slug;
   const breadcrumbs = getBreadcrumbs(categorySlug).map((crumb) => ({
@@ -122,6 +124,7 @@ export async function IdealoCategoryPage({
             <AsyncFilterPanel
               category={category}
               productDataPromise={Promise.resolve(productData)}
+              lockedFilters={lockedFilters}
             />
           </ComponentErrorBoundary>
 
