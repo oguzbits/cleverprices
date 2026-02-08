@@ -90,13 +90,19 @@ export const dbReady: Promise<void> = (async () => {
 
     // Run migrations AUTOMATICALLY in production
     if (isProductionEnvironment) {
-      console.log(
-        "[DB] Production environment detected. Running migrations...",
-      );
-      await migrate(db, {
-        migrationsFolder: path.resolve(process.cwd(), "drizzle"),
-      });
-      console.log("[DB] Migrations completed successfully.");
+      console.log("[DB] 🏁 Migration sequence started...");
+      const migrationsDir = path.resolve(process.cwd(), "drizzle");
+      console.log(`[DB] Looking for migrations in: ${migrationsDir}`);
+
+      try {
+        await migrate(db, {
+          migrationsFolder: migrationsDir,
+        });
+        console.log("[DB] ✅ Migration sequence completed successfully.");
+      } catch (migrateError) {
+        console.error("[DB ERROR] Migration phase failed:", migrateError);
+        throw migrateError; // Re-throw to handle in outer catch
+      }
     }
 
     // Diagnostics (useful for Dokploy logs)
@@ -106,6 +112,7 @@ export const dbReady: Promise<void> = (async () => {
       "[DB ERROR] Client initialization failure:",
       e instanceof Error ? e.message : String(e),
     );
+    throw e; // Re-throw to ensure dbReady rejects
   }
 })();
 

@@ -576,6 +576,7 @@ export const getProductVariants = cache(async function getProductVariants(
   skipLiveMerge: boolean = false, // Added back to match usage
   skipFullMapping: boolean = false, // If true, skips expensive consensus/identity logic
 ): Promise<Product[]> {
+  await dbReady;
   // 1. PRIMARY: Fetch by parentAsin (Ideal Path)
   const fetchByAsin = async (parentAsin: string) => {
     // [OPTIMIZATION] Single Query JOIN strategy using LEAN columns
@@ -687,6 +688,7 @@ export const getProductFamilyMembers = cache(
     countryCode: string = "de",
     skipFullMapping: boolean = false,
   ): Promise<Product[]> {
+    await dbReady;
     // Use the optimized variant fetcher by passing a synthetic product with just the parentAsin
     const syntheticProduct = { parentAsin } as Product;
     return getProductVariants(
@@ -699,6 +701,7 @@ export const getProductFamilyMembers = cache(
 );
 
 export async function getAllProducts(): Promise<Product[]> {
+  await dbReady;
   const allProducts = await withRetry(() =>
     db.select(liteProductColumns).from(products),
   );
@@ -966,6 +969,7 @@ export const getProductByAsin = cache(async function getProductByAsin(
 export async function findProductSlugByAsinSuffix(
   oldSlug: string,
 ): Promise<string | undefined> {
+  await dbReady;
   // Extract potential ASIN from old slug
   // 1. Try full 10-char ASIN (standard Amazon)
   const fullAsinMatch = oldSlug.match(/([a-z0-9]{10})$/i);
@@ -1014,6 +1018,7 @@ export const findProductByParentAsinSuffix = cache(
     slug: string,
   ): Promise<Product | undefined> {
     if (!slug) return undefined;
+    await dbReady;
     const shortSuffixMatch = slug.match(/-([a-z0-9]{3,4})-?$/i);
     if (!shortSuffixMatch) return undefined;
 
@@ -1182,6 +1187,8 @@ export async function searchProducts(
   const sanitized = query.trim().replace(/[^\w\s]/g, "");
   if (!sanitized) return [];
 
+  await dbReady;
+
   // Transform "Samsung Galaxy" into prefix matching targeted at brand and title
   const terms = sanitized
     .split(/\s+/)
@@ -1299,6 +1306,7 @@ export const getProductsByBrand = cache(async function getProductsByBrand(
   excludeSlug?: string,
 ): Promise<Product[]> {
   if (!brand) return [];
+  await dbReady;
   const prods = await withRetry(() =>
     db
       .select(liteProductColumns)
@@ -1510,6 +1518,7 @@ export const getMostPopular = cache(async function getMostPopular(
     const isScript =
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
     if (isScript) {
+      await dbReady;
       const prods = await db
         .select(liteProductColumns)
         .from(products)
@@ -1710,6 +1719,7 @@ export async function getNewArrivals(
     const isScript =
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
     if (isScript) {
+      await dbReady;
       const prods = await db
         .select(liteProductColumns)
         .from(products)
