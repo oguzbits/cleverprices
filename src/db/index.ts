@@ -144,21 +144,41 @@ export const dbReady: Promise<void> = (async () => {
         }
       }
 
-      // Manual Check: If __drizzle_migrations has data, SKIP migrate() to avoid conflicts
+      // Smart Migration Skip Logic:
+      // We compare the number of migration files on disk vs the number of recorded migrations in the DB.
+      // If DB count >= File count, we assume we are up to date and SKIP migrate() to avoid hash conflicts.
+      // If File count > DB count, we proceed with migrate().
       try {
-        const migCount = await client.execute(
+        const fs = await import("fs");
+        // Count .sql files in the migrations directory
+        const migrationFiles = fs
+          .readdirSync(migrationsDir)
+          .filter((f) => f.endsWith(".sql"));
+        const fileCount = migrationFiles.length;
+
+        const migCountResult = await client.execute(
           "SELECT count(*) as c FROM __drizzle_migrations",
         );
-        if (Number(migCount.rows[0]?.c) > 0) {
+        const dbCount = Number(migCountResult.rows[0]?.c || 0);
+
+        console.log(
+          `[DB] Migration check: Disk Files=${fileCount}, DB Records=${dbCount}`,
+        );
+
+        if (dbCount >= fileCount) {
           console.log(
-            `[DB] Found ${migCount.rows[0]?.c} existing migrations. Skipping migrate() to prevent conflicts.`,
+            `[DB] Database is up-to-date (DB: ${dbCount} >= Disk: ${fileCount}). Skipping migrate() to prevent conflicts.`,
           );
           return;
+        } else {
+          console.log(
+            `[DB] New migrations detected (Disk: ${fileCount} > DB: ${dbCount}). Proceeding with migration...`,
+          );
         }
       } catch (e) {
-        // Table likely missing, proceed with migration
+        // Table likely missing, proceed with migration to create it
         console.log(
-          "[DB] No existing migration table found, proceeding with migration...",
+          "[DB] No existing migration table found (or error checking), proceeding with migration...",
         );
       }
 
