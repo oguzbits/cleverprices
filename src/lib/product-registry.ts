@@ -1433,7 +1433,7 @@ const getCachedPopular = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
     await dbReady;
     try {
-      const whereConditions = [];
+      const whereConditions: SQL[] = [];
       if (condition) {
         whereConditions.push(eq(products.condition, condition as any));
         if (condition === "New") {
@@ -1646,7 +1646,7 @@ const getCachedNew = unstable_cache(
   async (limit: number, countryCode: string, condition?: string) => {
     await dbReady;
     try {
-      const whereConditions = [];
+      const whereConditions: SQL[] = [];
       if (condition) {
         whereConditions.push(eq(products.condition, condition as any));
         if (condition === "New") {
