@@ -34,11 +34,11 @@ function getDatabaseUrl(): string {
 
   // 2. Production: Default to the persistent volume database
   if (isProductionEnvironment) {
-    return `file:${path.join(process.cwd(), "data", "cleverprices.db")}`;
+    return `file:${path.resolve(process.cwd(), "data", "cleverprices.db")}`;
   }
 
   // 3. Local Development Fallback
-  return "file:./data/cleverprices.db";
+  return `file:${path.resolve(process.cwd(), "data", "cleverprices.db")}`;
 }
 
 // Create libSQL client

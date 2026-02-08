@@ -76,3 +76,4 @@ Go to Dokploy Dashboard -> Applications -> CleverPrices -> Stop / Start.
 - **Data out of date?** Check if `bun run db:push-prod` ran successfully.
 - **Database "Locked"?** If local, restart the worker. If production, ensured `WAL` mode is used.
 - **Charts Empty?** Ensure the `price-updater` action is running and writing to Turso Cloud.
+- **Wrong Database?** Always run commands from the **project root**. Running from subdirectories can lead to configuration issues or the creation of unwanted `local.db` files.

@@ -137,6 +137,7 @@ Before writing code:
 - [ ] Algorithm O(N) or better?
 - [ ] Script has `--dry-run` and `--force`?
 - [ ] Parallelism bounded?
+- [ ] Running command from PROJECT ROOT? (CRITICAL for path resolution)
 
 ---
 

@@ -1,4 +1,5 @@
 import { defineConfig } from "drizzle-kit";
+import path from "path";
 
 /**
  * Drizzle Kit Configuration for Local SQLite
@@ -13,7 +14,9 @@ import { defineConfig } from "drizzle-kit";
  * - `bun run db:generate` - Generate migration files
  */
 
-const url = process.env.DATABASE_PATH || "file:./data/cleverprices.db";
+const url =
+  process.env.DATABASE_PATH ||
+  `file:${path.resolve(process.cwd(), "data", "cleverprices.db")}`;
 
 export default defineConfig({
   schema: "./src/db/schema.ts",
