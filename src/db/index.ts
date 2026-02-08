@@ -100,13 +100,25 @@ export const dbReady: Promise<void> = (async () => {
         });
         console.log("[DB] ✅ Migration sequence completed successfully.");
       } catch (migrateError) {
-        console.error("[DB ERROR] Migration phase failed:", migrateError);
-        throw migrateError; // Re-throw to handle in outer catch
+        console.warn(
+          "[DB] Standard migration failed, attempting robust fallback...",
+          migrateError instanceof Error
+            ? migrateError.message
+            : String(migrateError),
+        );
+
+        try {
+          await robustMigrate(client, migrationsDir);
+          console.log("[DB] ✅ Robust migration sequence completed.");
+        } catch (robustError) {
+          console.error(
+            "[DB ERROR] Robust migration also failed:",
+            robustError,
+          );
+          throw robustError;
+        }
       }
     }
-
-    // Diagnostics (useful for Dokploy logs)
-    // console.log(`[DB] Initialization complete. Products counted via lazy query if needed.`);
   } catch (e) {
     console.error(
       "[DB ERROR] Client initialization failure:",
@@ -115,6 +127,87 @@ export const dbReady: Promise<void> = (async () => {
     throw e; // Re-throw to ensure dbReady rejects
   }
 })();
+
+/**
+ * robustMigrate
+ *
+ * A resilient migration applicator that executes SQL statement-by-statement.
+ * It ignores "already exists" errors, allowing a partial/push-merged database
+ * to reach schema parity with the migration files.
+ */
+async function robustMigrate(client: Client, migrationsFolder: string) {
+  const fs = await import("fs");
+  const path = await import("path");
+
+  // 1. Read the journal to get the order
+  const journalPath = path.join(migrationsFolder, "meta", "_journal.json");
+  if (!fs.existsSync(journalPath)) {
+    throw new Error(`Migration journal not found at ${journalPath}`);
+  }
+
+  const journal = JSON.parse(fs.readFileSync(journalPath, "utf8"));
+  const migrations = journal.entries;
+
+  console.log(
+    `[DB] Robust Migrator: Processing ${migrations.length} migrations...`,
+  );
+
+  for (const entry of migrations) {
+    const sqlFile = path.join(migrationsFolder, `${entry.tag}.sql`);
+    if (!fs.existsSync(sqlFile)) {
+      console.warn(`[DB] Migration file missing, skipping: ${sqlFile}`);
+      continue;
+    }
+
+    console.log(`[DB] Applying ${entry.tag}...`);
+    const sqlContent = fs.readFileSync(sqlFile, "utf8");
+
+    // Standard Drizzle separator
+    const statements = sqlContent
+      .split("--> statement-breakpoint")
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+
+    for (const statement of statements) {
+      try {
+        await client.execute(statement);
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        // Ignore "already exists" variations
+        if (
+          msg.includes("already exists") ||
+          msg.includes("duplicate column name") ||
+          msg.includes("already a column")
+        ) {
+          // Log as debug, but don't fail
+          continue;
+        }
+        console.error(
+          `[DB ERROR] Failed statement: ${statement.substring(0, 100)}...`,
+        );
+        throw err;
+      }
+    }
+
+    // After each file, record it in the migrations table if possible to avoid re-triggering robustMigrate
+    try {
+      // Create table if it doesn't exist (Drizzle's name)
+      await client.execute(`
+        CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+          id integer PRIMARY KEY AUTOINCREMENT,
+          hash text NOT NULL,
+          created_at integer
+        )
+      `);
+
+      // We don't have the exact hash Drizzle uses here easily,
+      // but standard migrate() will verify hashes later if it works.
+      // For now, we just want to ensure the schema is applied.
+    } catch (e) {
+      // Ignored
+    }
+  }
+}
 
 // Export schema for convenience
 export * from "./schema";
