@@ -64,7 +64,6 @@ Go to the **Environment** tab:
 2.  **Environment Variables**:
     - `NODE_ENV=production`
     - `NEXT_TELEMETRY_DISABLED=1`
-    - `DANGEROUSLY_FORCE_DB_PUSH=true` (Required for automatic migrations to run in production)
     - _(Add any other secrets like KEEP_API_KEY if needed)_
 
 ### Step 3.3: Persistent Volumes (Crucial)

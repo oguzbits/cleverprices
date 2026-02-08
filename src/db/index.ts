@@ -93,7 +93,9 @@ export const dbReady: Promise<void> = (async () => {
       console.log(
         "[DB] Production environment detected. Running migrations...",
       );
-      await migrate(db, { migrationsFolder: "./drizzle" });
+      await migrate(db, {
+        migrationsFolder: path.resolve(process.cwd(), "drizzle"),
+      });
       console.log("[DB] Migrations completed successfully.");
     }
 
