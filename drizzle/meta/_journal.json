@@ -1,0 +1,55 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1767875888961,
+      "tag": "0000_dazzling_monster_badoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1767878865987,
+      "tag": "0001_flawless_ultragirl",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1768096374209,
+      "tag": "0002_chemical_frank_castle",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1769094554446,
+      "tag": "0003_supreme_drax",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1769102743951,
+      "tag": "0004_acoustic_shadow_king",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1769103113949,
+      "tag": "0005_right_darkhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1770558604685,
+      "tag": "0006_blushing_skreet",
+      "breakpoints": true
+    }
+  ]
+}

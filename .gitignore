@@ -51,7 +51,6 @@ next-env.d.ts
 *.sqlite
 /data/*.backup
 /data/backups/
-/drizzle/
 
 # worker logs
 /logs/
