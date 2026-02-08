@@ -1487,6 +1487,9 @@ const getCachedPopular = unstable_cache(
       );
 
       const pricesByProduct = indexPricesById(prs);
+      console.log(
+        `[DB DEBUG] getCachedPopular: products=${prods.length}, prices=${prs.length} for ${countryCode}`,
+      );
 
       // Group by parentAsin
       const families = new Map<string, any[]>();
@@ -1746,6 +1749,9 @@ export async function getNewArrivals(
         );
 
       const pricesByProduct = indexPricesById(prs);
+      console.log(
+        `[DB DEBUG] getNewArrivals: products=${prods.length}, prices=${prs.length} for ${countryCode}`,
+      );
 
       // Group by parentAsin
       const families = new Map<string, any[]>();

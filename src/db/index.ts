@@ -176,15 +176,28 @@ export const dbReady: Promise<void> = (async () => {
 
     // Final check: table count
     try {
-      const countRes = await client.execute(
+      const prodCount = await client.execute(
         "SELECT count(*) as count FROM products",
       );
-      console.log(
-        `[DB DIAGNOSTIC] Products table count: ${countRes.rows[0]?.count}`,
+      const priceCount = await client.execute(
+        "SELECT count(*) as count FROM prices",
       );
+      console.log(
+        `[DB DIAGNOSTIC] Row counts: products=${prodCount.rows[0]?.count}, prices=${priceCount.rows[0]?.count}`,
+      );
+
+      // Check a sample price
+      const priceSample = await client.execute("SELECT * FROM prices LIMIT 1");
+      if (priceSample.rows.length > 0) {
+        console.log(
+          `[DB DIAGNOSTIC] Sample price record: ${JSON.stringify(priceSample.rows[0])}`,
+        );
+      } else {
+        console.warn("[DB DIAGNOSTIC] Prices table is EMPTY!");
+      }
     } catch (e) {
       console.warn(
-        `[DB DIAGNOSTIC] Failed to count products (schema might not be ready): ${e}`,
+        `[DB DIAGNOSTIC] Failed to count rows (schema might not be ready): ${e}`,
       );
     }
   } catch (e) {
