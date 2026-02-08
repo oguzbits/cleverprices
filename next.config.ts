@@ -306,12 +306,16 @@ const nextConfig: NextConfig = {
       },
 
       // --- Country Prefix Removal (Consolidated traffic to root) ---
-      // Move these common patterns higher to avoid interference
-      { source: "/de/:path*", destination: "/:path*", permanent: true },
-      { source: "/ca/:path*", destination: "/:path*", permanent: true },
-      { source: "/fr/:path*", destination: "/:path*", permanent: true },
-      { source: "/uk/:path*", destination: "/:path*", permanent: true },
-      { source: "/it/:path*", destination: "/:path*", permanent: true },
+      { source: "/de", destination: "/", permanent: true },
+      { source: "/de/:path+", destination: "/:path+", permanent: true },
+      { source: "/ca", destination: "/", permanent: true },
+      { source: "/ca/:path+", destination: "/:path+", permanent: true },
+      { source: "/fr", destination: "/", permanent: true },
+      { source: "/fr/:path+", destination: "/:path+", permanent: true },
+      { source: "/uk", destination: "/", permanent: true },
+      { source: "/uk/:path+", destination: "/:path+", permanent: true },
+      { source: "/it", destination: "/", permanent: true },
+      { source: "/it/:path+", destination: "/:path+", permanent: true },
 
       // --- GSC 404 Fixes (January 2026) ---
       // Legacy /elektroartikel/* subcategory paths
@@ -441,11 +445,7 @@ const nextConfig: NextConfig = {
       },
 
       // --- Legacy Prefix Catch-alls (Fallbacks for any remaining old structure) ---
-      {
-        source: "/elektroartikel/:path*",
-        destination: "/categories",
-        permanent: true,
-      },
+      // Note: /elektroartikel is a valid category, so no catch-all needed
       {
         source: "/electronics/:path*",
         destination: "/categories",

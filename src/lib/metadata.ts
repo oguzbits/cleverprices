@@ -200,10 +200,11 @@ export function getHomePageMetadata(
   countryCode: string,
 ): import("next").Metadata {
   const code = countryCode.toUpperCase();
-  const isUS = countryCode.toLowerCase() === "us";
+  // Canonical URL: US and DE use root domain, others use /{country}
+  const isDefaultMarket =
+    countryCode.toLowerCase() === "us" || countryCode.toLowerCase() === "de";
 
-  // Canonical URL: US uses root domain, others use /{country}
-  const canonicalUrl = isUS
+  const canonicalUrl = isDefaultMarket
     ? SITE_URL
     : getCountryUrl(countryCode.toLowerCase());
 

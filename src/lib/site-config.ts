@@ -130,9 +130,11 @@ export function getSiteUrl(path: string = ""): string {
  * Generate a URL for a specific country
  */
 export function getCountryUrl(countryCode: string, path: string = ""): string {
-  if (countryCode.toLowerCase() === "us") {
+  const code = countryCode.toLowerCase();
+  // Primary market (DE) and US both use the root domain without prefix
+  if (code === "de" || code === "us") {
     return getSiteUrl(path);
   }
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${SITE_URL}/${countryCode.toLowerCase()}${normalizedPath}`;
+  return `${SITE_URL}/${code}${normalizedPath}`;
 }
