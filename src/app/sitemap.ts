@@ -132,7 +132,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     // 3. Child categories
     activeChildren.forEach((child) => {
-      const fullPath = `/${hierarchy.parent.slug}/${child.slug}`;
+      const fullPath = `/${child.slug}`;
       categoryRoutes.push({
         url: `${baseUrl}${fullPath}`,
         lastModified: new Date(),

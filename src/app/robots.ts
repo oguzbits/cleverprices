@@ -16,6 +16,7 @@ export default function robots(): MetadataRoute.Robots {
           "/*?sort=",
           "/*?search=",
           "/*?filter_",
+          "/*?condition=",
         ],
       },
     ],
