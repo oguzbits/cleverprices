@@ -111,7 +111,7 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
       product,
       isParentView: false,
       redirect: `/p/${newSlug}`,
-      isPermanent: product.enrichmentStatus === "optimized",
+      isPermanent: true, // Legacy migration should always be 301
     };
   }
 
@@ -129,7 +129,7 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
         product: null,
         isParentView: false,
         redirect: `/p/${newSlug}`,
-        isPermanent: false, // Let the ID-based resolver handle the final code
+        isPermanent: true, // Legacy ASIN suffix should be 301
       };
     }
   }
@@ -146,7 +146,7 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
       product,
       isParentView: true,
       redirect: `/p/${newHubSlug}`,
-      isPermanent: product.enrichmentStatus === "optimized",
+      isPermanent: true, // Legacy Parent ASIN should be 301
     };
   }
 
@@ -243,6 +243,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: BRAND_DOMAIN };
   }
 
+  const isBuild =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.BUILD_PHASE === "1";
+
+  if (isBuild) {
+    return { title: `Produkt Details | ${BRAND_DOMAIN}` };
+  }
+
   try {
     const resolution = await resolveProductFromRoute(slug);
     let product = resolution?.product;
@@ -269,7 +277,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const price =
       product.prices[countryCode] || Object.values(product.prices)[0];
 
-    // ... rest of the logic uses product and isParentViewMode ...
+    // GSC Fix: Align metadata with content guards to prevent Soft 404 indexing
+    const hasPrice =
+      isParentViewMode ||
+      product.prices[countryCode] ||
+      product.usedPrices?.[countryCode] ||
+      Object.values(product.prices).some(
+        (p) => typeof p === "number" && p > 0,
+      ) ||
+      (product.usedPrices &&
+        Object.values(product.usedPrices).some((p) => p && p > 0));
+
+    const hasMeaningfulTitle =
+      product.title &&
+      product.title.length > 10 &&
+      product.title !== product.asin;
+
+    if (!hasPrice || !hasMeaningfulTitle) {
+      return {
+        title: "Produkt nicht gefunden - CleverPrices",
+        robots: { index: false },
+      };
+    }
     const isParentView = isParentViewMode;
     const { getProductVariants } = await import("@/lib/server/cached-products");
     const siblings = isParentView

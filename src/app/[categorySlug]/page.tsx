@@ -16,6 +16,10 @@ import {
   getOpenGraph,
 } from "@/lib/metadata";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
+import {
+  FilterParams,
+  getCategoryProducts,
+} from "@/lib/server/category-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -24,7 +28,7 @@ interface Props {
   params: Promise<{
     categorySlug: string;
   }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<FilterParams>;
 }
 
 export async function generateStaticParams() {
@@ -55,22 +59,51 @@ export async function generateStaticParams() {
     .map((c) => ({ categorySlug: c.slug }));
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: Props): Promise<Metadata> {
+  const isBuild =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.BUILD_PHASE === "1";
+
   const { categorySlug } = await params;
   const category = await getCategoryBySlug(categorySlug);
   if (!category) return { title: "Kategorie nicht gefunden" };
 
-  // Check if category is empty
-  const nonEmptySlugs = await getNonEmptyCategorySlugs();
-  const children = getChildCategories(categorySlug as CategorySlug);
-  const isEmpty =
-    children.length > 0
-      ? !children.some((child) => nonEmptySlugs.includes(child.slug))
-      : !nonEmptySlugs.includes(categorySlug);
-
-  if (isEmpty) {
-    return { title: "Kategorie nicht gefunden", robots: { index: false } };
+  if (isBuild) {
+    return { title: `${category.name} | ${BRAND_DOMAIN}` };
   }
+
+  const filters = await searchParams;
+
+  // 1. Check if category is hidden
+  if (category.hidden) {
+    return { title: category.name, robots: { index: false, follow: false } };
+  }
+
+  // 2. Fetch product data to check if result is empty
+  const productData = await getCategoryProducts(
+    categorySlug,
+    DEFAULT_COUNTRY,
+    filters,
+  );
+
+  const isEmpty = productData.filteredCount === 0;
+  const hasFilters = Object.keys(filters).some(
+    (k) => filters[k as keyof FilterParams] && k !== "page" && k !== "view",
+  );
+
+  // If empty, set noindex to prevent Soft 404s
+  if (isEmpty) {
+    return {
+      title: `${category.name} - Keine Ergebnisse | ${BRAND_DOMAIN}`,
+      robots: { index: false, follow: true },
+    };
+  }
+
+  // If heavy filters are active, we might also want to noindex to prevent crawl waste,
+  // but for now let's focus on the Soft 404 (0 results) case.
 
   const canonicalUrl = `https://${BRAND_DOMAIN}/${category.slug}`;
 
