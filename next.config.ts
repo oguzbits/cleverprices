@@ -305,6 +305,14 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // --- Country Prefix Removal (Consolidated traffic to root) ---
+      // Move these common patterns higher to avoid interference
+      { source: "/de/:path*", destination: "/:path*", permanent: true },
+      { source: "/ca/:path*", destination: "/:path*", permanent: true },
+      { source: "/fr/:path*", destination: "/:path*", permanent: true },
+      { source: "/uk/:path*", destination: "/:path*", permanent: true },
+      { source: "/it/:path*", destination: "/:path*", permanent: true },
+
       // --- GSC 404 Fixes (January 2026) ---
       // Legacy /elektroartikel/* subcategory paths
       {
@@ -432,6 +440,43 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // --- Legacy Prefix Catch-alls (Fallbacks for any remaining old structure) ---
+      {
+        source: "/elektroartikel/:path*",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/electronics/:path*",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/computer/:path*",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/pc-komponenten/:path*",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/telekommunikation/:path*",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/hifi-audio/:path*",
+        destination: "/categories",
+        permanent: true,
+      },
+      {
+        source: "/storage/:path*",
+        destination: "/categories",
+        permanent: true,
+      },
+
       // --- Legacy English/V1 Path Corrections ---
       { source: "/electronics/ram", destination: "/ram", permanent: true },
       {
@@ -471,39 +516,11 @@ const nextConfig: NextConfig = {
       },
       { source: "/electronics/gpu", destination: "/gpu", permanent: true },
 
-      // --- Country Prefix Removal (Consolidate traffic to root) ---
-      // Specific commonly hit paths first
-      {
-        source: "/de/drucker-scanner/laserdrucker",
-        destination: "/laserdrucker",
-        permanent: true,
-      },
-      {
-        source: "/de/computer/mouse-pads",
-        destination: "/mouse-pads",
-        permanent: true,
-      },
-      {
-        source: "/de/elektroartikel/soundbars",
-        destination: "/soundbars",
-        permanent: true,
-      },
-      {
-        source: "/de/elektroartikel/drones",
-        destination: "/drones",
-        permanent: true,
-      },
       {
         source: "/de/computer/network-switches",
         destination: "/network-switches",
         permanent: true,
       },
-      // Generic country Prefix Stripping (Catch-all for de/ca/fr/uk/it)
-      { source: "/de/:path*", destination: "/:path*", permanent: true },
-      { source: "/ca/:path*", destination: "/:path*", permanent: true },
-      { source: "/fr/:path*", destination: "/:path*", permanent: true },
-      { source: "/uk/:path*", destination: "/:path*", permanent: true },
-      { source: "/it/:path*", destination: "/:path*", permanent: true },
 
       // --- Outbound Link Fixes ---
       {
@@ -517,6 +534,11 @@ const nextConfig: NextConfig = {
         destination: "/hard-drives?brand=Seagate&capacity=16",
         permanent: true,
       },
+
+      // --- Targeted GSC Fixes (High impact 404/Soft 404) ---
+      { source: "/medien", destination: "/categories", permanent: true },
+      { source: "/thermal-paste", destination: "/categories", permanent: true },
+      { source: "/&", destination: "/", permanent: true },
     ];
   },
   async headers() {
