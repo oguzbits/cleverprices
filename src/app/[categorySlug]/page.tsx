@@ -69,7 +69,12 @@ export async function generateMetadata({
 
   const { categorySlug } = await params;
   const category = await getCategoryBySlug(categorySlug);
-  if (!category) return { title: "Kategorie nicht gefunden" };
+  if (!category) {
+    return {
+      title: "Kategorie nicht gefunden",
+      robots: { index: false, follow: false },
+    };
+  }
 
   if (isBuild) {
     return { title: `${category.name} | ${BRAND_DOMAIN}` };

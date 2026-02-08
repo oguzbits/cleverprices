@@ -268,7 +268,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     if (!product) {
-      return { title: "Produkt nicht gefunden - CleverPrices" };
+      return {
+        title: "Produkt nicht gefunden - CleverPrices",
+        robots: { index: false, follow: false },
+      };
     }
 
     const countryCode = DEFAULT_COUNTRY;
