@@ -144,6 +144,24 @@ export const dbReady: Promise<void> = (async () => {
         }
       }
 
+      // Manual Check: If __drizzle_migrations has data, SKIP migrate() to avoid conflicts
+      try {
+        const migCount = await client.execute(
+          "SELECT count(*) as c FROM __drizzle_migrations",
+        );
+        if (Number(migCount.rows[0]?.c) > 0) {
+          console.log(
+            `[DB] Found ${migCount.rows[0]?.c} existing migrations. Skipping migrate() to prevent conflicts.`,
+          );
+          return;
+        }
+      } catch (e) {
+        // Table likely missing, proceed with migration
+        console.log(
+          "[DB] No existing migration table found, proceeding with migration...",
+        );
+      }
+
       try {
         await migrate(db, {
           migrationsFolder: migrationsDir,
