@@ -64,6 +64,7 @@ Go to the **Environment** tab:
 2.  **Environment Variables**:
     - `NODE_ENV=production`
     - `NEXT_TELEMETRY_DISABLED=1`
+    - `DANGEROUSLY_FORCE_DB_PUSH=true` (Required for automatic migrations to run in production)
     - _(Add any other secrets like KEEP_API_KEY if needed)_
 
 ### Step 3.3: Persistent Volumes (Crucial)
@@ -172,15 +173,15 @@ _Current Setup:_ The Worker container runs `npm run start:worker` which keeps th
 **Ship local data to Server:**
 
 ```bash
-bun run db:push-prod
+bun run db:DANGEROUS-overwrite-prod --force
 ```
 
-_(This SCPs `data/cleverprices.db` to the VPS volume)_.
+_(This SCPs `data/cleverprices.db` to the VPS volume and requires SSH access correctly configured in the script)_.
 
 **Pull production data for local debugging:**
 
 ```bash
-bun run db:pull
+bun run db:pull-prod
 ```
 
 ---

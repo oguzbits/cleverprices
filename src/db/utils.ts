@@ -4,12 +4,12 @@
 
 /**
  * Retry wrapper for database operations.
- * Handles SQLITE_BUSY errors with exponential backoff.
+ * Handles SQLITE_BUSY errors with exponential backoff and jitter.
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
   maxRetries = 5,
-  baseDelayMs = 100,
+  baseDelayMs = 150,
 ): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -18,19 +18,25 @@ export async function withRetry<T>(
     } catch (error: unknown) {
       lastError = error;
       const errorMsg = error instanceof Error ? error.message : String(error);
-      const isSqliteBusy =
+
+      // Robust SQLITE_BUSY / Lockdown detection
+      const isSqliteLocked =
         errorMsg.includes("SQLITE_BUSY") ||
         (error as any).code === "SQLITE_BUSY" ||
         (error as any).cause?.message?.includes("SQLITE_BUSY") ||
-        errorMsg.includes("database is locked");
+        errorMsg.includes("database is locked") ||
+        errorMsg.includes("SQLITE_READONLY"); // Sometimes related to WAL recovery or checkpoints
 
-      if (!isSqliteBusy || attempt === maxRetries - 1) {
+      if (!isSqliteLocked || attempt === maxRetries - 1) {
         throw error;
       }
 
-      const delay = baseDelayMs * Math.pow(2, attempt);
-      console.log(
-        `  ⏳ DB Retry ${attempt + 1}/${maxRetries} after ${delay}ms (SQLITE_BUSY: ${errorMsg})`,
+      // Exponential backoff + jitter
+      const jitter = Math.random() * 50;
+      const delay = baseDelayMs * Math.pow(2, attempt) + jitter;
+
+      console.warn(
+        `[DB Retry] Attempt ${attempt + 1}/${maxRetries} after ${Math.round(delay)}ms. Error: ${errorMsg}`,
       );
       await new Promise((r) => setTimeout(r, delay));
     }

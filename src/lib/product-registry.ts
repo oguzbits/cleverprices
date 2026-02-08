@@ -211,11 +211,9 @@ export const getProductById = cache(async function getProductById(
   const realId =
     id >= 900000000 ? id - 900000000 : id >= 200000000 ? id - 200000000 : id;
 
-  const [p] = await db
-    .select()
-    .from(products)
-    .where(eq(products.id, realId))
-    .limit(1);
+  const [p] = await withRetry(() =>
+    db.select().from(products).where(eq(products.id, realId)).limit(1),
+  );
 
   if (!p) return undefined;
 
@@ -701,8 +699,12 @@ export const getProductFamilyMembers = cache(
 );
 
 export async function getAllProducts(): Promise<Product[]> {
-  const allProducts = await db.select(liteProductColumns).from(products);
-  const allPrices = await db.select(litePriceColumns).from(prices); // Drizzle ORM skill: query-select-columns
+  const allProducts = await withRetry(() =>
+    db.select(liteProductColumns).from(products),
+  );
+  const allPrices = await withRetry(() =>
+    db.select(litePriceColumns).from(prices),
+  ); // Drizzle ORM skill: query-select-columns
 
   const pricesByProduct = indexPricesById(allPrices);
 
@@ -840,19 +842,20 @@ const fetchProductBySlug = cache(
     if (!slug) return undefined;
     await dbReady;
     const getProductAndPrices = async (targetSlug: string) => {
-      const [p] = await db
-        .select()
-        .from(products)
-        .where(eq(products.slug, targetSlug))
-        .limit(1);
+      const [p] = await withRetry(() =>
+        db
+          .select()
+          .from(products)
+          .where(eq(products.slug, targetSlug))
+          .limit(1),
+      );
 
       if (!p) return undefined;
 
       // O(1) Fetch: Only fetch prices for the specific product.
-      const prs = await db
-        .select()
-        .from(prices)
-        .where(eq(prices.productId, p.id));
+      const prs = await withRetry(() =>
+        db.select().from(prices).where(eq(prices.productId, p.id)),
+      );
 
       return mapDbProduct(p as any, prs as any, []);
     };
@@ -912,23 +915,27 @@ const fetchProductByAsin = async (
   asin: string,
 ): Promise<Product | undefined> => {
   await dbReady;
-  const [p] = await db
-    .select()
-    .from(products)
-    .where(eq(products.asin, asin.toUpperCase()))
-    .limit(1);
+  const [p] = await withRetry(() =>
+    db
+      .select()
+      .from(products)
+      .where(eq(products.asin, asin.toUpperCase()))
+      .limit(1),
+  );
 
   if (!p) return undefined;
 
-  const [prs, siblings] = await Promise.all([
-    db.select().from(prices).where(eq(prices.productId, p.id)),
-    p.parentAsin
-      ? db
-          .select(liteProductColumns)
-          .from(products)
-          .where(eq(products.parentAsin, p.parentAsin))
-      : Promise.resolve([]),
-  ]);
+  const [prs, siblings] = await withRetry(() =>
+    Promise.all([
+      db.select().from(prices).where(eq(prices.productId, p.id)),
+      p.parentAsin
+        ? db
+            .select(liteProductColumns)
+            .from(products)
+            .where(eq(products.parentAsin, p.parentAsin))
+        : Promise.resolve([]),
+    ]),
+  );
 
   return mapDbProduct(p as any, prs as any, siblings as any[]);
 };
@@ -965,11 +972,13 @@ export async function findProductSlugByAsinSuffix(
   if (fullAsinMatch) {
     const asin = fullAsinMatch[1].toUpperCase();
     // Indexed lookup is O(1)
-    const [p] = await db
-      .select({ slug: products.slug })
-      .from(products)
-      .where(eq(products.asin, asin))
-      .limit(1);
+    const [p] = await withRetry(() =>
+      db
+        .select({ slug: products.slug })
+        .from(products)
+        .where(eq(products.asin, asin))
+        .limit(1),
+    );
     if (p) return p.slug;
   }
 
@@ -1035,27 +1044,28 @@ export const findProductByParentAsinSuffix = cache(
 
     // Join with prices to ensure we pick a child that actually exists and has a price
     // This prevents 404s if the first matching substring happens to be an unavailable product
-    const candidates = await db
-      .select({
-        ...liteProductColumns,
-        price: prices.price,
-      })
-      .from(products)
-      .innerJoin(prices, eq(products.id, prices.productId))
-      .where(
-        and(
-          ...conditions,
-          eq(prices.country, "de"), // Default to DE for resolving parent
-          gt(prices.price, 0),
-        ),
-      )
-      .orderBy(desc(prices.price)) // Pick expensive one (usually fully specced) or any valid one
-      .limit(10); // Fetch multiple candidates to resolve collisions
+    const candidates = await withRetry(() =>
+      db
+        .select({
+          ...liteProductColumns,
+          price: prices.price,
+        })
+        .from(products)
+        .innerJoin(prices, eq(products.id, prices.productId))
+        .where(
+          and(
+            ...conditions,
+            eq(prices.country, "de"), // Default to DE for resolving parent
+            gt(prices.price, 0),
+          ),
+        )
+        .orderBy(desc(prices.price)) // Pick expensive one (usually fully specced) or any valid one
+        .limit(10),
+    ); // Fetch multiple candidates to resolve collisions
 
     if (candidates.length === 0) return undefined;
 
-    // Scoring Logic to resolve collisions (e.g. "Pro" suffix matching "Pro Max" parent)
-    // We check for "Ghost Keywords" - words in the title that are NOT in the slug.
+    // ... Scoring Logic ... (Unchanged)
     const diffKeywords = ["max", "pro", "plus", "ultra", "mini", "lite", "fe"];
     const slugLower = slug.toLowerCase();
 
@@ -1095,10 +1105,12 @@ export const findProductByParentAsinSuffix = cache(
     if (!p) return undefined;
 
     // IMPORTANT: We found a child, but we mark it as parent view
-    const prs = await db
-      .select(litePriceColumns)
-      .from(prices)
-      .where(eq(prices.productId, p.id));
+    const prs = await withRetry(() =>
+      db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(eq(prices.productId, p.id)),
+    );
 
     const product = mapDbProduct(p as unknown as DbProduct, prs);
     return { ...product, isParentView: true };
@@ -1287,23 +1299,27 @@ export const getProductsByBrand = cache(async function getProductsByBrand(
   excludeSlug?: string,
 ): Promise<Product[]> {
   if (!brand) return [];
-  const prods = await db
-    .select(liteProductColumns)
-    .from(products)
-    .where(
-      and(
-        eq(sql`LOWER(${products.brand})`, brand.toLowerCase()),
-        excludeSlug ? sql`${products.slug} != ${excludeSlug}` : sql`1=1`,
+  const prods = await withRetry(() =>
+    db
+      .select(liteProductColumns)
+      .from(products)
+      .where(
+        and(
+          eq(sql`LOWER(${products.brand})`, brand.toLowerCase()),
+          excludeSlug ? sql`${products.slug} != ${excludeSlug}` : sql`1=1`,
+        ),
       ),
-    );
+  );
 
   if (prods.length === 0) return [];
 
   const ids = prods.map((p) => p.id);
-  const prs = await db
-    .select(litePriceColumns)
-    .from(prices)
-    .where(inArray(prices.productId, ids));
+  const prs = await withRetry(() =>
+    db
+      .select(litePriceColumns)
+      .from(prices)
+      .where(inArray(prices.productId, ids)),
+  );
 
   const pricesByProduct = indexPricesById(prs);
 
@@ -1324,7 +1340,7 @@ const getCachedDeals = unstable_cache(
     await dbReady;
     try {
       // Lean schema: use consolidated `price` column instead of amazonPrice/newPrice
-      const whereConditions = [
+      const whereConditions: (SQL | undefined)[] = [
         eq(prices.country, countryCode),
         gt(prices.priceAvg90, 0),
         gt(prices.price, 0), // Consolidated "clever" price
@@ -1341,21 +1357,23 @@ const getCachedDeals = unstable_cache(
         }
       }
 
-      const results = await db
-        .select({
-          product: liteProductColumns,
-          price: litePriceColumns,
-        })
-        .from(products)
-        .innerJoin(prices, eq(products.id, prices.productId))
-        .where(and(...whereConditions))
-        .orderBy(
-          desc(
-            // Deal percentage: (90-day avg - current price) / 90-day avg
-            sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90}`,
-          ),
-        )
-        .limit(limit);
+      const results = await withRetry(() =>
+        db
+          .select({
+            product: liteProductColumns,
+            price: litePriceColumns,
+          })
+          .from(products)
+          .innerJoin(prices, eq(products.id, prices.productId))
+          .where(and(...whereConditions))
+          .orderBy(
+            desc(
+              // Deal percentage: (90-day avg - current price) / 90-day avg
+              sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90}`,
+            ),
+          )
+          .limit(limit),
+      );
 
       const prods = results.map((r) => r.product);
       const pricesByProduct = indexPricesById(results.map((r) => r.price));
@@ -1385,17 +1403,19 @@ export const getBestDeals = cache(async function getBestDeals(
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
     if (isScript) {
       // Fallback for scripts where unstable_cache might not be available or needed
-      const results = await db
-        .select({ product: liteProductColumns, price: litePriceColumns })
-        .from(products)
-        .innerJoin(prices, eq(products.id, prices.productId))
-        .where(
-          and(
-            eq(prices.country, countryCode),
-            condition ? eq(products.condition, condition) : undefined,
-          ),
-        )
-        .limit(limit);
+      const results = await withRetry(() =>
+        db
+          .select({ product: liteProductColumns, price: litePriceColumns })
+          .from(products)
+          .innerJoin(prices, eq(products.id, prices.productId))
+          .where(
+            and(
+              eq(prices.country, countryCode),
+              condition ? eq(products.condition, condition) : undefined,
+            ),
+          )
+          .limit(limit),
+      );
       const prods = results.map((r) => r.product);
       const pricesByProduct = indexPricesById(results.map((r) => r.price));
       return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
@@ -1425,26 +1445,35 @@ const getCachedPopular = unstable_cache(
         }
       }
 
-      const prods = await db
-        .select(liteProductColumns)
-        .from(products)
-        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
-        .orderBy(
-          asc(sql`COALESCE(${products.salesRank}, 10000000)`),
-          desc(products.reviewCount),
-          desc(products.rating),
-        )
-        .limit(limit);
+      const prods = await withRetry(() =>
+        db
+          .select(liteProductColumns)
+          .from(products)
+          .where(
+            whereConditions.length > 0 ? and(...whereConditions) : undefined,
+          )
+          .orderBy(
+            asc(sql`COALESCE(${products.salesRank}, 10000000)`),
+            desc(products.reviewCount),
+            desc(products.rating),
+          )
+          .limit(limit),
+      );
 
       if (prods.length === 0) return [];
 
       const ids = prods.map((p) => p.id);
-      const prs = await db
-        .select(litePriceColumns)
-        .from(prices)
-        .where(
-          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-        );
+      const prs = await withRetry(() =>
+        db
+          .select(litePriceColumns)
+          .from(prices)
+          .where(
+            and(
+              inArray(prices.productId, ids),
+              eq(prices.country, countryCode),
+            ),
+          ),
+      );
 
       const pricesByProduct = indexPricesById(prs);
 
@@ -1550,17 +1579,24 @@ const fetchDiversePopular = unstable_cache(
       if (ids.length === 0) return [];
 
       // 2. Fetch full (lite) data for these specific IDs
-      const prods = await db
-        .select(liteProductColumns)
-        .from(products)
-        .where(inArray(products.id, ids));
+      const prods = await withRetry(() =>
+        db
+          .select(liteProductColumns)
+          .from(products)
+          .where(inArray(products.id, ids)),
+      );
 
-      const prs = await db
-        .select(litePriceColumns)
-        .from(prices)
-        .where(
-          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-        );
+      const prs = await withRetry(() =>
+        db
+          .select(litePriceColumns)
+          .from(prices)
+          .where(
+            and(
+              inArray(prices.productId, ids),
+              eq(prices.country, countryCode),
+            ),
+          ),
+      );
 
       const pricesByProduct = indexPricesById(prs);
 

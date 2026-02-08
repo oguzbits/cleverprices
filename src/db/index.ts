@@ -1,5 +1,6 @@
 import { createClient, type Client } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 
 import path from "path";
 import * as schema from "./schema";
@@ -85,6 +86,15 @@ export const dbReady: Promise<void> = (async () => {
     if (isBuild) {
       console.log("[DB] Build phase detected. Skipping live diagnostics.");
       return;
+    }
+
+    // Run migrations AUTOMATICALLY in production
+    if (isProductionEnvironment) {
+      console.log(
+        "[DB] Production environment detected. Running migrations...",
+      );
+      await migrate(db, { migrationsFolder: "./drizzle" });
+      console.log("[DB] Migrations completed successfully.");
     }
 
     // Diagnostics (useful for Dokploy logs)
