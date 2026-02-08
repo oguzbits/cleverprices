@@ -2,6 +2,7 @@ import { db } from "@/db";
 import { prices } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { cacheLife } from "next/cache";
+import { withRetry } from "../../db/utils";
 import { litePriceColumns, type Product } from "../product-registry";
 import { getBestPrice } from "../utils/price-selection";
 import {
@@ -24,15 +25,17 @@ export async function getLivePricesForProducts(
 
   if (productIds.length === 0) return new Map();
 
-  const latestPrices = await db
-    .select(litePriceColumns)
-    .from(prices)
-    .where(
-      and(
-        inArray(prices.productId, productIds),
-        eq(prices.country, countryCode),
-      ),
-    );
+  const latestPrices = await withRetry(async () => {
+    return await db
+      .select(litePriceColumns)
+      .from(prices)
+      .where(
+        and(
+          inArray(prices.productId, productIds),
+          eq(prices.country, countryCode),
+        ),
+      );
+  });
 
   const priceMap = new Map();
   latestPrices.forEach((p) => {

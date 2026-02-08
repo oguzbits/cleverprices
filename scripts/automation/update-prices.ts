@@ -340,8 +340,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
   // 🏁 Force Checkpoint: Truncate the WAL file to reclaim disk space immediately
   if (!isDryRun) {
     try {
-      await db.run(sql`PRAGMA wal_checkpoint(TRUNCATE);`);
-      console.log("💾 Database checkpoint complete (WAL truncated).");
+      // Use PASSIVE mode to avoid blocking readers.
+      // This checkpoints as much as possible without exclusive locks.
+      await db.run(sql`PRAGMA wal_checkpoint(PASSIVE);`);
+      console.log("💾 Database checkpoint complete (PASSIVE).");
     } catch (err) {
       console.warn(
         "⚠️ Checkpoint failed (Database busy). Space will be reclaimed in the next pass.",

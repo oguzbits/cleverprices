@@ -17,11 +17,12 @@ export async function withRetry<T>(
       return await operation();
     } catch (error: unknown) {
       lastError = error;
+      const errorMsg = error instanceof Error ? error.message : String(error);
       const isSqliteBusy =
-        error instanceof Error &&
-        (error.message.includes("SQLITE_BUSY") ||
-          (error as any).code === "SQLITE_BUSY" ||
-          (error as any).cause?.message?.includes("SQLITE_BUSY"));
+        errorMsg.includes("SQLITE_BUSY") ||
+        (error as any).code === "SQLITE_BUSY" ||
+        (error as any).cause?.message?.includes("SQLITE_BUSY") ||
+        errorMsg.includes("database is locked");
 
       if (!isSqliteBusy || attempt === maxRetries - 1) {
         throw error;
@@ -29,7 +30,7 @@ export async function withRetry<T>(
 
       const delay = baseDelayMs * Math.pow(2, attempt);
       console.log(
-        `  ⏳ DB Retry ${attempt + 1}/${maxRetries} after ${delay}ms (SQLITE_BUSY)`,
+        `  ⏳ DB Retry ${attempt + 1}/${maxRetries} after ${delay}ms (SQLITE_BUSY: ${errorMsg})`,
       );
       await new Promise((r) => setTimeout(r, delay));
     }

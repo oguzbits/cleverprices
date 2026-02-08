@@ -20,6 +20,7 @@ import {
   SQL,
 } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+import { withRetry } from "../db/utils";
 import { getFamilyIdentity } from "./product-families";
 import {
   CATEGORY_REVALIDATE_SECONDS,
@@ -219,15 +220,17 @@ export const getProductById = cache(async function getProductById(
   if (!p) return undefined;
 
   // [CONSISTENCY FIX] Fetch prices and siblings together to maintain slug consensus
-  const [prs, siblings] = await Promise.all([
-    db.select().from(prices).where(eq(prices.productId, p.id)),
-    p.parentAsin
-      ? db
-          .select(liteProductColumns)
-          .from(products)
-          .where(eq(products.parentAsin, p.parentAsin))
-      : Promise.resolve([]),
-  ]);
+  const [prs, siblings] = await withRetry(async () => {
+    return await Promise.all([
+      db.select().from(prices).where(eq(prices.productId, p.id)),
+      p.parentAsin
+        ? db
+            .select(liteProductColumns)
+            .from(products)
+            .where(eq(products.parentAsin, p.parentAsin))
+        : Promise.resolve([]),
+    ]);
+  });
 
   // Use centralized mapping logic which correctly handles historyJson and identity
   const product = mapDbProduct(
@@ -595,17 +598,22 @@ export const getProductVariants = cache(async function getProductVariants(
         }
       : liteProductColumns;
 
-    const rows = await db
-      .select({
-        product: columnsToUse,
-        price: superLitePriceColumns,
-      })
-      .from(products)
-      .leftJoin(
-        prices,
-        and(eq(prices.productId, products.id), eq(prices.country, countryCode)),
-      )
-      .where(eq(products.parentAsin, parentAsin));
+    const rows = await withRetry(async () => {
+      return await db
+        .select({
+          product: columnsToUse,
+          price: superLitePriceColumns,
+        })
+        .from(products)
+        .leftJoin(
+          prices,
+          and(
+            eq(prices.productId, products.id),
+            eq(prices.country, countryCode),
+          ),
+        )
+        .where(eq(products.parentAsin, parentAsin));
+    });
 
     if (rows.length <= 1) return [];
 
@@ -709,8 +717,11 @@ export async function getAllProducts(): Promise<Product[]> {
  * Helper: Index an array of prices by productId for O(1) lookups.
  * Accepts any object with productId (supports both full Price and litePriceColumns result).
  */
-type PriceWithProductId = { productId: number } & Partial<Price>;
-function indexPricesById<T extends PriceWithProductId>(
+type PriceWithProductId = {
+  productId: number;
+  country?: string | null;
+} & Partial<Price>;
+function indexPricesById<T extends { productId: number }>(
   pricesList: T[],
 ): Map<number, T[]> {
   const map = new Map<number, T[]>();
@@ -777,17 +788,24 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   if (!category) return [];
   const fetchProducts = async () => {
     await dbReady;
-    const prods = await db
-      .select(liteProductColumns)
-      .from(products)
-      .where(eq(products.category, category));
-    if (prods.length === 0) return [];
+    const { prods, prs } = await withRetry(async () => {
+      const prods = await db
+        .select(liteProductColumns)
+        .from(products)
+        .where(eq(products.category, category));
 
-    const ids = prods.map((p) => p.id);
-    const prs = await db
-      .select(litePriceColumns)
-      .from(prices)
-      .where(inArray(prices.productId, ids));
+      if (prods.length === 0) return { prods: [], prs: [] };
+
+      const ids = prods.map((p) => p.id);
+      const prs = await db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(inArray(prices.productId, ids));
+
+      return { prods, prs };
+    });
+
+    if (prods.length === 0) return [];
 
     const pricesByProduct = indexPricesById(prs);
 
