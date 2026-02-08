@@ -41,7 +41,7 @@ export default function CategoriesPage() {
             <Link
               key={category.slug}
               href={`/${category.slug}`}
-              className="rounded-lg border-1 border-gray-400 p-6 no-underline transition-shadow hover:no-underline hover:shadow-md"
+              className="rounded-lg border border-gray-400 p-6 no-underline hover:no-underline"
             >
               <h2 className="mb-2 text-lg font-semibold text-[#2d2d2d] no-underline">
                 {category.name}
