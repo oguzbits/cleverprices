@@ -151,12 +151,15 @@ export const dbReady: Promise<void> = (async () => {
         console.log("[DB] ✅ Migration sequence completed successfully.");
       } catch (migrateError) {
         console.warn(
-          "[DB] Standard migration failed, attempting robust fallback...",
+          "[DB] Standard migration failed. Fallback DISABLED to protect data.",
           migrateError instanceof Error
             ? migrateError.message
             : String(migrateError),
         );
+        // THROW to prevent robustMigrate from running and wiping data
+        throw migrateError;
 
+        /*
         try {
           await robustMigrate(client, migrationsDir);
           console.log("[DB] ✅ Robust migration sequence completed.");
@@ -167,6 +170,7 @@ export const dbReady: Promise<void> = (async () => {
           );
           throw robustError;
         }
+        */
       }
     } else {
       console.log(
