@@ -9,6 +9,7 @@ CREATE TABLE `__new_prices` (
 	`country` text NOT NULL,
 	`price` real,
 	`used_price` real,
+	`warehouse_price` real,
 	`list_price` real,
 	`price_avg_90` real,
 	`price_per_unit` real,
@@ -19,7 +20,7 @@ CREATE TABLE `__new_prices` (
 	FOREIGN KEY (`product_id`) REFERENCES `products`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-INSERT INTO `__new_prices`("id", "product_id", "country", "price", "used_price", "list_price", "price_avg_90", "price_per_unit", "history_json", "currency", "source", "last_updated") SELECT "id", "product_id", "country", "price", "used_price", "list_price", "price_avg_90", "price_per_unit", "history_json", "currency", "source", "last_updated" FROM `prices`;--> statement-breakpoint
+INSERT INTO `__new_prices`("id", "product_id", "country", "price", "used_price", "warehouse_price", "list_price", "price_avg_90", "price_per_unit", "history_json", "currency", "source", "last_updated") SELECT "id", "product_id", "country", "price", "used_price", "warehouse_price", "list_price", "price_avg_90", "price_per_unit", "history_json", "currency", "source", "last_updated" FROM `prices`;--> statement-breakpoint
 DROP TABLE `prices`;--> statement-breakpoint
 ALTER TABLE `__new_prices` RENAME TO `prices`;--> statement-breakpoint
 PRAGMA foreign_keys=ON;--> statement-breakpoint

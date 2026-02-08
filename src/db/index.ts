@@ -83,16 +83,66 @@ export const dbReady: Promise<void> = (async () => {
       process.env.NEXT_PHASE === "phase-production-build" ||
       process.env.BUILD_PHASE === "1";
 
+    console.log(
+      `[DB DIAGNOSTIC] Starting dbReady. NODE_ENV: ${process.env.NODE_ENV}, isBuild: ${isBuild}`,
+    );
+
     if (isBuild) {
       console.log("[DB] Build phase detected. Skipping live diagnostics.");
       return;
     }
 
+    const dbUrl = getDatabaseUrl();
+    console.log(`[DB DIAGNOSTIC] Resolved DB URL: ${dbUrl}`);
+    console.log(`[DB DIAGNOSTIC] Current working directory: ${process.cwd()}`);
+
+    // Check if migrations folder exists
+    const migrationsDir = path.resolve(process.cwd(), "drizzle");
+    const exists = (await import("fs")).existsSync(migrationsDir);
+    console.log(
+      `[DB DIAGNOSTIC] Migrations dir exists at ${migrationsDir}: ${exists}`,
+    );
+    if (exists) {
+      console.log(
+        `[DB DIAGNOSTIC] Migration files: ${JSON.stringify((await import("fs")).readdirSync(migrationsDir))}`,
+      );
+    }
+
     // Run migrations AUTOMATICALLY in production
     if (isProductionEnvironment) {
       console.log("[DB] 🏁 Migration sequence started...");
-      const migrationsDir = path.resolve(process.cwd(), "drizzle");
-      console.log(`[DB] Looking for migrations in: ${migrationsDir}`);
+
+      // DEFENSIVE: Auto-repair for "warehouse_price" which was accidentally dropped in some 0005 versions
+      try {
+        console.log(
+          "[DB] Checking for warehouse_price column on prices table...",
+        );
+        await client.execute(
+          "ALTER TABLE prices ADD COLUMN warehouse_price REAL;",
+        );
+        console.log(
+          "[DB] ✅ Manually added missing 'warehouse_price' column to 'prices' table.",
+        );
+      } catch (err: any) {
+        const msg = err?.message || String(err);
+        if (
+          msg.includes("duplicate column name") ||
+          msg.includes("already exists")
+        ) {
+          console.log(
+            "[DB] 'warehouse_price' already exists, no repair needed.",
+          );
+        } else if (msg.includes("no such table")) {
+          console.log(
+            "[DB] 'prices' table doesn't exist yet, standard migration will handle it.",
+          );
+        } else {
+          console.warn(
+            "[DB] Non-critical error during warehouse_price check:",
+            msg,
+          );
+        }
+      }
 
       try {
         await migrate(db, {
@@ -118,6 +168,24 @@ export const dbReady: Promise<void> = (async () => {
           throw robustError;
         }
       }
+    } else {
+      console.log(
+        "[DB DIAGNOSTIC] Not in production, skipping automatic migrations.",
+      );
+    }
+
+    // Final check: table count
+    try {
+      const countRes = await client.execute(
+        "SELECT count(*) as count FROM products",
+      );
+      console.log(
+        `[DB DIAGNOSTIC] Products table count: ${countRes.rows[0]?.count}`,
+      );
+    } catch (e) {
+      console.warn(
+        `[DB DIAGNOSTIC] Failed to count products (schema might not be ready): ${e}`,
+      );
     }
   } catch (e) {
     console.error(
@@ -170,6 +238,8 @@ async function robustMigrate(client: Client, migrationsFolder: string) {
 
     for (const statement of statements) {
       try {
+        const preview = statement.substring(0, 50).replace(/\n/g, " ");
+        console.log(`[DB] Executing: ${preview}...`);
         await client.execute(statement);
       } catch (err: any) {
         const msg = err?.message || String(err);
@@ -179,7 +249,9 @@ async function robustMigrate(client: Client, migrationsFolder: string) {
           msg.includes("duplicate column name") ||
           msg.includes("already a column")
         ) {
-          // Log as debug, but don't fail
+          console.log(
+            `[DB] Skipping existing element: ${msg.substring(0, 50)}`,
+          );
           continue;
         }
         console.error(

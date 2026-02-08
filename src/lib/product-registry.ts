@@ -1468,6 +1468,9 @@ const getCachedPopular = unstable_cache(
           .limit(limit),
       );
 
+      console.log(
+        `[DB DEBUG] getCachedPopular found ${prods.length} products with limit ${limit}`,
+      );
       if (prods.length === 0) return [];
 
       const ids = prods.map((p) => p.id);
@@ -1587,12 +1590,15 @@ const fetchDiversePopular = unstable_cache(
 
       if (ids.length === 0) return [];
 
-      // 2. Fetch full (lite) data for these specific IDs
       const prods = await withRetry(() =>
         db
           .select(liteProductColumns)
           .from(products)
           .where(inArray(products.id, ids)),
+      );
+
+      console.log(
+        `[DB DEBUG] fetchDiversePopular found ${prods.length} products`,
       );
 
       const prs = await withRetry(() =>
@@ -1674,6 +1680,9 @@ const getCachedNew = unstable_cache(
         .orderBy(desc(products.createdAt))
         .limit(limit);
 
+      console.log(
+        `[DB DEBUG] getCachedNew found ${prods.length} products for ${countryCode} (condition: ${condition})`,
+      );
       if (prods.length === 0) return [];
 
       const ids = prods.map((p) => p.id);
