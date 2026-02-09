@@ -452,11 +452,44 @@ export async function upsertProductFromKeepa(
     condition = "Renewed";
   }
 
+  // Parse variant information from Keepa
+  const parentAsin = keepaProduct.parentAsin || null;
+  const variationAttributes = parseVariationCSV(keepaProduct.variationCSV);
+
+  // Extract critical attributes for slug generation
+  const variationMap: Record<string, string> = {};
+  if (keepaProduct.variationCSV) {
+    keepaProduct.variationCSV.split(",").forEach((pair) => {
+      const [key, val] = pair.split("|");
+      if (key && val) variationMap[key.trim()] = val.trim();
+    });
+  }
+
+  // Standardize keys for slug generator
+  // Common Keys: "Color", "Size", "Style", "Pattern", "Configuration", "Edition"
+  const slugAttributes = {
+    storage:
+      variationMap["Size"] ||
+      variationMap["Capacity"] ||
+      variationMap["Storage"] ||
+      variationMap["Speicher"] ||
+      variationMap["Kapazität"],
+    color: variationMap["Color"] || variationMap["Farbe"],
+    ram: variationMap["RAM"] || variationMap["Arbeitsspeicher"],
+    size: variationMap["Display Size"] || variationMap["Bildschirmgröße"],
+    connectivity:
+      variationMap["Connectivity"] ||
+      variationMap["Konnektivität"] ||
+      variationMap["Style"] || // Sometimes "Wi-Fi" is in Style
+      variationMap["Edition"], // Sometimes in Edition
+  };
+
   // Generate slug from title with uniqueness
   const slug = generateProductSlug(
     keepaProduct.title || keepaProduct.asin,
     brand,
     keepaProduct.asin,
+    slugAttributes,
   );
 
   // Get first image URL
@@ -467,10 +500,6 @@ export async function upsertProductFromKeepa(
       imageUrl = `https://images-na.ssl-images-amazon.com/images/I/${firstImage}`;
     }
   }
-
-  // Parse variant information from Keepa
-  const parentAsin = keepaProduct.parentAsin || null;
-  const variationAttributes = parseVariationCSV(keepaProduct.variationCSV);
 
   // Upsert product with all fields (lean schema: no features/description)
   const [product] = await db

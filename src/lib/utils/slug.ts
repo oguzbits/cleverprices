@@ -26,21 +26,28 @@ export function generateProductSlug(
   title: string,
   brand?: string | null,
   asin?: string,
-  capacity?: number | null,
-  capacityUnit?: string | null,
+  attributes?: {
+    storage?: string | null;
+    color?: string | null;
+    ram?: string | null;
+    size?: string | null;
+    connectivity?: string | null;
+  },
 ): string {
   // 1. Extract Identity using the robust token-based system
-  // We mock a partial Product object for the identity utility
+  //    We pass the attributes explicitly to help `getProductIdentity` strip them from the model name
   const identity = getProductIdentity({
     title,
     brand: brand || "",
-    // If we have capacity info, we can pass it as a variation string to help stripping
-    variationAttributes: capacity
-      ? `Storage: ${capacity} ${capacityUnit || "GB"}`
-      : "",
+    variationAttributes: attributes
+      ? Object.entries(attributes)
+          .filter(([, v]) => v)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("; ")
+      : undefined,
   });
 
-  // 2. Format Model Part
+  // 2. Format Model Part (Cleaned)
   const modelPart = identity.model
     .toLowerCase()
     .normalize("NFKC")
@@ -51,19 +58,45 @@ export function generateProductSlug(
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  // 3. Format Spec Part (Capacity)
-  const castUnit = String(capacityUnit || "GB");
-  let specPart = "";
-  if (capacity) {
-    const unit = castUnit.toLowerCase();
-    specPart = `${capacity}${unit}`.replace(/\s+/g, "");
-  }
-
-  // 4. Construct Parts (Idealo Style: Model - Specs - Brand - UniqueID)
+  // 3. Construct Parts in Deterministic Order
+  //    Order: Model -> Size -> Storage -> RAM -> Color -> Connectivity -> Brand -> UniqueID
   const parts = [modelPart];
-  if (specPart) parts.push(specPart);
 
-  // Use the normalized brand from identity (e.g. PlayStation maps to Sony)
+  const clean = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize("NFKC")
+      .replace(/\u00E4/g, "ae")
+      .replace(/\u00F6/g, "oe")
+      .replace(/\u00FC/g, "ue")
+      .replace(/\u00DF/g, "ss")
+      .replace(/[^a-z0-9]+/g, "")
+      .trim();
+
+  // Helper to ensure we don't duplicate info if it's already in the model
+  // (e.g. if model is "iPhone 13 128GB", we don't want to add "128gb" again)
+  const addIfNew = (val: string | null | undefined) => {
+    if (!val) return;
+    const c = clean(val);
+    if (!c) return;
+    // Check against model part (stripping hyphens for check)
+    if (!modelPart.replace(/-/g, "").includes(c)) {
+      parts.push(c);
+    }
+  };
+
+  if (attributes?.size) addIfNew(attributes.size);
+  if (attributes?.storage) {
+    // Ensure storage has unit if missing (simple heuristic)
+    let s = attributes.storage;
+    if (/^\d+$/.test(s)) s += "gb";
+    addIfNew(s);
+  }
+  if (attributes?.ram) addIfNew(attributes.ram);
+  if (attributes?.color) addIfNew(attributes.color);
+  if (attributes?.connectivity) addIfNew(attributes.connectivity); // e.g. "Wi-Fi + Cellular"
+
+  // 4. Append Brand (if not in model)
   const finalBrand = identity.brand || brand;
   if (finalBrand) {
     const brandSlug = finalBrand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -72,6 +105,7 @@ export function generateProductSlug(
     }
   }
 
+  // 5. Append Unique ID (ASIN)
   if (asin && asin.length >= 4) {
     parts.push(asin.slice(-4).toLowerCase());
   }
