@@ -599,13 +599,12 @@ async function main() {
             return JSON.stringify(validation.specs);
           })(),
           category: categorySlug as CategorySlug,
-          slug: generateProductSlug(
-            title,
-            brand,
-            asin,
-            capacityValue,
-            capacityUnit,
-          ),
+          slug: generateProductSlug(title, brand, asin, {
+            storage:
+              capacityValue && capacityUnit
+                ? `${capacityValue}${capacityUnit}`
+                : undefined,
+          }),
           capacity: capacityValue,
           capacityUnit,
           condition: (function () {

@@ -31,8 +31,12 @@ async function regenerateSlugs() {
       titleBase,
       product.brand,
       product.asin,
-      product.capacity,
-      product.capacityUnit,
+      {
+        storage:
+          product.capacity && product.capacityUnit
+            ? `${product.capacity}${product.capacityUnit}`
+            : undefined,
+      },
     );
 
     if (newSlug !== product.slug) {
