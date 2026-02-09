@@ -26,31 +26,31 @@ export function SpecificationsTable({
   const [isExpanded, setIsExpanded] = useState(false);
   const isDebug = useDebugMode();
 
-  // Parse Specs - PROPRIETARY LOGIC: Prioritize Official Manufacturer Data
+  // Parse Specs - Use the REPAIRED specs from product-mapping.ts
+  // The mapping logic already handles storage repair, so we should use those values
   const { specs, isOfficial, source } = useMemo(() => {
-    // If official specs exist, use them exclusively
     let rawSpecs: Record<string, any> = {};
     let sourceLabel = "None";
     let isOfficialData = false;
 
-    if (product.officialSpecifications) {
-      const s =
-        typeof product.officialSpecifications === "string"
-          ? JSON.parse(product.officialSpecifications)
-          : product.officialSpecifications;
-      rawSpecs = s;
-      isOfficialData = true;
-      sourceLabel = product.specificationsSource || s.Source || "Unknown";
+    // Priority 1: Use the repaired specifications object (already processed by product-mapping.ts)
+    if (product.specifications && typeof product.specifications === "object") {
+      rawSpecs = product.specifications;
+      sourceLabel = product.specificationsSource || "Repaired";
+      // Check if this came from official sources
+      isOfficialData = !!product.officialSpecifications;
     } else if (
       product.specifications &&
-      product.enrichmentStatus !== "untrusted_source"
+      typeof product.specifications === "string"
     ) {
-      const parsed =
-        typeof product.specifications === "string"
-          ? JSON.parse(product.specifications)
-          : product.specifications;
-      rawSpecs = parsed || {};
-      sourceLabel = "Legacy";
+      // Fallback: parse if it's a string (shouldn't happen with proper mapping)
+      try {
+        rawSpecs = JSON.parse(product.specifications) || {};
+        sourceLabel = product.specificationsSource || "Legacy";
+      } catch (e) {
+        console.warn("Failed to parse specifications string", e);
+        rawSpecs = {};
+      }
     } else if (product.enrichmentStatus === "untrusted_source") {
       sourceLabel = "Untrusted";
       rawSpecs = {}; // Wipe polluted data from UI
@@ -109,18 +109,19 @@ export function SpecificationsTable({
         if (hubUnwanted.some((u) => lowerK.includes(u))) return;
       }
 
-      // 2. VARIANT DUPLICATION FILTERING (Standard View)
-      // If this attribute is controlled by the Variant Selector, hide it from the static table
-      // to avoid conflicts (e.g. "Spec says Black, Variant is White")
-      if (!isHubMode) {
+      // 2. VARIANT DUPLICATION FILTERING
+      // In Hub Mode: Hide variant attributes (color, storage, RAM) since they're shown in variant selectors
+      // In Standard View: Keep them! They're part of the product's specs and should be displayed.
+      // The repair logic in product-mapping.ts ensures they show the correct values.
+      if (isHubMode) {
+        // Only filter in hub mode where we have variant selectors
         if (isColorVariant && (lowerK === "color" || lowerK === "farbe"))
           return;
-        // Only hide Storage/RAM if it's strictly just the capacity number.
-        // Sometimes specs have "Storage Type: NVMe" which we want to keep.
         if (
           isStorageVariant &&
           (lowerK === "storage" ||
             lowerK === "kapazität" ||
+            lowerK === "speicherkapazität" ||
             lowerK === "interner speicher")
         )
           return;
