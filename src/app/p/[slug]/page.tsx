@@ -50,6 +50,8 @@ function generateEnrichedDescription(
         ? JSON.parse(product.officialSpecifications)
         : product.officialSpecifications;
 
+    if (!specs || typeof specs !== "object") return null;
+
     // 1. Processors (Intel/AMD)
     if (
       product.category === "processors-cpus" ||

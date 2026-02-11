@@ -97,16 +97,37 @@ export function mapDbProduct(
 
   if (stripHeavyData) {
     // Lite mode: skip full parsing, only extract identity keys
+    // Optimization: Skip officialSpecifications if original specifications are present for identity
     identitySpecs = {
       ...IDENTITY_CONFIG.getIdentitySpecs(p.specifications),
-      ...IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications),
     };
+    if (!p.specifications && p.officialSpecifications) {
+      Object.assign(
+        identitySpecs,
+        IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications),
+      );
+    }
   } else {
     // Full mode: parse everything
-    parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
-    parsedOfficialSpecs = p.officialSpecifications
-      ? JSON.parse(p.officialSpecifications)
-      : undefined;
+    try {
+      parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
+    } catch (e) {
+      console.error(
+        `[Data Error] Failed to parse specifications for ASIN ${p.asin}`,
+      );
+      parsedSpecs = {};
+    }
+
+    try {
+      parsedOfficialSpecs = p.officialSpecifications
+        ? JSON.parse(p.officialSpecifications)
+        : undefined;
+    } catch (e) {
+      console.error(
+        `[Data Error] Failed to parse officialSpecifications for ASIN ${p.asin}`,
+      );
+      parsedOfficialSpecs = undefined;
+    }
 
     identitySpecs = {
       ...IDENTITY_CONFIG.getIdentitySpecs(parsedSpecs),
