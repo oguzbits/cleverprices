@@ -53,7 +53,7 @@ export async function LivePriceHeader({
   return (
     <IdealoLivePrice
       productId={productId}
-      countryCode={countryCode}
+      countryCode={countryCode as any}
       initialPrice={initialPrice}
       className="text-[28px] font-black text-[#2d2d2d]"
     />
@@ -70,7 +70,7 @@ export async function LiveSavingsBadge({
   product: Product;
   countryCode: string;
 }) {
-  const [merged] = await mergeLivePrices([product], countryCode);
+  const [merged] = await mergeLivePrices([product], countryCode as any);
   if ((merged.savings || 0) <= 0) return null;
   return <PriceAnalysisBadge savings={merged.savings || 0} />;
 }
