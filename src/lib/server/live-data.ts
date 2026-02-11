@@ -25,13 +25,22 @@ export async function getLivePricesForProducts(
 
   if (productIds.length === 0) return new Map();
 
+  // Handle synthetic IDs (Hub/Parent Mode offsets)
+  const idMap = new Map<number, number>(); // realId -> requestedId
+  const realIds = productIds.map((id) => {
+    const realId =
+      id >= 900000000 ? id - 900000000 : id >= 200000000 ? id - 200000000 : id;
+    idMap.set(realId, id);
+    return realId;
+  });
+
   const latestPrices = await withRetry(async () => {
     return await db
       .select(litePriceColumns)
       .from(prices)
       .where(
         and(
-          inArray(prices.productId, productIds),
+          inArray(prices.productId, Array.from(new Set(realIds))),
           eq(prices.country, countryCode),
         ),
       );
@@ -43,10 +52,11 @@ export async function getLivePricesForProducts(
     const price = p.price && p.price > 0 ? p.price : null;
     const usedPrice = p.usedPrice && p.usedPrice > 0 ? p.usedPrice : null;
     const warehousePrice =
+      // @ts-ignore - Drizzle generated types might be slightly off for lean schema
       p.warehousePrice && p.warehousePrice > 0 ? p.warehousePrice : null;
 
     if (price || usedPrice || warehousePrice) {
-      priceMap.set(p.productId, {
+      const data = {
         price,
         usedPrice,
         warehousePrice,
@@ -54,6 +64,21 @@ export async function getLivePricesForProducts(
         priceAvg90: p.priceAvg90,
         listPrice: p.listPrice,
         pricePerUnit: p.pricePerUnit,
+        historyJson: p.historyJson,
+      };
+
+      // Map back to ALL requested IDs that resolve to this real ID
+      productIds.forEach((requestedId) => {
+        const mappedRealId =
+          requestedId >= 900000000
+            ? requestedId - 900000000
+            : requestedId >= 200000000
+              ? requestedId - 200000000
+              : requestedId;
+
+        if (mappedRealId === p.productId) {
+          priceMap.set(requestedId, data);
+        }
       });
     }
   });
@@ -145,6 +170,13 @@ export async function mergeLivePrices(
         listPrice: { ...p.listPrice, [countryCode]: live.listPrice },
         pricesPerUnit: { ...p.pricesPerUnit, [countryCode]: live.pricePerUnit },
         savings,
+        // PARSE LIVE HISTORY: Attach the parsed history if available in live data
+        priceHistory: live.historyJson
+          ? (() => {
+              const { parseHistoryJson } = require("../product-mapping");
+              return parseHistoryJson(live.historyJson);
+            })()
+          : p.priceHistory,
       };
 
       // Recalculate derived metrics (like savings) based on new prices
