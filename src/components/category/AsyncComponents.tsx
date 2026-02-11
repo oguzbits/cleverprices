@@ -6,7 +6,6 @@ import { Category, CategorySlug, getChildCategories } from "@/lib/categories";
 import { getCategoryFAQs } from "@/lib/category-faqs";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { FilterParams } from "@/lib/server/category-products";
-import { getLivePricesForProducts } from "@/lib/server/live-data";
 import { formatTechText } from "@/lib/utils/formatting";
 import { X } from "lucide-react";
 import Link from "next/link";
@@ -166,10 +165,17 @@ export async function AsyncProductList({
     (category.parent as CategorySlug) || ("elektroartikel" as CategorySlug),
   ).filter((c) => c.slug !== category.slug);
 
-  // Fetch live prices in batch
-  const livePrices = await getLivePricesForProducts(
-    products.map((p: any) => p.id!).filter(Boolean),
-    countryCode,
+  // No need to fetch live prices in batch again - getCategoryProducts already merged them
+  // into the product objects themselves. We just re-map them for IdealoResultList.
+  const livePrices = new Map<number, any>(
+    products.map((p: any) => [
+      p.id as number,
+      {
+        price: p.price,
+        usedPrice: p.usedPrice,
+        warehousePrice: p.warehousePrice,
+      },
+    ]),
   );
 
   if (!hasProducts) {

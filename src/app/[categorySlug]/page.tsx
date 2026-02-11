@@ -16,10 +16,7 @@ import {
   getOpenGraph,
 } from "@/lib/metadata";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
-import {
-  FilterParams,
-  getCategoryProducts,
-} from "@/lib/server/category-products";
+import { FilterParams } from "@/lib/server/category-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -87,17 +84,13 @@ export async function generateMetadata({
     return { title: category.name, robots: { index: false, follow: false } };
   }
 
-  // 2. Fetch product data to check if result is empty
-  const productData = await getCategoryProducts(
-    categorySlug,
-    DEFAULT_COUNTRY,
-    filters,
-  );
-
-  const isEmpty = productData.filteredCount === 0;
-  const hasFilters = Object.keys(filters).some(
-    (k) => filters[k as keyof FilterParams] && k !== "page" && k !== "view",
-  );
+  // 2. Check if category is empty to set noindex (prevent Soft 404s)
+  const nonEmptySlugs = await getNonEmptyCategorySlugs();
+  const children = getChildCategories(categorySlug as CategorySlug);
+  const isEmpty =
+    children.length > 0
+      ? !children.some((child) => nonEmptySlugs.includes(child.slug))
+      : !nonEmptySlugs.includes(categorySlug);
 
   // If empty, set noindex to prevent Soft 404s
   if (isEmpty) {

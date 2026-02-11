@@ -344,11 +344,8 @@ export async function getParentCategoryData(
   const productArrays = await Promise.all(productPromises);
   const allProductsRaw = productArrays.flat();
 
-  // 2. Merge live prices ONCE for the entire set
-  const allProducts = await mergeLivePrices(allProductsRaw, countryCode);
-
-  // 3. Filter for valid products
-  const validProducts = allProducts.filter(
+  // 2. Filter for valid products based on cached database prices
+  const validProducts = allProductsRaw.filter(
     (p) => p.prices[countryCode] !== undefined && p.prices[countryCode] > 0,
   );
 
@@ -476,11 +473,31 @@ export async function getParentCategoryData(
     2,
     3,
   );
-  deals.forEach((p) => {
-    p.savings = calculateProductDiscount(p, countryCode) / 100;
+  // 7. MERGE LIVE PRICES ONLY FOR SELECTED PRODUCTS
+  // This is the performance "Silver Bullet": We only fetch live data for the ~40 actual items shown,
+  // not the 1000s of products in the entire parent category tree.
+  const finalProducts = await mergeLivePrices(
+    [...bestsellers, ...newProducts, ...deals],
+    countryCode,
+  );
+
+  // Re-map the merged products back to their respective sections
+  const productMap = new Map(finalProducts.map((p) => [p.id, p]));
+
+  const bestsellersFinal = bestsellers.map((p) => productMap.get(p.id!) || p);
+  const newProductsFinal = newProducts.map((p) => productMap.get(p.id!) || p);
+  const dealsFinal = deals.map((p) => {
+    const merged = productMap.get(p.id!) || p;
+    // Re-calculate savings with fresh prices
+    merged.savings = calculateProductDiscount(merged, countryCode) / 100;
+    return merged;
   });
 
-  return { bestsellers, newProducts, deals };
+  return {
+    bestsellers: bestsellersFinal,
+    newProducts: newProductsFinal,
+    deals: dealsFinal,
+  };
 }
 
 /**
