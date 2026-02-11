@@ -35,11 +35,7 @@ import { IdealoProductOffers } from "./IdealoProductOffers";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { SpecificationsTable } from "./SpecificationsTable";
 
-import {
-  LivePriceBoundary,
-  LivePriceHeader,
-  LiveSavingsBadge,
-} from "./LivePriceBoundary";
+import { LivePriceHeader, LiveSavingsBadge } from "./LivePriceBoundary";
 
 interface IdealoProductPageProps {
   product: Product;
@@ -65,13 +61,22 @@ export async function IdealoProductPage({
   parentFullModel: passedFullModel,
 }: IdealoProductPageProps) {
   const isParentView = initialIsParentView;
-  const identity = getProductIdentity(product);
-  const effectiveCondition =
-    selectedCondition || (product.condition === "Renewed" ? "renewed" : "new");
 
-  const realId = (product.id || 0) % 100000000;
+  // 1. CONSOLIDATED LIVE DATA FETCH: This replaces the "Ghost Shell" deferral.
+  // By merging here, we deliver a solid page without animate-pulse skeletons.
+  const [mergedProduct, ...mergedVariants] = await mergeLivePrices(
+    [product, ...variants],
+    countryCode as any,
+  );
+
+  const identity = getProductIdentity(mergedProduct);
+  const effectiveCondition =
+    selectedCondition ||
+    (mergedProduct.condition === "Renewed" ? "renewed" : "new");
+
+  const realId = (mergedProduct.id || 0) % 100000000;
   const syntheticId = 900000000 + realId;
-  const parentRep = { ...product, syntheticId };
+  const parentRep = { ...mergedProduct, syntheticId };
   const { slug: autoParentSlug } = getFamilyIdentity(parentRep);
   const parentSlug = passedParentSlug || autoParentSlug;
 
@@ -99,7 +104,7 @@ export async function IdealoProductPage({
 
   return (
     <div className="bg-background min-h-screen">
-      <ProductSchema product={product} countryCode={countryCode} />
+      <ProductSchema product={mergedProduct} countryCode={countryCode} />
       <BreadcrumbSchema items={schemaBreadcrumbs} />
 
       <link rel="preconnect" href="https://m.media-amazon.com" />
@@ -130,14 +135,14 @@ export async function IdealoProductPage({
                 <div className="bg-card relative mx-auto flex aspect-square w-full max-w-[265px] items-center justify-center overflow-hidden rounded-lg">
                   {isParentView ? (
                     <ParentHeroImage
-                      product={product}
+                      product={mergedProduct}
                       countryCode={countryCode}
-                      variants={variants}
+                      variants={mergedVariants}
                     />
-                  ) : product.image ? (
+                  ) : mergedProduct.image ? (
                     <Image
-                      src={product.image}
-                      alt={product.title}
+                      src={mergedProduct.image}
+                      alt={mergedProduct.title}
                       fill
                       className="object-contain p-2"
                       sizes="(max-width: 265px) calc(100vw - 80px), 265px"
@@ -153,17 +158,19 @@ export async function IdealoProductPage({
 
                 <div className="flex flex-col items-center lg:hidden">
                   <div className="mb-4 text-[24px] font-extrabold text-[#2d2d2d]">
-                    <Suspense
-                      fallback={
-                        <div className="h-8 w-24 animate-pulse rounded bg-gray-100" />
-                      }
-                    >
-                      <LivePriceHeader
-                        productId={product.id!}
-                        countryCode={countryCode}
-                        initialPrice={product.prices[countryCode]}
-                      />
-                    </Suspense>
+                    <LivePriceHeader
+                      productId={mergedProduct.id!}
+                      countryCode={countryCode}
+                      initialPrice={mergedProduct.prices[countryCode]}
+                      livePriceData={{
+                        price: mergedProduct.prices[countryCode] ?? null,
+                        usedPrice:
+                          mergedProduct.usedPrices?.[countryCode] ?? null,
+                        // @ts-ignore
+                        warehousePrice:
+                          mergedProduct.warehousePrices?.[countryCode] ?? null,
+                      }}
+                    />
                   </div>
                   <a
                     href="#offerList"
@@ -183,12 +190,14 @@ export async function IdealoProductPage({
               >
                 {isParentView
                   ? hubFullModel
-                  : product.subtitle
-                    ? product.title.replace(product.subtitle, "").trim()
-                    : product.title}
-                {!isParentView && product.subtitle && (
+                  : mergedProduct.subtitle
+                    ? mergedProduct.title
+                        .replace(mergedProduct.subtitle, "")
+                        .trim()
+                    : mergedProduct.title}
+                {!isParentView && mergedProduct.subtitle && (
                   <span className="ml-2 text-[16px] font-bold">
-                    {product.subtitle}
+                    {mergedProduct.subtitle}
                   </span>
                 )}
               </h1>
@@ -207,19 +216,14 @@ export async function IdealoProductPage({
                     ))}
                   </div>
                   <span className="text-[13px] font-bold text-[#2d2d2d]">
-                    ({product.reviewCount || 10})
+                    ({mergedProduct.reviewCount || 10})
                   </span>
                 </div>
-                <Suspense
-                  fallback={
-                    <div className="h-6 w-24 animate-pulse rounded-full bg-blue-50" />
-                  }
-                >
-                  <LiveSavingsBadge
-                    product={product}
-                    countryCode={countryCode}
-                  />
-                </Suspense>
+                <LiveSavingsBadge
+                  product={mergedProduct}
+                  countryCode={countryCode}
+                  liveSavings={mergedProduct.savings}
+                />
               </div>
             </div>
 
@@ -230,11 +234,11 @@ export async function IdealoProductPage({
                     Produktübersicht:
                   </b>
                   {Object.entries(
-                    (product.officialSpecifications
-                      ? typeof product.officialSpecifications === "string"
-                        ? JSON.parse(product.officialSpecifications)
-                        : product.officialSpecifications
-                      : product.specifications) || {},
+                    (mergedProduct.officialSpecifications
+                      ? typeof mergedProduct.officialSpecifications === "string"
+                        ? JSON.parse(mergedProduct.officialSpecifications)
+                        : mergedProduct.officialSpecifications
+                      : mergedProduct.specifications) || {},
                   )
                     .filter(([key, value]) => {
                       if (!isParentView) return true;
@@ -316,18 +320,19 @@ export async function IdealoProductPage({
                   </Link>
                   <span className="text-[13px] text-[#767676]">·</span>
                   <Link
-                    href={`/search?q=${product.brand}`}
+                    href={`/search?q=${mergedProduct.brand}`}
                     className="text-[13px] text-[#0771d0] underline decoration-[#0771d0]/30 hover:no-underline"
                   >
-                    {product.brand} {category?.singularName || category?.name}
+                    {mergedProduct.brand}{" "}
+                    {category?.singularName || category?.name}
                   </Link>
                 </div>
 
                 <div className="mt-4 w-full max-w-full overflow-hidden">
                   <ComponentErrorBoundary name="VariantSelector">
                     <CachedVariantSelector
-                      product={product}
-                      variants={variants}
+                      product={mergedProduct}
+                      variants={mergedVariants}
                       countryCode={countryCode}
                       isParentView={isParentView}
                       selectedCondition={effectiveCondition}
@@ -338,12 +343,12 @@ export async function IdealoProductPage({
 
                 <div className="mt-6 flex flex-wrap gap-2.5">
                   <ConditionButtons
-                    product={product}
+                    product={mergedProduct}
                     countryCode={countryCode}
                     effectiveCondition={effectiveCondition}
                     isParentView={isParentView}
                     parentSlug={parentSlug}
-                    variants={variants}
+                    variants={mergedVariants}
                   />
                 </div>
               </div>
@@ -351,16 +356,11 @@ export async function IdealoProductPage({
 
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
               <ComponentErrorBoundary name="PriceChart">
-                <Suspense
-                  fallback={
-                    <div className="h-[250px] w-full animate-pulse rounded border border-gray-100 bg-gray-50/30" />
-                  }
-                >
-                  <PriceChartBoundary
-                    product={product}
-                    countryCode={countryCode}
-                  />
-                </Suspense>
+                <IdealoPriceChart
+                  history={mergedProduct.priceHistory || []}
+                  title={mergedProduct.title}
+                  currentPrice={mergedProduct.prices[countryCode]}
+                />
               </ComponentErrorBoundary>
             </div>
           </div>
@@ -372,42 +372,28 @@ export async function IdealoProductPage({
             >
               <ComponentErrorBoundary name="SidebarSimilarProducts">
                 <CachedSidebarSimilarProducts
-                  product={product}
+                  product={mergedProduct}
                   countryCode={countryCode}
                 />
               </ComponentErrorBoundary>
             </aside>
 
-            <Suspense
-              fallback={
-                <div className="min-h-[400px] w-full animate-pulse bg-gray-50 lg:w-3/4" />
-              }
-            >
-              <LivePriceBoundary
-                product={product}
-                variants={variants}
+            <ComponentErrorBoundary name="ProductOffers">
+              <IdealoProductOffers
+                product={mergedProduct}
+                productId={mergedProduct.id!}
                 countryCode={countryCode}
-              >
-                {({ mergedProduct, mergedVariants }) => (
-                  <ComponentErrorBoundary name="ProductOffers">
-                    <IdealoProductOffers
-                      product={mergedProduct}
-                      productId={mergedProduct.id!}
-                      countryCode={countryCode}
-                      selectedCondition={effectiveCondition}
-                      isParentView={isParentView}
-                      variants={mergedVariants}
-                    />
-                  </ComponentErrorBoundary>
-                )}
-              </LivePriceBoundary>
-            </Suspense>
+                selectedCondition={effectiveCondition}
+                isParentView={isParentView}
+                variants={mergedVariants}
+              />
+            </ComponentErrorBoundary>
           </div>
 
           <div id="datasheet" className="scroll-mt-[10vh]">
             <ComponentErrorBoundary name="Specifications">
               <CachedSpecifications
-                product={product}
+                product={mergedProduct}
                 selectedCondition={effectiveCondition}
                 isHubMode={isParentView}
               />
@@ -421,7 +407,7 @@ export async function IdealoProductPage({
               }
             >
               <CachedSimilarCarousel
-                product={product}
+                product={mergedProduct}
                 countryCode={countryCode}
               />
             </Suspense>
@@ -429,24 +415,6 @@ export async function IdealoProductPage({
         </div>
       </div>
     </div>
-  );
-}
-
-// Sub-component to handle Price Chart with live data
-async function PriceChartBoundary({
-  product,
-  countryCode,
-}: {
-  product: Product;
-  countryCode: string;
-}) {
-  const [merged] = await mergeLivePrices([product], countryCode);
-  return (
-    <IdealoPriceChart
-      history={merged.priceHistory || []}
-      title={merged.title}
-      currentPrice={merged.prices[countryCode]}
-    />
   );
 }
 
