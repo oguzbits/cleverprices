@@ -2,14 +2,11 @@ import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
-import { getFamilyIdentity } from "@/lib/product-families"; // Needed for redirects
 import { type Product } from "@/lib/product-registry";
 import {
   getAllProductSlugs,
   getPDPRenderData,
-  getProductById,
 } from "@/lib/server/cached-products";
-import { mergeLivePrices } from "@/lib/server/live-data";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { Metadata } from "next";
@@ -289,95 +286,16 @@ export default async function ProductPage({ params, searchParams }: Props) {
             ?.id || null
         : product.id || null;
 
-    // 2. Batch merge live prices for ONLY the items we really need (main + variants)
-    // We merge them all at once to minimize database round-trips
-    const [mergedMainProduct, ...mergedVariants] = await mergeLivePrices(
-      [product, ...allVariantsRaw],
-      countryCode,
-    );
-
-    // STABLE HUB RESOLUTION: Ensure "Alle Varianten" always points to the same ID
-    let canonicalHubSlug: string | undefined = undefined;
-    let consensusHubTitle: string | undefined = undefined;
-    let consensusHubFullModel: string | undefined = undefined;
-
-    if (!parentViewMode && canonicalRealId !== null) {
-      const syntheticId = 900000000 + canonicalRealId;
-
-      // 4. Determine representative (Hub Price)
-      // If we are in HUB mode, the representative is the canonical variant.
-      // Usually it's in allVariantsRaw, but if not, we fetch it and merge its price.
-      let representativeFound = mergedVariants.find(
-        (v) => v.id === canonicalRealId,
-      );
-      let representative: Product;
-
-      if (representativeFound) {
-        representative = representativeFound;
-      } else if (canonicalRealId) {
-        const fetched = await getProductById(canonicalRealId);
-        if (fetched) {
-          const [merged] = await mergeLivePrices([fetched], countryCode);
-          representative = merged;
-        } else {
-          representative = mergedMainProduct;
-        }
-      } else {
-        representative = mergedMainProduct;
-      }
-
-      const familyIdentity = getFamilyIdentity(
-        { ...representative, id: syntheticId },
-        mergedVariants,
-      );
-      canonicalHubSlug = familyIdentity.slug;
-      consensusHubTitle = familyIdentity.title;
-      consensusHubFullModel = familyIdentity.title;
-    } else if (parentViewMode) {
-      // We are ON the hub page.
-      const familyIdentity = getFamilyIdentity(
-        mergedMainProduct,
-        mergedVariants,
-      );
-      consensusHubTitle = familyIdentity.title;
-      consensusHubFullModel = familyIdentity.title;
-    }
-
-    // GSC Fix: Return 404 for products with insufficient data (prevents soft 404)
-    const hasPrice =
-      parentViewMode ||
-      mergedMainProduct.prices[countryCode] ||
-      mergedMainProduct.usedPrices?.[countryCode] ||
-      Object.values(mergedMainProduct.prices).some(
-        (p) => typeof p === "number" && p > 0,
-      ) ||
-      (mergedMainProduct.usedPrices &&
-        Object.values(mergedMainProduct.usedPrices).some((p) => p && p > 0));
-
-    const hasMeaningfulTitle =
-      mergedMainProduct.title &&
-      mergedMainProduct.title.length > 10 &&
-      mergedMainProduct.title !== mergedMainProduct.asin;
-
-    if (!hasPrice || !hasMeaningfulTitle) {
-      logPDPPerformance(slug, startTime);
-      notFound();
-    }
-
-    logPDPPerformance(slug, startTime);
-
-    // 4. Render immediately with all pre-resolved data
+    // 2. Render THE STATIC SHELL immediately
+    // Live price merging is now deferred into a Suspense boundary inside IdealoProductPage
     return (
       <IdealoProductPage
-        product={mergedMainProduct}
-        variants={mergedVariants}
+        product={product}
+        variants={allVariantsRaw}
         category={category}
         countryCode={countryCode}
         selectedCondition={condition as any}
         isParentView={parentViewMode}
-        parentSlug={canonicalHubSlug}
-        parentTitle={consensusHubTitle}
-        parentFullModel={consensusHubFullModel}
       />
     );
   } catch (error: any) {

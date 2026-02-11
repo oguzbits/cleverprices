@@ -29,23 +29,27 @@ import Link from "next/link";
 import React, { Suspense } from "react";
 import { CachedVariantSelector } from "./CachedVariantSelector";
 import { ConditionButtons } from "./ConditionButtons";
-import { IdealoLivePrice } from "./IdealoLivePrice";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import { IdealoProductOffers } from "./IdealoProductOffers";
 import { MobileActionGrid } from "./MobileActionGrid";
-import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
 import { SpecificationsTable } from "./SpecificationsTable";
+
+import {
+  LivePriceBoundary,
+  LivePriceHeader,
+  LiveSavingsBadge,
+} from "./LivePriceBoundary";
 
 interface IdealoProductPageProps {
   product: Product;
-  variants?: Product[]; // Pre-merged variants from server
-  category?: any; // Pre-resolved category
+  variants?: Product[];
+  category?: any;
   countryCode: CountryCode;
   selectedCondition?: "new" | "used" | "renewed";
   isParentView?: boolean;
-  parentSlug?: string; // Stable hub slug from server
-  parentTitle?: string; // Stable hub title from server
-  parentFullModel?: string; // Stable hub full model name
+  parentSlug?: string;
+  parentTitle?: string;
+  parentFullModel?: string;
 }
 
 export async function IdealoProductPage({
@@ -59,31 +63,21 @@ export async function IdealoProductPage({
   parentTitle: passedParentTitle,
   parentFullModel: passedFullModel,
 }: IdealoProductPageProps) {
-  // Check true variant count to prevent "Alle Varianten" view for singletons
-  // [OPTIMIZATION] We trust the server-side redirection/detection (from page.tsx)
-  // to tell us if we are in Parent View (Hub). We do not verify count here to avoid blocking.
   const isParentView = initialIsParentView;
-
-  // UNIVERSAL IDENTITY RESOLUTION
   const identity = getProductIdentity(product);
-
   const effectiveCondition =
     selectedCondition || (product.condition === "Renewed" ? "renewed" : "new");
 
-  // Create a synthetic parent representative to generate the Hub URL for breadcrumbs
-  // Use passedParentSlug if available (preferred for stability)
   const realId = (product.id || 0) % 100000000;
   const syntheticId = 900000000 + realId;
   const parentRep = { ...product, syntheticId };
   const { slug: autoParentSlug } = getFamilyIdentity(parentRep);
   const parentSlug = passedParentSlug || autoParentSlug;
 
-  // Breadcrumb Data from Universal Identity - Ensure suffix matches visually
   const parentTitle = passedParentTitle || identity.modelTitle;
   const hubFullModel = passedFullModel || identity.fullModel;
   const variantName = identity.variantSuffix || "Standard";
 
-  // Build breadcrumbs for SEO Schema (Idealo Style)
   const schemaBreadcrumbs = [
     { name: "Home", href: "/" },
     ...(category
@@ -98,51 +92,15 @@ export async function IdealoProductPage({
       ? [{ name: hubFullModel }]
       : [
           { name: parentTitle, href: `/p/${parentSlug}` },
-          {
-            name: variantName,
-          },
+          { name: variantName },
         ]),
   ];
 
-  // HUB PRICE HISTORY: If on Hub page, show history of the cheapest variant
-  // [OPTIMIZATION] Disabled to prevent blocking. We use the current product's history as fallback.
-  // Ideally, this should be moved to a streaming component "CachedPriceHistory".
-  let chartHistory = product.priceHistory || [];
-  let chartPrice = product.prices[countryCode];
-  let chartTitle = product.title;
-
-  /*
-  if (isParentView && variants.length > 0) {
-    const cheapest = variants[0];
-    const cheapestHistory = await getProductPriceHistory(
-      cheapest.id!,
-      countryCode,
-    );
-    if (cheapestHistory.length > 0) {
-      chartHistory = cheapestHistory;
-      chartPrice = cheapest.prices[countryCode];
-      chartTitle = cheapest.title;
-    }
-  }
-  */
-
-  const livePriceData = {
-    price: product.prices[countryCode] || null,
-    usedPrice: product.usedPrices?.[countryCode] || null,
-    warehousePrice: product.warehousePrices?.[countryCode] || null,
-  };
-
   return (
     <div className="bg-background min-h-screen">
-      <ProductSchema
-        product={product}
-        countryCode={countryCode}
-        rating={product.rating ?? 4.5}
-        reviewCount={product.reviewCount ?? 0}
-      />
+      <ProductSchema product={product} countryCode={countryCode} />
       <BreadcrumbSchema items={schemaBreadcrumbs} />
 
-      {/* Performance Hints: Preconnect to Amazon Image domains */}
       <link rel="preconnect" href="https://m.media-amazon.com" />
       <link rel="dns-prefetch" href="https://m.media-amazon.com" />
 
@@ -159,7 +117,6 @@ export async function IdealoProductPage({
               "mb-6 grid grid-cols-1 grid-rows-[auto_auto_auto] gap-0 lg:grid-cols-[1fr_2fr_1fr] lg:grid-rows-[auto_auto]",
             )}
           >
-            {/* Gallery */}
             <div className="min-w-0 flex-1 px-2.5 sm:px-0 lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:-row-end-1">
               <div className="oopStage-gallery">
                 {isParentView && (
@@ -193,18 +150,20 @@ export async function IdealoProductPage({
                   )}
                 </div>
 
-                {/* Mobile: Big Price & Button Display */}
                 <div className="flex flex-col items-center lg:hidden">
                   <div className="mb-4 text-[24px] font-extrabold text-[#2d2d2d]">
-                    <IdealoLivePrice
-                      productId={product.id!}
-                      countryCode={countryCode}
-                      initialPrice={product.prices[countryCode]}
-                      className="text-[28px] font-black text-[#2d2d2d]"
-                      livePriceData={livePriceData}
-                    />
+                    <Suspense
+                      fallback={
+                        <div className="h-9 w-24 animate-pulse rounded bg-gray-100" />
+                      }
+                    >
+                      <LivePriceHeader
+                        productId={product.id!}
+                        countryCode={countryCode}
+                        initialPrice={product.prices[countryCode]}
+                      />
+                    </Suspense>
                   </div>
-
                   <a
                     href="#offerList"
                     className="flex h-[44px] w-full items-center justify-center rounded-[4px] border border-[#0771d0] px-4 text-[14px] font-bold text-[#0771d0] transition-colors hover:bg-blue-50"
@@ -212,14 +171,10 @@ export async function IdealoProductPage({
                     Angebote vergleichen
                   </a>
                 </div>
-
                 <MobileActionGrid />
-
-                {/* Mobile: Price Alert Button */}
               </div>
             </div>
 
-            {/* Title & Rating */}
             <div className="col-start-1 row-start-1 min-w-0 flex-1 px-2.5 sm:px-[15px] lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-2 lg:px-[15px]">
               <h1
                 id="oopStage-title"
@@ -254,14 +209,15 @@ export async function IdealoProductPage({
                     ({product.reviewCount || 10})
                   </span>
                 </div>
-
-                {(product.savings || 0) > 0 && (
-                  <PriceAnalysisBadge savings={product.savings || 0} />
-                )}
+                <Suspense fallback={null}>
+                  <LiveSavingsBadge
+                    product={product}
+                    countryCode={countryCode}
+                  />
+                </Suspense>
               </div>
             </div>
 
-            {/* Product Overview */}
             <div className="w-full min-w-0 flex-1 lg:col-start-2 lg:col-end-3 lg:row-start-2 lg:-row-end-1 lg:justify-self-start lg:px-[15px]">
               <div className="oopStage-productInfo border-t border-[#dcdcdc] pt-4 lg:border-t-0 lg:pt-0">
                 <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:justify-center lg:justify-start">
@@ -273,13 +229,10 @@ export async function IdealoProductPage({
                       ? typeof product.officialSpecifications === "string"
                         ? JSON.parse(product.officialSpecifications)
                         : product.officialSpecifications
-                      : product.enrichmentStatus === "untrusted_source"
-                        ? {}
-                        : product.specifications) || {},
+                      : product.specifications) || {},
                   )
                     .filter(([key, value]) => {
                       if (!isParentView) return true;
-                      // HUB MODE: Filter out variant-specific traits
                       const k = key.toLowerCase();
                       const unwanted = [
                         "color",
@@ -305,16 +258,13 @@ export async function IdealoProductPage({
                         "size",
                       ];
                       if (unwanted.some((u) => k.includes(u))) return false;
-
                       const v = String(value).toLowerCase().trim();
-                      // Filter out description-like keys
                       if (
                         /description|summary|marketing|ean|upc|gtin|asin/i.test(
                           key,
                         )
                       )
                         return false;
-                      // Filter out negative/useless values
                       if (
                         [
                           "nein",
@@ -330,18 +280,10 @@ export async function IdealoProductPage({
                         ].includes(v)
                       )
                         return false;
-                      // Specs are usually short (e.g. "16 GB", "SSD"). Sentences are not specs.
                       if (v.length === 0 || v.length >= 40) return false;
-
-                      // SELF-EXPLANATORY CHECK:
-                      // Must contain at least one letter (for units like GB, Hz, or text)
-                      // OR contain specific symbols like " (inches), % (percent), or x (resolution 1920x1080)
-                      // This rejects pure numbers like "4096" or "1" which are confusing without labels.
-                      const isSelfExplanatory =
-                        /[a-z%"]/i.test(v) || /\d\s*x\s*\d/.test(v);
-                      return isSelfExplanatory;
+                      return /[a-z%"]/i.test(v) || /\d\s*x\s*\d/.test(v);
                     })
-                    .slice(0, 5) // Increased back to 5 now that we filter bad ones
+                    .slice(0, 5)
                     .map(([key, value], i) => (
                       <React.Fragment key={key}>
                         <span
@@ -357,7 +299,6 @@ export async function IdealoProductPage({
                     ))}
                 </div>
 
-                {/* Similar Products Links Row */}
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:justify-center lg:justify-start">
                   <b className="text-[13px] font-bold text-[#2d2d2d]">
                     Ähnliche Produkte:
@@ -377,7 +318,6 @@ export async function IdealoProductPage({
                   </Link>
                 </div>
 
-                {/* Variant Selector (scoped to selected condition) - Always render now, let it decide */}
                 <div className="mt-4 w-full max-w-full overflow-hidden">
                   <ComponentErrorBoundary name="VariantSelector">
                     <CachedVariantSelector
@@ -391,7 +331,6 @@ export async function IdealoProductPage({
                   </ComponentErrorBoundary>
                 </div>
 
-                {/* Condition Buttons */}
                 <div className="mt-6 flex flex-wrap gap-2.5">
                   <ConditionButtons
                     product={product}
@@ -405,14 +344,18 @@ export async function IdealoProductPage({
               </div>
             </div>
 
-            {/* Price Chart Column */}
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
               <ComponentErrorBoundary name="PriceChart">
-                <IdealoPriceChart
-                  history={chartHistory}
-                  title={chartTitle}
-                  currentPrice={chartPrice}
-                />
+                <Suspense
+                  fallback={
+                    <div className="h-64 w-full animate-pulse rounded bg-gray-50" />
+                  }
+                >
+                  <PriceChartBoundary
+                    product={product}
+                    countryCode={countryCode}
+                  />
+                </Suspense>
               </ComponentErrorBoundary>
             </div>
           </div>
@@ -430,17 +373,30 @@ export async function IdealoProductPage({
               </ComponentErrorBoundary>
             </aside>
 
-            {/* Offers Section (DB only) */}
-            <ComponentErrorBoundary name="ProductOffers">
-              <IdealoProductOffers
+            <Suspense
+              fallback={
+                <div className="min-h-[400px] w-full animate-pulse bg-gray-50 lg:w-3/4" />
+              }
+            >
+              <LivePriceBoundary
                 product={product}
-                productId={product.id!}
-                countryCode={countryCode}
-                selectedCondition={effectiveCondition}
-                isParentView={isParentView}
                 variants={variants}
-              />
-            </ComponentErrorBoundary>
+                countryCode={countryCode}
+              >
+                {({ mergedProduct, mergedVariants }) => (
+                  <ComponentErrorBoundary name="ProductOffers">
+                    <IdealoProductOffers
+                      product={mergedProduct}
+                      productId={mergedProduct.id!}
+                      countryCode={countryCode}
+                      selectedCondition={effectiveCondition}
+                      isParentView={isParentView}
+                      variants={mergedVariants}
+                    />
+                  </ComponentErrorBoundary>
+                )}
+              </LivePriceBoundary>
+            </Suspense>
           </div>
 
           <div id="datasheet" className="scroll-mt-[10vh]">
@@ -468,6 +424,24 @@ export async function IdealoProductPage({
         </div>
       </div>
     </div>
+  );
+}
+
+// Sub-component to handle Price Chart with live data
+async function PriceChartBoundary({
+  product,
+  countryCode,
+}: {
+  product: Product;
+  countryCode: string;
+}) {
+  const [merged] = await mergeLivePrices([product], countryCode);
+  return (
+    <IdealoPriceChart
+      history={merged.priceHistory || []}
+      title={merged.title}
+      currentPrice={merged.prices[countryCode]}
+    />
   );
 }
 
