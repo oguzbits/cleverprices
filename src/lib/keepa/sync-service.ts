@@ -17,7 +17,7 @@ import {
   parseHistoryBlob,
   pruneHistory,
 } from "@/lib/history-compression";
-import { generateProductSlug } from "@/lib/utils/slug";
+import { getFamilyIdentity } from "@/lib/product-families";
 import { and, asc, eq, lt, sql } from "drizzle-orm";
 
 import {
@@ -484,14 +484,6 @@ export async function upsertProductFromKeepa(
       variationMap["Edition"], // Sometimes in Edition
   };
 
-  // Generate slug from title with uniqueness
-  const slug = generateProductSlug(
-    keepaProduct.title || keepaProduct.asin,
-    brand,
-    keepaProduct.asin,
-    slugAttributes,
-  );
-
   // Get first image URL
   let imageUrl: string | undefined;
   if (keepaProduct.imagesCSV) {
@@ -501,12 +493,15 @@ export async function upsertProductFromKeepa(
     }
   }
 
-  // Upsert product with all fields (lean schema: no features/description)
+  // 1. Initial Draft Slug (Internal use only, will be overwritten by reconcile below)
+  const draftSlug = `${keepaProduct.asin}-${keepaProduct.title?.slice(0, 50)}`;
+
+  // 2. Upsert product with all fields
   const [product] = await db
     .insert(products)
     .values({
       asin: keepaProduct.asin,
-      slug,
+      slug: draftSlug, // Temporary, will be fixed by reconcileFamilySlugs
       title: keepaProduct.title || keepaProduct.asin,
       brand,
       gtin,
@@ -526,7 +521,6 @@ export async function upsertProductFromKeepa(
     .onConflictDoUpdate({
       target: products.asin,
       set: {
-        slug,
         title: keepaProduct.title || keepaProduct.asin,
         brand,
         gtin,
@@ -542,12 +536,19 @@ export async function upsertProductFromKeepa(
         updatedAt: now,
       },
     })
-    .returning({ id: products.id });
+    .returning({
+      id: products.id,
+      asin: products.asin,
+      parentAsin: products.parentAsin,
+    });
 
   if (!product) return;
 
-  // Lean schema: Calculate consolidated "clever" price
-  // Priority: Buy Box > min(Amazon, New) > Amazon > New > Used
+  // 3. RECONCILE FAMILY SLUGS (The PERFORMANCE BOOSTER)
+  // This ensures the DB slug column is always canonical and ID-prefixed
+  await reconcileFamilySlugs(product.parentAsin || product.asin);
+
+  // ... (Price update logic follows)
   const cleverPrice = amazonPrice ?? newPrice ?? usedPrice ?? avg90New;
 
   if (cleverPrice !== null && cleverPrice > 0) {
@@ -600,6 +601,64 @@ export async function upsertProductFromKeepa(
     } catch (error) {
       console.error(`[Sync] Price error for ${keepaProduct.asin}:`, error);
     }
+  }
+}
+
+/**
+ * RECONCILE FAMILY SLUGS
+ *
+ * This is the core of the PDP performance optimization.
+ * It ensures that every product in a family (siblings) stores its
+ * final, canonical, ID-prefixed slug in the DB column.
+ */
+async function reconcileFamilySlugs(parentAsin: string): Promise<void> {
+  try {
+    // 1. Fetch all products in this family
+    const family = await db
+      .select()
+      .from(products)
+      .where(eq(products.parentAsin, parentAsin));
+
+    if (family.length === 0) {
+      // Single product family (no parentAsin, or only one item)
+      const single = await db
+        .select()
+        .from(products)
+        .where(eq(products.asin, parentAsin))
+        .limit(1);
+
+      if (single[0]) {
+        const { slug: canonical } = getFamilyIdentity(single[0] as any, []);
+        await db
+          .update(products)
+          .set({ slug: canonical })
+          .where(eq(products.id, single[0].id));
+      }
+      return;
+    }
+
+    // 2. Identify Hub / Representative
+    // We use getProductVariants helper to ensure we follow standard loading rules
+    // but we already have the raw products if we want to be fast.
+    // However, getFamilyIdentity expects real ID-prefixed consensus.
+    for (const member of family) {
+      const { slug: canonical } = getFamilyIdentity(
+        member as any,
+        family as any,
+      );
+      if (member.slug !== canonical) {
+        await db
+          .update(products)
+          .set({ slug: canonical })
+          .where(eq(products.id, member.id));
+      }
+    }
+
+    // 3. Update the Hub (Synthetic) if necessary
+    // Hubs are virtual, but we might eventually want to store them too.
+    // For now, only physical products in the DB get slugs.
+  } catch (error) {
+    console.error(`[Reconcile] Failed for ${parentAsin}:`, error);
   }
 }
 

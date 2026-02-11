@@ -315,6 +315,21 @@ export async function getPDPRenderData(
       // Hub Mode
       product = await getCachedProductBySyntheticId(id);
       if (product) {
+        // PERFORMANCE BOOST: Trust the DB slug if it's already canonical
+        if (product.slug === slug) {
+          return {
+            product,
+            variants: await getCachedProductVariantsInternal(
+              product.parentAsin || product.asin,
+              countryCode,
+              true,
+            ),
+            isParentView: true,
+            redirect: null,
+            isPermanent: false,
+          };
+        }
+
         // Singleton Check
         const variants = await getCachedProductVariantsInternal(
           product.parentAsin!,
@@ -345,6 +360,23 @@ export async function getPDPRenderData(
       const realId = id >= 200000000 ? id - 200000000 : id;
       product = await getCachedProductById(realId);
       if (product) {
+        // PERFORMANCE BOOST: Trust the DB slug if it's already canonical
+        if (product.slug === slug) {
+          return {
+            product,
+            variants: product.parentAsin
+              ? await getCachedProductVariantsInternal(
+                  product.parentAsin,
+                  countryCode,
+                  true,
+                )
+              : [],
+            isParentView: false,
+            redirect: null,
+            isPermanent: false,
+          };
+        }
+
         const canonical = product.slug;
         if (slug !== canonical) {
           redirect = `/p/${canonical}`;
