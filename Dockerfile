@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/app/.next/cache \
 # Stage 4: Production Runner (Unified & Optimized)
 FROM base AS worker-runner
 WORKDIR /app
-RUN apk add --no-cache ca-certificates sqlite libc6-compat
+RUN apk add --no-cache ca-certificates sqlite libc6-compat curl
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
