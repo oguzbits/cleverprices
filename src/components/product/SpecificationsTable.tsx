@@ -10,7 +10,7 @@ import { useDebugMode } from "@/hooks/use-debug-mode";
 import { Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
 import { AlertCircle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 export interface SpecificationsTableProps {
   product: Product;
@@ -28,117 +28,113 @@ export function SpecificationsTable({
 
   // Parse Specs - Use the REPAIRED specs from product-mapping.ts
   // The mapping logic already handles storage repair, so we should use those values
-  const { specs, isOfficial, source } = useMemo(() => {
-    let rawSpecs: Record<string, any> = {};
-    let sourceLabel = "None";
-    let isOfficialData = false;
+  let rawSpecs: Record<string, any> = {};
+  let sourceLabel = "None";
+  let isOfficialData = false;
 
-    // Priority 1: Use the repaired specifications object (already processed by product-mapping.ts)
-    if (product.specifications && typeof product.specifications === "object") {
-      rawSpecs = product.specifications;
-      sourceLabel = product.specificationsSource || "Repaired";
-      // Check if this came from official sources
-      isOfficialData = !!product.officialSpecifications;
-    } else if (
-      product.specifications &&
-      typeof product.specifications === "string"
-    ) {
-      // Fallback: parse if it's a string (shouldn't happen with proper mapping)
-      try {
-        rawSpecs = JSON.parse(product.specifications) || {};
-        sourceLabel = product.specificationsSource || "Legacy";
-      } catch (e) {
-        console.warn("Failed to parse specifications string", e);
-        rawSpecs = {};
-      }
-    } else if (product.enrichmentStatus === "untrusted_source") {
-      sourceLabel = "Untrusted";
-      rawSpecs = {}; // Wipe polluted data from UI
+  // Priority 1: Use the repaired specifications object (already processed by product-mapping.ts)
+  if (product.specifications && typeof product.specifications === "object") {
+    rawSpecs = product.specifications;
+    sourceLabel = product.specificationsSource || "Repaired";
+    // Check if this came from official sources
+    isOfficialData = !!product.officialSpecifications;
+  } else if (
+    product.specifications &&
+    typeof product.specifications === "string"
+  ) {
+    // Fallback: parse if it's a string (shouldn't happen with proper mapping)
+    try {
+      rawSpecs = JSON.parse(product.specifications) || {};
+      sourceLabel = product.specificationsSource || "Legacy";
+    } catch (e) {
+      console.warn("Failed to parse specifications string", e);
+      rawSpecs = {};
+    }
+  } else if (product.enrichmentStatus === "untrusted_source") {
+    sourceLabel = "Untrusted";
+    rawSpecs = {}; // Wipe polluted data from UI
+  }
+
+  // LIST OF ATTRIBUTES TO ALWAYS HIDE IF THEY ARE VARIANTS
+  // (e.g. if we have a Color selector, don't show Color in specs table)
+  const variantKeys = (product.variationAttributes || "").toLowerCase();
+  const isColorVariant =
+    variantKeys.includes("color") || variantKeys.includes("farbe");
+  const isStorageVariant =
+    variantKeys.includes("storage") ||
+    variantKeys.includes("kapazität") ||
+    variantKeys.includes("speicher");
+  const isRamVariant =
+    variantKeys.includes("ram") ||
+    variantKeys.includes("arbeitsspeicher") ||
+    variantKeys.includes("memory");
+
+  const filtered: Record<string, any> = {};
+
+  // HUB MODE FILTERING LIST
+  const hubUnwanted = [
+    "color",
+    "farbe",
+    "mpn",
+    "ean",
+    "herstellernummer",
+    "teilenummer",
+    "part number",
+    "part-number",
+    "artikelnummer",
+    "sku",
+    "kapazität",
+    "storage",
+    "speicher",
+    "interner speicher",
+    "ram",
+    "memory",
+    "arbeitsspeicher",
+    "konnektivität",
+    "connectivity",
+    "mobilfunk",
+    "neu ab",
+    "gebraucht ab",
+    "preis",
+    "größe", // Size usually varies
+    "size",
+  ];
+
+  Object.entries(rawSpecs).forEach(([k, v]) => {
+    const lowerK = k.toLowerCase();
+
+    // 1. HUB MODE: Aggressive Filtering
+    if (isHubMode) {
+      if (hubUnwanted.some((u) => lowerK.includes(u))) return;
     }
 
-    // LIST OF ATTRIBUTES TO ALWAYS HIDE IF THEY ARE VARIANTS
-    // (e.g. if we have a Color selector, don't show Color in specs table)
-    const variantKeys = (product.variationAttributes || "").toLowerCase();
-    const isColorVariant =
-      variantKeys.includes("color") || variantKeys.includes("farbe");
-    const isStorageVariant =
-      variantKeys.includes("storage") ||
-      variantKeys.includes("kapazität") ||
-      variantKeys.includes("speicher");
-    const isRamVariant =
-      variantKeys.includes("ram") ||
-      variantKeys.includes("arbeitsspeicher") ||
-      variantKeys.includes("memory");
+    // 2. VARIANT DUPLICATION FILTERING
+    // In Hub Mode: Hide variant attributes (color, storage, RAM) since they're shown in variant selectors
+    // In Standard View: Keep them! They're part of the product's specs and should be displayed.
+    // The repair logic in product-mapping.ts ensures they show the correct values.
+    if (isHubMode) {
+      // Only filter in hub mode where we have variant selectors
+      if (isColorVariant && (lowerK === "color" || lowerK === "farbe")) return;
+      if (
+        isStorageVariant &&
+        (lowerK === "storage" ||
+          lowerK === "kapazität" ||
+          lowerK === "speicherkapazität" ||
+          lowerK === "interner speicher")
+      )
+        return;
+      if (isRamVariant && (lowerK === "ram" || lowerK === "arbeitsspeicher"))
+        return;
+    }
 
-    const filtered: Record<string, any> = {};
+    filtered[k] = v;
+  });
 
-    // HUB MODE FILTERING LIST
-    const hubUnwanted = [
-      "color",
-      "farbe",
-      "mpn",
-      "ean",
-      "herstellernummer",
-      "teilenummer",
-      "part number",
-      "part-number",
-      "artikelnummer",
-      "sku",
-      "kapazität",
-      "storage",
-      "speicher",
-      "interner speicher",
-      "ram",
-      "memory",
-      "arbeitsspeicher",
-      "konnektivität",
-      "connectivity",
-      "mobilfunk",
-      "neu ab",
-      "gebraucht ab",
-      "preis",
-      "größe", // Size usually varies
-      "size",
-    ];
-
-    Object.entries(rawSpecs).forEach(([k, v]) => {
-      const lowerK = k.toLowerCase();
-
-      // 1. HUB MODE: Aggressive Filtering
-      if (isHubMode) {
-        if (hubUnwanted.some((u) => lowerK.includes(u))) return;
-      }
-
-      // 2. VARIANT DUPLICATION FILTERING
-      // In Hub Mode: Hide variant attributes (color, storage, RAM) since they're shown in variant selectors
-      // In Standard View: Keep them! They're part of the product's specs and should be displayed.
-      // The repair logic in product-mapping.ts ensures they show the correct values.
-      if (isHubMode) {
-        // Only filter in hub mode where we have variant selectors
-        if (isColorVariant && (lowerK === "color" || lowerK === "farbe"))
-          return;
-        if (
-          isStorageVariant &&
-          (lowerK === "storage" ||
-            lowerK === "kapazität" ||
-            lowerK === "speicherkapazität" ||
-            lowerK === "interner speicher")
-        )
-          return;
-        if (isRamVariant && (lowerK === "ram" || lowerK === "arbeitsspeicher"))
-          return;
-      }
-
-      filtered[k] = v;
-    });
-
-    return { specs: filtered, isOfficial: isOfficialData, source: sourceLabel };
-  }, [
-    product.officialSpecifications,
-    product.specifications,
-    isHubMode,
-    product.variationAttributes,
-  ]);
+  const { specs, isOfficial, source } = {
+    specs: filtered,
+    isOfficial: isOfficialData,
+    source: sourceLabel,
+  };
 
   // Translation Map
   const keyTranslations: Record<string, string> = {

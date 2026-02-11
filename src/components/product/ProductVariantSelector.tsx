@@ -13,7 +13,6 @@ import {
 import { Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
 import { LegalPrice } from "../ui/LegalPrice";
 
 interface Product {
@@ -74,21 +73,21 @@ function VariantCard({
     variant?.category === "smartphones" ||
     variant?.title.toLowerCase().includes("smartphone");
 
-  const label = useMemo(() => {
+  const label = (() => {
     if (isAllVariants) return "Alle Varianten";
     // Prioritize pre-calculated suffix from server to ensure 100% consistency
     if (variant?.variantSuffix) return variant.variantSuffix;
 
     const identity = getProductIdentity(variant as any);
     return identity.variantSuffix || identity.displayTitle;
-  }, [variant, isAllVariants]);
+  })();
 
   // Price Logic: Show Used price if condition is 'used', otherwise New price
   const isUsedMode =
     selectedCondition === "used" || selectedCondition === "renewed";
   const isRenewed = (variant?.condition || "").toLowerCase() === "renewed";
 
-  const price = useMemo(() => {
+  const price = (() => {
     if (isAllVariants) return bestPrice;
     if (!variant) return 0;
 
@@ -104,7 +103,7 @@ function VariantCard({
     }
     // New mode
     return isRenewed ? 0 : p;
-  }, [isAllVariants, bestPrice, variant, isUsedMode, isRenewed, countryCode]);
+  })();
 
   const slug = variant?.slug;
 
@@ -447,34 +446,31 @@ export function ProductVariantSelector({
   parentSlug?: string; // Passed from server for stability
 }) {
   // 1. Enrich variants with normalized attributes
-  const normalizedAllVariants = useMemo(() => {
-    const normalizedVariants = allVariants.map((v) => {
-      const normStr = normalizeVariantAttributes({
-        variationAttributes: v.variationAttributes,
-        title: v.title,
-        category: v.category,
-        officialSpecs: v.officialSpecifications || v.specifications,
-      });
-
-      // DATA INTEGRITY FIX:
-      // If this variant is the current product, use the fresh 'currentProduct' data
-      // (which has the correct prices from server prop) instead of the stale family fetch
-      const isCurrent =
-        v.id === currentProduct.id || v.asin === currentProduct.asin;
-      const source = isCurrent ? currentProduct : v;
-
-      return {
-        ...source,
-        normalizedStr: normStr,
-        normalizedAttrs: parseVariationAttributes(normStr),
-        // Use v.slug directly as it is already canonicalized in the Parent (CachedVariantSelector)
-        variantSuffix: source.subtitle || "",
-      };
+  const normalizedAllVariants = allVariants.map((v) => {
+    const normStr = normalizeVariantAttributes({
+      variationAttributes: v.variationAttributes,
+      title: v.title,
+      category: v.category,
+      officialSpecs: v.officialSpecifications || v.specifications,
     });
-    return normalizedVariants;
-  }, [allVariants]);
 
-  const normalizedCurrentProduct = useMemo(() => {
+    // DATA INTEGRITY FIX:
+    // If this variant is the current product, use the fresh 'currentProduct' data
+    // (which has the correct prices from server prop) instead of the stale family fetch
+    const isCurrent =
+      v.id === currentProduct.id || v.asin === currentProduct.asin;
+    const source = isCurrent ? currentProduct : v;
+
+    return {
+      ...source,
+      normalizedStr: normStr,
+      normalizedAttrs: parseVariationAttributes(normStr),
+      // Use v.slug directly as it is already canonicalized in the Parent (CachedVariantSelector)
+      variantSuffix: source.subtitle || "",
+    };
+  });
+
+  const normalizedCurrentProduct = (() => {
     const normStr = normalizeVariantAttributes({
       variationAttributes: currentProduct.variationAttributes,
       title: currentProduct.title,
@@ -489,7 +485,7 @@ export function ProductVariantSelector({
       normalizedAttrs: parseVariationAttributes(normStr),
       variantSuffix: currentProduct.subtitle || "",
     };
-  }, [currentProduct]);
+  })();
 
   // Determine the condition pool to show.
   const targetCondition =
@@ -514,7 +510,7 @@ export function ProductVariantSelector({
     return bestOverall;
   };
 
-  const variants = useMemo(() => {
+  const variants = (() => {
     const rawFiltered = normalizedAllVariants.filter((v) => {
       // HUB MODE FIX: Always show all unique configurations in Parent View.
       // This ensures the "15 Varianten" count on Category Page (which counts unique specs)
@@ -579,20 +575,21 @@ export function ProductVariantSelector({
     });
 
     return Array.from(uniqueMap.values());
-  }, [normalizedAllVariants, targetCondition, countryCode, isParentView]);
+  })();
 
   const isSmartphone =
     currentProduct.category === "smartphones" ||
     currentProduct.title.toLowerCase().includes("smartphone");
 
-  const attributeGroups = useMemo(
-    () => extractAttributeGroups(variants),
-    [variants],
-  );
+  const attributeGroups = extractAttributeGroups(variants);
 
   const currentAttrs = normalizedCurrentProduct.normalizedAttrs;
 
-  const { bestPrice, allImages, cheapestAsin } = useMemo(() => {
+  const {
+    bestPrice,
+    allImages,
+    cheapestAsin = "",
+  } = (() => {
     let min = Infinity;
     let minAsin = "";
     const images: (string | undefined)[] = [];
@@ -611,9 +608,9 @@ export function ProductVariantSelector({
       allImages: images,
       cheapestAsin: minAsin,
     };
-  }, [variants, countryCode, targetCondition]);
+  })();
 
-  const sortedVariants = useMemo(() => {
+  const sortedVariants = (() => {
     const currentNormalizedStr = Object.entries(currentAttrs)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}:${v}`)
@@ -646,10 +643,10 @@ export function ProductVariantSelector({
 
       return (priceA || 999999) - (priceB || 999999);
     });
-  }, [variants, currentAttrs, targetCondition, countryCode]);
+  })();
 
   // Generate parent neutral slug using canonical logic
-  const derivedParentSlug = useMemo(() => {
+  const derivedParentSlug = (() => {
     if (parentSlug) return parentSlug;
 
     const rawId = currentProduct.id || 0;
@@ -660,13 +657,13 @@ export function ProductVariantSelector({
       normalizedAllVariants as any, // Use full list for consensus
     );
     return slug;
-  }, [currentProduct, normalizedAllVariants, parentSlug]);
+  })();
 
   const finalParentSlug = parentSlug || derivedParentSlug;
 
   if (allVariants.length <= 1) return null;
 
-  const sortedAttributeGroups = useMemo(() => {
+  const sortedAttributeGroups = (() => {
     const rawEntries = Object.entries(attributeGroups);
     const hasRam = rawEntries.some(([k]) =>
       /ram|memory|arbeitsspeicher/i.test(k),
@@ -730,9 +727,9 @@ export function ProductVariantSelector({
         };
         return score(a) - score(b);
       });
-  }, [attributeGroups, isSmartphone]);
+  })();
 
-  const activeVariants = useMemo(() => {
+  const activeVariants = (() => {
     const currentNormalizedStr = Object.entries(currentAttrs)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}:${v}`)
@@ -756,9 +753,9 @@ export function ProductVariantSelector({
       const attrsMatch = variantNormalizedStr === currentNormalizedStr;
       return (p && p > 0) || attrsMatch;
     });
-  }, [sortedVariants, targetCondition, countryCode, currentAttrs]);
+  })();
 
-  const carouselTitle = useMemo(() => {
+  const carouselTitle = (() => {
     if (!isParentView) return "Variante:";
 
     const count = activeVariants.length;
@@ -772,7 +769,7 @@ export function ProductVariantSelector({
     });
 
     return `${count} Varianten ab ${formatter.format(bestPrice)}`;
-  }, [isParentView, activeVariants.length, bestPrice]);
+  })();
 
   return (
     <div className="mt-4 mb-6">
