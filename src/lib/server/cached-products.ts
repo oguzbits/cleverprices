@@ -2,6 +2,8 @@ import { cacheLife } from "next/cache";
 import { type CountryCode } from "../countries";
 import { dataAggregator } from "../data-sources";
 import {
+  findProductByParentAsinSuffix as findProductByParentAsinSuffixSync,
+  findProductSlugByAsinSuffix as findProductSlugByAsinSuffixSync,
   getAllProductSlugs as getAllProductSlugsSync,
   getAllProducts as getAllProductsSync,
   getBestDeals as getBestDealsSync,
@@ -9,6 +11,7 @@ import {
   getMostPopular as getMostPopularSync,
   getNewArrivals as getNewArrivalsSync,
   getNonEmptyCategorySlugs as getNonEmptyCategorySlugsSync,
+  getProductById as getProductByIdSync,
   getProductBySlug as getProductBySlugSync,
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
@@ -70,6 +73,12 @@ async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
   return getProductBySlugSync(slug, includeHistory);
 }
 
+async function getCachedProductById(id: number) {
+  "use cache";
+  cacheLife("product");
+  return getProductByIdSync(id);
+}
+
 async function getCachedProductVariantsInternal(
   parentAsin: string,
   countryCode: string,
@@ -104,6 +113,29 @@ async function getCachedSimilarProducts(
     limit,
     countryCode,
   );
+}
+
+async function getCachedProductSlugByAsinSuffix(oldSlug: string) {
+  "use cache";
+  cacheLife("category"); // Redirects can be cached for a long time
+  return findProductSlugByAsinSuffixSync(oldSlug);
+}
+
+async function getCachedProductByParentAsinSuffix(slug: string) {
+  "use cache";
+  cacheLife("category");
+  return findProductByParentAsinSuffixSync(slug);
+}
+
+export async function getProductById(
+  id: number,
+  skipLiveMerge: boolean = false,
+): Promise<Product | undefined> {
+  const product = await getCachedProductById(id);
+  if (!product || skipLiveMerge) return product;
+
+  const merged = await mergeLivePrices([product], "de");
+  return merged[0];
 }
 export async function getAllProductSlugs(limit?: number): Promise<
   {
@@ -235,4 +267,16 @@ export async function getProductVariants(
   );
   if (skipLiveMerge) return variants;
   return mergeLivePrices(variants, countryCode);
+}
+
+export async function findProductSlugByAsinSuffix(
+  oldSlug: string,
+): Promise<string | undefined> {
+  return getCachedProductSlugByAsinSuffix(oldSlug);
+}
+
+export async function findProductByParentAsinSuffix(
+  slug: string,
+): Promise<Product | undefined> {
+  return getCachedProductByParentAsinSuffix(slug);
 }
