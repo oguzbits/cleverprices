@@ -1,6 +1,7 @@
 import { cacheLife } from "next/cache";
 import { type CountryCode } from "../countries";
 import { dataAggregator } from "../data-sources";
+import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
   findProductByParentAsinSuffix as findProductByParentAsinSuffixSync,
   findProductBySyntheticId as findProductBySyntheticIdSync,
@@ -286,6 +287,119 @@ export async function findProductByParentAsinSuffix(
   slug: string,
 ): Promise<Product | undefined> {
   return getCachedProductByParentAsinSuffix(slug);
+}
+
+/**
+ * ATOMIC PAGE DATA - The "Millisecond" Optimization
+ * This function handles the entire data assembly for a PDP page in one cached block.
+ * When a crawler hits multiple times, or metadata + page both need data, this returns instantly.
+ */
+export async function getPDPRenderData(
+  slug: string,
+  countryCode: string = "de",
+) {
+  "use cache";
+  cacheLife("product");
+
+  // 1. Resolve Product (ID-based, Slug-based, or Legacy)
+  let product: Product | undefined;
+  let isParentView = false;
+  let redirect: string | null = null;
+  let isPermanent = false;
+
+  // ID-Based Routing (e.g. 900123456_-apple-iphone)
+  const idMatch = slug.match(/^(\d+)_-(.*)$/);
+  if (idMatch) {
+    const id = parseInt(idMatch[1]);
+    if (id >= 900000000) {
+      // Hub Mode
+      product = await getCachedProductBySyntheticId(id);
+      if (product) {
+        // Singleton Check
+        const variants = await getCachedProductVariantsInternal(
+          product.parentAsin!,
+          countryCode,
+          true,
+        );
+        if (variants.length <= 1) {
+          const realId = id - 900000000;
+          const singletonProduct = { ...product, id: realId };
+          const { slug: singletonSlug } = getFamilyIdentitySync(
+            singletonProduct,
+            variants,
+          );
+          redirect = `/p/${singletonSlug}`;
+          isPermanent = product.enrichmentStatus === "optimized";
+          product = undefined;
+        } else {
+          isParentView = true;
+          const { slug: canonical } = getFamilyIdentitySync(product, variants);
+          if (slug !== canonical) {
+            redirect = `/p/${canonical}`;
+            isPermanent = product.enrichmentStatus === "optimized";
+          }
+        }
+      }
+    } else {
+      // Standard ID mode
+      const realId = id >= 200000000 ? id - 200000000 : id;
+      product = await getCachedProductById(realId);
+      if (product) {
+        const canonical = product.slug;
+        if (slug !== canonical) {
+          redirect = `/p/${canonical}`;
+          isPermanent = product.enrichmentStatus === "optimized";
+        }
+      }
+    }
+  }
+
+  // Fallback to Slug-based resolution if not found via ID
+  if (!product && !redirect) {
+    product = await getCachedProductBySlug(slug, false);
+    if (product) {
+      // Migrate to ID-based slug
+      const { slug: newSlug } = getFamilyIdentitySync(product, []);
+      redirect = `/p/${newSlug}`;
+      isPermanent = true;
+    } else {
+      // Legacy ASIN/Parent Suffix checks
+      const asinSlug = await getCachedProductSlugByAsinSuffix(slug);
+      if (asinSlug && asinSlug !== slug) {
+        redirect = `/p/${asinSlug}`;
+        isPermanent = true;
+      } else {
+        product = await getCachedProductByParentAsinSuffix(slug);
+        if (product) {
+          product.isParentView = true;
+          const { slug: newSlug } = getFamilyIdentitySync(product, []);
+          redirect = `/p/${newSlug}`;
+          isPermanent = true;
+          product = undefined;
+        }
+      }
+    }
+  }
+
+  if (!product && !redirect) return null;
+
+  // 2. Fetch Dependent Data in Parallel
+  let variants: Product[] = [];
+  if (product && product.parentAsin) {
+    variants = await getCachedProductVariantsInternal(
+      product.parentAsin,
+      countryCode,
+      true,
+    );
+  }
+
+  return {
+    product,
+    variants,
+    isParentView,
+    redirect,
+    isPermanent,
+  };
 }
 
 export async function findProductBySyntheticId(

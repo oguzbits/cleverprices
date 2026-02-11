@@ -592,8 +592,8 @@ export const getProductVariants = cache(async function getProductVariants(
           imageUrl: products.imageUrl,
           variationAttributes: products.variationAttributes,
           condition: products.condition,
-          specifications: products.specifications,
-          officialSpecifications: products.officialSpecifications,
+          // specifications: products.specifications, // Skipped for speed
+          // officialSpecifications: products.officialSpecifications, // Skipped for speed
         }
       : liteProductColumns;
 

@@ -9,149 +9,16 @@ import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { getFamilyIdentity } from "@/lib/product-families"; // Needed for redirects
 import { type Product } from "@/lib/product-registry";
 import {
-  findProductByParentAsinSuffix,
-  findProductBySyntheticId,
-  findProductSlugByAsinSuffix,
   getAllProductSlugs,
+  getPDPRenderData,
   getProductById,
-  getProductBySlug,
-  getProductVariants,
 } from "@/lib/server/cached-products";
 import { mergeLivePrices } from "@/lib/server/live-data";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { Metadata } from "next";
-import { cache } from "react";
 
 import { notFound, permanentRedirect, redirect } from "next/navigation";
-
-// Universal Product Resolver (ID-based + Legacy Fallbacks)
-const resolveProductFromRoute = cache(async function resolveProductFromRoute(
-  slug: string,
-) {
-  // 1. New ID-Based Routing (e.g. 900123456_-apple-iphone)
-  const idMatch = slug.match(/^(\d+)_-(.*)$/);
-  if (idMatch) {
-    const id = parseInt(idMatch[1]);
-
-    // Synthetic Parent (Hub)
-    if (id >= 900000000) {
-      const product = await findProductBySyntheticId(id);
-      if (!product) return null;
-
-      // Enable Consensus Identity for the canonical Hub check
-      const variants = await getProductVariants(
-        product,
-        DEFAULT_COUNTRY,
-        true,
-        true,
-      );
-
-      // SINGLETON CHECK: If this 'Hub' has no variants (just itself), redirect to the standard product page (200...)
-      if (variants.length <= 1) {
-        // We know the real ID is id - 900000000
-        const realId = id - 900000000;
-        const singletonProduct = {
-          ...product,
-          id: realId,
-          isParentView: false,
-        };
-        const { slug: singletonSlug } = getFamilyIdentity(
-          singletonProduct,
-          variants,
-        );
-        return {
-          product: null,
-          isParentView: false,
-          redirect: `/p/${singletonSlug}`,
-          isPermanent: product.enrichmentStatus === "optimized",
-        };
-      }
-
-      const { slug: canonical } = getFamilyIdentity(product, variants);
-      const isRedirect = slug !== canonical;
-      return {
-        product,
-        isParentView: true,
-        redirect: isRedirect ? `/p/${canonical}` : null,
-        isPermanent: product.enrichmentStatus === "optimized",
-      };
-    }
-
-    // Standard Product
-    // Handle 200m offset or legacy raw ID
-    const realId = id >= 200000000 ? id - 200000000 : id;
-    const product = await getProductById(realId, true); // SKIP LIVE MERGE
-    if (!product) return null;
-
-    // Standardize to 200m offset for the canonical URL
-    const canonicalId = 200000000 + realId;
-
-    // VARIANT FIX: We trust the slug returned by the product registry,
-    // which mapDbProduct automatically ensures is canonical and ID-prefixed.
-    const canonical = product.slug;
-    const isRedirect = slug !== canonical;
-
-    return {
-      product,
-      isParentView: false,
-      redirect: isRedirect ? `/p/${canonical}` : null,
-      isPermanent: product.enrichmentStatus === "optimized",
-    };
-  }
-
-  // 2. Legacy: Exact Slug Match
-  let product = await getProductBySlug(slug, false, true); // SKIP LIVE MERGE
-  if (product) {
-    // Determine new ID-based slug for redirect
-    const { slug: newSlug } = getFamilyIdentity(product, []); // Assume single item context
-    // If we want to force migration:
-    const redirectUrl = `/p/${newSlug}`; // 301 to new format
-    return {
-      product,
-      isParentView: false,
-      redirect: `/p/${newSlug}`,
-      isPermanent: true, // Legacy migration should always be 301
-    };
-  }
-
-  // 3. Legacy: ASIN Suffix
-  const newSlug = await findProductSlugByAsinSuffix(slug);
-  if (newSlug) {
-    // This helper returns a SLUG string. Recursively resolve it?
-    // Or just redirect to it. checking if it's new format?
-    // findProductSlugByAsinSuffix currently returns string from DB slug column.
-    // So it returns "apple-iphone-17-pro" (Legacy).
-    // We will redirect to that, then hit case #2, then redirect to ID? Double redirect.
-    // Acceptable for compatibility.
-    if (newSlug !== slug) {
-      return {
-        product: null,
-        isParentView: false,
-        redirect: `/p/${newSlug}`,
-        isPermanent: true, // Legacy ASIN suffix should be 301
-      };
-    }
-  }
-
-  // 4. Legacy: Parent ASIN Suffix (Hub)
-  product = await findProductByParentAsinSuffix(slug);
-  if (product) {
-    // Generate new Synthetic Slug
-    const syntheticId = 900000000 + ((product.id || 0) % 100000000);
-    (product as any).syntheticId = syntheticId;
-    const { slug: newHubSlug } = getFamilyIdentity(product, []);
-
-    return {
-      product,
-      isParentView: true,
-      redirect: `/p/${newHubSlug}`,
-      isPermanent: true, // Legacy Parent ASIN should be 301
-    };
-  }
-
-  return null;
-});
 
 export interface Props {
   params: Promise<{
@@ -252,14 +119,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   try {
-    const resolution = await resolveProductFromRoute(slug);
-    let product = resolution?.product;
-    let isParentViewMode = resolution?.isParentView || false;
+    const data = await getPDPRenderData(slug);
+    let product = data?.product;
+    let isParentViewMode = data?.isParentView || false;
 
     // Handle Metadata redirects if needed (canonical)
-    if (resolution?.redirect) {
+    if (data?.redirect) {
       // We can't strictly redirect in metadata, but we can set canonical to the target
-      const canonicalUrl = `https://${BRAND_DOMAIN}${resolution.redirect}`;
+      const canonicalUrl = `https://${BRAND_DOMAIN}${data.redirect}`;
       return {
         title: "Produkt wird geladen...",
         alternates: { canonical: canonicalUrl },
@@ -289,7 +156,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         (p) => typeof p === "number" && p > 0,
       ) ||
       (product.usedPrices &&
-        Object.values(product.usedPrices).some((p) => p && p > 0));
+        Object.values(product.usedPrices).some((p) => Number(p) > 0));
 
     const hasMeaningfulTitle =
       product.title &&
@@ -392,23 +259,23 @@ export default async function ProductPage({ params, searchParams }: Props) {
     const { logPDPPerformance } =
       await import("@/lib/server/performance-registry");
 
-    // 1. Fetch essential DB data (Lightning Fast)
-    const resolution = await resolveProductFromRoute(slug);
+    // 1. Fetch essential DB data via High-Speed Cache Bundle
+    const data = await getPDPRenderData(slug);
 
-    if (resolution?.redirect) {
+    if (data?.redirect) {
       logPDPPerformance(slug, startTime);
       console.log(
-        `[SEO Redirect] ${resolution.isPermanent ? "301/308" : "302/307"} ${slug} -> ${resolution.redirect}`,
+        `[SEO Redirect] ${data.isPermanent ? "301/308" : "302/307"} ${slug} -> ${data.redirect}`,
       );
-      if (resolution.isPermanent) {
-        permanentRedirect(resolution.redirect);
+      if (data.isPermanent) {
+        permanentRedirect(data.redirect);
       } else {
-        redirect(resolution.redirect);
+        redirect(data.redirect);
       }
     }
 
-    let product = resolution?.product;
-    const parentViewMode = resolution?.isParentView || false;
+    let product = data?.product;
+    const parentViewMode = data?.isParentView || false;
 
     if (!product) {
       logPDPPerformance(slug, startTime);
@@ -416,10 +283,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
     }
 
     // 1. Parallelize ALL essential data fetching (Category, Variants)
-    const [category, allVariantsRaw] = await Promise.all([
-      getCategoryBySlug(product.category),
-      getProductVariants(product, countryCode, true, true), // Lean Fetch
-    ]);
+    // Category is still in memory, Variants are now included in data bundle
+    const [category] = await Promise.all([getCategoryBySlug(product.category)]);
+    const allVariantsRaw = data?.variants || [];
 
     // 2. Identify the Canonical Variant ID locally from siblings (saves a DB query)
     const canonicalRealId =
