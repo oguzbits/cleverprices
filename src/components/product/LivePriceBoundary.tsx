@@ -32,7 +32,7 @@ export async function LivePriceBoundary({
   // Perform the heavy lifting here, away from the main page thread
   const [mergedProduct, ...mergedVariants] = await mergeLivePrices(
     [product, ...variants],
-    countryCode,
+    countryCode as any,
   );
 
   return <>{children({ mergedProduct, mergedVariants })}</>;

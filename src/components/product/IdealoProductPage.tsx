@@ -18,6 +18,7 @@ import {
   getProductVariants,
   getSimilarProducts,
 } from "@/lib/server/cached-products";
+import { mergeLivePrices } from "@/lib/server/live-data";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
