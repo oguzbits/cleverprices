@@ -1,19 +1,23 @@
 import { IdealoProductPage } from "@/components/product/IdealoProductPage";
-import { allCategories, type CategorySlug } from "@/lib/categories";
+import {
+  allCategories,
+  getCategoryBySlug,
+  type CategorySlug,
+} from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { getFamilyIdentity } from "@/lib/product-families"; // Needed for redirects
+import { type Product } from "@/lib/product-registry";
 import {
   findProductByParentAsinSuffix,
   findProductBySyntheticId,
-  findProductSlugByAsinSuffix, // New
-  getProductById, // New
-  type Product,
-} from "@/lib/product-registry";
-import {
+  findProductSlugByAsinSuffix,
   getAllProductSlugs,
+  getProductById,
   getProductBySlug,
+  getProductVariants,
 } from "@/lib/server/cached-products";
+import { mergeLivePrices } from "@/lib/server/live-data";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { Metadata } from "next";
@@ -36,8 +40,6 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
       if (!product) return null;
 
       // Enable Consensus Identity for the canonical Hub check
-      const { getProductVariants } =
-        await import("@/lib/server/cached-products");
       const variants = await getProductVariants(
         product,
         DEFAULT_COUNTRY,
@@ -54,7 +56,6 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
           id: realId,
           isParentView: false,
         };
-        const { getFamilyIdentity } = await import("@/lib/product-families");
         const { slug: singletonSlug } = getFamilyIdentity(
           singletonProduct,
           variants,
@@ -67,7 +68,6 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
         };
       }
 
-      const { getFamilyIdentity } = await import("@/lib/product-families");
       const { slug: canonical } = getFamilyIdentity(product, variants);
       const isRedirect = slug !== canonical;
       return {
@@ -81,7 +81,7 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
     // Standard Product
     // Handle 200m offset or legacy raw ID
     const realId = id >= 200000000 ? id - 200000000 : id;
-    const product = await getProductById(realId);
+    const product = await getProductById(realId, true); // SKIP LIVE MERGE
     if (!product) return null;
 
     // Standardize to 200m offset for the canonical URL
@@ -101,7 +101,7 @@ const resolveProductFromRoute = cache(async function resolveProductFromRoute(
   }
 
   // 2. Legacy: Exact Slug Match
-  let product = await getProductBySlug(slug, false, true);
+  let product = await getProductBySlug(slug, false, true); // SKIP LIVE MERGE
   if (product) {
     // Determine new ID-based slug for redirect
     const { slug: newSlug } = getFamilyIdentity(product, []); // Assume single item context
@@ -414,12 +414,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
       logPDPPerformance(slug, startTime);
       notFound();
     }
-
-    const { getProductById } = await import("@/lib/product-registry");
-    const { getProductVariants } = await import("@/lib/server/cached-products");
-    const { getFamilyIdentity } = await import("@/lib/product-families");
-    const { mergeLivePrices } = await import("@/lib/server/live-data");
-    const { getCategoryBySlug } = await import("@/lib/categories");
 
     // 1. Parallelize ALL essential data fetching (Category, Variants)
     const [category, allVariantsRaw] = await Promise.all([

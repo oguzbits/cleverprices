@@ -3,6 +3,7 @@ import { type CountryCode } from "../countries";
 import { dataAggregator } from "../data-sources";
 import {
   findProductByParentAsinSuffix as findProductByParentAsinSuffixSync,
+  findProductBySyntheticId as findProductBySyntheticIdSync,
   findProductSlugByAsinSuffix as findProductSlugByAsinSuffixSync,
   getAllProductSlugs as getAllProductSlugsSync,
   getAllProducts as getAllProductsSync,
@@ -125,6 +126,12 @@ async function getCachedProductByParentAsinSuffix(slug: string) {
   "use cache";
   cacheLife("category");
   return findProductByParentAsinSuffixSync(slug);
+}
+
+async function getCachedProductBySyntheticId(id: number) {
+  "use cache";
+  cacheLife("product");
+  return findProductBySyntheticIdSync(id);
 }
 
 export async function getProductById(
@@ -279,4 +286,10 @@ export async function findProductByParentAsinSuffix(
   slug: string,
 ): Promise<Product | undefined> {
   return getCachedProductByParentAsinSuffix(slug);
+}
+
+export async function findProductBySyntheticId(
+  id: number,
+): Promise<Product | undefined> {
+  return getCachedProductBySyntheticId(id);
 }

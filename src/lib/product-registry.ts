@@ -1103,9 +1103,11 @@ export const findProductByParentAsinSuffix = cache(
     const bestMatch = scoredCandidates[0];
     const p = bestMatch.score > -500 ? bestMatch.product : candidates[0]; // Fallback if all bad
 
+    /* 
     console.log(
       `[ParentLookup] Resolved ${slug} to ${p.title.slice(0, 30)}... (Score: ${bestMatch.score}, Suffix: ${suffix})`,
     );
+    */
 
     if (!p) return undefined;
 
