@@ -5,6 +5,7 @@ import { cacheLife } from "next/cache";
 import { withRetry } from "../../db/utils";
 import { litePriceColumns, type Product } from "../product-registry";
 import { getBestPrice } from "../utils/price-selection";
+import { parseHistoryJson } from "../utils/product-mapping";
 import {
   calculateProductMetrics,
   calculateProductSavings,
@@ -172,10 +173,7 @@ export async function mergeLivePrices(
         savings,
         // PARSE LIVE HISTORY: Attach the parsed history if available in live data
         priceHistory: live.historyJson
-          ? (() => {
-              const { parseHistoryJson } = require("../product-mapping");
-              return parseHistoryJson(live.historyJson);
-            })()
+          ? parseHistoryJson(live.historyJson)
           : p.priceHistory,
       };
 
