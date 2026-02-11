@@ -1,9 +1,5 @@
 import { IdealoProductPage } from "@/components/product/IdealoProductPage";
-import {
-  allCategories,
-  getCategoryBySlug,
-  type CategorySlug,
-} from "@/lib/categories";
+import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { getFamilyIdentity } from "@/lib/product-families"; // Needed for redirects
@@ -282,10 +278,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
       notFound();
     }
 
-    // 1. Parallelize ALL essential data fetching (Category, Variants)
-    // Category is still in memory, Variants are now included in data bundle
-    const [category] = await Promise.all([getCategoryBySlug(product.category)]);
-    const allVariantsRaw = data?.variants || [];
+    // 1. All data is now pre-fetched in parallel within the getPDPRenderData bundle
+    const category = data?.category;
+    const allVariantsRaw = (data?.variants || []) as Product[];
 
     // 2. Identify the Canonical Variant ID locally from siblings (saves a DB query)
     const canonicalRealId =

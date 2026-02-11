@@ -1,4 +1,5 @@
 import { cacheLife } from "next/cache";
+import { getCategoryBySlug } from "../categories";
 import { type CountryCode } from "../countries";
 import { dataAggregator } from "../data-sources";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
@@ -417,17 +418,27 @@ export async function getPDPRenderData(
 
   // 2. Fetch Dependent Data in Parallel
   let variants: Product[] = [];
-  if (product && product.parentAsin) {
-    variants = await getCachedProductVariantsInternal(
-      product.parentAsin,
-      countryCode,
-      true,
-    );
+  let category: any = null;
+
+  if (product) {
+    const results = await Promise.all([
+      getCategoryBySlug(product.category),
+      product.parentAsin
+        ? getCachedProductVariantsInternal(
+            product.parentAsin,
+            countryCode,
+            true,
+          )
+        : Promise.resolve([]),
+    ]);
+    category = results[0];
+    variants = results[1] as Product[];
   }
 
   return {
-    product,
+    product: product!,
     variants,
+    category,
     isParentView,
     redirect,
     isPermanent,

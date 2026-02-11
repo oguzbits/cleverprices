@@ -26,7 +26,7 @@ import { Package } from "lucide-react";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { Suspense } from "react";
 import { CachedVariantSelector } from "./CachedVariantSelector";
 import { ConditionButtons } from "./ConditionButtons";
 import { IdealoLivePrice } from "./IdealoLivePrice";
@@ -454,10 +454,16 @@ export async function IdealoProductPage({
           </div>
 
           <ComponentErrorBoundary name="SimilarCarousel">
-            <CachedSimilarCarousel
-              product={product}
-              countryCode={countryCode}
-            />
+            <Suspense
+              fallback={
+                <div className="mt-12 h-64 w-full animate-pulse rounded-lg bg-gray-50" />
+              }
+            >
+              <CachedSimilarCarousel
+                product={product}
+                countryCode={countryCode}
+              />
+            </Suspense>
           </ComponentErrorBoundary>
         </div>
       </div>

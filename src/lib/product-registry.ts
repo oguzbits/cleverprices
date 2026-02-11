@@ -14,6 +14,7 @@ import {
   gte,
   inArray,
   like,
+  lt,
   lte,
   or,
   sql,
@@ -1131,24 +1132,67 @@ const fetchSimilarProducts = async (
   limit: number,
   countryCode: string,
 ) => {
-  // Fetch category products (already cached via getProductsByCategory)
-  // Use stripHeavyData=true to avoid huge blobs since we only need simple props + prices
-  const categoryProducts = await getProductsByCategory(category, true);
+  await dbReady;
 
-  const valid = categoryProducts.filter(
-    (p) =>
-      p.slug !== excludedSlug &&
-      p.prices[countryCode] !== undefined &&
-      p.prices[countryCode] > 0,
-  );
+  // 1. Calculate a price range (+/- 50% for high diversity, or tighter)
+  const minPrice = targetPrice > 0 ? targetPrice * 0.5 : 1;
+  const maxPrice = targetPrice > 0 ? targetPrice * 1.5 : 10000;
 
-  const sorted = valid.sort((a: any, b: any) => {
-    const priceA = a.prices[countryCode] || 0;
-    const priceB = b.prices[countryCode] || 0;
+  // 2. Fetch candidates using an indexed range query
+  // We join prices and products to get only what we need
+  const candidates = await withRetry(async () => {
+    return await db
+      .select({
+        product: liteProductColumns,
+        priceVal: prices.price,
+      })
+      .from(products)
+      .innerJoin(prices, eq(prices.productId, products.id))
+      .where(
+        and(
+          eq(products.category, category),
+          eq(prices.country, countryCode),
+          gt(prices.price, minPrice),
+          lt(prices.price, maxPrice),
+          sql`${products.slug} != ${excludedSlug}`,
+        ),
+      )
+      .orderBy(asc(products.salesRank)) // Suggest popular similar products
+      .limit(Math.min(limit * 4, 100)); // Fetch a buffer for final sorting
+  });
+
+  if (candidates.length === 0) {
+    // Fallback: If no price-filtered results, get popular in category
+    const fallback = await db
+      .select({
+        product: liteProductColumns,
+        priceVal: prices.price,
+      })
+      .from(products)
+      .innerJoin(prices, eq(prices.productId, products.id))
+      .where(
+        and(
+          eq(products.category, category),
+          eq(prices.country, countryCode),
+          sql`${products.slug} != ${excludedSlug}`,
+        ),
+      )
+      .orderBy(asc(products.salesRank))
+      .limit(limit);
+
+    return fallback.map((c) => mapDbProduct(c.product as DbProduct, []));
+  }
+
+  // 3. Final refinement in memory for closest price matches
+  const sorted = candidates.sort((a, b) => {
+    const priceA = a.priceVal || 0;
+    const priceB = b.priceVal || 0;
     return Math.abs(priceA - targetPrice) - Math.abs(priceB - targetPrice);
   });
 
-  return sorted.slice(0, limit);
+  return sorted
+    .slice(0, limit)
+    .map((c) => mapDbProduct(c.product as DbProduct, []));
 };
 
 export const getSimilarProducts = cache(async function getSimilarProducts(
