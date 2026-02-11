@@ -46,7 +46,7 @@ A modular set of rules to maximize search visibility and organic traffic.
 ### 3. Technical
 
 - [Internal Linking](rules/seo-05-internal-linking.md) - Link to 3-5 related pages
-- [Performance](rules/seo-06-perf-ux.md) - LCP < 2.5s
+- [Performance](rules/seo-06-perf-ux.md) - LCP < 2.5s. Use **Static-First Rendering** for PDPs to ensure sub-10ms TTFB and visual stability.
 
 ---
 

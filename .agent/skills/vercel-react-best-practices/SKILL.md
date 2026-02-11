@@ -50,20 +50,28 @@ export async function getCategoryProducts() {
 }
 ```
 
-### Streaming Slow Content
+### Instant Shell Pattern (PDP)
+
+For Product Detail Pages, always separate static metadata (title, image, specs) from dynamic live data (prices, offers, charts).
 
 ```tsx
-export default async function ProductPage() {
+// IdealoProductPage.tsx
+export default async function Page({ product }) {
   return (
     <div>
-      <ProductHeader /> {/* Fast */}
-      <Suspense fallback={<Skeleton />}>
-        <PriceChart /> {/* Slow - streamed */}
+      <Header product={product} /> {/* Instant - no await */}
+      <Suspense fallback={<PriceSkeleton />}>
+        <LivePrice productId={product.id} /> {/* Streamed */}
+      </Suspense>
+      <Suspense fallback={<ChartSkeleton />}>
+        <PriceChart productId={product.id} /> {/* Streamed */}
       </Suspense>
     </div>
   );
 }
 ```
+
+**Benefits**: TTFB < 10ms, Zero Layout Shift (CLS), and immediate visual feedback.
 
 ### Image Optimization
 
