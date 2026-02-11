@@ -451,31 +451,6 @@ const nextConfig: NextConfig = {
         destination: "/categories",
         permanent: true,
       },
-      {
-        source: "/computer/:path*",
-        destination: "/categories",
-        permanent: true,
-      },
-      {
-        source: "/pc-komponenten/:path*",
-        destination: "/categories",
-        permanent: true,
-      },
-      {
-        source: "/telekommunikation/:path*",
-        destination: "/categories",
-        permanent: true,
-      },
-      {
-        source: "/hifi-audio/:path*",
-        destination: "/categories",
-        permanent: true,
-      },
-      {
-        source: "/storage/:path*",
-        destination: "/categories",
-        permanent: true,
-      },
 
       // --- Legacy English/V1 Path Corrections ---
       { source: "/electronics/ram", destination: "/ram", permanent: true },
