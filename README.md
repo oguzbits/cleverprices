@@ -133,10 +133,11 @@ src/
 
 ## Documentation
 
-- **[PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)** - Key features, architecture, and edge cases.
-- **[DATA_INTEGRITY.md](docs/DATA_INTEGRITY.md)** - **New.** SIF Firewall, DQA Golden Schemas, and Health Scoring.
-- **[WORKER.md](docs/WORKER.md)** - Maintainance, price updates, and cloud sync.
-- **[image-optimization.md](docs/image-optimization.md)** - Custom Amazon CDN optimization strategy.
+- **[PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md)** - Key features, architecture, and edge cases.
+- **[AI_GUIDELINES.md](docs/AI_GUIDELINES.md)** - **For AI Agents:** Protocols and Documentation Map.
+- **[DATA_INTEGRITY.md](docs/architecture/DATA_INTEGRITY.md)** - **New.** SIF Firewall, DQA Golden Schemas, and Health Scoring.
+- **[WORKER.md](docs/ops/WORKER.md)** - Maintainance, price updates, and cloud sync.
+- **[image-optimization.md](docs/guides/image-optimization.md)** - Custom Amazon CDN optimization strategy.
 
 ---
 
