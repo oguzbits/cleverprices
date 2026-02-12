@@ -12,8 +12,6 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   cacheComponents: true,
   experimental: {
-    workerThreads: false,
-    cpus: 1,
     optimizePackageImports: [
       "lucide-react",
       "mdx",
@@ -580,6 +578,12 @@ if (isBuild) {
   console.log(
     "🛠️  CLEVERPRICES BUILD PHASE DETECTED - Applying build-time constraints...",
   );
+  // @ts-ignore
+  nextConfig.experimental = {
+    ...nextConfig.experimental,
+    workerThreads: false,
+    cpus: 1,
+  };
 }
 
 export default configWithSentry;
