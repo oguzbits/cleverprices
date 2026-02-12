@@ -41,7 +41,7 @@ export const litePriceColumns = {
   listPrice: prices.listPrice,
   priceAvg90: prices.priceAvg90,
   pricePerUnit: prices.pricePerUnit,
-  historyJson: prices.historyJson,
+  // historyJson: prices.historyJson, // Excluded for performance (listing/live views only need current price)
   currency: prices.currency,
   lastUpdated: prices.lastUpdated,
 };
@@ -185,6 +185,7 @@ export interface Product {
 // Lite price type for optimized queries (lean schema)
 type LitePrice = Pick<
   Price,
+  | "id"
   | "productId"
   | "country"
   | "price"
@@ -193,9 +194,9 @@ type LitePrice = Pick<
   | "listPrice"
   | "priceAvg90"
   | "pricePerUnit"
-  | "historyJson"
+  | "currency"
   | "lastUpdated"
->;
+> & { historyJson?: Price["historyJson"] };
 
 // Lite price type for optimized queries (lean schema)
 export type { LitePrice };

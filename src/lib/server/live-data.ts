@@ -65,7 +65,7 @@ export async function getLivePricesForProducts(
         priceAvg90: p.priceAvg90,
         listPrice: p.listPrice,
         pricePerUnit: p.pricePerUnit,
-        historyJson: p.historyJson,
+        // historyJson: p.historyJson, // REMOVED: Performance optimization. Live data doesn't provide history blob.
       };
 
       // Map back to ALL requested IDs that resolve to this real ID
