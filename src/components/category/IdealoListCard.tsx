@@ -156,7 +156,7 @@ export function IdealoListCard({
           {/* PRODUCT DETAILS TRIGGER (LIST-specific wrapper) */}
           {/* ============================================ */}
           <div className="sr-resultItemTile__pioTrigger">
-            <div className="sr-productInformationTrigger text-idealo-blue flex items-center gap-0.5 text-[13px] font-bold">
+            <div className="sr-productInformationTrigger text-idealo-blue flex items-center gap-2 text-[13px] font-bold">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="24"
