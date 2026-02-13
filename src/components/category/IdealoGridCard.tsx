@@ -46,12 +46,26 @@ export function IdealoGridCard({
   const countryConfig = getCountryByCode(countryCode);
 
   // Build description parts
+  const fullTitle = (
+    product.subtitle ? `${product.title} ${product.subtitle}` : product.title
+  ).toLowerCase();
+
   const descriptionParts = [
     product.capacity && product.capacityUnit
       ? `${product.capacity} ${product.capacityUnit}`
       : null,
     product.formFactor,
-  ].filter(Boolean);
+  ]
+    .filter(Boolean)
+    .filter((part) => !fullTitle.includes(part!.toLowerCase()));
+
+  // Only show variation attributes if they aren't already in the title
+  const hasUniqueVariation =
+    product.variationAttributes &&
+    product.variationAttributes.split(";").some((attr) => {
+      const val = attr.split(":").pop()?.trim().toLowerCase();
+      return val && !fullTitle.includes(val);
+    });
 
   return (
     <div
@@ -152,7 +166,7 @@ export function IdealoGridCard({
                   <p className="sr-productSummary__mainDetails productSummary__mainDetails--categoryPage">
                     <span>{formatTechText(descriptionParts.join(", "))}</span>
                   </p>
-                  {product.variationAttributes && (
+                  {product.variationAttributes && hasUniqueVariation && (
                     <p className="mt-1 text-[11px] font-medium text-orange-600">
                       Version: {formatTechText(product.variationAttributes)}
                     </p>
