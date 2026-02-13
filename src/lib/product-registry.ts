@@ -791,15 +791,23 @@ import { cache } from "react";
 export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
   stripHeavyData: boolean = true, // Default to true for category lists
+  limit?: number,
 ): Promise<Product[]> {
   if (!category) return [];
   const fetchProducts = async () => {
     await dbReady;
     const { prods, prs } = await withRetry(async () => {
-      const prods = await db
+      let query = db
         .select(liteProductColumns)
         .from(products)
         .where(eq(products.category, category));
+
+      if (limit) {
+        // @ts-ignore - drizzle type complexity with dynamic orders
+        query = query.orderBy(desc(products.salesRank)).limit(limit);
+      }
+
+      const prods = await query;
 
       if (prods.length === 0) return { prods: [], prs: [] };
 
@@ -831,7 +839,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   // Use Next.js Data Cache to persist results across requests/users
   return unstable_cache(
     fetchProducts,
-    [`category-products-v34-${category}-${stripHeavyData}`],
+    [`category-products-v34-${category}-${stripHeavyData}-${limit || "all"}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
       tags: ["category-products", `cat-${category}`, "v46"],

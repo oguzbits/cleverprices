@@ -337,9 +337,11 @@ export async function getParentCategoryData(
 }> {
   const childCategories = getChildCategories(parentSlug);
 
-  // 1. Fetch ALL products for ALL child categories ONCE
+  // 1. Fetch TOP products for ALL child categories ONCE
+  // Using a limit (e.g. 60) per sub-category is the key optimization for hub pages.
+  // It provides enough volume for brand/diversity filtering without processing 1000s of items.
   const productPromises = childCategories.map((child) =>
-    getProductsByCategory(child.slug),
+    getProductsByCategory(child.slug, true, 60),
   );
   const productArrays = await Promise.all(productPromises);
   const allProductsRaw = productArrays.flat();

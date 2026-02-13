@@ -76,8 +76,7 @@ export async function generateMetadata({
   if (isBuild) {
     return { title: `${category.name} | ${BRAND_DOMAIN}` };
   }
-
-  const filters = await searchParams;
+  // No searchParams access here to keep the route prerenderable for base URLs
 
   // 1. Check if category is hidden
   if (category.hidden) {
