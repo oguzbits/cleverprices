@@ -1,6 +1,6 @@
 import { like } from "drizzle-orm";
-import { db, products } from "../src/db";
-import { localIcecatDataSource as icecatDataSource } from "../src/lib/data-sources/icecat-local";
+import { db, products } from "../../src/db";
+import { localIcecatDataSource as icecatDataSource } from "../../src/lib/data-sources/icecat-local";
 
 async function main() {
   console.log("🧪 Testing Icecat Fix for Apple MacBook Air M4...");

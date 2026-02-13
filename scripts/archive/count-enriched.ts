@@ -1,6 +1,6 @@
 import { count } from "drizzle-orm";
-import { db } from "../src/db";
-import { products } from "../src/db/schema";
+import { db } from "../../src/db";
+import { products } from "../../src/db/schema";
 
 async function main() {
   console.log("Querying database for enriched products...");
