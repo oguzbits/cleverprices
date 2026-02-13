@@ -32,19 +32,24 @@ export function SpecificationsTable({
   let sourceLabel = "None";
   let isOfficialData = false;
 
-  // Priority 1: Use the repaired specifications object (already processed by product-mapping.ts)
-  if (product.specifications && typeof product.specifications === "object") {
-    rawSpecs = product.specifications;
+  // Priority 1: Use official specifications if available (Icecat/Clean data)
+  // Priority 2: Use the repaired specifications object
+  const officialSpecs = product.officialSpecifications;
+  const standardSpecs = product.specifications;
+
+  if (officialSpecs && typeof officialSpecs === "object") {
+    rawSpecs = officialSpecs;
+    sourceLabel = product.specificationsSource || "Official";
+    isOfficialData = true;
+  } else if (standardSpecs && typeof standardSpecs === "object") {
+    rawSpecs = standardSpecs;
     sourceLabel = product.specificationsSource || "Repaired";
     // Check if this came from official sources
     isOfficialData = !!product.officialSpecifications;
-  } else if (
-    product.specifications &&
-    typeof product.specifications === "string"
-  ) {
+  } else if (standardSpecs && typeof standardSpecs === "string") {
     // Fallback: parse if it's a string (shouldn't happen with proper mapping)
     try {
-      rawSpecs = JSON.parse(product.specifications) || {};
+      rawSpecs = JSON.parse(standardSpecs) || {};
       sourceLabel = product.specificationsSource || "Legacy";
     } catch (e) {
       console.warn("Failed to parse specifications string", e);
@@ -269,7 +274,12 @@ export function SpecificationsTable({
       lowerKey.includes("prozessor") ||
       lowerKey.includes("speicher") ||
       lowerKey.includes("takt") ||
-      lowerKey.includes("leistung")
+      lowerKey.includes("leistung") ||
+      lowerKey.includes("read") ||
+      lowerKey.includes("write") ||
+      lowerKey.includes("lese") ||
+      lowerKey.includes("schreib") ||
+      lowerKey.includes("geschwindigkeit")
     ) {
       if (
         lowerKey.includes("operating") ||
