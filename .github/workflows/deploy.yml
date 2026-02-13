@@ -1,15 +1,19 @@
 name: Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main, staging]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Only deploy if CI succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Deploy to Dokploy (Production & Worker)
-        if: github.ref == 'refs/heads/main'
+        if: github.event.workflow_run.head_branch == 'main'
         env:
           WEBHOOK_URL: ${{ secrets.DOKPLOY_PRODUCTION_WEBHOOK_URL }}
           WORKER_WEBHOOK_URL: ${{ secrets.DOKPLOY_WORKER_WEBHOOK_URL }}
@@ -18,7 +22,7 @@ jobs:
           curl -X POST "$WORKER_WEBHOOK_URL"
 
       - name: Deploy to Dokploy (Staging)
-        if: github.ref == 'refs/heads/staging'
+        if: github.event.workflow_run.head_branch == 'staging'
         env:
           WEBHOOK_URL: ${{ secrets.DOKPLOY_STAGING_WEBHOOK_URL }}
         run: |
