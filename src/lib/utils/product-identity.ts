@@ -229,6 +229,8 @@ export const IDENTITY_CONFIG = {
     "modell",
     "series",
     "serie",
+    "generation",
+    "generationen",
     "mpn",
     "herstellernummer",
     "sku",
@@ -258,6 +260,7 @@ export const IDENTITY_CONFIG = {
     "socket-typ",
     "formfaktor",
     "form factor",
+    "modelljahr",
   ],
 
   /**
@@ -504,6 +507,10 @@ export function getProductIdentity(
     "80",
     "fully",
     "modular",
+    "mit",
+    "und",
+    "with",
+    "and",
   ];
   NOISE_WORDS.forEach((s) => subtractTokens.add(s));
 

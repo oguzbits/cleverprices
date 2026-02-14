@@ -88,7 +88,7 @@ export const liteProductColumns = {
   variationAttributes: products.variationAttributes,
   // specifications: products.specifications, // Often large, but needed for Identity
   specifications: products.specifications,
-  // officialSpecifications: products.officialSpecifications, // Massive JSON blob, only needed on PDP
+  officialSpecifications: products.officialSpecifications, // Included for identity resolution consistency
   officialTitle: products.officialTitle,
   energyLabel: products.energyLabel,
   historySeeded: products.historySeeded,

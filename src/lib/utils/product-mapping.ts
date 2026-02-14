@@ -96,17 +96,11 @@ export function mapDbProduct(
   let parsedOfficialSpecs: Record<string, any> | undefined = undefined;
 
   if (stripHeavyData) {
-    // Lite mode: skip full parsing, only extract identity keys
-    // Optimization: Skip officialSpecifications if original specifications are present for identity
+    // Lite mode: skip full parsing, only extract identity keys from raw strings
     identitySpecs = {
       ...IDENTITY_CONFIG.getIdentitySpecs(p.specifications),
+      ...IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications),
     };
-    if (!p.specifications && p.officialSpecifications) {
-      Object.assign(
-        identitySpecs,
-        IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications),
-      );
-    }
   } else {
     // Full mode: parse everything
     try {
