@@ -641,15 +641,24 @@ async function reconcileFamilySlugs(parentAsin: string): Promise<void> {
     // We use getProductVariants helper to ensure we follow standard loading rules
     // but we already have the raw products if we want to be fast.
     // However, getFamilyIdentity expects real ID-prefixed consensus.
+    // 2. Identify Hub / Representative
     for (const member of family) {
-      const { slug: canonical } = getFamilyIdentity(
-        member as any,
-        family as any,
-      );
-      if (member.slug !== canonical) {
+      const {
+        slug: canonical,
+        title,
+        variantSuffix,
+      } = getFamilyIdentity(member as any, family as any);
+
+      // Construct Premium Title: "Brand Model Variant"
+      const cleanTitle = variantSuffix ? `${title} ${variantSuffix}` : title;
+
+      if (member.slug !== canonical || member.title !== cleanTitle) {
         await db
           .update(products)
-          .set({ slug: canonical })
+          .set({
+            slug: canonical,
+            title: cleanTitle,
+          })
           .where(eq(products.id, member.id));
       }
     }

@@ -479,6 +479,16 @@ export function getProductIdentity(
     "monitor",
     "bildschirm",
     "display",
+    "dp",
+    "panel",
+    "ips",
+    "oled",
+    "qled",
+    "led",
+    "lcd",
+    "va",
+    "tn",
+    "hdr",
     "tv",
     "television",
     "fernseher",
@@ -504,7 +514,51 @@ export function getProductIdentity(
     "hd",
     "ai",
     "smart",
+    "smart",
+    "soundbar",
+    "lautsprecher",
+    "speaker",
+    "woofer",
+    "subwoofer",
+    "heimkino",
+    "theater",
+    "cinema",
+    "receiver",
+    "amplifier",
+    "verstaerker",
+    "gerät",
+    "geraet",
+    "geraete",
+    "device",
+    "anlage",
+    "system",
+    "komplettsystem",
     "80",
+    "fuer", // Normalized form of 'für'
+    "fur",
+    "for",
+    "in",
+    "teilbar",
+    "teilbare",
+    "einstellbar",
+    "einstellbare",
+    "gesteuert",
+    "gesteuerte",
+    "app",
+    "appgesteuerten",
+    "gesteuerten",
+    "voicemx", // Specific feature for this brand, treating as noise for now or move to generic approach later
+    "bass",
+    "eq",
+    "modi",
+    "eqmodi",
+    "arc",
+    "opt",
+    "aux",
+    "usb",
+    "hdmi",
+    "optisch",
+    "optical",
     "fully",
     "modular",
     /* 
@@ -630,7 +684,8 @@ export function getProductIdentity(
   };
 
   const baseTitle = officialModel || title;
-  let cleanTitle = baseTitle.split(/ \- | \/ | \(| \||: |,/i)[0].trim();
+  // NOTE: Removed comma split. Reverted slash split to require spaces.
+  let cleanTitle = baseTitle.split(/ \- | \/ | \(| \||: /i)[0].trim();
 
   // Robustly strip brand from start of title to prevent duplication
   // Handle cases where brand has punctuation (be quiet!) that might vary
@@ -665,12 +720,13 @@ export function getProductIdentity(
   // Clean up any leading punctuation left over (e.g. "! Dark Rock" -> "Dark Rock")
   cleanTitle = cleanTitle.replace(/^[^a-z0-9]+/i, "");
 
-  const rawWords = cleanTitle.split(/[\s,+\*~]+/).filter(Boolean);
+  // Split on slash and parens/brackets/comma to handle jammed specs
+  const rawWords = cleanTitle.split(/[\s,+\*~\/()\[\]]+/).filter(Boolean);
   const modelWords: string[] = [];
   const strippedUnits: string[] = [];
 
   rawWords.forEach((word, index) => {
-    const cleanWord = word.replace(/^[(\[",\.]+|[)\]",\.]+/g, "");
+    const cleanWord = word.replace(/^[(\[",\.]+|[)\]",\.]+$/g, "");
     const normalized = normalizeAccents(cleanWord);
     const rawLower = normalized.toLowerCase();
     const cleanLower = rawLower.replace(/[^a-z0-9]/g, "");
@@ -680,13 +736,30 @@ export function getProductIdentity(
     // we bypass the aggressive noise word stripping to respect the source's intent.
     const isOfficialModelTrustPath = !!officialModel;
 
-    // 2. Unit Recognition (e.g. 128GB, 128 GB, 165Hz, 34")
+    // 2. Unit Recognition (e.g. 128GB, 128 GB, 165Hz, 34", 1ms)
     const isExplicitUnit =
-      /^\d+(\.\d+)?(gb|tb|mb|wh|w|ghz|mhz|mp|hz|zoll|inch|")$/i.test(
+      /^\d+(\.\d+)?(gb|tb|mb|wh|w|ghz|mhz|mp|hz|ms|zoll|inch|")$/i.test(
         cleanLower,
       ) ||
       /^\d+hz/i.test(cleanLower) ||
       (word.includes('"') && /^\d+/.test(cleanLower));
+
+    // 2b. Audio Channel Pattern (e.g. 2.1, 5.1, 7.1.4) - treat as spec
+    const isAudioChannels = /^\d+\.\d+(\.\d+)?$/.test(cleanWord);
+
+    if (isAudioChannels) {
+      strippedUnits.push(cleanWord);
+      return;
+    }
+
+    // 2c. "N-in-1" Pattern (e.g. 2-in-1, 5-in-1) - treat as spec
+    if (
+      /^\d+(-| )?in(-| )?\d+$/i.test(cleanWord) ||
+      /^\d+(-| )?to(-| )?\d+$/i.test(cleanWord) // 1-to-3
+    ) {
+      strippedUnits.push(cleanWord);
+      return;
+    }
 
     // Look ahead for split units: (e.g. "128" followed by "GB")
     let isSplitUnit = false;
@@ -758,10 +831,43 @@ export function getProductIdentity(
       isActuallyProtected = true;
 
     // Specific strip: 'x' as separator in resolution (3440 x 1440)
+    // If we detect resolution pattern, we must pop the PREVIOUS number (which was added as a model)
+    // and skip the NEXT number.
     if (cleanLower === "x" && index > 0 && index < rawWords.length - 1) {
       const prevC = rawWords[index - 1].replace(/[^a-z0-9]/g, "");
       const nextC = rawWords[index + 1].replace(/[^a-z0-9]/g, "");
-      if (/^\d+$/.test(prevC) && /^\d+$/.test(nextC)) return;
+      if (/^\d+$/.test(prevC) && /^\d+$/.test(nextC)) {
+        // Found N x N pattern.
+        // 1. Remove previous number from modelWords if it matches prevC
+        // Note: modelWords might have formatted version.
+        if (modelWords.length > 0) {
+          const lastModel = modelWords[modelWords.length - 1].replace(
+            /[^a-z0-9]/g,
+            "",
+          );
+          if (lastModel === prevC) {
+            modelWords.pop(); // Remove "3440"
+          }
+        }
+        // 2. Mark this 'x' as handled (return)
+        // 3. We need to skip the NEXT word ("1440").
+        // Since we can't skip loop index easily, we can add "1440" to subtractTokens?
+        // Or just rely on a set of "skip indices"?
+        // Hacky: mutate rawWords? No.
+        // Better: use a `skipNext` flag?
+        // But I can't look back to finding `skipNext`.
+        // I'll add the next token to a temporary "ignore list"?
+        // Or easier: checking `prevWord` logic at start of loop?
+        // "If prev token was 'x' and prev-prev was number and I am number... skip".
+        return;
+      }
+    }
+
+    // Check if I am the "1440" part of "3440 x 1440"
+    if (/^\d+$/.test(cleanLower) && index > 1) {
+      const prev1 = rawWords[index - 1].replace(/[^a-z0-9]/g, ""); // x
+      const prev2 = rawWords[index - 2].replace(/[^a-z0-9]/g, ""); // 3440
+      if (prev1 === "x" && /^\d+$/.test(prev2)) return;
     }
 
     // Strip if it's the discovered MPN (always move MPN to variant suffix)
@@ -772,6 +878,49 @@ export function getProductIdentity(
     ) {
       const looksLikeSKU = mpnVal.length > 6 || /[\/\-]/.test(mpnVal);
       if (looksLikeSKU && modelWords.length > 0) return;
+    }
+
+    if (
+      /^\d+$/.test(cleanLower) &&
+      !isActuallyProtected &&
+      !isOfficialModelTrustPath
+    ) {
+      if (index < rawWords.length - 1) {
+        const nextWordRaw = rawWords[index + 1];
+        const nextClean = nextWordRaw.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (subtractTokens.has(nextClean) || NOISE_WORDS.includes(nextClean)) {
+          return;
+        }
+      }
+    }
+
+    // Special handling for connectors like "mit", "with", "und", "and"
+    // Only keep them if the NEXT word is a valid feature/model word.
+    // If the next word is a number (e.g. "mit 3") or a noise word, we strip the connector.
+    if (/^(mit|with|und|and|plus)$/.test(cleanLower)) {
+      // Look ahead
+      if (index < rawWords.length - 1) {
+        const nextWordRaw = rawWords[index + 1];
+        const nextClean = nextWordRaw.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+        // 1. If next is number -> strip connector
+        if (/^\d+$/.test(nextClean)) {
+          subtractTokens.add(cleanLower);
+          return;
+        }
+
+        // 2. If next is noise word -> strip connector
+        // We need to check against NOISE_WORDS/subtractTokens
+        // But subtractTokens is built dynamically. We can check the static lists + subtractTokens.
+        if (subtractTokens.has(nextClean) || NOISE_WORDS.includes(nextClean)) {
+          subtractTokens.add(cleanLower);
+          return;
+        }
+      } else {
+        // Connector at end of title -> strip
+        subtractTokens.add(cleanLower);
+        return;
+      }
     }
 
     // Strip if in noise list AND not protected (and not in official trust path)
@@ -911,6 +1060,20 @@ export function getProductIdentity(
   // This prevents overly long titles while keeping them distinct.
   let variantSuffix = "";
   if (isHighVariance && mpnVal && mpnVal.length > 3) {
+    // Sanitize oneFeatureToken: Don't use it if it's a technical spec we want to hide
+    if (oneFeatureToken) {
+      const lower = (oneFeatureToken as string).toLowerCase();
+      if (
+        /\d+\s?(hz|mhz|ghz)/i.test(lower) ||
+        /\d+\s?w$/i.test(lower) ||
+        /^\d+\.\d+(ch)?$/.test(lower) ||
+        /\d+(-| )?in(-| )?\d+/i.test(lower) ||
+        /\d+\s?(mm|cm|inch|zoll|")/i.test(lower)
+      ) {
+        oneFeatureToken = null;
+      }
+    }
+
     variantSuffix = (
       oneFeatureToken ? `${oneFeatureToken} ${mpnVal}` : mpnVal
     ).trim();
@@ -920,9 +1083,33 @@ export function getProductIdentity(
     const hasCellular = variantTokens.some((t) =>
       /cellular|5g|lte/i.test(t.toLowerCase()),
     );
-    const filteredTokens = hasCellular
+    let filteredTokens = hasCellular
       ? variantTokens.filter((t) => !/wi-?fi/i.test(t.toLowerCase()))
       : variantTokens;
+
+    // PREMIUM TITLE LOGIC: Filter out "Technical Specs" from the main display title
+    // We want to keep: Storage (TB/GB), RAM, Color, "Cellular"
+    // We want to drop: Hz, W, Channels (2.0, 5.1), "2-in-1", Dimensions (mm/cm/inch)
+    // Exception: If the product is a Monitor, "Hz" might be relevant, but user requested generic "premium" logic.
+    // Usually "Brand Model" is best.
+    filteredTokens = filteredTokens.filter((t) => {
+      const lower = t.toLowerCase();
+      // Keep Storage/RAM (GB/TB) - but filter out common noise like "128bit" if strictly storage
+      if (/\d+\s?(gb|tb)/i.test(lower)) return true;
+
+      // Keep Color (approximate check not easy here without lists, but distinct tokens usually OK)
+      // If it's a known color from variantMap, it's already safe.
+      // If it was in strippedUnits, it might be a spec.
+
+      // Drop patterns
+      if (/\d+\s?(hz|mhz|ghz)/i.test(lower)) return false; // Refresh rate
+      if (/\d+\s?w$/i.test(lower)) return false; // Wattage
+      if (/^\d+\.\d+(ch)?$/.test(lower)) return false; // Channels (2.1, 5.1, 5.1ch)
+      if (/\d+(-| )?in(-| )?\d+/i.test(lower)) return false; // N-in-1
+      if (/\d+\s?(mm|cm|inch|zoll|")/i.test(lower)) return false; // Size
+
+      return true;
+    });
 
     variantSuffix = filteredTokens.join(" ").trim();
   }
