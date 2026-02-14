@@ -507,10 +507,10 @@ export function getProductIdentity(
     "80",
     "fully",
     "modular",
-    "mit",
-    "und",
-    "with",
-    "and",
+    /* 
+       "mit", "und", "with", "and" 
+       REMOVED to allow preservation in model names (e.g. "AirPods 4 mit Active Noise Cancellation")
+    */
   ];
   NOISE_WORDS.forEach((s) => subtractTokens.add(s));
 
