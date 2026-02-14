@@ -20,6 +20,7 @@ import {
 export async function getLivePricesForProducts(
   productIds: number[],
   countryCode: string,
+  includeHistory: boolean = false,
 ) {
   "use cache";
   cacheLife("fast"); // 1 minute revalidation
@@ -37,7 +38,10 @@ export async function getLivePricesForProducts(
 
   const latestPrices = await withRetry(async () => {
     return await db
-      .select(litePriceColumns)
+      .select({
+        ...litePriceColumns,
+        ...(includeHistory ? { historyJson: prices.historyJson } : {}),
+      })
       .from(prices)
       .where(
         and(
@@ -48,7 +52,7 @@ export async function getLivePricesForProducts(
   });
 
   const priceMap = new Map();
-  latestPrices.forEach((p) => {
+  latestPrices.forEach((p: any) => {
     // Lean schema: price is already the consolidated "clever" price
     const price = p.price && p.price > 0 ? p.price : null;
     const usedPrice = p.usedPrice && p.usedPrice > 0 ? p.usedPrice : null;
@@ -65,7 +69,11 @@ export async function getLivePricesForProducts(
         priceAvg90: p.priceAvg90,
         listPrice: p.listPrice,
         pricePerUnit: p.pricePerUnit,
-        // historyJson: p.historyJson, // REMOVED: Performance optimization. Live data doesn't provide history blob.
+        // PARSE EARLY: Avoid passing raw Buffers through unstable_cache (serialization issues)
+        history:
+          includeHistory && p.historyJson
+            ? parseHistoryJson(p.historyJson)
+            : undefined,
       };
 
       // Map back to ALL requested IDs that resolve to this real ID
@@ -93,8 +101,13 @@ export async function getLivePricesForProducts(
 export async function getLivePriceForProduct(
   productId: number,
   countryCode: string,
+  includeHistory: boolean = true,
 ) {
-  const map = await getLivePricesForProducts([productId], countryCode);
+  const map = await getLivePricesForProducts(
+    [productId],
+    countryCode,
+    includeHistory,
+  );
   return map.get(productId);
 }
 
@@ -105,13 +118,19 @@ export async function getLivePriceForProduct(
 export async function mergeLivePrices(
   products: Product[],
   countryCode: string,
+  includeHistory: boolean = false,
 ): Promise<Product[]> {
   const ids = products
     .map((p) => p.id)
     .filter((id): id is number => id !== undefined);
   if (ids.length === 0) return products;
 
-  const priceMap = await getLivePricesForProducts(ids, countryCode);
+  // Only include history if explicitly requested (e.g., for PDP chart)
+  const priceMap = await getLivePricesForProducts(
+    ids,
+    countryCode,
+    includeHistory,
+  );
 
   return products.map((p) => {
     if (!p.id) return p;
@@ -171,11 +190,34 @@ export async function mergeLivePrices(
         listPrice: { ...p.listPrice, [countryCode]: live.listPrice },
         pricesPerUnit: { ...p.pricesPerUnit, [countryCode]: live.pricePerUnit },
         savings,
-        // PARSE LIVE HISTORY: Attach the parsed history if available in live data
-        priceHistory: live.historyJson
-          ? parseHistoryJson(live.historyJson)
-          : p.priceHistory,
+        // ATTACH LIVE HISTORY: Use the parsed history from live data if available
+        priceHistory: live.history || p.priceHistory,
       };
+
+      // INJECT CURRENT PRICE INTO HISTORY (Fix for Chart Discrepancy)
+      // The history blob is historic; the current price is "now".
+      if (
+        updated.priceHistory &&
+        updated.priceHistory.length > 0 &&
+        updated.prices[countryCode]
+      ) {
+        const lastPoint = updated.priceHistory[updated.priceHistory.length - 1];
+        const currentPrice = updated.prices[countryCode];
+        const currentDate =
+          updated.pricesLastUpdated?.[countryCode] || new Date().toISOString();
+
+        // Only append if it's newer than the last history point (by at least an hour to avoid clutter)
+        const lastDate = new Date(lastPoint.date).getTime();
+        const curDateTs = new Date(currentDate).getTime();
+
+        if (curDateTs > lastDate + 3600000) {
+          // Clone array to avoid mutating ref
+          updated.priceHistory = [
+            ...updated.priceHistory,
+            { date: currentDate, price: currentPrice },
+          ];
+        }
+      }
 
       // Recalculate derived metrics (like savings) based on new prices
       // [PERFORMANCE] Skip for lean variants (listing/carousel) to save CPU

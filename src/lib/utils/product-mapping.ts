@@ -146,6 +146,20 @@ export function mapDbProduct(
     let targetCapacityGB = 0;
     if (attrStorage) {
       targetCapacityGB = parseCapacityToGB(attrStorage);
+
+      // ANOMALY CHECK: Sometimes Amazon puts the Screen Size (15.6) into the Storage field.
+      // If it's a common laptop size but the title says something else (like 512GB), rescue it.
+      const commonLaptopSizes = [
+        10.1, 11.6, 12.1, 12.5, 13.3, 14, 15.4, 15.6, 17.3,
+      ];
+      if (commonLaptopSizes.includes(targetCapacityGB)) {
+        const titleMatch = (p.title || "").match(
+          /\b(\d+)\s?(GB|TB)\s?(SSD|HDD|NVMe|Disk)\b/i,
+        );
+        if (titleMatch) {
+          targetCapacityGB = parseCapacityToGB(titleMatch[1] + titleMatch[2]);
+        }
+      }
     } else if (p.normalizedCapacity && p.normalizedCapacity > 0) {
       targetCapacityGB = p.normalizedCapacity;
     }
@@ -165,6 +179,14 @@ export function mapDbProduct(
         const val =
           targetCapacityGB >= 1000 ? targetCapacityGB / 1000 : targetCapacityGB;
         rawSpecs["Speicherkapazität"] = `${val} ${unit}`;
+
+        // Also update variation attributes in memory so identity logic is correct
+        if (attrStorage) {
+          vMap["Storage"] = `${val} ${unit}`;
+          p.variationAttributes = Object.entries(vMap)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join("; ");
+        }
       }
     }
 

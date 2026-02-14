@@ -764,25 +764,75 @@ async function enrichWithFullSiblings(
   }
 
   const siblingsByParent = new Map<string, any[]>();
+  const allSiblingIds = allSiblings.map((s) => s.id);
+
+  // Fetch prices for ALL siblings to ensure representative selection is accurate
+  const allSiblingPrices =
+    allSiblingIds.length > 0
+      ? await withRetry(() =>
+          db
+            .select(litePriceColumns)
+            .from(prices)
+            .where(
+              and(
+                inArray(prices.productId, allSiblingIds),
+                eq(prices.country, countryCode),
+              ),
+            ),
+        )
+      : [];
+
+  const pricesBySiblingId = indexPricesById(allSiblingPrices);
+
   for (const s of allSiblings) {
     if (s.parentAsin) {
       if (!siblingsByParent.has(s.parentAsin))
         siblingsByParent.set(s.parentAsin, []);
-      siblingsByParent.get(s.parentAsin)!.push(s);
+
+      // Attach prices to the sibling object for mapDbProduct
+      const mappedSibling = {
+        ...s,
+        prices: pricesBySiblingId.get(s.id!)
+          ? Object.fromEntries(
+              pricesBySiblingId.get(s.id!)!.map((pr) => [pr.country, pr.price]),
+            )
+          : {},
+      };
+      siblingsByParent.get(s.parentAsin)!.push(mappedSibling);
     }
   }
 
-  return prods.map((p) => {
+  const { getFamilyRepresentative } = await import("./product-families");
+
+  const seenFamilies = new Set<string>();
+  const uniqueFamilies: Product[] = [];
+
+  for (const p of prods) {
+    const familyKey = p.parentAsin || `singleton-${p.id}`;
+    if (seenFamilies.has(familyKey)) continue;
+    seenFamilies.add(familyKey);
+
     const siblings = p.parentAsin
       ? siblingsByParent.get(p.parentAsin) || [p]
       : [p];
-    return mapDbProduct(
-      p as DbProduct,
-      pricesByProduct.get(p.id!) || [],
-      siblings,
-      stripHeavyData,
+
+    // Choose the best representative (cheapest new condition)
+    const representative = getFamilyRepresentative(siblings) || p;
+
+    // Create prices map for mapDbProduct from the representative
+    const repPrices = pricesBySiblingId.get(representative.id!) || [];
+
+    uniqueFamilies.push(
+      mapDbProduct(
+        representative as DbProduct,
+        repPrices,
+        siblings,
+        stripHeavyData,
+      ),
     );
-  });
+  }
+
+  return uniqueFamilies;
 }
 
 import { cache } from "react";
@@ -1954,13 +2004,19 @@ export async function getFilteredProducts(
       .innerJoin(prices, eq(products.id, prices.productId))
       .where(and(...where))
       .orderBy(...(Array.isArray(order) ? order : [order]))
-      .limit(filters.limit || 24)
+      .limit((filters.limit || 24) * 3) // Fetch more candidates to account for family deduplication
       .offset(filters.offset || 0);
 
     const prods = results.map((r) => r.product);
 
     const pricesByProduct = indexPricesById(results.map((r) => r.price));
-    return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
+    const families = await enrichWithFullSiblings(
+      prods,
+      pricesByProduct,
+      countryCode,
+      true,
+    );
+    return families.slice(0, filters.limit || 24);
   } catch (e) {
     console.warn(
       `[DB Warning] Failed to fetch filtered products: ${e instanceof Error ? e.message : String(e)}`,

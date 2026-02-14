@@ -2,7 +2,10 @@ import { cacheLife } from "next/cache";
 import { getCategoryBySlug } from "../categories";
 import { type CountryCode } from "../countries";
 import { dataAggregator } from "../data-sources";
-import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
+import {
+  getFamilyIdentity as getFamilyIdentitySync,
+  getFamilyRepresentative,
+} from "../product-families";
 import {
   findProductByParentAsinSuffix as findProductByParentAsinSuffixSync,
   findProductBySyntheticId as findProductBySyntheticIdSync,
@@ -316,15 +319,36 @@ export async function getPDPRenderData(
       // Hub Mode
       product = await getCachedProductBySyntheticId(id);
       if (product) {
-        // PERFORMANCE BOOST: Trust the DB slug if it's already canonical
         if (product.slug === slug) {
+          const variants = await getCachedProductVariantsInternal(
+            product.parentAsin || product.asin,
+            countryCode,
+            true,
+          );
+          const merged = await mergeLivePrices(
+            [product, ...variants],
+            countryCode,
+            true,
+          );
+
+          let effectiveProduct = merged[0];
+          // IN HUB MODE: The main product card must represent the "Starting At" deal.
+          // Overwrite price/history with the Best Representative (Cheapest New Variant).
+          const rep = getFamilyRepresentative(merged);
+          if (rep && rep.id !== effectiveProduct.id) {
+            effectiveProduct = {
+              ...effectiveProduct,
+              prices: rep.prices,
+              priceHistory: rep.priceHistory,
+              savings: rep.savings,
+              pricesLastUpdated: rep.pricesLastUpdated,
+              condition: rep.condition,
+            };
+          }
+
           return {
-            product,
-            variants: await getCachedProductVariantsInternal(
-              product.parentAsin || product.asin,
-              countryCode,
-              true,
-            ),
+            product: effectiveProduct,
+            variants: merged.filter((p) => p.id !== effectiveProduct.id),
             isParentView: true,
             redirect: null,
             isPermanent: false,
@@ -361,26 +385,101 @@ export async function getPDPRenderData(
       const realId = id >= 200000000 ? id - 200000000 : id;
       product = await getCachedProductById(realId);
       if (product) {
-        // PERFORMANCE BOOST: Trust the DB slug if it's already canonical
-        if (product.slug === slug) {
+        // Fetch variants early to determine family identity
+        let variants = product.parentAsin
+          ? await getCachedProductVariantsInternal(
+              product.parentAsin,
+              countryCode,
+              true,
+            )
+          : [];
+
+        // Check Identity: Specific vs Family
+        // If the URL matches the "Family/Hub" slug, treat as Hub View (Best Deal)
+        // If the URL matches the "Specific" slug, treat as Specific View
+
+        const rep = getFamilyRepresentative([product, ...variants]) || product;
+        const familyIdentity = getFamilyIdentitySync(rep, [
+          product,
+          ...variants,
+        ]);
+        const familySlugText =
+          familyIdentity.slug.split("_-")[1] || familyIdentity.slug;
+
+        const urlSlugText = slug.includes("_-") ? slug.split("_-")[1] : slug;
+        const productSlugText = product.slug;
+
+        const isFamilySlug = urlSlugText === familySlugText;
+        const isSpecificSlug = urlSlugText === productSlugText;
+
+        // Ensure we have fresh prices for the decision
+        const merged = await mergeLivePrices(
+          [product, ...variants],
+          countryCode,
+          true,
+        );
+
+        // DECISION PRIORITY:
+        // 1. If URL matches Specific Product Slug -> Specific View
+        // 2. If URL matches Family Slug (and NOT Specific) -> Hub View
+
+        if (isFamilySlug && !isSpecificSlug) {
+          // HUB MODE via Standard ID (e.g. "Generic" link to 575)
+          // Swap to Representative (Best Deal)
+          let effectiveProduct =
+            getFamilyRepresentative([product, ...variants]) || product;
+
+          // If the product IS the representative, treat as specific view
+          if (effectiveProduct.id === product.id) {
+            isParentView = false;
+          } else {
+            isParentView = true;
+
+            // Merge live prices for the NEW effective product (Representative)
+            // We must insure legacy data (like priceHistory) is merged
+            effectiveProduct = (
+              await mergeLivePrices(
+                [effectiveProduct],
+                countryCode,
+                true, // Force history include for PDP
+              )
+            )[0];
+
+            // Hide the effective product from variants list?
+            // Usually we show specific variants in the list.
+            // If we are showing Rep as "Main", it shouldn't be in the specific list?
+            // Actually, "variants" list usually excludes the main product.
+            // So we should filter out `effectiveProduct.id` from variants,
+            // AND ensure `product.id` (the one we visited) IS in the variants list.
+            const allVariants = [product, ...variants];
+            variants = allVariants.filter((v) => v.id !== effectiveProduct.id);
+
+            // SWAP
+            product = {
+              ...effectiveProduct,
+              title: familyIdentity.title, // Use Generic Title for Hub
+            };
+          }
+        }
+
+        // PERFORMANCE BOOST / Specific Match
+        if (isSpecificSlug || product.slug === slug) {
           return {
-            product,
-            variants: product.parentAsin
-              ? await getCachedProductVariantsInternal(
-                  product.parentAsin,
-                  countryCode,
-                  true,
-                )
-              : [],
+            product: merged.find((p) => p.id === product!.id) || merged[0],
+            variants: merged.filter((p) => p.id !== product!.id), // Just variants
             isParentView: false,
             redirect: null,
             isPermanent: false,
           };
         }
 
+        // Redirect to Canonical Specific Slug (Default)
         const canonical = product.slug;
-        if (slug !== canonical) {
-          redirect = `/p/${canonical}`;
+        // Construct canonical URL with ID prefix
+        const canonicalUrlSlug = `${200000000 + realId}_-${canonical}`;
+
+        if (slug !== canonicalUrlSlug) {
+          redirect = `/p/${canonicalUrlSlug}`;
           isPermanent = product.enrichmentStatus === "optimized";
         }
       }
@@ -432,7 +531,27 @@ export async function getPDPRenderData(
         : Promise.resolve([]),
     ]);
     category = results[0];
-    variants = results[1] as Product[];
+    const v = results[1] as Product[];
+
+    // Ensure PDP is fresh (Prices + History)
+    const merged = await mergeLivePrices([product, ...v], countryCode, true);
+    product = merged[0];
+    variants = merged.slice(1);
+
+    // If falling back to parent view logic (e.g. via slug resolution), apply representative logic too
+    if (isParentView) {
+      const rep = getFamilyRepresentative(merged);
+      if (rep && rep.id !== product.id) {
+        product = {
+          ...product,
+          prices: rep.prices,
+          priceHistory: rep.priceHistory,
+          savings: rep.savings,
+          pricesLastUpdated: rep.pricesLastUpdated,
+          condition: rep.condition,
+        };
+      }
+    }
   }
 
   return {
