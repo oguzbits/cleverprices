@@ -53,7 +53,7 @@ describe("getProductIdentity", () => {
       category: "monitors",
     };
     const identity = getProductIdentity(product);
-    expect(identity.model).toBe("UWQHD Curved");
+    expect(identity.model).toBe("UWQHD Curved Gaming");
     expect(identity.variantMap.Size).toBe('34"');
   });
 
