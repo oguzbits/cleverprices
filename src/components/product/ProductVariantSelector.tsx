@@ -535,8 +535,8 @@ export function ProductVariantSelector({
     rawFiltered.forEach((v) => {
       const key = Object.entries(v.normalizedAttrs)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, val]) => `${k}:${val}`)
-        .join(";");
+        .map(([k, val]) => `${k}: ${val}`)
+        .join("; ");
 
       const existing = uniqueMap.get(key);
 
@@ -732,8 +732,8 @@ export function ProductVariantSelector({
   const activeVariants = (() => {
     const currentNormalizedStr = Object.entries(currentAttrs)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([k, v]) => `${k}:${v}`)
-      .join(";");
+      .map(([k, v]) => `${k}: ${v}`)
+      .join("; ");
 
     return sortedVariants.filter((v) => {
       const p =
@@ -746,8 +746,8 @@ export function ProductVariantSelector({
       // Standardize variant for comparison
       const variantNormalizedStr = Object.entries(v.normalizedAttrs)
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([k, v]) => `${k}:${v}`)
-        .join(";");
+        .map(([k, v]) => `${k}: ${v}`)
+        .join("; ");
 
       // Ensure we don't hide the current product even if price is missing (safety)
       const attrsMatch = variantNormalizedStr === currentNormalizedStr;
@@ -817,15 +817,16 @@ export function ProductVariantSelector({
                 isSelected={
                   !isParentView &&
                   (variant.asin === currentProduct.asin ||
+                    variant.id === currentProduct.id || // Added ID check
                     (() => {
                       const curStr = Object.entries(currentAttrs)
                         .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([k, val]) => `${k}:${val}`)
-                        .join(";");
+                        .map(([k, val]) => `${k}: ${val}`)
+                        .join("; ");
                       const varStr = Object.entries(variant.normalizedAttrs)
                         .sort(([a], [b]) => a.localeCompare(b))
-                        .map(([k, val]) => `${k}:${val}`)
-                        .join(";");
+                        .map(([k, val]) => `${k}: ${val}`)
+                        .join("; ");
                       return curStr === varStr;
                     })())
                 }

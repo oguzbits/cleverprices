@@ -332,6 +332,7 @@ async function mergeLivePricesIntoLocalized(
       price: live.price,
       usedPrice: live.usedPrice,
       warehousePrice: live.warehousePrice,
+      condition: p.condition,
     });
     const refPrice = live.priceAvg90 || 0;
     const savings = calculateProductSavings({

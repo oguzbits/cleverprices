@@ -140,10 +140,26 @@ export async function mergeLivePrices(
       // Keep them separate so the UI knows the difference.
       const rawNewPrice = live.price || 0;
 
+      // Force "Renewed" condition if title implies it (Amazon compliance & Consistency)
+      // MOVE UP so we can use it in getBestPrice()
+      let condition = p.condition;
+      const titleLower = (p.title || "").toLowerCase();
+      if (
+        titleLower.includes("(generalüberholt)") ||
+        titleLower.includes("generalüberholt") ||
+        titleLower.includes("erneuert") ||
+        titleLower.includes("renewed") ||
+        titleLower.includes("refurbished") ||
+        titleLower.includes("b-ware")
+      ) {
+        condition = "Renewed";
+      }
+
       const smartPrice = getBestPrice({
         price: live.price,
         usedPrice: live.usedPrice,
         warehousePrice: live.warehousePrice,
+        condition: condition, // Pass interpreted condition
       });
 
       const newUsedPrice = live.usedPrice || 0;
@@ -158,19 +174,7 @@ export async function mergeLivePrices(
         avg90: refPrice,
       });
 
-      // Force "Renewed" condition if title implies it (Amazon compliance & Consistency)
-      let condition = p.condition;
-      const titleLower = (p.title || "").toLowerCase();
-      if (
-        titleLower.includes("(generalüberholt)") ||
-        titleLower.includes("generalüberholt") ||
-        titleLower.includes("erneuert") ||
-        titleLower.includes("renewed") ||
-        titleLower.includes("refurbished") ||
-        titleLower.includes("b-ware")
-      ) {
-        condition = "Renewed";
-      }
+      // (Moved Up) Condition Logic was here
 
       // Create a copy to avoid mutating cached object
       const updated = {
