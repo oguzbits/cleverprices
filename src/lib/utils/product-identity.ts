@@ -745,7 +745,7 @@ export function getProductIdentity(
 
     // Protect tech series
     const isProtectedTech =
-      /^(rtx|gtx|rx|ti|super|m\d|s\d+|pro|air|max|ultra|pixel|iphone|ipad|galaxy|macbook|artisan|aero|legion|tuf|rog|omen|mfp)$/i.test(
+      /^(rtx|gtx|rx|ti|super|m\d|s\d+|pro|air|max|ultra|pixel|iphone|ipad|galaxy|macbook|artisan|aero|legion|tuf|rog|omen|mfp|gaming)$/i.test(
         cleanLower,
       );
     let isActuallyProtected =
@@ -782,9 +782,15 @@ export function getProductIdentity(
     )
       return;
 
-    // Final clean swap
+    // Final clean swap & Deduplication
     const formatted = fixTechCasing(cleanWord.replace(/[,\-:\/]+$/, ""));
-    if (formatted) modelWords.push(formatted);
+    const formattedLower = formatted?.toLowerCase();
+    if (
+      formatted &&
+      !modelWords.some((w) => w.toLowerCase() === formattedLower)
+    ) {
+      modelWords.push(formatted);
+    }
   });
 
   const modelHead = modelWords[0] || "";
