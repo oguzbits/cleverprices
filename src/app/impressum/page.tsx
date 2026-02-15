@@ -54,14 +54,13 @@ export default function ImpressumPage() {
 
         <section>
           <h2 className="mb-4 text-2xl font-semibold text-[#2d2d2d]">
-            Umsatzsteuer-ID
+            Steuer-Identifikation
           </h2>
           <div className="rounded border border-[#e5e5e5] bg-white p-6 shadow-sm">
-            <p className="mb-2 text-[#555]">
-              Umsatzsteuer-Identifikationsnummer gemäß § 27 a
-              Umsatzsteuergesetz:
+            <p className="mb-1 text-[#555]">
+              Wirtschafts-Identifikationsnummer gemäß § 139c Abgabenordnung:
             </p>
-            <p className="text-[#767676] italic">(Beantragt / In Gründung)</p>
+            <p className="font-medium text-[#333]">DE460126612-00001</p>
           </div>
         </section>
 
