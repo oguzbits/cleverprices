@@ -35,20 +35,19 @@ export function IdealoProductCarousel({
   title,
   products,
   className,
-  countryCode,
+  countryCode = "de",
   priorityImages = false,
   livePriceMap,
 }: IdealoProductCarouselProps) {
-  if (products.length === 0) {
+  if (!products || products.length === 0) {
+    if (!title) return null;
     return (
       <div className={cn("cn-productCarousel", className)}>
-        {title && (
-          <div className="cn-productCarousel__header mb-4">
-            <h2 className="text-idealo-text-primary text-[20px] font-bold">
-              {title}
-            </h2>
-          </div>
-        )}
+        <div className="cn-productCarousel__header mb-4">
+          <h2 className="text-idealo-text-primary text-[20px] font-bold">
+            {title}
+          </h2>
+        </div>
         <div className="border-border bg-secondary flex items-center justify-center rounded border py-12 text-center">
           <p className="text-muted-foreground text-sm">
             Keine Produkte verfügbar
@@ -62,7 +61,7 @@ export function IdealoProductCarousel({
     <CarouselContainer title={title} className={className}>
       {products.map((product, index) => (
         <IdealoProductCard
-          key={product.slug}
+          key={product.id || index}
           id={product.id}
           title={product.title}
           subtitle={product.subtitle}

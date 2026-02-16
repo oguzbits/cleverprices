@@ -142,7 +142,7 @@ export function calculateProductMetrics(
 }
 
 /**
- * Optimizes external image URLs, specifically Amazon's ._AC_ tags
+ * Optimizes external image URLs, specifically Amazon's ._AC_ tags or fallback size tags like _SX2048_
  */
 export function getOptimizedImageUrl(
   url?: string,
@@ -150,10 +150,16 @@ export function getOptimizedImageUrl(
 ): string {
   if (!url) return "";
 
-  // If it's an Amazon image, replace the size tag (e.g. _SX522_ or _SY600_)
-  // with a custom width tag to request a smaller image from the source
+  // If it's an Amazon image, replace the size tag (e.g. _SX522_, _SY600_, _SX2048_)
+  // with a custom width tag to request a smaller image from the source.
+  // We look for patterns like ._AC_SXn_ or ._SXn_ or ._SYn_
   if (url.includes("media-amazon.com")) {
-    return url.replace(/\._AC_S[XY]\d+_/, `._AC_SX${width}_`);
+    // Robust replacement pattern that catches both _AC_ variants and direct size tags
+    const optimized = url.replace(/\._(AC_)?S[XY]\d+_/, `._AC_SX${width}_`);
+    // If the replacement happened, return it, otherwise try a simpler direct SX/SY replacement
+    if (optimized !== url) return optimized;
+
+    return url.replace(/\.S[XY]\d+_/, `._AC_SX${width}_`);
   }
 
   return url;

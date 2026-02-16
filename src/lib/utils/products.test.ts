@@ -85,6 +85,18 @@ describe("products utility", () => {
       const optimized = getOptimizedImageUrl(original, 400);
       expect(optimized).toContain("._AC_SX400_");
       expect(optimized).not.toContain("._AC_SY600_");
+
+      // Test with _SX2048_ pattern
+      const large =
+        "https://m.media-amazon.com/images/I/71u9c6P-YpL._SX2048_.jpg";
+      const optimizedLarge = getOptimizedImageUrl(large, 400);
+      expect(optimizedLarge).toContain("._AC_SX400_");
+
+      // Test with multiple codes
+      const complex =
+        "https://m.media-amazon.com/images/I/71u9c6P-YpL._AC_SX200_SY400_.jpg";
+      const optimizedComplex = getOptimizedImageUrl(complex, 500);
+      expect(optimizedComplex).toContain("._AC_SX500_");
     });
 
     it("should return unchanged URL for non-Amazon images", () => {

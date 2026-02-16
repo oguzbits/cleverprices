@@ -20,34 +20,28 @@ const DynamicProductCarousel = dynamic(
   },
 );
 
-interface Product {
-  title: string;
-  price: number;
-  slug: string;
-  image?: string;
-  badgeText?: string;
-}
-
 interface IdealoHomePageProps {
-  popular: Product[];
-  deals: Product[];
-  bestsellers: Product[];
-  newArrivals: Product[];
-  country: string;
+  heroProducts: any[];
+  bestsellers: any[];
+  deals: any[];
+  newArrivals: any[];
+  categories: any[];
+  countryCode: string;
   livePriceMap?: Map<number, any>;
 }
 
 export function IdealoHomePage({
-  popular,
-  deals,
+  heroProducts,
   bestsellers,
+  deals,
   newArrivals,
-  country,
+  categories,
+  countryCode,
   livePriceMap,
 }: IdealoHomePageProps) {
   // Handle empty state if all lists are empty
   if (
-    popular.length === 0 &&
+    heroProducts.length === 0 &&
     deals.length === 0 &&
     bestsellers.length === 0 &&
     newArrivals.length === 0
@@ -70,11 +64,11 @@ export function IdealoHomePage({
 
   return (
     <div className="bg-[#f5f5f5]">
-      <CategoryNav country={country} />
+      <CategoryNav country={countryCode} />
       {/* Hero Section - light blue bg - Critical, so we keep regular import or direct usage */}
-      {popular.length > 0 ? (
+      {heroProducts.length > 0 ? (
         <IdealoSection variant="lightBlue">
-          <IdealoHero products={popular} livePriceMap={livePriceMap} />
+          <IdealoHero products={heroProducts} livePriceMap={livePriceMap} />
         </IdealoSection>
       ) : null}
 
@@ -86,6 +80,7 @@ export function IdealoHomePage({
               title="Bestseller"
               products={bestsellers}
               livePriceMap={livePriceMap}
+              countryCode={countryCode as any}
             />
           </IdealoSection>
         </LazySection>
@@ -99,6 +94,7 @@ export function IdealoHomePage({
               title="Aktuelle Deals für dich"
               products={deals}
               livePriceMap={livePriceMap}
+              countryCode={countryCode as any}
             />
           </IdealoSection>
         </LazySection>
@@ -112,6 +108,7 @@ export function IdealoHomePage({
               title="Neuheiten"
               products={newArrivals}
               livePriceMap={livePriceMap}
+              countryCode={countryCode as any}
             />
           </IdealoSection>
         </LazySection>

@@ -1,10 +1,6 @@
 "use cache";
 
 import { IdealoHomePage } from "@/components/landing/IdealoHomePage";
-import {
-  OrganizationSchema,
-  WebSiteSchema,
-} from "@/components/seo/ProductSchema";
 import { type CountryCode } from "@/lib/countries";
 import { curateProductList } from "@/lib/product-curation";
 import { getCountryByCode } from "@/lib/server/cached-countries";
@@ -98,9 +94,7 @@ export default async function HomeContent({
     excludeGroupKeys: globalSeenGroups,
   });
 
-  // SAFETY CHECK: If everything is empty, the database is likely in a bad state or still syncing.
-  // We throw an error instead of returning empty lists to PREVENT caching this "broken" state.
-  // Next.js will catch the error and won't cache the result, allowing a future request to succeed.
+  // SAFETY CHECK
   const isBuild =
     process.env.NEXT_PHASE === "phase-production-build" ||
     process.env.BUILD_PHASE === "1";
@@ -119,14 +113,6 @@ export default async function HomeContent({
     );
   }
 
-  // Diagnostic logging for intermittent carousel issues
-  if (process.env.NODE_ENV === "production" && !isBuild) {
-    if (heroProducts.length === 0) console.warn("Hero section is empty.");
-    if (deals.length === 0) console.warn("Deals section is empty.");
-    if (newArrivals.length === 0)
-      console.warn("New arrivals section is empty.");
-  }
-
   // 5. Batch fetch live prices for all visible products
   const allHomeProductIds = [
     ...heroProducts.map((p) => p.id),
@@ -138,24 +124,24 @@ export default async function HomeContent({
     .filter((id) => typeof id === "number") as number[];
 
   const { getLivePricesForProducts } = await import("@/lib/server/live-data");
+
   const livePriceMap = await getLivePricesForProducts(
     allHomeProductIds,
     countryCode,
   );
 
+  // 6. Return curated data
   return (
-    <>
-      <OrganizationSchema />
-      <WebSiteSchema />
-
+    <div className="flex flex-col gap-6">
       <IdealoHomePage
-        popular={heroProducts as any}
-        deals={deals as any}
-        bestsellers={bestsellers as any}
-        newArrivals={newArrivals as any}
-        country={countryCode}
+        heroProducts={heroProducts}
+        bestsellers={bestsellers}
+        deals={deals}
+        newArrivals={newArrivals}
+        categories={[]} // Categories not handled here yet
+        countryCode={countryCode}
         livePriceMap={livePriceMap}
       />
-    </>
+    </div>
   );
 }
