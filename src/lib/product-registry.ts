@@ -748,6 +748,7 @@ async function enrichWithFullSiblings(
   pricesByProduct: Map<number, LitePrice[]>,
   countryCode: string,
   stripHeavyData: boolean = true,
+  collapseFamilies: boolean = false, // Default to FALSE to show all variants in lists
 ): Promise<Product[]> {
   if (prods.length === 0) return [];
 
@@ -805,34 +806,56 @@ async function enrichWithFullSiblings(
   const { getFamilyRepresentative } = await import("./product-families");
 
   const seenFamilies = new Set<string>();
-  const uniqueFamilies: Product[] = [];
+  const results: Product[] = [];
 
   for (const p of prods) {
     const familyKey = p.parentAsin || `singleton-${p.id}`;
-    if (seenFamilies.has(familyKey)) continue;
-    seenFamilies.add(familyKey);
 
-    const siblings = p.parentAsin
-      ? siblingsByParent.get(p.parentAsin) || [p]
-      : [p];
+    // Collapsing logic: If requested, only take the first member of each family
+    if (collapseFamilies) {
+      if (seenFamilies.has(familyKey)) continue;
+      seenFamilies.add(familyKey);
 
-    // Choose the best representative (cheapest new condition)
-    const representative = getFamilyRepresentative(siblings) || p;
+      const siblings = p.parentAsin
+        ? siblingsByParent.get(p.parentAsin) || [p]
+        : [p];
 
-    // Create prices map for mapDbProduct from the representative
-    const repPrices = pricesBySiblingId.get(representative.id!) || [];
+      // Choose the best representative (cheapest new condition)
+      const representative = getFamilyRepresentative(siblings) || p;
 
-    uniqueFamilies.push(
-      mapDbProduct(
-        representative as DbProduct,
-        repPrices,
-        siblings,
-        stripHeavyData,
-      ),
-    );
+      // Get prices: Prefer the pre-indexed pricesByProduct if it's one of the original prods,
+      // otherwise use the freshly fetched sibling prices.
+      const repPrices =
+        pricesByProduct.get(representative.id!) ||
+        pricesBySiblingId.get(representative.id!) ||
+        [];
+
+      results.push(
+        mapDbProduct(
+          representative as DbProduct,
+          repPrices,
+          siblings,
+          stripHeavyData,
+        ),
+      );
+    } else {
+      // Flat Mode: Return EVERY product in the list, but ensure it's mapped with its family context
+      const siblings = p.parentAsin
+        ? siblingsByParent.get(p.parentAsin) || [p]
+        : [p];
+
+      results.push(
+        mapDbProduct(
+          p as DbProduct,
+          pricesByProduct.get(p.id!) || pricesBySiblingId.get(p.id!) || [],
+          siblings,
+          stripHeavyData,
+        ),
+      );
+    }
   }
 
-  return uniqueFamilies;
+  return results;
 }
 
 import { cache } from "react";
@@ -842,6 +865,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   category: string,
   stripHeavyData: boolean = true, // Default to true for category lists
   limit?: number,
+  collapseFamilies: boolean = false, // Default to FALSE to show all variants
 ): Promise<Product[]> {
   if (!category) return [];
   const fetchProducts = async () => {
@@ -874,7 +898,13 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 
     const pricesByProduct = indexPricesById(prs);
 
-    return enrichWithFullSiblings(prods, pricesByProduct, "de", stripHeavyData);
+    return enrichWithFullSiblings(
+      prods,
+      pricesByProduct,
+      "de",
+      stripHeavyData,
+      collapseFamilies,
+    );
   };
 
   // Skip cache if we're not in a Next.js environment (e.g. running scripts)
@@ -892,7 +922,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
     [`category-products-v34-${category}-${stripHeavyData}-${limit || "all"}`],
     {
       revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: ["category-products", `cat-${category}`, "v46"],
+      tags: ["category-products", `cat-${category}`, "v48"],
     },
   )();
 });

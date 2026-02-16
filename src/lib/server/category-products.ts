@@ -504,7 +504,7 @@ export async function getCategoryProducts(
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v47",
+    "v48",
   );
 
   // 2. [OPTIMIZATION] Skip Live Price Merge for the FULL list
