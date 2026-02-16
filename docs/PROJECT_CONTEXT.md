@@ -17,6 +17,7 @@ Before writing any code or answering architecture questions, you MUST:
 - **Styling**: Tailwind CSS 4 with `shadcn/ui` components.
 - **State**: URL-based state management via `nuqs`.
 - [x] **Database**: Local SQLite with Drizzle ORM.
+- [x] **Price Consistency**: Strict Tiered TTL Policy (Pages: 15m, Data: 10m). See **[CACHE_POLICY.md](architecture/CACHE_POLICY.md)**.
 - [x] **Data Source**: Keepa API (Primary) for automated price tracking.
 - [x] **Performance**: Fully memory-mapped DB (256MB) + Next.js `cacheComponents` + **O(1) Detail Fetching** + **Request-Level Deduplication**.
 

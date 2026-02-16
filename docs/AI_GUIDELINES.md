@@ -22,6 +22,8 @@
 - **[architecture/LANDING_PAGE.md](architecture/LANDING_PAGE.md)**: Landing page component structure.
 - **[architecture/GEO_STRATEGY.md](architecture/GEO_STRATEGY.md)**: Internationalization strategy.
 - **[architecture/PDP_GUARDRAILS.md](architecture/PDP_GUARDRAILS.md)**: Performance rules for Product Detail Pages.
+- **[architecture/CACHE_POLICY.md](architecture/CACHE_POLICY.md)**: **CRITICAL**: Rules for absolute price consistency & cache TTLs.
+- **[architecture/STABILITY_GUIDE.md](architecture/STABILITY_GUIDE.md)**: **MANDATORY**: Soft 404, SEO Triad, and UX persistence rules.
 
 ### Operations & Runbooks
 

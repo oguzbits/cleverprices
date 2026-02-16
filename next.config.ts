@@ -31,15 +31,19 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-tabs",
       "@radix-ui/react-tooltip",
     ],
+    /* 
+       SINGLE SOURCE OF TRUTH FOR TTL: docs/architecture/CACHE_POLICY.md 
+       Inner Data Layer (Prices) must ALWAYS revalidate faster than pages to ensure consistency.
+    */
     cacheLife: {
       category: {
-        stale: 3600, // 1 hour
-        revalidate: 3600,
+        stale: 900, // 15 minutes
+        revalidate: 900,
         expire: 86400, // 24 hours
       },
       product: {
-        stale: 3600, // 1 hour
-        revalidate: 3600,
+        stale: 900, // 15 minutes
+        revalidate: 900,
         expire: 86400, // 24 hours
       },
       static: {
@@ -49,8 +53,8 @@ const nextConfig: NextConfig = {
       },
       // Short-lived cache for dynamic data like prices
       dynamic: {
-        stale: 900, // 15 minutes
-        revalidate: 900,
+        stale: 600, // 10 minutes
+        revalidate: 600,
         expire: 3600, // 1 hour
       },
       // Very fast cache for highly volatile data
@@ -61,8 +65,8 @@ const nextConfig: NextConfig = {
       },
       // Keep legacy name for backward compatibility during migration
       prices: {
-        stale: 1800, // 30 minutes
-        revalidate: 1800,
+        stale: 600, // 10 minutes
+        revalidate: 600,
         expire: 7200, // 2 hours
       },
     },

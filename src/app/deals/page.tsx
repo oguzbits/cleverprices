@@ -12,6 +12,10 @@ export const metadata = {
     "Finden Sie die besten Hardware-Deals und Technik-Angebote. Täglich geprüfte Preise für SSDs, HDDs, RAM und mehr.",
 };
 
+export async function generateStaticParams() {
+  return [{}];
+}
+
 export default async function DealsPage({ searchParams }: Props) {
   const filters = await searchParams;
   const category = CATEGORY_MAP["deals"]; // Now exists in categories.ts

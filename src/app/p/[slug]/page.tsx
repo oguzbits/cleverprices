@@ -2,14 +2,15 @@ import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
-import { getFamilyIdentity } from "@/lib/product-families";
 import { type Product } from "@/lib/product-registry";
 import {
   getAllProductSlugs,
   getPDPRenderData,
+  getProductById,
 } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
+import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
 
 import { notFound, permanentRedirect, redirect } from "next/navigation";
@@ -24,8 +25,8 @@ export interface Props {
 }
 // Generate static params for all products (Germany only)
 export async function generateStaticParams() {
-  // Fetch only top 100 products for pre-generation to keep build times manageable
-  const products = await getAllProductSlugs(100);
+  // Fetch top 500 products for pre-generation (Smart ordered by registry)
+  const products = await getAllProductSlugs(500);
 
   // Cache Components requires at least one result
   // If no products in DB yet, return a placeholder that will 404
@@ -115,14 +116,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   try {
-    const data = await getPDPRenderData(slug);
-    let product = data?.product;
-    let isParentViewMode = data?.isParentView || false;
+    const renderData = await getPDPRenderData(slug);
+    let isParentViewMode = renderData?.isParentView || false;
 
     // Handle Metadata redirects if needed (canonical)
-    if (data?.redirect) {
+    if (renderData?.redirect) {
       // We can't strictly redirect in metadata, but we can set canonical to the target
-      const canonicalUrl = `https://${BRAND_DOMAIN}${data.redirect}`;
+      const canonicalUrl = `https://${BRAND_DOMAIN}${renderData.redirect}`;
       return {
         title: "Produkt wird geladen...",
         alternates: { canonical: canonicalUrl },
@@ -130,12 +130,27 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
 
-    if (!product) {
-      return {
-        title: "Produkt nicht gefunden - CleverPrices",
-        robots: { index: false, follow: false },
-      };
+    if (!renderData || !renderData.product) {
+      // Phase 4: Error Recovery - Try to redirect to logical category/brand instead of 404
+      // This recovers link equity and keeps Googlebot indexing the site.
+      // First, let's see if we can extract ID from the slug to find the product's category
+      const idMatch = slug.match(/^(\d+)_/);
+      if (idMatch) {
+        const productId = parseInt(idMatch[1]);
+        const product = await getProductById(productId);
+        if (product?.category) {
+          redirect(`/c/${product.category}`);
+        }
+      }
+
+      notFound();
     }
+
+    const product = renderData.product;
+    if (!product.id) {
+      notFound();
+    }
+    const productId = product.id;
 
     const countryCode = DEFAULT_COUNTRY;
     const countryConfig = getCountryByCode(countryCode);
@@ -166,7 +181,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
     const isParentView = isParentViewMode;
-    const siblings = isParentView ? data?.variants || [] : [];
+    const siblings = isParentView ? renderData?.variants || [] : [];
     const identity = getProductIdentity(product, siblings);
 
     // Calculate price per unit for SEO
@@ -194,24 +209,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         : `${product.title} günstig kaufen. Aktueller Bestpreis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Finden Sie jetzt das beste Hardware-Angebot bei ${BRAND_DOMAIN}.`);
 
     // Use the ID-prefixed slug for the canonical URL to match the sitemap exactly
-    const { slug: canonicalSlug } = getFamilyIdentity(
-      product,
-      data?.variants || [],
-    );
-    const canonicalPath = `/p/${canonicalSlug}`;
-    const canonicalUrl = `https://${BRAND_DOMAIN}${canonicalPath}`;
+    const canonicalPath = getProductPath(product.id, product.slug);
 
     return {
       title,
       description,
       alternates: {
-        canonical: canonicalUrl,
+        canonical: getProductCanonicalUrl(product.id, product.slug),
         languages: getAlternateLanguages(canonicalPath),
       },
       openGraph: getOpenGraph({
         title: `${seoTitle} Preisvergleich | ${BRAND_DOMAIN}`,
         description,
-        url: canonicalUrl,
+        url: getProductCanonicalUrl(product.id, product.slug),
         locale: "de_DE",
         type: "article",
         images: product.image

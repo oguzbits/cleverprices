@@ -52,7 +52,6 @@ export async function generateStaticParams() {
       // Child: include if non-empty
       return nonEmptySlugs.includes(c.slug);
     })
-    .slice(0, 20)
     .map((c) => ({ categorySlug: c.slug }));
 }
 

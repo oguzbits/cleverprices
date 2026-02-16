@@ -412,7 +412,15 @@ export async function getAllProductSlugs(limit?: number): Promise<
         enrichmentStatus: products.enrichmentStatus,
         updatedAt: products.updatedAt,
       })
-      .from(products);
+      .from(products)
+      .orderBy(
+        // 1. Optimized products first (Google loves specifications)
+        sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
+        // 2. Then by Sales Rank (smaller is more popular)
+        asc(products.salesRank),
+        // 3. Then by newest updates
+        desc(products.updatedAt),
+      );
 
     if (limit) {
       // @ts-ignore - Drizzle limit works

@@ -23,7 +23,11 @@ export async function getLivePricesForProducts(
   includeHistory: boolean = false,
 ) {
   "use cache";
-  cacheLife("minutes"); // Increased from 1m to 5m+ to reduce crawl load on entry-level servers
+  /* 
+     PRICE CONSISTENCY: Revalidation must be <= Page TTL (15m). 
+     See Single Source Of Truth: docs/architecture/CACHE_POLICY.md 
+  */
+  cacheLife("prices"); // Synchronized profile
 
   if (productIds.length === 0) return new Map();
 
