@@ -415,7 +415,9 @@ export async function getPDPRenderData(
         }
 
         // Check if current URL is the canonical id-prefixed specific slug
-        const canonicalUrlSlug = `${200000000 + realId}_-${product.slug}`;
+        const canonicalUrlSlug = product.slug.includes("_-")
+          ? product.slug
+          : `${200000000 + realId}_-${product.slug}`;
         if (slug !== canonicalUrlSlug) {
           return {
             redirect: `/p/${canonicalUrlSlug}`,
