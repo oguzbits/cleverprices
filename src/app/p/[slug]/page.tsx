@@ -2,6 +2,7 @@ import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
+import { getFamilyIdentity } from "@/lib/product-families";
 import { type Product } from "@/lib/product-registry";
 import {
   getAllProductSlugs,
@@ -192,7 +193,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? `${product.title} zum besten Preis kaufen. Aktuell nur ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Jetzt Angebote in Deutschland vergleichen und sparen!`
         : `${product.title} günstig kaufen. Aktueller Bestpreis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Finden Sie jetzt das beste Hardware-Angebot bei ${BRAND_DOMAIN}.`);
 
-    const canonicalPath = `/p/${product.slug}`;
+    // Use the ID-prefixed slug for the canonical URL to match the sitemap exactly
+    const { slug: canonicalSlug } = getFamilyIdentity(
+      product,
+      data?.variants || [],
+    );
+    const canonicalPath = `/p/${canonicalSlug}`;
     const canonicalUrl = `https://${BRAND_DOMAIN}${canonicalPath}`;
 
     return {
@@ -260,9 +266,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
         `[SEO Redirect] ${data.isPermanent ? "301/308" : "302/307"} ${slug} -> ${data.redirect}`,
       );
       if (data.isPermanent) {
-        permanentRedirect(data.redirect);
+        return permanentRedirect(data.redirect);
       } else {
-        redirect(data.redirect);
+        return redirect(data.redirect);
       }
     }
 
