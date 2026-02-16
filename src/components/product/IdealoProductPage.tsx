@@ -18,7 +18,6 @@ import {
   getProductVariants,
   getSimilarProducts,
 } from "@/lib/server/cached-products";
-import { mergeLivePrices } from "@/lib/server/live-data";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
@@ -62,12 +61,10 @@ export async function IdealoProductPage({
 }: IdealoProductPageProps) {
   const isParentView = initialIsParentView;
 
-  // 1. CONSOLIDATED LIVE DATA FETCH: This replaces the "Ghost Shell" deferral.
-  // By merging here, we deliver a solid page without animate-pulse skeletons.
-  const [mergedProduct, ...mergedVariants] = await mergeLivePrices(
-    [product, ...variants],
-    countryCode as any,
-  );
+  // 1. DATA IS ALREADY MERGED: This component receives already-merged data
+  // from getPDPRenderData in the parent [slug]/page.tsx.
+  const mergedProduct = product;
+  const mergedVariants = variants;
 
   const identity = getProductIdentity(mergedProduct);
   const effectiveCondition =

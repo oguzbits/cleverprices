@@ -23,7 +23,7 @@ import {
   getSimilarProducts as getSimilarProductsSync,
   type Product,
 } from "../product-registry";
-import { mergeLivePrices } from "./live-data";
+import { mergeLivePrices, mergeLivePricesSelective } from "./live-data";
 
 /**
  * --- PRIVATE CACHED DATA FETCHERS ---
@@ -325,7 +325,7 @@ export async function getPDPRenderData(
             countryCode,
             true,
           );
-          const merged = await mergeLivePrices(
+          const merged = await mergeLivePricesSelective(
             [product, ...variants],
             countryCode,
             true,
@@ -413,7 +413,7 @@ export async function getPDPRenderData(
         const isSpecificSlug = urlSlugText === productSlugText;
 
         // Ensure we have fresh prices for the decision
-        const merged = await mergeLivePrices(
+        const merged = await mergeLivePricesSelective(
           [product, ...variants],
           countryCode,
           true,
@@ -534,7 +534,11 @@ export async function getPDPRenderData(
     const v = results[1] as Product[];
 
     // Ensure PDP is fresh (Prices + History)
-    const merged = await mergeLivePrices([product, ...v], countryCode, true);
+    const merged = await mergeLivePricesSelective(
+      [product, ...v],
+      countryCode,
+      true,
+    );
     product = merged[0];
     variants = merged.slice(1);
 

@@ -23,7 +23,7 @@ export async function getLivePricesForProducts(
   includeHistory: boolean = false,
 ) {
   "use cache";
-  cacheLife("fast"); // 1 minute revalidation
+  cacheLife("minutes"); // Increased from 1m to 5m+ to reduce crawl load on entry-level servers
 
   if (productIds.length === 0) return new Map();
 
@@ -232,4 +232,33 @@ export async function mergeLivePrices(
     }
     return p;
   });
+}
+
+/**
+ * Selective merge: Fetches history ONLY for the first product (the main PDP product)
+ * and only prices for the rest (variants). This saves massive DB overhead/JSON parsing.
+ */
+export async function mergeLivePricesSelective(
+  products: Product[],
+  countryCode: string,
+  includeHistoryForMain: boolean = false,
+): Promise<Product[]> {
+  if (products.length === 0) return [];
+  if (products.length === 1) {
+    return mergeLivePrices(products, countryCode, includeHistoryForMain);
+  }
+
+  const mainProduct = products[0];
+  const variants = products.slice(1);
+
+  // Fetch data in two chunks if history needed, or one if not
+  if (includeHistoryForMain) {
+    const [mainWithHistory, variantsOnlyPrices] = await Promise.all([
+      mergeLivePrices([mainProduct], countryCode, true),
+      mergeLivePrices(variants, countryCode, false),
+    ]);
+    return [...mainWithHistory, ...variantsOnlyPrices];
+  }
+
+  return mergeLivePrices(products, countryCode, false);
 }

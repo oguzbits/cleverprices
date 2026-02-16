@@ -165,10 +165,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       };
     }
     const isParentView = isParentViewMode;
-    const { getProductVariants } = await import("@/lib/server/cached-products");
-    const siblings = isParentView
-      ? await getProductVariants(product, countryCode, true, true) // LEAN Fetch for Metadata
-      : [];
+    const siblings = isParentView ? data?.variants || [] : [];
     const identity = getProductIdentity(product, siblings);
 
     // Calculate price per unit for SEO
