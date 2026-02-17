@@ -25,8 +25,8 @@ export interface Props {
 }
 // Generate static params for all products (Germany only)
 export async function generateStaticParams() {
-  // Fetch top 500 products for pre-generation (Smart ordered by registry)
-  const products = await getAllProductSlugs(500);
+  // Fetch top 1000 products for pre-generation (Smart ordered by registry)
+  const products = await getAllProductSlugs(1000);
 
   // Cache Components requires at least one result
   // If no products in DB yet, return a placeholder that will 404
