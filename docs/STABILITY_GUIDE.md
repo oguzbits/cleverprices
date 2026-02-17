@@ -30,6 +30,15 @@ CleverPrices uses a unified local-first architecture for maximum performance and
 - **Reads**: Performed by the **Next.js Web Server** ($0 cost, near-zero latency).
 - **Backups**: Periodically synced to Cloudflare R2.
 
+### 6.1 Build-Time Isolation
+
+To maintain high deployment velocity and image portability:
+
+- The `.db` file is **not present** during the `next build` phase.
+- This is enforced via `.dockerignore`.
+- **Why**: Prerendering 7,000+ pages during build would take 20+ minutes and risk baking stale local data into the production image.
+- **Optimization**: We rely on Next.js 16's `use cache` to handle on-demand static generation at runtime.
+
 ---
 
 ## 8. The Performance Baseline

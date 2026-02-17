@@ -38,3 +38,18 @@ The maximum discrepancy window between any two views is **15 minutes**. This ali
 ### 3. Absolute Priority
 
 If a build or a change introduces a risk of "Stale Hijacking" (where a page stays cached with old prices while others update), it must be rejected.
+
+## 🏗️ Static Generation Strategy
+
+### Dynamic-on-Demand (DoD)
+
+CleverPrices uses a **"Dynamic-on-Demand"** model for PDPs and Category pages.
+
+- **Build Phase**: The database is intentionally **excluded** from the Docker build context (via `.dockerignore`) to favor thin, portable images.
+- **`generateStaticParams`**: During the build, these functions return an empty array (or a placeholder) because the database is inaccessible.
+- **Runtime**: When a user or crawler (Googlebot) hits a page for the first time:
+  1. The page is generated on-the-fly (~200ms).
+  2. It is immediately frozen into the **Cache Life Layer** (15 minutes).
+  3. Subsequent hits are served instantly as static HTML.
+
+This strategy prevents "Static-Data-Baking" where local development data accidentally ends up in the production bundle.

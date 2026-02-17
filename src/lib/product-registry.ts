@@ -454,9 +454,14 @@ export async function getAllProductSlugs(limit?: number): Promise<
       };
     });
   } catch (e) {
-    console.warn(
-      "[Build Warning] Database missing or inaccessible in getAllProductSlugs. Skipping static generation.",
-    );
+    const isBuild =
+      process.env.NEXT_PHASE === "phase-production-build" ||
+      process.env.BUILD_PHASE === "1";
+    if (!isBuild) {
+      console.warn(
+        "[Product Registry] Database missing or inaccessible in getAllProductSlugs.",
+      );
+    }
     return [];
   }
 }
@@ -503,14 +508,6 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
         throw e; // Rethrow at runtime to prevent poisoned cache
       }
 
-      // During Docker build, the DB volume is not yet mounted.
-      // We return empty list to skip static generation of category pages during build.
-      // They will be rendered at runtime via SSR/ISR once the volume is available.
-      console.warn(
-        "[Build Warning] Database missing or inaccessible. Skipping static generation.",
-      );
-      // Next.js 16 cacheComponents requires at least one result from generateStaticParams.
-      // We return a placeholder that will be handled at runtime.
       return ["build-time-placeholder"];
     }
   };

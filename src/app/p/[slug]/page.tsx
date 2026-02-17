@@ -24,14 +24,24 @@ export interface Props {
   }>;
 }
 // Generate static params for all products (Germany only)
+// NOTE: During the build phase (Next.js build), the database is excluded to keep Docker images thin.
+// This function will return a placeholder during build, and relies on on-demand generation at runtime.
 export async function generateStaticParams() {
-  // Fetch top 1000 products for pre-generation (Smart ordered by registry)
-  const products = await getAllProductSlugs(1000);
+  const isBuild =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.BUILD_PHASE === "1";
 
-  // Cache Components requires at least one result
-  // If no products in DB yet, return a placeholder that will 404
+  if (isBuild) {
+    // Explicitly return a placeholder during build to avoid DB warnings and keep build fast.
+    return [{ slug: "build-time-placeholder" }];
+  }
+
+  // Fetch all products for on-demand static generation.
+  // This is only called at runtime or during incremental revalidation.
+  const products = await getAllProductSlugs();
+
   if (products.length === 0) {
-    return [{ slug: "[slug]" }];
+    return [{ slug: "build-time-placeholder" }];
   }
 
   return products.map((product) => ({
