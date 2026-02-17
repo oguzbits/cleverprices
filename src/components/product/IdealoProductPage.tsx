@@ -62,23 +62,43 @@ export async function IdealoProductPage({
   const isParentView = initialIsParentView;
 
   // 1. DATA IS ALREADY MERGED: This component receives already-merged data
-  // from getPDPRenderData in the parent [slug]/page.tsx.
+  // HUB STABILITY FIX: Use the actual family representative to derive the parent slug.
+  // This ensures that regardless of which variant page you are on, the "Alle Varianten"
+  // link always points to the same canonical hub ID, avoiding 302 redirects.
   const mergedProduct = product;
   const mergedVariants = variants;
+  const allFamilyMembers = [mergedProduct, ...mergedVariants];
+  const representative =
+    [...allFamilyMembers].sort((a, b) => (a.id || 0) - (b.id || 0))[0] ||
+    mergedProduct;
 
   const identity = getProductIdentity(mergedProduct);
   const effectiveCondition =
     selectedCondition ||
     (mergedProduct.condition === "Renewed" ? "renewed" : "new");
 
-  const realId = (mergedProduct.id || 0) % 100000000;
+  const realId = (representative.id || 0) % 100000000;
   const syntheticId = 900000000 + realId;
-  const parentRep = { ...mergedProduct, syntheticId };
-  const { slug: autoParentSlug } = getFamilyIdentity(parentRep);
+  const parentRep = { ...representative, syntheticId };
+  const { slug: autoParentSlug } = getFamilyIdentity(
+    parentRep,
+    allFamilyMembers,
+  );
+
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      `[DEBUG HUB] Current: ${mergedProduct.id}, Rep: ${representative.id}, Synthetic: ${syntheticId}, Slug: ${autoParentSlug}`,
+    );
+  }
+
   const parentSlug = passedParentSlug || autoParentSlug;
 
-  const parentTitle = passedParentTitle || identity.modelTitle;
-  const hubFullModel = passedFullModel || identity.fullModel;
+  const parentTitle =
+    passedParentTitle ||
+    getProductIdentity(representative, allFamilyMembers).modelTitle;
+  const hubFullModel =
+    passedFullModel ||
+    getProductIdentity(representative, allFamilyMembers).fullModel;
   const variantName = identity.variantSuffix || "Standard";
 
   const schemaBreadcrumbs = [
