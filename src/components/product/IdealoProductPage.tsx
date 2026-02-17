@@ -202,19 +202,13 @@ export async function IdealoProductPage({
 
             <div className="col-start-1 row-start-1 min-w-0 flex-1 px-2.5 sm:px-[15px] lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-2 lg:px-[15px]">
               <h1
-                id="oopStage-title"
-                className="text-idealo-text-primary mb-1 line-clamp-2 min-h-[50px] text-[20px] leading-tight font-bold sm:text-center lg:text-left"
+                id="product-title"
+                className="text-[20px] font-bold md:text-[24px]"
               >
-                {isParentView
-                  ? hubFullModel
-                  : mergedProduct.subtitle
-                    ? mergedProduct.title
-                        .replace(mergedProduct.subtitle, "")
-                        .trim()
-                    : mergedProduct.title}
-                {!isParentView && mergedProduct.subtitle && (
-                  <span className="ml-2 text-[16px] font-bold">
-                    {mergedProduct.subtitle}
+                {isParentView ? hubFullModel : identity.fullModel}
+                {!isParentView && identity.variantLabel && (
+                  <span className="ml-2 text-[16px] font-bold text-gray-500">
+                    {identity.variantLabel}
                   </span>
                 )}
               </h1>

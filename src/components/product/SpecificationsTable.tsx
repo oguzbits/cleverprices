@@ -9,6 +9,7 @@
 import { useDebugMode } from "@/hooks/use-debug-mode";
 import { Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import { AlertCircle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
@@ -263,6 +264,13 @@ export function SpecificationsTable({
     const cleanKey = key.replace(/[‡*]/g, "").trim();
     const lowerKey = cleanKey.toLowerCase();
     let label = keyTranslations[lowerKey] || cleanKey;
+
+    // DATA CLEANUP: If the key is "Modell" and the value is truncated (e.g. "Pixel 9" instead of "Pixel 9a"),
+    // or if it's missing the brand, we can use the cleaned identity to improve the UI.
+    if (lowerKey === "model" || lowerKey === "modell") {
+      const identity = getProductIdentity(product);
+      displayValue = identity.fullModel;
+    }
 
     if (
       lowerKey.includes("processor") ||

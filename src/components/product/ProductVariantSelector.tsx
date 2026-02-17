@@ -181,7 +181,7 @@ function VariantCard({
         </span>
 
         <div className="mt-auto flex flex-col items-start">
-          {price && price > 0 && (
+          {price && price > 0 ? (
             <div className="flex flex-col items-start">
               <span className="text-[10px] leading-none text-[#767676]">
                 ab
@@ -195,6 +195,12 @@ function VariantCard({
                     : "text-[#767676]",
                 )}
               />
+            </div>
+          ) : (
+            <div className="flex flex-col items-start">
+              <span className="text-[12px] font-bold text-[#767676]">
+                Nicht verfügbar
+              </span>
             </div>
           )}
         </div>
@@ -253,28 +259,28 @@ function AttributeSelector({
       </span>
       <div className={cn("mt-1.5 flex min-h-[33px] flex-wrap gap-2")}>
         {options.map((option) => {
-          // Availability Logic
+          // Availability Logic: Check if ANY variant with this option has a valid price
           const isUsedMode = condition === "used";
-          const isAvailable =
-            isParentView ||
-            isColor ||
-            variants.some((v) => {
-              const vAttrs = v.normalizedAttrs;
-              // Check if this variant has this specific option for this attribute
-              if (vAttrs[label] !== option) return false;
+          const isAvailable = variants.some((v) => {
+            const vAttrs = v.normalizedAttrs;
+            // Check if this variant has this specific option for this attribute
+            if (vAttrs[label] !== option) return false;
 
-              // Check if it has a price in the current mode
-              const price = isUsedMode
-                ? v.usedPrices?.[countryCode]
-                : v.prices[countryCode];
-              if (!price || price <= 0) return false;
+            // Check if it has a price in the current mode
+            const price = isUsedMode
+              ? v.usedPrices?.[countryCode]
+              : v.prices[countryCode];
+            if (!price || price <= 0) return false;
 
-              // And check if it's compatible with other selected attributes (excluding the current one's dimension)
-              return Object.entries(currentAttrs).every(([pk, pv]) => {
-                if (pk === label) return true; // ignore our own dimension
-                return vAttrs[pk] === pv;
-              });
+            // And check if it's compatible with other selected attributes (excluding the current one's dimension)
+            // In Parent View (Hub), we relax this to check if THIS attribute value is available ANYWHERE in the family
+            if (isParentView) return true;
+
+            return Object.entries(currentAttrs).every(([pk, pv]) => {
+              if (pk === label) return true; // ignore our own dimension
+              return vAttrs[pk] === pv;
             });
+          });
 
           const isSelected =
             !isParentView &&
