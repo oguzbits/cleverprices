@@ -34,8 +34,10 @@ export async function CachedVariantSelector({
   }
 
   // Find the merged version of the current product to ensure consistency
+  // Robust match: Try ID first, then ASIN (especially if ID is synthetic/Hub)
   const currentMergedProduct =
-    allVariants.find((v) => v.id === product.id) || product;
+    allVariants.find((v) => v.id === product.id || v.asin === product.asin) ||
+    product;
 
   if (allVariants.length <= 1) return null;
 

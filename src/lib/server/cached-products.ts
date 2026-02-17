@@ -23,7 +23,11 @@ import {
   getSimilarProducts as getSimilarProductsSync,
   type Product,
 } from "../product-registry";
-import { mergeLivePrices, mergeLivePricesSelective } from "./live-data";
+import {
+  getLivePriceForProduct,
+  mergeLivePrices,
+  mergeLivePricesSelective,
+} from "./live-data";
 
 /**
  * --- PRIVATE CACHED DATA FETCHERS ---
@@ -90,9 +94,7 @@ async function getCachedProductVariantsInternal(
   countryCode: string,
   skipFullMapping: boolean = false,
 ) {
-  "use cache";
-  cacheLife("product");
-  // We need a dummy product to start the registry fetch
+  // No cache for debugging
   return getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -319,20 +321,56 @@ export async function getPDPRenderData(
       // Hub Mode
       product = await getCachedProductBySyntheticId(id);
       if (product) {
-        if (product.slug === slug) {
+        // Robust slug check: allow match if slug text or ID prefix matches (helps with synthetic slugs)
+        const isSlugMatch = product.slug === slug || product.id === id;
+
+        if (isSlugMatch) {
           const variants = await getCachedProductVariantsInternal(
             product.parentAsin || product.asin,
             countryCode,
-            true,
-          );
-          const merged = await mergeLivePricesSelective(
-            [product, ...variants],
-            countryCode,
-            true,
+            true, // isLean
           );
 
-          let effectiveProduct = merged[0];
-          const rep = getFamilyRepresentative(merged);
+          // 1. Merge prices for all (No history yet)
+          const mergedAll = await mergeLivePrices(
+            [product, ...variants],
+            countryCode,
+            false,
+          );
+
+          // 2. Identify the TRUE representative (cheapest) from live data
+          const rep = getFamilyRepresentative(mergedAll);
+          let effectiveProduct = mergedAll[0];
+
+          // 3. Fetch History for the chosen representative
+          // This ensures the chart on the Hub page reflects the cheapest variant
+          if (rep) {
+            const liveData = await getLivePriceForProduct(
+              rep.id!,
+              countryCode,
+              true, // includeHistory
+            );
+
+            if (liveData?.history) {
+              // Sync history to both the rep and the effective Hub product
+              rep.priceHistory = liveData.history;
+
+              // Recalculate savings/metrics for rep if history updated
+              const { calculateProductSavings } =
+                await import("../utils/products");
+              rep.savings = calculateProductSavings({
+                price: rep.prices[countryCode] || 0,
+                usedPrice: rep.usedPrices?.[countryCode] || 0,
+                warehousePrice: rep.warehousePrices?.[countryCode] || 0,
+                avg90: liveData.priceAvg90 || 0,
+              });
+            } else if (effectiveProduct.priceHistory) {
+              // Fallback to history already in effectiveProduct if live fetch failed
+              rep.priceHistory = effectiveProduct.priceHistory;
+            }
+          }
+
+          // 4. Align Hub product with Representative metadata
           if (rep && rep.id !== effectiveProduct.id) {
             effectiveProduct = {
               ...effectiveProduct,
@@ -342,11 +380,14 @@ export async function getPDPRenderData(
               pricesLastUpdated: rep.pricesLastUpdated,
               condition: rep.condition,
             };
+          } else if (rep) {
+            // Even if same product, ensure history is attached
+            effectiveProduct.priceHistory = rep.priceHistory;
           }
 
           return {
             product: effectiveProduct,
-            variants: merged.filter((p) => p.id !== effectiveProduct.id),
+            variants: mergedAll.slice(1),
             isParentView: true,
             redirect: null,
             isPermanent: false,

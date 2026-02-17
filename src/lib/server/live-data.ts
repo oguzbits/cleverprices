@@ -32,36 +32,38 @@ export async function getLivePricesForProducts(
   if (productIds.length === 0) return new Map();
 
   // Handle synthetic IDs (Hub/Parent Mode offsets)
-  const idMap = new Map<number, number>(); // realId -> requestedId
-  const realIds = productIds.map((id) => {
+  const idMap = new Map<number, number[]>(); // realId -> requestedIds[]
+  const realIdsSet = new Set<number>();
+  productIds.forEach((id) => {
     const realId =
       id >= 900000000 ? id - 900000000 : id >= 200000000 ? id - 200000000 : id;
-    idMap.set(realId, id);
-    return realId;
+    const existing = idMap.get(realId) || [];
+    idMap.set(realId, [...existing, id]);
+    realIdsSet.add(realId);
   });
 
   const latestPrices = await withRetry(async () => {
     return await db
       .select({
         ...litePriceColumns,
+        productId: prices.productId, // Ensure productId is selected for mapping
         ...(includeHistory ? { historyJson: prices.historyJson } : {}),
       })
       .from(prices)
       .where(
         and(
-          inArray(prices.productId, Array.from(new Set(realIds))),
+          inArray(prices.productId, Array.from(realIdsSet)),
           eq(prices.country, countryCode),
         ),
       );
   });
 
-  const priceMap = new Map();
+  const priceMap = new Map<number, any>();
   latestPrices.forEach((p: any) => {
     // Lean schema: price is already the consolidated "clever" price
     const price = p.price && p.price > 0 ? p.price : null;
     const usedPrice = p.usedPrice && p.usedPrice > 0 ? p.usedPrice : null;
     const warehousePrice =
-      // @ts-ignore - Drizzle generated types might be slightly off for lean schema
       p.warehousePrice && p.warehousePrice > 0 ? p.warehousePrice : null;
 
     if (price || usedPrice || warehousePrice) {
@@ -76,23 +78,17 @@ export async function getLivePricesForProducts(
         // PARSE EARLY: Avoid passing raw Buffers through unstable_cache (serialization issues)
         history:
           includeHistory && p.historyJson
-            ? parseHistoryJson(p.historyJson)
+            ? parseHistoryJson(p.historyJson as string)
             : undefined,
       };
 
       // Map back to ALL requested IDs that resolve to this real ID
-      productIds.forEach((requestedId) => {
-        const mappedRealId =
-          requestedId >= 900000000
-            ? requestedId - 900000000
-            : requestedId >= 200000000
-              ? requestedId - 200000000
-              : requestedId;
-
-        if (mappedRealId === p.productId) {
-          priceMap.set(requestedId, data);
-        }
-      });
+      const requestedIds = idMap.get(p.productId);
+      if (requestedIds) {
+        requestedIds.forEach((id) => {
+          priceMap.set(id, data);
+        });
+      }
     }
   });
 

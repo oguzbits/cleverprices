@@ -384,9 +384,19 @@ export async function findProductBySyntheticId(
 
   // 4. Return the "Best" representative, but MASKED with the Synthetic ID
   // This ensures the URL remains stable (pointing to the family) while the content is dynamic/optimal.
+  const history = await getProductPriceHistory(representative.id!, "de");
+
+  // Determine the correct slug for the Hub
+  const slugText = representative.slug.includes("_-")
+    ? representative.slug.split("_-")[1]
+    : representative.slug;
+  const syntheticSlug = `${syntheticId}_-${slugText}`;
+
   return {
     ...representative,
+    priceHistory: history,
     id: syntheticId,
+    slug: syntheticSlug,
     isParentView: true,
   };
 }

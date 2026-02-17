@@ -349,7 +349,11 @@ export async function IdealoProductPage({
                   <ComponentErrorBoundary name="VariantSelector">
                     <CachedVariantSelector
                       product={mergedProduct}
-                      variants={[mergedProduct, ...mergedVariants]}
+                      variants={
+                        isParentView
+                          ? mergedVariants
+                          : [mergedProduct, ...mergedVariants]
+                      }
                       countryCode={countryCode}
                       isParentView={isParentView}
                       selectedCondition={effectiveCondition}

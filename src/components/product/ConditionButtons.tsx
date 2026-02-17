@@ -42,6 +42,9 @@ export async function ConditionButtons({
   let bestUsedOverallProductId = 0;
   let usedOverallType: "renewed" | "warehouse" = "renewed";
 
+  let bestNewVariant: Product | null = null;
+  let bestUsedVariant: Product | null = null;
+
   // Initialize with current product
   if (currentIsNew) {
     newPrice = product.prices[countryCode] || 0;
@@ -49,6 +52,7 @@ export async function ConditionButtons({
       hasNew = true;
       newSlug = product.slug;
       bestNewProductId = product.id!;
+      bestNewVariant = product;
     }
   }
 
@@ -63,12 +67,14 @@ export async function ConditionButtons({
     usedOverallSlug = product.slug;
     bestUsedOverallProductId = product.id!;
     usedOverallType = "renewed";
+    bestUsedVariant = product;
     hasUsedOverall = true;
   } else if (curWarehousePrice > 0) {
     usedOverallPrice = curWarehousePrice;
     usedOverallSlug = product.slug;
     bestUsedOverallProductId = product.id!;
     usedOverallType = "warehouse";
+    bestUsedVariant = product;
     hasUsedOverall = true;
   } else if (
     effectiveCondition === "used" ||
@@ -78,6 +84,7 @@ export async function ConditionButtons({
     usedOverallPrice = 0;
     usedOverallSlug = product.slug;
     bestUsedOverallProductId = product.id!;
+    bestUsedVariant = product;
     hasUsedOverall = true;
   }
 
@@ -97,7 +104,6 @@ export async function ConditionButtons({
       familyMembers = await mergeLivePrices(familyMembers, countryCode);
     }
     const normalizedCurAttrs = normalizeVariantAttributes(product);
-    const category = product.category || "";
 
     familyMembers.forEach((m) => {
       const p = m.prices[countryCode] || 0;
@@ -116,6 +122,7 @@ export async function ConditionButtons({
           const { slug } = getFamilyIdentity(m as any, familyMembers);
           newSlug = slug;
           bestNewProductId = m.id!;
+          bestNewVariant = m;
           hasNew = true;
         }
       }
@@ -153,6 +160,7 @@ export async function ConditionButtons({
           usedOverallSlug = slug;
           bestUsedOverallProductId = item.id;
           usedOverallType = item.type;
+          bestUsedVariant = m;
           hasUsedOverall = true;
         } else {
           const currentIsWarehouse = usedOverallType === "warehouse";
@@ -167,6 +175,7 @@ export async function ConditionButtons({
               usedOverallSlug = slug;
               bestUsedOverallProductId = item.id;
               usedOverallType = item.type;
+              bestUsedVariant = m;
             }
           } else {
             // SPEC-SPECIFIC View: Prefer Renewed if within 5€ margin
@@ -174,23 +183,18 @@ export async function ConditionButtons({
 
             if (itemIsRenewed) {
               if (currentIsWarehouse) {
-                // If current is Warehouse, switch to Renewed (Professional)
-                // Professionals are always preferred over volatile Warehouse deals unless the gap is huge.
                 shouldSwitch = true;
               } else {
-                // Both are Renewed, take the cheaper one
                 if (item.price < usedOverallPrice) {
                   shouldSwitch = true;
                 }
               }
             } else if (itemIsWarehouse) {
               if (currentIsWarehouse) {
-                // Both are Warehouse, take the cheaper one
                 if (item.price < usedOverallPrice) {
                   shouldSwitch = true;
                 }
               } else {
-                // Current is Renewed (Professional), switch to Warehouse only if it's >50€ cheaper
                 if (item.price < usedOverallPrice - 50) {
                   shouldSwitch = true;
                 }
@@ -203,6 +207,7 @@ export async function ConditionButtons({
               usedOverallSlug = slug;
               bestUsedOverallProductId = item.id;
               usedOverallType = item.type;
+              bestUsedVariant = m;
             }
           }
         }
@@ -223,7 +228,7 @@ export async function ConditionButtons({
     : getFamilyIdentity(product).slug;
 
   return (
-    <>
+    <div className="flex gap-2">
       {/* 1. NEW OFFER BOX */}
       {hasNew && (
         <Link
@@ -254,12 +259,23 @@ export async function ConditionButtons({
               countryCode={countryCode as any}
               initialPrice={newPrice}
               priceType="new"
+              livePriceData={
+                bestNewVariant
+                  ? {
+                      price: bestNewVariant.prices[countryCode] ?? null,
+                      usedPrice:
+                        bestNewVariant.usedPrices?.[countryCode] ?? null,
+                      warehousePrice:
+                        bestNewVariant.warehousePrices?.[countryCode] ?? null,
+                    }
+                  : undefined
+              }
             />
           </div>
         </Link>
       )}
 
-      {/* 2. GEBRAUCHT OFFER BOX (Merged Renewed & Warehouse) */}
+      {/* 2. GEBRAUCHT OFFER BOX */}
       {hasUsedOverall && (
         <Link
           href={`/p/${isParentView && parentSlug ? parentSlug : finalUsedSlug}?condition=used`}
@@ -286,10 +302,21 @@ export async function ConditionButtons({
               countryCode={countryCode as any}
               initialPrice={usedOverallPrice}
               priceType={usedOverallType === "renewed" ? "new" : "used"}
+              livePriceData={
+                bestUsedVariant
+                  ? {
+                      price: bestUsedVariant.prices[countryCode] ?? null,
+                      usedPrice:
+                        bestUsedVariant.usedPrices?.[countryCode] ?? null,
+                      warehousePrice:
+                        bestUsedVariant.warehousePrices?.[countryCode] ?? null,
+                    }
+                  : undefined
+              }
             />
           </div>
         </Link>
       )}
-    </>
+    </div>
   );
 }
