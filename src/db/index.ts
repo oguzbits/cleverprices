@@ -115,10 +115,10 @@ export const dbReady: Promise<void> = (async () => {
       // DEFENSIVE: Fix Pixel 10 Pro XL (Product 3860 & 3852) corrupted officialTitle
       try {
         await client.execute(
-          'UPDATE products SET "officialTitle" = NULL WHERE id IN (3852, 3860);',
+          'UPDATE products SET "official_title" = NULL WHERE id IN (3852, 3860);',
         );
         console.log(
-          "[DB] ✅ Defensive repair: Cleared corrupted officialTitle for Pixel 10 variants (3852, 3860).",
+          "[DB] ✅ Defensive repair: Cleared corrupted official_title for Pixel 10 variants (3852, 3860).",
         );
       } catch (err) {
         // Silently handle

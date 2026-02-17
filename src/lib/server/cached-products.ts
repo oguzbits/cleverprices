@@ -392,7 +392,7 @@ export async function getPDPRenderData(
             redirect: null,
             isPermanent: false,
             // Add a salt to bust any stale caches from previous weeks
-            _v: "v48-optimized",
+            _v: "v49-optimized",
           };
         }
 
@@ -562,7 +562,7 @@ export async function getPDPRenderData(
     isParentView,
     redirect,
     isPermanent,
-    _v: "v48-optimized",
+    _v: "v49-optimized",
   };
 }
 
