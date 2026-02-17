@@ -112,36 +112,16 @@ export const dbReady: Promise<void> = (async () => {
     if (isProductionEnvironment) {
       console.log("[DB] 🏁 Migration sequence started...");
 
-      // DEFENSIVE: Auto-repair for "warehouse_price" which was accidentally dropped in some 0005 versions
+      // DEFENSIVE: Fix Pixel 10 Pro XL (Product 3860 & 3852) corrupted officialTitle
       try {
-        console.log(
-          "[DB] Checking for warehouse_price column on prices table...",
-        );
         await client.execute(
-          "ALTER TABLE prices ADD COLUMN warehouse_price REAL;",
+          'UPDATE products SET "officialTitle" = NULL WHERE id IN (3852, 3860);',
         );
         console.log(
-          "[DB] ✅ Manually added missing 'warehouse_price' column to 'prices' table.",
+          "[DB] ✅ Defensive repair: Cleared corrupted officialTitle for Pixel 10 variants (3852, 3860).",
         );
-      } catch (err: any) {
-        const msg = err?.message || String(err);
-        if (
-          msg.includes("duplicate column name") ||
-          msg.includes("already exists")
-        ) {
-          console.log(
-            "[DB] 'warehouse_price' already exists, no repair needed.",
-          );
-        } else if (msg.includes("no such table")) {
-          console.log(
-            "[DB] 'prices' table doesn't exist yet, standard migration will handle it.",
-          );
-        } else {
-          console.warn(
-            "[DB] Non-critical error during warehouse_price check:",
-            msg,
-          );
-        }
+      } catch (err) {
+        // Silently handle
       }
 
       // Smart Migration Skip Logic:
