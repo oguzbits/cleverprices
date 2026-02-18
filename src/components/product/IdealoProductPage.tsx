@@ -73,6 +73,11 @@ export async function IdealoProductPage({
     mergedProduct;
 
   const identity = getProductIdentity(mergedProduct);
+  const repIdentity =
+    representative.id === mergedProduct.id
+      ? identity
+      : getProductIdentity(representative, allFamilyMembers);
+
   const effectiveCondition =
     selectedCondition ||
     (mergedProduct.condition === "Renewed" ? "renewed" : "new");
@@ -93,12 +98,8 @@ export async function IdealoProductPage({
 
   const parentSlug = passedParentSlug || autoParentSlug;
 
-  const parentTitle =
-    passedParentTitle ||
-    getProductIdentity(representative, allFamilyMembers).modelTitle;
-  const hubFullModel =
-    passedFullModel ||
-    getProductIdentity(representative, allFamilyMembers).fullModel;
+  const parentTitle = passedParentTitle || repIdentity.modelTitle;
+  const hubFullModel = passedFullModel || repIdentity.fullModel;
   const variantName = identity.variantSuffix || "Standard";
 
   const schemaBreadcrumbs = [

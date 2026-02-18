@@ -783,11 +783,12 @@ async function enrichWithFullSiblings(
   const allSiblingIds = allSiblings.map((s) => s.id);
 
   // Fetch prices for ALL siblings to ensure representative selection is accurate
+  // Use superLitePriceColumns to avoid massive JSON blobs (historyJson) in memory
   const allSiblingPrices =
     allSiblingIds.length > 0
       ? await withRetry(() =>
           db
-            .select(litePriceColumns)
+            .select(superLitePriceColumns)
             .from(prices)
             .where(
               and(
@@ -805,14 +806,14 @@ async function enrichWithFullSiblings(
       if (!siblingsByParent.has(s.parentAsin))
         siblingsByParent.set(s.parentAsin, []);
 
-      // Attach prices to the sibling object for mapDbProduct
+      // Attach prices to the sibling object for mapDbProduct - pre-mapped for Speed
+      const nodePrices = pricesBySiblingId.get(s.id!) || [];
       const mappedSibling = {
         ...s,
-        prices: pricesBySiblingId.get(s.id!)
-          ? Object.fromEntries(
-              pricesBySiblingId.get(s.id!)!.map((pr) => [pr.country, pr.price]),
-            )
-          : {},
+        prices:
+          nodePrices.length > 0
+            ? Object.fromEntries(nodePrices.map((pr) => [pr.country, pr.price]))
+            : {},
       };
       siblingsByParent.get(s.parentAsin)!.push(mappedSibling);
     }
@@ -848,7 +849,7 @@ async function enrichWithFullSiblings(
       results.push(
         mapDbProduct(
           representative as DbProduct,
-          repPrices,
+          repPrices as any,
           siblings,
           stripHeavyData,
         ),
@@ -862,7 +863,9 @@ async function enrichWithFullSiblings(
       results.push(
         mapDbProduct(
           p as DbProduct,
-          pricesByProduct.get(p.id!) || pricesBySiblingId.get(p.id!) || [],
+          (pricesByProduct.get(p.id!) ||
+            pricesBySiblingId.get(p.id!) ||
+            []) as any,
           siblings,
           stripHeavyData,
         ),
