@@ -51,21 +51,6 @@ export function CategoryNav({ country }: { country: string }) {
 
   const [isOverflowing, setIsOverflowing] = useState(false);
 
-  useEffect(() => {
-    // Force scroll to start on mount/pathname change
-    if (scrollRef.current) {
-      scrollRef.current.scrollLeft = 0;
-      // Small delay to ensure layout is ready before checking scroll
-      const timer = setTimeout(checkScroll, 100);
-      // Second check after images/layout might have shifted
-      const timer2 = setTimeout(checkScroll, 1000);
-      return () => {
-        clearTimeout(timer);
-        clearTimeout(timer2);
-      };
-    }
-  }, [pathname]);
-
   const checkScroll = () => {
     if (scrollRef.current) {
       const container = scrollRef.current;
@@ -96,6 +81,21 @@ export function CategoryNav({ country }: { country: string }) {
       }
     }
   };
+
+  useEffect(() => {
+    // Force scroll to start on mount/pathname change
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = 0;
+      // Small delay to ensure layout is ready before checking scroll
+      const timer = setTimeout(checkScroll, 100);
+      // Second check after images/layout might have shifted
+      const timer2 = setTimeout(checkScroll, 1000);
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(timer2);
+      };
+    }
+  }, [pathname]);
 
   useEffect(() => {
     checkScroll();

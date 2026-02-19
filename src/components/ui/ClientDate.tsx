@@ -36,12 +36,13 @@ export function ClientDate({
     return <span className={className}>...</span>;
   }
 
+  let displayDate = "Invalid Date";
   try {
     const d = typeof date === "string" ? new Date(date) : date;
-    return (
-      <span className={className}>{d.toLocaleString(locale, options)}</span>
-    );
+    displayDate = d.toLocaleString(locale, options);
   } catch (e) {
-    return <span className={className}>Invalid Date</span>;
+    // Falls back to "Invalid Date"
   }
+
+  return <span className={className}>{displayDate}</span>;
 }
