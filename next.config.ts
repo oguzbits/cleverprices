@@ -11,6 +11,41 @@ const nextConfig: NextConfig = {
   output: "standalone", // Required for Docker
   reactCompiler: true,
   cacheComponents: true,
+  cacheLife: {
+    category: {
+      stale: 900, // 15 minutes
+      revalidate: 900,
+      expire: 86400, // 24 hours
+    },
+    product: {
+      stale: 900, // 15 minutes
+      revalidate: 900,
+      expire: 86400, // 24 hours
+    },
+    static: {
+      stale: 86400, // 24 hours
+      revalidate: 86400,
+      expire: 2592000, // 30 days
+    },
+    // Short-lived cache for dynamic data like prices
+    dynamic: {
+      stale: 600, // 10 minutes
+      revalidate: 600,
+      expire: 3600, // 1 hour
+    },
+    // Very fast cache for highly volatile data
+    fast: {
+      stale: 60, // 1 minute
+      revalidate: 60,
+      expire: 300, // 5 minutes
+    },
+    // Keep legacy name for backward compatibility during migration
+    prices: {
+      stale: 600, // 10 minutes
+      revalidate: 600,
+      expire: 7200, // 2 hours
+    },
+  },
   experimental: {
     optimizePackageImports: [
       "lucide-react",
@@ -31,45 +66,6 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-tabs",
       "@radix-ui/react-tooltip",
     ],
-    /* 
-       SINGLE SOURCE OF TRUTH FOR TTL: docs/architecture/CACHE_POLICY.md 
-       Inner Data Layer (Prices) must ALWAYS revalidate faster than pages to ensure consistency.
-    */
-    cacheLife: {
-      category: {
-        stale: 900, // 15 minutes
-        revalidate: 900,
-        expire: 86400, // 24 hours
-      },
-      product: {
-        stale: 900, // 15 minutes
-        revalidate: 900,
-        expire: 86400, // 24 hours
-      },
-      static: {
-        stale: 86400, // 24 hours
-        revalidate: 86400,
-        expire: 2592000, // 30 days
-      },
-      // Short-lived cache for dynamic data like prices
-      dynamic: {
-        stale: 600, // 10 minutes
-        revalidate: 600,
-        expire: 3600, // 1 hour
-      },
-      // Very fast cache for highly volatile data
-      fast: {
-        stale: 60, // 1 minute
-        revalidate: 60,
-        expire: 300, // 5 minutes
-      },
-      // Keep legacy name for backward compatibility during migration
-      prices: {
-        stale: 600, // 10 minutes
-        revalidate: 600,
-        expire: 7200, // 2 hours
-      },
-    },
   },
   // Configure MDX file extensions
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
