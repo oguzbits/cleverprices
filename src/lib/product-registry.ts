@@ -1086,12 +1086,15 @@ export async function findProductSlugByAsinSuffix(
     // Indexed lookup is O(1)
     const [p] = await withRetry(() =>
       db
-        .select({ slug: products.slug })
+        .select({ id: products.id, slug: products.slug })
         .from(products)
         .where(eq(products.asin, asin))
         .limit(1),
     );
-    if (p) return p.slug;
+    if (p) {
+      const { slug: canonical } = getFamilyIdentity(p as any, []);
+      return canonical;
+    }
   }
 
   // 2. Try short 3-4 char suffix (common in our generated slugs)
@@ -1104,7 +1107,7 @@ export async function findProductSlugByAsinSuffix(
     // We only do this if N is small or we have no other choice.
     // In CleverPrices, we'll keep it but ensure it's the last resort.
     const [p] = await db
-      .select({ slug: products.slug })
+      .select({ id: products.id, slug: products.slug })
       .from(products)
       .where(
         and(
@@ -1115,7 +1118,10 @@ export async function findProductSlugByAsinSuffix(
         ),
       )
       .limit(1);
-    return p?.slug;
+    if (p) {
+      const { slug: canonical } = getFamilyIdentity(p as any, []);
+      return canonical;
+    }
   }
 
   return undefined;

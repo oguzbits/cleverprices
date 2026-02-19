@@ -495,12 +495,7 @@ export async function getPDPRenderData(
       // Legacy ASIN/Parent Suffix checks
       const asinSlug = await getCachedProductSlugByAsinSuffix(slug);
       if (asinSlug && asinSlug !== slug) {
-        const fullNewSlug = asinSlug.includes("_-")
-          ? asinSlug
-          : await getCachedProductById(
-              parseInt(asinSlug.match(/\d+/)?.toString() || "0"),
-            ).then((p) => (p ? getFamilyIdentitySync(p, []).slug : asinSlug));
-        return { redirect: `/p/${fullNewSlug}`, isPermanent: true };
+        return { redirect: `/p/${asinSlug}`, isPermanent: true };
       }
       product = await getCachedProductByParentAsinSuffix(slug);
       if (product) {
