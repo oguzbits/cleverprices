@@ -18,7 +18,7 @@
  * - Bursting: Allowed until bucket is empty
  */
 
-export const TOKEN_BUDGET = {
+const TOKEN_BUDGET = {
   BUCKET_CAPACITY: 1200, // Max burst size
   REFILL_RATE_PER_MIN: 20, // 20 tokens per minute
   REFILL_MS_PER_TOKEN: 3000, // 3000ms per token
@@ -43,7 +43,7 @@ export function updateTokenStatus(tokensLeft: number): void {
  * Estimate current tokens based on time since last update
  * (Optimistic refill)
  */
-export function estimateCurrentTokens(): number {
+function estimateCurrentTokens(): number {
   const now = Date.now();
   const elapsedMs = now - lastUpdate;
   const refilledTokens = Math.floor(
@@ -76,12 +76,12 @@ export function checkBudget(cost: number): {
 /**
  * Helper: Just check if we can proceed (for boolean checks)
  */
-export function hasTokenBudget(cost: number): boolean {
+function hasTokenBudget(cost: number): boolean {
   return checkBudget(cost).allowed;
 }
 
 // Legacy exports for compatibility (will be removed later)
-export function getTokenStatus() {
+function getTokenStatus() {
   const remaining = estimateCurrentTokens();
   const capacity = TOKEN_BUDGET.BUCKET_CAPACITY;
   const percentUsed = Math.max(
@@ -105,6 +105,6 @@ export function getMaxProductsToday() {
   return 100000; // Unlimited, bound only by time
 }
 
-export function getRecommendedBatchSize() {
+function getRecommendedBatchSize() {
   return 50; // Standard batch
 }

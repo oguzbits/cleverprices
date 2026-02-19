@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductBestseller } from "@/lib/utils/products";
+import { Category } from "@/types";
 import { Package } from "lucide-react";
 import { cacheLife } from "next/cache";
 import Image from "next/image";
@@ -39,7 +40,7 @@ import { LivePriceHeader, LiveSavingsBadge } from "./LivePriceBoundary";
 interface IdealoProductPageProps {
   product: Product;
   variants?: Product[];
-  category?: any;
+  category?: Category;
   countryCode: CountryCode;
   selectedCondition?: "new" | "used" | "renewed";
   isParentView?: boolean;
@@ -184,7 +185,6 @@ export async function IdealoProductPage({
                         price: mergedProduct.prices[countryCode] ?? null,
                         usedPrice:
                           mergedProduct.usedPrices?.[countryCode] ?? null,
-                        // @ts-ignore
                         warehousePrice:
                           mergedProduct.warehousePrices?.[countryCode] ?? null,
                       }}
@@ -477,7 +477,6 @@ async function CachedSidebarSimilarProducts({
                   sizes="56px"
                   quality={30}
                   loading="lazy"
-                  // @ts-ignore
                   fetchPriority="low"
                 />
               )}
@@ -549,7 +548,6 @@ async function CachedSimilarCarousel({
                   allCategories[p.category as CategorySlug]?.name
                 : undefined,
             discountRate: p.savings ? Math.round(p.savings * 100) : undefined,
-            // @ts-ignore - Product type is slightly different but compatible
             isBestseller: isProductBestseller(p),
           }))}
           countryCode={countryCode}

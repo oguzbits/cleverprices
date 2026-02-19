@@ -360,7 +360,7 @@ export async function IdealoProductOffers({
   );
 }
 
-export function IdealoProductOffersSkeleton() {
+function IdealoProductOffersSkeleton() {
   return (
     <div className="order-2 mb-11 w-full min-w-0 animate-pulse xl:w-3/4 xl:pl-[15px]">
       <div className="h-10 rounded-t-md border border-[#b4b4b4] bg-gray-100" />

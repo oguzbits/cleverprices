@@ -35,7 +35,7 @@ export async function getNicheBySlug(slug: string): Promise<NichePage | null> {
 /**
  * Fetches products for a specific niche with its unique filtering logic.
  */
-export async function getNicheProducts(niche: NichePage): Promise<Product[]> {
+async function getNicheProducts(niche: NichePage): Promise<Product[]> {
   const whereClauses: SQL[] = [eq(products.category, niche.category)];
 
   if (niche.filters.maxPrice) {

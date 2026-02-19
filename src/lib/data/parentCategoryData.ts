@@ -60,7 +60,7 @@ function getProductGroupKey(p: Product): string {
 
 const CURRENT_YEAR = new Date().getFullYear();
 
-export async function getCategoryBestsellers(
+async function getCategoryBestsellers(
   parentSlug: CategorySlug,
   limit: number = 12,
   countryCode: string = "de",
@@ -139,7 +139,7 @@ export async function getCategoryBestsellers(
  * Get newest products in a parent category.
  * Prioritizes recently added items from reputable brands.
  */
-export async function getCategoryNewProducts(
+async function getCategoryNewProducts(
   parentSlug: CategorySlug,
   limit: number = 8,
   countryCode: string = "de",
@@ -237,7 +237,7 @@ export async function getCategoryNewProducts(
  * Get best deal products in a parent category.
  * STRICTLY filters for products with actual savings (>5% vs 90d avg).
  */
-export async function getCategoryDeals(
+async function getCategoryDeals(
   parentSlug: CategorySlug,
   limit: number = 8,
   countryCode: string = "de",
@@ -505,7 +505,7 @@ export async function getParentCategoryData(
 /**
  * Get total product count for a parent category (sum of all child categories).
  */
-export async function getCategoryProductCount(
+async function getCategoryProductCount(
   parentSlug: CategorySlug,
   countryCode: string = "de",
 ): Promise<number> {

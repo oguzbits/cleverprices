@@ -13,7 +13,7 @@ import { getProductIdentity } from "@/lib/utils/product-identity";
 import { AlertCircle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
-export interface SpecificationsTableProps {
+interface SpecificationsTableProps {
   product: Product;
   selectedCondition?: "new" | "used" | "renewed";
   isHubMode?: boolean;
@@ -44,7 +44,7 @@ export function SpecificationsTable({
 
   // Parse Specs - Use the REPAIRED specs from product-mapping.ts
   // The mapping logic already handles storage repair, so we should use those values
-  let rawSpecs: Record<string, any> = {};
+  let rawSpecs: Record<string, unknown> = {};
   let sourceLabel = "None";
   let isOfficialData = false;
 
@@ -89,7 +89,7 @@ export function SpecificationsTable({
     variantKeys.includes("arbeitsspeicher") ||
     variantKeys.includes("memory");
 
-  const filtered: Record<string, any> = {};
+  const filtered: Record<string, unknown> = {};
 
   // HUB MODE FILTERING LIST
   const hubUnwanted = [
@@ -221,7 +221,7 @@ export function SpecificationsTable({
   };
 
   // Grouping Logic
-  const groups: Record<string, { label: string; value: any }[]> = {
+  const groups: Record<string, { label: string; value: unknown }[]> = {
     Allgemein: [],
     "Leistung & Hardware": [],
     "Display & Grafik": [],
@@ -269,7 +269,7 @@ export function SpecificationsTable({
     if (typeof value === "object") {
       try {
         displayValue = JSON.stringify(value);
-      } catch (e) {
+      } catch {
         displayValue = String(value);
       }
     }
@@ -277,7 +277,7 @@ export function SpecificationsTable({
     if (displayValue === "No") displayValue = "Nein";
     const cleanKey = key.replace(/[‡*]/g, "").trim();
     const lowerKey = cleanKey.toLowerCase();
-    let label = keyTranslations[lowerKey] || cleanKey;
+    const label = keyTranslations[lowerKey] || cleanKey;
 
     // DATA CLEANUP: If the key is "Modell" and the value is truncated (e.g. "Pixel 9" instead of "Pixel 9a"),
     // or if it's missing the brand, we can use the cleaned identity to improve the UI.
@@ -378,14 +378,13 @@ export function SpecificationsTable({
     }
   });
 
-  function releaseToBucket(bucket: string, label: string, value: any) {
+  function releaseToBucket(bucket: string, label: string, value: unknown) {
     groups[bucket].push({ label, value });
   }
 
   const flatList = Object.values(groups).flat();
   const hasData = flatList.length > 0;
 
-  // @ts-ignore
   const isEnriched =
     product.enrichmentStatus === "processed" ||
     product.enrichmentStatus === "optimized" ||
@@ -412,7 +411,6 @@ export function SpecificationsTable({
                   </div>
                 );
               }
-              // Priority 1: Intel Source
               if (source === "Intel" && specs.Method === "Scraped") {
                 return (
                   <div className="flex items-center gap-1.5 rounded-full border border-blue-600 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
@@ -501,7 +499,7 @@ export function SpecificationsTable({
                           {spec.label}
                         </div>
                         <div className="w-[55%] font-medium wrap-break-word text-[#2d2d2d]">
-                          {spec.value}
+                          {String(spec.value)}
                         </div>
                       </li>
                     ))}

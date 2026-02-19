@@ -19,12 +19,12 @@ export const BUILD_TIME = new Date().toISOString();
  * Update this manually when you refresh prices in products.json
  * Format: ISO 8601 (e.g., "2026-01-02T22:00:00Z")
  */
-export const PRICES_UPDATED_AT = "2026-01-02T22:00:00Z";
+const PRICES_UPDATED_AT = "2026-01-02T22:00:00Z";
 
 /**
  * Get human-readable time since prices were updated
  */
-export function getPricesAge(): string {
+function getPricesAge(): string {
   const updateTime = new Date(PRICES_UPDATED_AT).getTime();
   const now = Date.now();
   const hours = Math.floor((now - updateTime) / (1000 * 60 * 60));

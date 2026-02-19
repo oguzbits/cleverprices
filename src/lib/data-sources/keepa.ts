@@ -160,7 +160,7 @@ function keepaTimeToDate(keepaTime: number): Date {
 /**
  * Keepa Data Source Provider
  */
-export class KeepaDataSource implements DataSourceProvider {
+class KeepaDataSource implements DataSourceProvider {
   id = "keepa" as const;
   name = "Keepa Price History";
 

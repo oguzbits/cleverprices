@@ -1,8 +1,9 @@
+import { Product } from "@/lib/product-registry";
 import { ProductVariantSelector } from "./ProductVariantSelector";
 
 interface ProductVariantSelectorProps {
-  product: any;
-  variants?: any[]; // Pre-merged variants from server
+  product: Product;
+  variants?: Product[]; // Pre-merged variants from server
   countryCode: string;
   isParentView?: boolean;
   selectedCondition?: "new" | "used" | "renewed";
@@ -44,7 +45,7 @@ export async function CachedVariantSelector({
   return (
     <ProductVariantSelector
       currentProduct={currentMergedProduct}
-      variants={allVariants as any[]}
+      variants={allVariants as Product[]}
       countryCode={countryCode}
       isParentView={isParentView}
       selectedCondition={selectedCondition}

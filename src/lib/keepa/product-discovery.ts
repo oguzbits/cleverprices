@@ -5,8 +5,8 @@
  * Focuses on bestsellers and products with good data coverage.
  */
 
-import { updateTokenStatus } from "./token-tracker";
 import type { CountryCode } from "@/lib/countries";
+import { updateTokenStatus } from "./token-tracker";
 
 // Environment variable
 const KEEPA_API_KEY = process.env.KEEPA_API_KEY || "";
@@ -24,7 +24,7 @@ export const KEEPA_DOMAINS: Record<string, number> = {
 
 // Amazon Browse Node IDs for our categories
 // These are Amazon's category identifiers for bestseller queries
-export const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
+const CATEGORY_BROWSE_NODES: Record<string, Record<string, string>> = {
   // --- Hub Leaf Categories (Idealo order) ---
   elektroartikel: { de: "569604" }, // Generic Electronics node
   tvs: { de: "1197292" },
@@ -150,7 +150,7 @@ export interface KeepaProductRaw {
 }
 
 // Search results type
-export interface KeepaSearchResult {
+interface KeepaSearchResult {
   asinList?: string[];
   categoryCount?: number;
   totalResults?: number;
@@ -461,7 +461,7 @@ export async function getProducts(
  * Discover products for a category
  * Combines bestsellers + keyword search for comprehensive coverage
  */
-export async function discoverProducts(
+async function discoverProducts(
   categorySlug: string,
   country: CountryCode = "us",
   targetCount: number = 100,

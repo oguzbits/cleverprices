@@ -1,5 +1,8 @@
 import { CarouselContainer } from "@/components/CarouselContainer";
-import { IdealoProductCard } from "@/components/landing/IdealoProductCard";
+import {
+  IdealoProductCard,
+  LivePriceData,
+} from "@/components/landing/IdealoProductCard";
 import { type CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +31,7 @@ interface IdealoProductCarouselProps {
   countryCode?: CountryCode;
   /** Enable priority loading for first images (count depends on viewport) */
   priorityImages?: boolean;
-  livePriceMap?: Map<number, any>;
+  livePriceMap?: Map<number, LivePriceData>;
 }
 
 export function IdealoProductCarousel({

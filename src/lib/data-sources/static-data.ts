@@ -35,7 +35,7 @@ const COUNTRY_CURRENCIES: Record<CountryCode, Currency> = {
  *
  * Reads product data from local JSON files in /src/lib/data/
  */
-export class StaticDataSource implements DataSourceProvider {
+class StaticDataSource implements DataSourceProvider {
   id = "static" as const;
   name = "Static JSON Data";
 

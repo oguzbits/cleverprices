@@ -167,7 +167,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   return getNonEmptyCategorySlugsSync();
 }
 
-export async function getAllProducts(): Promise<Product[]> {
+async function getAllProducts(): Promise<Product[]> {
   return getAllProductsSync();
 }
 
@@ -185,7 +185,7 @@ export async function getBestDeals(
   return mergeLivePrices(products, countryCode);
 }
 
-export async function getMostPopular(
+async function getMostPopular(
   limit: number = 8,
   countryCode: string = "de",
   condition?: any,
@@ -225,7 +225,7 @@ export async function getDiverseMostPopular(
   return mergeLivePrices(products, countryCode);
 }
 
-export async function getProductBySlug(
+async function getProductBySlug(
   slug: string,
   includeHistory: boolean = false,
   skipLiveMerge: boolean = false,
@@ -240,7 +240,7 @@ export async function getProductBySlug(
 // Note: getProductPriceHistory removed in lean schema.
 // Price history is now stored in prices.historyJson and parsed by mapDbProduct.
 
-export async function getUnifiedProduct(
+async function getUnifiedProduct(
   asin: string,
   countryCode: CountryCode,
 ) {
@@ -283,13 +283,13 @@ export async function getProductVariants(
   return mergeLivePrices(variants, countryCode);
 }
 
-export async function findProductSlugByAsinSuffix(
+async function findProductSlugByAsinSuffix(
   oldSlug: string,
 ): Promise<string | undefined> {
   return getCachedProductSlugByAsinSuffix(oldSlug);
 }
 
-export async function findProductByParentAsinSuffix(
+async function findProductByParentAsinSuffix(
   slug: string,
 ): Promise<Product | undefined> {
   return getCachedProductByParentAsinSuffix(slug);
@@ -561,7 +561,7 @@ export async function getPDPRenderData(
   };
 }
 
-export async function findProductBySyntheticId(
+async function findProductBySyntheticId(
   id: number,
 ): Promise<Product | undefined> {
   return getCachedProductBySyntheticId(id);

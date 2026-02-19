@@ -236,7 +236,7 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
 /**
  * Organization Schema for the website
  */
-export function OrganizationSchema() {
+function OrganizationSchema() {
   const schema = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -257,7 +257,7 @@ export function OrganizationSchema() {
 /**
  * WebSite Schema with search action
  */
-export function WebSiteSchema() {
+function WebSiteSchema() {
   const schema = {
     "@context": "https://schema.org",
     "@type": "WebSite",

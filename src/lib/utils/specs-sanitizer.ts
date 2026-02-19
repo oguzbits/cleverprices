@@ -163,15 +163,15 @@ export function enrichmentGuard(
  * Sanitizes an entire record of specs.
  */
 export function sanitizeSpecs(
-  specs: Record<string, any>,
+  specs: Record<string, unknown>,
   productIdentity?: {
     title: string;
     brand: string;
     model: string;
   },
   consensus?: SiblingConsensus,
-): Record<string, any> {
-  const sanitized: Record<string, any> = {};
+): Record<string, unknown> {
+  const sanitized: Record<string, unknown> = {};
 
   Object.entries(specs).forEach(([k, v]) => {
     let cleanKey = decodeEntities(k);

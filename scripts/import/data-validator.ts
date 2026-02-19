@@ -1,10 +1,8 @@
-import type { CategorySlug } from "../../src/lib/categories";
-
 /**
  * CANONICAL KEY MAPPING
  * Merges multiple redundant keys into a single source of truth.
  */
-export const CANONICAL_MAP: Record<string, string> = {
+const CANONICAL_MAP: Record<string, string> = {
   // Weight normalization
   "Item: Weight (g)": "Weight_Grams",
   "Package: Weight (g)": "Package_Weight_Grams",
@@ -423,51 +421,6 @@ export const CATEGORY_SCHEMAS: Record<string, string[]> = {
   ],
   nas: ["Bays", "Processor", "RAM", "Max_Capacity", "LAN_Ports"],
 };
-
-/**
- * QUALITY SCORING
- * Returns a score (0-100) and list of missing keys based on schema.
- */
-export function validateCompleteness(
-  specs: Record<string, any>,
-  category: string,
-): { score: number; missing: string[] } {
-  const whitelist = CATEGORY_SCHEMAS[category];
-  if (!whitelist || whitelist.length === 0) return { score: 100, missing: [] };
-
-  // Identify required keys (assuming all in schema are important for "Industry Grade")
-  // In a real scenario, we might have "Required" vs "Optional" maps.
-  // For now, let's target 70% coverage of ANY schema fields as "Good".
-
-  // Filter out global safe keys from the requirement check to force category-specific density
-  const keysToCheck = whitelist;
-
-  const presentKeys = keysToCheck.filter(
-    (k) => specs[k] !== undefined && specs[k] !== null && specs[k] !== "",
-  );
-
-  const missing = keysToCheck.filter((k) => !presentKeys.includes(k));
-  const score = Math.round((presentKeys.length / keysToCheck.length) * 100);
-
-  return { score, missing };
-}
-
-/**
- * Specification Guard: Validates and standardizes extracted technical attributes.
- * Now supports Quality Scoring.
- */
-export function validateProductSpecs(
-  specs: Record<string, any>,
-  category: CategorySlug,
-): { specs: Record<string, any>; score: number; missing: string[] } {
-  const cleanSpecs = guardIntegrity(specs, category);
-  const quality = validateCompleteness(cleanSpecs, category);
-  return {
-    specs: cleanSpecs,
-    score: quality.score,
-    missing: quality.missing,
-  };
-}
 
 /**
  * THE GUARD: Clean, Validate, and Standardize

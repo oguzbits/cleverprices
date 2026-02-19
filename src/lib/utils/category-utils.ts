@@ -1,7 +1,7 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
 import type { LocalizedProduct } from "../server/category-products";
 
-export interface FilterState {
+interface FilterState {
   search: string;
   brand: string[];
   socket: string[];
@@ -198,7 +198,7 @@ export function sortProducts(
 /**
  * Utility to discover all unique values for a field in a list of products
  */
-export function getUniqueFieldValues(
+function getUniqueFieldValues(
   products: LocalizedProduct[],
   field: string,
 ): string[] {

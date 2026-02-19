@@ -15,25 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LegalPrice } from "../ui/LegalPrice";
 
-interface Product {
-  id: number;
-  asin: string;
-  slug: string;
-  title: string;
-  subtitle?: string;
-  image?: string;
-  variationAttributes?: string;
-  prices: Record<string, number>;
-  usedPrices?: Record<string, number>;
-  warehousePrices?: Record<string, number>;
-  brand: string;
-  specifications?: Record<string, any>;
-  officialSpecifications?: Record<string, any>;
-  parentAsin?: string;
-  condition: "New" | "Used" | "Renewed"; // Added condition
-  category?: string;
-  mpn?: string;
-}
+import { type Product } from "@/lib/product-registry";
 
 interface NormalizedProduct extends Product {
   normalizedStr: string;
@@ -78,7 +60,8 @@ function VariantCard({
     // Prioritize pre-calculated suffix from server to ensure 100% consistency
     if (variant?.variantSuffix) return variant.variantSuffix;
 
-    const identity = getProductIdentity(variant as any);
+    if (!variant) return "";
+    const identity = getProductIdentity(variant);
     return identity.variantSuffix || identity.displayTitle;
   })();
 
@@ -659,8 +642,8 @@ export function ProductVariantSelector({
     const realId = rawId % 100000000;
     const parentId = 900000000 + realId;
     const { slug } = getFamilyIdentity(
-      { ...currentProduct, id: parentId } as any,
-      normalizedAllVariants as any, // Use full list for consensus
+      { ...currentProduct, id: parentId },
+      normalizedAllVariants, // Use full list for consensus
     );
     return slug;
   })();
@@ -864,7 +847,7 @@ export function ProductVariantSelector({
   );
 }
 
-export function ProductVariantSelectorSkeleton() {
+function ProductVariantSelectorSkeleton() {
   return (
     <div className="mt-4 mb-6 animate-pulse">
       {/* Title Skeleton */}

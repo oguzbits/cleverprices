@@ -102,7 +102,7 @@ export function getCountryByCode(
 }
 
 // Detect country from browser locale
-export function detectCountryFromLocale(locale?: string): CountryCode {
+function detectCountryFromLocale(locale?: string): CountryCode {
   if (!locale && typeof navigator !== "undefined") {
     locale =
       navigator.language ||
@@ -134,10 +134,10 @@ export function detectCountryFromLocale(locale?: string): CountryCode {
 }
 
 // LocalStorage key for country preference (Deprecated, kept for cleanup)
-export const COUNTRY_STORAGE_KEY = "cleverprices_country";
+const COUNTRY_STORAGE_KEY = "cleverprices_country";
 
 // Get saved country preference from Cookies (Client-side)
-export function getSavedCountry(): CountryCode | null {
+function getSavedCountry(): CountryCode | null {
   if (typeof window === "undefined") return null;
   try {
     const match = document.cookie.match(/(^| )country=([^;]+)/);
@@ -151,7 +151,7 @@ export function getSavedCountry(): CountryCode | null {
 }
 
 // Save country preference to Cookies matches Server Proxy expectation
-export function saveCountryPreference(countryCode: string): void {
+function saveCountryPreference(countryCode: string): void {
   if (typeof window === "undefined") return;
   try {
     // Set cookie for 1 year, Lax, Root path to ensure Proxy visibility
@@ -166,7 +166,7 @@ export function saveCountryPreference(countryCode: string): void {
 }
 
 // Get user's country (saved preference > detected > default)
-export function getUserCountry(): CountryCode {
+function getUserCountry(): CountryCode {
   // 1. Check saved preference
   const saved = getSavedCountry();
   if (saved && countries[saved] && countries[saved].isLive) {

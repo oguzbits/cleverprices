@@ -1,11 +1,18 @@
 import { IdealoLivePrice } from "@/components/product/IdealoLivePrice";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
+import { CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { IdealoStarRating } from "../category/IdealoStarRating";
 
-export interface IdealoProductCardProps {
+export interface LivePriceData {
+  price: number | null;
+  usedPrice: number | null;
+  warehousePrice: number | null;
+}
+
+interface IdealoProductCardProps {
   id?: number; // DB ID for live price fetching
   title: string;
   subtitle?: string;
@@ -24,7 +31,7 @@ export interface IdealoProductCardProps {
   isVariantGroup?: boolean;
   countryCode?: string;
   priorityLoad?: boolean;
-  livePriceData?: any;
+  livePriceData?: LivePriceData;
 }
 
 export function IdealoProductCard({
@@ -42,7 +49,6 @@ export function IdealoProductCard({
   categoryName,
   discountRate,
   isBestseller,
-  isVariantGroup,
   countryCode = "de",
   priorityLoad = false,
   livePriceData,
@@ -80,7 +86,6 @@ export function IdealoProductCard({
                 sizes="(max-width: 600px) 128px, 192px"
                 quality={30}
                 priority={priorityLoad}
-                // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
                 fetchPriority={priorityLoad ? "high" : "auto"}
               />
             ) : (
@@ -145,7 +150,7 @@ export function IdealoProductCard({
             {id ? (
               <IdealoLivePrice
                 productId={id}
-                countryCode={countryCode as any}
+                countryCode={countryCode as CountryCode}
                 initialPrice={price}
                 showAb
                 className="text-primary text-[20px] leading-none font-bold"

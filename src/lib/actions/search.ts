@@ -16,6 +16,7 @@ export interface SearchProduct {
   id: number;
   slug: string;
   title: string;
+  subtitle?: string;
   categoryName?: string;
   isVariantGroup?: boolean;
 }

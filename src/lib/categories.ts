@@ -4,21 +4,19 @@ import { CATEGORY_MAP } from "./category-definitions";
 import {
   CategoryData as BaseCategoryData,
   CategorySlug,
-  CategoryType,
-  FilterGroup,
   UnitType,
 } from "./category-types";
 import { getCategoryPath as _getCategoryPath } from "./category-utils";
 
 // Export types for consumers
-export type { CategorySlug, CategoryType, FilterGroup, UnitType };
+export type { CategorySlug, UnitType };
 
 export interface Category extends BaseCategoryData {
   slug: CategorySlug;
   icon?: LucideIcon;
 }
 
-export interface CategoryHierarchy {
+interface CategoryHierarchy {
   parent: Category;
   children: Category[];
 }
@@ -114,28 +112,28 @@ export function stripCategoryIcon(category: Category): Omit<Category, "icon"> {
 /**
  * Check if a category is analytical (price-per-unit)
  */
-export function isAnalyticalCategory(category: Category): boolean {
+function isAnalyticalCategory(category: Category): boolean {
   return category.categoryType === "analytical";
 }
 
 /**
  * Get all analytical categories (price-per-unit categories) - O(1) via cache
  */
-export function getAnalyticalCategories(): Category[] {
+function getAnalyticalCategories(): Category[] {
   return _cachedAnalyticalCategories;
 }
 
 /**
  * Get all categories
  */
-export function getAllCategories(): Category[] {
+function getAllCategories(): Category[] {
   return _cachedAllCategories;
 }
 
 /**
  * Get all standard categories (regular price comparison) - O(1) via cache
  */
-export function getStandardCategories(): Category[] {
+function getStandardCategories(): Category[] {
   return _cachedStandardCategories;
 }
 

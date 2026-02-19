@@ -160,7 +160,7 @@ function mapEbayCondition(conditionId?: string): ProductCondition {
  *
  * Uses the Finding API (simpler, works with App ID)
  */
-export class EbayDataSource implements DataSourceProvider {
+class EbayDataSource implements DataSourceProvider {
   id = "ebay" as const;
   name = "eBay";
 

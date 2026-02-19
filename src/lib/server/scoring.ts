@@ -1,6 +1,6 @@
 import { Product } from "@/lib/product-registry";
 
-export interface ProductScore {
+interface ProductScore {
   popularityScore: number;
   revenue: number;
   prestigeMultiplier: number;

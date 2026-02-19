@@ -12,8 +12,9 @@ interface VariantLike {
   variationAttributes?: string;
   title?: string;
   category?: string;
-  officialSpecs?: any; // Allow fallback to official/scavenged specs
-  specifications?: any; // Alias for local props
+  officialSpecs?: unknown; // Allow fallback to official/scavenged specs
+  specifications?: unknown; // Alias for local props
+  officialSpecifications?: unknown; // For Product model compatibility
 }
 
 /**
@@ -54,7 +55,7 @@ export function parseCapacityToGB(val: string): number {
 /**
  * Natural sort for capacity-like strings
  */
-export function sortCapacities(values: string[]): string[] {
+function sortCapacities(values: string[]): string[] {
   return [...values].sort((a, b) => {
     const aVal = parseCapacityToGB(a);
     const bVal = parseCapacityToGB(b);
@@ -75,7 +76,7 @@ export function extractAttributeGroups(
       title: variant.title || "",
       category: variant.category || "",
       officialSpecs:
-        (variant as any).officialSpecifications ||
+        variant.officialSpecifications ||
         variant.officialSpecs ||
         variant.specifications,
     });
@@ -357,12 +358,12 @@ export function normalizeVariantAttributes(v: {
   title: string;
   variationAttributes?: string;
   category?: string;
-  officialSpecs?: Record<string, any>;
+  officialSpecs?: Record<string, unknown> | unknown;
 }): string {
   const variationAttributes = v.variationAttributes || "";
   const title = v.title || "";
   const category = v.category || "";
-  const specs = v.officialSpecs || {};
+  const specs = (v.officialSpecs as Record<string, unknown>) || {};
 
   const isSmartphone =
     category === "smartphones" || title.toLowerCase().includes("smartphone");
@@ -377,8 +378,9 @@ export function normalizeVariantAttributes(v: {
   // If we have explicit Official Specs, use them!
   const overrides: Record<string, string> = {};
   if (specs["Farbe"] || specs["Produktfarbe"] || specs["Color"]) {
-    overrides["Farbe"] =
-      specs["Farbe"] || specs["Produktfarbe"] || specs["Color"];
+    overrides["Farbe"] = String(
+      specs["Farbe"] || specs["Produktfarbe"] || specs["Color"],
+    );
   }
   if (
     specs["Interner Speichertyp"] === "SSD" ||
@@ -393,7 +395,7 @@ export function normalizeVariantAttributes(v: {
       specs["HDD Kapazität"] ||
       specs["SSD Speicherkapazität"] ||
       specs["Kapazität"];
-    if (capacity) overrides["Storage"] = capacity;
+    if (capacity) overrides["Storage"] = String(capacity);
   }
 
   // 1. Trust Official Specs for RAM
@@ -550,7 +552,7 @@ export function normalizeVariantAttributes(v: {
 /**
  * Extract RAM from title (e.g. "16GB RAM", "32GB Arbeitsspeicher")
  */
-export function extractRamFromTitle(title: string | undefined): string | null {
+function extractRamFromTitle(title: string | undefined): string | null {
   if (!title) return null;
   const lowerTitle = title.toLowerCase();
 

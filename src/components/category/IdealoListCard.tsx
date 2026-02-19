@@ -33,7 +33,11 @@ interface IdealoListCardProps {
   countryCode: CountryCode;
   className?: string;
   priority?: boolean;
-  livePriceData?: any;
+  livePriceData?: {
+    price: number | null;
+    usedPrice: number | null;
+    warehousePrice: number | null;
+  };
 }
 
 export function IdealoListCard({

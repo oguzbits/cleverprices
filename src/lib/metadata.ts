@@ -13,7 +13,7 @@ import {
   getCountryUrl,
 } from "./site-config";
 
-export const coreKeywords = [
+const coreKeywords = [
   "Preisvergleich",
   "Preis pro TB",
   "Preis pro GB",

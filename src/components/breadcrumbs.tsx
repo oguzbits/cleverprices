@@ -108,7 +108,7 @@ export function Breadcrumbs({
 }
 
 // Structured data for SEO
-export function BreadcrumbStructuredData({
+function BreadcrumbStructuredData({
   items,
 }: {
   items: BreadcrumbItem[];

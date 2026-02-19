@@ -242,7 +242,7 @@ export async function discoverProducts(
       if (dealBudget.allowed) {
         const deals = await getDeals(category, "de", 150);
         if (deals.length > 0) {
-          deals.forEach((asin) => allAsins.add(asin));
+          deals.forEach((asin: string) => allAsins.add(asin));
           console.log(`[Discovery] Got ${deals.length} deals for ${category}`);
         }
       } else {
@@ -459,7 +459,7 @@ export async function upsertProductFromKeepa(
   // Extract critical attributes for slug generation
   const variationMap: Record<string, string> = {};
   if (keepaProduct.variationCSV) {
-    keepaProduct.variationCSV.split(",").forEach((pair) => {
+    keepaProduct.variationCSV.split(",").forEach((pair: string) => {
       const [key, val] = pair.split("|");
       if (key && val) variationMap[key.trim()] = val.trim();
     });

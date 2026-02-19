@@ -16,7 +16,7 @@ export function parseUnitValue(pricePerUnit?: string): number {
 /**
  * Calculates badges for products based on their unit values.
  */
-export function calculateProductBadges(
+function calculateProductBadges(
   products: (UIProduct & { unitValue: number })[],
 ) {
   const minUnitValue = Math.min(
@@ -209,7 +209,7 @@ export function getLocalizedProductData(
 /**
  * Adapts internal Product model to ProductUIModel
  */
-export function adaptToUIModel(
+function adaptToUIModel(
   p: Product,
   countryCode: CountryCode = "us",
   currency: Currency = "USD",
@@ -270,7 +270,7 @@ export function calculateProductDiscount(
  * Calculates raw savings ratio (0.0 to 1.0) based on current price vs 90-day avg.
  * Includes sanity checks for data anomalies.
  */
-export function calculateSavings(currentPrice: number, avg90: number): number {
+function calculateSavings(currentPrice: number, avg90: number): number {
   if (!currentPrice || !avg90 || currentPrice <= 0 || avg90 <= 0) return 0;
 
   if (avg90 <= currentPrice) return 0;

@@ -53,7 +53,7 @@ export const litePriceColumns = {
 
 // ULTRA-lightweight price columns for variant lists (No history blobs!)
 // This excludes historyJson which can be 90% of the payload size.
-export const superLitePriceColumns = {
+const superLitePriceColumns = {
   id: prices.id,
   productId: prices.productId,
   country: prices.country,
@@ -207,7 +207,7 @@ type LitePrice = Pick<
 export type { LitePrice };
 
 // Re-export mapping logic for backward compatibility
-export { mapDbProduct, parseHistoryJson } from "./utils/product-mapping";
+export { mapDbProduct,  } from "./utils/product-mapping";
 
 export const getProductById = cache(async function getProductById(
   id: number,
@@ -256,7 +256,7 @@ export const getProductById = cache(async function getProductById(
  * Get the stable canonical ID for a family (Smallest ID in the family).
  * This ensures all variants point to the same Hub ID regardless of price/condition.
  */
-export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
+const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
   parentAsin: string | undefined,
   currentId: number,
 ): Promise<number> {
@@ -284,7 +284,7 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
  * Fetch only price history for a specific product and country.
  * Optimized for Hub pages where we just need the history of the cheapest variant.
  */
-export async function getProductPriceHistory(
+async function getProductPriceHistory(
   productId: number,
   countryCode: string = "de",
 ): Promise<{ date: string; price: number }[]> {
@@ -539,7 +539,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
  * Input: "Color: Cosmic Orange; Storage: 2000GB"
  * Output: { Color: "Cosmic Orange", Storage: "2000GB" }
  */
-export function parseVariationAttributes(
+function parseVariationAttributes(
   attrs: string | undefined,
 ): Record<string, string> {
   if (!attrs) return {};
@@ -559,7 +559,7 @@ export function parseVariationAttributes(
  * Extract unique attribute values from a list of variants
  * Returns: { Color: ["Cosmic Orange", "Tiefblau", "Silber"], Storage: ["256GB", "512GB", ...] }
  */
-export function extractAttributeGroups(
+function extractAttributeGroups(
   variants: Product[],
 ): Record<string, string[]> {
   const groups: Record<string, Set<string>> = {};
@@ -1459,7 +1459,7 @@ export async function searchProducts(
   }
 }
 
-export const getProductsByBrand = cache(async function getProductsByBrand(
+const getProductsByBrand = cache(async function getProductsByBrand(
   brand: string,
   excludeSlug?: string,
 ): Promise<Product[]> {
@@ -1943,7 +1943,7 @@ export async function getNewArrivals(
  * SERVER-SIDE FILTERING & PAGINATION (Module 2)
  * Moves logic from JS to SQL for performance and scalability.
  */
-export async function getFilteredProducts(
+async function getFilteredProducts(
   category: string,
   countryCode: string,
   filters: {
@@ -2081,7 +2081,7 @@ export async function getFilteredProducts(
 /**
  * Get total count for pagination without fetching records.
  */
-export async function getFilteredProductsCount(
+async function getFilteredProductsCount(
   category: string,
   countryCode: string,
   filters: any,

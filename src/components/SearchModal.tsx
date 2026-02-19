@@ -8,7 +8,11 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import { performSearch } from "@/lib/actions/search";
+import {
+  performSearch,
+  SearchCategory,
+  SearchProduct,
+} from "@/lib/actions/search";
 import { CATEGORY_MANIFEST } from "@/lib/category-manifest";
 import { CategorySlug } from "@/lib/category-types";
 import { getCategoryPath } from "@/lib/category-utils";
@@ -20,6 +24,7 @@ import {
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
+import { Category } from "@/types";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import * as React from "react";
@@ -90,8 +95,8 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   }, []);
 
   const [data, setData] = React.useState<{
-    categories: any[];
-    products: any[];
+    categories: SearchCategory[];
+    products: SearchProduct[];
   } | null>(null);
   const [isFetching, setIsFetching] = React.useState(false);
 
@@ -140,9 +145,9 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
   const handlePopularSearch = (
     categorySlug: string,
-    params: Record<string, any>,
+    params: Record<string, unknown>,
   ) => {
-    const basePath = getCategoryPath(categorySlug as any);
+    const basePath = getCategoryPath(categorySlug as CategorySlug);
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
@@ -226,8 +231,8 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
             </CommandGroup>
 
             <CommandGroup>
-              {(Object.entries(CATEGORY_MANIFEST) as [CategorySlug, any][])
-                .filter(([_, c]) => !c.hidden)
+              {(Object.entries(CATEGORY_MANIFEST) as [CategorySlug, Category][])
+                .filter(([, c]) => !c.hidden)
                 .slice(0, limit === 6 ? 2 : 5)
                 .map(([slug, cat]) => (
                   <CommandItem
@@ -256,8 +261,8 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                     onSelect={() =>
                       handleSelect(
                         cat.searchTerm
-                          ? `${getCategoryPath(cat.slug as any)}?search=${cat.searchTerm}`
-                          : getCategoryPath(cat.slug as any),
+                          ? `${getCategoryPath(cat.slug as CategorySlug)}?search=${cat.searchTerm}`
+                          : getCategoryPath(cat.slug as CategorySlug),
                       )
                     }
                     className="cursor-pointer py-3"

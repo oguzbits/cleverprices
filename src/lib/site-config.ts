@@ -10,7 +10,7 @@
 /**
  * Primary domain name (without protocol)
  */
-export const SITE_DOMAIN = "cleverprices.com";
+const SITE_DOMAIN = "cleverprices.com";
 
 /**
  * Full site URL with protocol
@@ -53,7 +53,7 @@ export const CONTACT_EMAIL = `info@${SITE_DOMAIN}`;
 /**
  * Twitter/X handle (without @)
  */
-export const TWITTER_HANDLE = "cleverprices";
+const TWITTER_HANDLE = "cleverprices";
 
 /**
  * Twitter/X handle with @ for display
@@ -68,7 +68,7 @@ export const TWITTER_AT = `@${TWITTER_HANDLE}`;
  * Default page title template
  * Usage: `${pageTitle} | ${TITLE_SUFFIX}`
  */
-export const TITLE_SUFFIX = BRAND_DOMAIN;
+const TITLE_SUFFIX = BRAND_DOMAIN;
 
 /**
  * Default meta title for homepage
@@ -109,10 +109,10 @@ export const LOGO = {
  * We use 23 hours (82800 seconds) to ensure we always stay within the limit
  * while accounting for build/caching delays.
  */
-export const AMAZON_TOS_LIMIT_SECONDS = 86400; // 24 hours
+const AMAZON_TOS_LIMIT_SECONDS = 86400; // 24 hours
 export const CATEGORY_REVALIDATE_SECONDS = 3600; // 1 hour (Global category lists)
 export const PRODUCT_REVALIDATE_SECONDS = 3600; // 1 hour (Deep product details)
-export const STATIC_REVALIDATE_SECONDS = 86400; // 24 hours (Legal, Blog lists, Static pages)
+const STATIC_REVALIDATE_SECONDS = 86400; // 24 hours (Legal, Blog lists, Static pages)
 
 // =============================================================================
 // HELPER FUNCTIONS

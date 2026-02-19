@@ -582,22 +582,10 @@ async function main() {
             category: categorySlug,
           }),
           keepaFeatures,
-          // Validate and Score
-          specifications: (function () {
-            const validation = validateProductSpecs(
-              specs,
-              categorySlug as CategorySlug,
-            );
-            // Log low quality items if needed
-            if (validation.score < 50 && categorySlug !== "uncategorized") {
-              console.log(
-                `⚠️ Low Quality Data (${validation.score}%): ${asin} - Missing: ${validation.missing.join(", ")}`,
-              );
-            }
-            // For now we just store the clean specs.
-            // Once DB schema is updated, we would also store validation.score and validation.missing
-            return JSON.stringify(validation.specs);
-          })(),
+          // Clean and standardize specs using guardIntegrity
+          specifications: JSON.stringify(
+            guardIntegrity(specs, categorySlug as string),
+          ),
           category: categorySlug as CategorySlug,
           slug: generateProductSlug(title, brand, asin, {
             storage:
@@ -1023,16 +1011,6 @@ function parseCSVPrice(val: any): number | null {
     return isNaN(result) ? null : result;
   }
   return null;
-}
-/**
- * Specification Guard: Validates and standardizes extracted technical attributes.
- * Prevents misclassification (e.g. DDR5 in Storage) and ensures clean keys.
- */
-function validateProductSpecs(
-  specs: Record<string, any>,
-  category: CategorySlug,
-): Record<string, any> {
-  return guardIntegrity(specs, category);
 }
 
 main().catch(console.error);

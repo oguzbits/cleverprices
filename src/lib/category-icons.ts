@@ -36,7 +36,7 @@ import {
 } from "lucide-react";
 import { CategorySlug } from "./category-types";
 
-export const CATEGORY_ICONS: Record<CategorySlug, LucideIcon> = {
+const CATEGORY_ICONS: Record<CategorySlug, LucideIcon> = {
   haushaltselektronik: Home,
   computer: Laptop,
   telekommunikation: Phone,

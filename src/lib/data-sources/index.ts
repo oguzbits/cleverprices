@@ -32,8 +32,8 @@ import type {
 export type {
   AggregatedResult,
   DataSourceId,
+  DataSourceProvider,
   FetchOptions,
-  PriceAnalysis,
   PriceHistoryPoint,
   ProductOffer,
   UnifiedProduct,
@@ -365,6 +365,3 @@ export const dataAggregator = new DataAggregator();
 /**
  * Convenience exports for checking source availability
  */
-export { isEbayConfigured } from "./ebay";
-export { isKeepaConfigured } from "./keepa";
-export { isPaApiConfigured };

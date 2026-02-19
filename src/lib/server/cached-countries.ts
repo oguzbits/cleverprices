@@ -11,7 +11,7 @@ import {
  * These are used in Server Components to benefit from Next.js caching
  */
 
-export async function getAllCountries(): Promise<Country[]> {
+async function getAllCountries(): Promise<Country[]> {
   return getAllCountriesSync();
 }
 

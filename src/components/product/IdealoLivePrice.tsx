@@ -73,7 +73,7 @@ export async function IdealoLivePrice({
   );
 }
 
-export function IdealoLivePriceSkeleton({
+function IdealoLivePriceSkeleton({
   className = "h-7 w-24",
 }: {
   className?: string;

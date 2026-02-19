@@ -38,7 +38,7 @@ export interface Product {
 /**
  * Filter state types
  */
-export interface FilterState {
+interface FilterState {
   search: string;
   condition: string[] | null;
   technology: string[] | null;
@@ -49,19 +49,14 @@ export interface FilterState {
   sortOrder: SortOrder;
 }
 
-export type SortOrder = "asc" | "desc";
+type SortOrder = "asc" | "desc";
 
-export type SortBy =
-  | "relevance"
-  | "price"
-  | "pricePerUnit"
-  | "rating"
-  | "capacity";
+type SortBy = "relevance" | "price" | "pricePerUnit" | "rating" | "capacity";
 
 /**
  * Product condition types
  */
-export type Condition = "New" | "Used" | "Renewed";
+type Condition = "New" | "Used" | "Renewed";
 
 /**
  * Category types
@@ -74,16 +69,17 @@ export interface Category {
   parent?: CategorySlug;
   metaTitle?: string;
   metaDescription?: string;
+  singularName?: string;
   unitType?: UnitType;
   hidden?: boolean;
 }
 
-export interface CategoryHierarchy {
+interface CategoryHierarchy {
   parent: Category;
   children: Category[];
 }
 
-export interface CategoryLink {
+interface CategoryLink {
   name: string;
   slug: CategorySlug;
   icon: LucideIcon;
@@ -92,7 +88,7 @@ export interface CategoryLink {
 /**
  * Country types
  */
-export interface Country {
+interface Country {
   code: CountryCode;
   name: string;
   currency: Currency;
@@ -114,7 +110,7 @@ export interface BreadcrumbItem {
 /**
  * Analytics event types
  */
-export interface AffiliateClickParams {
+interface AffiliateClickParams {
   productName: string;
   category: CategorySlug;
   country: CountryCode;
@@ -123,13 +119,13 @@ export interface AffiliateClickParams {
   position?: number;
 }
 
-export interface FilterAppliedParams {
+interface FilterAppliedParams {
   filter: string;
   value: string | string[];
   category: CategorySlug;
 }
 
-export interface SortChangedParams {
+interface SortChangedParams {
   sortBy: SortBy;
   order: SortOrder;
   category: CategorySlug;

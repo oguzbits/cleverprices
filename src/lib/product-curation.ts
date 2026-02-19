@@ -7,7 +7,7 @@ import {
   isProductBestseller,
 } from "./utils/products";
 
-export interface DashboardProduct {
+interface DashboardProduct {
   id?: number;
   title: string;
   price: number;

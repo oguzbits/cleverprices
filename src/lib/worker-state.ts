@@ -3,7 +3,7 @@ import { join } from "path";
 
 const STATE_FILE = join(process.cwd(), "data/worker-state.json");
 
-export interface WorkerState {
+interface WorkerState {
   lastRun: number;
   lastRunHuman?: string;
   lastCloudSync: number;
@@ -51,6 +51,6 @@ export function updateLastRun() {
   saveWorkerState({ lastRun: Date.now() });
 }
 
-export function updateLastCloudSync() {
+function updateLastCloudSync() {
   saveWorkerState({ lastCloudSync: Date.now() });
 }

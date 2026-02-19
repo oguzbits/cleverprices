@@ -6,7 +6,7 @@ import { getProductIdentity } from "@/lib/utils/product-identity";
  * Responsible for Entity Resolution / Clustering of identical products.
  */
 
-export interface SemanticCluster {
+interface SemanticCluster {
   hash: string;
   representativeId: number;
   productIds: number[];
@@ -18,7 +18,7 @@ export interface SemanticCluster {
  * GOAL: Group colors, MPNs, and multiple sources of the EXACT same technical product.
  * NON-GOAL: Grouping different storage capacities (128GB vs 256GB) - these are distinct search intents.
  */
-export function generateSemanticHash(product: Partial<Product>): string {
+function generateSemanticHash(product: Partial<Product>): string {
   if (!product.title) return "unknown";
 
   // 1. Leverage existing identity resolution (strips noise, normalizes brands)

@@ -45,7 +45,7 @@ export interface SiblingConsensus {
   total: number;
 }
 
-export interface ProductIdentity {
+interface ProductIdentity {
   brand: string;
   model: string;
   fullModel: string;
@@ -326,10 +326,7 @@ export function calculateSiblingConsensus(siblings: any[]): SiblingConsensus {
  * Checks if a token is a global constant in the sibling family (Identity Token)
  * or a variable trait (Variation Token).
  */
-export function isIdentityToken(
-  token: string,
-  consensus: SiblingConsensus,
-): boolean {
+function isIdentityToken(token: string, consensus: SiblingConsensus): boolean {
   if (consensus.total <= 1) return true; // Can't tell without siblings
   const freq =
     (consensus.tokenCounts[token.toLowerCase()] || 0) / consensus.total;

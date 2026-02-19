@@ -105,7 +105,7 @@ function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
  * Pruning is essential to stay under the 2MB cache limit.
  * Price is included but will be overwritten by the loader for live sync.
  */
-export async function getCachedLocalizedCategoryProducts(
+async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
   version: string = "v1", // Cache buster

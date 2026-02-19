@@ -74,13 +74,13 @@ export async function getBlogPostBySlug(
   } as BlogPost;
 }
 
-export function calculateReadingTimeSync(content: string): string {
+function calculateReadingTimeSync(content: string): string {
   const wordsPerMinute = 200;
   const words = content.trim().split(/\s+/).length;
   const time = Math.ceil(words / wordsPerMinute);
   return `${time} min read`;
 }
 
-export async function calculateReadingTime(content: string): Promise<string> {
+async function calculateReadingTime(content: string): Promise<string> {
   return calculateReadingTimeSync(content);
 }
