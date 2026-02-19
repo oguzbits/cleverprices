@@ -19,6 +19,21 @@ export interface SpecificationsTableProps {
   isHubMode?: boolean;
 }
 
+const parseLegacySpecs = (
+  standardSpecs: string,
+  specificationsSource?: string,
+) => {
+  try {
+    return {
+      rawSpecs: JSON.parse(standardSpecs) || {},
+      sourceLabel: specificationsSource || "Legacy",
+    };
+  } catch (e) {
+    console.warn("Failed to parse specifications string", e);
+    return { rawSpecs: {}, sourceLabel: specificationsSource || "Legacy" };
+  }
+};
+
 export function SpecificationsTable({
   product,
   selectedCondition,
@@ -49,13 +64,12 @@ export function SpecificationsTable({
     isOfficialData = !!product.officialSpecifications;
   } else if (standardSpecs && typeof standardSpecs === "string") {
     // Fallback: parse if it's a string (shouldn't happen with proper mapping)
-    try {
-      rawSpecs = JSON.parse(standardSpecs) || {};
-      sourceLabel = product.specificationsSource || "Legacy";
-    } catch (e) {
-      console.warn("Failed to parse specifications string", e);
-      rawSpecs = {};
-    }
+    const parsed = parseLegacySpecs(
+      standardSpecs,
+      product.specificationsSource || undefined,
+    );
+    rawSpecs = parsed.rawSpecs;
+    sourceLabel = parsed.sourceLabel;
   } else if (product.enrichmentStatus === "untrusted_source") {
     sourceLabel = "Untrusted";
     rawSpecs = {}; // Wipe polluted data from UI

@@ -9,7 +9,21 @@ import {
   getDiverseMostPopular,
   getNewArrivals,
 } from "@/lib/server/cached-products";
+import { getLivePricesForProducts as getPricesFromDb } from "@/lib/server/live-data";
 import { cacheLife } from "next/cache";
+
+async function fetchHomeData(countryCode: string) {
+  try {
+    return await Promise.all([
+      getBestDeals(40, countryCode, "New").catch(() => []),
+      getDiverseMostPopular(8, countryCode).catch(() => []),
+      getNewArrivals(100, countryCode, "New").catch(() => []),
+    ]);
+  } catch (error) {
+    console.error("Critical error fetching home page data:", error);
+    return [[], [], []];
+  }
+}
 
 export default async function HomeContent({
   country,
@@ -21,19 +35,7 @@ export default async function HomeContent({
   const countryCode = countryConfig?.code || country;
 
   // Fetch enough data for curation with margin for filtering
-  let rawDeals: any[] = [];
-  let rawPopular: any[] = [];
-  let rawNew: any[] = [];
-
-  try {
-    [rawDeals, rawPopular, rawNew] = await Promise.all([
-      getBestDeals(40, countryCode, "New").catch(() => []),
-      getDiverseMostPopular(8, countryCode).catch(() => []),
-      getNewArrivals(100, countryCode, "New").catch(() => []),
-    ]);
-  } catch (error) {
-    console.error("Critical error fetching home page data:", error);
-  }
+  const [rawDeals, rawPopular, rawNew] = await fetchHomeData(countryCode);
 
   // Global duplicate tracker across ALL sections
   const globalSeen = new Set<string>();
@@ -123,12 +125,7 @@ export default async function HomeContent({
     .filter(Boolean)
     .filter((id) => typeof id === "number") as number[];
 
-  const { getLivePricesForProducts } = await import("@/lib/server/live-data");
-
-  const livePriceMap = await getLivePricesForProducts(
-    allHomeProductIds,
-    countryCode,
-  );
+  const livePriceMap = await getPricesFromDb(allHomeProductIds, countryCode);
 
   // 6. Return curated data
   return (

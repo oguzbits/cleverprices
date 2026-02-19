@@ -30,7 +30,7 @@ export const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
     });
 
     useEffect(() => {
-      setMounted(true);
+      requestAnimationFrame(() => setMounted(true));
       const container = scrollContainerRef.current;
       if (!container) return;
 

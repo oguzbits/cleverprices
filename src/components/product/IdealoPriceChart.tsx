@@ -25,8 +25,10 @@ const ALL_TIMEFRAMES: { k: TimeFrame; l: string }[] = [
   { k: "1J", l: "1 Jahr" },
 ];
 
+const EMPTY_HISTORY: { date: string; price: number }[] = [];
+
 export function IdealoPriceChart({
-  history = [],
+  history = EMPTY_HISTORY,
   title,
   currentPrice,
 }: IdealoPriceChartProps & { currentPrice?: number }) {
@@ -99,7 +101,6 @@ function ChartRenderer({
   timeframe: TimeFrame;
   onTimeframeChange: (tf: TimeFrame) => void;
 }) {
-  const [activeTimeframe, setActiveTimeframe] = useState<TimeFrame>(timeframe);
   const [hoveredData, setHoveredData] = useState<{
     date: number;
     price: number;
@@ -109,8 +110,10 @@ function ChartRenderer({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [nowTimestamp] = useState(() => Date.now());
+
   const { data, minPrice, maxPrice, minDate, maxDate, stats, yTicks, yDomain } =
-    (() => {
+    React.useMemo(() => {
       // 1. Sort & Map
       const rawSorted = [...history]
         .map((h) => ({
@@ -122,19 +125,19 @@ function ChartRenderer({
       // Inject livePrice if available
       if (livePrice !== undefined && livePrice !== null) {
         rawSorted.push({
-          date: Date.now(),
+          date: nowTimestamp,
           price: livePrice,
         });
       }
 
       // 2. Cutoff
-      const now = new Date();
+      const now = new Date(nowTimestamp);
       now.setHours(23, 59, 59, 999);
 
       let daysBack = 90;
-      if (activeTimeframe === "1M") daysBack = 30;
-      if (activeTimeframe === "6M") daysBack = 180;
-      if (activeTimeframe === "1J") daysBack = 365;
+      if (timeframe === "1M") daysBack = 30;
+      if (timeframe === "6M") daysBack = 180;
+      if (timeframe === "1J") daysBack = 365;
 
       const startDate = new Date(now);
       startDate.setDate(startDate.getDate() - daysBack);
@@ -235,7 +238,7 @@ function ChartRenderer({
           days: filledData.length,
         },
       };
-    })();
+    }, [history, livePrice, timeframe, nowTimestamp]);
 
   // Helpers
   const formatPrice = (price: number) =>
@@ -266,7 +269,7 @@ function ChartRenderer({
 
   const getDaysAgo = (ts?: number) => {
     if (!ts) return "";
-    const diff = Date.now() - ts;
+    const diff = nowTimestamp - ts;
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     if (days === 0) return "Heute";
     if (days === 1) return "vor 1 Tag";
@@ -377,17 +380,13 @@ function ChartRenderer({
 
         <div className="flex gap-1.5">
           {visibleTimeframes.map((tf) => {
-            const isActive = activeTimeframe === tf.k;
+            const isActive = timeframe === tf.k;
             return (
               <button
                 key={tf.k}
                 onClick={(e) => {
-                  if (isModal) {
-                    e.stopPropagation();
-                  } else {
-                    onTimeframeChange(tf.k as TimeFrame);
-                  }
-                  setActiveTimeframe(tf.k as TimeFrame);
+                  if (isModal) e.stopPropagation();
+                  onTimeframeChange(tf.k as TimeFrame);
                 }}
                 className={cn(
                   "cursor-pointer rounded border text-[11px] font-bold transition-colors",

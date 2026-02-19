@@ -25,10 +25,26 @@ interface BlogPostViewMDXProps {
  * Blog post view using build-time compiled MDX
  * This replaces next-mdx-remote with @next/mdx for better performance
  */
+async function loadMDXModule(slug: string) {
+  try {
+    const mdxModule = await import(`@/content/blog/${slug}.mdx`);
+    return mdxModule.default;
+  } catch (error) {
+    console.error(`Failed to load MDX for slug: ${slug}`, error);
+    return null;
+  }
+}
+
 export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
   const post = await getBlogPostBySlug(slug);
 
   if (!post) {
+    notFound();
+  }
+
+  const MDXContent = await loadMDXModule(slug);
+
+  if (!MDXContent) {
     notFound();
   }
 
@@ -37,16 +53,6 @@ export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
     { name: "Blog", href: "/blog" },
     { name: post.title },
   ];
-
-  // Dynamically import the compiled MDX file
-  let MDXContent;
-  try {
-    const mdxModule = await import(`@/content/blog/${slug}.mdx`);
-    MDXContent = mdxModule.default;
-  } catch (error) {
-    console.error(`Failed to load MDX for slug: ${slug}`, error);
-    notFound();
-  }
 
   // Prepare MDX components with server-side data
   const components = {

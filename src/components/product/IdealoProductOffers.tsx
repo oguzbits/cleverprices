@@ -1,10 +1,10 @@
 import { ClientDate } from "@/components/ui/ClientDate";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PaymentMethodIcon } from "@/components/ui/PaymentMethodIcon";
-import type { CountryCode } from "@/lib/countries";
-import { getCountryByCode } from "@/lib/countries";
-import type { ProductOffer } from "@/lib/data-sources";
+import { getCountryByCode, type CountryCode } from "@/lib/countries";
+import { type ProductOffer } from "@/lib/data-sources";
 import { getProductFamilyMembers, type Product } from "@/lib/product-registry";
+import { mergeLivePrices } from "@/lib/server/live-data";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Star } from "lucide-react";
 
@@ -44,7 +44,6 @@ export async function IdealoProductOffers({
 
     // Only merge if not already passed (pre-merged)
     if (!passedVariants) {
-      const { mergeLivePrices } = await import("@/lib/server/live-data");
       familyMembers = await mergeLivePrices(familyMembers, countryCode);
     }
 
@@ -99,7 +98,6 @@ export async function IdealoProductOffers({
 
       // Only merge if not passed
       if (!passedVariants) {
-        const { mergeLivePrices } = await import("@/lib/server/live-data");
         familyMembers = await mergeLivePrices(familyMembers, countryCode);
       }
 
@@ -114,7 +112,6 @@ export async function IdealoProductOffers({
       targets = [mergedProduct, ...identicalSiblings];
     } else if (!passedVariants) {
       // Single Product (No Parent) - MUST refreshed prices to match "Neu ab" if not passed
-      const { mergeLivePrices } = await import("@/lib/server/live-data");
       const [fresh] = await mergeLivePrices([product], countryCode);
       targets = [fresh];
     } else {

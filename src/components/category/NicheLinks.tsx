@@ -5,17 +5,22 @@ interface Props {
   categorySlug: string;
 }
 
-export async function NicheLinks({ categorySlug }: Props) {
-  // In a real app, we'd filter the manifest at runtime or pre-filter it
-  let niches: NichePage[] = [];
+async function getNichesForCategory(
+  categorySlug: string,
+): Promise<NichePage[]> {
   try {
     const manifest = await import("../../../data/niche-manifest.json");
-    niches = (manifest.default as NichePage[]).filter(
+    return (manifest.default as NichePage[]).filter(
       (n) => n.category === categorySlug,
     );
-  } catch {
-    return null;
+  } catch (error) {
+    console.warn("Could not load niche manifest", error);
+    return [];
   }
+}
+
+export async function NicheLinks({ categorySlug }: Props) {
+  const niches = await getNichesForCategory(categorySlug);
 
   if (niches.length === 0) return null;
 

@@ -164,11 +164,19 @@ export default async function DedicatedCategoryPage({
 
   if (isEmpty) notFound();
 
-  try {
-    const childCategories = getChildCategories(categorySlug as CategorySlug);
+  const childCategories = getChildCategories(categorySlug as CategorySlug);
+  let showNotFound = false;
 
-    // If it's a hub (has children), show the parent view with product sections
-    if (childCategories.length > 0) {
+  // Data for the hub view
+  let hubData: {
+    bestsellers: any[];
+    newProducts: any[];
+    deals: any[];
+    breadcrumbItems: any[];
+  } | null = null;
+
+  if (childCategories.length > 0) {
+    try {
       // Fetch products for internal linking sections (Optimized single round trip)
       const { bestsellers, newProducts, deals } = await getParentCategoryData(
         categorySlug as CategorySlug,
@@ -207,36 +215,50 @@ export default async function DedicatedCategoryPage({
         })),
       ];
 
-      return (
-        <ParentCategoryView
-          parentCategory={stripCategoryIcon(category)}
-          childCategories={childCategories.map(stripCategoryIcon)}
-          bestsellers={bestsellers.map(transformProduct)}
-          newProducts={newProducts.map(transformProduct)}
-          deals={deals.map(transformProduct)}
-          breadcrumbItems={breadcrumbItems}
-        />
-      );
+      hubData = {
+        bestsellers: bestsellers.map(transformProduct),
+        newProducts: newProducts.map(transformProduct),
+        deals: deals.map(transformProduct),
+        breadcrumbItems,
+      };
+    } catch (error: any) {
+      if (
+        error?.digest?.startsWith("NEXT_") ||
+        error?.digest === "HANGING_PROMISE_REJECTION" ||
+        error?.message?.includes("searchParams")
+      ) {
+        throw error;
+      }
+      console.error(`[Page Error] Category ${categorySlug}:`, error);
+      showNotFound = true;
     }
+  }
 
-    // If it's a child category, show the NEW Idealo-style products view
-    const filters = await searchParams;
-    return (
-      <IdealoCategoryPage
-        category={stripCategoryIcon(category)}
-        countryCode={DEFAULT_COUNTRY}
-        searchParams={filters}
-      />
-    );
-  } catch (error: any) {
-    if (
-      error?.digest?.startsWith("NEXT_") ||
-      error?.digest === "HANGING_PROMISE_REJECTION" ||
-      error?.message?.includes("searchParams")
-    ) {
-      throw error;
-    }
-    console.error(`[Page Error] Category ${categorySlug}:`, error);
+  if (showNotFound) {
     notFound();
   }
+
+  // If it's a hub (has children), show the parent view with product sections
+  if (hubData) {
+    return (
+      <ParentCategoryView
+        parentCategory={stripCategoryIcon(category)}
+        childCategories={childCategories.map(stripCategoryIcon)}
+        bestsellers={hubData.bestsellers}
+        newProducts={hubData.newProducts}
+        deals={hubData.deals}
+        breadcrumbItems={hubData.breadcrumbItems}
+      />
+    );
+  }
+
+  // If it's a child category, show the NEW Idealo-style products view
+  const filters = await searchParams;
+  return (
+    <IdealoCategoryPage
+      category={stripCategoryIcon(category)}
+      countryCode={DEFAULT_COUNTRY}
+      searchParams={filters}
+    />
+  );
 }

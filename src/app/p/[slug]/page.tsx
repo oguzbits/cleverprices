@@ -8,6 +8,7 @@ import {
   getPDPRenderData,
   getProductById,
 } from "@/lib/server/cached-products";
+import { logPDPPerformance } from "@/lib/server/performance-registry";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
@@ -61,51 +62,58 @@ function generateEnrichedDescription(
       typeof product.officialSpecifications === "string"
         ? JSON.parse(product.officialSpecifications)
         : product.officialSpecifications;
-
-    if (!specs || typeof specs !== "object") return null;
-
-    // 1. Processors (Intel/AMD)
-    if (
-      product.category === "processors-cpus" ||
-      product.title.includes("Intel") ||
-      product.title.includes("AMD")
-    ) {
-      const cores =
-        specs["Anzahl der Kerne"] || specs["Total Cores"] || specs["Cores"];
-      const turbo =
-        specs["Max. Turbo-Taktfrequenz"] || specs["Max Turbo Frequency"];
-      const cache = specs["Cache"] || specs["L3 Cache"];
-      if (cores && turbo) {
-        return `${product.title} (${cores} Cores, bis zu ${turbo}, ${cache || ""}). Offizielle technische Daten & Bestpreis.`;
-      }
-    }
-
-    // 2. Smartphones (Apple/Samsung)
-    if (
-      product.category === "smartphones" ||
-      product.title.includes("iPhone") ||
-      product.title.includes("Galaxy")
-    ) {
-      const display =
-        specs["Display"] ||
-        specs["Super Retina XDR Display"] ||
-        specs["Display-Größe"];
-      const chip = specs["Chip"] || specs["Prozessor"] || specs["Chipset"];
-      const camera = specs["Kamera"] || specs["Camera"] || specs["Hauptkamera"];
-      const capacity =
-        specs["Kapazität"] || specs["Speicherkapazität"] || specs["Storage"];
-
-      const parts = [];
-      if (display) parts.push(display.replace(/Display/g, "").trim());
-      if (chip) parts.push(chip);
-      if (camera) parts.push(camera.split("\n")[0]); // Take first line often
-
-      if (parts.length > 0) {
-        return `${product.title} (${parts.join(", ")}). Technische Daten, Preisvergleich & Angebote.`;
-      }
-    }
+    return getEnrichedDescriptionFromSpecs(product, specs, category);
   } catch (e) {
-    // Fail silently to default
+    return null;
+  }
+}
+
+function getEnrichedDescriptionFromSpecs(
+  product: any,
+  specs: any,
+  category: any,
+): string | null {
+  if (!specs || typeof specs !== "object") return null;
+
+  // 1. Processors (Intel/AMD)
+  if (
+    product.category === "processors-cpus" ||
+    product.title.includes("Intel") ||
+    product.title.includes("AMD")
+  ) {
+    const cores =
+      specs["Anzahl der Kerne"] || specs["Total Cores"] || specs["Cores"];
+    const turbo =
+      specs["Max. Turbo-Taktfrequenz"] || specs["Max Turbo Frequency"];
+    const cache = specs["Cache"] || specs["L3 Cache"];
+    if (cores && turbo) {
+      return `${product.title} (${cores} Cores, bis zu ${turbo}, ${cache || ""}). Offizielle technische Daten & Bestpreis.`;
+    }
+  }
+
+  // 2. Smartphones (Apple/Samsung)
+  if (
+    product.category === "smartphones" ||
+    product.title.includes("iPhone") ||
+    product.title.includes("Galaxy")
+  ) {
+    const display =
+      specs["Display"] ||
+      specs["Super Retina XDR Display"] ||
+      specs["Display-Größe"];
+    const chip = specs["Chip"] || specs["Prozessor"] || specs["Chipset"];
+    const camera = specs["Kamera"] || specs["Camera"] || specs["Hauptkamera"];
+    const capacity =
+      specs["Kapazität"] || specs["Speicherkapazität"] || specs["Storage"];
+
+    const parts = [];
+    if (display) parts.push(display.replace(/Display/g, "").trim());
+    if (chip) parts.push(chip);
+    if (camera) parts.push(camera.split("\n")[0]); // Take first line often
+
+    if (parts.length > 0) {
+      return `${product.title} (${parts.join(", ")}). Technische Daten, Preisvergleich & Angebote.`;
+    }
   }
   return null;
 }
@@ -272,10 +280,14 @@ export default async function ProductPage({ params, searchParams }: Props) {
     return null;
   }
 
+  let action:
+    | { type: "notFound" }
+    | { type: "redirect"; url: string; permanent: boolean }
+    | null = null;
+  let renderContent = null;
+
   try {
     const startTime = performance.now();
-    const { logPDPPerformance } =
-      await import("@/lib/server/performance-registry");
 
     // 1. Fetch essential DB data via High-Speed Cache Bundle
     const data = await getPDPRenderData(slug);
@@ -285,44 +297,35 @@ export default async function ProductPage({ params, searchParams }: Props) {
       console.log(
         `[SEO Redirect] ${data.isPermanent ? "301/308" : "302/307"} ${slug} -> ${data.redirect}`,
       );
-      if (data.isPermanent) {
-        return permanentRedirect(data.redirect);
+      action = {
+        type: "redirect",
+        url: data.redirect,
+        permanent: !!data.isPermanent,
+      };
+    } else {
+      let product = data?.product;
+      const parentViewMode = data?.isParentView || false;
+
+      if (!product) {
+        logPDPPerformance(slug, startTime);
+        action = { type: "notFound" };
       } else {
-        return redirect(data.redirect);
+        // 1. All data is now pre-fetched in parallel within the getPDPRenderData bundle
+        const category = data?.category;
+        const allVariantsRaw = (data?.variants || []) as Product[];
+
+        renderContent = (
+          <IdealoProductPage
+            product={product}
+            variants={allVariantsRaw}
+            category={category}
+            countryCode={countryCode}
+            selectedCondition={condition as any}
+            isParentView={parentViewMode}
+          />
+        );
       }
     }
-
-    let product = data?.product;
-    const parentViewMode = data?.isParentView || false;
-
-    if (!product) {
-      logPDPPerformance(slug, startTime);
-      notFound();
-    }
-
-    // 1. All data is now pre-fetched in parallel within the getPDPRenderData bundle
-    const category = data?.category;
-    const allVariantsRaw = (data?.variants || []) as Product[];
-
-    // 2. Identify the Canonical Variant ID locally from siblings (saves a DB query)
-    const canonicalRealId =
-      allVariantsRaw.length > 0
-        ? [...allVariantsRaw].sort((a, b) => (a.id || 0) - (b.id || 0))[0]
-            ?.id || null
-        : product.id || null;
-
-    // 2. Render THE STATIC SHELL immediately
-    // Live price merging is now deferred into a Suspense boundary inside IdealoProductPage
-    return (
-      <IdealoProductPage
-        product={product}
-        variants={allVariantsRaw}
-        category={category}
-        countryCode={countryCode}
-        selectedCondition={condition as any}
-        isParentView={parentViewMode}
-      />
-    );
   } catch (error: any) {
     if (
       error?.digest?.startsWith("NEXT_") ||
@@ -331,6 +334,17 @@ export default async function ProductPage({ params, searchParams }: Props) {
       throw error;
     }
     console.error(`[Page Error] Product ${slug}:`, error);
-    notFound(); // Fallback to 404 for DB errors during crawl
+    action = { type: "notFound" };
   }
+
+  if (action?.type === "redirect") {
+    if (action.permanent) permanentRedirect(action.url);
+    else redirect(action.url);
+  }
+
+  if (action?.type === "notFound") {
+    notFound();
+  }
+
+  return renderContent;
 }
