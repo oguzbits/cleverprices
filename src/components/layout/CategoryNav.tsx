@@ -86,11 +86,20 @@ export function CategoryNav({ country }: { country: string }) {
     // Force scroll to start on mount/pathname change
     if (scrollRef.current) {
       scrollRef.current.scrollLeft = 0;
+
+      // Use requestAnimationFrame to avoid synchronous state updates if possible
+      // or at least defer them slightly to let the browser paint
+      const frameId = requestAnimationFrame(() => {
+        checkScroll();
+      });
+
       // Small delay to ensure layout is ready before checking scroll
       const timer = setTimeout(checkScroll, 100);
       // Second check after images/layout might have shifted
       const timer2 = setTimeout(checkScroll, 1000);
+
       return () => {
+        cancelAnimationFrame(frameId);
         clearTimeout(timer);
         clearTimeout(timer2);
       };
@@ -98,7 +107,7 @@ export function CategoryNav({ country }: { country: string }) {
   }, [pathname]);
 
   useEffect(() => {
-    checkScroll();
+    // Removed direct checkScroll() call to avoid synchronous update on mount
     window.addEventListener("resize", checkScroll);
     return () => window.removeEventListener("resize", checkScroll);
   }, []);

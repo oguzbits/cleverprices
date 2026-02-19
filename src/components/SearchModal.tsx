@@ -87,7 +87,8 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
   React.useEffect(() => {
     const handleResize = () => {
-      setLimit(window.innerWidth < 640 ? 6 : 10);
+      const newLimit = window.innerWidth < 640 ? 6 : 10;
+      setLimit((prev) => (prev !== newLimit ? newLimit : prev));
     };
     handleResize();
     window.addEventListener("resize", handleResize);
@@ -110,17 +111,18 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
     let active = true;
     const fetchResults = async () => {
       setIsFetching(true);
+      let results = null;
       try {
-        const results = await performSearch(debouncedSearch, limit);
-        if (active) {
-          setData(results);
-        }
+        results = await performSearch(debouncedSearch, limit);
       } catch (error) {
         console.error("Search failed:", error);
-      } finally {
-        if (active) {
-          setIsFetching(false);
+      }
+
+      if (active) {
+        if (results) {
+          setData(results);
         }
+        setIsFetching(false);
       }
     };
 

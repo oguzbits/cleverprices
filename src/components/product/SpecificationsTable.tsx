@@ -34,6 +34,77 @@ const parseLegacySpecs = (
   }
 };
 
+function safeStringify(value: unknown): string {
+  if (typeof value === "string") return value;
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
+}
+
+const KEY_TRANSLATIONS: Record<string, string> = {
+  "release date": "Gelistet seit",
+  model: "Modell",
+  color: "Farbe",
+  series: "Serie",
+  manufacturer: "Hersteller",
+  interface: "Schnittstelle",
+  "form factor": "Bauform",
+  dimensions: "Abmessungen",
+  weight: "Gewicht",
+  warranty: "Garantie",
+  capacity: "Kapazität",
+  "read speed": "Lesegeschwindigkeit",
+  "write speed": "Schreibgeschwindigkeit",
+  technology: "Technik",
+  type: "Typ",
+  socket: "Sockel",
+  cores: "Kerne",
+  threads: "Threads",
+  "base clock": "Basistakt",
+  "boost clock": "Boost-Takt",
+  cache: "Cache",
+  tdp: "TDP",
+  graphics: "Grafik",
+  resolution: "Auflösung",
+  brightness: "Helligkeit",
+  "contrast ratio": "Kontrastverhältnis",
+  "response time": "Reaktionszeit",
+  "refresh rate": "Bildwiederholfrequenz",
+  "panel type": "Panel-Typ",
+  "screen size": "Bildschirmdiagonale",
+  "aspect ratio": "Seitenverhältnis",
+  "display type": "Display-Typ",
+  connections: "Anschlüsse",
+  hdmi: "HDMI",
+  displayport: "DisplayPort",
+  curved: "Curved",
+  chipset: "Grafikchipsatz",
+  "gpu clock": "Chiptakt",
+  "gpu boost clock": "Boost-Takt",
+  "video memory": "Grafikspeicher",
+  "memory type": "Speichertyp",
+  "memory clock": "Speichertakt",
+  "power consumption": "Stromverbrauch",
+  cooling: "Kühlung",
+  "memory speed": "Speichertakt",
+  "cas latency": "CAS Latenz",
+  voltage: "Spannung",
+  modules: "Module",
+  wattage: "Leistung",
+  efficiency: "Effizienz",
+  modular: "Modular",
+  certification: "Zertifizierung",
+  "rotational speed": "Umdrehungsgeschwindigkeit",
+  "buffer size": "Cache-Größe",
+  "pixel density": "Pixeldichte",
+  "display resolution": "Auflösung",
+  processor: "Prozessor",
+  "chip name": "Chip",
+  description: "Beschreibung",
+};
+
 export function SpecificationsTable({
   product,
   selectedCondition,
@@ -156,71 +227,7 @@ export function SpecificationsTable({
     source: sourceLabel,
   };
 
-  // Translation Map
-  const keyTranslations: Record<string, string> = {
-    // ... existing translations ...
-    "release date": "Gelistet seit",
-    model: "Modell",
-    color: "Farbe",
-    series: "Serie",
-    manufacturer: "Hersteller",
-    interface: "Schnittstelle",
-    "form factor": "Bauform",
-    dimensions: "Abmessungen",
-    weight: "Gewicht",
-    warranty: "Garantie",
-    capacity: "Kapazität",
-    "read speed": "Lesegeschwindigkeit",
-    "write speed": "Schreibgeschwindigkeit",
-    technology: "Technik",
-    type: "Typ",
-    socket: "Sockel",
-    cores: "Kerne",
-    threads: "Threads",
-    "base clock": "Basistakt",
-    "boost clock": "Boost-Takt",
-    cache: "Cache",
-    tdp: "TDP",
-    graphics: "Grafik",
-    resolution: "Auflösung",
-    brightness: "Helligkeit",
-    "contrast ratio": "Kontrastverhältnis",
-    "response time": "Reaktionszeit",
-    "refresh rate": "Bildwiederholfrequenz",
-    "panel type": "Panel-Typ",
-    "screen size": "Bildschirmdiagonale",
-    "aspect ratio": "Seitenverhältnis",
-    "display type": "Display-Typ",
-    connections: "Anschlüsse",
-    hdmi: "HDMI",
-    displayport: "DisplayPort",
-    curved: "Curved",
-    chipset: "Grafikchipsatz",
-    "gpu clock": "Chiptakt",
-    "gpu boost clock": "Boost-Takt",
-    "video memory": "Grafikspeicher",
-    "memory type": "Speichertyp",
-    "memory clock": "Speichertakt",
-    "power consumption": "Stromverbrauch",
-    cooling: "Kühlung",
-    "memory speed": "Speichertakt",
-    "cas latency": "CAS Latenz",
-    voltage: "Spannung",
-    modules: "Module",
-    wattage: "Leistung",
-    efficiency: "Effizienz",
-    modular: "Modular",
-    certification: "Zertifizierung",
-    "rotational speed": "Umdrehungsgeschwindigkeit",
-    "buffer size": "Cache-Größe",
-    "pixel density": "Pixeldichte",
-    "display resolution": "Auflösung",
-    processor: "Prozessor",
-    "chip name": "Chip",
-    description: "Beschreibung",
-  };
-
-  // Grouping Logic
+  // Groups and items distribution logic
   const groups: Record<string, { label: string; value: unknown }[]> = {
     Allgemein: [],
     "Leistung & Hardware": [],
@@ -228,6 +235,10 @@ export function SpecificationsTable({
     "Anschlüsse & Konnektivität": [],
     "Abmessungen & Energie": [],
     Sonstiges: [],
+  };
+
+  const releaseToBucket = (bucket: string, label: string, value: unknown) => {
+    groups[bucket].push({ label, value });
   };
 
   // Add Core Specs first
@@ -267,17 +278,13 @@ export function SpecificationsTable({
     // Localize Values
     let displayValue = value;
     if (typeof value === "object") {
-      try {
-        displayValue = JSON.stringify(value);
-      } catch {
-        displayValue = String(value);
-      }
+      displayValue = safeStringify(value);
     }
     if (displayValue === "Yes") displayValue = "Ja";
     if (displayValue === "No") displayValue = "Nein";
     const cleanKey = key.replace(/[‡*]/g, "").trim();
     const lowerKey = cleanKey.toLowerCase();
-    const label = keyTranslations[lowerKey] || cleanKey;
+    const label = KEY_TRANSLATIONS[lowerKey] || cleanKey;
 
     // DATA CLEANUP: If the key is "Modell" and the value is truncated (e.g. "Pixel 9" instead of "Pixel 9a"),
     // or if it's missing the brand, we can use the cleaned identity to improve the UI.
@@ -377,10 +384,6 @@ export function SpecificationsTable({
       }
     }
   });
-
-  function releaseToBucket(bucket: string, label: string, value: unknown) {
-    groups[bucket].push({ label, value });
-  }
 
   const flatList = Object.values(groups).flat();
   const hasData = flatList.length > 0;
@@ -489,7 +492,7 @@ export function SpecificationsTable({
                   <ul className="m-0 list-none p-0">
                     {items.map((spec, index) => (
                       <li
-                        key={index}
+                        key={spec.label}
                         className={cn(
                           "flex items-start px-[15px] py-[7px] text-[13px] leading-[1.4]",
                           index % 2 === 0 ? "bg-[#f5f5f5]" : "bg-white",

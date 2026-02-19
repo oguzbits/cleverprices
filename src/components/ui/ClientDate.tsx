@@ -9,6 +9,19 @@ interface ClientDateProps {
   className?: string;
 }
 
+function formatClientDate(
+  date: string | Date,
+  locale: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  try {
+    const d = typeof date === "string" ? new Date(date) : date;
+    return d.toLocaleString(locale, options);
+  } catch (e) {
+    return "Invalid Date";
+  }
+}
+
 /**
  * Renders a date only on the client to avoid hydration mismatches
  * caused by server/client timezone differences.
@@ -28,7 +41,8 @@ export function ClientDate({
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const frameId = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(frameId);
   }, []);
 
   if (!mounted) {
@@ -36,13 +50,7 @@ export function ClientDate({
     return <span className={className}>...</span>;
   }
 
-  let displayDate = "Invalid Date";
-  try {
-    const d = typeof date === "string" ? new Date(date) : date;
-    displayDate = d.toLocaleString(locale, options);
-  } catch (e) {
-    // Falls back to "Invalid Date"
-  }
+  const displayDate = formatClientDate(date, locale, options);
 
   return <span className={className}>{displayDate}</span>;
 }
