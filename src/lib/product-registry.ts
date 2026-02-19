@@ -1,3 +1,8 @@
+// detect build phase to skip db operations
+const IS_BUILD =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.BUILD_PHASE === "1";
+
 import { client, db, dbReady } from "@/db";
 import {
   prices,
@@ -464,10 +469,7 @@ export async function getAllProductSlugs(limit?: number): Promise<
       };
     });
   } catch (e) {
-    const isBuild =
-      process.env.NEXT_PHASE === "phase-production-build" ||
-      process.env.BUILD_PHASE === "1";
-    if (!isBuild) {
+    if (!IS_BUILD) {
       console.warn(
         "[Product Registry] Database missing or inaccessible in getAllProductSlugs.",
       );
@@ -507,11 +509,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
       return results.map((r) => r.category);
     } catch (e) {
       // Differentiate between build-time and runtime failures
-      const isBuild =
-        process.env.NEXT_PHASE === "phase-production-build" ||
-        process.env.BUILD_PHASE === "1";
-
-      if (!isBuild) {
+      if (!IS_BUILD) {
         console.error(
           `[DB Error] getNonEmptyCategorySlugs failed: ${e instanceof Error ? e.message : String(e)}`,
         );
@@ -593,6 +591,7 @@ export const getProductVariants = cache(async function getProductVariants(
   skipLiveMerge: boolean = false, // Added back to match usage
   skipFullMapping: boolean = false, // If true, skips expensive consensus/identity logic
 ): Promise<Product[]> {
+  if (IS_BUILD) return [];
   await dbReady;
   // 1. PRIMARY: Fetch by parentAsin (Ideal Path)
   const fetchByAsin = async (parentAsin: string) => {
