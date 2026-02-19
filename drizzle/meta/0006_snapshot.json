@@ -103,61 +103,42 @@
       "indexes": {
         "unique_price_product_country": {
           "name": "unique_price_product_country",
-          "columns": [
-            "product_id",
-            "country"
-          ],
+          "columns": ["product_id", "country"],
           "isUnique": true
         },
         "idx_prices_country": {
           "name": "idx_prices_country",
-          "columns": [
-            "country"
-          ],
+          "columns": ["country"],
           "isUnique": false
         },
         "idx_prices_product_id": {
           "name": "idx_prices_product_id",
-          "columns": [
-            "product_id"
-          ],
+          "columns": ["product_id"],
           "isUnique": false
         },
         "idx_prices_last_updated": {
           "name": "idx_prices_last_updated",
-          "columns": [
-            "last_updated"
-          ],
+          "columns": ["last_updated"],
           "isUnique": false
         },
         "idx_prices_price_val": {
           "name": "idx_prices_price_val",
-          "columns": [
-            "price"
-          ],
+          "columns": ["price"],
           "isUnique": false
         },
         "idx_prices_unit_val": {
           "name": "idx_prices_unit_val",
-          "columns": [
-            "price_per_unit"
-          ],
+          "columns": ["price_per_unit"],
           "isUnique": false
         },
         "idx_prices_country_price": {
           "name": "idx_prices_country_price",
-          "columns": [
-            "country",
-            "price"
-          ],
+          "columns": ["country", "price"],
           "isUnique": false
         },
         "idx_prices_country_unit": {
           "name": "idx_prices_country_unit",
-          "columns": [
-            "country",
-            "price_per_unit"
-          ],
+          "columns": ["country", "price_per_unit"],
           "isUnique": false
         }
       },
@@ -166,12 +147,8 @@
           "name": "prices_product_id_products_id_fk",
           "tableFrom": "prices",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -460,115 +437,82 @@
       "indexes": {
         "products_asin_unique": {
           "name": "products_asin_unique",
-          "columns": [
-            "asin"
-          ],
+          "columns": ["asin"],
           "isUnique": true
         },
         "products_slug_unique": {
           "name": "products_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         },
         "idx_products_category": {
           "name": "idx_products_category",
-          "columns": [
-            "category"
-          ],
+          "columns": ["category"],
           "isUnique": false
         },
         "idx_products_brand": {
           "name": "idx_products_brand",
-          "columns": [
-            "brand"
-          ],
+          "columns": ["brand"],
           "isUnique": false
         },
         "idx_products_asin": {
           "name": "idx_products_asin",
-          "columns": [
-            "asin"
-          ],
+          "columns": ["asin"],
           "isUnique": false
         },
         "idx_products_gtin": {
           "name": "idx_products_gtin",
-          "columns": [
-            "gtin"
-          ],
+          "columns": ["gtin"],
           "isUnique": false
         },
         "idx_products_created_at": {
           "name": "idx_products_created_at",
-          "columns": [
-            "created_at"
-          ],
+          "columns": ["created_at"],
           "isUnique": false
         },
         "idx_products_canonical_id": {
           "name": "idx_products_canonical_id",
-          "columns": [
-            "canonical_id"
-          ],
+          "columns": ["canonical_id"],
           "isUnique": false
         },
         "idx_products_sales_rank": {
           "name": "idx_products_sales_rank",
-          "columns": [
-            "sales_rank"
-          ],
+          "columns": ["sales_rank"],
           "isUnique": false
         },
         "idx_products_rating": {
           "name": "idx_products_rating",
-          "columns": [
-            "rating"
-          ],
+          "columns": ["rating"],
           "isUnique": false
         },
         "idx_products_category_rank": {
           "name": "idx_products_category_rank",
-          "columns": [
-            "category",
-            "sales_rank"
-          ],
+          "columns": ["category", "sales_rank"],
           "isUnique": false
         },
         "idx_products_technology": {
           "name": "idx_products_technology",
-          "columns": [
-            "technology"
-          ],
+          "columns": ["technology"],
           "isUnique": false
         },
         "idx_products_capacity": {
           "name": "idx_products_capacity",
-          "columns": [
-            "capacity"
-          ],
+          "columns": ["capacity"],
           "isUnique": false
         },
         "idx_products_parent_asin": {
           "name": "idx_products_parent_asin",
-          "columns": [
-            "parent_asin"
-          ],
+          "columns": ["parent_asin"],
           "isUnique": false
         },
         "idx_products_enrichment_status": {
           "name": "idx_products_enrichment_status",
-          "columns": [
-            "enrichment_status"
-          ],
+          "columns": ["enrichment_status"],
           "isUnique": false
         },
         "idx_products_missing_specs": {
           "name": "idx_products_missing_specs",
-          "columns": [
-            "missing_specs"
-          ],
+          "columns": ["missing_specs"],
           "isUnique": false
         }
       },

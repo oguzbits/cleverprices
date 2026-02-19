@@ -54,11 +54,7 @@
       "indexes": {
         "idx_affiliate_product_country_source": {
           "name": "idx_affiliate_product_country_source",
-          "columns": [
-            "product_id",
-            "country",
-            "source"
-          ],
+          "columns": ["product_id", "country", "source"],
           "isUnique": false
         }
       },
@@ -67,12 +63,8 @@
           "name": "affiliate_links_product_id_products_id_fk",
           "tableFrom": "affiliate_links",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -138,17 +130,12 @@
       "indexes": {
         "idx_price_history_product_country": {
           "name": "idx_price_history_product_country",
-          "columns": [
-            "product_id",
-            "country"
-          ],
+          "columns": ["product_id", "country"],
           "isUnique": false
         },
         "idx_price_history_recorded": {
           "name": "idx_price_history_recorded",
-          "columns": [
-            "recorded_at"
-          ],
+          "columns": ["recorded_at"],
           "isUnique": false
         }
       },
@@ -157,12 +144,8 @@
           "name": "price_history_product_id_products_id_fk",
           "tableFrom": "price_history",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -319,10 +302,7 @@
       "indexes": {
         "idx_prices_product_country": {
           "name": "idx_prices_product_country",
-          "columns": [
-            "product_id",
-            "country"
-          ],
+          "columns": ["product_id", "country"],
           "isUnique": false
         }
       },
@@ -331,12 +311,8 @@
           "name": "prices_product_id_products_id_fk",
           "tableFrom": "prices",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -395,17 +371,12 @@
       "indexes": {
         "idx_identifiers_source_external": {
           "name": "idx_identifiers_source_external",
-          "columns": [
-            "source",
-            "external_id"
-          ],
+          "columns": ["source", "external_id"],
           "isUnique": false
         },
         "idx_identifiers_product": {
           "name": "idx_identifiers_product",
-          "columns": [
-            "product_id"
-          ],
+          "columns": ["product_id"],
           "isUnique": false
         }
       },
@@ -414,12 +385,8 @@
           "name": "product_identifiers_product_id_products_id_fk",
           "tableFrom": "product_identifiers",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -549,30 +516,22 @@
       "indexes": {
         "idx_offers_product": {
           "name": "idx_offers_product",
-          "columns": [
-            "product_id"
-          ],
+          "columns": ["product_id"],
           "isUnique": false
         },
         "idx_offers_source": {
           "name": "idx_offers_source",
-          "columns": [
-            "source"
-          ],
+          "columns": ["source"],
           "isUnique": false
         },
         "idx_offers_price": {
           "name": "idx_offers_price",
-          "columns": [
-            "price"
-          ],
+          "columns": ["price"],
           "isUnique": false
         },
         "idx_offers_total_price": {
           "name": "idx_offers_total_price",
-          "columns": [
-            "total_price"
-          ],
+          "columns": ["total_price"],
           "isUnique": false
         }
       },
@@ -581,12 +540,8 @@
           "name": "product_offers_product_id_products_id_fk",
           "tableFrom": "product_offers",
           "tableTo": "products",
-          "columnsFrom": [
-            "product_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["product_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -857,44 +812,32 @@
       "indexes": {
         "products_asin_unique": {
           "name": "products_asin_unique",
-          "columns": [
-            "asin"
-          ],
+          "columns": ["asin"],
           "isUnique": true
         },
         "products_slug_unique": {
           "name": "products_slug_unique",
-          "columns": [
-            "slug"
-          ],
+          "columns": ["slug"],
           "isUnique": true
         },
         "idx_products_category": {
           "name": "idx_products_category",
-          "columns": [
-            "category"
-          ],
+          "columns": ["category"],
           "isUnique": false
         },
         "idx_products_brand": {
           "name": "idx_products_brand",
-          "columns": [
-            "brand"
-          ],
+          "columns": ["brand"],
           "isUnique": false
         },
         "idx_products_asin": {
           "name": "idx_products_asin",
-          "columns": [
-            "asin"
-          ],
+          "columns": ["asin"],
           "isUnique": false
         },
         "idx_products_gtin": {
           "name": "idx_products_gtin",
-          "columns": [
-            "gtin"
-          ],
+          "columns": ["gtin"],
           "isUnique": false
         }
       },

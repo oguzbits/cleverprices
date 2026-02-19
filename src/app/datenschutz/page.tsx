@@ -115,12 +115,12 @@ export default function DatenschutzPage() {
               herkömmlichen Analyse-Tools.
             </p>
 
-      <h3>Analytics & Speed Insights (Cookieless)</h3>
-      <p>
-        Wir nutzen moderne Analytics-Tools, um die technische
-        Leistung und Nutzung der Webseite zu analysieren. Diese Tools arbeiten
-        komplett ohne Cookies und speichern keine persönlichen Daten.
-      </p>
+            <h3>Analytics & Speed Insights (Cookieless)</h3>
+            <p>
+              Wir nutzen moderne Analytics-Tools, um die technische Leistung und
+              Nutzung der Webseite zu analysieren. Diese Tools arbeiten komplett
+              ohne Cookies und speichern keine persönlichen Daten.
+            </p>
 
             <h3 className="text-lg font-semibold text-[#333]">
               Local Storage (Funktionale Speicherung)
