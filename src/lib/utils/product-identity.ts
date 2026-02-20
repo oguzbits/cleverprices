@@ -160,8 +160,27 @@ export function verifySpecModel(
   // B. Numeric Version mismatch (e.g. Title says 15, Candidate says 14)
   const getVersions = (tokens: string[]) =>
     tokens.filter((t) => /^\d+$/.test(t));
-  const versionsTitle = getVersions(titleTokens);
+  const versionsTitleRaw = getVersions(titleTokens);
   const versionsCand = getVersions(candTokens);
+
+  // Dynamic Spec Value Detector
+  // We don't want to enforce a match on numbers that are obviously spec units (e.g. "128" in "128 GB" or "144" in "144 Hz")
+  const isSpecValue = (v: string) => {
+    // If the number 'v' is attached to or immediately followed by a spec unit in the original title, it's not a model version.
+    const regex = new RegExp(
+      `\\b${v}\\s*(gb|tb|mb|hz|mhz|ghz|w|mah|inch|zoll|cm|mm|"|')\\b`,
+      "i",
+    );
+    return regex.test(originalTitle);
+  };
+
+  const versionsTitle = versionsTitleRaw.filter((v) => !isSpecValue(v));
+
+  if (versionsTitle.length > 0 && versionsCand.length === 0) {
+    // If title has a version number (< 100 or a year) but candidate has none, it's too vague.
+    // e.g. Title: "iPad 11 2025" vs Candidate: "iPad WiFi" -> reject
+    return false;
+  }
 
   // If both have numbers, they must share the core version
   if (versionsTitle.length > 0 && versionsCand.length > 0) {

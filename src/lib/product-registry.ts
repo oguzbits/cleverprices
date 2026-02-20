@@ -86,8 +86,8 @@ export const liteProductColumns = {
   monthlySold: products.monthlySold,
   parentAsin: products.parentAsin,
   variationAttributes: products.variationAttributes,
-  // specifications: products.specifications, // STRIPPED: Too heavy for category lists (~10KB/prod)
-  // officialSpecifications: products.officialSpecifications, // STRIPPED: Too heavy for category lists
+  specifications: products.specifications,
+  officialSpecifications: products.officialSpecifications,
   officialTitle: products.officialTitle,
   energyLabel: products.energyLabel,
   historySeeded: products.historySeeded,

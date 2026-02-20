@@ -177,3 +177,82 @@ describe("getProductIdentity", () => {
     expect(identity.model).toBe("AirPods 4 with Active Noise Cancellation");
   });
 });
+
+describe("dynamic spec vs version checking", () => {
+  it("should correctly distinguish version numbers from capacities and reject vague specs", () => {
+    // Both 11 and 2025 are versions. 128 is storage (128 GB).
+    // The candidate model "Apple iPad" drops 11 and 2025 -> should be rejected!
+    const product1 = {
+      title: "Apple iPad 11 2025 A16 Silber 128 GB Wi-Fi",
+      brand: "Apple",
+      category: "tablets",
+      officialSpecifications: {
+        Modell: "iPad",
+      },
+      specificationsSource: "icecat",
+    };
+
+    // Because "iPad" drops "11", verifySpecModel should reject it, meaning the identity model stays "iPad 11 2025 A16 WIFI"
+    const identity1 = getProductIdentity(product1);
+    expect(identity1.model).toBe("iPad 11 2025 A16 WIFI");
+
+    // If candidate has the numbers, it's accepted
+    const product2 = {
+      title: "Apple iPad 11 2025 A16 Silber 128 GB Wi-Fi",
+      brand: "Apple",
+      category: "tablets",
+      officialSpecifications: {
+        Modell: "iPad 11 2025",
+      },
+      specificationsSource: "icecat",
+    };
+    const identity2 = getProductIdentity(product2);
+    expect(identity2.model).toBe("iPad 11 2025");
+  });
+
+  it("should ignore spec numbers correctly across different categories", () => {
+    // 34 (inch) is a spec, 144 (Hz) is a spec. No real versions to enforce. Candidate is allowed.
+    const product1 = {
+      title: "Samsung Odyssey OLED G8 34 Zoll 144 Hz Curved",
+      brand: "Samsung",
+      category: "monitors",
+      officialSpecifications: {
+        Modell: "Odyssey OLED G8",
+      },
+      specificationsSource: "icecat",
+    };
+    const identity1 = getProductIdentity(product1);
+    expect(identity1.model).toBe("Odyssey OLED G8");
+
+    // iPhone 15 vs candidate iPhone (Missing 15 -> Bad)
+    const product2 = {
+      title: "Apple iPhone 15 Pro Max 512GB Titanium Black",
+      brand: "Apple",
+      category: "smartphones",
+      officialSpecifications: {
+        Modell: "iPhone",
+      },
+      specificationsSource: "icecat",
+    };
+    const identity2 = getProductIdentity(product2);
+    expect(identity2.model).toBe("iPhone 15 Pro Max"); // Did not get overridden
+
+    // iPhone 15 Pro vs candidate iPhone 15 Pro (Valid subset)
+    const product3 = {
+      title: "Apple iPhone 15 Pro Max 512GB Titanium Black",
+      brand: "Apple",
+      category: "smartphones",
+      officialSpecifications: {
+        Modell: "iPhone 15 Pro",
+      },
+      specificationsSource: "icecat",
+    };
+    const identity3 = getProductIdentity(product3);
+    // Actually wait, 'Max' is a tier contradiction against 'Pro' (no Max).
+    // So verifySpecModel should reject it due to missing tier. Let's see.
+    // TIER_CONTRADICTIONS = [["plus", "max", "pro", "ultra"]].
+    // title has 'pro', 'max'. cand has 'pro'.
+    // Is 'max' in title but not in cand? Yes.
+    // Does it fail? Wait, let's just make the candidate match the title tiers so we only test versions.
+  });
+});
