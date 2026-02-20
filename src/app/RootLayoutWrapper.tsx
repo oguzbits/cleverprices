@@ -1,6 +1,5 @@
 import "@/app/globals.css";
 
-import { DeferredAnalytics } from "@/components/DeferredAnalytics";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
@@ -60,8 +59,6 @@ export default function RootLayoutWrapper({
             <main className="flex-1">{children}</main>
             {!hideFooter && <Footer />}
           </div>
-          {/* Analytics deferred until after hydration (Next.js Best Practices: bundle-defer-third-party) */}
-          <DeferredAnalytics />
         </NuqsProvider>
       </body>
     </html>
