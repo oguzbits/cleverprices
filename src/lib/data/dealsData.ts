@@ -1,11 +1,11 @@
-import { db } from "@/db";
+import { db, IS_BUILD } from "@/db";
 import { prices, products } from "@/db/schema";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import {
-  Product,
   litePriceColumns,
   liteProductColumns,
   mapDbProduct,
+  Product,
 } from "@/lib/product-registry";
 import { CATEGORY_REVALIDATE_SECONDS } from "@/lib/site-config";
 import { and, desc, eq, gt, sql } from "drizzle-orm";
@@ -22,6 +22,7 @@ export const getAllDeals = unstable_cache(
     limit: number = 24,
     countryCode: string = DEFAULT_COUNTRY,
   ): Promise<Product[]> => {
+    if (IS_BUILD) return [];
     // Use a direct database query to find deals across all categories.
     // This is MUCH faster than fetching products from every category individually.
     const results = await db

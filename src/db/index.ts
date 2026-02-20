@@ -8,6 +8,10 @@ import * as schema from "./schema";
 // Environment detection
 const isProductionEnvironment = process.env.NODE_ENV === "production";
 
+export const IS_BUILD =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.BUILD_PHASE === "1";
+
 /**
  * Database Configuration
  *
@@ -18,12 +22,7 @@ const isProductionEnvironment = process.env.NODE_ENV === "production";
 
 // Determine database URL
 function getDatabaseUrl(): string {
-  // Check if we are in a build phase
-  const isBuild =
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.BUILD_PHASE === "1";
-
-  if (isBuild) {
+  if (IS_BUILD) {
     return "file::memory:?cache=shared";
   }
 
@@ -79,15 +78,11 @@ export const db: LibSQLDatabase<typeof schema> = drizzle(client, { schema });
  */
 export const dbReady: Promise<void> = (async () => {
   try {
-    const isBuild =
-      process.env.NEXT_PHASE === "phase-production-build" ||
-      process.env.BUILD_PHASE === "1";
-
     console.log(
-      `[DB DIAGNOSTIC] Starting dbReady. NODE_ENV: ${process.env.NODE_ENV}, isBuild: ${isBuild}`,
+      `[DB DIAGNOSTIC] Starting dbReady. NODE_ENV: ${process.env.NODE_ENV}, isBuild: ${IS_BUILD}`,
     );
 
-    if (isBuild) {
+    if (IS_BUILD) {
       console.log("[DB] Build phase detected. Skipping live diagnostics.");
       return;
     }

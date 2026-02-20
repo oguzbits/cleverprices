@@ -1,9 +1,4 @@
-// detect build phase to skip db operations
-const IS_BUILD =
-  process.env.NEXT_PHASE === "phase-production-build" ||
-  process.env.BUILD_PHASE === "1";
-
-import { client, db, dbReady } from "@/db";
+import { client, db, dbReady, IS_BUILD } from "@/db";
 import {
   prices,
   products,
@@ -212,6 +207,7 @@ export const getProductById = cache(async function getProductById(
   id: number,
   _country = "de", // Parameter kept for signature compatibility
 ): Promise<Product | undefined> {
+  if (IS_BUILD) return undefined;
   await dbReady;
   // Handle 200m offset from slugs
   const realId =
@@ -414,6 +410,7 @@ export async function getAllProductSlugs(limit?: number): Promise<
     updatedAt: Date;
   }[]
 > {
+  if (IS_BUILD) return [];
   try {
     let query = db
       .select({
@@ -482,6 +479,7 @@ export async function getAllProductSlugs(limit?: number): Promise<
  * Used for filtering the sitemap and preventing thin content.
  */
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {
+  if (IS_BUILD) return ["build-time-placeholder"];
   const fetchNonEmpty = async () => {
     await dbReady;
     try {
@@ -675,6 +673,7 @@ export const getProductFamilyMembers = cache(
 );
 
 export async function getAllProducts(): Promise<Product[]> {
+  if (IS_BUILD) return [];
   await dbReady;
   const allProducts = await withRetry(() =>
     db.select(liteProductColumns).from(products),
@@ -842,7 +841,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   limit?: number,
   collapseFamilies: boolean = false, // Default to FALSE to show all variants
 ): Promise<Product[]> {
-  if (!category) return [];
+  if (IS_BUILD || !category) return [];
   const fetchProducts = async () => {
     await dbReady;
     const { prods, prs } = await withRetry(async () => {
@@ -907,7 +906,7 @@ const fetchProductBySlug = cache(
     slug: string,
     _includeHistory: boolean = false, // History now comes from historyJson in prices
   ): Promise<Product | undefined> => {
-    if (!slug) return undefined;
+    if (IS_BUILD || !slug) return undefined;
     await dbReady;
     const getProductAndPrices = async (targetSlug: string) => {
       const [p] = await withRetry(() =>
@@ -982,6 +981,7 @@ export const getProductBySlug = cache(async function getProductBySlug(
 const fetchProductByAsin = async (
   asin: string,
 ): Promise<Product | undefined> => {
+  if (IS_BUILD) return undefined;
   await dbReady;
   const [p] = await withRetry(() =>
     db
@@ -1034,6 +1034,7 @@ export const getProductByAsin = cache(async function getProductByAsin(
 export async function findProductSlugByAsinSuffix(
   oldSlug: string,
 ): Promise<string | undefined> {
+  if (IS_BUILD) return undefined;
   await dbReady;
   // Extract potential ASIN from old slug
   // 1. Try full 10-char ASIN (standard Amazon)
@@ -1088,7 +1089,7 @@ export const findProductByParentAsinSuffix = cache(
   async function findProductByParentAsinSuffix(
     slug: string,
   ): Promise<Product | undefined> {
-    if (!slug) return undefined;
+    if (IS_BUILD || !slug) return undefined;
     await dbReady;
     const shortSuffixMatch = slug.match(/-([a-z0-9]{3,4})-?$/i);
     if (!shortSuffixMatch) return undefined;
@@ -1202,6 +1203,7 @@ const fetchSimilarProducts = async (
   limit: number,
   countryCode: string,
 ) => {
+  if (IS_BUILD) return [];
   await dbReady;
 
   // 1. Calculate a price range (+/- 50% for high diversity, or tighter)
@@ -1300,6 +1302,7 @@ export async function searchProducts(
   query: string,
   limit: number = 20,
 ): Promise<Product[]> {
+  if (IS_BUILD) return [];
   const sanitized = query.trim().replace(/[^\w\s]/g, "");
   if (!sanitized) return [];
 
@@ -1421,7 +1424,7 @@ const getProductsByBrand = cache(async function getProductsByBrand(
   brand: string,
   excludeSlug?: string,
 ): Promise<Product[]> {
-  if (!brand) return [];
+  if (IS_BUILD || !brand) return [];
   await dbReady;
   const prods = await withRetry(() =>
     db
@@ -1521,6 +1524,7 @@ export const getBestDeals = cache(async function getBestDeals(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
+  if (IS_BUILD) return [];
   await dbReady;
   try {
     const isScript =
@@ -1636,6 +1640,7 @@ export const getMostPopular = cache(async function getMostPopular(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
+  if (IS_BUILD) return [];
   try {
     const isScript =
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
@@ -1686,6 +1691,7 @@ export const getMostPopular = cache(async function getMostPopular(
  */
 const fetchDiversePopular = unstable_cache(
   async (itemsPerCategory: number, countryCode: string) => {
+    if (IS_BUILD) return [];
     await dbReady;
     try {
       const result = await client.execute({
@@ -1843,6 +1849,7 @@ export async function getNewArrivals(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
+  if (IS_BUILD) return [];
   try {
     const isScript =
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
@@ -1922,6 +1929,7 @@ async function getFilteredProducts(
     offset?: number;
   },
 ): Promise<Product[]> {
+  if (IS_BUILD) return [];
   await dbReady;
   try {
     const where: SQL[] = [
@@ -2044,6 +2052,7 @@ async function getFilteredProductsCount(
   countryCode: string,
   filters: any,
 ): Promise<number> {
+  if (IS_BUILD) return 0;
   await dbReady;
   const where: SQL[] = [
     eq(products.category, category),
