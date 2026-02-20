@@ -91,18 +91,17 @@ export const liteProductColumns = {
   monthlySold: products.monthlySold,
   parentAsin: products.parentAsin,
   variationAttributes: products.variationAttributes,
-  // specifications: products.specifications, // Often large, but needed for Identity
-  specifications: products.specifications,
-  officialSpecifications: products.officialSpecifications, // Included for identity resolution consistency
+  // specifications: products.specifications, // STRIPPED: Too heavy for category lists (~10KB/prod)
+  // officialSpecifications: products.officialSpecifications, // STRIPPED: Too heavy for category lists
   officialTitle: products.officialTitle,
   energyLabel: products.energyLabel,
   historySeeded: products.historySeeded,
   icecatId: products.icecatId,
   enrichmentStatus: products.enrichmentStatus,
   specificationsSource: products.specificationsSource,
-  keepaFeatures: products.keepaFeatures,
+  // keepaFeatures: products.keepaFeatures, // STRIPPED: Heavy blob
   completenessScore: products.completenessScore,
-  missingSpecs: products.missingSpecs,
+  // missingSpecs: products.missingSpecs, // STRIPPED: JSON bucket
   lastEnrichedAt: products.lastEnrichedAt,
   canonicalId: products.canonicalId,
   createdAt: products.createdAt,
@@ -207,7 +206,7 @@ type LitePrice = Pick<
 export type { LitePrice };
 
 // Re-export mapping logic for backward compatibility
-export { mapDbProduct,  } from "./utils/product-mapping";
+export { mapDbProduct } from "./utils/product-mapping";
 
 export const getProductById = cache(async function getProductById(
   id: number,
@@ -539,47 +538,6 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
  * Input: "Color: Cosmic Orange; Storage: 2000GB"
  * Output: { Color: "Cosmic Orange", Storage: "2000GB" }
  */
-function parseVariationAttributes(
-  attrs: string | undefined,
-): Record<string, string> {
-  if (!attrs) return {};
-  return Object.fromEntries(
-    attrs
-      .split(";")
-      .map((pair) => {
-        const [key, ...valueParts] = pair.split(":");
-        const value = valueParts.join(":").trim(); // Handle values that might contain ":"
-        return [key?.trim(), value];
-      })
-      .filter(([key, value]) => key && value),
-  );
-}
-
-/**
- * Extract unique attribute values from a list of variants
- * Returns: { Color: ["Cosmic Orange", "Tiefblau", "Silber"], Storage: ["256GB", "512GB", ...] }
- */
-function extractAttributeGroups(
-  variants: Product[],
-): Record<string, string[]> {
-  const groups: Record<string, Set<string>> = {};
-
-  for (const variant of variants) {
-    const attrs = parseVariationAttributes(variant.variationAttributes);
-    for (const [key, value] of Object.entries(attrs)) {
-      if (!groups[key]) groups[key] = new Set();
-      groups[key].add(value);
-    }
-  }
-
-  // Convert Sets to sorted arrays
-  return Object.fromEntries(
-    Object.entries(groups).map(([key, valueSet]) => [
-      key,
-      Array.from(valueSet).sort(),
-    ]),
-  );
-}
 
 /**
  * Get all variants for a product (products sharing the same parentAsin)

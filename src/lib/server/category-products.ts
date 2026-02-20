@@ -1,12 +1,9 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
 import { getAllDeals } from "@/lib/data/dealsData";
 import { getProductsByCategory } from "@/lib/product-registry";
-import {
-  filterProducts,
-  normalizeBrand,
-  sortProducts,
-} from "@/lib/utils/category-utils";
+import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getLocalizedProductData } from "@/lib/utils/products";
+import { parseVariationAttributes } from "@/lib/utils/variants";
 import { cacheLife } from "next/cache";
 import { getBestPrice } from "../utils/price-selection";
 import { calculateProductSavings } from "../utils/products";
@@ -105,10 +102,10 @@ function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
  * Pruning is essential to stay under the 2MB cache limit.
  * Price is included but will be overwritten by the loader for live sync.
  */
-async function getCachedLocalizedCategoryProducts(
+export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v1", // Cache buster
+  version: string = "v50", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
@@ -138,7 +135,53 @@ async function getCachedLocalizedCategoryProducts(
       // 1. Extract core attributes (already pre-extracted by Product Registry)
       let { socket, cores } = p;
 
-      // 1.1 Enforce correct condition from title (Fixes stale cache issues)
+      // 1.1 Restore missing filters via lightweight parsing (Specifications JSON is stripped for speed)
+      const vMap = p.variationAttributes
+        ? parseVariationAttributes(p.variationAttributes)
+        : {};
+
+      if (categorySlug === "cpu" || categorySlug === "motherboards") {
+        if (!socket) {
+          const socketMatch = title.match(
+            /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i,
+          );
+          if (socketMatch) {
+            socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
+          } else {
+            const variantSocket = vMap["Sockel"] || vMap["Stil"];
+            if (variantSocket?.match(/AM[45]|LGA\s?\d+|TR4/i)) {
+              socket = variantSocket.trim();
+            }
+          }
+        }
+        if (!cores && categorySlug === "cpu") {
+          const coreMatch = title.match(/(\d+)\s?-?\s?(Core|Kerne)/i);
+          if (coreMatch) cores = coreMatch[1];
+        }
+      }
+
+      let technology = p.technology || "";
+      if (!technology && categorySlug === "ssds") {
+        const tLower = title.toLowerCase();
+        if (tLower.includes("nvme") || tLower.includes("m.2"))
+          technology = "NVMe";
+        else if (tLower.includes("sata")) technology = "SATA";
+      }
+
+      let formFactor = p.formFactor || "";
+      if (!formFactor && categorySlug === "ssds") {
+        const tLower = title.toLowerCase();
+        if (tLower.includes("m.2") || tLower.includes("m2")) formFactor = "M.2";
+        else if (
+          tLower.includes("2.5 zoll") ||
+          tLower.includes('2.5"') ||
+          tLower.includes("2.5-inch") ||
+          tLower.includes("2.5 in")
+        )
+          formFactor = "2.5 Zoll";
+      }
+
+      // 1.2 Enforce correct condition from title (Fixes stale cache issues)
       // Sometimes the DB cache might label a Renewed item as New. We fix it here.
       let condition = p.condition;
       const titleLower = title.toLowerCase();
@@ -294,8 +337,8 @@ async function getCachedLocalizedCategoryProducts(
         capacity,
         capacityUnit,
         normalizedCapacity: normCap,
-        formFactor: p.formFactor,
-        technology: p.technology || "",
+        formFactor,
+        technology,
         socket,
         cores,
         lastUpdated,
@@ -314,7 +357,7 @@ async function getCachedLocalizedCategoryProducts(
 /**
  * Merges fresh prices into localized products and recalculates price-dependent fields.
  */
-async function mergeLivePricesIntoLocalized(
+export async function mergeLivePricesIntoLocalized(
   products: LocalizedProduct[],
   countryCode: string,
 ): Promise<LocalizedProduct[]> {
@@ -498,142 +541,124 @@ export async function getCategoryProducts(
   });
 
   // 1. Fetch ALL products for the category (Cached)
-  // We use this "fat" fetch + in-memory filter/sort because the "Desirability Score"
-  // (Prestige/Freshness/Commercial Value) is too complex for efficient SQL.
-  // Since categories have < 2000 items, this is fast and safe (2MB limit).
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v48",
+    "v49",
   );
 
-  // 2. [OPTIMIZATION] Skip Live Price Merge for the FULL list
-  // Reason: Calling Keepa/Idealo for 500+ products causes 429 Rate Limits and slow page loads.
-  // Trade-off: The "Desirability Score" sort uses CACHED prices (up to 24h old).
-  // This is acceptable because:
-  //   a) Popularity/Prestige doesn't change hourly
-  //   b) Extreme price swings are rare
-  //   c) We still show LIVE prices for the visible 24 products below.
   const localizedProducts = cachedProducts;
-
   const category = allCategories[categorySlug as CategorySlug];
   const unitLabel = category?.unitType || "TB";
 
-  // 3. Apply Filters In-Memory
-  const filteredProducts = filterProducts(
-    localizedProducts,
-    filters as any,
-    categorySlug,
-    unitLabel,
-  );
+  // 3. Optimized Single-Pass Processing (Filtering, Facet Counting, Price Ranges)
+  const dynamicFilterCounts: FilterCounts = {};
+  const filterFields = category?.filterGroups?.map((g) => g.field) || [];
+  if (!filterFields.includes("brand")) filterFields.push("brand");
+  filterFields.forEach((f) => (dynamicFilterCounts[f] = {}));
 
-  // 4. Variant Expansion (Idealo Style)
-  // Logic:
-  // - Keep ALL original variants.
-  // - For each group (by parentAsin), ADD a synthetic "Parent Card" ("Alle Varianten").
-  // - Parent Card gets:
-  //   - Price: Min price of group
-  //   - Popularity: Sum of all variants (so it ranks #1)
-  //   - isVariantGroup: true
+  const filteredProducts: LocalizedProduct[] = [];
+  const productsMatchingNonPrice: LocalizedProduct[] = [];
 
-  // 2. [FLAT LIST MODE] - User requested "DO NOT MERGE"
-  // We simply pass through the standardized title/subtitle from mapDbProduct.
-  const extendedProducts: LocalizedProduct[] = filteredProducts.map((p) => {
-    return {
-      ...p,
-      // Remove any parentAsin/syntheticId to prevents any accidental grouping downstream
-      parentAsin: undefined,
-      syntheticId: undefined,
-      isVariantGroup: false,
-    };
+  localizedProducts.forEach((p) => {
+    // A. Field Match Status
+    const matches: Record<string, boolean> = {};
+    matches.brand =
+      !filters.brand?.length || filters.brand.includes(p.brand || "");
+
+    category?.filterGroups?.forEach((group) => {
+      if (group.field === "brand") return;
+      const selected = filters[group.field];
+      if (!selected || (Array.isArray(selected) && selected.length === 0)) {
+        matches[group.field] = true;
+      } else {
+        const pVal =
+          group.field === "capacity"
+            ? String(p.normalizedCapacity || p.capacity || "")
+            : String((p as any)[group.field] || "");
+        matches[group.field] = Array.isArray(selected)
+          ? selected.includes(pVal)
+          : selected === pVal;
+      }
+    });
+
+    // B. Global Match Status (Search & Condition & Capacity Range)
+    const matchesSearch =
+      !filters.search ||
+      p.title.toLowerCase().includes(filters.search.toLowerCase());
+    const matchesCondition =
+      !filters.condition?.length ||
+      filters.condition.includes(p.condition || "New");
+
+    // Capacity Range (Storage/PSU)
+    const cap = p.capacity || 0;
+    let matchesCapRange = true;
+    if (filters.minCapacity !== null) {
+      const minValReal =
+        unitLabel === "TB" ? filters.minCapacity * 1000 : filters.minCapacity;
+      if (cap < minValReal) matchesCapRange = false;
+    }
+    if (filters.maxCapacity !== null) {
+      const maxValReal =
+        unitLabel === "TB" ? filters.maxCapacity * 1000 : filters.maxCapacity;
+      if (cap > maxValReal) matchesCapRange = false;
+    }
+
+    if (!matchesSearch || !matchesCondition || !matchesCapRange) return;
+
+    // C. Price Match Status
+    const matchesPrice =
+      (!filters.minPrice || p.price >= filters.minPrice) &&
+      (!filters.maxPrice || (p.price > 0 && p.price <= filters.maxPrice));
+
+    // D. Final Logic
+    const matchesAllFields = filterFields.every((f) => matches[f]);
+
+    if (matchesAllFields && matchesPrice) {
+      filteredProducts.push(p);
+    }
+
+    if (matchesAllFields) {
+      productsMatchingNonPrice.push(p);
+    }
+
+    // Facet counts
+    filterFields.forEach((field) => {
+      const matchesOthers =
+        matchesPrice && filterFields.every((f) => f === field || matches[f]);
+      if (matchesOthers) {
+        const pVal =
+          field === "capacity"
+            ? String(p.normalizedCapacity || p.capacity || "")
+            : field === "brand"
+              ? p.brand
+              : String((p as any)[field] || "");
+
+        if (pVal && pVal !== "0" && pVal !== "null" && pVal !== "undefined") {
+          dynamicFilterCounts[field][pVal] =
+            (dynamicFilterCounts[field][pVal] || 0) + 1;
+        }
+      }
+    });
   });
 
-  // SKIP GROUPING LOGIC ENTIRELY
-  // The code below previously created synthetic parents. Now we skip it.
+  const totalFilteredCount = filteredProducts.length;
 
-  // 5. Sort the EXTENDED list
+  // 4. Sort and Paginate
   const sortedProducts = sortProducts(
-    extendedProducts,
+    filteredProducts,
     filters.sortBy,
     filters.sortOrder,
   );
 
-  const totalFilteredCount = sortedProducts.length;
-
-  // 5. Paginate In-Memory
   const page = filterParams.page ? parseInt(filterParams.page) : 1;
   const pageSize = 24;
   const skip = (page - 1) * pageSize;
   const rawPaginatedProducts = sortedProducts.slice(skip, skip + pageSize);
 
-  // 6. [CRITICAL] Merge Live Prices for VISIBLE products only
-  // This ensures the user sees correct, up-to-the-minute prices/availability
-  // without hammering the external API for the entire back-catalog.
   const paginatedProducts = await mergeLivePricesIntoLocalized(
     rawPaginatedProducts,
     countryCode,
-  );
-
-  // 6. Context (Refactored to re-use our already-fetched list)
-  // No need to re-fetch cachedProducts or mergeLivePrices again.
-  // We use localizedProducts (full list with live prices) for aggregation.
-
-  const dynamicFilterCounts: FilterCounts = {};
-  if (category?.filterGroups) {
-    category.filterGroups.forEach((group) => {
-      const otherFilters = { ...filters };
-      delete (otherFilters as any)[group.field];
-
-      const productsForThisGroup = filterProducts(
-        localizedProducts,
-        otherFilters,
-        categorySlug,
-        unitLabel,
-      );
-
-      dynamicFilterCounts[group.field] = {};
-
-      productsForThisGroup.forEach((p) => {
-        let value =
-          group.field === "capacity"
-            ? p.normalizedCapacity
-            : (p as any)[group.field];
-        if (
-          value !== undefined &&
-          value !== null &&
-          value !== "" &&
-          value !== 0
-        ) {
-          const strValue = String(value);
-          dynamicFilterCounts[group.field][strValue] =
-            (dynamicFilterCounts[group.field][strValue] || 0) + 1;
-        }
-      });
-    });
-
-    if (!dynamicFilterCounts["brand"]) {
-      const otherFilters = { ...filters };
-      delete (otherFilters as any)["brand"];
-      const productsForBrand = filterProducts(
-        localizedProducts,
-        otherFilters,
-        categorySlug,
-        unitLabel,
-      );
-      dynamicFilterCounts["brand"] = {};
-      productsForBrand.forEach((p) => {
-        if (p.brand)
-          dynamicFilterCounts["brand"][p.brand] =
-            (dynamicFilterCounts["brand"][p.brand] || 0) + 1;
-      });
-    }
-  }
-
-  const productsMatchingNonPrice = filterProducts(
-    localizedProducts,
-    { ...filters, minPrice: null, maxPrice: null },
-    categorySlug,
-    unitLabel,
   );
 
   const contextMinPrice =
