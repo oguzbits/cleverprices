@@ -163,7 +163,7 @@ We use a separate "Worker" application for background tasks to avoid blocking th
 
 The `worker` service handles cron jobs internally via `node-cron` or simple loop if configured, but typically we trigger it via Dokploy Cron or internal scheduling.
 
-_Current Setup:_ The Worker container runs `npm run start:worker` which keeps the process alive for processing queues.
+_Current Setup:_ The Worker container runs `bun run worker:run` which keeps the process alive for processing queues.
 
 ---
 
@@ -199,7 +199,7 @@ We use a custom script to compress and upload the SQLite database to Cloudflare 
     - `R2_ENDPOINT`: `https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
 3.  **Cron Job** (In Worker App):
     - **Schedule**: `0 4 * * *` (Daily 4 AM)
-    - **Command**: `npm run db:backup`
+    - **Command**: `bun run db:backup`
 
 ---
 

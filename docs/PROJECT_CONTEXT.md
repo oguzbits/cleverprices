@@ -5,7 +5,7 @@
 Before writing any code or answering architecture questions, you MUST:
 
 1.  **Read this file (`PROJECT_CONTEXT.md`)** completely.
-2.  **Search `docs/`** for relevant feature guides (e.g., `PERFORMANCE_BASELINE.md`, `ops/STABILITY_GUIDE.md`).
+2.  **Search `docs/`** for relevant feature guides (e.g., `architecture/STABILITY_GUIDE.md`).
 3.  **Check `.agent/skills/`** for technical patterns (e.g., `modern-seo`, `drizzle-orm`) using `list_dir`.
 4.  **Query MCPs**: Use `mcp_context7` or `mcp_dokploy` for library/platform specifics if unsure.
 

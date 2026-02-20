@@ -562,12 +562,18 @@ const configWithSentry = withSentryConfig(
     // Routes HTTP requests through Next.js to avoid ad-blockers
     tunnelRoute: "/monitoring",
 
-    // Automatically tree-shake Sentry logger statements to reduce bundle size
-    disableLogger: true,
+    // Sentry Bundle Size Optimizations
+    bundleSizeOptimizations: {
+      excludeDebugStatements: true,
+    },
 
-    // Enables automatic instrumentation of Vercel Cron Jobs.
-    // See the [official documentation](https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/vercel-monitors/) for more information.
-    automaticVercelMonitors: true,
+    // Sentry Webpack Plugin Options (Fallback for legacy builds)
+    // Note: Some of these are not yet supported by Sentry for Turbopack
+    // but using the new structure resolves deprecation warnings in v8/v10.
+    // @ts-ignore
+    webpack: (config: any) => {
+      return config;
+    },
   },
 );
 

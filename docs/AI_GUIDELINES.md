@@ -5,7 +5,7 @@
 **STOP.** Before answering any request, you must:
 
 1.  **Read `docs/PROJECT_CONTEXT.md`**: This is the Single Source of Truth for architecture and constraints.
-2.  **Check `docs/`**: Look for specific guides like `PERFORMANCE_BASELINE.md` or `STABILITY_GUIDE.md` relevant to the task.
+2.  **Check `docs/`**: Look for specific guides like `architecture/STABILITY_GUIDE.md` relevant to the task.
 3.  **Inspect `.agent/skills/`**: Use `list_dir` to find reusable patterns (e.g., `modern-seo`, `drizzle-orm`).
 
 ---
@@ -29,6 +29,7 @@
 
 - **[ops/CHEATSHEET.md](ops/CHEATSHEET.md)**: Common commands for dev, db, and deployment.
 - **[ops/DOKPLOY_SETUP.md](ops/DOKPLOY_SETUP.md)**: Server provisioning and Dokploy configuration.
+- **[STABILITY_GUIDE.md](STABILITY_GUIDE.md)**: **CRITICAL**: SQLite WAL mode, memory mapping, and build isolation.
 - **[ops/WORKER.md](ops/WORKER.md)**: Background jobs, price syncing, and Keepa API usage.
 - **[ops/BUNDLE_ANALYSIS.md](ops/BUNDLE_ANALYSIS.md)**: How to analyze JS bundle size.
 
