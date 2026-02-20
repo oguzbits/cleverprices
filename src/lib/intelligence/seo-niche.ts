@@ -1,6 +1,6 @@
 import { db } from "@/db";
-import { prices, products } from "@/db/schema";
-import { and, desc, eq, lte, SQL } from "drizzle-orm";
+import { prices, products, type Product as DbProduct } from "@/db/schema";
+import { and, desc, eq, inArray, lte, SQL } from "drizzle-orm";
 import type { Product } from "../product-registry";
 import { litePriceColumns, liteProductColumns } from "../product-registry";
 import { mapDbProduct } from "../utils/product-mapping";
@@ -49,10 +49,10 @@ async function getNicheProducts(niche: NichePage): Promise<Product[]> {
   // Always require DE prices and a primary condition
   whereClauses.push(eq(prices.country, "de"));
 
-  const results = await db
+  // 1. Lightweight IDs Query
+  const lightweightRows = await db
     .select({
-      product: liteProductColumns,
-      price: litePriceColumns,
+      id: products.id,
     })
     .from(products)
     .innerJoin(prices, eq(products.id, prices.productId))
@@ -60,7 +60,29 @@ async function getNicheProducts(niche: NichePage): Promise<Product[]> {
     .orderBy(desc(products.rating), desc(products.monthlySold))
     .limit(40);
 
+  const topIds = lightweightRows.map((r) => r.id);
+
+  if (topIds.length === 0) return [];
+
+  // 2. Fetch full objects only for the top IDs
+  const results = await db
+    .select({
+      product: liteProductColumns,
+      price: litePriceColumns,
+    })
+    .from(products)
+    .innerJoin(prices, eq(products.id, prices.productId))
+    .where(and(eq(prices.country, "de"), inArray(products.id, topIds)));
+
+  // Restore the correct descending order
+  const orderMap = new Map(topIds.map((id, index) => [id, index]));
+  results.sort((a, b) => {
+    const indexA = orderMap.get(a.product.id) ?? 9999;
+    const indexB = orderMap.get(b.product.id) ?? 9999;
+    return indexA - indexB;
+  });
+
   return results.map((r) =>
-    mapDbProduct(r.product as any, [r.price as any]),
+    mapDbProduct(r.product as unknown as DbProduct, [r.price as any]),
   ) as Product[];
 }
