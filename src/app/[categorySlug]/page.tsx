@@ -150,6 +150,11 @@ export default async function DedicatedCategoryPage({
   searchParams,
 }: Props) {
   const { categorySlug } = await params;
+
+  if (categorySlug === "build-time-placeholder") {
+    return null;
+  }
+
   const category = await getCategoryBySlug(categorySlug);
 
   if (!category) notFound();
