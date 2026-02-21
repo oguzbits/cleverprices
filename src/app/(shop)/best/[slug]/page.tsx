@@ -7,6 +7,12 @@ import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+// During build, return a placeholder to avoid DB access.
+// At runtime, pages are generated on-demand.
+export async function generateStaticParams() {
+  return [{ slug: "build-time-placeholder" }];
+}
+
 interface Props {
   params: Promise<{
     slug: string;
@@ -37,6 +43,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function BestNichePage({ params }: Props) {
   const { slug } = await params;
+
+  if (slug === "build-time-placeholder") return null;
+
   const niche = await getNicheBySlug(slug);
 
   if (!niche) notFound();

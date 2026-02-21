@@ -15,7 +15,7 @@ Before writing any code or answering architecture questions, you MUST:
 
 - **Framework**: Next.js 16 (App Router) with React 19 Compiler.
 - **Styling**: Tailwind CSS 4 with `shadcn/ui` components.
-- **State**: URL-based state management via `nuqs`.
+- **State**: URL-based state management via native Next.js hooks.
 - [x] **Database**: Local SQLite with Drizzle ORM.
 - [x] **Price Consistency**: Strict Tiered TTL Policy (Pages: 15m, Data: 10m). See **[CACHE_POLICY.md](architecture/CACHE_POLICY.md)**.
 - [x] **Data Source**: Keepa API (Primary) for automated price tracking.
@@ -162,8 +162,8 @@ Before writing any code or answering architecture questions, you MUST:
 ### UI/Component Updates
 
 - **Server vs Client**: Product pages are cached Server Components.
-- **Interactive**: Search/Filters use `nuqs` (Client Side) for URL state.
-- **Nuqs**: When adding filters, use `useQueryState` from `nuqs`. Do NOT use standard `useState` for things that should be shareable.
+- **Interactive**: Search/Filters use native `useSearchParams` and `useRouter` for URL state.
+- **URL State**: When adding filters, use the `useFilters` hook from `src/lib/hooks/use-filters.ts`. Do NOT use standard `useState` for things that should be shareable.
 
 ## Scalability & Algorithmic Guarantees
 

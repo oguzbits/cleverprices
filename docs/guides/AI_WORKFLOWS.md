@@ -17,7 +17,7 @@ This document is your **operating manual** for deploying AI Agents effectively w
 > Create a new file `docs/planning/[feature-slug].md` with:
 >
 > 1. Database schema changes (Drizzle)
-> 2. Server Action logic (use `nuqs` for state if needed)
+> 2. Server Action logic (use native URL state via `useFilters` if needed)
 > 3. UI Component structure (shadcn/ui + Tailwind v4)
 > 4. URL/Routing strategy (`proxy.ts` vs `page.tsx`)
 >    Do not write code yet. Just the plan."
@@ -35,7 +35,7 @@ This document is your **operating manual** for deploying AI Agents effectively w
 
 > "Read `docs/planning/[feature-slug].md` and `.agent/skills/tailwind-v4/SKILL.md`.
 > Build the UI components in `src/components/features/[feature-name]/`.
-> Use `server-only` for data fetching. Use `nuqs` for any URL state."
+> Use `server-only` for data fetching. Use native URL state hooks for any shareable state."
 
 ---
 

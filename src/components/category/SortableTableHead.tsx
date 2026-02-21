@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
-import { parseAsString, useQueryState } from "nuqs";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
 interface SortableTableHeadProps {
@@ -13,8 +13,9 @@ interface SortableTableHeadProps {
 }
 
 /**
- * Client component for sortable table headers
- * Updates URL params when clicked for server-side sorting
+ * Client component for sortable table headers.
+ * Updates URL params when clicked for server-side sorting.
+ * Uses native useSearchParams instead of nuqs.
  */
 export function SortableTableHead({
   sortKey,
@@ -23,24 +24,9 @@ export function SortableTableHead({
   children,
   className = "",
 }: SortableTableHeadProps) {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [, startTransition] = useTransition();
-  const [, setSortBy] = useQueryState(
-    "sortBy",
-    parseAsString.withDefault("pricePerUnit").withOptions({
-      shallow: false,
-      clearOnDefault: true,
-      startTransition,
-    }),
-  );
-
-  const [, setSortOrder] = useQueryState(
-    "sortOrder",
-    parseAsString.withDefault("asc").withOptions({
-      shallow: false,
-      clearOnDefault: true,
-      startTransition,
-    }),
-  );
 
   const handleSort = () => {
     const effectiveKey = !sortKey ? "pricePerUnit" : sortKey;
@@ -50,8 +36,27 @@ export function SortableTableHead({
         ? "desc"
         : "asc";
 
-    setSortBy(sortKey);
-    setSortOrder(newOrder);
+    startTransition(() => {
+      const newParams = new URLSearchParams(searchParams.toString());
+
+      // Set sortBy — clear if default
+      if (sortKey === "pricePerUnit") {
+        newParams.delete("sortBy");
+      } else {
+        newParams.set("sortBy", sortKey);
+      }
+
+      // Set sortOrder — clear if default
+      if (newOrder === "asc") {
+        newParams.delete("sortOrder");
+      } else {
+        newParams.set("sortOrder", newOrder);
+      }
+
+      const query = newParams.toString();
+      const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
+      router.replace(newUrl, { scroll: false });
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

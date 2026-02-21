@@ -87,7 +87,7 @@ CleverPrices is architected for maximum performance and efficiency, running on *
 - **High Performance Caching** - Utilizes Next.js 16 "use cache" directive and Cache Components for extreme speed.
 - **Image Optimization** - Custom URL-based transformation (Size & Quality).
 - **React Compiler** - Fully optimized with React 19 Compiler for minimal re-renders.
-- **URL-Based Filter State** - Shareable, bookmarkable filtered views using [nuqs](https://nuqs.47ng.com/).
+- **URL-Based Filter State** - Shareable, bookmarkable filtered views using native Next.js `useSearchParams` and `useRouter`.
 - **Modern MDX Blog** - Content-driven blog system using MDX with frontmatter support.
 
 ---

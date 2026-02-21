@@ -2,23 +2,57 @@
 
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { parseAsString, useQueryState } from "nuqs";
-import { useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useState, useTransition } from "react";
 
 /**
- * Client component for search input that syncs with URL
+ * Client component for search input that syncs with URL.
+ * Uses native useSearchParams instead of nuqs.
  */
 export function SearchInput() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [, startTransition] = useTransition();
-  const [search, setSearch] = useQueryState(
-    "search",
-    parseAsString.withDefault("").withOptions({
-      shallow: false,
-      throttleMs: 300,
-      clearOnDefault: true,
-      startTransition,
-    }),
+
+  // Local state for immediate input responsiveness
+  const [localValue, setLocalValue] = useState(
+    searchParams.get("search") || "",
   );
+
+  // Debounce timer ref
+  const [debounceTimer, setDebounceTimer] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+
+  const updateUrl = useCallback(
+    (value: string) => {
+      startTransition(() => {
+        const newParams = new URLSearchParams(searchParams.toString());
+        if (value) {
+          newParams.set("search", value);
+        } else {
+          newParams.delete("search");
+        }
+        const query = newParams.toString();
+        const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
+        router.replace(newUrl, { scroll: false });
+      });
+    },
+    [searchParams, router, startTransition],
+  );
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalValue(value);
+
+    // Debounce URL update (300ms, matching old nuqs throttleMs)
+    if (debounceTimer) clearTimeout(debounceTimer);
+    setDebounceTimer(
+      setTimeout(() => {
+        updateUrl(value);
+      }, 300),
+    );
+  };
 
   return (
     <div className="relative flex-1 md:w-64 md:flex-none lg:w-80">
@@ -26,8 +60,8 @@ export function SearchInput() {
       <Input
         placeholder="Search products..."
         className="bg-card dark:bg-card focus-visible:border-primary h-10 pl-8 shadow-sm transition-colors focus-visible:ring-0"
-        value={search}
-        onChange={(e) => setSearch(e.target.value || null)}
+        value={localValue}
+        onChange={handleChange}
         aria-label="Search products"
       />
     </div>

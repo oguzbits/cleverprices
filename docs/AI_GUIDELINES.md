@@ -40,7 +40,7 @@
 
 ### Guides & Patterns
 
-- **[guides/NUQS.md](guides/NUQS.md)**: URL state management patterns.
+- **[guides/URL_STATE.md](guides/URL_STATE.md)**: Native URL state management patterns.
 - **[guides/image-optimization.md](guides/image-optimization.md)**: CDN strategy and image loader rules.
 
 ---

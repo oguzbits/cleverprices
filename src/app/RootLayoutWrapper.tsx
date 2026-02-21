@@ -3,7 +3,6 @@ import "@/app/globals.css";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
-import { NuqsProvider } from "@/providers/nuqs-provider";
 import { Inter } from "next/font/google";
 import * as React from "react";
 
@@ -53,13 +52,13 @@ export default function RootLayoutWrapper({
           "bg-background min-h-screen antialiased",
         )}
       >
-        <NuqsProvider>
-          <div className="flex min-h-screen flex-col">
-            {!hideNavbar && <Navbar />}
+        <div className="flex min-h-screen flex-col">
+          {!hideNavbar && <Navbar />}
+          <React.Suspense>
             <main className="flex-1">{children}</main>
-            {!hideFooter && <Footer />}
-          </div>
-        </NuqsProvider>
+          </React.Suspense>
+          {!hideFooter && <Footer />}
+        </div>
       </body>
     </html>
   );
