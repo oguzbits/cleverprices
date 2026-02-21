@@ -12,7 +12,7 @@ import { FilterGroup } from "@/lib/category-types";
 import { useFilters } from "@/lib/hooks/use-filters";
 import type { FilterCounts } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface IdealoFilterBarProps {
   categorySlug: string;
@@ -244,6 +244,18 @@ export function IdealoFilterPanel({
 }: IdealoFilterBarProps) {
   const [filters, setFilters] = useFilters();
 
+  // Optimistic local state to make clicks feel instant
+  const [optimisticFilters, setOptimisticFilters] = useState(filters);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Sync back if URL changes (e.g. back button)
+  useEffect(() => {
+    setOptimisticFilters(filters);
+    setIsTransitioning(false);
+  }, [filters]);
+
+  const currentFilters = optimisticFilters;
+
   // Group search states
   const [groupSearch, setGroupSearch] = useState<Record<string, string>>({});
   const [groupShowAll, setGroupShowAll] = useState<Record<string, boolean>>({});
@@ -275,19 +287,37 @@ export function IdealoFilterPanel({
 
   // Handle price update
   const handlePriceUpdate = (min: string, max: string) => {
+    const minNum = min ? parseInt(min) : null;
+    const maxNum = max ? parseInt(max) : null;
+
+    // Optimistic update
+    setOptimisticFilters((prev) => ({
+      ...prev,
+      minPrice: minNum,
+      maxPrice: maxNum,
+    }));
+    setIsTransitioning(true);
+
     setFilters({
-      minPrice: min ? parseInt(min) : null,
-      maxPrice: max ? parseInt(max) : null,
+      minPrice: minNum,
+      maxPrice: maxNum,
     });
     if (onFilterChange) onFilterChange();
   };
 
   // Generic checkbox update
   const toggleCheckbox = (field: string, value: string) => {
-    const current = (filters as any)[field] || [];
+    const current = (optimisticFilters as any)[field] || [];
     const next = current.includes(value)
       ? current.filter((v: string) => v !== value)
       : [...current, value];
+
+    // Optimistic update
+    setOptimisticFilters((prev) => ({
+      ...prev,
+      [field]: next,
+    }));
+    setIsTransitioning(true);
 
     setFilters({ [field]: next });
     if (onFilterChange) onFilterChange();
@@ -299,6 +329,7 @@ export function IdealoFilterPanel({
         "sr-filterBar_t26b_",
         "flex h-full min-h-full w-full flex-col",
         !isMobile ? "bg-transparent p-0" : "bg-[#f9f9f9]",
+        isTransitioning && "pointer-events-none opacity-80",
       )}
     >
       <div className="sr-filterBar__content_eiiz2">
@@ -306,7 +337,9 @@ export function IdealoFilterPanel({
         <FilterBox
           title="Preis"
           activeCount={
-            filters.minPrice !== null || filters.maxPrice !== null ? 1 : 0
+            currentFilters.minPrice !== null || currentFilters.maxPrice !== null
+              ? 1
+              : 0
           }
           isClickable={false}
           isMobile={isMobile}
@@ -319,7 +352,7 @@ export function IdealoFilterPanel({
                   type="number"
                   inputMode="decimal"
                   placeholder={minPriceInCategory.toString()}
-                  value={filters.minPrice?.toString() || ""}
+                  value={currentFilters.minPrice?.toString() || ""}
                   onChange={(e) =>
                     setFilters({
                       minPrice: e.target.value
@@ -341,7 +374,7 @@ export function IdealoFilterPanel({
                   type="number"
                   inputMode="decimal"
                   placeholder={maxPriceInCategory.toString()}
-                  value={filters.maxPrice?.toString() || ""}
+                  value={currentFilters.maxPrice?.toString() || ""}
                   onChange={(e) =>
                     setFilters({
                       maxPrice: e.target.value
@@ -358,8 +391,8 @@ export function IdealoFilterPanel({
               <button
                 onClick={() =>
                   handlePriceUpdate(
-                    filters.minPrice?.toString() || "",
-                    filters.maxPrice?.toString() || "",
+                    currentFilters.minPrice?.toString() || "",
+                    currentFilters.maxPrice?.toString() || "",
                   )
                 }
                 className="sr-iButton__default_Ihhof flex h-10 w-10 shrink-0 items-center justify-center rounded-[4px] bg-[#0771D0] text-white hover:bg-[#0050a0]"
@@ -374,8 +407,8 @@ export function IdealoFilterPanel({
                 min={minPriceInCategory}
                 max={maxPriceInCategory}
                 value={[
-                  filters.minPrice ?? minPriceInCategory,
-                  filters.maxPrice ?? maxPriceInCategory,
+                  currentFilters.minPrice ?? minPriceInCategory,
+                  currentFilters.maxPrice ?? maxPriceInCategory,
                 ]}
                 onChange={([min, max]) => {
                   setFilters({
@@ -399,8 +432,8 @@ export function IdealoFilterPanel({
                   ]
               ).map((range, idx) => {
                 const isSelected =
-                  filters.minPrice === range.min &&
-                  filters.maxPrice === range.max;
+                  currentFilters.minPrice === range.min &&
+                  currentFilters.maxPrice === range.max;
                 return (
                   <label
                     key={idx}
@@ -476,7 +509,7 @@ export function IdealoFilterPanel({
           // Skip if no options OR only 1 option (no point showing a filter with no choice)
           if (options.length <= 1) return null;
 
-          const currentValues = (filters as any)[group.field] || [];
+          const currentValues = (currentFilters as any)[group.field] || [];
           const query = groupSearch[group.field] || "";
           const isExpanded = groupShowAll[group.field] || false;
 

@@ -54,9 +54,7 @@ export default function RootLayoutWrapper({
       >
         <div className="flex min-h-screen flex-col">
           {!hideNavbar && <Navbar />}
-          <React.Suspense>
-            <main className="flex-1">{children}</main>
-          </React.Suspense>
+          <main className="flex-1">{children}</main>
           {!hideFooter && <Footer />}
         </div>
       </body>

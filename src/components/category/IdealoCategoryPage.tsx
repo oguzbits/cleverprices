@@ -52,6 +52,8 @@ interface Props {
  * Main Category Page - Server Component
  */
 
+export const dynamic = "force-dynamic";
+
 export async function IdealoCategoryPage({
   category,
   countryCode,
@@ -64,8 +66,8 @@ export async function IdealoCategoryPage({
     Icon: getCategoryIcon(crumb.slug),
   }));
 
-  // 1. Fetch data immediately (Awaiting at top-level for layout stability)
-  const productData = await getCategoryProducts(
+  // 1. Kick off data fetch (Don't await here to avoid blocking the transition)
+  const productDataPromise = getCategoryProducts(
     category.slug,
     countryCode,
     searchParams,
@@ -85,6 +87,7 @@ export async function IdealoCategoryPage({
       <BreadcrumbSchema items={breadcrumbItems} />
       {/* ============================================ */}
       {/* MAIN CONTAINER - max-width 1280px */}
+      {/* ============================================ */}
       <div className="mx-auto max-w-[1280px]">
         <div className="border-border bg-card border-b px-4">
           {/* ============================================ */}
@@ -104,7 +107,7 @@ export async function IdealoCategoryPage({
             <AsyncTopBar
               categoryName={formatTechText(category.name)}
               searchParams={searchParams}
-              productDataPromise={Promise.resolve(productData)}
+              productDataPromise={productDataPromise}
             />
           </ComponentErrorBoundary>
         </div>
@@ -123,7 +126,7 @@ export async function IdealoCategoryPage({
           <ComponentErrorBoundary name="CategoryFilters">
             <AsyncFilterPanel
               category={category}
-              productDataPromise={Promise.resolve(productData)}
+              productDataPromise={productDataPromise}
               lockedFilters={lockedFilters}
             />
           </ComponentErrorBoundary>
@@ -134,7 +137,7 @@ export async function IdealoCategoryPage({
               category={category}
               countryCode={countryCode}
               searchParams={searchParams}
-              productDataPromise={Promise.resolve(productData)}
+              productDataPromise={productDataPromise}
             />
           </ComponentErrorBoundary>
         </div>
