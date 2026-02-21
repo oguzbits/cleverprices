@@ -162,8 +162,10 @@ export default async function DedicatedCategoryPage({
 
   // The "Shell": Immediate rendering of the background and basic structural container.
   // This ensures the URL updates instantly and avoids the "frozen" UI feeling.
+  // Using bg-secondary to match child category pages, or bg-white for parents.
+  // (IdealoCategoryPage uses bg-secondary)
   return (
-    <div className="min-h-screen bg-white">
+    <div className="bg-secondary min-h-screen">
       <Suspense fallback={null}>
         <CategoryPageContent
           categorySlug={categorySlug as CategorySlug}
