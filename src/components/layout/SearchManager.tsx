@@ -17,9 +17,14 @@ declare global {
 
 export function SearchManager() {
   const [open, setOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
 
-  // Expose toggle to window object so disconnected SearchButtons can call it
+  // Only render the modal after the client has fully mounted.
+  // This prevents the Radix UI focus trap / portal from initializing during
+  // hydration, which was swallowing the first click event site-wide.
   React.useEffect(() => {
+    setMounted(true);
+
     const toggle = () => setOpen((prev) => !prev);
     window.triggerSearch = toggle;
 
@@ -43,6 +48,8 @@ export function SearchManager() {
       // Don't nullify triggerSearch to avoid breaking buttons during soft navigations
     };
   }, []);
+
+  if (!mounted) return null;
 
   return <SearchModal open={open} onOpenChange={setOpen} />;
 }
