@@ -3,6 +3,7 @@
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { type CategorySlug } from "@/lib/category-types";
 import { getCategoryPath } from "@/lib/category-utils";
+import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
   ChevronRight,
@@ -42,6 +43,7 @@ export function CategoryNav({ country }: { country: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [isOverflowing, setIsOverflowing] = useState(false);
 
   // Only show on landing pages (root path for each country)
   const isLandingPage =
@@ -49,78 +51,64 @@ export function CategoryNav({ country }: { country: string }) {
     pathname === `/${country}` ||
     pathname === `/${country}/`;
 
-  const [isOverflowing, setIsOverflowing] = useState(false);
-
   const checkScroll = () => {
     if (scrollRef.current) {
       const container = scrollRef.current;
       const { scrollWidth, clientWidth } = container;
-      // Threshold 10 to ignore tiny overflow rounding
-      const overflow = scrollWidth > clientWidth + 10;
-      setIsOverflowing(overflow);
 
-      if (!overflow) {
+      // Threshold 5 to ignore tiny overflow rounding
+      const hasOverflow = scrollWidth > clientWidth + 5;
+      setIsOverflowing(hasOverflow);
+
+      if (!hasOverflow) {
         setCanScrollLeft(false);
         setCanScrollRight(false);
         return;
       }
 
-      // Visual detection: Check if the first and last items are truly visible
-      // This is immune to scroll snap offsets or hidden offsets
-      const items = container.querySelectorAll("a");
-      if (items.length > 0) {
-        const firstItem = items[0];
-        const lastItem = items[items.length - 1];
-        const containerRect = container.getBoundingClientRect();
-        const firstRect = firstItem.getBoundingClientRect();
-        const lastRect = lastItem.getBoundingClientRect();
-
-        // 10px tolerance for rounding
-        setCanScrollLeft(firstRect.left < containerRect.left - 10);
-        setCanScrollRight(lastRect.right > containerRect.right + 10);
-      }
+      // Check scroll position for chevrons
+      const { scrollLeft } = container;
+      // 5px tolerance
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 5);
     }
   };
 
   useEffect(() => {
-    // Force scroll to start on mount/pathname change
-    if (scrollRef.current) {
-      scrollRef.current.scrollLeft = 0;
+    if (!scrollRef.current) return;
 
-      // Use requestAnimationFrame to avoid synchronous state updates if possible
-      // or at least defer them slightly to let the browser paint
-      const frameId = requestAnimationFrame(() => {
-        checkScroll();
-      });
+    const container = scrollRef.current;
 
-      // Small delay to ensure layout is ready before checking scroll
-      const timer = setTimeout(checkScroll, 100);
-      // Second check after images/layout might have shifted
-      const timer2 = setTimeout(checkScroll, 1000);
+    // Use ResizeObserver for perfect accuracy on mount and resize
+    const observer = new ResizeObserver(() => {
+      checkScroll();
+    });
 
-      return () => {
-        cancelAnimationFrame(frameId);
-        clearTimeout(timer);
-        clearTimeout(timer2);
-      };
-    }
+    observer.observe(container);
+
+    // Initial check
+    checkScroll();
+
+    return () => observer.disconnect();
   }, [pathname]);
 
   useEffect(() => {
-    // Removed direct checkScroll() call to avoid synchronous update on mount
-    window.addEventListener("resize", checkScroll);
-    return () => window.removeEventListener("resize", checkScroll);
-  }, []);
+    // Reset scroll on navigation
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = 0;
+      checkScroll();
+    }
+  }, [pathname]);
 
   const scroll = (direction: "left" | "right") => {
     if (scrollRef.current) {
-      const scrollAmount = scrollRef.current.clientWidth * 0.5;
+      const scrollAmount = scrollRef.current.clientWidth * 0.6;
       scrollRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
       });
-      // Allow time for the smooth scroll plus snap-alignment to settle
-      setTimeout(checkScroll, 600);
+      // Small timeout to check scroll after animation finishes
+      setTimeout(checkScroll, 500);
     }
   };
 
@@ -130,19 +118,18 @@ export function CategoryNav({ country }: { country: string }) {
   }
 
   return (
-    <div className="z-40 border-b border-white/10 bg-(--sub-header-bg) dark:bg-(--sub-header-bg)">
-      <div className="group/nav relative mx-auto max-w-[1280px]">
+    <div className="z-40 h-[80px] border-b border-white/10 bg-(--sub-header-bg) dark:bg-(--sub-header-bg)">
+      <div className="group/nav relative mx-auto h-full max-w-[1280px]">
         {/* Categories scroll container with CSS Scroll Snap */}
         <div
           ref={scrollRef}
           onScroll={checkScroll}
-          className="scrollbar-hide relative flex h-[80px] w-full items-center overflow-x-auto"
+          className="scrollbar-hide relative flex h-full w-full items-center overflow-x-auto overflow-y-hidden"
           style={{
             scrollbarWidth: "none",
             msOverflowStyle: "none",
-            touchAction: "pan-x pan-y",
-            overscrollBehavior: "contain auto",
-            overflowY: "hidden",
+            touchAction: "pan-x",
+            overscrollBehavior: "contain",
             scrollPaddingLeft: "16px",
             scrollPaddingRight: "16px",
           }}
@@ -176,32 +163,42 @@ export function CategoryNav({ country }: { country: string }) {
           </div>
         </div>
 
-        {/* Navigation Buttons - Placed after scroll container for consistent stacking context */}
-        {/* Left scroll button */}
-        {canScrollLeft && (
-          <button
-            onClick={() => scroll("left")}
-            className="pointer-events-none absolute top-0 left-0 z-30 flex h-full items-center bg-linear-to-r from-(--sub-header-bg) to-transparent pr-12 pl-2 transition-opacity duration-300"
-            aria-label="Scroll left"
-          >
-            <div className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-105 hover:bg-white/25 active:scale-95">
+        {/* Navigation Buttons - Using div wrapper to prevent hit-test blocking */}
+        {/* Left scroll button overlay */}
+        <div
+          className={cn(
+            "pointer-events-none absolute top-0 left-0 z-30 flex h-full items-center bg-linear-to-r from-(--sub-header-bg) to-transparent pr-16 pl-2 transition-opacity duration-300",
+            canScrollLeft ? "opacity-100" : "opacity-0",
+          )}
+        >
+          {canScrollLeft && (
+            <button
+              onClick={() => scroll("left")}
+              className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-105 hover:bg-white/25 active:scale-95"
+              aria-label="Scroll left"
+            >
               <ChevronLeft className="h-5 w-5" />
-            </div>
-          </button>
-        )}
+            </button>
+          )}
+        </div>
 
-        {/* Right scroll button */}
-        {canScrollRight && (
-          <button
-            onClick={() => scroll("right")}
-            className="pointer-events-none absolute top-0 right-0 z-30 flex h-full items-center bg-linear-to-l from-(--sub-header-bg) to-transparent pr-2 pl-12 transition-opacity duration-300"
-            aria-label="Scroll right"
-          >
-            <div className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-105 hover:bg-white/25 active:scale-95">
+        {/* Right scroll button overlay */}
+        <div
+          className={cn(
+            "pointer-events-none absolute top-0 right-0 z-30 flex h-full items-center bg-linear-to-l from-(--sub-header-bg) to-transparent pr-2 pl-16 transition-opacity duration-300",
+            canScrollRight ? "opacity-100" : "opacity-0",
+          )}
+        >
+          {canScrollRight && (
+            <button
+              onClick={() => scroll("right")}
+              className="pointer-events-auto flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-white shadow-sm ring-1 ring-white/10 transition-all hover:scale-105 hover:bg-white/25 active:scale-95"
+              aria-label="Scroll right"
+            >
               <ChevronRight className="h-5 w-5" />
-            </div>
-          </button>
-        )}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
