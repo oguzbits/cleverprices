@@ -1,8 +1,46 @@
-import { DEFAULT_COUNTRY } from "@/lib/countries";
+"use client";
 
 import { Logo } from "@/components/layout/Logo";
 import { SearchButton } from "@/components/layout/SearchButton";
-import { SearchManager } from "@/components/layout/SearchManager";
+import { SearchModal } from "@/components/SearchModal";
+import { DEFAULT_COUNTRY } from "@/lib/countries";
+import React from "react";
+
+export function SearchManager() {
+  const [open, setOpen] = React.useState(false);
+  const [mounted, setMounted] = React.useState(false);
+
+  // Expose toggle to window object so disconnected SearchButtons can call it
+  React.useEffect(() => {
+    setMounted(true);
+    const toggle = () => setOpen((prev) => !prev);
+    window.triggerSearch = toggle;
+
+    // If a search was triggered before hydration, open it now
+    if ((window as any).__searchPending) {
+      setOpen(true);
+      (window as any).__searchPending = false;
+    }
+
+    // Global shortcut (Cmd+K / Ctrl+K)
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        toggle();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      // Don't nullify triggerSearch to avoid breaking buttons during soft navigations
+    };
+  }, []);
+
+  if (!mounted) return null;
+
+  return <SearchModal open={open} onOpenChange={setOpen} />;
+}
 
 export function Navbar({ country: propCountry }: { country?: string }) {
   const country = propCountry || DEFAULT_COUNTRY;
