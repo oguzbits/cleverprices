@@ -29,6 +29,15 @@ export default function RootLayoutWrapper({
   return (
     <html lang={lang} suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+            window.triggerSearch = function() {
+              window.__searchPending = true;
+            };
+          `,
+          }}
+        />
         <link
           rel="preconnect"
           href="https://m.media-amazon.com"

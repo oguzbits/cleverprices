@@ -48,11 +48,9 @@ interface Props {
   lockedFilters?: string[];
 }
 
-/**
- * Main Category Page - Server Component
- */
-
-export const dynamic = "force-dynamic";
+// Main Category Page - Server Component
+// Removed force-dynamic to allow Next.js 16 dynamicIO and "use cache" to work effectively.
+// The page will become dynamic if needed through searchParams access, but is otherwise cacheable.
 
 export async function IdealoCategoryPage({
   category,

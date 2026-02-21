@@ -120,6 +120,8 @@ export async function mergeLivePrices(
   countryCode: string,
   includeHistory: boolean = false,
 ): Promise<Product[]> {
+  "use cache";
+  cacheLife("prices");
   const ids = products
     .map((p) => p.id)
     .filter((id): id is number => id !== undefined);
@@ -243,6 +245,8 @@ export async function mergeLivePricesSelective(
   countryCode: string,
   includeHistoryForMain: boolean = false,
 ): Promise<Product[]> {
+  "use cache";
+  cacheLife("prices");
   if (products.length === 0) return [];
   if (products.length === 1) {
     return mergeLivePrices(products, countryCode, includeHistoryForMain);
