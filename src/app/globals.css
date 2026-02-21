@@ -181,48 +181,33 @@
   }
 }
 
-/* ─── View Transitions — seamless page crossfades ──────────────────────── */
+/* ─── Page content fade-in on navigation ───────────────────────────────── */
 /*
- * These rules control how the browser animates between old and new page content
- * when experimental.viewTransition is enabled in next.config.ts.
+ * A simple, flicker-free transition for page navigation.
  *
- * The ViewTransitionWrapper in RootLayoutWrapper wraps <main> so that only the
- * page content (not Navbar/Footer) participates in the transition.
+ * Why not View Transitions? The browser View Transitions API captures the
+ * entire viewport (including Navbar) in both old and new snapshots. This
+ * causes the Navbar to be composited twice, producing a visual flicker.
+ * Combined with loading.tsx (null), there are two distinct visual states
+ * (old→null, then null→content), causing a double-animation artifact.
  *
- * For cached pages (staleTimes: 30s), new content arrives in <50ms so the
- * crossfade is imperceptible. For first-time visits, the user sees the old
- * content fade out while the new content loads, giving clear navigation feedback.
+ * This approach is simpler: new page content gently fades in when it appears.
+ * Only one animation, one direction. No flickering, no double-rendering.
+ * Respects prefers-reduced-motion.
  */
-
 @media (prefers-reduced-motion: no-preference) {
-  ::view-transition-old(root) {
-    animation: 180ms ease-out both vt-fade-out;
-  }
-  ::view-transition-new(root) {
-    animation: 220ms ease-in both vt-fade-in;
+  main > * {
+    animation: page-enter 180ms ease-out both;
   }
 }
 
-@keyframes vt-fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes vt-fade-in {
+@keyframes page-enter {
   from {
     opacity: 0;
+    translate: 0 6px;
   }
   to {
     opacity: 1;
+    translate: 0 0;
   }
-}
-
-/* Navbar and footer — static, do not animate */
-header,
-footer {
-  view-transition-name: none;
 }
