@@ -180,34 +180,3 @@
     }
   }
 }
-
-/* ─── Page content fade-in on navigation ───────────────────────────────── */
-/*
- * A simple, flicker-free transition for page navigation.
- *
- * Why not View Transitions? The browser View Transitions API captures the
- * entire viewport (including Navbar) in both old and new snapshots. This
- * causes the Navbar to be composited twice, producing a visual flicker.
- * Combined with loading.tsx (null), there are two distinct visual states
- * (old→null, then null→content), causing a double-animation artifact.
- *
- * This approach is simpler: new page content gently fades in when it appears.
- * Only one animation, one direction. No flickering, no double-rendering.
- * Respects prefers-reduced-motion.
- */
-@media (prefers-reduced-motion: no-preference) {
-  main > * {
-    animation: page-enter 180ms ease-out both;
-  }
-}
-
-@keyframes page-enter {
-  from {
-    opacity: 0;
-    translate: 0 6px;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
