@@ -18,7 +18,7 @@ import {
   Video,
   Zap,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 // Core PC component categories - prioritized for focus
@@ -40,10 +40,25 @@ const categories: {
 
 export function CategoryNav({ country }: { country: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [isOverflowing, setIsOverflowing] = useState(false);
+
+  // Eagerly prefetch all category pages on mount so clicks are instant.
+  // These links are always visible, so prefetching them immediately is the
+  // most effective way to eliminate the blank flash on first navigation.
+  useEffect(() => {
+    categories.forEach(({ slug }) => {
+      if (slug === "deals") {
+        router.prefetch("/deals");
+      } else if (slug) {
+        router.prefetch(getCategoryPath(slug));
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Only show on landing pages (root path for each country)
   const isLandingPage =
