@@ -180,3 +180,49 @@
     }
   }
 }
+
+/* ─── View Transitions — seamless page crossfades ──────────────────────── */
+/*
+ * These rules control how the browser animates between old and new page content
+ * when experimental.viewTransition is enabled in next.config.ts.
+ *
+ * The ViewTransitionWrapper in RootLayoutWrapper wraps <main> so that only the
+ * page content (not Navbar/Footer) participates in the transition.
+ *
+ * For cached pages (staleTimes: 30s), new content arrives in <50ms so the
+ * crossfade is imperceptible. For first-time visits, the user sees the old
+ * content fade out while the new content loads, giving clear navigation feedback.
+ */
+
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: 180ms ease-out both vt-fade-out;
+  }
+  ::view-transition-new(root) {
+    animation: 220ms ease-in both vt-fade-in;
+  }
+}
+
+@keyframes vt-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vt-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Navbar and footer — static, do not animate */
+header,
+footer {
+  view-transition-name: none;
+}
