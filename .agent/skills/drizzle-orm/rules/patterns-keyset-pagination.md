@@ -43,4 +43,3 @@ while (true) {
 ## See Also
 
 - [Examples: keyset-pagination.ts](../examples/keyset-pagination.ts)
-- [docs/TURSO_OPTIMIZATION.md](file:///Users/oguz/Desktop/Dev/cleverprices/docs/TURSO_OPTIMIZATION.md)

@@ -52,16 +52,6 @@ Provide flags to limit the depth of data operations during testing or migration.
 - `--limit=100`: Process only a small batch of products.
 - `--history-days=30`: Only sync the last 30 days of data instead of full history.
 
-## Guardrail 4: Point-in-Time Recovery (PITR)
-
-For massive accidental deletions, use PITR instead of manual re-uploads. PITR is a metadata operation that doesn't consume row-write quotas.
-
-```bash
-turso db create DB_NAME --from-db SRC_DB --timestamp TIMESTAMP_IN_UTC
-```
-
----
-
 ## ⚠️ CRITICAL: Banned Patterns
 
 The following patterns are **NEVER** allowed in this project:

@@ -4,20 +4,20 @@ This guide explains the most important commands for your workflow.
 
 ## 🏠 1. Local Development (Daily)
 
-| Command                 | Description                                                                                            |
-| :---------------------- | :----------------------------------------------------------------------------------------------------- |
-| `bun run dev`           | Starts the Next.js website at http://localhost:3000                                                    |
-| `bun run worker:local`  | **Recommended.** Runs the price-updater in the background. Does not sync to Turso Cloud (saves quota). |
-| `bun run worker:enrich` | Fetches 1-year history for products that don't have charts yet.                                        |
-| `bun run db:studio`     | Opens a GUI to view and edit your local database.                                                      |
+| Command                 | Description                                                     |
+| :---------------------- | :-------------------------------------------------------------- |
+| `bun run dev`           | Starts the Next.js website at http://localhost:3000             |
+| `bun run worker:local`  | **Recommended.** Runs the price-updater in the background.      |
+| `bun run worker:enrich` | Fetches 1-year history for products that don't have charts yet. |
+| `bun run db:studio`     | Opens a GUI to view and edit your local database.               |
 
 ## 🤖 2. Autonomous Workflows (GitHub Actions)
 
 These workflows run automatically in GitHub to keep the site fresh without manual effort.
 
-| Workflow       | Frequency | Description                                                         |
-| :------------- | :-------- | :------------------------------------------------------------------ |
-| **Price Sync** | Hourly    | Fetches Keepa prices, enriches products, and writes to Turso Cloud. |
+| Workflow       | Frequency | Description                                                             |
+| :------------- | :-------- | :---------------------------------------------------------------------- |
+| **Price Sync** | Hourly    | Fetches Keepa prices, enriches products, and writes to SQLite database. |
 
 ## 🚀 3. Self-Hosting (Hetzner + Dokploy)
 
@@ -75,5 +75,5 @@ Go to Dokploy Dashboard -> Applications -> CleverPrices -> Stop / Start.
 - **Search fails in Production?** Ensure FTS5 index exists (run `bun run db:optimize`).
 - **Data out of date?** Check if `bun run db:push-prod` ran successfully.
 - **Database "Locked"?** If local, restart the worker. If production, ensured `WAL` mode is used.
-- **Charts Empty?** Ensure the `price-updater` action is running and writing to Turso Cloud.
+- **Charts Empty?** Ensure the `price-updater` action is running.
 - **Wrong Database?** Always run commands from the **project root**. Running from subdirectories can lead to configuration issues or the creation of unwanted `local.db` files.

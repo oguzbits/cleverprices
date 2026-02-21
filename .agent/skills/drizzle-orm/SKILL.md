@@ -58,7 +58,6 @@ version: "2.1.0"
 
 - [Safe Database Sync (WAL/SHM Precautions)](file:///Users/oguz/Desktop/Dev/cleverprices/.agent/skills/drizzle-orm/rules/maintenance-db-sync.md)
 - [Backup Strategies](file:///Users/oguz/Desktop/Dev/cleverprices/.agent/skills/drizzle-orm/rules/backups.md)
-- [Turso Latency](rules/patterns-turso-latency.md)
 - [Transactions](rules/patterns-transactions.md)
 - [Resource Safety](rules/patterns-resource-safety.md) - CRITICAL
 

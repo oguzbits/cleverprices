@@ -6,7 +6,6 @@
  * Safe to run multiple times (CREATE INDEX IF NOT EXISTS).
  */
 
-import { createClient } from "@libsql/client";
 import { Database } from "bun:sqlite";
 
 const INDEXES = [
@@ -40,35 +39,6 @@ async function main() {
     localDb.close();
     console.log("✅ Local indexes applied.\n");
   }
-
-  if (target === "cloud" || target === "all") {
-    const dbUrl =
-      process.env.TURSO_DATABASE_URL?.replace("libsql://", "https://") || "";
-    const authToken = process.env.TURSO_AUTH_TOKEN;
-
-    if (!dbUrl || !authToken) {
-      console.error("❌ Missing TURSO credentials for cloud migration.");
-      process.exit(1);
-    }
-
-    console.log("☁️  Applying indexes to Turso cloud database...");
-    const client = createClient({ url: dbUrl, authToken });
-
-    for (const sql of INDEXES) {
-      try {
-        await client.execute(sql);
-        console.log(`  ✓ ${sql.split(" ON ")[0].replace("CREATE ", "")}`);
-      } catch (e: any) {
-        if (e.message.includes("already exists")) {
-          console.log(`  ⏭️  Index already exists`);
-        } else {
-          console.error(`  ❌ ${e.message}`);
-        }
-      }
-    }
-    console.log("✅ Cloud indexes applied.\n");
-  }
-
   console.log("🏁 Index migration complete.");
 }
 

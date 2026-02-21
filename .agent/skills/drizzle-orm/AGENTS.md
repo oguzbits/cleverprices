@@ -11,7 +11,7 @@ January 2026
 
 ## Abstract
 
-Best practices for Drizzle ORM with SQLite (Turso/LibSQL). Contains 11 rules across 4 categories: Schema Definition (tables, indexes, relations), Query Optimization (select columns, RQB, filters), Common Patterns (upsert, batch, transactions), and Configuration (migrations).
+Best practices for Drizzle ORM with SQLite. Contains 11 rules across 4 categories: Schema Definition (tables, indexes, relations), Query Optimization (select columns, RQB, filters), Common Patterns (upsert, batch, transactions), and Configuration (migrations).
 
 ---
 
