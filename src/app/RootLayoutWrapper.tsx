@@ -1,5 +1,6 @@
 import "@/app/globals.css";
 
+import { BfcacheRecovery } from "@/components/layout/BfcacheRecovery";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,7 @@ export default function RootLayoutWrapper({
         )}
       >
         <div className="flex min-h-screen flex-col">
+          <BfcacheRecovery />
           {!hideNavbar && <Navbar />}
           <main className="flex-1">{children}</main>
           {!hideFooter && <Footer />}
