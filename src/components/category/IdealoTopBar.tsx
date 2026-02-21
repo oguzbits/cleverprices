@@ -42,7 +42,7 @@ export function IdealoTopBar({
   const setView = (view: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("view", view);
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const setSort = (sort: string) => {
@@ -52,7 +52,7 @@ export function IdealoTopBar({
     } else {
       params.set("sort", sort);
     }
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   return (

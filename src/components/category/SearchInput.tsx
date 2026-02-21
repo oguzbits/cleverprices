@@ -2,8 +2,8 @@
 
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useState, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useState } from "react";
 
 /**
  * Client component for search input that syncs with URL.
@@ -12,7 +12,7 @@ import { useCallback, useState, useTransition } from "react";
 export function SearchInput() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const pathname = usePathname();
 
   // Local state for immediate input responsiveness
   const [localValue, setLocalValue] = useState(
@@ -26,19 +26,17 @@ export function SearchInput() {
 
   const updateUrl = useCallback(
     (value: string) => {
-      startTransition(() => {
-        const newParams = new URLSearchParams(searchParams.toString());
-        if (value) {
-          newParams.set("search", value);
-        } else {
-          newParams.delete("search");
-        }
-        const query = newParams.toString();
-        const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
-        router.replace(newUrl, { scroll: false });
-      });
+      const newParams = new URLSearchParams(searchParams.toString());
+      if (value) {
+        newParams.set("search", value);
+      } else {
+        newParams.delete("search");
+      }
+      const query = newParams.toString();
+      const newUrl = `${pathname}${query ? `?${query}` : ""}`;
+      router.replace(newUrl, { scroll: false });
     },
-    [searchParams, router, startTransition],
+    [searchParams, router, pathname],
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

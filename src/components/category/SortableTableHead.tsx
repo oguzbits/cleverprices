@@ -1,8 +1,7 @@
 "use client";
 
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface SortableTableHeadProps {
   sortKey: string;
@@ -26,7 +25,7 @@ export function SortableTableHead({
 }: SortableTableHeadProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const pathname = usePathname();
 
   const handleSort = () => {
     const effectiveKey = !sortKey ? "pricePerUnit" : sortKey;
@@ -36,27 +35,25 @@ export function SortableTableHead({
         ? "desc"
         : "asc";
 
-    startTransition(() => {
-      const newParams = new URLSearchParams(searchParams.toString());
+    const newParams = new URLSearchParams(searchParams.toString());
 
-      // Set sortBy — clear if default
-      if (sortKey === "pricePerUnit") {
-        newParams.delete("sortBy");
-      } else {
-        newParams.set("sortBy", sortKey);
-      }
+    // Set sortBy — clear if default
+    if (sortKey === "pricePerUnit") {
+      newParams.delete("sortBy");
+    } else {
+      newParams.set("sortBy", sortKey);
+    }
 
-      // Set sortOrder — clear if default
-      if (newOrder === "asc") {
-        newParams.delete("sortOrder");
-      } else {
-        newParams.set("sortOrder", newOrder);
-      }
+    // Set sortOrder — clear if default
+    if (newOrder === "asc") {
+      newParams.delete("sortOrder");
+    } else {
+      newParams.set("sortOrder", newOrder);
+    }
 
-      const query = newParams.toString();
-      const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
-      router.replace(newUrl, { scroll: false });
-    });
+    const query = newParams.toString();
+    const newUrl = `${pathname}${query ? `?${query}` : ""}`;
+    router.replace(newUrl, { scroll: false });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useTransition } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo } from "react";
 
 /**
  * Filter state shape — mirrors the old nuqs-based hook exactly.
@@ -95,7 +95,7 @@ type SetFilters = (
 export const useFilters = (): [FilterState, SetFilters] => {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const pathname = usePathname();
 
   const filters = useMemo(
     () => parseFiltersFromParams(searchParams),
@@ -104,55 +104,54 @@ export const useFilters = (): [FilterState, SetFilters] => {
 
   const setFilters: SetFilters = useCallback(
     (updates) => {
-      startTransition(() => {
-        const newParams = new URLSearchParams(searchParams.toString());
+      const newParams = new URLSearchParams(searchParams.toString());
 
-        for (const [key, value] of Object.entries(updates)) {
-          // Remove old values for this key
-          newParams.delete(key);
+      for (const [key, value] of Object.entries(updates)) {
+        // Remove old values for this key
+        newParams.delete(key);
 
-          if (value === null || value === undefined) {
-            // null = clear the param
-            continue;
-          }
-
-          if (Array.isArray(value)) {
-            // Empty array = clear
-            if (value.length === 0) continue;
-            // Multi-value params
-            for (const v of value) {
-              newParams.append(key, v);
-            }
-          } else if (typeof value === "number") {
-            newParams.set(key, value.toString());
-          } else if (typeof value === "string") {
-            // Empty string = clear for search, but keep for sort/view
-            if (value === "" && key === "search") continue;
-            // Don't write default values to keep URLs clean
-            if (
-              key in DEFAULTS &&
-              value === (DEFAULTS as any)[key] &&
-              key !== "sort" &&
-              key !== "view"
-            ) {
-              continue;
-            }
-            newParams.set(key, value);
-          }
+        if (value === null || value === undefined) {
+          // null = clear the param
+          continue;
         }
 
-        // Clean up default values to keep URLs short
-        if (newParams.get("sort") === "popular") newParams.delete("sort");
-        if (newParams.get("view") === "grid") newParams.delete("view");
+        if (Array.isArray(value)) {
+          // Empty array = clear
+          if (value.length === 0) continue;
+          // Multi-value params
+          for (const v of value) {
+            newParams.append(key, v);
+          }
+        } else if (typeof value === "number") {
+          newParams.set(key, value.toString());
+        } else if (typeof value === "string") {
+          // Empty string = clear for search, but keep for sort/view
+          if (value === "" && key === "search") continue;
+          // Don't write default values to keep URLs clean
+          if (
+            key in DEFAULTS &&
+            value === (DEFAULTS as any)[key] &&
+            key !== "sort" &&
+            key !== "view"
+          ) {
+            continue;
+          }
+          newParams.set(key, value);
+        }
+      }
 
-        const query = newParams.toString();
-        const newUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
+      // Clean up default values to keep URLs short
+      if (newParams.get("sort") === "popular") newParams.delete("sort");
+      if (newParams.get("view") === "grid") newParams.delete("view");
 
-        // Full navigation (not shallow) so server components re-render
-        router.replace(newUrl, { scroll: false });
-      });
+      const query = newParams.toString();
+      const newUrl = `${pathname}${query ? `?${query}` : ""}`;
+
+      // router.replace is already a transition in Next.js 16.
+      // Wrapping it manually in startTransition can cause rendering deadlocks.
+      router.replace(newUrl, { scroll: false });
     },
-    [searchParams, router, startTransition],
+    [searchParams, router, pathname],
   );
 
   return [filters, setFilters];
