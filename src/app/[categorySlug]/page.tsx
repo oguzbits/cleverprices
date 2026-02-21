@@ -6,6 +6,7 @@ import {
   getCategoryBySlug,
   getChildCategories,
   stripCategoryIcon,
+  type Category,
   type CategorySlug,
 } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
@@ -20,6 +21,7 @@ import { FilterParams } from "@/lib/server/category-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 interface Props {
   params: Promise<{
@@ -156,12 +158,35 @@ export default async function DedicatedCategoryPage({
   }
 
   const category = await getCategoryBySlug(categorySlug);
-
   if (!category) notFound();
 
+  // The "Shell": Immediate rendering of the background and basic structural container.
+  // This ensures the URL updates instantly and avoids the "frozen" UI feeling.
+  return (
+    <div className="min-h-screen bg-white">
+      <Suspense fallback={null}>
+        <CategoryPageContent
+          categorySlug={categorySlug as CategorySlug}
+          category={category}
+          searchParams={searchParams}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+async function CategoryPageContent({
+  categorySlug,
+  category,
+  searchParams,
+}: {
+  categorySlug: CategorySlug;
+  category: Category;
+  searchParams: Promise<FilterParams>;
+}) {
   // Check if category is empty to avoid showing empty results pages
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
-  const children = getChildCategories(categorySlug as CategorySlug);
+  const children = getChildCategories(categorySlug);
   const isEmpty =
     children.length > 0
       ? !children.some((child) => nonEmptySlugs.includes(child.slug))
@@ -169,7 +194,7 @@ export default async function DedicatedCategoryPage({
 
   if (isEmpty) notFound();
 
-  const childCategories = getChildCategories(categorySlug as CategorySlug);
+  const childCategories = children;
   let showNotFound = false;
 
   // Data for the hub view
@@ -184,7 +209,7 @@ export default async function DedicatedCategoryPage({
     try {
       // Fetch products for internal linking sections (Optimized single round trip)
       const { bestsellers, newProducts, deals } = await getParentCategoryData(
-        categorySlug as CategorySlug,
+        categorySlug,
         DEFAULT_COUNTRY,
       ).catch(() => ({ bestsellers: [], newProducts: [], deals: [] }));
 
@@ -214,7 +239,7 @@ export default async function DedicatedCategoryPage({
       // Build breadcrumbs for the parent view
       const breadcrumbItems = [
         { name: "Home", href: "/" },
-        ...getBreadcrumbs(categorySlug as CategorySlug).map((crumb) => ({
+        ...getBreadcrumbs(categorySlug).map((crumb) => ({
           name: crumb.name,
           href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
         })),
@@ -230,7 +255,8 @@ export default async function DedicatedCategoryPage({
       if (
         error?.digest?.startsWith("NEXT_") ||
         error?.digest === "HANGING_PROMISE_REJECTION" ||
-        error?.message?.includes("searchParams")
+        error?.message?.includes("searchParams") ||
+        error?.message?.includes("notFound")
       ) {
         throw error;
       }
