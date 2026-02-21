@@ -8,13 +8,19 @@ interface PrefetchLinkProps {
   href: string;
   children: ReactNode;
   className?: string;
-  /** Prefetch on hover/focus instead of viewport entry (Next.js Best Practices: bundle-preload) */
+  /** Also prefetch eagerly on hover/focus (on top of viewport-based prefetching) */
   prefetchOnHover?: boolean;
 }
 
 /**
- * Enhanced Link component that prefetches on hover/focus instead of viewport entry.
- * This reduces server load while maintaining near-instant navigation.
+ * Enhanced Link component that adds hover/focus prefetching on top of
+ * Next.js's built-in viewport-based prefetching.
+ *
+ * NOTE: Do NOT set prefetch={false} here. Disabling auto-prefetch means
+ * every click requires a fresh server fetch in production, causing the
+ * App Router to silently hold on the old page for 1-3s (no loading indicator)
+ * until the RSC payload arrives. Second click or window resize "works" because
+ * it flushes the already-completed-but-unrendered transition commit.
  *
  * Use this for product cards and other high-volume link lists.
  */
@@ -36,7 +42,6 @@ export function PrefetchLink({
     <Link
       href={href}
       className={className}
-      prefetch={prefetchOnHover ? false : undefined} // Disable auto-prefetch if hover-based
       onMouseEnter={prefetchOnHover ? handlePrefetch : undefined}
       onFocus={prefetchOnHover ? handlePrefetch : undefined}
     >
