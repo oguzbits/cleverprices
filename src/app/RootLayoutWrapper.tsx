@@ -3,6 +3,7 @@ import "@/app/globals.css";
 import { BfcacheRecovery } from "@/components/layout/BfcacheRecovery";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
+import { ViewTransitionWrapper } from "@/components/layout/ViewTransitionWrapper";
 import { cn } from "@/lib/utils";
 import { Inter } from "next/font/google";
 import * as React from "react";
@@ -65,7 +66,9 @@ export default function RootLayoutWrapper({
         <div className="flex min-h-screen flex-col">
           <BfcacheRecovery />
           {!hideNavbar && <Navbar />}
-          <main className="flex-1">{children}</main>
+          <ViewTransitionWrapper>
+            <main className="flex-1">{children}</main>
+          </ViewTransitionWrapper>
           {!hideFooter && <Footer />}
         </div>
       </body>

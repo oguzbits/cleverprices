@@ -54,6 +54,11 @@ const nextConfig: NextConfig = {
       dynamic: 30,
       static: 300,
     },
+    // Enable React 19 View Transitions API for seamless page crossfades.
+    // With this enabled, Next.js wraps navigations in startViewTransition so
+    // the old page stays visible and crossfades to the new one — no blank flash,
+    // no skeleton, zero maintenance required.
+    viewTransition: true,
     optimizePackageImports: [
       "lucide-react",
       "mdx",
