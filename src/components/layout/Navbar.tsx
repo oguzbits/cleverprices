@@ -10,20 +10,24 @@ export function Navbar({ country: propCountry }: { country?: string }) {
   return (
     <>
       <header className="z-50 w-full bg-(--header-bg) shadow-md">
-        <div className="relative mx-auto flex h-20 max-w-[1280px] items-center justify-between gap-4 px-4">
-          {/* Logo */}
-          <div className="flex shrink-0 items-center">
-            <Logo />
-          </div>
+        {/*
+         * 3-column grid layout to avoid any absolutely positioned overlays.
+         * An `absolute inset-0 pointer-events-none` div can race against
+         * CSS hydration and swallow the first click on the Logo.
+         * Grid approach is pointer-event safe from the first paint.
+         */}
+        <div className="mx-auto grid h-20 max-w-[1280px] grid-cols-[auto_1fr_auto] items-center gap-4 px-4">
+          {/* Col 1: Logo */}
+          <Logo />
 
-          {/* Center Search - Only on Desktop (840px+) */}
-          <div className="pointer-events-none absolute inset-0 hidden items-center justify-center min-[840px]:flex">
-            <div className="pointer-events-auto">
-              <SearchButton mode="desktop" />
-            </div>
+          {/* Col 2: Center Search (desktop only, hidden on mobile) */}
+          <div className="hidden items-center justify-center min-[840px]:flex">
+            <SearchButton mode="desktop" />
           </div>
+          {/* Col 2 placeholder on mobile so grid stays consistent */}
+          <div className="min-[840px]:hidden" />
 
-          {/* Right Controls */}
+          {/* Col 3: Right controls (mobile search icon placeholder) */}
           <div className="flex shrink-0 items-center gap-3 sm:gap-6">
             <SearchButton mode="mobile" className="hidden" />
           </div>
