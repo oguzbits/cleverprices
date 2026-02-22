@@ -102,6 +102,12 @@ Avoid user-visible skeletons (pulse elements) or route-level `loading.tsx` for c
 - **Proactive Hydration**: Trigger the `warm-cache` script after deployments and price updates.
 - **Safe Warming**: Ensure the warmer monitors `os.loadavg()` to avoid competing with real traffic or Google crawlers.
 
+### 5. Network Compression (CRITICAL)
+
+- **Offload Compression**: Set `compress: false` in `next.config.ts`.
+- **External Handler**: All compression (Brotli/Gzip) must be handled by the reverse proxy (Traefik).
+- **RSC Payloads**: The proxy **MUST** include `text/x-component` in its allowed compression types. Missing this will result in massive uncompressed data transfers during navigations.
+
 ---
 
 ## Examples

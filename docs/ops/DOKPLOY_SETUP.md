@@ -107,7 +107,7 @@ chmod -R 775 /etc/dokploy/volumes/cleverprices/data
         cleverprices-production-router-websecure-X:
           rule: Host(`cleverprices.com`)
           middlewares:
-            - app-compress # <--- REFERENCE GLOBAL MIDDLEWARE
+            - cleverprices-compress # <--- REFERENCE GLOBAL MIDDLEWARE
           entryPoints:
             - websecure
           tls:

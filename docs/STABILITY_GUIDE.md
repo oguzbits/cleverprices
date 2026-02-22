@@ -131,4 +131,24 @@ We use `display: "swap"` for fonts to ensure brand consistency (Inter) while rel
 Avoid using JavaScript for purely visual elements like "hiding scrollbars" on carousels.
 
 - **Solution**: Use the `.scrollbar-hide` utility class in CSS.
-- **Benefit**: The UI looks "finished" the moment the HTML arrives, long before the JS bundle executes. This significantly improves the **Perceived Performance**.
+
+---
+
+## 11. Network Performance & Compression
+
+CleverPrices offloads all response compression to the **Traefik** reverse proxy to maintain low CPU overhead on the Next.js process and support high-performance **Brotli** compression.
+
+### 11.1 The "Offloaded Compression" Strategy
+
+- **Next.js Config**: `compress: false` is set in `next.config.ts`.
+- **Reason**: Next.js internal compression is performed by the Node.js process, which is less efficient than the multi-threaded Go-based Traefik compression middleware.
+
+### 11.2 The RSC Compression Trap
+
+Modern Next.js applications rely heavily on **React Server Component (RSC)** payloads for navigation.
+
+- **Content-Type**: `text/x-component`.
+- **Discovery**: Most default Traefik or Nginx compression configs only include standard types (HTML, JS, CSS).
+- **Critical Fix**: The Traefik `compress` middleware **MUST** explicitly include `text/x-component` in the `includedcontenttypes` list. Failing to do this results in large, uncompressed data transfers during page navigations, significantly hurting performance.
+
+---
