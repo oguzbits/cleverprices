@@ -1,13 +1,10 @@
-import {
-  CarouselProduct,
-  IdealoProductCarousel,
-} from "@/components/IdealoProductCarousel";
-import { LivePriceData } from "@/components/landing/IdealoProductCard";
+import type { CarouselProduct } from "@/components/IdealoProductCarousel";
+import type { LivePriceData } from "@/components/landing/IdealoProductCard";
 import { CategoryNav } from "@/components/layout/CategoryNav";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { LazySection } from "@/components/ui/LazySection";
-import { CountryCode } from "@/lib/countries";
-import { Category } from "@/types";
+import type { CountryCode } from "@/lib/countries";
+import type { Category } from "@/types";
 import dynamic from "next/dynamic";
 import { IdealoHero } from "./IdealoHero";
 import { IdealoSection } from "./IdealoSection";
@@ -20,9 +17,21 @@ const DynamicProductCarousel = dynamic(
     ),
   {
     loading: () => (
-      <div className="bg-muted h-[400px] w-full animate-pulse rounded-md" />
+      <div className="bg-white px-4 py-12">
+        <div className="mx-auto max-w-[1280px]">
+          <div className="mb-4 h-6 w-48 animate-pulse rounded bg-gray-200" />
+          <div className="flex gap-4 overflow-hidden">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div
+                key={i}
+                className="h-[320px] w-[220px] shrink-0 animate-pulse rounded bg-gray-100"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
     ),
-    ssr: true, // Keep SSR for SEO and initial HTML
+    ssr: true,
   },
 );
 
@@ -77,11 +86,11 @@ export function IdealoHomePage({
         </IdealoSection>
       ) : null}
 
-      {/* Bestseller Carousel - Just below hero, might be visible on load */}
+      {/* Bestseller Carousel - Just below hero, likely visible or near-visible */}
       {bestsellers.length > 0 ? (
-        <LazySection placeholderHeight="400px" rootMargin="0px">
+        <LazySection placeholderHeight="400px" rootMargin="300px">
           <IdealoSection variant="white">
-            <IdealoProductCarousel
+            <DynamicProductCarousel
               title="Bestseller"
               products={bestsellers}
               livePriceMap={livePriceMap}
@@ -93,7 +102,7 @@ export function IdealoHomePage({
 
       {/* Top Deals - Below the fold */}
       {deals.length > 0 ? (
-        <LazySection placeholderHeight="400px" rootMargin="0px">
+        <LazySection placeholderHeight="400px" rootMargin="300px">
           <IdealoSection variant="lightBlue">
             <DynamicProductCarousel
               title="Aktuelle Deals für dich"
@@ -107,7 +116,7 @@ export function IdealoHomePage({
 
       {/* New Arrivals - Below the fold */}
       {newArrivals.length > 0 ? (
-        <LazySection placeholderHeight="400px" rootMargin="0px">
+        <LazySection placeholderHeight="400px" rootMargin="300px">
           <IdealoSection variant="white">
             <DynamicProductCarousel
               title="Neuheiten"

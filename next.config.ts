@@ -572,6 +572,8 @@ const configWithSentry = withSentryConfig(
     // Sentry Bundle Size Optimizations
     bundleSizeOptimizations: {
       excludeDebugStatements: true,
+      excludeReplayIframe: true,
+      excludeReplayWorker: true,
     },
 
     // Sentry Webpack Plugin Options (Fallback for legacy builds)

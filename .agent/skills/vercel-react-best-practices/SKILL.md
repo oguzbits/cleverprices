@@ -108,6 +108,14 @@ Avoid user-visible skeletons (pulse elements) or route-level `loading.tsx` for c
 - **External Handler**: All compression (Brotli/Gzip) must be handled by the reverse proxy (Traefik).
 - **RSC Payloads**: The proxy **MUST** include `text/x-component` in its allowed compression types. Missing this will result in massive uncompressed data transfers during navigations.
 
+### 6. Bundle Hygiene & Dynamic Imports (CRITICAL)
+
+- **No Double-Bundling**: Never import a component statically at the top of a file if you also plan to import it using `next/dynamic` later in the same file. This results in the component being included in the main bundle AND its own chunk.
+- **Type-Only Imports**: Always use `import type` for interfaces, types, and metadata objects from other modules. This ensures the module doesn't accidentally get pulled into the runtime bundle.
+- **Lazy Loading Strategy**: Use `LazySection` with a healthy `rootMargin` (e.g., 300px) for below-the-fold content. This prevents heavy React mounting tasks (Long Tasks) from blocking the main thread during initial page load.
+- **Package Optimization**: Ensure `optimizePackageImports` in `next.config.ts` includes heavy libraries like `lucide-react` and Radix UI.
+- **Modern Target**: Target `ES2022` or higher in `tsconfig.json` to reduce polyfill weight for modern browsers.
+
 ---
 
 ## Examples
