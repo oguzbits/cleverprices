@@ -127,16 +127,31 @@ export function getAlternateLanguages(
     alternates[lang] = url.startsWith("http") ? url : `${SITE_URL}${url}`;
   });
 
-  // Primary market is Germany
+  // Simplified Hreflang: Only 'de' and 'x-default' to avoid redundancy penalties
   if (!alternates["de"]) {
     alternates["de"] = `${SITE_URL}${cleanPath}`;
   }
 
-  if (!alternates["de-DE"]) {
-    alternates["de-DE"] = `${SITE_URL}${cleanPath}`;
+  return alternates;
+}
+
+/**
+ * Truncates a title to stay within SEO recommended limits (50-70 characters).
+ * @param title The title string to truncate
+ * @param maxLength Maximum length before truncation (default 65)
+ */
+export function truncateTitle(title: string, maxLength: number = 65): string {
+  if (title.length <= maxLength) return title;
+
+  // Try to truncate at the last space before maxLength
+  const truncated = title.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(" ");
+
+  if (lastSpace > maxLength * 0.7) {
+    return truncated.substring(0, lastSpace) + "...";
   }
 
-  return alternates;
+  return truncated + "...";
 }
 
 /**

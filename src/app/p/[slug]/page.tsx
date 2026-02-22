@@ -1,7 +1,11 @@
 import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
-import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
+import {
+  getAlternateLanguages,
+  getOpenGraph,
+  truncateTitle,
+} from "@/lib/metadata";
 import { type Product } from "@/lib/product-registry";
 import {
   getAllProductSlugs,
@@ -212,9 +216,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? ` - ${pricePerUnit}€ pro ${category.unitType}`
         : "";
 
-    // SEO-optimized Title
+    // SEO-optimized Title: Ensure it stays under 65 chars
+    // Pattern: [Clean Name] | Preisvergleich | Brand
     const seoTitle = isParentView ? identity.fullModel : product.title;
-    const title = `${seoTitle}${unitPriceText} | Hardware Preisvergleich | ${BRAND_DOMAIN}`;
+    const baseTitle = `${seoTitle} | Preisvergleich`;
+    const title = truncateTitle(baseTitle, 60) + ` | ${BRAND_DOMAIN}`;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
     // Try enriched description first
@@ -223,8 +229,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description =
       enrichedDesc ||
       (pricePerUnit && category?.unitType
-        ? `${product.title} zum besten Preis kaufen. Aktuell nur ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Jetzt Angebote in Deutschland vergleichen und sparen!`
-        : `${product.title} günstig kaufen. Aktueller Bestpreis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Finden Sie jetzt das beste Hardware-Angebot bei ${BRAND_DOMAIN}.`);
+        ? `${product.title} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_DOMAIN}.`
+        : `${product.title} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_DOMAIN}.`);
 
     // Use the ID-prefixed slug for the canonical URL to match the sitemap exactly
     const canonicalPath = getProductPath(product.id, product.slug);

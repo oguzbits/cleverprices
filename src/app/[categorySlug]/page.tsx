@@ -15,6 +15,7 @@ import {
   generateKeywords,
   getAlternateLanguages,
   getOpenGraph,
+  truncateTitle,
 } from "@/lib/metadata";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
 import { FilterParams } from "@/lib/server/category-products";
@@ -107,16 +108,14 @@ export async function generateMetadata({
 
   const canonicalUrl = `https://${BRAND_DOMAIN}/${category.slug}`;
 
-  // SEO-optimized title: [Category] + [Value Prop] + Brand
-  const unitSuffix = category.unitType
-    ? ` - Günstigster Preis pro ${category.unitType}`
-    : " - Günstig kaufen & sparen";
-  const title = `${category.name}${unitSuffix} | ${BRAND_DOMAIN}`;
+  // SEO-optimized title: [Category] | Preisvergleich | Brand
+  const baseTitle = `${category.name} | Preisvergleich`;
+  const title = truncateTitle(baseTitle, 60) + ` | ${BRAND_DOMAIN}`;
 
-  // Action-oriented description (Modern SEO skill: seo-03-meta-descriptions)
+  // Action-oriented description
   const description = category.unitType
-    ? `Hardware-Preisvergleich: Vergleichen Sie ${category.name} nach Preis pro ${category.unitType}. Finden Sie die besten Angebote in Deutschland und sparen Sie beim Hardware-Kauf.`
-    : `Vergleichen Sie Preise für ${category.name} von Top-Marken. Finden Sie jetzt die günstigsten Hardware-Angebote bei ${BRAND_DOMAIN}.`;
+    ? `${category.name} Preisvergleich. Beste Angebote nach Preis pro ${category.unitType} filtern & in Deutschland sparen bei ${BRAND_DOMAIN}.`
+    : `Günstige ${category.name} von Top-Marken im Preisvergleich. Jetzt Hardware-Angebote finden & sparen bei ${BRAND_DOMAIN}.`;
 
   return {
     title,
