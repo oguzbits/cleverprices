@@ -16,7 +16,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface IdealoTopBarProps {
   categoryName: string;
-  productCount: number;
+  productCount?: number;
   currentView: string;
   currentSort: string;
 }
@@ -66,9 +66,11 @@ export function IdealoTopBar({
       {/* LEFT: Category Title + Count */}
       <h1 className="sr-topBar__title text-[18px] font-bold text-[#2d2d2d]">
         {categoryName}
-        <span className="sr-topBar__productCount ml-1.5 text-[14px] font-normal text-[#767676]">
-          ({productCount.toLocaleString("de-DE")})
-        </span>
+        {typeof productCount === "number" && (
+          <span className="sr-topBar__productCount ml-1.5 text-[14px] font-normal text-[#767676]">
+            ({productCount.toLocaleString("de-DE")})
+          </span>
+        )}
       </h1>
 
       {/* RIGHT: Sort + View Toggle */}

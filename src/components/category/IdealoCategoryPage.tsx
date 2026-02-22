@@ -27,6 +27,7 @@ import {
 } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
+import { Suspense } from "react";
 
 // Sub-components
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
@@ -122,21 +123,33 @@ export async function IdealoCategoryPage({
         >
           {/* FILTERS (Sidebar) */}
           <ComponentErrorBoundary name="CategoryFilters">
-            <AsyncFilterPanel
-              category={category}
-              productDataPromise={productDataPromise}
-              lockedFilters={lockedFilters}
-            />
+            <Suspense
+              fallback={
+                <div className="sr-filterBar hidden min-[840px]:block min-[840px]:max-w-[33.33333%] min-[840px]:basis-[33.33333%] min-[960px]:max-w-[25%] min-[960px]:basis-[25%]" />
+              }
+            >
+              <AsyncFilterPanel
+                category={category}
+                productDataPromise={productDataPromise}
+                lockedFilters={lockedFilters}
+              />
+            </Suspense>
           </ComponentErrorBoundary>
 
           {/* PRODUCT LIST */}
           <ComponentErrorBoundary name="CategoryProductList">
-            <AsyncProductList
-              category={category}
-              countryCode={countryCode}
-              searchParams={searchParams}
-              productDataPromise={productDataPromise}
-            />
+            <Suspense
+              fallback={
+                <div className="sr-searchResult__resultPanel w-full min-[840px]:max-w-[66.66667%] min-[840px]:basis-[66.66667%] min-[840px]:pl-[15px] min-[960px]:max-w-[75%] min-[960px]:basis-[75%]" />
+              }
+            >
+              <AsyncProductList
+                category={category}
+                countryCode={countryCode}
+                searchParams={searchParams}
+                productDataPromise={productDataPromise}
+              />
+            </Suspense>
           </ComponentErrorBoundary>
         </div>
 

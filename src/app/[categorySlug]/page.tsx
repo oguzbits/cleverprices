@@ -152,17 +152,13 @@ export default async function DedicatedCategoryPage({
 
   // The "Shell": Immediate rendering of the background and basic structural container.
   // This ensures the URL updates instantly and avoids the "frozen" UI feeling.
-  // Using bg-secondary to match child category pages, or bg-white for parents.
-  // (IdealoCategoryPage uses bg-secondary)
   return (
     <div className="bg-secondary min-h-screen">
-      <Suspense fallback={null}>
-        <CategoryPageContent
-          categorySlug={categorySlug as CategorySlug}
-          category={category}
-          searchParams={searchParams}
-        />
-      </Suspense>
+      <CategoryPageContent
+        categorySlug={categorySlug as CategorySlug}
+        category={category}
+        searchParams={searchParams}
+      />
     </div>
   );
 }
@@ -176,7 +172,7 @@ async function CategoryPageContent({
   category: Category;
   searchParams: Promise<FilterParams>;
 }) {
-  // Check if category is empty to avoid showing empty results pages
+  // 1. Initial checks (Fast, usually cached)
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
   const children = getChildCategories(categorySlug);
   const isEmpty =
@@ -186,102 +182,88 @@ async function CategoryPageContent({
 
   if (isEmpty) notFound();
 
-  const childCategories = children;
-  let showNotFound = false;
+  // 2. Identify view type
+  const isParent = children.length > 0;
 
-  // Data for the hub view
-  let hubData: {
-    bestsellers: any[];
-    newProducts: any[];
-    deals: any[];
-    breadcrumbItems: any[];
-  } | null = null;
-
-  if (childCategories.length > 0) {
-    try {
-      // Fetch products for internal linking sections (Optimized single round trip)
-      const { bestsellers, newProducts, deals } = await getParentCategoryData(
-        categorySlug,
-        DEFAULT_COUNTRY,
-      ).catch(() => ({ bestsellers: [], newProducts: [], deals: [] }));
-
-      // Transform products to LeanProduct format for consistent card styling
-      const transformProduct = (p: any) => ({
-        id: p.id,
-        slug: p.slug,
-        title: p.title,
-        subtitle: p.subtitle,
-        image: p.image,
-        price: p.prices[DEFAULT_COUNTRY] || 0,
-        pricePerUnit: p.pricePerUnit,
-        capacity: p.capacity,
-        capacityUnit: p.capacityUnit,
-        formFactor: p.formFactor,
-        brand: p.brand,
-        rating: p.rating,
-        reviewCount: p.reviewCount,
-        salesRank: p.salesRank,
-        monthlySold: p.monthlySold,
-        variationAttributes: p.variationAttributes,
-        category: p.category,
-        listPrice: p.listPrice?.[DEFAULT_COUNTRY],
-        savings: p.savings,
-      });
-
-      // Build breadcrumbs for the parent view
-      const breadcrumbItems = [
-        { name: "Home", href: "/" },
-        ...getBreadcrumbs(categorySlug).map((crumb) => ({
-          name: crumb.name,
-          href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
-        })),
-      ];
-
-      hubData = {
-        bestsellers: bestsellers.map(transformProduct),
-        newProducts: newProducts.map(transformProduct),
-        deals: deals.map(transformProduct),
-        breadcrumbItems,
-      };
-    } catch (error: any) {
-      if (
-        error?.digest?.startsWith("NEXT_") ||
-        error?.digest === "HANGING_PROMISE_REJECTION" ||
-        error?.message?.includes("searchParams") ||
-        error?.message?.includes("notFound")
-      ) {
-        throw error;
-      }
-      console.error(`[Page Error] Category ${categorySlug}:`, error);
-      showNotFound = true;
-    }
-  }
-
-  if (showNotFound) {
-    notFound();
-  }
-
-  // If it's a hub (has children), show the parent view with product sections
-  if (hubData) {
+  if (isParent) {
+    // Parent View Hub
     return (
-      <ParentCategoryView
-        parentCategory={stripCategoryIcon(category)}
-        childCategories={childCategories.map(stripCategoryIcon)}
-        bestsellers={hubData.bestsellers}
-        newProducts={hubData.newProducts}
-        deals={hubData.deals}
-        breadcrumbItems={hubData.breadcrumbItems}
-      />
+      <Suspense fallback={null}>
+        <ParentCategoryViewLoader
+          category={category}
+          categorySlug={categorySlug}
+          children={children}
+        />
+      </Suspense>
     );
   }
 
-  // If it's a child category, show the NEW Idealo-style products view
+  // 3. Child Category View (Idealo style)
+  // We pass the promise of searchParams down to avoid awaiting it here if we just want to start rendering the shell.
+  // Actually, IdealoCategoryPage already does Suspense internally for its heavy parts.
   const filters = await searchParams;
+
   return (
     <IdealoCategoryPage
       category={stripCategoryIcon(category)}
       countryCode={DEFAULT_COUNTRY}
       searchParams={filters}
+    />
+  );
+}
+
+async function ParentCategoryViewLoader({
+  category,
+  categorySlug,
+  children,
+}: {
+  category: Category;
+  categorySlug: CategorySlug;
+  children: Category[];
+}) {
+  const { bestsellers, newProducts, deals } = await getParentCategoryData(
+    categorySlug,
+    DEFAULT_COUNTRY,
+  ).catch(() => ({ bestsellers: [], newProducts: [], deals: [] }));
+
+  const transformProduct = (p: any) => ({
+    id: p.id,
+    slug: p.slug,
+    title: p.title,
+    subtitle: p.subtitle,
+    image: p.image,
+    price: p.prices[DEFAULT_COUNTRY] || 0,
+    pricePerUnit: p.pricePerUnit,
+    capacity: p.capacity,
+    capacityUnit: p.capacityUnit,
+    formFactor: p.formFactor,
+    brand: p.brand,
+    rating: p.rating,
+    reviewCount: p.reviewCount,
+    salesRank: p.salesRank,
+    monthlySold: p.monthlySold,
+    variationAttributes: p.variationAttributes,
+    category: p.category,
+    listPrice: p.listPrice?.[DEFAULT_COUNTRY],
+    savings: p.savings,
+  });
+
+  const breadcrumbItems = [
+    { name: "Home", href: "/" },
+    ...getBreadcrumbs(categorySlug).map((crumb) => ({
+      name: crumb.name,
+      href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
+    })),
+  ];
+
+  return (
+    <ParentCategoryView
+      parentCategory={stripCategoryIcon(category)}
+      childCategories={children.map(stripCategoryIcon)}
+      bestsellers={bestsellers.map(transformProduct)}
+      newProducts={newProducts.map(transformProduct)}
+      deals={deals.map(transformProduct)}
+      breadcrumbItems={breadcrumbItems}
     />
   );
 }

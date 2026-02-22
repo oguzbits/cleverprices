@@ -9,6 +9,7 @@ import { FilterParams } from "@/lib/server/category-products";
 import { formatTechText } from "@/lib/utils/formatting";
 import { X } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { IdealoFilterPanel } from "./IdealoFilterPanel";
 import { IdealoResultList } from "./IdealoResultList";
 import { IdealoTopBar } from "./IdealoTopBar";
@@ -20,24 +21,57 @@ interface AsyncTopBarProps {
   productDataPromise: Promise<any>;
 }
 
-export async function AsyncTopBar({
+export function AsyncTopBar({
   categoryName,
   searchParams,
   productDataPromise,
 }: AsyncTopBarProps) {
-  const data = await productDataPromise;
   const viewMode = searchParams.view || "grid";
+  const currentSort =
+    typeof searchParams === "object" && "sort" in searchParams
+      ? (searchParams.sort as string)
+      : "popular";
 
+  return (
+    <div className="sr-topBar mb-4 flex flex-col gap-3 min-[840px]:flex-row min-[840px]:items-center min-[840px]:justify-between">
+      <Suspense
+        fallback={
+          <IdealoTopBar
+            categoryName={categoryName}
+            currentView={viewMode}
+            currentSort={currentSort}
+          />
+        }
+      >
+        <AsyncTopBarContent
+          categoryName={categoryName}
+          viewMode={viewMode}
+          currentSort={currentSort}
+          productDataPromise={productDataPromise}
+        />
+      </Suspense>
+    </div>
+  );
+}
+
+async function AsyncTopBarContent({
+  categoryName,
+  viewMode,
+  currentSort,
+  productDataPromise,
+}: {
+  categoryName: string;
+  viewMode: string;
+  currentSort: string;
+  productDataPromise: Promise<any>;
+}) {
+  const data = await productDataPromise;
   return (
     <IdealoTopBar
       categoryName={categoryName}
       productCount={data.filteredCount}
       currentView={viewMode}
-      currentSort={
-        typeof searchParams === "object" && "sort" in searchParams
-          ? (searchParams.sort as string)
-          : "popular"
-      }
+      currentSort={currentSort}
     />
   );
 }
