@@ -43,3 +43,9 @@ If product data is corrupt, the user loses trust.
 ## Execution
 
 When asked to run `/benchmarks`, the AI Agent should execute a comprehensive scan encompassing the localized tests in `bun test src`, the React compiler rules, bundled size reports, and SEO metadata verifications.
+
+// turbo
+
+```bash
+bun run audit:seo
+```

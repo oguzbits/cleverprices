@@ -23,9 +23,9 @@ A modular set of rules to maximize search visibility and organic traffic.
 ## ✅ REQUIRED
 
 | Element     | Target        | Example                                                                    |
-| ----------- | ------------- | -------------------------------------------------------------------------- | ------------- |
-| Title       | 50-60 chars   | `Samsung 990 Pro 2TB SSD - Best Price                                      | CleverPrices` |
-| Description | 150-160 chars | `Compare prices for Samsung 990 Pro 2TB. Save up to 30% across Amazon DE.` |
+| ----------- | ------------- | -------------------------------------------------------------------------- | -------------- | ----------------- |
+| Title       | < 65 chars    | `Samsung 990 Pro 2TB                                                       | Preisvergleich | cleverprices.com` |
+| Description | 150-160 chars | `Vergleiche Preise für Samsung 990 Pro 2TB. Bis zu 30% sparen bei Amazon.` |
 | H1          | One per page  | `Samsung 990 Pro 2TB SSD Preisvergleich`                                   |
 | LCP         | < 2.5s        | Use Next/Image, preload fonts                                              |
 
@@ -39,8 +39,8 @@ A modular set of rules to maximize search visibility and organic traffic.
 
 ### 2. On-Page
 
-- [Titles](rules/seo-02-title-tags.md) - 50-60 chars, Keyword + Hook + Brand
-- [Descriptions](rules/seo-03-meta-descriptions.md) - Action Verb + UVP + CTA
+- [Titles](rules/seo-02-title-tags.md) - Max 65 chars, [Name] | [Hook] | Brand
+- [Descriptions](rules/seo-03-meta-descriptions.md) - Action Verb + UVP + Hook
 - [Structure](rules/seo-04-structure.md) - One H1, logical H2/H3s
 
 ### 3. Technical
@@ -54,15 +54,15 @@ A modular set of rules to maximize search visibility and organic traffic.
 
 ### Global SEO (Brand Authority)
 
-- **JSON-LD Schema**: Always include `GlobalSchema` in the root layout. This defines the **Organization** (Brand, Logo, Social) and **WebSite** (Sitelinks Search Box).
-- **Internal Linking**: Maintain a list of top categories in the Footer. This helps distribute link equity to high-value landing pages.
+- **JSON-LD Schema**: Always include `GlobalSchema` and `BreadcrumbStructuredData`. This ensures Google understands the site hierarchy and displays rich snippets.
+- **Internal Linking**: Maintain a list of top categories in the Footer. This helps distribute link equity and reduces crawl depth.
 
 ```tsx
 // Required meta structure
 export function generateMetadata({ params }) {
   return {
-    title: `${product.title} - Preisvergleich | CleverPrices`,
-    description: `${product.title} ab ${price}€. Vergleiche Preise und spare bis zu ${savings}%.`,
+    title: truncateTitle(`${product.title} | Preisvergleich | ${BRAND_DOMAIN}`),
+    description: `${product.title} günstig kaufen. Bis zu 30% sparen. Aktueller Bestpreis: ${price}€.`,
     openGraph: {
       type: 'product',
       ...
@@ -75,3 +75,25 @@ export function generateMetadata({ params }) {
 
 - Include brand + capacity in title where relevant
 - Add structured data for product lists
+
+## 🤖 Generative Engine Optimization (GEO/AEO)
+
+To ensure the site is cited by Perplexity, ChatGPT, and Google AI Overviews:
+
+### 1. AI Bot Management (robots.txt)
+
+Always allow these specialized agents to crawl product data:
+
+- `GPTBot`, `PerplexityBot`, `Google-Extended`, `anthropic-ai`, `Claude-Web`
+
+### 2. Citation-First Content
+
+- **Answer-First**: Place a concise summary/verdict at the top of category and product pages.
+- **Data Densification**: Use tables for price-per-unit and specs. AI agents prioritize structured tabular data for summaries.
+- **FAQ Schema**: Use `FAQPage` JSON-LD for common hardware queries (e.g., "Best SSD under 100€").
+
+### 3. Structured Data Requirements
+
+- **ItemList**: For categories to show product rankings.
+- **Product**: For PDPs with high-frequency price updates.
+- **BreadcrumbList**: Using `SITE_URL` for absolute URI consistency.

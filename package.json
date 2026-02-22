@@ -32,6 +32,7 @@
     "slugs:fix": "bun run scripts/maintenance/regenerate-slugs.ts",
     "identity:rebuild": "bun run scripts/intelligence/rebuild-identity-clusters.ts",
     "seo:generate": "bun run scripts/growth/seo-niche-generator.ts",
+    "audit:seo": "bun run scripts/maintenance/seo-audit.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

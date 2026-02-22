@@ -14,11 +14,14 @@ Use the established AI skill to review pages:
 - Validate `generateMetadata` exports in Next.js.
 - Ensure only one `<h1>` tag exists and describes the target keyword exactly.
 
-## 2. Sitemap Generation
+## 2. Sitemap & Crawl Hygiene
 
-Sitemaps map our extensive product catalog. Ensure outdated or blacklisted URLs (`/produkt/old-slug`) are excluded from `sitemap.xml`.
+Maintain a clean "Crawl Budget" to ensure bots focus on high-value pages.
 
-- **Review:** Make sure redirect lists in `next.config.ts` or routing middleware properly 301.
+- **Quality Filtering**: Only include `optimized` or `processed` products in `sitemap.xml`. Exclude raw `scavenged` data.
+- **Noise Blocking**: Ensure `robots.txt` disallows `/monitoring/` and `/*?_rsc=` parameters.
+- **AI Bot Audit**: Periodically verify that new AI agents (e.g. `PerplexityBot`) are explicitly allowed in `robots.txt` to ensure GEO visibility.
+- **Redirects**: Avoid "Redirect Loops" or "Soft 404s" in `next.config.ts`.
 
 ## 3. Ideation / SEO Niche Generation
 
