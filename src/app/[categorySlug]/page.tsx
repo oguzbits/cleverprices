@@ -32,15 +32,34 @@ interface Props {
 
 // Generate static params for categories
 // NOTE: During the build phase, the database is excluded to keep Docker images thin.
-// This function returns a placeholder during build, and relies on on-demand generation at runtime.
+// We pre-render the top 50 most popular categories to ensure instant TTFB/FCP for 80% of users.
 export async function generateStaticParams() {
   const isBuild =
     process.env.NEXT_PHASE === "phase-production-build" ||
     process.env.BUILD_PHASE === "1";
 
   if (isBuild) {
-    // Explicitly return a placeholder during build to avoid DB warnings.
-    return [{ categorySlug: "build-time-placeholder" }];
+    // These categories will be pre-rendered during build.
+    // They will serve the static Shell immediately, and stream results via PPR.
+    const topCategories = [
+      "smartphones",
+      "notebooks",
+      "tablets",
+      "tvs",
+      "headphones",
+      "gpu",
+      "ram",
+      "ssds",
+      "consoles",
+      "elektroartikel",
+      "computer",
+      "telekommunikation",
+      "haushaltselektronik",
+      "smartwatches",
+      "pc-komponenten",
+    ].map((slug) => ({ categorySlug: slug }));
+
+    return [...topCategories, { categorySlug: "build-time-placeholder" }];
   }
 
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
