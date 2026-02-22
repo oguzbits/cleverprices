@@ -41,6 +41,14 @@ Generate a comprehensive quality report detailing orphaned products or corrupted
 bun run quality:report
 ```
 
+## 5. Price Sync & Cache Warming
+
+Price updates automatically trigger the cache warmer in production. To run a manual targeted warm:
+
+```bash
+bun run warm-cache --lite [slug1] [slug2]
+```
+
 ## Execution Policy
 
 These scripts should be run manually (or proposed by an AI agent) whenever there are widespread data issues or before a major marketing launch.

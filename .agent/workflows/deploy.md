@@ -48,6 +48,13 @@ This workflow ensures all checks pass before pushing changes, which are then aut
 
 6. **Git Push for Dokploy**
    Pushing to the `main` branch will automatically trigger a Dokploy deployment from the GitHub repository source.
+
    ```bash
    git push origin main
+   ```
+
+7. **Proactive Cache Warming**
+   After the deployment is live, trigger a site-wide warm cycle to ensure instant load times.
+   ```bash
+   bun run warm-cache --lite
    ```

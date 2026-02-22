@@ -80,6 +80,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
       salesRank: products.salesRank,
       rating: products.rating,
       reviewCount: products.reviewCount,
+      categorySlug: products.category,
       // Current price state for diffing (lean schema)
       currentPrice: prices.price,
       currentUsedPrice: prices.usedPrice,
@@ -116,6 +117,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
   let updated = 0;
   let failed = 0;
+  const affectedCategories = new Set<string>();
 
   // Create batches
   const batches = [];
@@ -296,6 +298,10 @@ async function updatePrices(country: CountryCode): Promise<void> {
                   },
                 }),
             );
+
+            if (product.categorySlug) {
+              affectedCategories.add(product.categorySlug);
+            }
           }
 
           if (sqlQueries.length > 0 && !isDryRun) {
@@ -328,9 +334,15 @@ async function updatePrices(country: CountryCode): Promise<void> {
   const WARM_CACHE_ENABLED = process.env.WARM_CACHE !== "false"; // Default to true unless explicitly disabled
   if (WARM_CACHE_ENABLED && !isDryRun) {
     try {
-      console.log("\n🔥 Triggering Cache Warmer (Lite Mode)...");
-      // Trigger warmer in lite mode by default for speed, but ensure it runs.
-      execSync(`bun run warm-cache --lite`, { stdio: "inherit" });
+      if (affectedCategories.size > 0 && affectedCategories.size < 10) {
+        const slugs = Array.from(affectedCategories).join(" ");
+        console.log(`\n🎯 Triggering Targeted Cache Warmer for: ${slugs}`);
+        execSync(`bun run warm-cache ${slugs}`, { stdio: "inherit" });
+      } else {
+        console.log("\n🔥 Triggering Cache Warmer (Lite Mode)...");
+        // Trigger warmer in lite mode by default for speed, but ensure it runs.
+        execSync(`bun run warm-cache --lite`, { stdio: "inherit" });
+      }
     } catch (err) {
       console.error(
         "\n   ❌ Cache warming failed:",

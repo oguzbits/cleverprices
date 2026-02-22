@@ -41,15 +41,15 @@ If a build or a change introduces a risk of "Stale Hijacking" (where a page stay
 
 ## 🏗️ Static Generation Strategy
 
-### Dynamic-on-Demand (DoD)
+### Warm-Static Architecture
 
-CleverPrices uses a **"Dynamic-on-Demand"** model for PDPs and Category pages.
+CleverPrices uses a **"Warm-Static"** model for PDPs and Category pages.
 
-- **Build Phase**: The database is intentionally **excluded** from the Docker build context (via `.dockerignore`) to favor thin, portable images.
-- **`generateStaticParams`**: During the build, these functions return an empty array (or a placeholder) because the database is inaccessible.
-- **Runtime**: When a user or crawler (Googlebot) hits a page for the first time:
-  1. The page is generated on-the-fly (~200ms).
-  2. It is immediately frozen into the **Cache Life Layer** (15 minutes).
-  3. Subsequent hits are served instantly as static HTML.
+- **Build Phase**: The database is intentionally **excluded** from the Docker build context (via `.dockerignore`) to favor thin, portable images. `generateStaticParams` returns placeholders.
+- **Warming Phase**: After every deployment or price update (Keepa Worker), we trigger the `warm-cache` script.
+- **Runtime**:
+  1. The page is proactively rendered in the background by the warmer.
+  2. It is frozen into the **Cache Life Layer** (15 minutes).
+  3. Real users (and Google) always hit **Static Cache** with < 40ms TTFB.
 
-This strategy prevents "Static-Data-Baking" where local development data accidentally ends up in the production bundle.
+This strategy combines the speed of SSG with the freshness of a dynamic app, without the long build times.

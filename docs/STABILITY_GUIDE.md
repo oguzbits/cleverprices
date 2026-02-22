@@ -37,7 +37,8 @@ To maintain high deployment velocity and image portability:
 - The `.db` file is **not present** during the `next build` phase.
 - This is enforced via `.dockerignore`.
 - **Why**: Prerendering 7,000+ pages during build would take 20+ minutes and risk baking stale local data into the production image.
-- **Optimization**: We rely on Next.js 16's `use cache` to handle on-demand static generation at runtime.
+- **Optimization**: We use a **Warm-Static Architecture**. Instead of baking data during build, the `warm-cache` script proactively hydrates the runtime cache after deployments and price updates.
+- **The Warmer**: Triggered automatically by `update-prices.ts` and the **Keepa Worker**.
 
 ---
 
@@ -52,7 +53,15 @@ To protect the user experience and SEO rankings:
 
 ---
 
-## 9. SQLite Performance Tuning
+## 9. Safe Warming (Resource Protection)
+
+To prevent the cache warmer from competing with real user traffic or search engine crawlers:
+
+- **CPU Monitoring**: The `warm-cache` script monitors `os.loadavg()`.
+- **Backoff**: If CPU load exceeds 95% of available capacity, the warmer pauses for 10 seconds.
+- **Priority**: Users and Googlebot always get priority over background rendering cycles.
+
+## 10. SQLite Performance Tuning
 
 For maximum query speed on the bundled Lite DB, CleverPrices uses several optimization strategies.
 

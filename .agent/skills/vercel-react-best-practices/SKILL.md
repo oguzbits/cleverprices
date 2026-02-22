@@ -50,28 +50,18 @@ export async function getCategoryProducts() {
 }
 ```
 
-### Instant Shell Pattern (PDP)
+### Zero-Flicker Rendering (Cohesive SSR)
 
-For Product Detail Pages, always separate static metadata (title, image, specs) from dynamic live data (prices, offers, charts).
+Avoid user-visible skeletons (pulse elements) or route-level `loading.tsx` for core landing pages (Category/PDP).
 
-```tsx
-// IdealoProductPage.tsx
-export default async function Page({ product }) {
-  return (
-    <div>
-      <Header product={product} /> {/* Instant - no await */}
-      <Suspense fallback={<PriceSkeleton />}>
-        <LivePrice productId={product.id} /> {/* Streamed */}
-      </Suspense>
-      <Suspense fallback={<ChartSkeleton />}>
-        <PriceChart productId={product.id} /> {/* Streamed */}
-      </Suspense>
-    </div>
-  );
-}
-```
+- **Pattern**: Await data on the server and render the complete view.
+- **Why**: Layout stability (Zero CLS) and a premium "Idealo-style" stability are preferred over incremental streaming.
+- **Implementation**:
+  - Delete `loading.tsx` for the route.
+  - Await the main data fetching in the page component.
+  - No `Suspense` placeholders that cause layout shifts.
 
-**Benefits**: TTFB < 10ms, Zero Layout Shift (CLS), and immediate visual feedback.
+**Benefits**: Smooth transitions, zero layout shift, and immediate stability.
 
 ### Image Optimization
 
@@ -104,9 +94,11 @@ export default async function Page({ product }) {
 - `server-cache-react` - Use `react.cache()` for per-request deduplication of data fetching.
 - `server-deduplication` - Wrap shared logic (like `resolveProductFromRoute`) in `cache()` to prevent redundant metadata vs. page DB queries.
 
-### 4. Resource-Aware Patterns (PROJECT-SPECIFIC)
+### 4. Warm-Static Architecture (CRITICAL)
 
-- [Resource-Aware Patterns](rules/resource-aware-patterns.md) - Vercel Hobby limits
+- **Do NOT rely on build-time SSG** for large catalogs (database is excluded from build).
+- **Proactive Hydration**: Trigger the `warm-cache` script after deployments and price updates.
+- **Safe Warming**: Ensure the warmer monitors `os.loadavg()` to avoid competing with real traffic or Google crawlers.
 
 ---
 
