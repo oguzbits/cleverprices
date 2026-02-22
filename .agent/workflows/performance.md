@@ -4,31 +4,57 @@ description: Analyze and improve Fast LCP, TTFB, and React bundle sizes
 
 # ⚡ Performance Tuning
 
-This workflow focuses on the physical speed of the application, prioritizing mobile-first rendering optimizations.
+This workflow focuses on the physical speed of the application, prioritizing mobile-first rendering optimizations and React Compiler health.
 
-## 1. Apply React Vercel Best Practices
+## 1. Compliance Audit (React Doctor)
 
-Utilize the `vercel-react-best-practices` skill during development.
+Always run the React Doctor before large performance pushes to find hidden re-renders and compiler bypasses.
 
-- The assistant should proactively cross-reference components against this skill.
-- Goals: Leverage React Cache, deduplicate fetch requests, and minimize "use client" components.
-
-## 2. Bundle Analyzer
-
-Run the Next.js Bundle Analyzer to spot large dependencies dragging down metrics.
+// turbo
 
 ```bash
-ANALYZE=true bun run build
+bun run audit:react
 ```
 
-## 3. Metric Checks (LCP & TTFB)
+- **Goal**: Maintain 90+ health score.
+- **Check**: Look for "React Compiler: Bypassed" warnings. These indicate manual `useMemo` or complex patterns blocking optimization.
 
-If a user requests a performance fix, address the core trio:
+## 2. Zero-Flicker Directive (UX Stability)
 
-- **Images:** Ensure `next/image` is used optimally. Product images must not block LCP.
-- **SQL:** Trace slow SQLite queries impacting TTFB.
-- **Caching:** Ensure Redis is catching the request before the DB.
+CleverPrices prioritizes a premium, stable feel (Zero CLS).
 
-## 4. Lighthouse Audit
+- **Rule**: Do NOT use `loading.tsx` or skeletons for core Category and PDP routes.
+- **Check**: Ensure data is awaited on the server and passed to the component.
+- **Verification**: Use the "Network Throttle" (3G) in Browser Tools. The page should wait, then display fully formed (no height jumping).
 
-Use the Browser Subagent to open DevTools, run a Lighthouse score check on the local dev server, and retrieve the metrics.
+## 3. Bundle Analyzer
+
+Spot large dependencies or unnecessary Client Components.
+
+// turbo
+
+```bash
+bun run perf:analyze
+```
+
+- **Action**: Use `next/dynamic` for heavy visual components (Charts, Modals) that aren't above the fold.
+- **Action**: Check if `@sentry/nextjs` is dragging down the client-side bundle; optimize its init if necessary.
+
+## 4. TTFB & Cache Warmth
+
+If TTFB (Time to First Byte) is > 200ms on warm pages:
+
+- **Check**: Is `cacheLife()` applied effectively to the data fetcher?
+- **Action**: Run the cache warmer to prime Redis.
+  ```bash
+  bun run warm-cache
+  ```
+- **Optimization**: Verify SQLite WAL mode and checkpoint status if DB reads are slow.
+
+## 5. Automated Verification (Lighthouse)
+
+Use the Browser Subagent to run a mobile Lighthouse score check on the local dev server.
+
+- **KPI**: LCP < 2.5s (Mobile).
+- **KPI**: TTFB < 100ms (Warm Cache).
+- **KPI**: CLS < 0.1.

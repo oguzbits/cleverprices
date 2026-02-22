@@ -33,6 +33,8 @@
     "identity:rebuild": "bun run scripts/intelligence/rebuild-identity-clusters.ts",
     "seo:generate": "bun run scripts/growth/seo-niche-generator.ts",
     "audit:seo": "bun run scripts/maintenance/seo-audit.ts",
+    "audit:react": "npx -y react-doctor@latest . --verbose --diff",
+    "perf:analyze": "ANALYZE=true next build",
     "test:e2e": "playwright test"
   },
   "dependencies": {
