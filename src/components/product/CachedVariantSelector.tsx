@@ -1,4 +1,6 @@
 import { Product } from "@/lib/product-registry";
+import { getProductVariants } from "@/lib/server/cached-products";
+import { mergeLivePrices } from "@/lib/server/live-data";
 import { ProductVariantSelector } from "./ProductVariantSelector";
 
 interface ProductVariantSelectorProps {
@@ -21,7 +23,6 @@ export async function CachedVariantSelector({
   let allVariants = passedVariants || [];
 
   if (!passedVariants) {
-    const { getProductVariants } = await import("@/lib/server/cached-products");
     allVariants = await getProductVariants(product, countryCode);
 
     // Fallback: If getProductVariants returns empty (no siblings), we ensure the current product is in the list
@@ -30,7 +31,6 @@ export async function CachedVariantSelector({
     }
 
     // [CRITICAL] Overlay fresh prices (1-min) for consistency across components
-    const { mergeLivePrices } = await import("@/lib/server/live-data");
     allVariants = await mergeLivePrices(allVariants, countryCode);
   }
 

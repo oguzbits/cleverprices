@@ -1,5 +1,6 @@
 import { getFamilyIdentity } from "@/lib/product-families";
 import { getProductFamilyMembers, type Product } from "@/lib/product-registry";
+import { mergeLivePrices } from "@/lib/server/live-data";
 import { cn } from "@/lib/utils";
 import { normalizeVariantAttributes } from "@/lib/utils/variants";
 import { Check } from "lucide-react";
@@ -100,7 +101,6 @@ export async function ConditionButtons({
 
     // [CRITICAL] Overlay fresh prices from the fast-cache prices table (1-min)
     if (!passedVariants) {
-      const { mergeLivePrices } = await import("@/lib/server/live-data");
       familyMembers = await mergeLivePrices(familyMembers, countryCode);
     }
     const normalizedCurAttrs = normalizeVariantAttributes(product);

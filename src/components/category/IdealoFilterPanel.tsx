@@ -12,7 +12,7 @@ import { FilterGroup } from "@/lib/category-types";
 import { useFilters } from "@/lib/hooks/use-filters";
 import type { FilterCounts } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface IdealoFilterBarProps {
   categorySlug: string;
@@ -27,6 +27,9 @@ interface IdealoFilterBarProps {
   filterGroups?: FilterGroup[];
   lockedFilters?: string[];
 }
+
+const DEFAULT_OBJECT = {};
+const DEFAULT_ARRAY: any[] = [];
 
 // ============================================
 // SVG ICONS (EXTRACTED FROM IDEALO HTML)
@@ -234,13 +237,13 @@ export function IdealoFilterPanel({
   unitLabel,
   isMobile = false,
   onFilterChange,
-  filterOptions = {},
-  filterCounts = {},
-  priceRanges = [],
+  filterOptions = DEFAULT_OBJECT,
+  filterCounts = DEFAULT_OBJECT,
+  priceRanges = DEFAULT_ARRAY,
   minPriceInCategory = 0,
   maxPriceInCategory = 1000,
-  filterGroups = [],
-  lockedFilters = [],
+  filterGroups = DEFAULT_ARRAY,
+  lockedFilters = DEFAULT_ARRAY,
 }: IdealoFilterBarProps) {
   const [filters, setFilters] = useFilters();
 
@@ -248,11 +251,13 @@ export function IdealoFilterPanel({
   const [optimisticFilters, setOptimisticFilters] = useState(filters);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  // Sync back if URL changes (e.g. back button)
-  useEffect(() => {
+  // Sync back if URL changes (e.g. back button) - Using render-phase sync for React Compiler compliance
+  const [prevFilters, setPrevFilters] = useState(filters);
+  if (filters !== prevFilters) {
+    setPrevFilters(filters);
     setOptimisticFilters(filters);
     setIsTransitioning(false);
-  }, [filters]);
+  }
 
   const currentFilters = optimisticFilters;
 
@@ -430,13 +435,14 @@ export function IdealoFilterPanel({
                     { label: "330 € bis 940 €", min: 330, max: 940 },
                     { label: "ab 940 €", min: 940, max: null },
                   ]
-              ).map((range, idx) => {
+              ).map((range) => {
+                const rangeKey = `${range.min}-${range.max}-${range.label}`;
                 const isSelected =
                   currentFilters.minPrice === range.min &&
                   currentFilters.maxPrice === range.max;
                 return (
                   <label
-                    key={idx}
+                    key={rangeKey}
                     className="group/item flex cursor-pointer items-center justify-between py-1"
                   >
                     <div className="flex items-center gap-3">

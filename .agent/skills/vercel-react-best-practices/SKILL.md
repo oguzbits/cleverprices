@@ -25,14 +25,16 @@ This project uses **Next.js 16.0.10** with special features:
 
 ## 🚫 BANNED (Never Use)
 
-| Pattern                     | Why                    | Use Instead                    |
-| --------------------------- | ---------------------- | ------------------------------ |
-| `middleware.ts`             | Deprecated in Next 16  | Route handlers, server actions |
-| `useMemo()`                 | React Compiler handles | Remove it                      |
-| `useCallback()`             | React Compiler handles | Remove it                      |
-| `React.memo()`              | React Compiler handles | Remove it                      |
-| `fetchCache` export         | Deprecated             | `'use cache'` directive        |
-| Full SSG for large catalogs | Build timeout          | ISR with `cacheLife()`         |
+| Pattern                     | Why                       | Use Instead                              |
+| --------------------------- | ------------------------- | ---------------------------------------- |
+| `middleware.ts`             | Deprecated in Next 16     | Route handlers, server actions           |
+| `useMemo()`                 | React Compiler handles    | Remove it                                |
+| `useCallback()`             | React Compiler handles    | Remove it                                |
+| `React.memo()`              | React Compiler handles    | Remove it                                |
+| `fetchCache` export         | Deprecated                | `'use cache'` directive                  |
+| Full SSG for large catalogs | Build timeout             | ISR with `cacheLife()`                   |
+| `await import()` in RSC     | Blocks Compiler, SLOW     | Static top-level `import`                |
+| `useEffect` State Sync      | Blocks Compiler, Cascades | Render-phase state sync (if (p!=s) setS) |
 
 ---
 

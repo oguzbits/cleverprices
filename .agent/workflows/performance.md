@@ -18,6 +18,7 @@ bun run audit:react
 
 - **Goal**: Maintain 90+ health score.
 - **Check**: Look for "React Compiler: Bypassed" warnings. These indicate manual `useMemo` or complex patterns blocking optimization.
+- **Compiler Compliance**: verify code against [vercel-react-best-practices](file:///Users/oguz/Desktop/Dev/cleverprices/.agent/skills/vercel-react-best-practices/SKILL.md) to ensure no `await import()` in RSC or redundant `useEffect` syncing.
 
 ## 2. Zero-Flicker Directive (UX Stability)
 
