@@ -11,12 +11,14 @@ export default function robots(): MetadataRoute.Robots {
           "/api/",
           "/_next/",
           "/static/",
+          "/monitoring/", // Block Sentry telemetry
           "/search?*",
           "/*?view=",
           "/*?sort=",
           "/*?search=",
           "/*?filter_",
           "/*?condition=",
+          "/*?_rsc=", // Block Next.js RSC payload fragments
         ],
       },
     ],
