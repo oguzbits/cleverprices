@@ -417,11 +417,7 @@ export async function IdealoProductPage({
           </div>
 
           <ComponentErrorBoundary name="SimilarCarousel">
-            <Suspense
-              fallback={
-                <div className="mt-12 h-64 w-full animate-pulse rounded-lg bg-gray-50" />
-              }
-            >
+            <Suspense fallback={null}>
               <CachedSimilarCarousel
                 product={mergedProduct}
                 countryCode={countryCode}
