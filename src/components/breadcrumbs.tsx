@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site-config";
 import { cn } from "@/lib/utils";
 import type { BreadcrumbItem } from "@/types";
 import { Home } from "lucide-react";
@@ -24,6 +25,7 @@ export function Breadcrumbs({
 
   return (
     <nav className={cn("mb-4", className)} aria-label="Breadcrumb">
+      <BreadcrumbStructuredData items={items} />
       <ol className="flex flex-wrap items-center gap-1.5 gap-y-1 text-[12px] leading-normal text-[#767676] sm:gap-2">
         {visibleItems.map((item, index) => {
           const isLastInVisible = index === visibleItems.length - 1;
@@ -108,11 +110,7 @@ export function Breadcrumbs({
 }
 
 // Structured data for SEO
-function BreadcrumbStructuredData({
-  items,
-}: {
-  items: BreadcrumbItem[];
-}) {
+function BreadcrumbStructuredData({ items }: { items: BreadcrumbItem[] }) {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
@@ -122,7 +120,7 @@ function BreadcrumbStructuredData({
         "@type": "ListItem",
         position: index + 1,
         name: item.name,
-        item: `https://cleverprices.com${item.href}`,
+        item: `${SITE_URL}${item.href}`,
       })),
   };
 
