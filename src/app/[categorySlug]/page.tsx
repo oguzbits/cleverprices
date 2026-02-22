@@ -150,16 +150,12 @@ export default async function DedicatedCategoryPage({
   const category = await getCategoryBySlug(categorySlug);
   if (!category) notFound();
 
-  // The "Shell": Immediate rendering of the background and basic structural container.
-  // This ensures the URL updates instantly and avoids the "frozen" UI feeling.
   return (
-    <div className="bg-secondary min-h-screen">
-      <CategoryPageContent
-        categorySlug={categorySlug as CategorySlug}
-        category={category}
-        searchParams={searchParams}
-      />
-    </div>
+    <CategoryPageContent
+      categorySlug={categorySlug as CategorySlug}
+      category={category}
+      searchParams={searchParams}
+    />
   );
 }
 

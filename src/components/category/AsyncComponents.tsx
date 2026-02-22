@@ -9,86 +9,21 @@ import { FilterParams } from "@/lib/server/category-products";
 import { formatTechText } from "@/lib/utils/formatting";
 import { X } from "lucide-react";
 import Link from "next/link";
-import { Suspense } from "react";
 import { IdealoFilterPanel } from "./IdealoFilterPanel";
 import { IdealoResultList } from "./IdealoResultList";
-import { IdealoTopBar } from "./IdealoTopBar";
 import { MobileFilterDrawer } from "./MobileFilterDrawer";
-
-interface AsyncTopBarProps {
-  categoryName: string;
-  searchParams: FilterParams;
-  productDataPromise: Promise<any>;
-}
-
-export function AsyncTopBar({
-  categoryName,
-  searchParams,
-  productDataPromise,
-}: AsyncTopBarProps) {
-  const viewMode = searchParams.view || "grid";
-  const currentSort =
-    typeof searchParams === "object" && "sort" in searchParams
-      ? (searchParams.sort as string)
-      : "popular";
-
-  return (
-    <div className="sr-topBar mb-4 flex flex-col gap-3 min-[840px]:flex-row min-[840px]:items-center min-[840px]:justify-between">
-      <Suspense
-        fallback={
-          <IdealoTopBar
-            categoryName={categoryName}
-            currentView={viewMode}
-            currentSort={currentSort}
-          />
-        }
-      >
-        <AsyncTopBarContent
-          categoryName={categoryName}
-          viewMode={viewMode}
-          currentSort={currentSort}
-          productDataPromise={productDataPromise}
-        />
-      </Suspense>
-    </div>
-  );
-}
-
-async function AsyncTopBarContent({
-  categoryName,
-  viewMode,
-  currentSort,
-  productDataPromise,
-}: {
-  categoryName: string;
-  viewMode: string;
-  currentSort: string;
-  productDataPromise: Promise<any>;
-}) {
-  const data = await productDataPromise;
-  return (
-    <IdealoTopBar
-      categoryName={categoryName}
-      productCount={data.filteredCount}
-      currentView={viewMode}
-      currentSort={currentSort}
-    />
-  );
-}
 
 interface AsyncFilterPanelProps {
   category: Omit<Category, "icon">;
-  productDataPromise: Promise<any>;
+  filteredData: any;
   lockedFilters?: string[];
 }
 
 export async function AsyncFilterPanel({
   category,
-  productDataPromise,
+  filteredData,
   lockedFilters,
 }: AsyncFilterPanelProps) {
-  const filteredData = await productDataPromise;
-
   const {
     filteredCount,
     unitLabel,
@@ -151,21 +86,19 @@ interface AsyncProductListProps {
   category: Omit<Category, "icon">;
   countryCode: string;
   searchParams: FilterParams;
-  productDataPromise: Promise<any>;
+  filteredData: any;
 }
 
 export async function AsyncProductList({
   category,
   countryCode,
   searchParams,
-  productDataPromise,
+  filteredData,
 }: AsyncProductListProps) {
-  const data = await productDataPromise;
   const {
     products,
     filteredCount,
-    unitLabel,
-    hasProducts,
+    totalCount,
     filters,
     filterCounts,
     minPriceInCategory,
@@ -173,7 +106,9 @@ export async function AsyncProductList({
     priceRanges,
     lastUpdated,
     pagination,
-  } = data;
+    hasProducts,
+    unitLabel,
+  } = filteredData;
 
   const viewMode = searchParams.view || "grid";
 

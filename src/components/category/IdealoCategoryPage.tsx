@@ -27,15 +27,11 @@ import {
 } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
-import { Suspense } from "react";
 
 // Sub-components
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
-import {
-  AsyncFilterPanel,
-  AsyncProductList,
-  AsyncTopBar,
-} from "./AsyncComponents";
+import { AsyncFilterPanel, AsyncProductList } from "./AsyncComponents";
+import { IdealoTopBar } from "./IdealoTopBar";
 import { NicheLinks } from "./NicheLinks";
 
 // FAQ components for SEO
@@ -65,8 +61,9 @@ export async function IdealoCategoryPage({
     Icon: getCategoryIcon(crumb.slug),
   }));
 
-  // 1. Kick off data fetch (Don't await here to avoid blocking the transition)
-  const productDataPromise = getCategoryProducts(
+  // 1. Kick off data fetch and WAIT for it (Cohesive Rendering)
+  // This ensures the page appears "complete" and avoids layout shifts.
+  const filteredData = await getCategoryProducts(
     category.slug,
     countryCode,
     searchParams,
@@ -103,10 +100,11 @@ export async function IdealoCategoryPage({
           {/* TOP BAR */}
           {/* ============================================ */}
           <ComponentErrorBoundary name="CategoryTopBar">
-            <AsyncTopBar
+            <IdealoTopBar
               categoryName={formatTechText(category.name)}
-              searchParams={searchParams}
-              productDataPromise={productDataPromise}
+              productCount={filteredData.filteredCount}
+              currentView={searchParams.view || "grid"}
+              currentSort={searchParams.sort || "popular"}
             />
           </ComponentErrorBoundary>
         </div>
@@ -123,33 +121,21 @@ export async function IdealoCategoryPage({
         >
           {/* FILTERS (Sidebar) */}
           <ComponentErrorBoundary name="CategoryFilters">
-            <Suspense
-              fallback={
-                <div className="sr-filterBar hidden min-[840px]:block min-[840px]:max-w-[33.33333%] min-[840px]:basis-[33.33333%] min-[960px]:max-w-[25%] min-[960px]:basis-[25%]" />
-              }
-            >
-              <AsyncFilterPanel
-                category={category}
-                productDataPromise={productDataPromise}
-                lockedFilters={lockedFilters}
-              />
-            </Suspense>
+            <AsyncFilterPanel
+              category={category}
+              filteredData={filteredData}
+              lockedFilters={lockedFilters}
+            />
           </ComponentErrorBoundary>
 
           {/* PRODUCT LIST */}
           <ComponentErrorBoundary name="CategoryProductList">
-            <Suspense
-              fallback={
-                <div className="sr-searchResult__resultPanel w-full min-[840px]:max-w-[66.66667%] min-[840px]:basis-[66.66667%] min-[840px]:pl-[15px] min-[960px]:max-w-[75%] min-[960px]:basis-[75%]" />
-              }
-            >
-              <AsyncProductList
-                category={category}
-                countryCode={countryCode}
-                searchParams={searchParams}
-                productDataPromise={productDataPromise}
-              />
-            </Suspense>
+            <AsyncProductList
+              category={category}
+              countryCode={countryCode}
+              searchParams={searchParams}
+              filteredData={filteredData}
+            />
           </ComponentErrorBoundary>
         </div>
 
