@@ -164,6 +164,8 @@ export async function getAllProductSlugs(limit?: number): Promise<
 }
 
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {
+  "use cache";
+  cacheLife("category");
   return getNonEmptyCategorySlugsSync();
 }
 
@@ -240,10 +242,7 @@ async function getProductBySlug(
 // Note: getProductPriceHistory removed in lean schema.
 // Price history is now stored in prices.historyJson and parsed by mapDbProduct.
 
-async function getUnifiedProduct(
-  asin: string,
-  countryCode: CountryCode,
-) {
+async function getUnifiedProduct(asin: string, countryCode: CountryCode) {
   "use cache";
   cacheLife("fast"); // Live product data from Keepa/PA-API should use 'fast' (1 min)
   return dataAggregator.fetchProduct(asin, countryCode);

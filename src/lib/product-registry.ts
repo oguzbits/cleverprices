@@ -479,7 +479,16 @@ export async function getAllProductSlugs(limit?: number): Promise<
  * Used for filtering the sitemap and preventing thin content.
  */
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {
-  if (IS_BUILD) return ["build-time-placeholder"];
+  if (IS_BUILD) {
+    // During build, we return all non-hidden categories from the manifest
+    // to ensure shells are generated and sitemap is complete.
+    // We use a dynamic import to avoid circular dependencies if any.
+    const { allCategories } = await import("./categories");
+    return Object.values(allCategories)
+      .filter((c) => !c.hidden)
+      .map((c) => c.slug);
+  }
+
   const fetchNonEmpty = async () => {
     await dbReady;
     try {
@@ -513,7 +522,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
         throw e; // Rethrow at runtime to prevent poisoned cache
       }
 
-      return ["build-time-placeholder"];
+      return [];
     }
   };
 
@@ -525,7 +534,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
     return fetchNonEmpty();
   }
 
-  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v1"], {
+  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v2"], {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
     tags: ["categories-non-empty"],
   })();
