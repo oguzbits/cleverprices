@@ -325,9 +325,11 @@ async function updatePrices(country: CountryCode): Promise<void> {
   console.log(`✅ Updated: ${updated}`);
   console.log(`❌ Failed:  ${failed}`);
   console.log(`------------------------------`);
-  if (process.env.WARM_CACHE === "true" && !isDryRun) {
+  const WARM_CACHE_ENABLED = process.env.WARM_CACHE !== "false"; // Default to true unless explicitly disabled
+  if (WARM_CACHE_ENABLED && !isDryRun) {
     try {
       console.log("\n🔥 Triggering Cache Warmer (Lite Mode)...");
+      // Trigger warmer in lite mode by default for speed, but ensure it runs.
       execSync(`bun run warm-cache --lite`, { stdio: "inherit" });
     } catch (err) {
       console.error(
