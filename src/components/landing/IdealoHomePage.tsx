@@ -1,3 +1,4 @@
+import { IdealoProductCarousel as DynamicProductCarousel } from "@/components/DynamicProductCarousel";
 import type { CarouselProduct } from "@/components/IdealoProductCarousel";
 import type { LivePriceData } from "@/components/landing/IdealoProductCard";
 import { CategoryNav } from "@/components/layout/CategoryNav";
@@ -5,35 +6,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { LazySection } from "@/components/ui/LazySection";
 import type { CountryCode } from "@/lib/countries";
 import type { Category } from "@/types";
-import dynamic from "next/dynamic";
 import { IdealoHero } from "./IdealoHero";
 import { IdealoSection } from "./IdealoSection";
-
-// Only dynamic import below-the-fold carousels (Next.js Best Practices: bundle-dynamic-imports)
-const DynamicProductCarousel = dynamic(
-  () =>
-    import("@/components/IdealoProductCarousel").then(
-      (mod) => mod.IdealoProductCarousel,
-    ),
-  {
-    loading: () => (
-      <div className="bg-white px-4 py-12">
-        <div className="mx-auto max-w-[1280px]">
-          <div className="mb-4 h-6 w-48 animate-pulse rounded bg-gray-200" />
-          <div className="flex gap-4 overflow-hidden">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div
-                key={i}
-                className="h-[320px] w-[220px] shrink-0 animate-pulse rounded bg-gray-100"
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-    ),
-    ssr: true,
-  },
-);
 
 interface IdealoHomePageProps {
   heroProducts: CarouselProduct[];

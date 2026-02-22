@@ -87,7 +87,7 @@ const nextConfig: NextConfig = {
       16, 32, 48, 64, 96, 128, 160, 174, 192, 200, 224, 240, 256, 320, 350, 384,
       400, 512,
     ],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 3600,
     qualities: [30, 40, 50, 75],
     remotePatterns: [
       {
@@ -574,6 +574,7 @@ const configWithSentry = withSentryConfig(
       excludeDebugStatements: true,
       excludeReplayIframe: true,
       excludeReplayWorker: true,
+      excludeReplayShadowDom: true,
     },
 
     // Sentry Webpack Plugin Options (Fallback for legacy builds)

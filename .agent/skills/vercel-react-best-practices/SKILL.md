@@ -110,7 +110,8 @@ Avoid user-visible skeletons (pulse elements) or route-level `loading.tsx` for c
 
 ### 6. Bundle Hygiene & Dynamic Imports (CRITICAL)
 
-- **No Double-Bundling**: Never import a component statically at the top of a file if you also plan to import it using `next/dynamic` later in the same file. This results in the component being included in the main bundle AND its own chunk.
+- **No Double-Bundling**: Never import a component statically at the top of a file if you also plan to import it using `next/dynamic` later in the same file.
+- **Shared Dynamic Loaders**: If a heavy component (e.g., Carousel, Chart) is used across multiple pages, move the `dynamic()` definition to a shared file (e.g., `DynamicProductCarousel.tsx`) to ensure it's always loaded via its dynamic chunk and never accidentally pulled into a main bundle via a transitive static import.
 - **Type-Only Imports**: Always use `import type` for interfaces, types, and metadata objects from other modules. This ensures the module doesn't accidentally get pulled into the runtime bundle.
 - **Lazy Loading Strategy**: Use `LazySection` with a healthy `rootMargin` (e.g., 300px) for below-the-fold content. This prevents heavy React mounting tasks (Long Tasks) from blocking the main thread during initial page load.
 - **Package Optimization**: Ensure `optimizePackageImports` in `next.config.ts` includes heavy libraries like `lucide-react` and Radix UI.

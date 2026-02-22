@@ -157,7 +157,7 @@ To ensure a "Premium/Idealo" feel with no stutters (TBT < 50ms):
 
 - **Modern JS Target**: The `tsconfig.json` target is set to **ES2022**. This ensures clean, modern syntax and saves ~15-20 KiB by avoiding legacy polyfills.
 - **Lazy Mounting & Hydration**: Use `LazySection` with a **300px rootMargin**. This ensures that heavy components (like Carousels) are mounted _before_ they enter the viewport, but _after_ the critical above-the-fold content is interactive.
-- **Dynamic Consolidation**: Avoid "Double Bundling" (static + dynamic import of the same module). If a component is used above-the-fold, standard import is preferred. For below-the-fold, use `next/dynamic`.
-- **Sentry Tuning**: Sentry is configured to exclude `Replay` and `Worker` modules to keep the initial JS execution task under the 50ms "blocking" threshold.
+- **Dynamic Consolidation**: Avoid "Double Bundling". Use **Shared Dynamic Loaders** (like `DynamicProductCarousel.tsx`) for components used across multiple pages to ensure they consistently live in a dynamic chunk, preventing transitive static paths from pulling them into the main bundle.
+- **Sentry Tuning**: Sentry is configured to exclude `Replay`, `Worker`, and `ShadowDom` modules to keep the initial JS execution task under the 50ms "blocking" threshold.
 
 ---

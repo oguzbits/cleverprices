@@ -8,7 +8,7 @@ import { Inter } from "next/font/google";
 import * as React from "react";
 
 const inter = Inter({
-  subsets: ["latin", "latin-ext"],
+  subsets: ["latin"],
   display: "swap",
   preload: true,
   variable: "--font-inter",
@@ -56,11 +56,7 @@ export default function RootLayoutWrapper({
         />
       </head>
       <body
-        className={cn(
-          inter.variable,
-          inter.className,
-          "bg-background min-h-screen antialiased",
-        )}
+        className={cn(inter.variable, "bg-background min-h-screen antialiased")}
       >
         <div className="flex min-h-screen flex-col">
           <BfcacheRecovery />

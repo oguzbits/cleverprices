@@ -4,7 +4,7 @@ import { getCategoryIcon } from "@/lib/category-icons";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryHubCard } from "@/components/category/CategoryHubCard";
 import { ProductBestsellerGrid } from "@/components/category/ProductBestsellerGrid";
-import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
+import { IdealoProductCarousel } from "@/components/DynamicProductCarousel";
 import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 import { LazySection } from "@/components/ui/LazySection";
 import { type LeanProduct } from "@/lib/types";

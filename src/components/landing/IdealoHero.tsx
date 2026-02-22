@@ -1,4 +1,4 @@
-import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
+import { IdealoProductCarousel } from "@/components/DynamicProductCarousel";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 
 interface Product {
