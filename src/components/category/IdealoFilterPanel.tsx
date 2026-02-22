@@ -249,14 +249,12 @@ export function IdealoFilterPanel({
 
   // Optimistic local state to make clicks feel instant
   const [optimisticFilters, setOptimisticFilters] = useState(filters);
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Sync back if URL changes (e.g. back button) - Using render-phase sync for React Compiler compliance
   const [prevFilters, setPrevFilters] = useState(filters);
   if (filters !== prevFilters) {
     setPrevFilters(filters);
     setOptimisticFilters(filters);
-    setIsTransitioning(false);
   }
 
   const currentFilters = optimisticFilters;
@@ -301,7 +299,6 @@ export function IdealoFilterPanel({
       minPrice: minNum,
       maxPrice: maxNum,
     }));
-    setIsTransitioning(true);
 
     setFilters({
       minPrice: minNum,
@@ -322,7 +319,6 @@ export function IdealoFilterPanel({
       ...prev,
       [field]: next,
     }));
-    setIsTransitioning(true);
 
     setFilters({ [field]: next });
     if (onFilterChange) onFilterChange();
@@ -334,7 +330,6 @@ export function IdealoFilterPanel({
         "sr-filterBar_t26b_",
         "flex h-full min-h-full w-full flex-col",
         !isMobile ? "bg-transparent p-0" : "bg-[#f9f9f9]",
-        isTransitioning && "pointer-events-none opacity-80",
       )}
     >
       <div className="sr-filterBar__content_eiiz2">
