@@ -100,6 +100,7 @@ Avoid user-visible skeletons (pulse elements) or route-level `loading.tsx` for c
 
 - **Do NOT rely on build-time SSG** for large catalogs (database is excluded from build).
 - **Proactive Hydration**: Trigger the `warm-cache` script after deployments and price updates.
+- **Price Freshness**: Category and product pages must have a **60-second stale window** to ensure site-wide price consistency during the 20-minute Keepa update cycle.
 - **Safe Warming**: Ensure the warmer monitors `os.loadavg()` to avoid competing with real traffic or Google crawlers.
 
 ### 5. Network Compression (CRITICAL)

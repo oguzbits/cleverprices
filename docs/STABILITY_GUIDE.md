@@ -50,6 +50,8 @@ To protect the user experience and SEO rankings:
    Implement a `Promise.race` in the `dbReady` logic if syncing from cloud.
 2. **Weekly Freshness**:
    Update the production database at least once a week via `db:push-prod`.
+3. **1-Minute Price Freshness**:
+   All category and product pages must use a **60-second stale window**. This ensures that price discrepancies between pages last no longer than 1 minute, maintaining parity with the 20-minute Keepa update cycle.
 
 ---
 

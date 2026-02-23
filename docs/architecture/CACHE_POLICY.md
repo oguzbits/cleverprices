@@ -16,9 +16,9 @@ All cache profiles are defined in [next.config.ts](../../next.config.ts).
 
 | Profile    | Layer       | Revalidate | Stale | Expire | Use Case                               |
 | ---------- | ----------- | ---------- | ----- | ------ | -------------------------------------- |
-| `prices`   | **Data**    | 10m (600s) | 600s  | 1h     | Shared price fetching (`live-data.ts`) |
-| `category` | **Page**    | 15m (900s) | 900s  | 1d     | `/[categorySlug]` pages                |
-| `product`  | **Page**    | 15m (900s) | 900s  | 1d     | `/p/[slug]` pages                      |
+| `prices`   | **Data**    | 1m (60s)   | 60s   | 4h     | Shared price fetching (`live-data.ts`) |
+| `category` | **Page**    | 1m (60s)   | 60s   | 1d     | `/[categorySlug]` pages                |
+| `product`  | **Page**    | 1m (60s)   | 60s   | 1d     | `/p/[slug]` pages                      |
 | `dynamic`  | **Overlay** | 10m (600s) | 600s  | 1h     | Search results, filtered views         |
 | `static`   | **Meta**    | 24h        | 24h   | 30d    | Sitemaps, categories list              |
 
@@ -33,11 +33,11 @@ Whenever modifying a page component:
 
 ### 2. Synchronization Window
 
-The maximum discrepancy window between any two views is **15 minutes**. This aligns with our 20-minute price update cycle from Keepa.
+The maximum discrepancy window between any two views is **60 seconds**. This ensures that even during a 20-minute Keepa update cycle, prices remain globally consistent across the site.
 
-### 3. Absolute Priority
+### 3. Absolute Freshness
 
-If a build or a change introduces a risk of "Stale Hijacking" (where a page stays cached with old prices while others update), it must be rejected.
+The 1-minute `stale` window ensures that the warmer and organic visitors frequently trigger background revalidation. The 24-hour `expire` window ensures that even while revalidating, the site remains instant (TTFB < 40ms) by serving the last-known-good fallback.
 
 ## 🏗️ Static Generation Strategy
 

@@ -45,8 +45,9 @@ bun run perf:analyze
 
 If TTFB (Time to First Byte) is > 200ms on warm pages:
 
-- **Check**: Is `cacheLife()` applied effectively to the data fetcher?
-- **Action**: Run the cache warmer to prime Redis.
+- **Check**: Is `cacheLife()` applied effectively? The standard is **60s stale / 24h expire**.
+- **Accuracy**: The 60s stale window ensures price accuracy, while the 24h expire window guarantees < 100ms TTFB by serving stale data during background revalidation.
+- **Action**: Run the cache warmer to prime the cache.
   ```bash
   bun run warm-cache
   ```

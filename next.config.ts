@@ -1,6 +1,9 @@
 import bundleAnalyzer from "@next/bundle-analyzer";
 import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
+import remarkFrontmatter from "remark-frontmatter";
+import remarkGfm from "remark-gfm";
+import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -13,14 +16,14 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   cacheLife: {
     category: {
-      stale: 900, // 15 minutes (Matches Keepa cycle)
-      revalidate: 900,
+      stale: 60, // 1 minute (Ensures site-wide price consistency)
+      revalidate: 60,
       expire: 86400, // 24 hours
     },
     product: {
-      stale: 900, // 15 minutes
-      revalidate: 900,
-      expire: 86400, // 24 hours
+      stale: 60,
+      revalidate: 60,
+      expire: 86400,
     },
     static: {
       stale: 86400, // 24 hours
@@ -41,9 +44,9 @@ const nextConfig: NextConfig = {
     },
     // Keep legacy name for backward compatibility during migration
     prices: {
-      stale: 600, // 10 minutes
-      revalidate: 600,
-      expire: 7200, // 2 hours
+      stale: 60, // 1 minute
+      revalidate: 60,
+      expire: 14400, // 4 hours
     },
   },
   experimental: {
@@ -55,23 +58,12 @@ const nextConfig: NextConfig = {
       static: 300,
     },
     optimizePackageImports: [
-      "lucide-react",
-      "mdx",
       "@radix-ui/react-accordion",
-      "@radix-ui/react-avatar",
       "@radix-ui/react-checkbox",
       "@radix-ui/react-dialog",
-      "@radix-ui/react-dropdown-menu",
-      "@radix-ui/react-label",
-      "@radix-ui/react-popover",
-      "@radix-ui/react-radio-group",
-      "@radix-ui/react-scroll-area",
       "@radix-ui/react-select",
-      "@radix-ui/react-separator",
       "@radix-ui/react-slider",
-      "@radix-ui/react-switch",
-      "@radix-ui/react-tabs",
-      "@radix-ui/react-tooltip",
+      "@radix-ui/react-slot",
     ],
   },
   // Configure MDX file extensions
@@ -83,12 +75,9 @@ const nextConfig: NextConfig = {
     loaderFile: "./src/lib/image-loader.ts",
     formats: ["image/avif", "image/webp"],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
-    imageSizes: [
-      16, 32, 48, 64, 96, 128, 160, 174, 192, 200, 224, 240, 256, 320, 350, 384,
-      400, 512,
-    ],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512],
     minimumCacheTTL: 3600,
-    qualities: [30, 40, 50, 75],
+    qualities: [50, 75],
     remotePatterns: [
       {
         protocol: "https",
@@ -149,7 +138,7 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/p/motorola-motorola-handy-moto-g86-5g-256gb-b0f7rtgckm",
+        source: "/p/motorola-motorola-handy-moto-g86-256gb-b0f7rtgckm",
         destination: "/p/200003921_-moto-g86-5g-motorola-gckm",
         permanent: true,
       },
@@ -330,11 +319,6 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/elektroartikel/w%C3%A4schetrockner",
-        destination: "/categories",
-        permanent: true,
-      },
-      {
         source: "/elektroartikel/wäschetrockner",
         destination: "/categories",
         permanent: true,
@@ -365,12 +349,7 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/elektroartikel/gefrierschr%C3%A4nke",
-        destination: "/categories",
-        permanent: true,
-      },
-      {
-        source: "/elektroartikel/gefrierschränke",
+        source: "/elektroartikel/gefrierschranke",
         destination: "/categories",
         permanent: true,
       },
@@ -380,12 +359,7 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
-        source: "/elektroartikel/back%C3%B6fen",
-        destination: "/categories",
-        permanent: true,
-      },
-      {
-        source: "/elektroartikel/backöfen",
+        source: "/elektroartikel/backofen",
         destination: "/categories",
         permanent: true,
       },
@@ -543,9 +517,9 @@ const withMDX = createMDX({
   // Add markdown plugins here, as desired
   options: {
     remarkPlugins: [
-      "remark-gfm",
-      ["remark-frontmatter", { type: "yaml", marker: "-" }],
-      "remark-mdx-frontmatter",
+      remarkGfm,
+      [remarkFrontmatter, { type: "yaml", marker: "-" }],
+      remarkMdxFrontmatter,
     ],
     rehypePlugins: [],
   },
@@ -589,16 +563,15 @@ const configWithSentry = withSentryConfig(
 const isBuild =
   process.env.NEXT_PHASE === "phase-production-build" ||
   process.env.BUILD_PHASE === "1";
+
 if (isBuild) {
   console.log(
     "🛠️  CLEVERPRICES BUILD PHASE DETECTED - Applying build-time constraints...",
   );
-  // @ts-ignore
-  nextConfig.experimental = {
-    ...nextConfig.experimental,
-    workerThreads: false,
-    cpus: 1,
-  };
+  if (nextConfig.experimental) {
+    nextConfig.experimental.workerThreads = false;
+    nextConfig.experimental.cpus = 1;
+  }
 }
 
 export default configWithSentry;

@@ -54,7 +54,7 @@ This workflow ensures all checks pass before pushing changes, which are then aut
    ```
 
 7. **Proactive Cache Warming**
-   After the deployment is live, trigger a site-wide warm cycle to ensure instant load times.
+   After the deployment is live, trigger a site-wide warm cycle to ensure instant load times and immediate price consistency across all pages.
    ```bash
    bun run warm-cache --lite
    ```
