@@ -474,6 +474,11 @@ export async function getAllProductSlugs(limit?: number): Promise<
   }
 }
 
+// Process-level cache for non-empty categories to avoid Redis roundtrips on every page load
+let MEMORY_NON_EMPTY_CATEGORIES: { data: string[]; timestamp: number } | null =
+  null;
+const MEMORY_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
 /**
  * Get all category slugs that have at least one product with "optimized" status.
  * Used for filtering the sitemap and preventing thin content.
@@ -481,12 +486,19 @@ export async function getAllProductSlugs(limit?: number): Promise<
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   if (IS_BUILD) {
     // During build, we return all non-hidden categories from the manifest
-    // to ensure shells are generated and sitemap is complete.
-    // We use a dynamic import to avoid circular dependencies if any.
     const { allCategories } = await import("./categories");
     return Object.values(allCategories)
       .filter((c) => !c.hidden)
       .map((c) => c.slug);
+  }
+
+  // Check Memory Cache first (Instant, process-level)
+  const now = Date.now();
+  if (
+    MEMORY_NON_EMPTY_CATEGORIES &&
+    now - MEMORY_NON_EMPTY_CATEGORIES.timestamp < MEMORY_CACHE_TTL_MS
+  ) {
+    return MEMORY_NON_EMPTY_CATEGORIES.data;
   }
 
   const fetchNonEmpty = async () => {
@@ -504,24 +516,25 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
         )
         .groupBy(products.category);
 
-      // SAFETY: If we have 0 categories in production, something is wrong (likely syncing).
-      // Throwing prevents caching a "no categories" state which leads to persistent 404s.
       if (results.length === 0 && process.env.NODE_ENV === "production") {
         throw new Error(
           "No non-empty categories found. Database might be empty or syncing.",
         );
       }
 
-      return results.map((r) => r.category);
+      const categories = results.map((r) => r.category);
+
+      // Update memory cache
+      MEMORY_NON_EMPTY_CATEGORIES = { data: categories, timestamp: Date.now() };
+
+      return categories;
     } catch (e) {
-      // Differentiate between build-time and runtime failures
       if (!IS_BUILD) {
         console.error(
           `[DB Error] getNonEmptyCategorySlugs failed: ${e instanceof Error ? e.message : String(e)}`,
         );
-        throw e; // Rethrow at runtime to prevent poisoned cache
+        throw e;
       }
-
       return [];
     }
   };
@@ -534,9 +547,9 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
     return fetchNonEmpty();
   }
 
-  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v2"], {
+  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v55"], {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["categories-non-empty"],
+    tags: ["categories-non-empty", "v55"],
   })();
 }
 

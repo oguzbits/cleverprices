@@ -97,6 +97,13 @@ function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
   }
 }
 
+// Pre-compile regexes for multi-product loop performance
+const SOCKET_REGEX =
+  /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i;
+const CORES_REGEX = /(\d+)\s?-?\s?(Core|Kerne)/i;
+const VARIANT_SOCKET_REGEX = /AM[45]|LGA\s?\d+|TR4/i;
+const CAPACITY_REGEX = /(\d+(?:\.\d+)?)\s?(TB|GB|MB)/i;
+
 /**
  * RE-USABLE CACHED LAYER: Localizes, scores, and PRUNES products in a category.
  * Pruning is essential to stay under the 2MB cache limit.
@@ -105,18 +112,40 @@ function mapSortParam(sort?: string): { sortBy: string; sortOrder: string } {
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v50", // Cache buster
+  version: string = "v55", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
 
   let rawProducts;
   if (categorySlug === "deals") {
-    // Fetch a large number of deals to allow for filtering and surpressing no-names via popularity scoring
+    // Fetch a large number of deals to allow for filtering
     rawProducts = await getAllDeals(250, countryCode);
   } else {
-    rawProducts = await getProductsByCategory(categorySlug);
+    // [PERFORMANCE] Limit to top 500 products per category to keep mapping and cache deserialization fast.
+    // 500 is enough for comprehensive filters and the first few pages of results.
+    rawProducts = await getProductsByCategory(
+      categorySlug,
+      true, // stripHeavyData
+      500, // limit
+    );
   }
+
+  // Optimize branching by checking category flags outside the hot loop
+  const isCpuOrMobo = categorySlug === "cpu" || categorySlug === "motherboards";
+  const isCpu = categorySlug === "cpu";
+  const isSsd = categorySlug === "ssds";
+  const isStorageOrRam = [
+    "hard-drives",
+    "ssds",
+    "external-storage",
+    "storage",
+    "nas",
+    "smartphones",
+    "tablets",
+    "notebooks",
+    "ram",
+  ].includes(categorySlug);
 
   return rawProducts
     .map((p) => {
@@ -133,35 +162,33 @@ export async function getCachedLocalizedCategoryProducts(
       if (!price || price <= 0) return null;
 
       // 1. Extract core attributes (already pre-extracted by Product Registry)
-      let { socket, cores } = p;
+      let { socket, cores } = p as any;
 
       // 1.1 Restore missing filters via lightweight parsing (Specifications JSON is stripped for speed)
       const vMap = p.variationAttributes
         ? parseVariationAttributes(p.variationAttributes)
         : {};
 
-      if (categorySlug === "cpu" || categorySlug === "motherboards") {
+      if (isCpuOrMobo) {
         if (!socket) {
-          const socketMatch = title.match(
-            /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i,
-          );
+          const socketMatch = title.match(SOCKET_REGEX);
           if (socketMatch) {
             socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
           } else {
             const variantSocket = vMap["Sockel"] || vMap["Stil"];
-            if (variantSocket?.match(/AM[45]|LGA\s?\d+|TR4/i)) {
+            if (variantSocket?.match(VARIANT_SOCKET_REGEX)) {
               socket = variantSocket.trim();
             }
           }
         }
-        if (!cores && categorySlug === "cpu") {
-          const coreMatch = title.match(/(\d+)\s?-?\s?(Core|Kerne)/i);
+        if (!cores && isCpu) {
+          const coreMatch = title.match(CORES_REGEX);
           if (coreMatch) cores = coreMatch[1];
         }
       }
 
       let technology = p.technology || "";
-      if (!technology && categorySlug === "ssds") {
+      if (!technology && isSsd) {
         const tLower = title.toLowerCase();
         if (tLower.includes("nvme") || tLower.includes("m.2"))
           technology = "NVMe";
@@ -169,7 +196,7 @@ export async function getCachedLocalizedCategoryProducts(
       }
 
       let formFactor = p.formFactor || "";
-      if (!formFactor && categorySlug === "ssds") {
+      if (!formFactor && isSsd) {
         const tLower = title.toLowerCase();
         if (tLower.includes("m.2") || tLower.includes("m2")) formFactor = "M.2";
         else if (
@@ -223,42 +250,29 @@ export async function getCachedLocalizedCategoryProducts(
       let normCap = p.normalizedCapacity || 0;
 
       // Ensure we have capacity for devices even if not explicitly normalized in DB
-      if (
-        [
-          "hard-drives",
-          "ssds",
-          "external-storage",
-          "storage",
-          "nas",
-          "smartphones",
-          "tablets",
-          "notebooks",
-          "ram",
-        ].includes(categorySlug) &&
-        (!normCap || normCap === 0)
-      ) {
+      if (isStorageOrRam && (!normCap || normCap === 0)) {
         // Try to get from specifications JSON first (most reliable)
         if (p.specifications && typeof p.specifications === "object") {
           const specs = p.specifications as Record<string, any>;
           const sizeVal =
             specs.Size || specs.Capacity || specs.Speicherkapazität;
           if (sizeVal && typeof sizeVal === "string") {
-            const match = sizeVal.match(/(\d+(?:\.\d+)?)\s?(TB|GB|MB)/i);
+            const match = sizeVal.match(CAPACITY_REGEX);
             if (match) {
               const val = parseFloat(match[1]);
               const unit = match[2].toUpperCase();
               if (unit === "TB") {
-                normCap = val * 1000;
                 capacity = val;
                 capacityUnit = "TB";
+                normCap = val * 1000;
               } else if (unit === "GB") {
-                normCap = val;
                 capacity = val;
                 capacityUnit = "GB";
+                normCap = val;
               } else if (unit === "MB") {
-                normCap = val / 1000;
                 capacity = val;
                 capacityUnit = "MB";
+                normCap = val / 1000;
               }
             }
           }
@@ -544,7 +558,7 @@ export async function getCategoryProducts(
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v49",
+    "v55",
   );
 
   const localizedProducts = cachedProducts;
