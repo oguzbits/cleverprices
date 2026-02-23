@@ -34,19 +34,20 @@ interface Props {
 // Generate static params for categories
 // NOTE: During the build phase, the database is excluded to keep Docker images thin.
 export async function generateStaticParams() {
-  const nonEmptySlugs = await getNonEmptyCategorySlugs();
+  const isBuild =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.BUILD_PHASE === "1";
 
-  // Next.js 16 requirement: return at least one result
-  if (
-    nonEmptySlugs.length === 1 &&
-    nonEmptySlugs[0] === "build-time-placeholder"
-  ) {
+  if (isBuild) {
+    // Explicitly return a placeholder during build to avoid DB warnings and keep build fast.
     return [{ categorySlug: "build-time-placeholder" }];
   }
 
+  const nonEmptySlugs = await getNonEmptyCategorySlugs();
+
   const categories = Object.values(allCategories).filter((c) => !c.hidden);
 
-  // Generates all non-empty categories
+  // Generates all non-empty categories at runtime
   return categories
     .filter((c) => {
       const children = getChildCategories(c.slug);

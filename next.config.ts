@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   cacheLife: {
     category: {
-      stale: 900, // 15 minutes
+      stale: 900, // 15 minutes (Matches Keepa cycle)
       revalidate: 900,
       expire: 86400, // 24 hours
     },

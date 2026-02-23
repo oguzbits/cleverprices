@@ -40,8 +40,7 @@ export async function generateStaticParams() {
     return [{ slug: "build-time-placeholder" }];
   }
 
-  // Fetch all products for on-demand static generation.
-  // This is only called at runtime or during incremental revalidation.
+  // Fetch all products for on-demand static generation at runtime
   const products = await getAllProductSlugs();
 
   if (products.length === 0) {
