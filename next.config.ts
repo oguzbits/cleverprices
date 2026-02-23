@@ -528,8 +528,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Link",
-            value:
-              "<https://m.media-amazon.com>; rel=preconnect; crossorigin, <https://images-na.ssl-images-amazon.com>; rel=preconnect; crossorigin",
+            value: "<https://m.media-amazon.com>; rel=preconnect; crossorigin",
           },
         ],
       },

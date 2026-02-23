@@ -1,12 +1,9 @@
-import { DEFAULT_COUNTRY } from "@/lib/countries";
-
 import { Logo } from "@/components/layout/Logo";
 import { SearchButton } from "@/components/layout/SearchButton";
 import { SearchManager } from "@/components/layout/SearchManager";
+import * as React from "react";
 
-export function Navbar({ country: propCountry }: { country?: string }) {
-  const country = propCountry || DEFAULT_COUNTRY;
-
+export function Navbar() {
   return (
     <>
       <header className="z-50 w-full bg-(--header-bg) shadow-md">
@@ -41,7 +38,9 @@ export function Navbar({ country: propCountry }: { country?: string }) {
           />
         </div>
 
-        <SearchManager />
+        <React.Suspense fallback={null}>
+          <SearchManager />
+        </React.Suspense>
       </header>
     </>
   );

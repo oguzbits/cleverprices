@@ -53,6 +53,23 @@ export default function RootLayoutWrapper({
           href="https://m.media-amazon.com"
           crossOrigin=""
         />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin=""
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+            :root {
+              --background: #ffffff;
+              --header-bg: #18181b;
+              --idealo-text-primary: #2d2d2d;
+            }
+            body { background: #ffffff; margin: 0; }
+          `,
+          }}
+        />
       </head>
       <body
         className={cn(inter.variable, "bg-background min-h-screen antialiased")}
