@@ -109,17 +109,15 @@ export const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
         </div>
 
         {/* Mobile visual indicator for scroll */}
-        {mounted && (
-          <div className="bg-muted/20 absolute right-0 bottom-0 left-0 h-1 overflow-hidden rounded-full sm:hidden">
-            <div
-              className="bg-primary/20 h-full rounded-full transition-all duration-300"
-              style={{
-                width: "33%",
-                transform: `translateX(${scrollState.canScrollLeft ? (scrollState.canScrollRight ? "100%" : "200%") : "0%"})`,
-              }}
-            />
-          </div>
-        )}
+        <div className="bg-muted/20 absolute right-0 bottom-0 left-0 h-1 overflow-hidden rounded-full sm:hidden">
+          <div
+            className="bg-primary/20 h-full rounded-full transition-all duration-300"
+            style={{
+              width: "33%",
+              transform: `translateX(${scrollState.canScrollLeft ? (scrollState.canScrollRight ? "100%" : "200%") : "0%"})`,
+            }}
+          />
+        </div>
       </div>
     );
   },
