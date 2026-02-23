@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import * as React from "react";
 
 const inter = Inter({
@@ -30,8 +31,9 @@ export default function RootLayoutWrapper({
   return (
     <html lang={lang} suppressHydrationWarning>
       <head>
-        <script
+        <Script
           id="search-trigger-capture"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.triggerSearch = function() {
@@ -44,30 +46,6 @@ export default function RootLayoutWrapper({
           rel="preconnect"
           href="https://m.media-amazon.com"
           crossOrigin=""
-        />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-            :root {
-              --background: #ffffff;
-              --header-bg: #18181b;
-              --idealo-text-primary: #2d2d2d;
-              --idealo-blue: #0771d0;
-            }
-            body { background: #ffffff; margin: 0; padding: 0; }
-            /* Critical LCP Shell Styles */
-            .cn-productCarousel { min-height: 400px; }
-            .group.relative.flex.flex-col { background: #fff; border: 1px solid #d4d4d8; border-radius: 6px; }
-            .mb-3.bg-gray-100 { background-color: #f3f4f6; }
-            .flex.gap-4 { display: flex; gap: 1rem; }
-            header { background: #18181b; height: 80px; }
-          `,
-          }}
         />
       </head>
       <body
