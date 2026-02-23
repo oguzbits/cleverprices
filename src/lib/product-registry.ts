@@ -547,9 +547,9 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
     return fetchNonEmpty();
   }
 
-  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v55"], {
+  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v56"], {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["categories-non-empty", "v55"],
+    tags: ["categories-non-empty", "v56"],
   })();
 }
 
@@ -874,7 +874,7 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
 
       if (limit) {
         // @ts-ignore - drizzle type complexity with dynamic orders
-        query = query.orderBy(desc(products.salesRank)).limit(limit);
+        query = query.orderBy(asc(products.salesRank)).limit(limit);
       }
 
       const prods = await query;

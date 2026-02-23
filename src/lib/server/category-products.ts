@@ -112,7 +112,7 @@ const CAPACITY_REGEX = /(\d+(?:\.\d+)?)\s?(TB|GB|MB)/i;
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v55", // Cache buster
+  version: string = "v56", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
@@ -122,12 +122,12 @@ export async function getCachedLocalizedCategoryProducts(
     // Fetch a large number of deals to allow for filtering
     rawProducts = await getAllDeals(250, countryCode);
   } else {
-    // [PERFORMANCE] Limit to top 500 products per category to keep mapping and cache deserialization fast.
-    // 500 is enough for comprehensive filters and the first few pages of results.
+    // [PERFORMANCE] Limit to top 2000 products per category to stay within Next.js 2MB cache limit
+    // while ensuring comprehensive results for all categories.
     rawProducts = await getProductsByCategory(
       categorySlug,
       true, // stripHeavyData
-      500, // limit
+      2000, // limit
     );
   }
 
@@ -558,7 +558,7 @@ export async function getCategoryProducts(
   const cachedProducts = await getCachedLocalizedCategoryProducts(
     categorySlug,
     countryCode,
-    "v55",
+    "v56",
   );
 
   const localizedProducts = cachedProducts;
