@@ -24,10 +24,11 @@ This workflow ensures all checks pass before pushing changes, which are then aut
 
 3. **Build Verification**
    Ensure the app builds locally to catch React Server/Client component errors early.
+   **CRITICAL (Next.js 16)**: If you see `Uncached data was accessed outside of <Suspense>`, ensure all `async` components or components accessing `searchParams`/`connection()` are wrapped in a `<Suspense>` boundary. Never remove the root `Suspense` safety net in `layout.tsx`.
    // turbo
 
    ```bash
-   bun run build
+   BUILD_PHASE=1 bun run build
    ```
 
 4. **Database Push (if schema changes exist)**

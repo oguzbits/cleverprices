@@ -1,4 +1,5 @@
 import RootLayoutWrapper from "@/app/RootLayoutWrapper";
+import { Suspense } from "react";
 
 import { siteMetadata } from "@/lib/metadata";
 import { Metadata, Viewport } from "next";
@@ -23,8 +24,10 @@ export default function RootLayout({
 }) {
   return (
     <RootLayoutWrapper lang="de">
-      <GlobalSchema />
-      {children}
+      <Suspense fallback={null}>
+        <GlobalSchema />
+        {children}
+      </Suspense>
     </RootLayoutWrapper>
   );
 }

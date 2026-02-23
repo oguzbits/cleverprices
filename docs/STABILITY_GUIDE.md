@@ -163,3 +163,44 @@ To ensure a "Premium/Idealo" feel with no stutters (TBT < 50ms):
 - **Sentry Tuning**: Sentry is configured to exclude `Replay`, `Worker`, and `ShadowDom` modules to keep the initial JS execution task under the 50ms "blocking" threshold.
 
 ---
+
+## 12. Zero-Loading Navigation Architecture
+
+To achieve an **Idealo-like** experience where navigations feel instant and "never blink," CleverPrices uses a **Shell-First Rendering** pattern.
+
+### 12.1 The "Shell-First" Pattern
+
+Instead of making the entire Page component `async` and awaiting data at the top (which blocks navigation), we split the rendering:
+
+1.  **Synchronous Shell**: The main Page component handles elements that don't depend on heavy data (Metadata, Breadcrumbs, Shared UI). This ensures the Next.js router can **commit the navigation immediately**, updating the URL.
+2.  **Asynchronous Content**: Heavy data-dependent components (Product Lists, Filter Panels) are moved into internal `async` components wrapped in `<Suspense fallback={null}>`.
+3.  **Non-Blocking Promises**: Pass the `searchParams` promise directly to consumers. Awaiting it in the entry "Shell" triggers a server-side block that "freezes" the browser during navigation.
+
+### 12.2 Router Cache Strategy
+
+We explicitly enable `staleTimes` in `next.config.ts`:
+
+```ts
+experimental: {
+  staleTimes: {
+    dynamic: 30, // Prevents "Frozen UI" on back/forward
+    static: 300,
+  }
+}
+```
+
+### 12.3 Failures to Avoid
+
+Significant regressions have occurred when attempting to "simplify" this logic. Always consult [FAILED_ATTEMPTS.md](./archive/FAILED_ATTEMPTS.md) before modifying:
+
+- **Do not** use manual `router.prefetch()` in hover events.
+- **Do not** disable `staleTimes` for dynamic routes.
+- **Do not** await heavy data in the component that acts as the navigation entry point.
+
+### 12.4 Build Guardrails: "Blocking Routes"
+
+In Next.js 16, accessing dynamic server data (like `connection()`, `cookies()`, or `searchParams`) outside of a `<Suspense>` boundary will crash the build.
+
+- **Rule**: Every `async` component or component using dynamic functions **MUST** have a `Suspense` ancestor.
+- **Safety Net**: The root `Suspense` boundary in `src/app/layout.tsx` is mandatory. Do not remove it to "optimize" for TBT; instead, optimize child components to be synchronous.
+- **`use cache` Interaction**: Components using the `use cache` directive are particularly sensitive during build-time pruning. Ensure they are correctly suspended.

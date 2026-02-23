@@ -52,18 +52,19 @@ export async function getCategoryProducts() {
 }
 ```
 
-### Zero-Flicker Rendering (Cohesive SSR)
+### Zero-Flicker Rendering (Shell-First Pattern)
 
-Avoid user-visible skeletons (pulse elements) or route-level `loading.tsx` for core landing pages (Category/PDP).
+Avoid user-visible skeletons or route-level `loading.tsx` for core routes. Instead, use a **Shell-First** approach to ensure the UI remains responsive and the navigation commit is instant.
 
-- **Pattern**: Await data on the server and render the complete view.
-- **Why**: Layout stability (Zero CLS) and a premium "Idealo-style" stability are preferred over incremental streaming.
+- **Pattern**: Create a synchronous "Shell" component that renders immediate UI (Metadata, Breadcrumbs, Headers). Move heavy data fetching into internal components wrapped in `<Suspense fallback={null}>`.
+- **Why**: Next.js 15+ "freezes" the browser during navigation if the main Page or entry point is `async` and awaiting data. A synchronous shell allows the Next Router to commit the navigation immediately.
+- **Router Cache**: Always set `staleTimes.dynamic` to `30s` in `next.config.ts` to prevent "Frozen UI" when navigating back/forward.
 - **Implementation**:
-  - Delete `loading.tsx` for the route.
-  - Await the main data fetching in the page component.
-  - No `Suspense` placeholders that cause layout shifts.
+  - Main Page component should be synchronous (not `async`).
+  - Pass the `searchParams` promise directly to child components.
+  - Wrap internal data-fetching logic in `<Suspense fallback={null}>`.
 
-**Benefits**: Smooth transitions, zero layout shift, and immediate stability.
+**Benefits**: Instant URL updates, responsive browser UI, and seamless Idealo-style transitions without flickering loaders.
 
 ### Image Optimization
 
