@@ -164,17 +164,18 @@ To ensure a "Premium/Idealo" feel with no stutters (TBT < 50ms):
 
 ---
 
-## 12. Zero-Loading Navigation Architecture
+## 12. Zero-Flicker (Native Hold) Architecture
 
-To achieve an **Idealo-like** experience where navigations feel instant and "never blink," CleverPrices uses a **Shell-First Rendering** pattern.
+To achieve an **Idealo-like** experience where navigations feel instant and stable, CleverPrices uses a **Hold-First (Async Page)** pattern.
 
-### 12.1 The "Shell-First" Pattern
+### 12.1 The "Hold-First" Pattern
 
-Instead of making the entire Page component `async` and awaiting data at the top (which blocks navigation), we split the rendering:
+Instead of showing a blank "Shell" or skeletons immediately, we leverage Next.js's native transition hold:
 
-1.  **Synchronous Shell**: The main Page component handles elements that don't depend on heavy data (Metadata, Breadcrumbs, Shared UI). This ensures the Next.js router can **commit the navigation immediately**, updating the URL.
-2.  **Asynchronous Content**: Heavy data-dependent components (Product Lists, Filter Panels) are moved into internal `async` components wrapped in `<Suspense fallback={null}>`.
-3.  **Non-Blocking Promises**: Pass the `searchParams` promise directly to consumers. Awaiting it in the entry "Shell" triggers a server-side block that "freezes" the browser during navigation.
+1.  **Async Entry Points**: Main page components are `async` and explicitly `await` their data (and the `connection()` signal) at the top level.
+2.  **Native Hold**: The browser remains on the current page while the server prepares the next one. With a warm Redis cache, this hold is typically <100ms.
+3.  **No-Flicker Transition**: The UI "jumps" directly to the fully-rendered next page. This avoids the "cheap" feeling of headers loading before products.
+4.  **Static Build Protection**: By adding `await connection()` to entry pages, we prevent Next.js from "baking" empty versions of the pages during the `next build` phase when the DB is unavailable.
 
 ### 12.2 Router Cache Strategy
 
@@ -202,5 +203,5 @@ Significant regressions have occurred when attempting to "simplify" this logic. 
 In Next.js 16, accessing dynamic server data (like `connection()`, `cookies()`, or `searchParams`) outside of a `<Suspense>` boundary will crash the build.
 
 - **Rule**: Every `async` component or component using dynamic functions **MUST** have a `Suspense` ancestor.
-- **Safety Net**: The root `Suspense` boundary in `src/app/layout.tsx` is mandatory. Do not remove it to "optimize" for TBT; instead, optimize child components to be synchronous.
-- **`use cache` Interaction**: Components using the `use cache` directive are particularly sensitive during build-time pruning. Ensure they are correctly suspended.
+- **Root Safety**: A mandatory `Suspense fallback={null}` exists in `src/app/layout.tsx`. Do NOT remove it. It acts as the final safety net for the build process.
+- **Dynamic Signals**: Use `await connection()` at the top of pages to safely opt into dynamic rendering while maintaining the "Hold" behavior.

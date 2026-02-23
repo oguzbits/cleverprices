@@ -27,6 +27,7 @@ import {
 } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
+import { connection } from "next/server";
 
 // Sub-components
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
@@ -49,13 +50,16 @@ interface Props {
 // Removed force-dynamic to allow Next.js 16 dynamicIO and "use cache" to work effectively.
 // The page will become dynamic if needed through searchParams access, but is otherwise cacheable.
 
-// Main Category Page - Synchronous Shell to prevent "Frozen Navigation"
+// Main Category Page - Hold-First Pattern (Async Page)
 export async function IdealoCategoryPage({
   category,
   countryCode,
   searchParams,
   lockedFilters,
 }: Props) {
+  // Explicitly wait for the connection and searchParams to trigger the "Hold" behavior.
+  // This ensures the browser stays on the current page until the new content is ready.
+  await connection();
   const resolvedSearchParams = await searchParams;
   const categorySlug = category.slug;
 

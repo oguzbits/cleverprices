@@ -23,7 +23,14 @@ This document tracks technical approaches that were tried in CleverPrices but ul
 - **Where**: `src/app/[categorySlug]/loading.tsx`
 - **Symptom**: "Blinking" or "Flickering" UI. Layout shifts when skeletons are replaced by real content.
 - **Root Cause**: User preference for "Idealo-like" behavior. Premium sites often "hold" the current page until the next one is ready, or render a partial "Shell" instantly. Full-page skeletons feel cheap and interrupt the flow.
-- **Lesson**: Use `Suspense fallback={null}` at the leaf components, or a synchronous "Shell" pattern to handle data-heavy sections.
+- **Lesson**: Use `Suspense fallback={null}` at the leaf components, or use the **Hold-First (Async Page)** pattern for premium catalog navigation.
+
+### ❌ Attempt: Synchronous "Shell-First" Rendering
+
+- **Where**: `src/app/[categorySlug]/page.tsx` and `src/components/category/IdealoCategoryPage.tsx`
+- **Symptom**: "Flickering" UI during navigation. The browser would instantly update the URL and show the Header/Breadcrumbs/Filter Shell, but the product list would be blank for 100-300ms before appearing.
+- **Root Cause**: Next.js commits navigation as soon as the synchronous shell is ready. While this makes the URL change fast, it results in a "cheap" feeling where the page contents "pop in" after the layout.
+- **Lesson**: For a premium search engine experience, it is better to **Hold** the current page until the new content is fully ready. Making the Page component `async` and awaiting data (Hold-First) is the superior pattern.
 
 ### ❌ Attempt: Removing Root `Suspense` Boundary
 

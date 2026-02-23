@@ -52,19 +52,20 @@ export async function getCategoryProducts() {
 }
 ```
 
-### Zero-Flicker Rendering (Shell-First Pattern)
+### Zero-Flicker Rendering (Hold-First Pattern)
 
-Avoid user-visible skeletons or route-level `loading.tsx` for core routes. Instead, use a **Shell-First** approach to ensure the UI remains responsive and the navigation commit is instant.
+Avoid user-visible skeletons or flickering "shells" where headers load before content. Instead, use a **Hold-First** approach to ensure the browser holds the current page until the next one is ready.
 
-- **Pattern**: Create a synchronous "Shell" component that renders immediate UI (Metadata, Breadcrumbs, Headers). Move heavy data fetching into internal components wrapped in `<Suspense fallback={null}>`.
-- **Why**: Next.js 15+ "freezes" the browser during navigation if the main Page or entry point is `async` and awaiting data. A synchronous shell allows the Next Router to commit the navigation immediately.
-- **Router Cache**: Always set `staleTimes.dynamic` to `30s` in `next.config.ts` to prevent "Frozen UI" when navigating back/forward.
+- **Pattern**: Make the main Page component `async` and `await` all critical data (including the `connection()` signal) at the top level.
+- **Why**: Next.js 15+ navigation "holds" the transition while a Server Component is executing. For a premium/Idealo experience, it is better to stay on the current page for 100-300ms than to show a flickering blank shell.
+- **Dynamic Signal**: Use `await connection()` from `next/server` to signal dynamic rendering without causing build-time crashes (Next.js 16 requirement).
+- **Router Cache**: Always set `staleTimes.dynamic` to `30s` in `next.config.ts`. This ensures that when the data is warmed in Redis, the navigation "hold" is near-instant (<100ms).
 - **Implementation**:
-  - Main Page component should be synchronous (not `async`).
-  - Pass the `searchParams` promise directly to child components.
-  - Wrap internal data-fetching logic in `<Suspense fallback={null}>`.
+  - Main Page component **MUST** be `async`.
+  - Await `searchParams` and `connection()` at the top.
+  - Do NOT use route-level `loading.tsx` for core catalog pages.
 
-**Benefits**: Instant URL updates, responsive browser UI, and seamless Idealo-style transitions without flickering loaders.
+**Benefits**: One-click, seamless transitions where the screen "jumps" to the fully loaded next page, eliminating the cheap-feeling flicker of progressive shells.
 
 ### Image Optimization
 
