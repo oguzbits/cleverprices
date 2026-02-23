@@ -51,5 +51,5 @@ export function SearchManager() {
 
   if (!mounted) return null;
 
-  return <SearchModal open={open} onOpenChange={setOpen} />;
+  return open ? <SearchModal open={open} onOpenChange={setOpen} /> : null;
 }

@@ -15,8 +15,6 @@ export const viewport: Viewport = {
 
 import { GlobalSchema } from "@/components/seo/GlobalSchema";
 
-import { Suspense } from "react";
-
 // Root layout - minimal wrapper, individual pages/route groups control their own navbar/footer
 export default function RootLayout({
   children,
@@ -26,7 +24,7 @@ export default function RootLayout({
   return (
     <RootLayoutWrapper lang="de">
       <GlobalSchema />
-      <Suspense fallback={null}>{children}</Suspense>
+      {children}
     </RootLayoutWrapper>
   );
 }

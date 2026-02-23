@@ -27,6 +27,7 @@ import {
 } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
+import { Suspense } from "react";
 
 // Sub-components
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
@@ -41,7 +42,7 @@ import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 interface Props {
   category: Omit<Category, "icon">;
   countryCode: CountryCode;
-  searchParams: FilterParams;
+  searchParams: FilterParams | Promise<FilterParams>;
   lockedFilters?: string[];
 }
 
@@ -49,7 +50,8 @@ interface Props {
 // Removed force-dynamic to allow Next.js 16 dynamicIO and "use cache" to work effectively.
 // The page will become dynamic if needed through searchParams access, but is otherwise cacheable.
 
-export async function IdealoCategoryPage({
+// Main Category Page - Synchronous Shell to prevent "Frozen Navigation"
+export function IdealoCategoryPage({
   category,
   countryCode,
   searchParams,
@@ -60,14 +62,6 @@ export async function IdealoCategoryPage({
     ...stripCategoryIcon(crumb),
     Icon: getCategoryIcon(crumb.slug),
   }));
-
-  // 1. Kick off data fetch and WAIT for it (Cohesive Rendering)
-  // This ensures the page appears "complete" and avoids layout shifts.
-  const filteredData = await getCategoryProducts(
-    category.slug,
-    countryCode,
-    searchParams,
-  );
 
   // Breadcrumb items
   const breadcrumbItems = [
@@ -81,69 +75,84 @@ export async function IdealoCategoryPage({
   return (
     <div className="sr-searchResult bg-secondary min-h-screen">
       <BreadcrumbSchema items={breadcrumbItems} />
-      {/* ============================================ */}
-      {/* MAIN CONTAINER - max-width 1280px */}
-      {/* ============================================ */}
       <div className="mx-auto max-w-[1280px]">
+        {/* Render the Shell (Synchronous part) */}
         <div className="border-border bg-card border-b px-4">
-          {/* ============================================ */}
-          {/* BREADCRUMB - sr-breadcrumb */}
-          {/* ============================================ */}
           <div className="sr-breadcrumb py-3">
             <Breadcrumbs
               items={breadcrumbItems}
               className="text-idealo-text-secondary mb-0 text-[14px]"
             />
           </div>
-
-          {/* ============================================ */}
-          {/* TOP BAR */}
-          {/* ============================================ */}
-          <ComponentErrorBoundary name="CategoryTopBar">
-            <IdealoTopBar
-              categoryName={formatTechText(category.name)}
-              productCount={filteredData.filteredCount}
-              currentView={searchParams.view || "grid"}
-              currentSort={searchParams.sort || "popular"}
-            />
-          </ComponentErrorBoundary>
         </div>
 
-        {/* ============================================ */}
-        {/* PRODUCTS + FILTERS CONTAINER */}
-        {/* sr-searchResult__products_momVp */}
-        {/* ============================================ */}
-        <div
-          className={cn(
-            "sr-searchResult__products",
-            "relative mt-3 mb-[45px] flex flex-row flex-wrap",
-          )}
-        >
-          {/* FILTERS (Sidebar) */}
-          <ComponentErrorBoundary name="CategoryFilters">
-            <AsyncFilterPanel
-              category={category}
-              filteredData={filteredData}
-              lockedFilters={lockedFilters}
-            />
-          </ComponentErrorBoundary>
+        {/* Suspend the heavy the data-dependent part */}
+        <Suspense fallback={null}>
+          <CategoryContent
+            category={category}
+            countryCode={countryCode}
+            searchParams={searchParams}
+            lockedFilters={lockedFilters}
+          />
+        </Suspense>
 
-          {/* PRODUCT LIST */}
-          <ComponentErrorBoundary name="CategoryProductList">
-            <AsyncProductList
-              category={category}
-              countryCode={countryCode}
-              searchParams={searchParams}
-              filteredData={filteredData}
-            />
-          </ComponentErrorBoundary>
-        </div>
-
-        {/* ============================================ */}
         {/* SEO NICHES / POPULAR SEARCHES */}
-        {/* ============================================ */}
         <NicheLinks categorySlug={category.slug} />
       </div>
     </div>
+  );
+}
+
+// Heavy part that fetches data
+async function CategoryContent({
+  category,
+  countryCode,
+  searchParams,
+  lockedFilters,
+}: Props) {
+  const resolvedSearchParams = await searchParams;
+  const filteredData = await getCategoryProducts(
+    category.slug,
+    countryCode,
+    resolvedSearchParams,
+  );
+
+  return (
+    <>
+      <div className="border-border bg-card border-b px-4">
+        <ComponentErrorBoundary name="CategoryTopBar">
+          <IdealoTopBar
+            categoryName={formatTechText(category.name)}
+            productCount={filteredData.filteredCount}
+            currentView={resolvedSearchParams.view || "grid"}
+            currentSort={resolvedSearchParams.sort || "popular"}
+          />
+        </ComponentErrorBoundary>
+      </div>
+
+      <div
+        className={cn(
+          "sr-searchResult__products",
+          "relative mt-3 mb-[45px] flex flex-row flex-wrap",
+        )}
+      >
+        <ComponentErrorBoundary name="CategoryFilters">
+          <AsyncFilterPanel
+            category={category}
+            filteredData={filteredData}
+            lockedFilters={lockedFilters}
+          />
+        </ComponentErrorBoundary>
+
+        <ComponentErrorBoundary name="CategoryProductList">
+          <AsyncProductList
+            category={category}
+            countryCode={countryCode}
+            searchParams={resolvedSearchParams}
+            filteredData={filteredData}
+          />
+        </ComponentErrorBoundary>
+      </div>
+    </>
   );
 }
