@@ -47,13 +47,11 @@ const nextConfig: NextConfig = {
     },
   },
   experimental: {
-    // Cache RSC payloads in the router for 30s to prevent fresh server fetches
-    // on every back+forward navigation. Default in Next.js 15+ is 0 (no caching),
-    // which causes navigation to appear "frozen" while waiting for the server.
-    staleTimes: {
-      dynamic: 30,
-      static: 300,
-    },
+    // Cache RSC payloads in the router...
+    // staleTimes: {
+    //   dynamic: 30,
+    //   static: 300,
+    // },
     optimizePackageImports: [
       "@radix-ui/react-accordion",
       "@radix-ui/react-checkbox",
