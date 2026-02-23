@@ -27,7 +27,6 @@ import {
 } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
-import { Suspense } from "react";
 
 // Sub-components
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
@@ -51,13 +50,21 @@ interface Props {
 // The page will become dynamic if needed through searchParams access, but is otherwise cacheable.
 
 // Main Category Page - Synchronous Shell to prevent "Frozen Navigation"
-export function IdealoCategoryPage({
+export async function IdealoCategoryPage({
   category,
   countryCode,
   searchParams,
   lockedFilters,
 }: Props) {
+  const resolvedSearchParams = await searchParams;
   const categorySlug = category.slug;
+
+  const filteredData = await getCategoryProducts(
+    categorySlug,
+    countryCode,
+    resolvedSearchParams,
+  );
+
   const breadcrumbs = getBreadcrumbs(categorySlug).map((crumb) => ({
     ...stripCategoryIcon(crumb),
     Icon: getCategoryIcon(crumb.slug),
@@ -76,7 +83,7 @@ export function IdealoCategoryPage({
     <div className="sr-searchResult bg-secondary min-h-screen">
       <BreadcrumbSchema items={breadcrumbItems} />
       <div className="mx-auto max-w-[1280px]">
-        {/* Render the Shell (Synchronous part) */}
+        {/* Header / Breadcrumbs */}
         <div className="border-border bg-card border-b px-4">
           <div className="sr-breadcrumb py-3">
             <Breadcrumbs
@@ -84,75 +91,44 @@ export function IdealoCategoryPage({
               className="text-idealo-text-secondary mb-0 text-[14px]"
             />
           </div>
+          <ComponentErrorBoundary name="CategoryTopBar">
+            <IdealoTopBar
+              categoryName={formatTechText(category.name)}
+              productCount={filteredData.filteredCount}
+              currentView={(resolvedSearchParams.view as any) || "grid"}
+              currentSort={(resolvedSearchParams.sort as any) || "popular"}
+            />
+          </ComponentErrorBoundary>
         </div>
 
-        {/* Suspend the heavy the data-dependent part */}
-        <Suspense fallback={null}>
-          <CategoryContent
-            category={category}
-            countryCode={countryCode}
-            searchParams={searchParams}
-            lockedFilters={lockedFilters}
-          />
-        </Suspense>
+        {/* Main Content */}
+        <div
+          className={cn(
+            "sr-searchResult__products",
+            "relative mt-3 mb-[45px] flex flex-row flex-wrap",
+          )}
+        >
+          <ComponentErrorBoundary name="CategoryFilters">
+            <AsyncFilterPanel
+              category={category}
+              filteredData={filteredData}
+              lockedFilters={lockedFilters}
+            />
+          </ComponentErrorBoundary>
+
+          <ComponentErrorBoundary name="CategoryProductList">
+            <AsyncProductList
+              category={category}
+              countryCode={countryCode}
+              searchParams={resolvedSearchParams}
+              filteredData={filteredData}
+            />
+          </ComponentErrorBoundary>
+        </div>
 
         {/* SEO NICHES / POPULAR SEARCHES */}
         <NicheLinks categorySlug={category.slug} />
       </div>
     </div>
-  );
-}
-
-// Heavy part that fetches data
-async function CategoryContent({
-  category,
-  countryCode,
-  searchParams,
-  lockedFilters,
-}: Props) {
-  const resolvedSearchParams = await searchParams;
-  const filteredData = await getCategoryProducts(
-    category.slug,
-    countryCode,
-    resolvedSearchParams,
-  );
-
-  return (
-    <>
-      <div className="border-border bg-card border-b px-4">
-        <ComponentErrorBoundary name="CategoryTopBar">
-          <IdealoTopBar
-            categoryName={formatTechText(category.name)}
-            productCount={filteredData.filteredCount}
-            currentView={resolvedSearchParams.view || "grid"}
-            currentSort={resolvedSearchParams.sort || "popular"}
-          />
-        </ComponentErrorBoundary>
-      </div>
-
-      <div
-        className={cn(
-          "sr-searchResult__products",
-          "relative mt-3 mb-[45px] flex flex-row flex-wrap",
-        )}
-      >
-        <ComponentErrorBoundary name="CategoryFilters">
-          <AsyncFilterPanel
-            category={category}
-            filteredData={filteredData}
-            lockedFilters={lockedFilters}
-          />
-        </ComponentErrorBoundary>
-
-        <ComponentErrorBoundary name="CategoryProductList">
-          <AsyncProductList
-            category={category}
-            countryCode={countryCode}
-            searchParams={resolvedSearchParams}
-            filteredData={filteredData}
-          />
-        </ComponentErrorBoundary>
-      </div>
-    </>
   );
 }

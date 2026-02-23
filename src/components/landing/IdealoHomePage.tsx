@@ -4,7 +4,6 @@ import {
 } from "@/components/IdealoProductCarousel";
 import type { LivePriceData } from "@/components/landing/IdealoProductCard";
 import { CategoryNav } from "@/components/layout/CategoryNav";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { LazySection } from "@/components/ui/LazySection";
 import type { CountryCode } from "@/lib/countries";
 import type { Category } from "@/types";
@@ -29,25 +28,22 @@ export function IdealoHomePage({
   countryCode,
   livePriceMap,
 }: IdealoHomePageProps) {
-  // Handle empty state if all lists are empty
-  if (
-    heroProducts.length === 0 &&
-    deals.length === 0 &&
-    bestsellers.length === 0 &&
-    newArrivals.length === 0
-  ) {
+  // Handle empty state - only show if we are NOT in a suspected query-failure state
+  const hasContent =
+    heroProducts.length > 0 ||
+    deals.length > 0 ||
+    bestsellers.length > 0 ||
+    newArrivals.length > 0;
+
+  if (!hasContent) {
     return (
-      <div className="bg-[#f5f5f5]">
-        <IdealoSection variant="white" className="py-12">
-          <EmptyState
-            title="Willkommen bei cleverprices!"
-            description="Wir bauen gerade unseren Produktkatalog auf. Schauen Sie sich in der Zwischenzeit unsere Kategorien an."
-            action={{
-              label: "Kategorien entdecken",
-              href: "/categories",
-            }}
-          />
-        </IdealoSection>
+      <div className="flex min-h-[600px] items-center justify-center bg-[#f5f5f5]">
+        <div className="p-12 text-center">
+          {/* Minimal placeholder to avoid "Willkommen" flicker if data is just slow */}
+          <div className="animate-pulse text-gray-400">
+            Inhalte werden geladen...
+          </div>
+        </div>
       </div>
     );
   }

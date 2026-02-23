@@ -1,9 +1,10 @@
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
-import { CATEGORY_MAP } from "@/lib/categories";
+import { CATEGORY_MAP } from "@/lib/category-definitions";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
+import { connection } from "next/server";
 
 interface Props {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export const metadata = {
@@ -12,12 +13,10 @@ export const metadata = {
     "Finden Sie die besten Hardware-Deals und Technik-Angebote. Täglich geprüfte Preise für SSDs, HDDs, RAM und mehr.",
 };
 
-export async function generateStaticParams() {
-  return [{}];
-}
-
-export default function DealsPage({ searchParams }: Props) {
+export default async function DealsPage({ searchParams }: Props) {
+  await connection();
   const category = CATEGORY_MAP["deals"];
+  const resolvedSearchParams = await searchParams;
 
   return (
     <IdealoCategoryPage
@@ -26,7 +25,7 @@ export default function DealsPage({ searchParams }: Props) {
         slug: "deals",
       }}
       countryCode={DEFAULT_COUNTRY}
-      searchParams={searchParams}
+      searchParams={resolvedSearchParams}
     />
   );
 }

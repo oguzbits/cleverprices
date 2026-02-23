@@ -3,14 +3,11 @@ import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getHomePageMetadata } from "@/lib/metadata";
 import { Metadata } from "next";
 
-import { Suspense } from "react";
+import { connection } from "next/server";
 
 export const metadata: Metadata = getHomePageMetadata(DEFAULT_COUNTRY);
 
-export default function HomePage() {
-  return (
-    <Suspense fallback={null}>
-      <HomeContent country={DEFAULT_COUNTRY} />
-    </Suspense>
-  );
+export default async function HomePage() {
+  await connection();
+  return <HomeContent country={DEFAULT_COUNTRY} />;
 }

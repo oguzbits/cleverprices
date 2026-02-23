@@ -195,13 +195,13 @@ async function CategoryPageContent({
   }
 
   // 3. Child Category View (Idealo style)
-  // We pass the promise of searchParams down to avoid awaiting it here.
-  // IdealoCategoryPage is now synchronous shell + internal Suspense.
+  const resolvedSearchParams = await searchParams;
+
   return (
     <IdealoCategoryPage
       category={stripCategoryIcon(category)}
       countryCode={DEFAULT_COUNTRY}
-      searchParams={searchParams}
+      searchParams={resolvedSearchParams}
     />
   );
 }
