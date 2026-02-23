@@ -461,7 +461,7 @@ export async function getPDPRenderData(
         if (slug !== canonicalUrlSlug) {
           return {
             redirect: `/p/${canonicalUrlSlug}`,
-            isPermanent: product.enrichmentStatus === "optimized",
+            isPermanent: true,
           };
         }
 

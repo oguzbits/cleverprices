@@ -10,7 +10,6 @@ import { type Product } from "@/lib/product-registry";
 import {
   getAllProductSlugs,
   getPDPRenderData,
-  getProductById,
 } from "@/lib/server/cached-products";
 import { logPDPPerformance } from "@/lib/server/performance-registry";
 import { BRAND_DOMAIN } from "@/lib/site-config";
@@ -153,18 +152,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
 
     if (!renderData || !renderData.product) {
-      // Phase 4: Error Recovery - Try to redirect to logical category/brand instead of 404
-      // This recovers link equity and keeps Googlebot indexing the site.
-      // First, let's see if we can extract ID from the slug to find the product's category
-      const idMatch = slug.match(/^(\d+)_/);
-      if (idMatch) {
-        const productId = parseInt(idMatch[1]);
-        const product = await getProductById(productId);
-        if (product?.category) {
-          redirect(`/c/${product.category}`);
-        }
-      }
-
       notFound();
     }
 

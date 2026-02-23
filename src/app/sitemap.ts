@@ -76,7 +76,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // This ensures Google only committed to stable, high-quality URLs.
   const products = allProducts.filter(
     (p) =>
-      p.enrichmentStatus === "optimized" || p.enrichmentStatus === "processed",
+      (p.enrichmentStatus === "optimized" ||
+        p.enrichmentStatus === "processed") &&
+      !p.slug.endsWith("_-generic"),
   );
 
   const productRoutes: MetadataRoute.Sitemap = products.map((product) => {
