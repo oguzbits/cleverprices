@@ -1,13 +1,19 @@
-import { CarouselContainer } from "@/components/CarouselContainer";
 import {
   IdealoProductCard,
   LivePriceData,
 } from "@/components/landing/IdealoProductCard";
 import { type CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+
+const RotatingCarouselContainer = dynamic(
+  () =>
+    import("@/components/CarouselContainer").then((m) => m.CarouselContainer),
+  { ssr: true },
+);
 
 export interface CarouselProduct {
-  id?: number; // DB ID for live price fetching
+  id?: number;
   title: string;
   subtitle?: string;
   price: number;
@@ -29,11 +35,15 @@ interface IdealoProductCarouselProps {
   products: CarouselProduct[];
   className?: string;
   countryCode?: CountryCode;
-  /** Enable priority loading for first images (count depends on viewport) */
   priorityImages?: boolean;
   livePriceMap?: Map<number, LivePriceData>;
 }
 
+/**
+ * Server Component: Renders a product carousel.
+ * Passing cards as children to the Client CarouselContainer ensures
+ * that card rendering logic (the heaviest part) stays on the server.
+ */
 export function IdealoProductCarousel({
   title,
   products,
@@ -61,7 +71,7 @@ export function IdealoProductCarousel({
   }
 
   return (
-    <CarouselContainer title={title} className={className}>
+    <RotatingCarouselContainer title={title} className={className}>
       {products.map((product, index) => (
         <IdealoProductCard
           key={product.id || index}
@@ -85,6 +95,6 @@ export function IdealoProductCarousel({
           livePriceData={product.id ? livePriceMap?.get(product.id) : undefined}
         />
       ))}
-    </CarouselContainer>
+    </RotatingCarouselContainer>
   );
 }

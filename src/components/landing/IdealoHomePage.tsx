@@ -1,5 +1,7 @@
-import { IdealoProductCarousel as DynamicProductCarousel } from "@/components/DynamicProductCarousel";
-import type { CarouselProduct } from "@/components/IdealoProductCarousel";
+import {
+  IdealoProductCarousel,
+  type CarouselProduct,
+} from "@/components/IdealoProductCarousel";
 import type { LivePriceData } from "@/components/landing/IdealoProductCard";
 import { CategoryNav } from "@/components/layout/CategoryNav";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -64,7 +66,7 @@ export function IdealoHomePage({
       {bestsellers.length > 0 ? (
         <LazySection placeholderHeight="400px" rootMargin="300px">
           <IdealoSection variant="white">
-            <DynamicProductCarousel
+            <IdealoProductCarousel
               title="Bestseller"
               products={bestsellers}
               livePriceMap={livePriceMap}
@@ -78,7 +80,7 @@ export function IdealoHomePage({
       {deals.length > 0 ? (
         <LazySection placeholderHeight="400px" rootMargin="300px">
           <IdealoSection variant="lightBlue">
-            <DynamicProductCarousel
+            <IdealoProductCarousel
               title="Aktuelle Deals für dich"
               products={deals}
               livePriceMap={livePriceMap}
@@ -92,7 +94,7 @@ export function IdealoHomePage({
       {newArrivals.length > 0 ? (
         <LazySection placeholderHeight="400px" rootMargin="300px">
           <IdealoSection variant="white">
-            <DynamicProductCarousel
+            <IdealoProductCarousel
               title="Neuheiten"
               products={newArrivals}
               livePriceMap={livePriceMap}

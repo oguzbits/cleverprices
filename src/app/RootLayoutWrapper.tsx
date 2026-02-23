@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import * as React from "react";
 
 const inter = Inter({
@@ -30,29 +31,27 @@ export default function RootLayoutWrapper({
   return (
     <html lang={lang} suppressHydrationWarning>
       <head>
-        <script
+        {/*
+          Hydration Barrier Script:
+          Ensures that if a user clicks a "Search" button before the dynamic
+          SearchManager has hydrated, the intent is captured and set as a flag.
+          Without this, the first click on mobile during loading would be "swallowed".
+        */}
+        <Script
+          id="search-trigger-capture"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
-            window.triggerSearch = function() {
-              window.__searchPending = true;
-            };
-          `,
+              window.triggerSearch = function() {
+                window.__searchPending = true;
+              };
+            `,
           }}
         />
         <link
           rel="preconnect"
           href="https://m.media-amazon.com"
           crossOrigin=""
-        />
-        <link rel="dns-prefetch" href="https://m.media-amazon.com" />
-        <link
-          rel="preconnect"
-          href="https://images-na.ssl-images-amazon.com"
-          crossOrigin=""
-        />
-        <link
-          rel="dns-prefetch"
-          href="https://images-na.ssl-images-amazon.com"
         />
       </head>
       <body
