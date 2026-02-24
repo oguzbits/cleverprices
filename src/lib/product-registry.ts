@@ -103,6 +103,28 @@ export const liteProductColumns = {
   updatedAt: products.updatedAt,
 };
 
+// ULTRA-lean columns for the filtering tier (Lean & Ghost Architecture)
+// Only includes fields needed for facets, sorting, and search.
+export const filteringProductColumns = {
+  id: products.id,
+  asin: products.asin,
+  title: products.title,
+  brand: products.brand,
+  category: products.category,
+  condition: products.condition,
+  capacity: products.capacity, // For filtering
+  capacityUnit: products.capacityUnit, // For display
+  normalizedCapacity: products.normalizedCapacity, // For range filters/sorting
+  formFactor: products.formFactor, // For filtering
+  technology: products.technology, // For filtering
+  salesRank: products.salesRank, // For sorting
+  rating: products.rating, // For sorting
+  reviewCount: products.reviewCount, // For sorting
+  monthlySold: products.monthlySold, // For sorting
+  parentAsin: products.parentAsin, // For grouping/identity
+  variationAttributes: products.variationAttributes, // Fallback for socket/cores
+};
+
 /**
  * Product Registry - DB Adapter
  * Fetches data from SQLite database seeded with realistic data.
@@ -922,6 +944,79 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
     },
   )();
 });
+
+export const getRawProductsByCategory = cache(
+  async function getRawProductsByCategory(
+    category: string,
+    countryCode: string = "de",
+    limit: number = 2000,
+  ) {
+    if (IS_BUILD || !category) return [];
+
+    const fetchProducts = async () => {
+      await dbReady;
+      const { prods, prs } = await withRetry(async () => {
+        const prods = await db
+          .select(filteringProductColumns)
+          .from(products)
+          .where(eq(products.category, category))
+          .orderBy(asc(products.salesRank))
+          .limit(limit);
+
+        if (prods.length === 0) return { prods: [], prs: [] };
+
+        const foundIds = prods.map((p) => p.id);
+        const prs = await db
+          .select(superLitePriceColumns)
+          .from(prices)
+          .where(
+            and(
+              inArray(prices.productId, foundIds),
+              eq(prices.country, countryCode),
+            ),
+          );
+
+        return { prods, prs };
+      });
+
+      if (prods.length === 0) return [];
+
+      const pricesByProduct = new Map<number, any>();
+      prs.forEach((pr) => pricesByProduct.set(pr.productId, pr));
+
+      return prods.map((p) => {
+        const live = pricesByProduct.get(p.id);
+        const code = countryCode.toLowerCase();
+        return {
+          ...p,
+          prices: { [code]: live?.price || 0 },
+          usedPrices: { [code]: live?.usedPrice || 0 },
+          warehousePrices: { [code]: live?.warehousePrice || 0 },
+          priceAvg90: { [code]: live?.priceAvg90 || 0 },
+          pricePerUnit: { [code]: live?.pricePerUnit || 0 },
+          pricesLastUpdated: { [code]: live?.lastUpdated },
+        };
+      });
+    };
+
+    const isScript =
+      typeof globalThis === "undefined" ||
+      (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
+
+    if (isScript) {
+      return fetchProducts();
+    }
+
+    return unstable_cache(
+      fetchProducts,
+      [`raw-category-products-v1-${category}-${countryCode}-${limit}`],
+      {
+        revalidate: CATEGORY_REVALIDATE_SECONDS,
+        tags: ["category-products", `cat-${category}`, "v60"],
+      },
+    )();
+  },
+);
 
 /**
  * Get a specific batch of products by their IDs, enriched with prices and siblings.

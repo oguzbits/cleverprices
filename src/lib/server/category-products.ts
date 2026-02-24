@@ -3,6 +3,7 @@ import { getAllDeals } from "@/lib/data/dealsData";
 import {
   getProductsByCategory,
   getProductsByIds,
+  getRawProductsByCategory,
 } from "@/lib/product-registry";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getLocalizedProductData } from "@/lib/utils/products";
@@ -51,10 +52,6 @@ export interface LocalizedProduct {
   officialTitle?: string;
   mpn?: string;
 }
-
-// ... (Wait, I can't put ALL of it here. The prompt size limits might clip it?
-// 2MB limit mentioned in code :)
-// I will try to supply the full block. It is about 200 lines.
 
 export interface FilterParams {
   search?: string;
@@ -398,30 +395,59 @@ export async function getLeanCategoryProducts(
   "use cache";
   cacheLife("category");
 
-  const products = await getCachedLocalizedCategoryProducts(
+  const rawProducts = await getRawProductsByCategory(
     categorySlug,
     countryCode,
-    version,
+    2000,
   );
 
-  // Strip non-essential fields to create a high-speed filtering set
-  return products.map((p) => ({
-    id: p.id,
-    title: p.title,
-    brand: p.brand,
-    price: p.price,
-    popularityScore: p.popularityScore,
-    condition: p.condition,
-    capacity: p.capacity,
-    normalizedCapacity: p.normalizedCapacity,
-    formFactor: p.formFactor,
-    technology: p.technology,
-    socket: p.socket,
-    cores: p.cores,
-    savings: p.savings,
-    pricePerUnit: p.pricePerUnit,
-    salesRank: p.salesRank,
-  }));
+  const isCpuOrMobo = categorySlug === "cpu" || categorySlug === "motherboards";
+  const isCpu = categorySlug === "cpu";
+  const isSsd = categorySlug === "ssds";
+  const isStorageOrRam = [
+    "hard-drives",
+    "ssds",
+    "external-storage",
+    "storage",
+    "nas",
+    "smartphones",
+    "tablets",
+    "notebooks",
+    "ram",
+  ].includes(categorySlug);
+
+  return rawProducts
+    .map((p) => {
+      const localized = mapRawToLocalizedProduct(
+        p,
+        countryCode,
+        categorySlug,
+        isCpuOrMobo,
+        isCpu,
+        isSsd,
+        isStorageOrRam,
+      );
+      if (!localized) return null;
+
+      return {
+        id: localized.id,
+        title: localized.title,
+        brand: localized.brand,
+        price: localized.price,
+        popularityScore: localized.popularityScore,
+        condition: localized.condition,
+        capacity: localized.capacity,
+        normalizedCapacity: localized.normalizedCapacity,
+        formFactor: localized.formFactor,
+        technology: localized.technology,
+        socket: localized.socket,
+        cores: localized.cores,
+        savings: localized.savings,
+        pricePerUnit: localized.pricePerUnit,
+        salesRank: localized.salesRank,
+      };
+    })
+    .filter((p): p is any => p !== null);
 }
 
 /**

@@ -15,6 +15,7 @@ The `getLeanCategoryProducts` function serves as the high-speed engine for the c
 - **Payload**: Contains only primitive data (ID, price, brand, popularity, specific category tokens like 'socket' or 'capacity').
 - **Size**: ~150KB for 2,000 products (down from ~2.5MB).
 - **Purpose**: All filtering, facet counting (sidebar numbers), and sorting happen on this set.
+- **Database Optimization**: Powered by `getRawProductsByCategory` which selects only `filteringProductColumns`, bypassing expensive sibling lookups and JSON parsing for the initial product set.
 - **TTFB Impact**: Extremely low, as Redis/Memory can parse this instantly.
 
 ### 2. The "Ghost" Product Hydration
