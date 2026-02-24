@@ -56,7 +56,7 @@ export function ProductBestsellerGrid({
             key={product.slug}
             product={product}
             countryCode={countryCode}
-            priority={false}
+            priority={index < 4}
           />
         ))}
       </div>

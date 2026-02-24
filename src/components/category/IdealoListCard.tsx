@@ -86,8 +86,7 @@ export function IdealoListCard({
         {/* ============================================ */}
         <div
           className={cn(
-            "sr-resultItemTile__imageSection sr-resultItemTile__imageSection--LIST",
-            "relative flex h-[140px] w-[168px] items-center justify-center overflow-hidden bg-white",
+            "relative flex h-[140px] w-[168px] items-center justify-center overflow-hidden bg-[#f5f5f5]",
           )}
         >
           {/* Shimmer overlay */}
@@ -102,9 +101,9 @@ export function IdealoListCard({
               loading={priority ? undefined : "lazy"}
               // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
               fetchPriority={priority ? "high" : "low"}
-              className="object-contain p-2"
+              className="object-contain p-2 mix-blend-multiply"
               sizes="168px"
-              quality={50}
+              quality={75}
               style={{ objectFit: "contain" }}
             />
           ) : (

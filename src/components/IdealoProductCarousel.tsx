@@ -85,7 +85,7 @@ export function IdealoProductCarousel({
           isBestseller={product.isBestseller}
           isVariantGroup={product.isVariantGroup}
           countryCode={countryCode}
-          priorityLoad={priorityImages && index < 2}
+          priorityLoad={priorityImages && index < 4}
           livePriceData={product.id ? livePriceMap?.get(product.id) : undefined}
         />
       ))}

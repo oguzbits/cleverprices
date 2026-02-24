@@ -49,7 +49,7 @@ export function IdealoResultList({
             key={product.id || product.slug}
             product={product}
             countryCode={countryCode}
-            priority={index < 2}
+            priority={index < 8}
             livePriceData={livePrices?.get(product.id || 0)}
           />
         ))}
@@ -75,7 +75,7 @@ export function IdealoResultList({
           key={product.id || product.slug}
           product={product}
           countryCode={countryCode}
-          priority={index < 2}
+          priority={index < 8}
           livePriceData={livePrices?.get(product.id || 0)}
         />
       ))}

@@ -60,7 +60,11 @@ export function IdealoHomePage({
 
       {/* Bestseller Carousel - Just below hero, likely visible or near-visible */}
       {bestsellers.length > 0 ? (
-        <LazySection placeholderHeight="400px" rootMargin="300px">
+        <LazySection
+          placeholderHeight="400px"
+          rootMargin="300px"
+          immediate={true}
+        >
           <IdealoSection variant="white">
             <IdealoProductCarousel
               title="Bestseller"

@@ -56,7 +56,7 @@ export function ParentCategoryView({
 
         {/* Bestseller Section - Lazy loaded since it's below the fold */}
         {bestsellers.length > 0 && (
-          <LazySection placeholderHeight="600px" rootMargin="0px">
+          <LazySection placeholderHeight="600px" rootMargin="300px">
             <ProductBestsellerGrid
               title={`Bestseller in "${formatTechText(parentCategory.name)}"`}
               products={bestsellers}
@@ -67,7 +67,7 @@ export function ParentCategoryView({
 
         {/* New Products Carousel - Lazy loaded */}
         {newProducts.length > 0 && (
-          <LazySection placeholderHeight="400px" rootMargin="0px">
+          <LazySection placeholderHeight="400px" rootMargin="300px">
             <section className="mb-10 rounded-lg bg-[#e8f4fd] px-6 py-6">
               <IdealoProductCarousel
                 title={`Neu in ${formatTechText(parentCategory.name)}`}
@@ -100,7 +100,7 @@ export function ParentCategoryView({
 
         {/* Deals Carousel - Lazy loaded */}
         {deals.length > 0 && (
-          <LazySection placeholderHeight="400px" rootMargin="0px">
+          <LazySection placeholderHeight="400px" rootMargin="300px">
             <section className="mb-10 rounded-lg bg-white px-6 py-6 shadow-sm">
               <IdealoProductCarousel
                 title={`Deals in "${formatTechText(parentCategory.name)}"`}

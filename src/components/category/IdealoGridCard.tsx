@@ -103,7 +103,6 @@ export function IdealoGridCard({
         {/* ============================================ */}
         <div
           className={cn(
-            "sr-resultItemTile__imageSection resultItemTile__imageSection--GRID",
             "relative flex h-[140px] items-center justify-center overflow-hidden bg-[#f5f5f5]",
           )}
         >
@@ -121,7 +120,7 @@ export function IdealoGridCard({
               fetchPriority={priority ? "high" : "low"}
               className="object-contain p-2 mix-blend-multiply"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 168px"
-              quality={50}
+              quality={75}
               style={{ objectFit: "contain" }}
             />
           ) : (

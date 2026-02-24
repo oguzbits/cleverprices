@@ -84,7 +84,7 @@ export function IdealoProductCard({
                 fill
                 className="object-contain mix-blend-multiply transition-transform duration-300 group-hover:scale-105"
                 sizes="(max-width: 600px) 128px, 192px"
-                quality={30}
+                quality={75}
                 priority={priorityLoad}
                 fetchPriority={priorityLoad ? "high" : "auto"}
               />
