@@ -102,6 +102,7 @@ Avoid user-visible skeletons or flickering "shells" where headers load before co
 
 - **Do NOT rely on build-time SSG** for large catalogs (database is excluded from build).
 - **Proactive Hydration**: Trigger the `warm-cache` script after deployments and price updates.
+- **Lean & Ghost Strategy**: For categories with >500 products, always use the Lean & Ghost architecture (fetch IDs/prices for filtering, hydrate full details only for the visible page) to prevent massive RSC payloads and slow server processing.
 - **Price Freshness**: Category and product pages must have a **60-second stale window** to ensure site-wide price consistency during the 20-minute Keepa update cycle.
 - **Safe Warming**: Ensure the warmer monitors `os.loadavg()` to avoid competing with real traffic or Google crawlers.
 

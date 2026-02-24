@@ -30,6 +30,7 @@ version: "2.1.0"
 | **Bounded Parallelism** | Batch operations           | [Rule](rules/patterns-batch.md)             |
 | **Value Diffing**       | Before any write           | [Rule](rules/patterns-resource-safety.md)   |
 | **O(1) Data Lookups**   | Single product pages       | [Rule](rules/patterns-product-identity.md)  |
+| **Lean & Ghost**        | Catalog / Category pages   | [Rule](rules/patterns-lean-ghost.md)        |
 
 ---
 
@@ -60,6 +61,7 @@ version: "2.1.0"
 - [Backup Strategies](file:///Users/oguz/Desktop/Dev/cleverprices/.agent/skills/drizzle-orm/rules/backups.md)
 - [Transactions](rules/patterns-transactions.md)
 - [Resource Safety](rules/patterns-resource-safety.md) - CRITICAL
+- [Lean & Ghost Pattern](rules/patterns-lean-ghost.md) - CRITICAL for Catalogs
 
 ### Configuration
 

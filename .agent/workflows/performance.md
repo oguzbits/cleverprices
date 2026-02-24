@@ -52,6 +52,15 @@ If TTFB (Time to First Byte) is > 200ms on warm pages:
   bun run warm-cache
   ```
 - **Optimization**: Verify SQLite WAL mode and checkpoint status if DB reads are slow.
+- **Optimization (Lean & Ghost)**: For large categories, ensure `getCategoryProducts` is using the tiered fetching approach. Verify that the hydration step (`getLocalizedProductsByIds`) is only fetching active page products.
+
+## 5. Lean & Ghost Verification
+
+For categories with > 500 products:
+
+- **Check**: Is the server deserializing all 2,000 products or just 24?
+- **Action**: Inspect the cache usage. If the main fetch uses `getLeanCategoryProducts`, memory spikes during category loads should be eliminated.
+- **Consistency**: Verify that pagination maintains the exact same product titles and slugs as the first page.
 
 ## 5. Automated Verification (Lighthouse)
 
