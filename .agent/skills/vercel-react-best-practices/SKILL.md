@@ -35,6 +35,7 @@ This project uses **Next.js 16.0.10** with special features:
 | Full SSG for large catalogs | Build timeout             | ISR with `cacheLife()`                   |
 | `await import()` in RSC     | Blocks Compiler, SLOW     | Static top-level `import`                |
 | `useEffect` State Sync      | Blocks Compiler, Cascades | Render-phase state sync (if (p!=s) setS) |
+| Re-calculating Identity     | Divergent titles/slugs    | Use `product.subtitle` from DB mapping   |
 
 ---
 

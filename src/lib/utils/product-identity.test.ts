@@ -68,6 +68,26 @@ describe("getProductIdentity", () => {
     expect(identity.model).toBe("990 PRO");
   });
 
+  it("should strip M.2 from SSD model names but keep it for Apple products", () => {
+    // Samsung Case
+    const samsungSsd = {
+      title: "Samsung 990 PRO NVMe M.2 SSD",
+      brand: "Samsung",
+      category: "ssds",
+    };
+    const res1 = getProductIdentity(samsungSsd);
+    expect(res1.model).toBe("990 PRO");
+
+    // Apple Case
+    const appleMac = {
+      title: "Apple MacBook Air mit M2 Chip",
+      brand: "Apple",
+      category: "laptops",
+    };
+    const res2 = getProductIdentity(appleMac);
+    expect(res2.model).toContain("M2");
+  });
+
   it("should handle PSUs with wattage and efficiency noise", () => {
     const product = {
       title: "Corsair RM750e 750W 80+ Gold Fully Modular PSU",

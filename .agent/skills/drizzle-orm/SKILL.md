@@ -31,6 +31,7 @@ version: "2.1.0"
 | **Value Diffing**       | Before any write           | [Rule](rules/patterns-resource-safety.md)   |
 | **O(1) Data Lookups**   | Single product pages       | [Rule](rules/patterns-product-identity.md)  |
 | **Lean & Ghost**        | Catalog / Category pages   | [Rule](rules/patterns-lean-ghost.md)        |
+| **Identity Mapping**    | Data normalization         | `src/lib/utils/product-mapping.ts`          |
 
 ---
 

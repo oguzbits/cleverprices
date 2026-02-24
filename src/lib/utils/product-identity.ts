@@ -576,9 +576,11 @@ export function getProductIdentity(
     // but ALLOW subtraction for variant traits like Color/Size to keep model names clean
     const lowerKey = k.toLowerCase();
     const isCoreIdentityKey =
-      /model|name|series|serie|family|familie|bezeichnung|style/.test(lowerKey);
+      /model|name|series|serie|family|familie|bezeichnung|style|stil/.test(
+        lowerKey,
+      );
 
-    if (isCoreIdentityKey && IDENTITY_CONFIG.IDENTITY_KEYS.includes(lowerKey))
+    if (isCoreIdentityKey || IDENTITY_CONFIG.IDENTITY_KEYS.includes(lowerKey))
       return;
 
     if (typeof v === "string") {
@@ -764,14 +766,13 @@ export function getProductIdentity(
       /^(rtx|gtx|rx|ti|super|m\d|s\d+|pro|air|max|ultra|pixel|iphone|ipad|galaxy|macbook|artisan|aero|legion|tuf|rog|omen|mfp|gaming)$/i.test(
         cleanLower,
       );
-    let isActuallyProtected =
+    const isActuallyProtected =
       isModelCode ||
       (isProtectedTech &&
-        (!/^m\d$/.test(cleanLower) || resolvedBrandLower === "apple"));
-
-    // Always protect the first word if not in subtractTokens
-    if (index === 0 && !subtractTokens.has(cleanLower))
-      isActuallyProtected = true;
+        (!/^m\d$/.test(cleanLower) || resolvedBrandLower === "apple")) ||
+      (index === 0 && !subtractTokens.has(cleanLower)) ||
+      (cleanLower.length >= 3 &&
+        /model|serie|name|evo|select/i.test(cleanLower));
 
     // Specific strip: 'x' as separator in resolution (3440 x 1440)
     if (cleanLower === "x" && index > 0 && index < rawWords.length - 1) {
@@ -795,8 +796,9 @@ export function getProductIdentity(
       subtractTokens.has(cleanLower) &&
       !isActuallyProtected &&
       !isOfficialModelTrustPath
-    )
+    ) {
       return;
+    }
 
     // Final clean swap & Deduplication
     const formatted = fixTechCasing(cleanWord.replace(/[,\-:\/]+$/, ""));
@@ -864,15 +866,56 @@ export function getProductIdentity(
       displayVal = "Cellular";
     }
 
-    const valLower = displayVal.toLowerCase();
+    // Aggressively strip model words from variant display value to prevent duplication
+    // E.g. Model: "Evo Select", Token: "Evo Select (2024)" -> "(2024)"
+    const currentModelWords = hubModelName
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((w) => w.length > 2);
+    let cleanedDisplayVal = displayVal;
+
+    currentModelWords.forEach((mw) => {
+      const escaped = mw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const wordRegex = new RegExp(`\\b${escaped}\\b`, "gi");
+      cleanedDisplayVal = cleanedDisplayVal.replace(wordRegex, "").trim();
+    });
+
+    // Cleanup redundant punctuation after stripping
+    cleanedDisplayVal = cleanedDisplayVal
+      .replace(/^[(\[",\-\.\/:\s]+|[)\]",\-\.\/:\s]+$/g, "")
+      .trim();
+
+    // If stripping left us with nothing or just noise, skip this token
+    if (!cleanedDisplayVal || cleanedDisplayVal.length < 1) return;
+
+    const valLower = cleanedDisplayVal.toLowerCase();
     const valNorm = valLower.replace(/[^a-z0-9]/g, "");
     const modelNorm = hubModelName.toLowerCase().replace(/[^a-z0-9]/g, "");
 
-    if (valNorm && modelNorm.includes(valNorm)) return;
+    // Bi-directional inclusion check: prevent "iPhone" in "iPhone 15" AND "iPhone 15" in "iPhone"
+    if (
+      valNorm &&
+      (modelNorm.includes(valNorm) || valNorm.includes(modelNorm)) &&
+      !/^\d+$/.test(valNorm) // Don't strip pure numbers like "15" or "2024" if they are distinct
+    ) {
+      // If it's a model word match but has a number (like 2024), we might want to keep the single number part
+      const matches = valLower.match(/\d+/g);
+      if (matches && matches.length === 1 && !modelNorm.includes(matches[0])) {
+        cleanedDisplayVal = matches[0];
+      } else {
+        return;
+      }
+    }
+
+    displayVal = cleanedDisplayVal;
 
     // Smart technical labeling: Skip for Consoles, Smartphones, and redundant categories
     const isConsole = category === "consoles";
-    const isSSD = category === "ssds";
+    const isSSD =
+      category === "ssds" ||
+      category === "memory" ||
+      /ssd|evoselect/i.test(hubModelName.toLowerCase());
+
     const isRAM = category === "ram";
     const isCapacityKey = /storage|capacity|speicher/i.test(k);
     const isRAMKey = /ram|arbeitsspeicher/i.test(k);
@@ -949,7 +992,13 @@ export function getProductIdentity(
     variantSuffix = filteredTokens.join(" ").trim();
   }
 
-  const variantLabel = Array.from(new Set(variantTokens)).join(" ").trim();
+  const variantLabel =
+    isHighVariance && mpnVal && mpnVal.length > 3
+      ? Array.from(new Set([...variantTokens, mpnVal]))
+          .join(" ")
+          .trim()
+      : Array.from(new Set(variantTokens)).join(" ").trim();
+
   const displayTitle = variantSuffix
     ? `${modelTitle} ${variantSuffix}`
     : modelTitle;

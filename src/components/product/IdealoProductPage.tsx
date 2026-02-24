@@ -207,10 +207,14 @@ export async function IdealoProductPage({
                 id="product-title"
                 className="text-[20px] font-bold md:text-[24px]"
               >
-                {isParentView ? hubFullModel : identity.fullModel}
-                {!isParentView && identity.variantLabel && (
-                  <span className="ml-2 text-[16px] font-bold text-gray-500">
-                    {identity.variantLabel}
+                {mergedProduct.subtitle
+                  ? mergedProduct.title
+                      .replace(mergedProduct.subtitle, "")
+                      .trim()
+                  : mergedProduct.title}{" "}
+                {!isParentView && mergedProduct.subtitle && (
+                  <span className="text-[16px] font-bold text-gray-500">
+                    {mergedProduct.subtitle}
                   </span>
                 )}
               </h1>

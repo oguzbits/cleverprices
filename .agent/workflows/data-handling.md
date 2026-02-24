@@ -47,6 +47,13 @@ import { IS_BUILD } from "@/db";
 if (IS_BUILD) return [];
 ```
 
-## 5. Measure First
+## 6. Product Title Consistency (Single Source of Truth)
 
-If you suspect a TTFB reduction goal is needed, always measure the raw SQLite execution cost locally before adding Suspense or Streaming.
+To prevent discrepancies between Category Pages, Landing Pages, and Product Detail Pages (PDP), all display titles must be derived from a single source of truth.
+
+1.  **Generation**: titles and subtitles are generated **once** in `src/lib/utils/product-mapping.ts` within the `mapDbProduct` function. This function calls `getFamilyIdentity` which ensures canonical brand/model/variant alignment.
+2.  **Storage**: The resulting `item.title` (full identifier) and `item.subtitle` (variant specific) are stored in the product object.
+3.  **Consumption**:
+    - **Grid Cards**: Use `{product.title.replace(product.subtitle, "")}` for the model and `{product.subtitle}` for the variant details.
+    - **PDP H1**: MUST follow the same replacement logic using the product fields. **NEVER** re-calculate identity strings in components for display purposes.
+4.  **Testing**: Any changes to identity logic must be verified against `src/lib/utils/identity-consistency.test.ts` to ensure no divergence.

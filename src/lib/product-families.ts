@@ -58,7 +58,13 @@ export function getFamilyIdentity(
   representative: Product | Partial<Product>,
   allVariants: Product[] = [],
   consensus?: SiblingConsensus,
-): { slug: string; title: string; brand: string; variantSuffix: string } {
+): {
+  slug: string;
+  title: string;
+  brand: string;
+  variantSuffix: string;
+  displaySubtitle: string;
+} {
   // 1. Basic Identity (Contains normalized brand e.g. PlayStation -> Sony)
   const identity = getProductIdentity(representative, allVariants, consensus);
   const brand = identity.brand || "Generic";
@@ -127,9 +133,10 @@ export function getFamilyIdentity(
 
   return {
     slug: `${idPrefix}_-${textSlug}`,
-    title: identity.fullModel, // Use neutral Hub model name for all family members
+    title: identity.fullModel,
     brand,
     variantSuffix: identity.variantSuffix,
+    displaySubtitle: identity.variantSuffix, // Use concise suffix (Color + MPN) as the Source of Truth
   };
 }
 
