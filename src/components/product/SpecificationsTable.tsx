@@ -7,6 +7,7 @@
 "use client";
 
 import { useDebugMode } from "@/hooks/use-debug-mode";
+import { translateSpecKey } from "@/lib/constants/spec-translations";
 import { Product } from "@/lib/product-registry";
 import { cn } from "@/lib/utils";
 import { getProductIdentity } from "@/lib/utils/product-identity";
@@ -43,67 +44,7 @@ function safeStringify(value: unknown): string {
   }
 }
 
-const KEY_TRANSLATIONS: Record<string, string> = {
-  "release date": "Gelistet seit",
-  model: "Modell",
-  color: "Farbe",
-  series: "Serie",
-  manufacturer: "Hersteller",
-  interface: "Schnittstelle",
-  "form factor": "Bauform",
-  dimensions: "Abmessungen",
-  weight: "Gewicht",
-  warranty: "Garantie",
-  capacity: "Kapazität",
-  "read speed": "Lesegeschwindigkeit",
-  "write speed": "Schreibgeschwindigkeit",
-  technology: "Technik",
-  type: "Typ",
-  socket: "Sockel",
-  cores: "Kerne",
-  threads: "Threads",
-  "base clock": "Basistakt",
-  "boost clock": "Boost-Takt",
-  cache: "Cache",
-  tdp: "TDP",
-  graphics: "Grafik",
-  resolution: "Auflösung",
-  brightness: "Helligkeit",
-  "contrast ratio": "Kontrastverhältnis",
-  "response time": "Reaktionszeit",
-  "refresh rate": "Bildwiederholfrequenz",
-  "panel type": "Panel-Typ",
-  "screen size": "Bildschirmdiagonale",
-  "aspect ratio": "Seitenverhältnis",
-  "display type": "Display-Typ",
-  connections: "Anschlüsse",
-  hdmi: "HDMI",
-  displayport: "DisplayPort",
-  curved: "Curved",
-  chipset: "Grafikchipsatz",
-  "gpu clock": "Chiptakt",
-  "gpu boost clock": "Boost-Takt",
-  "video memory": "Grafikspeicher",
-  "memory type": "Speichertyp",
-  "memory clock": "Speichertakt",
-  "power consumption": "Stromverbrauch",
-  cooling: "Kühlung",
-  "memory speed": "Speichertakt",
-  "cas latency": "CAS Latenz",
-  voltage: "Spannung",
-  modules: "Module",
-  wattage: "Leistung",
-  efficiency: "Effizienz",
-  modular: "Modular",
-  certification: "Zertifizierung",
-  "rotational speed": "Umdrehungsgeschwindigkeit",
-  "buffer size": "Cache-Größe",
-  "pixel density": "Pixeldichte",
-  "display resolution": "Auflösung",
-  processor: "Prozessor",
-  "chip name": "Chip",
-  description: "Beschreibung",
-};
+// Replaced by translateSpecKey function
 
 export function SpecificationsTable({
   product,
@@ -284,7 +225,7 @@ export function SpecificationsTable({
     if (displayValue === "No") displayValue = "Nein";
     const cleanKey = key.replace(/[‡*]/g, "").trim();
     const lowerKey = cleanKey.toLowerCase();
-    const label = KEY_TRANSLATIONS[lowerKey] || cleanKey;
+    const label = translateSpecKey(cleanKey);
 
     // DATA CLEANUP: If the key is "Modell" and the value is truncated (e.g. "Pixel 9" instead of "Pixel 9a"),
     // or if it's missing the brand, we can use the cleaned identity to improve the UI.

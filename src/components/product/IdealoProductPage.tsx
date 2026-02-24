@@ -11,6 +11,7 @@ import {
   getCategoryPath,
   type CategorySlug,
 } from "@/lib/categories";
+import { translateSpecKey } from "@/lib/constants/spec-translations";
 import { type CountryCode } from "@/lib/countries";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { Product } from "@/lib/product-registry";
@@ -281,7 +282,7 @@ export async function IdealoProductPage({
                       if (unwanted.some((u) => k.includes(u))) return false;
                       const v = String(value).toLowerCase().trim();
                       if (
-                        /description|summary|marketing|ean|upc|gtin|asin/i.test(
+                        /description|beschreibung|summary|marketing|ean|upc|gtin|asin/i.test(
                           key,
                         )
                       )
@@ -305,19 +306,33 @@ export async function IdealoProductPage({
                       return /[a-z%"]/i.test(v) || /\d\s*x\s*\d/.test(v);
                     })
                     .slice(0, 5)
-                    .map(([key, value], i) => (
-                      <React.Fragment key={key}>
-                        <span
-                          className="inline-block max-w-[200px] truncate align-bottom text-[13px] text-[#2d2d2d]"
-                          title={String(value)}
-                        >
-                          {String(value)}
-                        </span>
-                        {i < 4 && (
-                          <span className="text-[13px] text-[#767676]">·</span>
-                        )}
-                      </React.Fragment>
-                    ))}
+                    .map(([key, value], i, array) => {
+                      const v = String(value).toLowerCase().trim();
+                      const isTrue = ["ja", "yes", "true", "1"].includes(v);
+
+                      // If it's a boolean true, show the property name (translated if possible)
+                      // Otherwise show the value itself (e.g. Brand names, Colors, etc.)
+                      let displayValue = String(value);
+                      if (isTrue) {
+                        displayValue = translateSpecKey(key);
+                      }
+
+                      return (
+                        <React.Fragment key={key}>
+                          <span
+                            className="inline-block max-w-[200px] truncate align-bottom text-[13px] text-[#2d2d2d]"
+                            title={displayValue}
+                          >
+                            {displayValue}
+                          </span>
+                          {i < array.length - 1 && (
+                            <span className="text-[13px] text-[#767676]">
+                              ·
+                            </span>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:justify-center lg:justify-start">
