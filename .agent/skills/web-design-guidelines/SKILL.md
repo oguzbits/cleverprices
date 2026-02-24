@@ -60,7 +60,7 @@ Review files for compliance with Vercel's Web Interface Guidelines.
 
 - [ ] Navigation arrows are keyboard accessible.
 - [ ] `scroll-snap` is used for smooth mobile interactions.
-- [ ] `priorityLoad` is applied to the first 2-3 items to optimize LCP.
+- [ ] `priorityLoad` is applied to the first 4 items in carousels to optimize LCP and flickering.
 - [ ] Mobile scroll indicator is visible.
 
 ### Filters

@@ -88,8 +88,8 @@ To prevent "network bunching"—where the browser attempts to download dozens of
 
 We never prioritize more than the absolute minimum required to achieve a fast **Largest Contentful Paint (LCP)**.
 
-- **Rule**: Only set `priority={index < 2}` for the first row of above-the-fold grids or carousels.
-- **Why**: Modern browsers handle the remaining 2-4 visible images intelligently. Over-prioritizing leads to "waterfall bunching" and delays the primary product image.
+- **Rule**: Set `priority={index < 8}` for category grids and `priority={index < 4}` for carousels.
+- **Why**: This ensures the entire first two rows (or visible carousel items) are available before the user starts scrolling, eliminating flickering.
 
 ### 2. The `LazySection` Utility (`src/components/ui/LazySection.tsx`)
 
@@ -97,7 +97,7 @@ We non-critically render below-the-fold sections using an `IntersectionObserver`
 
 - **Mechanism**: Sections like "Related Products" or "Bestsellers" are wrapped in `<LazySection>`.
 - **Optimization**:
-  - `rootMargin="0px"`: Ensures content only mounts when it enters the viewport.
+  - `rootMargin="300px"`: Ensures content starts loading 300px before it enters the viewport.
   - `threshold: 0.01`: Guards against premature triggers in high-DPI browsers.
 - **Pattern**: This allows us to keep the actual carousels as **Server Components** inside the client-side lazy wrapper, preserving SEO.
 
@@ -114,12 +114,12 @@ To maintain a balance between visual quality and performance, we use the followi
 
 | Component Type         | Usage Example               | Recommended Quality |
 | :--------------------- | :-------------------------- | :------------------ |
-| **Hero Images**        | Product Detail main image   | `quality={30}`      |
-| **Grid/List Cards**    | Category pages, Bestsellers | `quality={30}`      |
-| **Sidebar/Thumbnails** | Product page thumbnails     | `quality={30}`      |
-| **Background/Tiny**    | Gallery list, History       | `quality={10}`      |
+| **Hero Images**        | Product Detail main image   | `quality={75}`      |
+| **Grid/List Cards**    | Category pages, Bestsellers | `quality={75}`      |
+| **Sidebar/Thumbnails** | Product page thumbnails     | `quality={50}`      |
+| **Background/Tiny**    | Gallery list, History       | `quality={20}`      |
 
-> **Note**: While Q30 seems low for JPEGs, on **AVIF** it maintains excellent sharpness for product covers while keeping file sizes between 12KB and 18KB.
+> **Note**: We have standardized on **Q75** for primary images to ensure visual fidelity on high-DPI screens while keeping AVIF payloads under 25KB.
 
 ## Benefits
 
