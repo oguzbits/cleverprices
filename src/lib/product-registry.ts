@@ -923,6 +923,74 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
   )();
 });
 
+/**
+ * Get a specific batch of products by their IDs, enriched with prices and siblings.
+ * Optimized for hydration in the Lean & Ghost architecture.
+ */
+export const getProductsByIds = cache(async function getProductsByIds(
+  ids: number[],
+  countryCode: string = "de",
+  stripHeavyData: boolean = true,
+): Promise<Product[]> {
+  if (IS_BUILD || !ids || ids.length === 0) return [];
+
+  const fetchProducts = async () => {
+    await dbReady;
+    const { prods, prs } = await withRetry(async () => {
+      const prods = await db
+        .select(liteProductColumns)
+        .from(products)
+        .where(inArray(products.id, ids));
+
+      if (prods.length === 0) return { prods: [], prs: [] };
+
+      const foundIds = prods.map((p) => p.id);
+      const prs = await db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(
+          and(
+            inArray(prices.productId, foundIds),
+            eq(prices.country, countryCode),
+          ),
+        );
+
+      return { prods, prs };
+    });
+
+    if (prods.length === 0) return [];
+
+    const pricesByProduct = indexPricesById(prs);
+
+    return enrichWithFullSiblings(
+      prods,
+      pricesByProduct,
+      countryCode,
+      stripHeavyData,
+      false, // collapseFamilies
+    );
+  };
+
+  const isScript =
+    typeof globalThis === "undefined" ||
+    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
+
+  if (isScript) {
+    return fetchProducts();
+  }
+
+  return unstable_cache(
+    fetchProducts,
+    [
+      `products-by-ids-v1-${[...ids].sort((a, b) => a - b).join(",")}-${stripHeavyData}`,
+    ],
+    {
+      revalidate: CATEGORY_REVALIDATE_SECONDS,
+      tags: ["products-by-ids", "v48"],
+    },
+  )();
+});
+
 const fetchProductBySlug = cache(
   async (
     slug: string,

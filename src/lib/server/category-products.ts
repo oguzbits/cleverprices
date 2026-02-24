@@ -1,6 +1,9 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
 import { getAllDeals } from "@/lib/data/dealsData";
-import { getProductsByCategory } from "@/lib/product-registry";
+import {
+  getProductsByCategory,
+  getProductsByIds,
+} from "@/lib/product-registry";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { parseVariationAttributes } from "@/lib/utils/variants";
@@ -105,6 +108,228 @@ const VARIANT_SOCKET_REGEX = /AM[45]|LGA\s?\d+|TR4/i;
 const CAPACITY_REGEX = /(\d+(?:\.\d+)?)\s?(TB|GB|MB)/i;
 
 /**
+ * Single source of truth for mapping raw DB products to localized display products.
+ * Ensures consistent titles, slugs, and attributes across all parts of the app.
+ */
+export function mapRawToLocalizedProduct(
+  p: any,
+  countryCode: string,
+  categorySlug: string,
+  isCpuOrMobo: boolean,
+  isCpu: boolean,
+  isSsd: boolean,
+  isStorageOrRam: boolean,
+): LocalizedProduct | null {
+  const {
+    price,
+    usedPrice,
+    warehousePrice,
+    title,
+    asin,
+    parentAsin,
+    lastUpdated,
+  } = getLocalizedProductData(p, countryCode);
+
+  // Filter out products with no valid price - they shouldn't appear in listings
+  if (!price || price <= 0) return null;
+
+  // 1. Extract core attributes (already pre-extracted by Product Registry)
+  let { socket, cores } = p as any;
+
+  // 1.1 Restore missing filters via lightweight parsing (Specifications JSON is stripped for speed)
+  const vMap = p.variationAttributes
+    ? parseVariationAttributes(p.variationAttributes)
+    : {};
+
+  if (isCpuOrMobo) {
+    if (!socket) {
+      const socketMatch = title.match(SOCKET_REGEX);
+      if (socketMatch) {
+        socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
+      } else {
+        const variantSocket = vMap["Sockel"] || vMap["Stil"];
+        if (variantSocket?.match(VARIANT_SOCKET_REGEX)) {
+          socket = variantSocket.trim();
+        }
+      }
+    }
+    if (!cores && isCpu) {
+      const coreMatch = title.match(CORES_REGEX);
+      if (coreMatch) cores = coreMatch[1];
+    }
+  }
+
+  let technology = p.technology || "";
+  if (!technology && isSsd) {
+    const tLower = title.toLowerCase();
+    if (tLower.includes("nvme") || tLower.includes("m.2")) technology = "NVMe";
+    else if (tLower.includes("sata")) technology = "SATA";
+  }
+
+  let formFactor = p.formFactor || "";
+  if (!formFactor && isSsd) {
+    const tLower = title.toLowerCase();
+    if (tLower.includes("m.2") || tLower.includes("m2")) formFactor = "M.2";
+    else if (
+      tLower.includes("2.5 zoll") ||
+      tLower.includes('2.5"') ||
+      tLower.includes("2.5-inch") ||
+      tLower.includes("2.5 in")
+    )
+      formFactor = "2.5 Zoll";
+  }
+
+  // 1.2 Enforce correct condition from title (Fixes stale cache issues)
+  let condition = p.condition;
+  const titleLower = title.toLowerCase();
+  if (
+    titleLower.includes("(generalüberholt)") ||
+    titleLower.includes("generalüberholt") ||
+    titleLower.includes("erneuert") ||
+    titleLower.includes("renewed") ||
+    titleLower.includes("refurbished") ||
+    titleLower.includes("b-ware")
+  ) {
+    condition = "Renewed";
+  } else if (condition === "Used") {
+    condition = "Used";
+  } else {
+    condition = "New";
+  }
+
+  // 2. Metrics & Desirability (Initial calculation)
+  const { popularityScore } = calculateDesirabilityScore(
+    p,
+    price || 0,
+    title,
+    "category",
+  );
+
+  const refPrice = p.priceAvg90?.[countryCode] || 0;
+  const savings = calculateProductSavings({
+    price: price || 0,
+    usedPrice: usedPrice || 0,
+    warehousePrice: warehousePrice || 0,
+    avg90: refPrice,
+  });
+  const displayListPrice = savings > 0 ? refPrice : undefined;
+
+  // 3. Storage Capacity Extraction
+  let capacity = p.capacity;
+  let capacityUnit = p.capacityUnit || "";
+  let normCap = p.normalizedCapacity || 0;
+
+  if (isStorageOrRam && (!normCap || normCap === 0)) {
+    if (p.specifications && typeof p.specifications === "object") {
+      const specs = p.specifications as Record<string, any>;
+      const sizeVal = specs.Size || specs.Capacity || specs.Speicherkapazität;
+      if (sizeVal && typeof sizeVal === "string") {
+        const match = sizeVal.match(CAPACITY_REGEX);
+        if (match) {
+          const val = parseFloat(match[1]);
+          const unit = match[2].toUpperCase();
+          if (unit === "TB") {
+            capacity = val;
+            capacityUnit = "TB";
+            normCap = val * 1000;
+          } else if (unit === "GB") {
+            capacity = val;
+            capacityUnit = "GB";
+            normCap = val;
+          } else if (unit === "MB") {
+            capacity = val;
+            capacityUnit = "MB";
+            normCap = val / 1000;
+          }
+        }
+      }
+    }
+
+    if (!normCap || normCap === 0) {
+      const capMatch = (title || "").match(/\b(\d+(?:\.\d+)?)\s?(TB|GB|MB)\b/i);
+      if (capMatch) {
+        const val = parseFloat(capMatch[1]);
+        const unit = capMatch[2].toUpperCase();
+        if (unit === "TB") {
+          normCap = val * 1000;
+          capacity = val;
+          capacityUnit = "TB";
+        } else if (unit === "GB") {
+          normCap = val;
+          capacity = val;
+          capacityUnit = "GB";
+        } else if (unit === "MB") {
+          normCap = val / 1000;
+          capacity = val;
+          capacityUnit = "MB";
+        }
+      }
+    }
+  }
+
+  // 4. Price per Unit (Initial calculation)
+  const capacityMB =
+    capacityUnit === "TB"
+      ? capacity * 1024 * 1024
+      : capacityUnit === "GB"
+        ? capacity * 1024
+        : capacity;
+  const pricePerUnit = capacityMB > 0 ? ((price || 0) / capacityMB) * 1024 : 0;
+
+  // --- SNAP NORMALIZATION ---
+  if (
+    (categorySlug === "ssds" || categorySlug === "hard-drives") &&
+    normCap > 0 &&
+    normCap < 60
+  ) {
+    normCap = 0;
+  }
+
+  if (normCap >= 900) {
+    const tbCount = Math.round(normCap / 1000);
+    if (Math.abs(normCap - tbCount * 1000) < 100) {
+      normCap = tbCount * 1000;
+    }
+  }
+
+  return {
+    id: p.id || 0,
+    slug: p.slug,
+    asin,
+    title,
+    subtitle: p.subtitle,
+    price: price || 0,
+    usedPrice: usedPrice || undefined,
+    warehousePrice: warehousePrice || undefined,
+    pricePerUnit,
+    popularityScore,
+    category: p.category,
+    image: p.image || "",
+    brand: normalizeBrand(p.brand || ""),
+    rating: p.rating || 0,
+    reviewCount: p.reviewCount || 0,
+    monthlySold: p.monthlySold || 0,
+    salesRank: p.salesRank,
+    condition,
+    capacity,
+    capacityUnit,
+    normalizedCapacity: normCap,
+    formFactor,
+    technology,
+    socket,
+    cores,
+    lastUpdated,
+    savings,
+    listPrice: displayListPrice,
+    parentAsin,
+    variationAttributes: p.variationAttributes,
+    specificationsSource: p.specificationsSource,
+    officialTitle: p.officialTitle,
+    mpn: p.mpn,
+  } as LocalizedProduct;
+}
+
+/**
  * RE-USABLE CACHED LAYER: Localizes, scores, and PRUNES products in a category.
  * Pruning is essential to stay under the 2MB cache limit.
  * Price is included but will be overwritten by the loader for live sync.
@@ -112,7 +337,7 @@ const CAPACITY_REGEX = /(\d+(?:\.\d+)?)\s?(TB|GB|MB)/i;
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v56", // Cache buster
+  version: string = "v60", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
@@ -122,8 +347,7 @@ export async function getCachedLocalizedCategoryProducts(
     // Fetch a large number of deals to allow for filtering
     rawProducts = await getAllDeals(250, countryCode);
   } else {
-    // [PERFORMANCE] Limit to top 2000 products per category to stay within Next.js 2MB cache limit
-    // while ensuring comprehensive results for all categories.
+    // [PERFORMANCE] Limit to top 2000 products per category
     rawProducts = await getProductsByCategory(
       categorySlug,
       true, // stripHeavyData
@@ -131,7 +355,6 @@ export async function getCachedLocalizedCategoryProducts(
     );
   }
 
-  // Optimize branching by checking category flags outside the hot loop
   const isCpuOrMobo = categorySlug === "cpu" || categorySlug === "motherboards";
   const isCpu = categorySlug === "cpu";
   const isSsd = categorySlug === "ssds";
@@ -148,224 +371,57 @@ export async function getCachedLocalizedCategoryProducts(
   ].includes(categorySlug);
 
   return rawProducts
-    .map((p) => {
-      const {
-        price,
-        usedPrice,
-        warehousePrice,
-        title,
-        asin,
-        parentAsin,
-        lastUpdated,
-      } = getLocalizedProductData(p, countryCode);
-      // Filter out products with no valid price - they shouldn't appear in listings
-      if (!price || price <= 0) return null;
-
-      // 1. Extract core attributes (already pre-extracted by Product Registry)
-      let { socket, cores } = p as any;
-
-      // 1.1 Restore missing filters via lightweight parsing (Specifications JSON is stripped for speed)
-      const vMap = p.variationAttributes
-        ? parseVariationAttributes(p.variationAttributes)
-        : {};
-
-      if (isCpuOrMobo) {
-        if (!socket) {
-          const socketMatch = title.match(SOCKET_REGEX);
-          if (socketMatch) {
-            socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
-          } else {
-            const variantSocket = vMap["Sockel"] || vMap["Stil"];
-            if (variantSocket?.match(VARIANT_SOCKET_REGEX)) {
-              socket = variantSocket.trim();
-            }
-          }
-        }
-        if (!cores && isCpu) {
-          const coreMatch = title.match(CORES_REGEX);
-          if (coreMatch) cores = coreMatch[1];
-        }
-      }
-
-      let technology = p.technology || "";
-      if (!technology && isSsd) {
-        const tLower = title.toLowerCase();
-        if (tLower.includes("nvme") || tLower.includes("m.2"))
-          technology = "NVMe";
-        else if (tLower.includes("sata")) technology = "SATA";
-      }
-
-      let formFactor = p.formFactor || "";
-      if (!formFactor && isSsd) {
-        const tLower = title.toLowerCase();
-        if (tLower.includes("m.2") || tLower.includes("m2")) formFactor = "M.2";
-        else if (
-          tLower.includes("2.5 zoll") ||
-          tLower.includes('2.5"') ||
-          tLower.includes("2.5-inch") ||
-          tLower.includes("2.5 in")
-        )
-          formFactor = "2.5 Zoll";
-      }
-
-      // 1.2 Enforce correct condition from title (Fixes stale cache issues)
-      // Sometimes the DB cache might label a Renewed item as New. We fix it here.
-      let condition = p.condition;
-      const titleLower = title.toLowerCase();
-      if (
-        titleLower.includes("(generalüberholt)") ||
-        titleLower.includes("generalüberholt") ||
-        titleLower.includes("erneuert") ||
-        titleLower.includes("renewed") ||
-        titleLower.includes("refurbished") ||
-        titleLower.includes("b-ware")
-      ) {
-        condition = "Renewed";
-      } else if (condition === "Used") {
-        condition = "Used";
-      } else {
-        condition = "New";
-      }
-
-      // 2. Metrics & Desirability (Initial calculation)
-      const { popularityScore } = calculateDesirabilityScore(
+    .map((p) =>
+      mapRawToLocalizedProduct(
         p,
-        price || 0,
-        title,
-        "category",
-      );
-
-      const refPrice = p.priceAvg90?.[countryCode] || 0;
-      const savings = calculateProductSavings({
-        price: price || 0,
-        usedPrice: usedPrice || 0,
-        warehousePrice: warehousePrice || 0,
-        avg90: refPrice,
-      });
-      const displayListPrice = savings > 0 ? refPrice : undefined;
-
-      // 3. Storage Capacity Extraction
-      let capacity = p.capacity;
-      let capacityUnit = p.capacityUnit || "";
-      let normCap = p.normalizedCapacity || 0;
-
-      // Ensure we have capacity for devices even if not explicitly normalized in DB
-      if (isStorageOrRam && (!normCap || normCap === 0)) {
-        // Try to get from specifications JSON first (most reliable)
-        if (p.specifications && typeof p.specifications === "object") {
-          const specs = p.specifications as Record<string, any>;
-          const sizeVal =
-            specs.Size || specs.Capacity || specs.Speicherkapazität;
-          if (sizeVal && typeof sizeVal === "string") {
-            const match = sizeVal.match(CAPACITY_REGEX);
-            if (match) {
-              const val = parseFloat(match[1]);
-              const unit = match[2].toUpperCase();
-              if (unit === "TB") {
-                capacity = val;
-                capacityUnit = "TB";
-                normCap = val * 1000;
-              } else if (unit === "GB") {
-                capacity = val;
-                capacityUnit = "GB";
-                normCap = val;
-              } else if (unit === "MB") {
-                capacity = val;
-                capacityUnit = "MB";
-                normCap = val / 1000;
-              }
-            }
-          }
-        }
-
-        // Fallback to title regex if still not found
-        if (!normCap || normCap === 0) {
-          const capMatch = (title || "").match(
-            /\b(\d+(?:\.\d+)?)\s?(TB|GB|MB)\b/i,
-          );
-          if (capMatch) {
-            const val = parseFloat(capMatch[1]);
-            const unit = capMatch[2].toUpperCase();
-            if (unit === "TB") {
-              normCap = val * 1000;
-              capacity = val;
-              capacityUnit = "TB";
-            } else if (unit === "GB") {
-              normCap = val;
-              capacity = val;
-              capacityUnit = "GB";
-            } else if (unit === "MB") {
-              normCap = val / 1000;
-              capacity = val;
-              capacityUnit = "MB";
-            }
-          }
-        }
-      }
-
-      // 4. Price per Unit (Initial calculation)
-      const capacityMB =
-        capacityUnit === "TB"
-          ? capacity * 1024 * 1024
-          : capacityUnit === "GB"
-            ? capacity * 1024
-            : capacity;
-      const pricePerUnit =
-        capacityMB > 0 ? ((price || 0) / capacityMB) * 1024 : 0;
-
-      // --- SNAP NORMALIZATION ---
-      if (
-        (categorySlug === "ssds" || categorySlug === "hard-drives") &&
-        normCap > 0 &&
-        normCap < 60
-      ) {
-        normCap = 0;
-      }
-
-      if (normCap >= 900) {
-        const tbCount = Math.round(normCap / 1000);
-        if (Math.abs(normCap - tbCount * 1000) < 100) {
-          normCap = tbCount * 1000;
-        }
-      }
-
-      return {
-        id: p.id || 0,
-        slug: p.slug,
-        asin,
-        title,
-        subtitle: p.subtitle,
-        price: price || 0,
-        usedPrice: usedPrice || undefined,
-        warehousePrice: warehousePrice || undefined,
-        pricePerUnit,
-        popularityScore,
-        category: p.category,
-        image: p.image || "",
-        brand: normalizeBrand(p.brand || ""),
-        rating: p.rating || 0,
-        reviewCount: p.reviewCount || 0,
-        monthlySold: p.monthlySold || 0,
-        salesRank: p.salesRank,
-        condition,
-        capacity,
-        capacityUnit,
-        normalizedCapacity: normCap,
-        formFactor,
-        technology,
-        socket,
-        cores,
-        lastUpdated,
-        savings,
-        listPrice: displayListPrice,
-        parentAsin,
-        variationAttributes: p.variationAttributes,
-        specificationsSource: p.specificationsSource,
-        officialTitle: p.officialTitle,
-        mpn: p.mpn,
-      } as LocalizedProduct;
-    })
+        countryCode,
+        categorySlug,
+        isCpuOrMobo,
+        isCpu,
+        isSsd,
+        isStorageOrRam,
+      ),
+    )
     .filter((p): p is LocalizedProduct => p !== null);
+}
+
+/**
+ * LEAN CACHE LAYER: Only stores fields needed for filtering and sorting.
+ * No images, no subtitles, no variation attributes.
+ * This makes deserialization from Redis drastically faster (TTFB win).
+ */
+export async function getLeanCategoryProducts(
+  categorySlug: string,
+  countryCode: string,
+  version: string = "v60",
+) {
+  "use cache";
+  cacheLife("category");
+
+  const products = await getCachedLocalizedCategoryProducts(
+    categorySlug,
+    countryCode,
+    version,
+  );
+
+  // Strip non-essential fields to create a high-speed filtering set
+  return products.map((p) => ({
+    id: p.id,
+    title: p.title,
+    brand: p.brand,
+    price: p.price,
+    popularityScore: p.popularityScore,
+    condition: p.condition,
+    capacity: p.capacity,
+    normalizedCapacity: p.normalizedCapacity,
+    formFactor: p.formFactor,
+    technology: p.technology,
+    socket: p.socket,
+    cores: p.cores,
+    savings: p.savings,
+    pricePerUnit: p.pricePerUnit,
+    salesRank: p.salesRank,
+  }));
 }
 
 /**
@@ -497,6 +553,51 @@ function calculatePriceRangeBuckets(products: LocalizedProduct[]) {
   return buckets;
 }
 
+/**
+ * Hydrates only a specific set of IDs into full LocalizedProducts.
+ * This is the "Ghost" part of the Lean & Ghost architecture.
+ */
+export async function getLocalizedProductsByIds(
+  ids: number[],
+  categorySlug: string,
+  countryCode: string,
+): Promise<LocalizedProduct[]> {
+  const rawProducts = await getProductsByIds(
+    ids,
+    countryCode,
+    true, // stripHeavyData (History not needed for listing)
+  );
+
+  const isCpuOrMobo = categorySlug === "cpu" || categorySlug === "motherboards";
+  const isCpu = categorySlug === "cpu";
+  const isSsd = categorySlug === "ssds";
+  const isStorageOrRam = [
+    "hard-drives",
+    "ssds",
+    "external-storage",
+    "storage",
+    "nas",
+    "smartphones",
+    "tablets",
+    "notebooks",
+    "ram",
+  ].includes(categorySlug);
+
+  return rawProducts
+    .map((p) =>
+      mapRawToLocalizedProduct(
+        p,
+        countryCode,
+        categorySlug,
+        isCpuOrMobo,
+        isCpu,
+        isSsd,
+        isStorageOrRam,
+      ),
+    )
+    .filter((p): p is LocalizedProduct => p !== null);
+}
+
 export async function getCategoryProducts(
   categorySlug: string,
   countryCode: string,
@@ -554,14 +655,13 @@ export async function getCategoryProducts(
     }
   });
 
-  // 1. Fetch ALL products for the category (Cached)
-  const cachedProducts = await getCachedLocalizedCategoryProducts(
+  // 1. Fetch LEAN products for filtering/sorting (High Speed)
+  const leanProducts = await getLeanCategoryProducts(
     categorySlug,
     countryCode,
-    "v56",
+    "v60",
   );
 
-  const localizedProducts = cachedProducts;
   const category = allCategories[categorySlug as CategorySlug];
   const unitLabel = category?.unitType || "TB";
 
@@ -571,10 +671,10 @@ export async function getCategoryProducts(
   if (!filterFields.includes("brand")) filterFields.push("brand");
   filterFields.forEach((f) => (dynamicFilterCounts[f] = {}));
 
-  const filteredProducts: LocalizedProduct[] = [];
-  const productsMatchingNonPrice: LocalizedProduct[] = [];
+  const filteredLeanProducts: any[] = [];
+  const leanMatchingNonPrice: any[] = [];
 
-  localizedProducts.forEach((p) => {
+  leanProducts.forEach((p) => {
     // A. Field Match Status
     const matches: Record<string, boolean> = {};
     matches.brand =
@@ -629,11 +729,11 @@ export async function getCategoryProducts(
     const matchesAllFields = filterFields.every((f) => matches[f]);
 
     if (matchesAllFields && matchesPrice) {
-      filteredProducts.push(p);
+      filteredLeanProducts.push(p);
     }
 
     if (matchesAllFields) {
-      productsMatchingNonPrice.push(p);
+      leanMatchingNonPrice.push(p);
     }
 
     // Facet counts
@@ -656,11 +756,11 @@ export async function getCategoryProducts(
     });
   });
 
-  const totalFilteredCount = filteredProducts.length;
+  const totalFilteredCount = filteredLeanProducts.length;
 
-  // 4. Sort and Paginate
-  const sortedProducts = sortProducts(
-    filteredProducts,
+  // 4. Sort and Paginate (on Lean data)
+  const sortedLeanProducts = sortProducts(
+    filteredLeanProducts,
     filters.sortBy,
     filters.sortOrder,
   );
@@ -668,24 +768,34 @@ export async function getCategoryProducts(
   const page = filterParams.page ? parseInt(filterParams.page) : 1;
   const pageSize = 24;
   const skip = (page - 1) * pageSize;
-  const rawPaginatedProducts = sortedProducts.slice(skip, skip + pageSize);
+  const pageLeanProducts = sortedLeanProducts.slice(skip, skip + pageSize);
 
+  // 5. HYDRATION: Fetch full objects only for the 24 visible items
+  // We fetch them from the deep cache using the IDs from our lean set
+  // This is surgical: we only hydrate what we actually display.
+  const rawPaginatedProducts = await getLocalizedProductsByIds(
+    pageLeanProducts.map((p) => p.id),
+    categorySlug,
+    countryCode,
+  );
+
+  // Merge live prices (the final display step)
   const paginatedProducts = await mergeLivePricesIntoLocalized(
     rawPaginatedProducts,
     countryCode,
   );
 
   const contextMinPrice =
-    productsMatchingNonPrice.length > 0
-      ? Math.floor(Math.min(...productsMatchingNonPrice.map((p) => p.price)))
+    leanMatchingNonPrice.length > 0
+      ? Math.floor(Math.min(...leanMatchingNonPrice.map((p) => p.price)))
       : 0;
 
   const contextMaxPrice =
-    productsMatchingNonPrice.length > 0
-      ? Math.ceil(Math.max(...productsMatchingNonPrice.map((p) => p.price)))
+    leanMatchingNonPrice.length > 0
+      ? Math.ceil(Math.max(...leanMatchingNonPrice.map((p) => p.price)))
       : 1000;
 
-  const priceRanges = calculatePriceRangeBuckets(productsMatchingNonPrice);
+  const priceRanges = calculatePriceRangeBuckets(leanMatchingNonPrice);
 
   const pagination = {
     currentPage: page,
@@ -696,18 +806,18 @@ export async function getCategoryProducts(
 
   return {
     products: paginatedProducts,
-    totalCount: localizedProducts.length,
+    totalCount: leanProducts.length,
     filteredCount: totalFilteredCount,
     unitLabel,
-    hasProducts: localizedProducts.length > 0,
+    hasProducts: leanProducts.length > 0,
     filters,
     filterCounts: dynamicFilterCounts,
     minPriceInCategory: contextMinPrice,
     maxPriceInCategory: contextMaxPrice,
     priceRanges,
     lastUpdated:
-      localizedProducts.length > 0
-        ? localizedProducts.reduce(
+      rawPaginatedProducts.length > 0
+        ? rawPaginatedProducts.reduce(
             (latest, p) =>
               p.lastUpdated && (!latest || p.lastUpdated > latest)
                 ? p.lastUpdated
