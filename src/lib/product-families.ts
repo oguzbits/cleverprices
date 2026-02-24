@@ -108,7 +108,12 @@ export function getFamilyIdentity(
     // Use word-boundary aware check (split by hyphen) to avoid stripping 'a' from 'macbook'
     const modelWords = modelPart.split("-");
     const vParts = variantPart.split("-");
-    const uniqueVParts = vParts.filter((p) => !modelWords.includes(p));
+    const uniqueVParts = vParts.filter((p) => {
+      if (modelWords.includes(p)) return false;
+      // For pure numbers, avoid repetition if they are already embedded in the model name (common in TVs/Monitors)
+      if (/^\d+$/.test(p) && modelPart.includes(p)) return false;
+      return true;
+    });
     if (uniqueVParts.length > 0) {
       textSlug += `-${uniqueVParts.join("-")}`;
     }

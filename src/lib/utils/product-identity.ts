@@ -575,13 +575,12 @@ export function getProductIdentity(
     // skip subtraction for core model-defining keys (Model, Name, Series, etc.)
     // but ALLOW subtraction for variant traits like Color/Size to keep model names clean
     const lowerKey = k.toLowerCase();
-    const isCoreIdentityKey =
-      /model|name|series|serie|family|familie|bezeichnung|style|stil/.test(
+    const isProtectedIdentityKey =
+      /model|name|series|serie|family|familie|bezeichnung|style|stil|generation|mpn|sku/.test(
         lowerKey,
       );
 
-    if (isCoreIdentityKey || IDENTITY_CONFIG.IDENTITY_KEYS.includes(lowerKey))
-      return;
+    if (isProtectedIdentityKey) return;
 
     if (typeof v === "string") {
       v.toLowerCase()
