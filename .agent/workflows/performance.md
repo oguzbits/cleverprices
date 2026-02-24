@@ -53,6 +53,8 @@ If TTFB (Time to First Byte) is > 200ms on warm pages:
   ```
 - **Optimization**: Verify SQLite WAL mode and checkpoint status if DB reads are slow.
 - **Optimization (Lean & Ghost)**: For large categories, ensure `getCategoryProducts` is using the tiered fetching approach. Verify that the hydration step (`getLocalizedProductsByIds`) is only fetching active page products.
+- **Optimization (SQL Push-down)**: Move sorting (e.g., by savings or price) into SQL using `.orderBy(desc(sql...))` to avoid fetching large intermediate datasets.
+- **Thresholding**: Apply minimum savings (e.g., 5%) at the query level to filter out negligible price drops and reduce data transfer.
 
 ## 5. Lean & Ghost Verification
 

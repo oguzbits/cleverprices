@@ -205,6 +205,10 @@ const BUDGET_BRANDS = [
 
 const CURRENT_YEAR = new Date().getFullYear();
 
+const PRESTIGE_BRANDS_SET = new Set(PRESTIGE_BRANDS);
+const ESTABLISHED_BRANDS_SET = new Set(ESTABLISHED_BRANDS);
+const BUDGET_BRANDS_SET = new Set(BUDGET_BRANDS);
+
 /**
  * Advanced Metric-Driven Scoring Logic.
  *
@@ -225,9 +229,9 @@ export function calculateDesirabilityScore(
   const titleLower = title.toLowerCase();
 
   // --- 1. BRAND AUTHORITY ---
-  const isPrestige = PRESTIGE_BRANDS.includes(brand);
-  const isEstablished = ESTABLISHED_BRANDS.includes(brand);
-  const isBudget = BUDGET_BRANDS.includes(brand);
+  const isPrestige = PRESTIGE_BRANDS_SET.has(brand);
+  const isEstablished = ESTABLISHED_BRANDS_SET.has(brand);
+  const isBudget = BUDGET_BRANDS_SET.has(brand);
   const isNoName =
     !isPrestige &&
     !isEstablished &&

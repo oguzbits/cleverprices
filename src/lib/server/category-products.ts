@@ -4,6 +4,7 @@ import {
   getProductsByCategory,
   getProductsByIds,
   getRawProductsByCategory,
+  type Product,
 } from "@/lib/product-registry";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getLocalizedProductData } from "@/lib/utils/products";
@@ -118,6 +119,67 @@ export function mapRawToLocalizedProduct(
   isSsd?: boolean,
   isStorageOrRam?: boolean,
 ): LocalizedProduct | null {
+  // [PERFORMANCE] FAST-PATH: If this is already a localized product or a full product with merged prices
+  // (e.g. from getAllDeals), we skip the heavy mapping logic.
+  // We check for the presence of the 'prices' object which indicates p is a Product entity.
+  const isProductObj = (obj: any): obj is Product =>
+    obj &&
+    obj.prices &&
+    typeof obj.prices === "object" &&
+    obj.id &&
+    obj.specifications !== undefined;
+
+  if (isProductObj(p) && p.prices[countryCode] !== undefined) {
+    const priceVal = p.prices[countryCode] as number;
+    if (!priceVal || priceVal <= 0) return null;
+
+    const { popularityScore } = calculateDesirabilityScore(
+      p,
+      priceVal,
+      p.title,
+      "category",
+    );
+
+    const brand = normalizeBrand(p.brand || "Generic");
+
+    // Just ensure the structure matches LocalizedProduct
+    return {
+      id: p.id,
+      slug: p.slug,
+      asin: p.asin,
+      title: p.title,
+      subtitle: p.subtitle || undefined,
+      price: priceVal,
+      usedPrice: p.usedPrices?.[countryCode] ?? undefined,
+      warehousePrice: p.warehousePrices?.[countryCode] ?? undefined,
+      pricePerUnit: p.pricesPerUnit?.[countryCode] || 0,
+      popularityScore: popularityScore,
+      savings: p.savings || 0,
+      listPrice: p.listPrice?.[countryCode] ?? undefined,
+      category: p.category || categorySlug,
+      image: (p as any).image || (p as any).imageUrl || "",
+      brand,
+      rating: p.rating || 0,
+      reviewCount: p.reviewCount || 0,
+      monthlySold: p.monthlySold || 0,
+      salesRank: p.salesRank ?? undefined,
+      condition: p.condition || "New",
+      capacity: p.capacity || 0,
+      capacityUnit: p.capacityUnit || "",
+      normalizedCapacity: p.normalizedCapacity || 0,
+      formFactor: p.formFactor || "",
+      technology: p.technology || "",
+      socket: p.socket || undefined,
+      cores: p.cores || undefined,
+      lastUpdated: p.pricesLastUpdated?.[countryCode],
+      variationAttributes: p.variationAttributes || undefined,
+      parentAsin: p.parentAsin || undefined,
+      specificationsSource: p.specificationsSource || undefined,
+      officialTitle: p.officialTitle || undefined,
+      mpn: p.mpn || undefined,
+    } as LocalizedProduct;
+  }
+
   const actualCategory = p.category || categorySlug;
   const cpuOrMobo =
     isCpuOrMobo ??
@@ -643,6 +705,15 @@ export async function getCategoryProducts(
   const category = allCategories[categorySlug as CategorySlug];
   const unitLabel = category?.unitType || "TB";
 
+  // [PERFORMANCE] Pre-compute filter values once to avoid redundant work in the 2000-item loop
+  const searchLower = filters.search?.toLowerCase() || "";
+  const filterSummary = {
+    socket: new Set(filters.socket || []),
+    cores: new Set(filters.cores || []),
+    condition: new Set(filters.condition || []),
+    brand: new Set(filters.brand || []),
+  };
+
   // 3. Optimized Single-Pass Processing (Filtering, Facet Counting, Price Ranges)
   const dynamicFilterCounts: FilterCounts = {};
   const filterFields = category?.filterGroups?.map((g) => g.field) || [];
@@ -652,11 +723,14 @@ export async function getCategoryProducts(
   const filteredLeanProducts: any[] = [];
   const leanMatchingNonPrice: any[] = [];
 
+  let contextMinPrice = Infinity;
+  let contextMaxPrice = -Infinity;
+
   leanProducts.forEach((p) => {
     // A. Field Match Status
     const matches: Record<string, boolean> = {};
     matches.brand =
-      !filters.brand?.length || filters.brand.includes(p.brand || "");
+      !filterSummary.brand.size || filterSummary.brand.has(p.brand || "");
 
     category?.filterGroups?.forEach((group) => {
       if (group.field === "brand") return;
@@ -668,19 +742,23 @@ export async function getCategoryProducts(
           group.field === "capacity"
             ? String(p.normalizedCapacity || p.capacity || "")
             : String((p as any)[group.field] || "");
-        matches[group.field] = Array.isArray(selected)
-          ? selected.includes(pVal)
-          : selected === pVal;
+
+        // Support both array and single value
+        if (Array.isArray(selected)) {
+          matches[group.field] = selected.includes(pVal);
+        } else {
+          matches[group.field] = selected === pVal;
+        }
       }
     });
 
     // B. Global Match Status (Search & Condition & Capacity Range)
     const matchesSearch =
-      !filters.search ||
-      p.title.toLowerCase().includes(filters.search.toLowerCase());
+      !searchLower || p.title.toLowerCase().includes(searchLower);
+
+    const pCondition = p.condition || "New";
     const matchesCondition =
-      !filters.condition?.length ||
-      filters.condition.includes(p.condition || "New");
+      !filterSummary.condition.size || filterSummary.condition.has(pCondition);
 
     // Capacity Range (Storage/PSU)
     const cap = p.capacity || 0;
@@ -712,6 +790,12 @@ export async function getCategoryProducts(
 
     if (matchesAllFields) {
       leanMatchingNonPrice.push(p);
+
+      // [PERFORMANCE] Track min/max inline to avoid expensive Math.min/max(...spread)
+      if (p.price > 0) {
+        if (p.price < contextMinPrice) contextMinPrice = p.price;
+        if (p.price > contextMaxPrice) contextMaxPrice = p.price;
+      }
     }
 
     // Facet counts
@@ -763,15 +847,10 @@ export async function getCategoryProducts(
     countryCode,
   );
 
-  const contextMinPrice =
-    leanMatchingNonPrice.length > 0
-      ? Math.floor(Math.min(...leanMatchingNonPrice.map((p) => p.price)))
-      : 0;
-
-  const contextMaxPrice =
-    leanMatchingNonPrice.length > 0
-      ? Math.ceil(Math.max(...leanMatchingNonPrice.map((p) => p.price)))
-      : 1000;
+  const contextMinPriceFinal =
+    contextMinPrice === Infinity ? 0 : Math.floor(contextMinPrice);
+  const contextMaxPriceFinal =
+    contextMaxPrice === -Infinity ? 1000 : Math.ceil(contextMaxPrice);
 
   const priceRanges = calculatePriceRangeBuckets(leanMatchingNonPrice);
 
@@ -790,8 +869,8 @@ export async function getCategoryProducts(
     hasProducts: leanProducts.length > 0,
     filters,
     filterCounts: dynamicFilterCounts,
-    minPriceInCategory: contextMinPrice,
-    maxPriceInCategory: contextMaxPrice,
+    minPriceInCategory: contextMinPriceFinal,
+    maxPriceInCategory: contextMaxPriceFinal,
     priceRanges,
     lastUpdated:
       rawPaginatedProducts.length > 0

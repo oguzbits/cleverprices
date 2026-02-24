@@ -7,7 +7,7 @@ import {
   mapDbProduct,
   Product,
 } from "@/lib/product-registry";
-import { and, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 
 /**
@@ -25,8 +25,7 @@ export async function getAllDeals(
 
   if (IS_BUILD) return [];
 
-  // 1. Fetch lightweight price data to compute and sort heavily in memory
-  // This is MUCH faster than forcing SQLite to compute and Sort a JOINed table
+  // 1. Fetch top deal IDs directly in SQL (Much faster than fetching 50k+ rows)
   const priceRows = await db
     .select({
       productId: prices.productId,
@@ -39,18 +38,19 @@ export async function getAllDeals(
         eq(prices.country, countryCode),
         gt(prices.priceAvg90, 0),
         gt(prices.price, 0),
-        sql`${prices.price} < ${prices.priceAvg90}`,
+        // Filter: only items where current price is 5% to 80% lower than 90d avg
+        sql`${prices.price} < ${prices.priceAvg90} * 0.95`,
+        sql`${prices.price} >= ${prices.priceAvg90} * 0.2`,
       ),
-    );
+    )
+    .orderBy(
+      desc(
+        sql`(CAST(${prices.priceAvg90} AS FLOAT) - ${prices.price}) / ${prices.priceAvg90}`,
+      ),
+    )
+    .limit(limit);
 
-  // 2. Sort by deal savings percentage in NodeJS (very fast)
-  priceRows.sort((a, b) => {
-    const savingsA = (a.priceAvg90! - a.price!) / a.priceAvg90!;
-    const savingsB = (b.priceAvg90! - b.price!) / b.priceAvg90!;
-    return savingsB - savingsA;
-  });
-
-  const topDealIds = priceRows.slice(0, limit).map((p) => p.productId);
+  const topDealIds = priceRows.map((p) => p.productId);
 
   if (topDealIds.length === 0) return [];
 

@@ -20,6 +20,7 @@ version: "2.1.0"
 | Unbounded `Promise.all()`            | Resource exhaustion               | Bounded parallelism (max 5-10)           |
 | `db.delete(table)` without `--force` | Accidental data loss              | CLI safety flag                          |
 | Writes without diffing               | Wastes write quota                | Value-based diffing                      |
+| In-memory sorting (Large sets)       | Blocks the event loop / High RAM  | SQL `orderBy` / Indexed scoring          |
 
 ### ✅ REQUIRED
 
