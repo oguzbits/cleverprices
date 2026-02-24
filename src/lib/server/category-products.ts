@@ -112,11 +112,31 @@ export function mapRawToLocalizedProduct(
   p: any,
   countryCode: string,
   categorySlug: string,
-  isCpuOrMobo: boolean,
-  isCpu: boolean,
-  isSsd: boolean,
-  isStorageOrRam: boolean,
+  // Optimization flags (now optional, can be derived from p.category if not provided)
+  isCpuOrMobo?: boolean,
+  isCpu?: boolean,
+  isSsd?: boolean,
+  isStorageOrRam?: boolean,
 ): LocalizedProduct | null {
+  const actualCategory = p.category || categorySlug;
+  const cpuOrMobo =
+    isCpuOrMobo ??
+    (actualCategory === "cpu" || actualCategory === "motherboards");
+  const cpu = isCpu ?? actualCategory === "cpu";
+  const ssd = isSsd ?? actualCategory === "ssds";
+  const storageOrRam =
+    isStorageOrRam ??
+    [
+      "hard-drives",
+      "ssds",
+      "external-storage",
+      "storage",
+      "nas",
+      "smartphones",
+      "tablets",
+      "notebooks",
+      "ram",
+    ].includes(actualCategory);
   const {
     price,
     usedPrice,
@@ -138,7 +158,7 @@ export function mapRawToLocalizedProduct(
     ? parseVariationAttributes(p.variationAttributes)
     : {};
 
-  if (isCpuOrMobo) {
+  if (cpuOrMobo) {
     if (!socket) {
       const socketMatch = title.match(SOCKET_REGEX);
       if (socketMatch) {
@@ -150,21 +170,21 @@ export function mapRawToLocalizedProduct(
         }
       }
     }
-    if (!cores && isCpu) {
+    if (!cores && cpu) {
       const coreMatch = title.match(CORES_REGEX);
       if (coreMatch) cores = coreMatch[1];
     }
   }
 
   let technology = p.technology || "";
-  if (!technology && isSsd) {
+  if (!technology && ssd) {
     const tLower = title.toLowerCase();
     if (tLower.includes("nvme") || tLower.includes("m.2")) technology = "NVMe";
     else if (tLower.includes("sata")) technology = "SATA";
   }
 
   let formFactor = p.formFactor || "";
-  if (!formFactor && isSsd) {
+  if (!formFactor && ssd) {
     const tLower = title.toLowerCase();
     if (tLower.includes("m.2") || tLower.includes("m2")) formFactor = "M.2";
     else if (
@@ -216,7 +236,7 @@ export function mapRawToLocalizedProduct(
   let capacityUnit = p.capacityUnit || "";
   let normCap = p.normalizedCapacity || 0;
 
-  if (isStorageOrRam && (!normCap || normCap === 0)) {
+  if (storageOrRam && (!normCap || normCap === 0)) {
     if (p.specifications && typeof p.specifications === "object") {
       const specs = p.specifications as Record<string, any>;
       const sizeVal = specs.Size || specs.Capacity || specs.Speicherkapazität;
@@ -275,7 +295,7 @@ export function mapRawToLocalizedProduct(
 
   // --- SNAP NORMALIZATION ---
   if (
-    (categorySlug === "ssds" || categorySlug === "hard-drives") &&
+    (actualCategory === "ssds" || actualCategory === "hard-drives") &&
     normCap > 0 &&
     normCap < 60
   ) {
@@ -352,33 +372,8 @@ export async function getCachedLocalizedCategoryProducts(
     );
   }
 
-  const isCpuOrMobo = categorySlug === "cpu" || categorySlug === "motherboards";
-  const isCpu = categorySlug === "cpu";
-  const isSsd = categorySlug === "ssds";
-  const isStorageOrRam = [
-    "hard-drives",
-    "ssds",
-    "external-storage",
-    "storage",
-    "nas",
-    "smartphones",
-    "tablets",
-    "notebooks",
-    "ram",
-  ].includes(categorySlug);
-
   return rawProducts
-    .map((p) =>
-      mapRawToLocalizedProduct(
-        p,
-        countryCode,
-        categorySlug,
-        isCpuOrMobo,
-        isCpu,
-        isSsd,
-        isStorageOrRam,
-      ),
-    )
+    .map((p) => mapRawToLocalizedProduct(p, countryCode, categorySlug))
     .filter((p): p is LocalizedProduct => p !== null);
 }
 
@@ -395,38 +390,20 @@ export async function getLeanCategoryProducts(
   "use cache";
   cacheLife("category");
 
-  const rawProducts = await getRawProductsByCategory(
-    categorySlug,
-    countryCode,
-    2000,
-  );
-
-  const isCpuOrMobo = categorySlug === "cpu" || categorySlug === "motherboards";
-  const isCpu = categorySlug === "cpu";
-  const isSsd = categorySlug === "ssds";
-  const isStorageOrRam = [
-    "hard-drives",
-    "ssds",
-    "external-storage",
-    "storage",
-    "nas",
-    "smartphones",
-    "tablets",
-    "notebooks",
-    "ram",
-  ].includes(categorySlug);
+  let rawProducts;
+  if (categorySlug === "deals") {
+    rawProducts = await getAllDeals(1000, countryCode);
+  } else {
+    rawProducts = await getRawProductsByCategory(
+      categorySlug,
+      countryCode,
+      2000,
+    );
+  }
 
   return rawProducts
     .map((p) => {
-      const localized = mapRawToLocalizedProduct(
-        p,
-        countryCode,
-        categorySlug,
-        isCpuOrMobo,
-        isCpu,
-        isSsd,
-        isStorageOrRam,
-      );
+      const localized = mapRawToLocalizedProduct(p, countryCode, categorySlug);
       if (!localized) return null;
 
       return {
@@ -594,33 +571,8 @@ export async function getLocalizedProductsByIds(
     true, // stripHeavyData (History not needed for listing)
   );
 
-  const isCpuOrMobo = categorySlug === "cpu" || categorySlug === "motherboards";
-  const isCpu = categorySlug === "cpu";
-  const isSsd = categorySlug === "ssds";
-  const isStorageOrRam = [
-    "hard-drives",
-    "ssds",
-    "external-storage",
-    "storage",
-    "nas",
-    "smartphones",
-    "tablets",
-    "notebooks",
-    "ram",
-  ].includes(categorySlug);
-
   return rawProducts
-    .map((p) =>
-      mapRawToLocalizedProduct(
-        p,
-        countryCode,
-        categorySlug,
-        isCpuOrMobo,
-        isCpu,
-        isSsd,
-        isStorageOrRam,
-      ),
-    )
+    .map((p) => mapRawToLocalizedProduct(p, countryCode, categorySlug))
     .filter((p): p is LocalizedProduct => p !== null);
 }
 
