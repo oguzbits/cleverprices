@@ -185,7 +185,7 @@ const nextConfig: NextConfig = {
       // --- Category Coverage Fixes (Flattened Hierarchy) ---
       {
         source: "/computer/tablet-accessories",
-        destination: "/tablet-accessories",
+        destination: "/tablet-zubehoer",
         permanent: true,
       },
       {
@@ -233,15 +233,19 @@ const nextConfig: NextConfig = {
         destination: "/radios",
         permanent: true,
       },
-      { source: "/pc-komponenten/ram", destination: "/ram", permanent: true },
+      {
+        source: "/pc-komponenten/ram",
+        destination: "/arbeitsspeicher",
+        permanent: true,
+      },
       {
         source: "/pc-komponenten/pc-cases",
-        destination: "/pc-cases",
+        destination: "/pc-gehaeuse",
         permanent: true,
       },
       {
         source: "/computer/mouse-pads",
-        destination: "/mouse-pads",
+        destination: "/mauspads",
         permanent: true,
       },
       {
@@ -256,15 +260,19 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/pc-komponenten/storage",
-        destination: "/storage",
+        destination: "/laufwerke",
         permanent: true,
       },
       {
         source: "/computer/keyboards",
-        destination: "/keyboards",
+        destination: "/tastaturen",
         permanent: true,
       },
-      { source: "/pc-komponenten/cpu", destination: "/cpu", permanent: true },
+      {
+        source: "/pc-komponenten/cpu",
+        destination: "/prozessoren",
+        permanent: true,
+      },
       {
         source: "/elektroartikel/elektrische-zahnb%C3%BCrsten",
         destination: "/elektrische-zahnbuersten",
@@ -394,17 +402,17 @@ const nextConfig: NextConfig = {
       // Legacy /electronics/* paths not covered above
       {
         source: "/electronics/office-chairs",
-        destination: "/office-chairs",
+        destination: "/buerostuehle",
         permanent: true,
       },
       {
         source: "/electronics/phone-accessories",
-        destination: "/telekommunikation",
+        destination: "/handy-zubehoer",
         permanent: true,
       },
       {
         source: "/electronics/monitor-arms",
-        destination: "/monitor-arms",
+        destination: "/monitorhalterungen",
         permanent: true,
       },
       // Legacy /storage/* paths
@@ -429,7 +437,11 @@ const nextConfig: NextConfig = {
       },
 
       // --- Legacy English/V1 Path Corrections ---
-      { source: "/electronics/ram", destination: "/ram", permanent: true },
+      {
+        source: "/electronics/ram",
+        destination: "/arbeitsspeicher",
+        permanent: true,
+      },
       {
         source: "/electronics/webcams",
         destination: "/webcams",
@@ -437,35 +449,39 @@ const nextConfig: NextConfig = {
       },
       {
         source: "/electronics/hard-drives",
-        destination: "/hard-drives",
+        destination: "/festplatten",
         permanent: true,
       },
       {
         source: "/electronics/monitors",
-        destination: "/monitors",
+        destination: "/monitore",
         permanent: true,
       },
       {
         source: "/electronics/routers",
-        destination: "/routers",
+        destination: "/wlan-router",
         permanent: true,
       },
       {
         source: "/electronics/pc-cases",
-        destination: "/pc-cases",
+        destination: "/pc-gehaeuse",
         permanent: true,
       },
       {
         source: "/electronics/game-controllers",
-        destination: "/game-controllers",
+        destination: "/gamepad-controller",
         permanent: true,
       },
       {
         source: "/electronics/cable-management",
-        destination: "/cable-management",
+        destination: "/kabelmanagement",
         permanent: true,
       },
-      { source: "/electronics/gpu", destination: "/gpu", permanent: true },
+      {
+        source: "/electronics/gpu",
+        destination: "/grafikkarten",
+        permanent: true,
+      },
 
       {
         source: "/de/computer/network-switches",
@@ -477,12 +493,12 @@ const nextConfig: NextConfig = {
       {
         source:
           "/out/tecknet-wireless-vertikale-ergonomische-maus-4800-dpi-5-tasten-kabellose-optisch-b0dh1mg23d",
-        destination: "/mice?brand=TeckNet", // Safe fallback to category+brand filter
+        destination: "/maeuse?brand=TeckNet", // Safe fallback to category+brand filter
         permanent: true,
       },
       {
         source: "/out/seagate-ironwolf-pro-16tb",
-        destination: "/hard-drives?brand=Seagate&capacity=16",
+        destination: "/festplatten?brand=Seagate&capacity=16",
         permanent: true,
       },
 
