@@ -13,12 +13,14 @@ A modular set of rules to maximize search visibility and organic traffic.
 
 ## 🚫 BANNED (Never Use)
 
-| Pattern                          | Why                   | Use Instead                 |
-| -------------------------------- | --------------------- | --------------------------- |
-| Duplicate titles                 | Cannibalizes rankings | Unique title per page       |
-| Missing meta descriptions        | Poor CTR              | Action + UVP + CTA          |
-| Generic H1s                      | Low relevance         | Keyword-rich, unique H1     |
-| Orphan pages (no internal links) | Not crawled           | Link from 3-5 related pages |
+| Pattern                   | Why                   | Use Instead             |
+| ------------------------- | --------------------- | ----------------------- |
+| Duplicate titles          | Cannibalizes rankings | Unique title per page   |
+| Missing meta descriptions | Poor CTR              | Action + UVP + CTA      |
+| Generic H1s               | Low relevance         | Keyword-rich, unique H1 |
+
+- **Stability Shield Compliance**: Serving bots slightly older data (15m cached vs 1m live) is permitted to protect human performance. Googlebot rewards < 200ms TTFB more than 60s price freshness.
+- **Orphan pages (no internal links)**: Not crawled. Link from 3-5 related pages.
 
 ## ✅ REQUIRED
 

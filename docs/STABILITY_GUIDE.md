@@ -71,11 +71,11 @@ For maximum query speed on the bundled Lite DB, CleverPrices uses several optimi
 
 These are configured in `src/db/index.ts`:
 
-| PRAGMA         | Value             | Benefit                                     |
-| :------------- | :---------------- | :------------------------------------------ |
-| `cache_size`   | `-200000` (200MB) | Huge buffer for repeat reads                |
-| `mmap_size`    | `268435456`       | Entire 40MB DB fits in Memory Map (No disk) |
-| `busy_timeout` | `5000`            | Prevents lock errors on concurrent access   |
+| PRAGMA         | Value             | Benefit                                                                   |
+| :------------- | :---------------- | :------------------------------------------------------------------------ |
+| `cache_size`   | `-200000` (200MB) | Huge buffer for repeat reads                                              |
+| `mmap_size`    | `268435456`       | Entire 40MB DB fits in Memory Map (No disk)                               |
+| `busy_timeout` | `1000`            | [STABILITY SHIELD] Trips circuit breaker faster to protect responsiveness |
 
 ### 9.2 Index Strategy
 
@@ -95,7 +95,51 @@ Add an index if:
 
 ## **Avoid over-indexing**: Each index increases write time and database size. Only index what you query.
 
-## 10. Hydration & Rendering Patterns
+---
+
+## 10. The CleverPrices "Stability Shield"
+
+To protect the application from cascading failures during high load or crawler spikes, we implement a multi-layered stability shield.
+
+### 10.1 Database Circuit Breaker
+
+- **Goal**: Prevent application hangs due to persistent SQLite locks.
+- **Mechanism**: The `withRetry` utility in `src/db/utils.ts` trips after 3 failed attempts (~3 seconds total).
+- **Behavior**: Throws `DatabaseBusyError`, allowing the UI to catch the error and fall back to stale Redis cache instead of timing out.
+
+### 10.2 Bot Shield (Workload Tiering)
+
+- **Goal**: Reserve expensive database operations (like Live Price Merging) for real human users.
+- **Mechanism**: Detected bots (via `src/lib/server/user-agent.ts`) are served cached prices directly from SQLite, skipping the real-time "Live Merge" step.
+- **Coverage**: Applied to both standard category listings and parent category hub pages.
+
+### 10.3 Worker "Breather" (Lazy Writes)
+
+- **Goal**: Prevent background price updates from saturating SSD I/O and blocking user reads.
+- **Mechanism**: The `update-prices.ts` worker uses a `BATCH_DELAY_MS` of 150ms between commits and runs at `concurrency: 1`.
+
+---
+
+## 11. Join-Depth Policy
+
+To maintain O(1)-like performance even as our schema grows, we enforce a strict query complexity limit.
+
+### 11.1 The "Max 3 Joins" Rule
+
+- **Standard**: No Drizzle query may exceed **3 joins**.
+- **Why**: SQLite performance degrades non-linearly with join complexity, especially under concurrent load.
+
+### 11.2 The Hydration Pattern
+
+When an entity (like a Product) requires data from >3 tables, use the **Hydration Pattern**:
+
+1. **Lean Fetch**: Fetch a "lean" set of IDs using minimal joins.
+2. **Surgical Hydration**: Fetch the full objects for only the visible IDs (e.g., the 24 items on the current page).
+3. **Reference**: See `.agent/skills/drizzle-orm/rules/patterns-hydration.md` for implementation details.
+
+---
+
+## 12. Hydration & Rendering Patterns
 
 To keep the application fast as it grows, we use specific patterns to defer non-critical rendering.
 

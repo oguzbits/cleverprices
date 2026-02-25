@@ -19,8 +19,10 @@ import {
 } from "@/lib/metadata";
 import { type FilterParams } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
+import { isBot } from "@/lib/server/user-agent";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
@@ -215,9 +217,14 @@ async function ParentCategoryViewLoader({
   categorySlug: CategorySlug;
   children: Category[];
 }) {
+  const headersList = await headers();
+  const userAgent = headersList.get("user-agent") || "";
+  const botStatus = isBot(userAgent);
+
   const { bestsellers, newProducts, deals } = await getParentCategoryData(
     categorySlug,
     DEFAULT_COUNTRY,
+    botStatus,
   ).catch(() => ({ bestsellers: [], newProducts: [], deals: [] }));
 
   const transformProduct = (p: any) => ({

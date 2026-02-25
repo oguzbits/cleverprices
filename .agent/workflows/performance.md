@@ -51,8 +51,11 @@ If TTFB (Time to First Byte) is > 200ms on warm pages:
   ```bash
   bun run warm-cache
   ```
+- **Optimization (Bot Shield)**: Serve bots/crawlers slightly older data from Redis/SQLite instead of performing a "Live Merge" to protect DB resources.
+- **Optimization (Worker Breather)**: Ensure background writes use the "Lazy Write" pattern (150ms delay) to keep the I/O path clear for user reads.
 - **Optimization**: Verify SQLite WAL mode and checkpoint status if DB reads are slow.
 - **Optimization (Lean & Ghost)**: For large categories, ensure `getCategoryProducts` is using the tiered fetching approach. Verify that the hydration step (`getLocalizedProductsByIds`) is only fetching active page products.
+- **Optimization (Join-Depth Policy)**: Enforce the **3-join limit** per query. Use surgical hydration for complex views.
 - **Optimization (SQL Push-down)**: Move sorting (e.g., by savings or price) into SQL using `.orderBy(desc(sql...))` to avoid fetching large intermediate datasets.
 - **Thresholding**: Apply minimum savings (e.g., 5%) at the query level to filter out negligible price drops and reduce data transfer.
 

@@ -44,7 +44,9 @@ Given our usage of React Compiler and Cache Components, caching behavior is a co
 Issues with data fetching, missing products, or incorrect relationships should be debugged here.
 
 - **Check Local DB**: We use local SQLite as the persistent store. Verify the local database file has the expected schema and data.
+- **Circuit Breaker**: If you see `DatabaseBusyError`, it means the circuit breaker tripped due to persistent SQLite locks. Check if a background worker is saturating I/O.
 - **Query Logging**: Drizzle allows logging SQL queries. If a query returns unexpected results, log the raw SQL.
+- **Join Limit**: Verify that queries do not exceed the **3-join limit**. Use the Hydration Pattern for complex data.
 - **Migrations**: If you encounter `table already exists` or missing column errors, verify that schema definitions match the current state.
   // turbo
 

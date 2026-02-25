@@ -11,6 +11,7 @@ This workflow focuses on ensuring the local SQLite database, Redis caching layer
 Drizzle ORM interactions with SQLite should be optimized.
 
 - **Rule:** Check if queries in `src/lib/server/` or `src/db/` use the most efficient filtering.
+- **Rule (Join Limit):** No query should exceed **3 joins**. Use the Hydration Pattern for entities requiring more data.
 - **Rule:** Ensure we only select necessary columns, avoiding `select *` when joining multiple heavy tables (like Prices and Products).
 
 ## 2. Dynamic-on-Demand (DoD) Static Generation
@@ -32,4 +33,6 @@ Verify that the `redis-cache.ts` layer is effectively wrapping expensive queries
 Ensure background task separation is maintained.
 
 - Our updates and scraping run in a separate `worker` queue managed via `bun run worker:run` to avoid blocking the user-facing web requests.
+- **Worker Breather**: Updates use the "Lazy Write" pattern (150ms batch delay) to prevent I/O saturation.
+- **Circuit Breaker**: Queries use a 3-attempt circuit breaker to fail fast if the worker locks the DB for too long.
 - Validate that the worker's cron jobs do not overlap destructively.
