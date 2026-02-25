@@ -1,6 +1,11 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
 import { getAllDeals } from "@/lib/data/dealsData";
-import { type Product } from "@/lib/product-definitions";
+import {
+  type FilterCounts,
+  type FilterParams,
+  type LocalizedProduct,
+  type Product,
+} from "@/lib/product-definitions";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { parseVariationAttributes } from "@/lib/utils/variants";
@@ -14,30 +19,6 @@ import {
   getRawProductsByCategory,
 } from "./product-queries";
 import { calculateDesirabilityScore } from "./scoring";
-
-import { type LocalizedProduct } from "@/lib/product-definitions";
-export type { LocalizedProduct };
-
-export interface FilterParams {
-  search?: string;
-  condition?: string | string[];
-  technology?: string | string[];
-  formFactor?: string | string[];
-  brand?: string | string[];
-  minCapacity?: string;
-  maxCapacity?: string;
-  socket?: string[];
-  cores?: string[];
-  capacity?: string[];
-  minPrice?: string;
-  maxPrice?: string;
-  sortBy?: string;
-  sortOrder?: string;
-  sort?: string;
-  view?: string;
-  page?: string;
-  fetchAll?: boolean;
-}
 
 /**
  * Maps the IdealoTopBar sort parameter to sortBy and sortOrder values
@@ -518,7 +499,6 @@ export async function mergeLivePricesIntoLocalized(
 /**
  * Type for filter option counts: { brand: { Samsung: 213, SanDisk: 138 }, ... }
  */
-export type FilterCounts = Record<string, Record<string, number>>;
 
 /**
  * Calculate smart price range buckets based on current product distribution

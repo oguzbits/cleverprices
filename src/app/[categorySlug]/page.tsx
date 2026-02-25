@@ -17,8 +17,8 @@ import {
   getOpenGraph,
   truncateTitle,
 } from "@/lib/metadata";
+import { type FilterParams } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
-import { FilterParams } from "@/lib/server/category-products";
 import { BRAND_DOMAIN } from "@/lib/site-config";
 import { Metadata } from "next";
 import { notFound } from "next/navigation";

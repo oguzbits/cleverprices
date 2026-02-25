@@ -41,6 +41,29 @@ export interface LocalizedProduct {
   mpn?: string;
 }
 
+export interface FilterParams {
+  search?: string;
+  condition?: string | string[];
+  technology?: string | string[];
+  formFactor?: string | string[];
+  brand?: string | string[];
+  minCapacity?: string;
+  maxCapacity?: string;
+  socket?: string[];
+  cores?: string[];
+  capacity?: string[];
+  minPrice?: string;
+  maxPrice?: string;
+  sortBy?: string;
+  sortOrder?: string;
+  sort?: string;
+  view?: string;
+  page?: string;
+  fetchAll?: boolean;
+}
+
+export type FilterCounts = Record<string, Record<string, number>>;
+
 export const litePriceColumns = {
   id: prices.id,
   productId: prices.productId,

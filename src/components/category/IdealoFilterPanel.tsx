@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PriceRangeSlider } from "@/components/ui/PriceRangeSlider";
 import { FilterGroup } from "@/lib/category-types";
 import { useFilters } from "@/lib/hooks/use-filters";
-import type { FilterCounts } from "@/lib/server/category-products";
+import type { FilterCounts } from "@/lib/product-definitions";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 

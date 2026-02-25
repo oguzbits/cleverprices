@@ -5,7 +5,7 @@ import { Pagination } from "@/components/ui/pagination";
 import { Category, CategorySlug, getChildCategories } from "@/lib/categories";
 import { getCategoryFAQs } from "@/lib/category-faqs";
 import { getCategoryIcon } from "@/lib/category-icons";
-import { FilterParams } from "@/lib/server/category-products";
+import { type FilterParams } from "@/lib/product-definitions";
 import { formatTechText } from "@/lib/utils/formatting";
 import { X } from "lucide-react";
 import Link from "next/link";

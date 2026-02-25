@@ -21,10 +21,8 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Category, getBreadcrumbs, stripCategoryIcon } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { type CountryCode } from "@/lib/countries";
-import {
-  FilterParams,
-  getCategoryProducts,
-} from "@/lib/server/category-products";
+import { type FilterParams } from "@/lib/product-definitions";
+import { getCategoryProducts } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
 import { connection } from "next/server";
