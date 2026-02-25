@@ -361,7 +361,7 @@ export function mapRawToLocalizedProduct(
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v60", // Cache buster
+  version: string = "v61", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
@@ -392,7 +392,7 @@ export async function getCachedLocalizedCategoryProducts(
 export async function getLeanCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v60",
+  version: string = "v61",
 ) {
   "use cache";
   cacheLife("category");
@@ -644,7 +644,7 @@ export async function getCategoryProducts(
   const leanProducts = await getLeanCategoryProducts(
     categorySlug,
     countryCode,
-    "v60",
+    "v61",
   );
 
   const category = allCategories[categorySlug as CategorySlug];

@@ -32,7 +32,6 @@ const categories: {
   { slug: "grafikkarten", label: "Grafikkarten", icon: Video },
   { slug: "arbeitsspeicher", label: "Arbeitsspeicher", icon: MemoryStick },
   { slug: "ssds", label: "SSDs", icon: HardDrive },
-  { slug: "festplatten", label: "HDDs", icon: HardDrive },
   { slug: "netzteile", label: "Netzteile", icon: Zap },
   { slug: "monitore", label: "Monitore", icon: Monitor },
   { slug: "mainboards", label: "Mainboards", icon: CircuitBoard },

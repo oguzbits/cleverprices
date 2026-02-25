@@ -255,10 +255,10 @@ export const getRawProductsByCategory = cache(
 
     return unstable_cache(
       fetchProducts,
-      [`raw-category-products-v1-${category}-${countryCode}-${limit}`],
+      [`raw-category-products-v2-${category}-${countryCode}-${limit}`],
       {
         revalidate: CATEGORY_REVALIDATE_SECONDS,
-        tags: ["category-products", `cat-${category}`, "v60"],
+        tags: ["category-products", `cat-${category}`, "v61"],
       },
     )();
   },
