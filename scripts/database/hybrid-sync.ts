@@ -75,6 +75,19 @@ async function hybridSync() {
         `
       UPDATE products
       SET 
+        category = local.category,
+        slug = local.slug,
+        title = local.title,
+        brand = local.brand,
+        canonical_id = local.canonical_id,
+        parent_asin = local.parent_asin,
+        capacity = local.capacity,
+        capacity_unit = local.capacity_unit,
+        normalized_capacity = local.normalized_capacity,
+        form_factor = local.form_factor,
+        technology = local.technology,
+        completeness_score = local.completeness_score,
+        missing_specs = local.missing_specs,
         official_title = local.official_title,
         official_specifications = local.official_specifications,
         enrichment_status = local.enrichment_status,
@@ -87,6 +100,32 @@ async function hybridSync() {
       .run();
 
     console.log(`   ✅ Merged ${result.changes} products successfully!`);
+
+    console.log("   Inserting new products and prices...");
+
+    // Insert products that exist in local but not in prod candidate
+    const insertProducts = db
+      .prepare(
+        `
+      INSERT OR IGNORE INTO products
+      SELECT * FROM local_db.products
+      WHERE id NOT IN (SELECT id FROM products)
+    `,
+      )
+      .run();
+    console.log(`   ✅ Inserted ${insertProducts.changes} new products!`);
+
+    // Insert prices for those new products (or any missing prices)
+    const insertPrices = db
+      .prepare(
+        `
+      INSERT OR IGNORE INTO prices
+      SELECT * FROM local_db.prices
+      WHERE id NOT IN (SELECT id FROM prices)
+    `,
+      )
+      .run();
+    console.log(`   ✅ Inserted ${insertPrices.changes} new prices!`);
 
     // Cleanup
     db.run("DETACH DATABASE local_db");
