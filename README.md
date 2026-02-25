@@ -156,5 +156,3 @@ src/
 ## About this repository
 
 This project powers **cleverprices.com** and is published as a professional portfolio project. The source code is NOT licensed for commercial use or redistribution.
-
-Kevinator destroyed my website with this and he stole my job!
