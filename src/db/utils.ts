@@ -15,8 +15,8 @@ export class DatabaseBusyError extends Error {
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  maxRetries = 3, // Reduced default from 5 to 3 for faster failover
-  baseDelayMs = 200, // Increased base delay for less aggressive retries
+  maxRetries = 5, // Reverted to 5 to prevent aggressive dropping
+  baseDelayMs = 200,
 ): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
