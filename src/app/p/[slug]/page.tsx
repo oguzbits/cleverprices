@@ -190,7 +190,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
     const isParentView = isParentViewMode;
     const siblings = isParentView ? renderData?.variants || [] : [];
-    const identity = getProductIdentity(product, siblings);
+    const identity = getProductIdentity(product);
 
     // Calculate price per unit for SEO
     const pricePerUnit =
