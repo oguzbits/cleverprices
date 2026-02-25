@@ -5,7 +5,7 @@ import {
 } from "@/lib/categories";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import type { ProductOffer, UnifiedProduct } from "@/lib/data-sources";
-import { Product } from "@/lib/product-registry";
+import { Product } from "@/lib/product-definitions";
 import { cn } from "@/lib/utils";
 import {
   Check,

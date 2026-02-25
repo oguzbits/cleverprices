@@ -3,7 +3,7 @@ import { prices } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { withRetry } from "../../db/utils";
-import { litePriceColumns, type Product } from "../product-registry";
+import { litePriceColumns, type Product } from "../product-definitions";
 import { getBestPrice } from "../utils/price-selection";
 import { parseHistoryJson } from "../utils/product-mapping";
 import {

@@ -4,9 +4,9 @@ import { DEFAULT_COUNTRY } from "@/lib/countries";
 import {
   litePriceColumns,
   liteProductColumns,
-  mapDbProduct,
   Product,
-} from "@/lib/product-registry";
+} from "@/lib/product-definitions";
+import { mapDbProduct } from "@/lib/utils/product-mapping";
 import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 

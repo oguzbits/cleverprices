@@ -1,8 +1,8 @@
 import { db } from "@/db";
 import { prices, products, type Product as DbProduct } from "@/db/schema";
 import { and, desc, eq, inArray, lte, SQL } from "drizzle-orm";
-import type { Product } from "../product-registry";
-import { litePriceColumns, liteProductColumns } from "../product-registry";
+import type { Product } from "../product-definitions";
+import { litePriceColumns, liteProductColumns } from "../product-definitions";
 import { mapDbProduct } from "../utils/product-mapping";
 
 export interface NichePage {

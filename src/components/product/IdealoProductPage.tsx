@@ -13,8 +13,8 @@ import {
 } from "@/lib/categories";
 import { translateSpecKey } from "@/lib/constants/spec-translations";
 import { type CountryCode } from "@/lib/countries";
+import { type Product } from "@/lib/product-definitions";
 import { getFamilyIdentity } from "@/lib/product-families";
-import { Product } from "@/lib/product-registry";
 import {
   getProductVariants,
   getSimilarProducts,

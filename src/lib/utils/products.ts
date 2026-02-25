@@ -1,7 +1,7 @@
 import type { CategorySlug } from "@/lib/categories";
 import { allCategories } from "@/lib/categories";
 import type { CountryCode } from "@/lib/countries";
-import type { Product } from "@/lib/product-registry";
+import type { Product } from "@/lib/product-definitions";
 import type { Currency, Product as UIProduct } from "@/types";
 
 /**

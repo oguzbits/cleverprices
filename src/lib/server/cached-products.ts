@@ -2,6 +2,7 @@ import { cacheLife } from "next/cache";
 import { getCategoryBySlug } from "../categories";
 import { type CountryCode } from "../countries";
 import { dataAggregator } from "../data-sources";
+import { type Product } from "../product-definitions";
 import {
   getFamilyIdentity as getFamilyIdentitySync,
   getFamilyRepresentative,
@@ -21,7 +22,6 @@ import {
   getProductBySlug as getProductBySlugSync,
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
-  type Product,
 } from "../product-registry";
 import {
   getLivePriceForProduct,

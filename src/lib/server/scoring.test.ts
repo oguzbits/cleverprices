@@ -1,4 +1,4 @@
-import type { Product } from "@/lib/product-registry";
+import type { Product } from "@/lib/product-definitions";
 import { describe, expect, test } from "bun:test";
 import { calculateDesirabilityScore } from "./scoring";
 

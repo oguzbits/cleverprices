@@ -1,19 +1,5 @@
 import { describe, expect, it, mock } from "bun:test";
 
-// Mock must happen BEFORE imports that use it
-mock.module("@/lib/product-registry", () => ({
-  parseVariationAttributes: (attrs: string) => {
-    if (!attrs) return {};
-    return Object.fromEntries(
-      attrs.split(";").map((pair) => {
-        const [k, v] = pair.split(":");
-        return [k.trim(), v.trim()];
-      }),
-    );
-  },
-  Product: {},
-}));
-
 mock.module("next/cache", () => ({
   cacheLife: () => {},
   unstable_cache: (fn: any) => fn,

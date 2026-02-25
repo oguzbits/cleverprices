@@ -33,8 +33,8 @@ export async function GET(
     product = await getProductBySlug(slug);
   }
 
-  if (!product) {
-    // Product not found - return 404 (GSC fix: avoid soft redirects for missing products)
+  if (!product || !product.affiliateUrl) {
+    // Product or affiliate URL not found - return 404 (GSC fix: avoid soft redirects for missing products)
     return new NextResponse("Product not found", { status: 404 });
   }
 

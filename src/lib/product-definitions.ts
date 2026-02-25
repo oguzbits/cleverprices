@@ -1,0 +1,212 @@
+import { prices, products, type Price } from "@/db/schema";
+
+// Lightweight price columns - lean schema
+
+export interface LocalizedProduct {
+  id: number;
+  slug: string;
+  asin: string;
+  title: string;
+  subtitle?: string;
+  price: number;
+  usedPrice?: number;
+  warehousePrice?: number;
+  pricePerUnit: number;
+  popularityScore: number;
+  savings: number;
+  listPrice?: number;
+  category: string;
+  image: string;
+  brand: string;
+  rating: number;
+  reviewCount: number;
+  monthlySold: number;
+  salesRank?: number;
+  condition: string;
+  capacity: number;
+  capacityUnit: string;
+  normalizedCapacity: number;
+  formFactor: string;
+  technology: string;
+  socket?: string;
+  cores?: string;
+  lastUpdated?: string;
+  variationAttributes?: string;
+  parentAsin?: string; // For grouping
+  isVariantGroup?: boolean; // UI flag
+  variantCount?: number; // UI flag
+  officialSpecifications?: any; // Structured official specs
+  specificationsSource?: string;
+  officialTitle?: string;
+  mpn?: string;
+}
+
+export const litePriceColumns = {
+  id: prices.id,
+  productId: prices.productId,
+  country: prices.country,
+  price: prices.price,
+  usedPrice: prices.usedPrice,
+  warehousePrice: prices.warehousePrice,
+  listPrice: prices.listPrice,
+  priceAvg90: prices.priceAvg90,
+  pricePerUnit: prices.pricePerUnit,
+  currency: prices.currency,
+  lastUpdated: prices.lastUpdated,
+};
+
+// ULTRA-lightweight price columns for variant lists
+export const superLitePriceColumns = {
+  id: prices.id,
+  productId: prices.productId,
+  country: prices.country,
+  price: prices.price,
+  usedPrice: prices.usedPrice,
+  warehousePrice: prices.warehousePrice,
+  currency: prices.currency,
+  lastUpdated: prices.lastUpdated,
+};
+
+// Define lightweight columns for list views
+export const liteProductColumns = {
+  id: products.id,
+  asin: products.asin,
+  gtin: products.gtin,
+  mpn: products.mpn,
+  slug: products.slug,
+  title: products.title,
+  brand: products.brand,
+  category: products.category,
+  imageUrl: products.imageUrl,
+  manufacturer: products.manufacturer,
+  capacity: products.capacity,
+  capacityUnit: products.capacityUnit,
+  normalizedCapacity: products.normalizedCapacity,
+  formFactor: products.formFactor,
+  technology: products.technology,
+  condition: products.condition,
+  rating: products.rating,
+  reviewCount: products.reviewCount,
+  salesRank: products.salesRank,
+  monthlySold: products.monthlySold,
+  parentAsin: products.parentAsin,
+  variationAttributes: products.variationAttributes,
+  specifications: products.specifications,
+  officialSpecifications: products.officialSpecifications,
+  officialTitle: products.officialTitle,
+  energyLabel: products.energyLabel,
+  historySeeded: products.historySeeded,
+  icecatId: products.icecatId,
+  enrichmentStatus: products.enrichmentStatus,
+  specificationsSource: products.specificationsSource,
+  completenessScore: products.completenessScore,
+  lastEnrichedAt: products.lastEnrichedAt,
+  canonicalId: products.canonicalId,
+  createdAt: products.createdAt,
+  updatedAt: products.updatedAt,
+};
+
+// ULTRA-lean columns for the filtering tier
+export const filteringProductColumns = {
+  id: products.id,
+  asin: products.asin,
+  title: products.title,
+  brand: products.brand,
+  category: products.category,
+  condition: products.condition,
+  capacity: products.capacity,
+  capacityUnit: products.capacityUnit,
+  normalizedCapacity: products.normalizedCapacity,
+  formFactor: products.formFactor,
+  technology: products.technology,
+  salesRank: products.salesRank,
+  rating: products.rating,
+  reviewCount: products.reviewCount,
+  monthlySold: products.monthlySold,
+  parentAsin: products.parentAsin,
+  variationAttributes: products.variationAttributes,
+};
+
+export interface Product {
+  id?: number;
+  slug: string;
+  asin: string;
+  title: string;
+  rawTitle?: string;
+  subtitle?: string;
+  category: string;
+  imageUrl?: string;
+  image?: string; // Legacy field
+  affiliateUrl?: string; // Optional for some views
+  gtin?: string;
+  brand: string;
+  prices: Record<string, number>;
+  usedPrices?: Record<string, number>;
+  warehousePrices?: Record<string, number>;
+  price?: number; // Normalized active price for display
+  usedPrice?: number;
+  warehousePrice?: number;
+  currency?: string;
+  pricePerUnit?: number;
+  pricesLastUpdated?: Record<string, string>;
+  parentAsin?: string;
+  variationAttributes?: string;
+  specifications?: Record<string, any>;
+  officialSpecifications?: Record<string, any>;
+  officialTitle?: string | null;
+  socket?: string;
+  cores?: string;
+  manufacturer?: string;
+  features?: string[];
+  capacity: number;
+  capacityUnit: string;
+  normalizedCapacity?: number;
+  formFactor: string;
+  technology?: string;
+  condition: "New" | "Used" | "Renewed";
+  priceHistory?: { date: string; price: number }[];
+  rating?: number;
+  reviewCount?: number;
+  energyLabel?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
+  salesRank?: number;
+  priceAvg90?: Record<string, number>;
+  monthlySold?: number;
+  mpn?: string;
+  popularityScore?: number;
+  createdAt?: string;
+  releaseDate?: string;
+  savings?: number;
+  listPrice?: Record<string, number>;
+  pricesPerUnit?: Record<string, number>;
+  isParentView?: boolean;
+  icecatId?: number | null;
+  specificationsSource?: string | null;
+  enrichmentStatus?:
+    | "pending"
+    | "processed"
+    | "not_found"
+    | "error"
+    | "optimized"
+    | "scavenged"
+    | "untrusted_source"
+    | null;
+  completenessScore?: number | null;
+  missingSpecs?: string | null;
+  lastEnrichedAt?: Date | null;
+  canonicalId?: number | null;
+}
+
+export type LitePrice = Pick<
+  Price,
+  | "id"
+  | "productId"
+  | "country"
+  | "price"
+  | "usedPrice"
+  | "warehousePrice"
+  | "listPrice"
+  | "priceAvg90"
+  | "pricePerUnit"
+  | "currency"
+  | "lastUpdated"
+> & { historyJson?: Price["historyJson"] };

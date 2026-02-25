@@ -7,7 +7,8 @@
  */
 
 import { getChildCategories, type CategorySlug } from "@/lib/categories";
-import { getProductsByCategory, type Product } from "@/lib/product-registry";
+import { type Product } from "@/lib/product-definitions";
+import { getProductsByCategory } from "@/lib/product-registry";
 import { mergeLivePrices } from "@/lib/server/live-data";
 import { calculateDesirabilityScore } from "@/lib/server/scoring";
 import { calculateProductDiscount } from "@/lib/utils/products";

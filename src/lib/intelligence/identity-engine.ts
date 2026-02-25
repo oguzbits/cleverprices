@@ -1,4 +1,4 @@
-import { Product } from "@/lib/product-registry";
+import { Product } from "@/lib/product-definitions";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 
 /**

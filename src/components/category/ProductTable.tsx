@@ -2,7 +2,7 @@ import { SortableTableHead } from "@/components/category/SortableTableHead";
 import { Badge } from "@/components/ui/badge";
 import { getAffiliateRedirectPath } from "@/lib/affiliate-utils";
 import { DEFAULT_COUNTRY, type CountryCode } from "@/lib/countries";
-import { LocalizedProduct } from "@/lib/server/category-products";
+import { type LocalizedProduct } from "@/lib/product-definitions";
 import { cn } from "@/lib/utils";
 import { formatCurrency, formatPricePerUnit } from "@/lib/utils/formatting";
 import Link from "next/link";

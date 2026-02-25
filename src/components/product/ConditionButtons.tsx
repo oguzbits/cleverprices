@@ -1,5 +1,6 @@
+import { type Product } from "@/lib/product-definitions";
 import { getFamilyIdentity } from "@/lib/product-families";
-import { getProductFamilyMembers, type Product } from "@/lib/product-registry";
+import { getProductFamilyMembers } from "@/lib/product-registry";
 import { mergeLivePrices } from "@/lib/server/live-data";
 import { cn } from "@/lib/utils";
 import { normalizeVariantAttributes } from "@/lib/utils/variants";

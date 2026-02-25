@@ -1,7 +1,7 @@
 import { type Price as DbPrice, type Product as DbProduct } from "@/db/schema";
 import { parseHistoryBlob } from "../history-compression";
+import { type LitePrice, type Product } from "../product-definitions";
 import { getFamilyIdentity } from "../product-families";
-import { type LitePrice, type Product } from "../product-registry";
 import { type SiblingConsensus, IDENTITY_CONFIG } from "./product-identity";
 import { calculateProductMetrics } from "./products";
 import { parseCapacityToGB, parseVariationAttributes } from "./variants";

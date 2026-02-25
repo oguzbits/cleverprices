@@ -21,209 +21,59 @@ import {
   SQL,
 } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import { withRetry } from "../db/utils";
-import { getFamilyIdentity } from "./product-families";
 import {
   CATEGORY_REVALIDATE_SECONDS,
   PRODUCT_REVALIDATE_SECONDS,
 } from "./site-config";
-import { calculateSiblingConsensus } from "./utils/product-identity";
-import { mapDbProduct } from "./utils/product-mapping";
 
 // Lightweight price columns - lean schema (Drizzle ORM skill: query-select-columns)
-export const litePriceColumns = {
-  id: prices.id,
-  productId: prices.productId,
-  country: prices.country,
-  price: prices.price,
-  usedPrice: prices.usedPrice,
-  warehousePrice: prices.warehousePrice,
-  listPrice: prices.listPrice,
-  priceAvg90: prices.priceAvg90,
-  pricePerUnit: prices.pricePerUnit,
-  // historyJson: prices.historyJson, // Excluded for performance (listing/live views only need current price)
-  currency: prices.currency,
-  lastUpdated: prices.lastUpdated,
+import {
+  filteringProductColumns,
+  litePriceColumns,
+  liteProductColumns,
+  superLitePriceColumns,
+} from "./product-definitions";
+
+export {
+  filteringProductColumns,
+  litePriceColumns,
+  liteProductColumns,
+  superLitePriceColumns,
 };
 
-// ULTRA-lightweight price columns for variant lists (No history blobs!)
-// This excludes historyJson which can be 90% of the payload size.
-const superLitePriceColumns = {
-  id: prices.id,
-  productId: prices.productId,
-  country: prices.country,
-  price: prices.price,
-  usedPrice: prices.usedPrice,
-  warehousePrice: prices.warehousePrice,
-  // listPrice: prices.listPrice, // Often unused in variant buttons
-  // priceAvg90: prices.priceAvg90, // Unused in variant buttons? Keep if needed for "Good Price" badge
-  // pricePerUnit: prices.pricePerUnit, // Unused in variant buttons
-  currency: prices.currency,
-  lastUpdated: prices.lastUpdated,
-};
-
-// Define lightweight columns for list views to avoid fetching huge JSON/text blobs
-export const liteProductColumns = {
-  id: products.id,
-  asin: products.asin,
-  gtin: products.gtin,
-  mpn: products.mpn,
-  slug: products.slug,
-  title: products.title,
-  brand: products.brand,
-  category: products.category,
-  imageUrl: products.imageUrl,
-  manufacturer: products.manufacturer,
-  capacity: products.capacity,
-  capacityUnit: products.capacityUnit,
-  normalizedCapacity: products.normalizedCapacity,
-  formFactor: products.formFactor,
-  technology: products.technology,
-  condition: products.condition,
-  rating: products.rating,
-  reviewCount: products.reviewCount,
-  salesRank: products.salesRank,
-  monthlySold: products.monthlySold,
-  parentAsin: products.parentAsin,
-  variationAttributes: products.variationAttributes,
-  specifications: products.specifications,
-  officialSpecifications: products.officialSpecifications,
-  officialTitle: products.officialTitle,
-  energyLabel: products.energyLabel,
-  historySeeded: products.historySeeded,
-  icecatId: products.icecatId,
-  enrichmentStatus: products.enrichmentStatus,
-  specificationsSource: products.specificationsSource,
-  // keepaFeatures: products.keepaFeatures, // STRIPPED: Heavy blob
-  completenessScore: products.completenessScore,
-  // missingSpecs: products.missingSpecs, // STRIPPED: JSON bucket
-  lastEnrichedAt: products.lastEnrichedAt,
-  canonicalId: products.canonicalId,
-  createdAt: products.createdAt,
-  updatedAt: products.updatedAt,
-};
-
-// ULTRA-lean columns for the filtering tier (Lean & Ghost Architecture)
-// Only includes fields needed for facets, sorting, and search.
-export const filteringProductColumns = {
-  id: products.id,
-  asin: products.asin,
-  title: products.title,
-  brand: products.brand,
-  category: products.category,
-  condition: products.condition,
-  capacity: products.capacity, // For filtering
-  capacityUnit: products.capacityUnit, // For display
-  normalizedCapacity: products.normalizedCapacity, // For range filters/sorting
-  formFactor: products.formFactor, // For filtering
-  technology: products.technology, // For filtering
-  salesRank: products.salesRank, // For sorting
-  rating: products.rating, // For sorting
-  reviewCount: products.reviewCount, // For sorting
-  monthlySold: products.monthlySold, // For sorting
-  parentAsin: products.parentAsin, // For grouping/identity
-  variationAttributes: products.variationAttributes, // Fallback for socket/cores
-};
+import { getFamilyIdentity } from "./product-families";
+import { calculateSiblingConsensus } from "./utils/product-identity";
+import { mapDbProduct } from "./utils/product-mapping";
 
 /**
  * Product Registry - DB Adapter
  * Fetches data from SQLite database seeded with realistic data.
  */
 
-export interface Product {
-  id?: number;
-  slug: string;
-  asin: string;
-  title: string;
-  rawTitle?: string;
-  subtitle?: string;
-  category: string;
-  image?: string;
-  affiliateUrl: string;
-  prices: Record<string, number>;
-  usedPrices?: Record<string, number>;
-  warehousePrices?: Record<string, number>;
-  /**
-   * Last updated timestamp per country price (ISO string)
-   * Essential for Amazon compliance
-   */
-  pricesLastUpdated?: Record<string, string>;
-  parentAsin?: string;
-  variationAttributes?: string;
-  specifications?: Record<string, any>;
-  officialSpecifications?: Record<string, any>;
-  officialTitle?: string | null;
-  socket?: string;
-  cores?: string;
-  manufacturer?: string;
-  features?: string[]; // Parsed from JSON string
+import type { LitePrice, Product } from "./product-definitions";
 
-  // Basic properties
-  capacity: number;
-  capacityUnit: string;
-  normalizedCapacity?: number;
-  pricePerUnit?: number;
-  formFactor: string;
-  technology?: string;
-  condition: "New" | "Used" | "Renewed";
-  brand: string;
-
-  // History & Metrics
-  priceHistory?: { date: string; price: number }[];
-  rating?: number;
-  reviewCount?: number;
-  energyLabel?: "A" | "B" | "C" | "D" | "E" | "F" | "G";
-  salesRank?: number;
-  priceAvg90?: Record<string, number>;
-  monthlySold?: number;
-  mpn?: string;
-  popularityScore?: number;
-  createdAt?: string; // ISO string
-  releaseDate?: string; // Extracted from specs or metadata
-  savings?: number; // Calculated savings percentage (0-1)
-  listPrice?: Record<string, number>;
-  pricesPerUnit?: Record<string, number>;
-  isParentView?: boolean; // Flag to indicate we are in aggregated mode
-
-  // Enrichment & Data Quality
-  icecatId?: number | null;
-  specificationsSource?: string | null;
-  enrichmentStatus?:
-    | "pending"
-    | "processed"
-    | "not_found"
-    | "error"
-    | "optimized"
-    | "scavenged"
-    | "untrusted_source"
-    | null;
-  completenessScore?: number | null;
-  missingSpecs?: string | null;
-  lastEnrichedAt?: Date | null;
-  canonicalId?: number | null;
-}
-
-// Lite price type for optimized queries (lean schema)
-type LitePrice = Pick<
-  Price,
-  | "id"
-  | "productId"
-  | "country"
-  | "price"
-  | "usedPrice"
-  | "warehousePrice"
-  | "listPrice"
-  | "priceAvg90"
-  | "pricePerUnit"
-  | "currency"
-  | "lastUpdated"
-> & { historyJson?: Price["historyJson"] };
-
-// Lite price type for optimized queries (lean schema)
-export type { LitePrice };
+export type { LitePrice, Product };
 
 // Re-export mapping logic for backward compatibility
 export { mapDbProduct } from "./utils/product-mapping";
+
+import {
+  enrichWithFullSiblings,
+  getProductsByCategory,
+  getProductsByIds,
+  getRawProductsByCategory,
+  indexPricesById,
+} from "./server/product-queries";
+
+export {
+  enrichWithFullSiblings,
+  getProductsByCategory,
+  getProductsByIds,
+  getRawProductsByCategory,
+  indexPricesById,
+};
 
 export const getProductById = cache(async function getProductById(
   id: number,
@@ -724,367 +574,10 @@ export async function getAllProducts(): Promise<Product[]> {
   );
   const allPrices = await withRetry(() =>
     db.select(litePriceColumns).from(prices),
-  ); // Drizzle ORM skill: query-select-columns
-
-  const pricesByProduct = indexPricesById(allPrices);
-
-  return allProducts.map(
-    (
-      p, // Kept allProducts.map as 'prods' was undefined
-    ) => mapDbProduct(p as DbProduct, pricesByProduct.get(p.id!) || []),
   );
+  const pricesByProduct = indexPricesById(allPrices);
+  return enrichWithFullSiblings(allProducts, pricesByProduct, "de");
 }
-
-/**
- * Helper: Index an array of prices by productId for O(1) lookups.
- * Accepts any object with productId (supports both full Price and litePriceColumns result).
- */
-type PriceWithProductId = {
-  productId: number;
-  country?: string | null;
-} & Partial<Price>;
-function indexPricesById<T extends { productId: number }>(
-  pricesList: T[],
-): Map<number, T[]> {
-  const map = new Map<number, T[]>();
-  for (const pr of pricesList) {
-    if (!map.has(pr.productId)) map.set(pr.productId, []);
-    map.get(pr.productId)!.push(pr);
-  }
-  return map;
-}
-
-/**
- * [CONSISTENCY FIX] Ensures that listing views see the same siblings as the product page.
- * This prevents slug mismatches and unnecessary redirects.
- */
-async function enrichWithFullSiblings(
-  prods: any[],
-  pricesByProduct: Map<number, LitePrice[]>,
-  countryCode: string,
-  stripHeavyData: boolean = true,
-  collapseFamilies: boolean = false, // Default to FALSE to show all variants in lists
-): Promise<Product[]> {
-  if (prods.length === 0) return [];
-
-  const parentAsins = [
-    ...new Set(prods.map((p) => p.parentAsin).filter(Boolean)),
-  ];
-
-  let allSiblings: any[] = [];
-  if (parentAsins.length > 0) {
-    allSiblings = await db
-      .select(liteProductColumns)
-      .from(products)
-      .where(inArray(products.parentAsin, parentAsins as string[]));
-  }
-
-  const siblingsByParent = new Map<string, any[]>();
-  const allSiblingIds = allSiblings.map((s) => s.id);
-
-  // Fetch prices for ALL siblings to ensure representative selection is accurate
-  // Use superLitePriceColumns to avoid massive JSON blobs (historyJson) in memory
-  const allSiblingPrices =
-    allSiblingIds.length > 0
-      ? await withRetry(() =>
-          db
-            .select(superLitePriceColumns)
-            .from(prices)
-            .where(
-              and(
-                inArray(prices.productId, allSiblingIds),
-                eq(prices.country, countryCode),
-              ),
-            ),
-        )
-      : [];
-
-  const pricesBySiblingId = indexPricesById(allSiblingPrices);
-
-  for (const s of allSiblings) {
-    if (s.parentAsin) {
-      if (!siblingsByParent.has(s.parentAsin))
-        siblingsByParent.set(s.parentAsin, []);
-
-      // Attach prices to the sibling object for mapDbProduct - pre-mapped for Speed
-      const nodePrices = pricesBySiblingId.get(s.id!) || [];
-      const mappedSibling = {
-        ...s,
-        prices:
-          nodePrices.length > 0
-            ? Object.fromEntries(nodePrices.map((pr) => [pr.country, pr.price]))
-            : {},
-      };
-      siblingsByParent.get(s.parentAsin)!.push(mappedSibling);
-    }
-  }
-
-  const { getFamilyRepresentative } = await import("./product-families");
-
-  const seenFamilies = new Set<string>();
-  const results: Product[] = [];
-
-  for (const p of prods) {
-    const familyKey = p.parentAsin || `singleton-${p.id}`;
-
-    // Collapsing logic: If requested, only take the first member of each family
-    if (collapseFamilies) {
-      if (seenFamilies.has(familyKey)) continue;
-      seenFamilies.add(familyKey);
-
-      const siblings = p.parentAsin
-        ? siblingsByParent.get(p.parentAsin) || [p]
-        : [p];
-
-      // Choose the best representative (cheapest new condition)
-      const representative = getFamilyRepresentative(siblings) || p;
-
-      // Get prices: Prefer the pre-indexed pricesByProduct if it's one of the original prods,
-      // otherwise use the freshly fetched sibling prices.
-      const repPrices =
-        pricesByProduct.get(representative.id!) ||
-        pricesBySiblingId.get(representative.id!) ||
-        [];
-
-      results.push(
-        mapDbProduct(
-          representative as DbProduct,
-          repPrices as any,
-          siblings,
-          stripHeavyData,
-        ),
-      );
-    } else {
-      // Flat Mode: Return EVERY product in the list, but ensure it's mapped with its family context
-      const siblings = p.parentAsin
-        ? siblingsByParent.get(p.parentAsin) || [p]
-        : [p];
-
-      results.push(
-        mapDbProduct(
-          p as DbProduct,
-          (pricesByProduct.get(p.id!) ||
-            pricesBySiblingId.get(p.id!) ||
-            []) as any,
-          siblings,
-          stripHeavyData,
-        ),
-      );
-    }
-  }
-
-  return results;
-}
-
-import { cache } from "react";
-
-// Use React.cache for per-request deduplication (Production Optimization: server-cache-react)
-export const getProductsByCategory = cache(async function getProductsByCategory(
-  category: string,
-  stripHeavyData: boolean = true, // Default to true for category lists
-  limit?: number,
-  collapseFamilies: boolean = false, // Default to FALSE to show all variants
-): Promise<Product[]> {
-  if (IS_BUILD || !category) return [];
-  const fetchProducts = async () => {
-    await dbReady;
-    const { prods, prs } = await withRetry(async () => {
-      let query = db
-        .select(liteProductColumns)
-        .from(products)
-        .where(eq(products.category, category));
-
-      if (limit) {
-        // @ts-ignore - drizzle type complexity with dynamic orders
-        query = query.orderBy(asc(products.salesRank)).limit(limit);
-      }
-
-      const prods = await query;
-
-      if (prods.length === 0) return { prods: [], prs: [] };
-
-      const ids = prods.map((p) => p.id);
-      const prs = await db
-        .select(litePriceColumns)
-        .from(prices)
-        .where(inArray(prices.productId, ids));
-
-      return { prods, prs };
-    });
-
-    if (prods.length === 0) return [];
-
-    const pricesByProduct = indexPricesById(prs);
-
-    return enrichWithFullSiblings(
-      prods,
-      pricesByProduct,
-      "de",
-      stripHeavyData,
-      collapseFamilies,
-    );
-  };
-
-  // Skip cache if we're not in a Next.js environment (e.g. running scripts)
-  const isScript =
-    typeof globalThis === "undefined" ||
-    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
-
-  if (isScript) {
-    return fetchProducts();
-  }
-
-  // Use Next.js Data Cache to persist results across requests/users
-  return unstable_cache(
-    fetchProducts,
-    [`category-products-v34-${category}-${stripHeavyData}-${limit || "all"}`],
-    {
-      revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: ["category-products", `cat-${category}`, "v48"],
-    },
-  )();
-});
-
-export const getRawProductsByCategory = cache(
-  async function getRawProductsByCategory(
-    category: string,
-    countryCode: string = "de",
-    limit: number = 2000,
-  ) {
-    if (IS_BUILD || !category) return [];
-
-    const fetchProducts = async () => {
-      await dbReady;
-      const { prods, prs } = await withRetry(async () => {
-        const prods = await db
-          .select(filteringProductColumns)
-          .from(products)
-          .where(eq(products.category, category))
-          .orderBy(asc(products.salesRank))
-          .limit(limit);
-
-        if (prods.length === 0) return { prods: [], prs: [] };
-
-        const foundIds = prods.map((p) => p.id);
-        const prs = await db
-          .select(superLitePriceColumns)
-          .from(prices)
-          .where(
-            and(
-              inArray(prices.productId, foundIds),
-              eq(prices.country, countryCode),
-            ),
-          );
-
-        return { prods, prs };
-      });
-
-      if (prods.length === 0) return [];
-
-      const pricesByProduct = new Map<number, any>();
-      prs.forEach((pr) => pricesByProduct.set(pr.productId, pr));
-
-      return prods.map((p) => {
-        const live = pricesByProduct.get(p.id);
-        const code = countryCode.toLowerCase();
-        return {
-          ...p,
-          prices: { [code]: live?.price || 0 },
-          usedPrices: { [code]: live?.usedPrice || 0 },
-          warehousePrices: { [code]: live?.warehousePrice || 0 },
-          priceAvg90: { [code]: live?.priceAvg90 || 0 },
-          pricePerUnit: { [code]: live?.pricePerUnit || 0 },
-          pricesLastUpdated: { [code]: live?.lastUpdated },
-        };
-      });
-    };
-
-    const isScript =
-      typeof globalThis === "undefined" ||
-      (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
-
-    if (isScript) {
-      return fetchProducts();
-    }
-
-    return unstable_cache(
-      fetchProducts,
-      [`raw-category-products-v1-${category}-${countryCode}-${limit}`],
-      {
-        revalidate: CATEGORY_REVALIDATE_SECONDS,
-        tags: ["category-products", `cat-${category}`, "v60"],
-      },
-    )();
-  },
-);
-
-/**
- * Get a specific batch of products by their IDs, enriched with prices and siblings.
- * Optimized for hydration in the Lean & Ghost architecture.
- */
-export const getProductsByIds = cache(async function getProductsByIds(
-  ids: number[],
-  countryCode: string = "de",
-  stripHeavyData: boolean = true,
-): Promise<Product[]> {
-  if (IS_BUILD || !ids || ids.length === 0) return [];
-
-  const fetchProducts = async () => {
-    await dbReady;
-    const { prods, prs } = await withRetry(async () => {
-      const prods = await db
-        .select(liteProductColumns)
-        .from(products)
-        .where(inArray(products.id, ids));
-
-      if (prods.length === 0) return { prods: [], prs: [] };
-
-      const foundIds = prods.map((p) => p.id);
-      const prs = await db
-        .select(litePriceColumns)
-        .from(prices)
-        .where(
-          and(
-            inArray(prices.productId, foundIds),
-            eq(prices.country, countryCode),
-          ),
-        );
-
-      return { prods, prs };
-    });
-
-    if (prods.length === 0) return [];
-
-    const pricesByProduct = indexPricesById(prs);
-
-    return enrichWithFullSiblings(
-      prods,
-      pricesByProduct,
-      countryCode,
-      stripHeavyData,
-      false, // collapseFamilies
-    );
-  };
-
-  const isScript =
-    typeof globalThis === "undefined" ||
-    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
-
-  if (isScript) {
-    return fetchProducts();
-  }
-
-  return unstable_cache(
-    fetchProducts,
-    [
-      `products-by-ids-v1-${[...ids].sort((a, b) => a - b).join(",")}-${stripHeavyData}`,
-    ],
-    {
-      revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: ["products-by-ids", "v48"],
-    },
-  )();
-});
 
 const fetchProductBySlug = cache(
   async (

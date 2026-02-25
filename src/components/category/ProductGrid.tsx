@@ -1,5 +1,5 @@
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
-import { LocalizedProduct } from "@/lib/server/category-products";
+import { type LocalizedProduct } from "@/lib/product-definitions";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
 import Image from "next/image";

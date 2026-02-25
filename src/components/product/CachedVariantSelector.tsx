@@ -1,4 +1,4 @@
-import { Product } from "@/lib/product-registry";
+import { Product } from "@/lib/product-definitions";
 import { getProductVariants } from "@/lib/server/cached-products";
 import { mergeLivePrices } from "@/lib/server/live-data";
 import { ProductVariantSelector } from "./ProductVariantSelector";

@@ -1,5 +1,5 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
-import type { LocalizedProduct } from "../server/category-products";
+import { type LocalizedProduct } from "@/lib/product-definitions";
 
 interface FilterState {
   search: string;

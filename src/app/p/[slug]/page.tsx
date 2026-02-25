@@ -6,7 +6,7 @@ import {
   getOpenGraph,
   truncateTitle,
 } from "@/lib/metadata";
-import { type Product } from "@/lib/product-registry";
+import { type Product } from "@/lib/product-definitions";
 import {
   getAllProductSlugs,
   getPDPRenderData,

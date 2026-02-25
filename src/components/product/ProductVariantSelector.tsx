@@ -15,7 +15,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { LegalPrice } from "../ui/LegalPrice";
 
-import { type Product } from "@/lib/product-registry";
+import { type Product } from "@/lib/product-definitions";
 
 interface NormalizedProduct extends Product {
   normalizedStr: string;

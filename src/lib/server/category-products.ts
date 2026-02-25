@@ -1,11 +1,6 @@
 import { allCategories, CategorySlug } from "@/lib/categories";
 import { getAllDeals } from "@/lib/data/dealsData";
-import {
-  getProductsByCategory,
-  getProductsByIds,
-  getRawProductsByCategory,
-  type Product,
-} from "@/lib/product-registry";
+import { type Product } from "@/lib/product-definitions";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { parseVariationAttributes } from "@/lib/utils/variants";
@@ -13,46 +8,15 @@ import { cacheLife } from "next/cache";
 import { getBestPrice } from "../utils/price-selection";
 import { calculateProductSavings } from "../utils/products";
 import { getLivePricesForProducts } from "./live-data";
+import {
+  getProductsByCategory,
+  getProductsByIds,
+  getRawProductsByCategory,
+} from "./product-queries";
 import { calculateDesirabilityScore } from "./scoring";
 
-export interface LocalizedProduct {
-  id: number;
-  slug: string;
-  asin: string;
-  title: string;
-  subtitle?: string;
-  price: number;
-  usedPrice?: number;
-  warehousePrice?: number;
-  pricePerUnit: number;
-  popularityScore: number;
-  savings: number;
-  listPrice?: number;
-  category: string;
-  image: string;
-  brand: string;
-  rating: number;
-  reviewCount: number;
-  monthlySold: number;
-  salesRank?: number;
-  condition: string;
-  capacity: number;
-  capacityUnit: string;
-  normalizedCapacity: number;
-  formFactor: string;
-  technology: string;
-  socket?: string;
-  cores?: string;
-  lastUpdated?: string;
-  variationAttributes?: string;
-  parentAsin?: string; // For grouping
-  isVariantGroup?: boolean; // UI flag
-  variantCount?: number; // UI flag
-  officialSpecifications?: any; // Structured official specs
-  specificationsSource?: string;
-  officialTitle?: string;
-  mpn?: string;
-}
+import { type LocalizedProduct } from "@/lib/product-definitions";
+export type { LocalizedProduct };
 
 export interface FilterParams {
   search?: string;

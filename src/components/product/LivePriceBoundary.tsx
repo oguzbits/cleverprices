@@ -1,4 +1,4 @@
-import { Product } from "@/lib/product-registry";
+import { Product } from "@/lib/product-definitions";
 import { mergeLivePrices } from "@/lib/server/live-data";
 import { IdealoLivePrice } from "./IdealoLivePrice";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
