@@ -21,6 +21,7 @@ version: "2.1.0"
 | `db.delete(table)` without `--force` | Accidental data loss              | CLI safety flag                          |
 | Writes without diffing               | Wastes write quota                | Value-based diffing                      |
 | In-memory sorting (Large sets)       | Blocks the event loop / High RAM  | SQL `orderBy` / Indexed scoring          |
+| **Joins > 3**                        | High query complexity             | Hydration Pattern                        |
 
 ### ✅ REQUIRED
 
@@ -30,7 +31,8 @@ version: "2.1.0"
 | **Keyset Pagination**   | Large table iteration      | [Rule](rules/patterns-keyset-pagination.md) |
 | **Bounded Parallelism** | Batch operations           | [Rule](rules/patterns-batch.md)             |
 | **Value Diffing**       | Before any write           | [Rule](rules/patterns-resource-safety.md)   |
-| **O(1) Data Lookups**   | Single product pages       | [Rule](rules/patterns-product-identity.md)  |
+| **Hydration Pattern**   | Joining > 3 tables         | [Rule](rules/patterns-hydration.md)         |
+| **Stability Shield**    | All DB interactions        | `withRetry()` wrapper                       |
 | **Lean & Ghost**        | Catalog / Category pages   | [Rule](rules/patterns-lean-ghost.md)        |
 | **Identity Mapping**    | Data normalization         | `src/lib/utils/product-mapping.ts`          |
 

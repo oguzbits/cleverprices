@@ -37,6 +37,9 @@ import { NicheLinks } from "./NicheLinks";
 
 import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 
+import { isBot } from "@/lib/server/user-agent";
+import { headers } from "next/headers";
+
 interface Props {
   category: Omit<Category, "icon">;
   countryCode: CountryCode;
@@ -58,13 +61,22 @@ export async function IdealoCategoryPage({
   // Explicitly wait for the connection and searchParams to trigger the "Hold" behavior.
   // This ensures the browser stays on the current page until the new content is ready.
   await connection();
-  const resolvedSearchParams = await searchParams;
+
+  const [resolvedSearchParams, headersList] = await Promise.all([
+    searchParams,
+    headers(),
+  ]);
+
+  const userAgent = headersList.get("user-agent");
+  const botStatus = isBot(userAgent);
+
   const categorySlug = category.slug;
 
   const filteredData = await getCategoryProducts(
     categorySlug,
     countryCode,
     resolvedSearchParams,
+    botStatus,
   );
 
   const breadcrumbs = getBreadcrumbs(categorySlug).map((crumb) => ({

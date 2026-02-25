@@ -148,9 +148,14 @@ async function updatePrices(country: CountryCode): Promise<void> {
   }
 
   const fetchStart = performance.now();
-  const BATCH_CONCURRENCY = 3;
+  const BATCH_CONCURRENCY = 1; // [STABILITY SHIELD] Reduced from 3 to 1 to prevent I/O saturation
+  const BATCH_DELAY_MS = 150; // [STABILITY SHIELD] "Lazy Writes" breather for user reads
 
   for (let i = 0; i < batches.length; i += BATCH_CONCURRENCY) {
+    // Breather period to let the SSD and DB "breathe" for user requests
+    if (i > 0 && BATCH_DELAY_MS > 0) {
+      await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
+    }
     const currentBatches = batches.slice(i, i + BATCH_CONCURRENCY);
     await Promise.all(
       currentBatches.map(async (batch, idx) => {

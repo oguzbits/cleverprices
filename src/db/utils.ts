@@ -1,15 +1,22 @@
 /**
- * Database Utilities
+ * Custom error thrown when the database circuit breaker trips.
  */
+export class DatabaseBusyError extends Error {
+  constructor(message: string = "Database is currently under heavy load.") {
+    super(message);
+    this.name = "DatabaseBusyError";
+  }
+}
 
 /**
  * Retry wrapper for database operations.
  * Handles SQLITE_BUSY errors with exponential backoff and jitter.
+ * Includes a "Circuit Breaker" to fail fast if the lock persists.
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  maxRetries = 5,
-  baseDelayMs = 150,
+  maxRetries = 3, // Reduced default from 5 to 3 for faster failover
+  baseDelayMs = 200, // Increased base delay for less aggressive retries
 ): Promise<T> {
   let lastError: unknown;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -25,14 +32,26 @@ export async function withRetry<T>(
         (error as any).code === "SQLITE_BUSY" ||
         (error as any).cause?.message?.includes("SQLITE_BUSY") ||
         errorMsg.includes("database is locked") ||
-        errorMsg.includes("SQLITE_READONLY"); // Sometimes related to WAL recovery or checkpoints
+        errorMsg.includes("SQLITE_READONLY");
 
-      if (!isSqliteLocked || attempt === maxRetries - 1) {
+      if (!isSqliteLocked) {
         throw error;
       }
 
+      // --- CIRCUIT BREAKER ---
+      // If we've reached the final attempt and it's still locked,
+      // throw a specific error instead of just the raw SQLite error.
+      if (attempt === maxRetries - 1) {
+        console.error(
+          `[DB Circuit Breaker] Tripped after ${maxRetries} attempts.`,
+        );
+        throw new DatabaseBusyError(
+          `Database lock persistent after ${maxRetries} attempts: ${errorMsg}`,
+        );
+      }
+
       // Exponential backoff + jitter
-      const jitter = Math.random() * 50;
+      const jitter = Math.random() * 100;
       const delay = baseDelayMs * Math.pow(2, attempt) + jitter;
 
       console.warn(

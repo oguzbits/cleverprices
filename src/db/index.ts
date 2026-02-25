@@ -51,7 +51,7 @@ function createDbClient(): Client {
   // We force SQLite to cache as much as possible in RAM via memory-mapped I/O.
   try {
     // Shared Boosters
-    client.execute("PRAGMA busy_timeout = 5000").catch(() => {});
+    client.execute("PRAGMA busy_timeout = 1000").catch(() => {}); // [STABILITY SHIELD] Lowered from 5s to 1s to trip circuit breaker faster
     client.execute("PRAGMA cache_size = -200000").catch(() => {}); // ~200MB RAM cache
     client.execute("PRAGMA journal_mode = WAL").catch(() => {});
     client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
