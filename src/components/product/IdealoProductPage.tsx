@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductBestseller } from "@/lib/utils/products";
+import { getProductPath } from "@/lib/utils/url";
 import { Category } from "@/types";
 import { Package } from "lucide-react";
 import { cacheLife } from "next/cache";
@@ -78,7 +79,7 @@ export async function IdealoProductPage({
   const repIdentity =
     representative.id === mergedProduct.id
       ? identity
-      : getProductIdentity(representative, allFamilyMembers);
+      : getProductIdentity(representative);
 
   const effectiveCondition =
     selectedCondition ||
@@ -91,12 +92,6 @@ export async function IdealoProductPage({
     parentRep,
     allFamilyMembers,
   );
-
-  if (process.env.NODE_ENV === "development") {
-    console.log(
-      `[DEBUG HUB] Current: ${mergedProduct.id}, Rep: ${representative.id}, Synthetic: ${syntheticId}, Slug: ${autoParentSlug}`,
-    );
-  }
 
   const parentSlug = passedParentSlug || autoParentSlug;
 
@@ -117,7 +112,7 @@ export async function IdealoProductPage({
     ...(isParentView
       ? [{ name: hubFullModel }]
       : [
-          { name: parentTitle, href: `/p/${parentSlug}` },
+          { name: parentTitle, href: getProductPath(syntheticId, parentSlug) },
           { name: variantName },
         ]),
   ];
@@ -498,7 +493,7 @@ async function CachedSidebarSimilarProducts({
             </div>
             <div className="min-w-0 flex-1">
               <Link
-                href={`/p/${p.slug}`}
+                href={getProductPath(p.id, p.slug)}
                 className="text-idealo-text-primary! hover:text-primary! focus-visible:ring-idealo-blue line-clamp-2 block text-[12px] font-bold underline! outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
               >
                 {formatDisplayTitle(p.title)}

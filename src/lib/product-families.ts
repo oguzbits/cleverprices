@@ -65,8 +65,8 @@ export function getFamilyIdentity(
   variantSuffix: string;
   displaySubtitle: string;
 } {
-  // 1. Basic Identity (Contains normalized brand e.g. PlayStation -> Sony)
-  const identity = getProductIdentity(representative, allVariants, consensus);
+  // 1. Basic Identity (Stateless: Core Model + Own Traits)
+  const identity = getProductIdentity(representative);
   const brand = identity.brand || "Generic";
   const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 

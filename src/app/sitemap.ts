@@ -6,6 +6,7 @@ import {
   getNonEmptyCategorySlugs,
 } from "@/lib/server/cached-products";
 import { SITE_URL } from "@/lib/site-config";
+import { getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -82,7 +83,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   );
 
   const productRoutes: MetadataRoute.Sitemap = products.map((product) => {
-    const productPath = `/p/${product.slug.includes("_-") ? product.slug : `${200000000 + product.id}_-${product.slug}`}`;
+    const productPath = getProductPath(product.id, product.slug);
     return {
       url: `${baseUrl}${productPath}`,
       lastModified: product.updatedAt,

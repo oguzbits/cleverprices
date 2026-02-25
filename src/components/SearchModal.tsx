@@ -24,6 +24,7 @@ import {
 import { useDebounce } from "@/lib/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
+import { getProductPath } from "@/lib/utils/url";
 import { Category } from "@/types";
 import { Loader2 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -293,7 +294,9 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   <CommandItem
                     key={product.slug}
                     value={`product-${product.slug}`}
-                    onSelect={() => handleSelect(`/p/${product.slug}`)}
+                    onSelect={() =>
+                      handleSelect(getProductPath(product.id, product.slug))
+                    }
                     className="cursor-pointer py-2.5"
                   >
                     <div className="flex w-full items-baseline gap-2 truncate">

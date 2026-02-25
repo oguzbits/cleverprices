@@ -352,11 +352,7 @@ function isIdentityToken(token: string, consensus: SiblingConsensus): boolean {
   return freq >= 0.7; // Appears in 70% of siblings
 }
 
-export function getProductIdentity(
-  product: Partial<Product>,
-  siblings: Partial<Product>[] = [],
-  consensus?: SiblingConsensus,
-): ProductIdentity {
+export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const rawBrand = (product.brand || "").trim();
   const title = (product.title || "").trim();
   const rawCategory = (product.category || "").toLowerCase();
@@ -398,7 +394,9 @@ export function getProductIdentity(
   // QA SYSTEM: Verify if the 'Modell' spec is a safe improvement over the title
   const source = product.specificationsSource || "";
   const trustedSources = ["icecat", "intel", "ebay", "google"];
-  const isDirectSource = trustedSources.some((s) => source.includes(s));
+  const isDirectSource = trustedSources.some((s) =>
+    source.toLowerCase().includes(s),
+  );
 
   if (isDirectSource) {
     const candidate = String(specs["Modell"] || specs["Model"] || "").trim();
@@ -407,33 +405,9 @@ export function getProductIdentity(
     }
   }
 
-  // 2b. SIBLING MODEL STEERING: If this product isn't enriched, borrow the official model
-  // from an enriched sibling to ensure family-wide canonical slug consistency.
-  if (!officialModel && siblings.length > 0) {
-    for (const s of siblings) {
-      const sSource = (s.specificationsSource || "").toLowerCase();
-      const isSourced = trustedSources.some((src) => sSource.includes(src));
-      if (!isSourced) continue;
-
-      try {
-        const sSpecs = s.officialSpecifications
-          ? typeof s.officialSpecifications === "string"
-            ? JSON.parse(s.officialSpecifications)
-            : s.officialSpecifications
-          : s.specifications || {};
-
-        const candidate = String(
-          sSpecs["Modell"] || sSpecs["Model"] || "",
-        ).trim();
-        if (verifySpecModel(candidate, title, resolvedBrand)) {
-          officialModel = candidate;
-          break; // Found a valid steering model
-        }
-      } catch (e) {
-        continue;
-      }
-    }
-  }
+  // 2b. SIBLING MODEL STEERING: Optimized for Statelessness.
+  // Steering (borrowing official models from siblings) is moved to the data enrichment layer.
+  // At runtime, we use the product's own official title or title to ensure URL stability.
 
   if (
     officialModel &&
@@ -601,27 +575,10 @@ export function getProductIdentity(
   }
 
   /**
-   * C. SMART SIBLING CONSENSUS (DYNAMIC HUB RESOLUTION)
-   * Instead of hard-coding "Fortnite" or "Spielekonsole", we look at all variations.
-   * If a word appears in the current product but is MISSING in most siblings,
-   * it's definitely a variation/noise and should be stripped from the model.
+   * C. SMART SIBLING CONSENSUS: Optimized for Statelessness.
+   * Consensus (stripping tokens based on family frequency) is moved to the data enrichment layer.
+   * At runtime, we rely on deterministic trait subtraction to keep model names clean.
    */
-  if (consensus || siblings.length > 1) {
-    const { tokenCounts, total } =
-      consensus || calculateSiblingConsensus(siblings);
-
-    // Strategy: Any token in the CURRENT product that appears in less than 70%
-    // of the family members is considered a variation-specific detail.
-    const currentTokens = title.toLowerCase().split(/[^a-z0-9]+/);
-    currentTokens.forEach((t) => {
-      if (t.length > 1) {
-        const freq = (tokenCounts[t] || 0) / total;
-        if (freq < 0.7 && !isFixedTraitCategory) {
-          subtractTokens.add(t);
-        }
-      }
-    });
-  }
 
   const fixTechCasing = (w: string) => {
     const clean = w.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -867,13 +824,23 @@ export function getProductIdentity(
 
     // Aggressively strip model words from variant display value to prevent duplication
     // E.g. Model: "Evo Select", Token: "Evo Select (2024)" -> "(2024)"
-    const currentModelWords = hubModelName
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((w) => w.length > 2);
+    const currentModelWords = [
+      resolvedBrandLower,
+      ...hubModelName.toLowerCase().split(/\s+/),
+    ].filter(Boolean);
+
     let cleanedDisplayVal = displayVal;
 
     currentModelWords.forEach((mw) => {
+      // Don't strip pure numbers (like 65) if they are immediately followed by a unit
+      if (/^\d+$/.test(mw)) {
+        const unitRegex = new RegExp(
+          `\\b${mw}\\s*(gb|tb|mb|hz|inch|zoll|\\")\\b`,
+          "i",
+        );
+        if (unitRegex.test(cleanedDisplayVal)) return;
+      }
+
       const escaped = mw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       const wordRegex = new RegExp(`\\b${escaped}\\b`, "gi");
       cleanedDisplayVal = cleanedDisplayVal.replace(wordRegex, "").trim();

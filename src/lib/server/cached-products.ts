@@ -23,6 +23,7 @@ import {
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
+import { getProductPath } from "../utils/url";
 import {
   getLivePriceForProduct,
   mergeLivePrices,
@@ -94,7 +95,8 @@ async function getCachedProductVariantsInternal(
   countryCode: string,
   skipFullMapping: boolean = false,
 ) {
-  // No cache for debugging
+  "use cache";
+  cacheLife("product");
   return getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -182,7 +184,7 @@ export async function getBestDeals(
     limit,
     countryCode,
     condition,
-    "v6",
+    "v7",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -196,7 +198,7 @@ async function getMostPopular(
     limit,
     countryCode,
     condition,
-    "v6",
+    "v7",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -210,7 +212,7 @@ export async function getNewArrivals(
     limit,
     countryCode,
     condition,
-    "v6",
+    "v7",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -222,7 +224,7 @@ export async function getDiverseMostPopular(
   const products = await getCachedDiverseMostPopular(
     itemsPerCategory,
     countryCode,
-    "v6",
+    "v7",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -406,12 +408,12 @@ export async function getPDPRenderData(
             { ...product, id: id - 900000000 },
             variants,
           );
-          return { redirect: `/p/${canonical}`, isPermanent: true };
+          return { redirect: getProductPath(id, canonical), isPermanent: true };
         } else {
           const { slug: canonical } = getFamilyIdentitySync(product, variants);
           if (slug !== canonical) {
             return {
-              redirect: `/p/${canonical}`,
+              redirect: getProductPath(product.id, canonical),
               isPermanent: product.enrichmentStatus === "optimized",
             };
           }
@@ -436,11 +438,18 @@ export async function getPDPRenderData(
           product,
           ...variants,
         ]);
-        const familySlugText =
-          familyIdentity.slug.split("_-")[1] || familyIdentity.slug;
+        // Determine canonical slugs using latest code logic (ignoring DB drift)
+        const { slug: canonicalFamilySlug } = getFamilyIdentitySync(rep, []);
+        const { slug: canonicalProductSlug } = getFamilyIdentitySync(
+          product,
+          [],
+        );
 
+        const familySlugText =
+          canonicalFamilySlug.split("_-")[1] || canonicalFamilySlug;
+        const productSlugText =
+          canonicalProductSlug.split("_-")[1] || canonicalProductSlug;
         const urlSlugText = slug.includes("_-") ? slug.split("_-")[1] : slug;
-        const productSlugText = product.slug;
 
         const isFamilySlug = urlSlugText === familySlugText;
         const isSpecificSlug = urlSlugText === productSlugText;
@@ -450,17 +459,25 @@ export async function getPDPRenderData(
             getFamilyRepresentative([product, ...variants]) || product;
           if (effectiveProduct.id !== product.id) {
             // It's a Hub Redirect: redirect directly to the canonical hub slug
-            return { redirect: `/p/${familyIdentity.slug}`, isPermanent: true };
+            return {
+              redirect: getProductPath(
+                rep.id || product.id,
+                familyIdentity.slug,
+              ),
+              isPermanent: true,
+            };
           }
         }
 
         // Check if current URL is the canonical id-prefixed specific slug
-        const canonicalUrlSlug = product.slug.includes("_-")
-          ? product.slug
-          : `${200000000 + realId}_-${product.slug}`;
-        if (slug !== canonicalUrlSlug) {
+        // We use getFamilyIdentitySync to ensure the redirect target matches our latest stable logic.
+        const { slug: canonicalFullSlug } = getFamilyIdentitySync(product, []);
+        const canonicalPath = getProductPath(product.id!, canonicalFullSlug);
+        const urlSlugWithoutLeadingSlash = canonicalPath.replace("/p/", "");
+
+        if (slug !== urlSlugWithoutLeadingSlash) {
           return {
-            redirect: `/p/${canonicalUrlSlug}`,
+            redirect: canonicalPath,
             isPermanent: true,
           };
         }
@@ -489,17 +506,26 @@ export async function getPDPRenderData(
     if (product) {
       // Migrate immediately to ID-based slug
       const { slug: newSlug } = getFamilyIdentitySync(product, []);
-      return { redirect: `/p/${newSlug}`, isPermanent: true };
+      return {
+        redirect: getProductPath(product.id, newSlug),
+        isPermanent: true,
+      };
     } else {
       // Legacy ASIN/Parent Suffix checks
       const asinSlug = await getCachedProductSlugByAsinSuffix(slug);
       if (asinSlug && asinSlug !== slug) {
-        return { redirect: `/p/${asinSlug}`, isPermanent: true };
+        return {
+          redirect: getProductPath(undefined, asinSlug),
+          isPermanent: true,
+        };
       }
       product = await getCachedProductByParentAsinSuffix(slug);
       if (product) {
         const { slug: newSlug } = getFamilyIdentitySync(product, []);
-        return { redirect: `/p/${newSlug}`, isPermanent: true };
+        return {
+          redirect: getProductPath(product.id, newSlug),
+          isPermanent: true,
+        };
       }
     }
   }

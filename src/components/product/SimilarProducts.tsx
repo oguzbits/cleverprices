@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
 import type { Product } from "@/lib/product-definitions";
+import { getProductPath } from "@/lib/utils/url";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -39,7 +40,7 @@ export function SimilarProducts({
         return (
           <Link
             key={product.slug}
-            href={`/p/${product.slug}`}
+            href={getProductPath(product.id, product.slug)}
             className="group no-underline"
           >
             <Card className="h-full transition-shadow hover:shadow-md">
@@ -123,7 +124,7 @@ export function SimilarProductsCompact({
         return (
           <li key={product.slug}>
             <Link
-              href={`/p/${product.slug}`}
+              href={getProductPath(product.id, product.slug)}
               className="hover:bg-muted flex items-center gap-3 rounded-md p-2 transition-colors"
             >
               {/* Thumbnail */}

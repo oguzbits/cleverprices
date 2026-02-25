@@ -3,6 +3,7 @@ import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
+import { getProductPath } from "@/lib/utils/url";
 import Image from "next/image";
 import { IdealoStarRating } from "../category/IdealoStarRating";
 
@@ -53,7 +54,7 @@ export function IdealoProductCard({
   priorityLoad = false,
   livePriceData,
 }: IdealoProductCardProps) {
-  const href = `/p/${slug}`;
+  const href = getProductPath(id, slug);
   return (
     <div className="group border-idealo-border relative flex h-[272px] w-[164px] shrink-0 snap-start flex-col overflow-hidden rounded-[6px] border bg-white sm:h-[327px] sm:w-[224px]">
       <PrefetchLink

@@ -13,6 +13,7 @@ import {
   gt,
   gte,
   inArray,
+  isNotNull,
   like,
   lt,
   lte,
@@ -285,16 +286,7 @@ export async function getAllProductSlugs(limit?: number): Promise<
   if (IS_BUILD) return [];
   try {
     let query = db
-      .select({
-        id: products.id,
-        slug: products.slug,
-        title: products.title,
-        brand: products.brand,
-        category: products.category,
-        parentAsin: products.parentAsin,
-        enrichmentStatus: products.enrichmentStatus,
-        updatedAt: products.updatedAt,
-      })
+      .select()
       .from(products)
       .orderBy(
         // 1. Optimized products first (Google loves specifications)
@@ -312,22 +304,12 @@ export async function getAllProductSlugs(limit?: number): Promise<
 
     const allProducts = await query;
 
-    // OPTIMIZATION: Index products by parentAsin for fast sibling lookup
-    // This avoids O(N^2) in getFamilyIdentity when processing thousands of products.
-    const families = new Map<string, any[]>();
-    for (const p of allProducts) {
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
-      }
-    }
-
-    return allProducts.map((p) => {
-      // Only pass family members as variants for consensus
-      const siblings = p.parentAsin ? families.get(p.parentAsin) || [] : [p];
-
-      // Generate canonical slug (includes ID prefix) using targeted consensus set
-      const { slug: canonical } = getFamilyIdentity(p as any, siblings as any);
+    // 2. Map products to their canonical slugs (Stateless & High-Speed)
+    const results = allProducts.map((p) => {
+      // Map and clean product data exactly like the PDP logic to ensure slug parity.
+      // We use false for stripHeavyData to ensure all identity repairs (like M.2 stripping) are applied identically.
+      const mapped = mapDbProduct(p as DbProduct, [], [], false);
+      const { slug: canonical } = getFamilyIdentity(mapped, []);
       return {
         id: p.id!,
         slug: canonical,
@@ -336,6 +318,50 @@ export async function getAllProductSlugs(limit?: number): Promise<
         updatedAt: p.updatedAt || new Date(),
       };
     });
+
+    // 3. SEO BONUS: Include Hub (Parent) pages
+    // These are "Alle Varianten" pages (ID prefix 900M).
+    // We fetch unique parent clusters efficiently.
+    const families = await db
+      .select({
+        parentAsin: products.parentAsin,
+        minId: sql<number>`MIN(${products.id})`,
+        // Representative data for slug generation
+        title: sql<string>`MAX(${products.title})`,
+        brand: sql<string>`MAX(${products.brand})`,
+        category: sql<string>`MAX(${products.category})`,
+      })
+      .from(products)
+      .where(isNotNull(products.parentAsin))
+      .groupBy(products.parentAsin)
+      .having(sql`COUNT(*) > 1`);
+
+    for (const fam of families) {
+      if (!fam.parentAsin) continue;
+
+      const syntheticId = 900000000 + fam.minId;
+      // Generate Hub slug (Brand + Model only, no variant traits)
+      const { slug: hubSlug } = getFamilyIdentity(
+        {
+          title: fam.title,
+          brand: fam.brand,
+          category: fam.category,
+          id: syntheticId,
+          isParentView: true,
+        } as any,
+        [],
+      );
+
+      results.push({
+        id: syntheticId,
+        slug: hubSlug,
+        category: fam.category || "unknown",
+        enrichmentStatus: "optimized",
+        updatedAt: new Date(),
+      });
+    }
+
+    return results;
   } catch (e) {
     if (!IS_BUILD) {
       console.warn(
@@ -1190,10 +1216,10 @@ const getCachedDeals = unstable_cache(
       return [];
     }
   },
-  ["best-deals-v14"],
+  ["best-deals-v15"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "deals", "v14"],
+    tags: ["products", "deals", "v15"],
   },
 );
 
@@ -1306,10 +1332,10 @@ const getCachedPopular = unstable_cache(
       return [];
     }
   },
-  ["popular-deals-v14"],
+  ["popular-deals-v15"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "v14"],
+    tags: ["products", "popular", "v15"],
   },
 );
 
@@ -1435,10 +1461,10 @@ const fetchDiversePopular = unstable_cache(
       return [];
     }
   },
-  ["diverse-popular-v14"],
+  ["diverse-popular-v15"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "diverse", "v14"],
+    tags: ["products", "popular", "diverse", "v15"],
   },
 );
 
@@ -1515,10 +1541,10 @@ const getCachedNew = unstable_cache(
       return [];
     }
   },
-  ["new-arrivals-v14"],
+  ["new-arrivals-v15"],
   {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "new", "v14"],
+    tags: ["products", "new", "v15"],
   },
 );
 

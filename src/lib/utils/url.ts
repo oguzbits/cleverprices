@@ -8,8 +8,20 @@ export function getProductPath(
   id: string | number | undefined,
   slug: string,
 ): string {
+  // If slug already has the canonical ID prefix (###_-), use it as is
+  if (slug.includes("_-")) {
+    return `/p/${slug}`;
+  }
+
   if (!id) return `/p/${slug}`;
-  return `/p/${id}_-${slug}`;
+
+  const numId = typeof id === "string" ? parseInt(id, 10) : id;
+
+  // Apply project-wide canonical prefixing:
+  // - Sub-100M IDs (real DB IDs) get the 200M variant prefix
+  // - 900M+ IDs (synthetic hub IDs) stay as is
+  const prefix = numId < 100000000 ? 200000000 : 0;
+  return `/p/${prefix + numId}_-${slug}`;
 }
 
 /**

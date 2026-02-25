@@ -4,6 +4,7 @@ import { getFamilyIdentity } from "@/lib/product-families";
 import { cn } from "@/lib/utils";
 import { getBestPrice } from "@/lib/utils/price-selection";
 import { getProductIdentity } from "@/lib/utils/product-identity";
+import { getProductPath } from "@/lib/utils/url";
 import {
   extractAttributeGroups,
   normalizeVariantAttributes,
@@ -331,7 +332,7 @@ function AttributeSelector({
             getBestMatch(variants) || getRelaxedMatch(variants);
 
           const href = targetVariant
-            ? `/p/${targetVariant.slug}${
+            ? `${getProductPath(targetVariant.id, targetVariant.slug)}${
                 condition && condition !== "new"
                   ? `?condition=${condition}`
                   : ""
@@ -770,7 +771,7 @@ export function ProductVariantSelector({
         <div className="scrollbar-thin scrollbar-thumb-gray-300 flex gap-2.5 overflow-x-auto pt-1 pb-2">
           {/* Alle Varianten Card */}
           <Link
-            href={`/p/${finalParentSlug}${
+            href={`${getProductPath(undefined, finalParentSlug)}${
               targetCondition && targetCondition !== "new"
                 ? `?condition=${targetCondition}`
                 : ""
@@ -793,7 +794,7 @@ export function ProductVariantSelector({
           {activeVariants.map((variant) => (
             <Link
               key={variant.asin}
-              href={`/p/${variant.slug}${
+              href={`${getProductPath(variant.id, variant.slug)}${
                 targetCondition && targetCondition !== "new"
                   ? `?condition=${targetCondition}`
                   : ""
