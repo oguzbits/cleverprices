@@ -27,8 +27,8 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "PC-Komponenten", href: "/pc-komponenten" },
       { label: "Notebooks", href: "/notebooks" },
       { label: "Tablets", href: "/tablets" },
-      { label: "Tastaturen", href: "/keyboards" },
-      { label: "Grafikkarten", href: "/gpu" },
+      { label: "Tastaturen", href: "/tastaturen" },
+      { label: "Grafikkarten", href: "/grafikkarten" },
     ],
     metaTitle: `Computer & Zubehör Preisvergleich | ${BRAND_DOMAIN}`,
     metaDescription:
@@ -80,9 +80,9 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     categoryType: "standard",
     imageUrl: "/images/category/headphone.jpg",
     popularFilters: [
-      { label: "Receiver", href: "/receiver" },
-      { label: "Kopfhörer", href: "/headphones" },
-      { label: "Lautsprecher", href: "/speakers" },
+      { label: "Receiver", href: "/av-receiver" },
+      { label: "Kopfhörer", href: "/kopfhoerer" },
+      { label: "Lautsprecher", href: "/lautsprecher" },
       { label: "Soundbars", href: "/soundbars" },
       { label: "Radios", href: "/radios" },
     ],
@@ -94,9 +94,9 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     categoryType: "standard",
     imageUrl: "/images/category/tv.jpg",
     popularFilters: [
-      { label: "Fernseher", href: "/tvs" },
+      { label: "Fernseher", href: "/fernseher" },
       { label: "Soundbars", href: "/soundbars" },
-      { label: "Receiver", href: "/receiver" },
+      { label: "Receiver", href: "/av-receiver" },
     ],
   },
   fotografie: {
@@ -107,7 +107,7 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     imageUrl: "/images/category/camera.jpg",
     popularFilters: [
       { label: "Systemkameras", href: "/systemkameras" },
-      { label: "Digitalkameras", href: "/cameras" },
+      { label: "Digitalkameras", href: "/digitalkameras" },
       { label: "Kompaktkameras", href: "/kompaktkameras" },
       { label: "Speicherkarten", href: "/speicherkarten" },
     ],
@@ -131,11 +131,11 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     categoryType: "standard",
     imageUrl: "/images/category/drone.jpg",
     popularFilters: [
-      { label: "Spielekonsolen", href: "/consoles" },
-      { label: "Drohnen", href: "/drones" },
-      { label: "VR-Brillen", href: "/vr-headsets" },
-      { label: "Gaming-Stühle", href: "/gaming-chairs" },
-      { label: "Game-Controller", href: "/game-controllers" },
+      { label: "Spielekonsolen", href: "/spielekonsolen" },
+      { label: "Drohnen", href: "/drohnen" },
+      { label: "VR-Brillen", href: "/vr-brillen" },
+      { label: "Gaming-Stühle", href: "/gaming-stuehle" },
+      { label: "Game-Controller", href: "/gamepad-controller" },
     ],
   },
   elektroartikel: {
@@ -159,12 +159,13 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     hidden: true,
     categoryType: "standard",
   },
-  tvs: {
-    name: "Fernseher",
+  fernseher: {
+    ...CATEGORY_MANIFEST.fernseher,
     description: "OLED, QLED und Smart TVs",
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/tv.jpg",
+    aliases: ["tvs"],
     popularFilters: [
       { label: "55 Zoll", params: "size=55" },
       { label: "65 Zoll", params: "size=65" },
@@ -192,18 +193,12 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Miele", params: "brand=Miele" },
     ],
   },
-  headphones: {
-    name: "Kopfhörer",
+  kopfhoerer: {
+    ...CATEGORY_MANIFEST.kopfhoerer,
     description: "In-Ear, Over-Ear und Bluetooth Kopfhörer",
-    parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/headphone.jpg",
-    popularFilters: [
-      { label: "Apple", params: "brand=Apple" },
-      { label: "Bluetooth", params: "type=bluetooth" },
-      { label: "Noise-Cancelling", params: "features=anc" },
-      { label: "In-Ear", params: "type=in-ear" },
-    ],
+    aliases: ["headphones"],
     filterGroups: [
       { label: "Hersteller", field: "brand", type: "checkbox" },
       { label: "Technologie", field: "technology", type: "checkbox" },
@@ -259,13 +254,13 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Siemens EQ.6", params: "model=eq6" },
     ],
   },
-  monitors: {
-    name: "Monitore",
+  monitore: {
+    ...CATEGORY_MANIFEST.monitore,
     description: "Gaming und Office Monitore",
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/monitor.jpg",
-    aliases: ["bildschirme", "screens"],
+    aliases: ["bildschirme", "screens", "monitors"],
     popularFilters: [
       { label: "27 Zoll", params: "size=27" },
       { label: "144 Hz", params: "refresh=144" },
@@ -277,12 +272,13 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
-  speakers: {
-    name: "Lautsprecher",
+  lautsprecher: {
+    ...CATEGORY_MANIFEST.lautsprecher,
     description: "Bluetooth, Regal und Standlautsprecher",
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/speakers.jpg",
+    aliases: ["speakers"],
     popularFilters: [
       { label: "JBL", params: "brand=jbl" },
       { label: "Sonos", params: "brand=sonos" },
@@ -360,12 +356,13 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Vollintegriert", params: "type=integrated" },
     ],
   },
-  routers: {
-    name: "Router",
+  "wlan-router": {
+    ...CATEGORY_MANIFEST["wlan-router"],
     description: "WLAN & Internet Router",
     parent: "elektroartikel",
     categoryType: "standard",
     imageUrl: "/images/category/router.jpg",
+    aliases: ["routers"],
     popularFilters: [
       { label: "AVM Fritz!Box", params: "brand=AVM" },
       { label: "WiFi 6", params: "standard=wifi-6" },
@@ -481,11 +478,12 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Haarschneider", params: "type=hair" },
     ],
   },
-  receiver: {
-    name: "Receiver",
+  "av-receiver": {
+    ...CATEGORY_MANIFEST["av-receiver"],
     description: "AV-Receiver und Verstärker",
     parent: "elektroartikel",
     categoryType: "standard",
+    aliases: ["receiver"],
     popularFilters: [
       { label: "AV-Receiver", params: "type=av" },
       { label: "Yamaha", params: "brand=Yamaha" },
@@ -518,13 +516,13 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "60 cm breit", params: "width=60" },
     ],
   },
-  "hard-drives": {
-    name: "Festplatten",
+  festplatten: {
+    ...CATEGORY_MANIFEST.festplatten,
     description: "HDD Speicherlösungen",
     parent: "elektroartikel",
     categoryType: "analytical",
     imageUrl: "/images/category/hdd.jpg",
-    aliases: ["festplatten", "hdd"],
+    aliases: ["hdd", "hard-drives"],
     unitType: "TB",
     unitLabel: "pro TB",
     popularFilters: [
@@ -563,8 +561,8 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Herd-Set", params: "type=set" },
     ],
   },
-  drones: {
-    name: "Drohnen",
+  drohnen: {
+    ...CATEGORY_MANIFEST.drohnen,
     description: "Kameradrohnen and Quadcopters",
     parent: "gaming-elektrospielzeug",
     categoryType: "standard",
@@ -574,11 +572,12 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "4K Kamera", params: "resolution=4k" },
     ],
   },
-  nas: {
-    name: "NAS-Server",
+  "nas-systeme": {
+    ...CATEGORY_MANIFEST["nas-systeme"],
     description: "Netzwerkspeicher für zuhause",
     parent: "elektroartikel",
     categoryType: "standard",
+    aliases: ["nas"],
     popularFilters: [
       { label: "Synology", params: "brand=Synology" },
       { label: "4-Bay NAS", params: "bays=4" },
@@ -591,20 +590,20 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     categoryType: "standard",
     imageUrl: "/images/category/festplatten-&-ssds.jpg",
     popularFilters: [
-      { label: "Grafikkarten", href: "/gpu" },
-      { label: "Laufwerke", href: "/storage" },
-      { label: "RAM", href: "/ram" },
-      { label: "CPU", href: "/cpu" },
-      { label: "PC-Gehäuse", href: "/pc-cases" },
+      { label: "Grafikkarten", href: "/grafikkarten" },
+      { label: "Laufwerke", href: "/laufwerke" },
+      { label: "Arbeitsspeicher", href: "/arbeitsspeicher" },
+      { label: "Prozessoren", href: "/prozessoren" },
+      { label: "PC-Gehäuse", href: "/pc-gehaeuse" },
     ],
   },
-  gpu: {
-    name: "Grafikkarten",
+  grafikkarten: {
+    ...CATEGORY_MANIFEST.grafikkarten,
     description: "NVIDIA, AMD & Intel GPUs vergleichen",
     parent: "pc-komponenten",
     categoryType: "analytical",
     imageUrl: "/images/category/gpu.jpg",
-    aliases: ["grafikkarten", "graphics-cards"],
+    aliases: ["gpu", "graphics-cards"],
     unitType: "GB",
     unitLabel: "pro GB VRAM",
     popularFilters: [
@@ -618,13 +617,13 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
-  motherboards: {
-    name: "Mainboards",
+  mainboards: {
+    ...CATEGORY_MANIFEST.mainboards,
     description: "Motherboards für Intel & AMD",
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/mainboard.jpg",
-    aliases: ["mainboards"],
+    aliases: ["motherboards"],
     popularFilters: [
       { label: "AM5 Mainboards", params: "socket=AM5" },
       { label: "LGA 1700", params: "socket=LGA1700" },
@@ -636,13 +635,13 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Formfaktor", field: "formFactor", type: "checkbox" },
     ],
   },
-  ram: {
-    name: "Arbeitsspeicher",
+  arbeitsspeicher: {
+    ...CATEGORY_MANIFEST.arbeitsspeicher,
     description: "DDR4 & DDR5 RAM Module",
     parent: "pc-komponenten",
     categoryType: "analytical",
     imageUrl: "/images/category/ram.jpg",
-    aliases: ["arbeitsspeicher", "memory"],
+    aliases: ["ram", "memory"],
     unitType: "GB",
     unitLabel: "pro GB",
     popularFilters: [
@@ -656,26 +655,26 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Technologie", field: "technology", type: "checkbox" },
     ],
   },
-  "pc-cases": {
-    name: "PC-Gehäuse",
+  "pc-gehaeuse": {
+    ...CATEGORY_MANIFEST["pc-gehaeuse"],
     description: "Computergehäuse für Ihren Build",
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/pc-case.jpg",
-    aliases: ["gehaeuse", "pc-gehaeuse", "cases"],
+    aliases: ["gehaeuse", "pc-gehaeuse", "cases", "pc-cases"],
     popularFilters: [
       { label: "Midi-Tower", params: "type=midi-tower" },
       { label: "Big-Tower", params: "type=big-tower" },
       { label: "Mini-ITX Gehäuse", params: "type=mini-itx" },
     ],
   },
-  "power-supplies": {
-    name: "Netzteile",
+  netzteile: {
+    ...CATEGORY_MANIFEST.netzteile,
     description: "Effiziente Stromversorgung",
     parent: "pc-komponenten",
     categoryType: "analytical",
     imageUrl: "/images/category/power-supply.jpg",
-    aliases: ["netzteile", "psu"],
+    aliases: ["power-supplies", "psu"],
     unitType: "W",
     unitLabel: "pro Watt",
     popularFilters: [
@@ -689,28 +688,29 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
-  "cpu-coolers": {
-    name: "CPU-Kühler",
+  "cpu-kuehler": {
+    ...CATEGORY_MANIFEST["cpu-kuehler"],
     description: "Luft- & Wasserkühlung",
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/cpu-cooler.jpg",
-    aliases: ["kuehler", "cpu-kuehler", "coolers"],
+    aliases: ["kuehler", "cpu-kuehler", "coolers", "cpu-coolers"],
     popularFilters: [
       { label: "Luftkühler", params: "type=air" },
       { label: "Wasserkühlung (AiO)", params: "type=aio" },
     ],
   },
-  storage: {
-    name: "Laufwerke",
+  laufwerke: {
+    ...CATEGORY_MANIFEST.laufwerke,
     description: "Interne & externe Speicherlösungen",
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "images/category/ssd.jpg",
+    aliases: ["storage", "drives"],
     popularFilters: [
       { label: "SSDs", href: "/ssds" },
-      { label: "Festplatten (HDD)", params: "type=hdd" },
-      { label: "Externe Festplatten", href: "/external-storage" },
+      { label: "Festplatten (HDD)", href: "/festplatten" },
+      { label: "Externe Festplatten", href: "/externe-speicher" },
     ],
   },
   ssds: {
@@ -735,12 +735,13 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
-  "smartwatch-accessories": {
-    name: "Smartwatch-Zubehör",
+  "smartwatch-zubehoer": {
+    ...CATEGORY_MANIFEST["smartwatch-zubehoer"],
     description: "Bänder & Ladestationen",
     parent: "telekommunikation",
     categoryType: "standard",
     imageUrl: "/images/category/smartwatch-accessories.jpg",
+    aliases: ["smartwatch-accessories"],
   },
   smartphones: {
     name: "Smartphones",
@@ -768,31 +769,34 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Zustand", field: "condition", type: "checkbox" },
     ],
   },
-  consoles: {
-    name: "Spielekonsolen",
+  spielekonsolen: {
+    ...CATEGORY_MANIFEST.spielekonsolen,
     description: "PS5, Xbox, Switch",
     parent: "gaming-elektrospielzeug",
     categoryType: "standard",
     imageUrl: "/images/category/console.jpg",
+    aliases: ["consoles"],
     popularFilters: [
-      { label: "Spielekonsolen", href: "/consoles" },
-      { label: "Drohnen", href: "/drones" },
-      { label: "VR-Brillen", href: "/vr-headsets" },
-      { label: "Gaming-Stühle", href: "/gaming-chairs" },
-      { label: "Game-Controller", href: "/game-controllers" },
+      { label: "Spielekonsolen", href: "/spielekonsolen" },
+      { label: "Drohnen", href: "/drohnen" },
+      { label: "VR-Brillen", href: "/vr-brillen" },
+      { label: "Gaming-Stühle", href: "/gaming-stuehle" },
+      { label: "Game-Controller", href: "/gamepad-controller" },
     ],
   },
-  games: {
-    ...CATEGORY_MANIFEST.games,
+  videospiele: {
+    ...CATEGORY_MANIFEST.videospiele,
     description: "Videospiele für alle Plattformen",
     categoryType: "standard",
+    aliases: ["games"],
   },
-  cameras: {
-    name: "Digitalkameras",
+  digitalkameras: {
+    ...CATEGORY_MANIFEST.digitalkameras,
     description: "Kameras & Optik",
     parent: "fotografie",
     categoryType: "standard",
     imageUrl: "/images/category/camera.jpg",
+    aliases: ["cameras"],
     popularFilters: [
       { label: "Canon", params: "brand=Canon" },
       { label: "Fujifilm", params: "brand=Fujifilm" },
@@ -801,37 +805,39 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Vollformat", params: "sensor=Full+Frame" },
     ],
   },
-  keyboards: {
-    name: "Tastaturen",
+  tastaturen: {
+    ...CATEGORY_MANIFEST.tastaturen,
     description: "Keyboards & Eingabegeräte",
     parent: "computer",
     categoryType: "standard",
     imageUrl: "/images/category/keyboard.jpg",
-    aliases: ["tastaturen"],
+    aliases: ["keyboards"],
   },
-  mice: {
-    name: "Mäuse",
+  maeuse: {
+    ...CATEGORY_MANIFEST.maeuse,
     description: "Präzisionsmäuse",
     parent: "computer",
     categoryType: "standard",
     imageUrl: "/images/category/mouse.jpg",
-    aliases: ["maus", "maeuse"],
+    aliases: ["mice", "maus"],
   },
-  "mouse-pads": {
-    name: "Mauspads",
+  mauspads: {
+    ...CATEGORY_MANIFEST.mauspads,
     description: "Unterlagen",
     parent: "computer",
     categoryType: "standard",
     imageUrl: "/images/category/mouse-pad.jpg",
+    aliases: ["mouse-pads"],
   },
-  "external-storage": {
-    name: "Externe Speicher",
+  "externe-speicher": {
+    ...CATEGORY_MANIFEST["externe-speicher"],
     description: "Portable HDDs & SSDs",
-    parent: "storage",
+    parent: "laufwerke",
     categoryType: "analytical",
     unitType: "TB",
     unitLabel: "pro TB",
     imageUrl: "/images/category/external-storage.jpg",
+    aliases: ["external-storage"],
   },
   speicherkarten: {
     name: "Speicherkarten",
@@ -847,116 +853,133 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Samsung", params: "brand=Samsung" },
     ],
   },
-  "docking-stations": {
-    name: "Docking-Stationen",
+  dockingstationen: {
+    ...CATEGORY_MANIFEST.dockingstationen,
     description: "Laptop-Docks",
     parent: "computer",
     categoryType: "standard",
     imageUrl: "/images/category/docking-station.jpg",
+    aliases: ["docking-stations"],
   },
-  "network-switches": {
-    name: "Netzwerk-Switches",
+  "netzwerk-switches": {
+    ...CATEGORY_MANIFEST["netzwerk-switches"],
     description: "Ethernet-Verteiler",
-    parent: "computer",
+    parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/network-switch.jpg",
+    aliases: ["network-switches"],
   },
-  "network-cards": {
-    name: "Netzwerkkarten",
+  netzwerkkarten: {
+    ...CATEGORY_MANIFEST.netzwerkkarten,
     description: "WLAN-Karten",
-    parent: "computer",
+    parent: "pc-komponenten",
     categoryType: "standard",
+    aliases: ["network-cards"],
   },
-  cables: {
-    name: "Kabel & Adapter",
+  "kabel-adapter": {
+    ...CATEGORY_MANIFEST["kabel-adapter"],
     description: "Verbindungen",
-    parent: "computer",
+    parent: "elektroartikel",
     categoryType: "standard",
+    aliases: ["cables"],
   },
-  "laptop-stands": {
-    name: "Laptop-Ständer",
+  "laptop-staender": {
+    ...CATEGORY_MANIFEST["laptop-staender"],
     description: "Halterungen",
     parent: "computer",
     categoryType: "standard",
+    aliases: ["laptop-stands"],
   },
-  ups: {
-    name: "USV",
+  "usv-anlagen": {
+    ...CATEGORY_MANIFEST["usv-anlagen"],
     description: "Notstrom",
-    parent: "computer",
+    parent: "pc-komponenten",
     categoryType: "standard",
+    aliases: ["ups"],
   },
-  "cable-management": {
-    name: "Kabelmanagement",
+  kabelmanagement: {
+    ...CATEGORY_MANIFEST.kabelmanagement,
     description: "Ordnung",
-    parent: "computer",
+    parent: "pc-komponenten",
     categoryType: "standard",
+    aliases: ["cable-management"],
   },
-  "monitor-arms": {
-    name: "Monitorhalterungen",
+  monitorhalterungen: {
+    ...CATEGORY_MANIFEST.monitorhalterungen,
     description: "Arme & Halter",
     parent: "computer",
     categoryType: "standard",
+    aliases: ["monitor-arms"],
   },
-  "desk-accessories": {
-    name: "Schreibtisch-Zubehör",
+  "schreibtisch-zubehoer": {
+    ...CATEGORY_MANIFEST["schreibtisch-zubehoer"],
     description: "Ordnung am Tisch",
     parent: "computer",
     categoryType: "standard",
+    aliases: ["desk-accessories"],
   },
-  "office-chairs": {
-    name: "Bürostühle",
+  buerostuehle: {
+    ...CATEGORY_MANIFEST.buerostuehle,
     description: "Ergonomie",
     parent: "computer",
     categoryType: "standard",
+    aliases: ["office-chairs"],
   },
-  "standing-desks": {
-    name: "Stehschreibtische",
+  stehschreibtische: {
+    ...CATEGORY_MANIFEST.stehschreibtische,
     description: "Höhenverstellbar",
     parent: "computer",
     categoryType: "standard",
+    aliases: ["standing-desks"],
   },
-  "tablet-accessories": {
-    name: "Tablet-Zubehör",
+  "tablet-zubehoer": {
+    ...CATEGORY_MANIFEST["tablet-zubehoer"],
     description: "Hüllen & Stifte",
     parent: "computer",
     categoryType: "standard",
+    aliases: ["tablet-accessories"],
   },
-  "phone-accessories": {
-    name: "Handy-Zubehör",
+  "handy-zubehoer": {
+    ...CATEGORY_MANIFEST["handy-zubehoer"],
     description: "Schutz & Power",
     parent: "telekommunikation",
     categoryType: "standard",
+    aliases: ["phone-accessories"],
   },
-  "game-controllers": {
-    name: "Game-Controller",
+  "gamepad-controller": {
+    ...CATEGORY_MANIFEST["gamepad-controller"],
     description: "Gamepads",
     parent: "gaming-elektrospielzeug",
     categoryType: "standard",
     imageUrl: "/images/category/game-controller.jpg",
+    aliases: ["game-controllers"],
   },
-  "vr-headsets": {
-    name: "VR-Brillen",
+  "vr-brillen": {
+    ...CATEGORY_MANIFEST["vr-brillen"],
     description: "Virtual Reality",
     parent: "gaming-elektrospielzeug",
     categoryType: "standard",
     imageUrl: "/images/category/vr-glasses.jpg",
+    aliases: ["vr-headsets"],
     popularFilters: [
       { label: "Meta Quest", params: "series=quest" },
       { label: "PlayStation VR2", params: "platform=ps5" },
     ],
   },
-  microphones: {
-    name: "Mikrofone",
+  mikrofone: {
+    ...CATEGORY_MANIFEST.mikrofone,
     description: "Audio-Aufnahme",
     parent: "hifi-audio",
     categoryType: "standard",
+    aliases: ["microphones"],
   },
-  "gaming-chairs": {
-    name: "Gaming-Stühle",
+  "gaming-stuehle": {
+    ...CATEGORY_MANIFEST["gaming-stuehle"],
     description: "Zocker-Sessel",
     parent: "gaming-elektrospielzeug",
     categoryType: "standard",
     imageUrl: "/images/category/gaming-chair.jpg",
+    aliases: ["gaming-chairs"],
     popularFilters: [
       { label: "Secretlab", params: "brand=Secretlab" },
       { label: "Noblechairs", params: "brand=Noblechairs" },
@@ -969,19 +992,20 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     parent: "computer",
     categoryType: "standard",
   },
-  "capture-cards": {
-    name: "Capture-Karten",
+  "capture-karten": {
+    ...CATEGORY_MANIFEST["capture-karten"],
     description: "Streaming-Hardware",
-    parent: "computer",
+    parent: "pc-komponenten",
     categoryType: "standard",
+    aliases: ["capture-cards"],
   },
-  cpu: {
-    name: "Prozessoren",
+  prozessoren: {
+    ...CATEGORY_MANIFEST.prozessoren,
     description: "CPUs von Intel & AMD",
     parent: "pc-komponenten",
     categoryType: "analytical",
     imageUrl: "/images/category/cpu.jpg",
-    aliases: ["prozessoren", "processors"],
+    aliases: ["cpu", "processors"],
     popularFilters: [
       { label: "Sockel AM5", params: "socket=AM5" },
       { label: "Sockel 1700", params: "socket=LGA1700" },
@@ -1085,23 +1109,5 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
       { label: "Panasonic", params: "brand=Panasonic" },
       { label: "Vlogging", params: "type=vlogging" },
     ],
-  },
-  prozessoren: {
-    name: "Prozessoren",
-    description: "CPUs von Intel & AMD",
-    categoryType: "analytical",
-    hidden: true,
-  },
-  monitore: {
-    name: "Monitore",
-    description: "Gaming und Office Monitore",
-    categoryType: "standard",
-    hidden: true,
-  },
-  arbeitsspeicher: {
-    name: "Arbeitsspeicher",
-    description: "DDR4 & DDR5 RAM Module",
-    categoryType: "analytical",
-    hidden: true,
   },
 };

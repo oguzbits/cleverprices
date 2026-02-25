@@ -28,14 +28,14 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
   elektroartikel: { name: "Elektroartikel" },
   deals: { name: "Deals" },
   electronics: { name: "Elektronik", hidden: true },
-  tvs: { name: "Fernseher", singularName: "Fernseher", parent: "tv-sat" },
+  fernseher: { name: "Fernseher", singularName: "Fernseher", parent: "tv-sat" },
   staubsauger: {
     name: "Staubsauger",
     singularName: "Staubsauger",
     parent: "haushaltselektronik",
     hidden: true,
   },
-  headphones: {
+  kopfhoerer: {
     name: "Kopfhörer",
     singularName: "Kopfhörer",
     parent: "hifi-audio",
@@ -52,8 +52,8 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     parent: "haushaltselektronik",
     hidden: true,
   },
-  monitors: { name: "Monitore", singularName: "Monitor", parent: "computer" },
-  speakers: {
+  monitore: { name: "Monitore", singularName: "Monitor", parent: "computer" },
+  lautsprecher: {
     name: "Lautsprecher",
     singularName: "Lautsprecher",
     parent: "hifi-audio",
@@ -84,7 +84,7 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     parent: "haushaltselektronik",
     hidden: true,
   },
-  routers: {
+  "wlan-router": {
     name: "Router",
     singularName: "Router",
     parent: "telekommunikation",
@@ -130,7 +130,7 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     parent: "haushaltselektronik",
     hidden: true,
   },
-  receiver: {
+  "av-receiver": {
     name: "Receiver",
     singularName: "Receiver",
     parent: "hifi-audio",
@@ -147,10 +147,10 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     parent: "haushaltselektronik",
     hidden: true,
   },
-  "hard-drives": {
+  festplatten: {
     name: "Festplatten",
     singularName: "Festplatte",
-    parent: "pc-komponenten",
+    parent: "elektroartikel",
   },
   gefrierschraenke: {
     name: "Gefrierschränke",
@@ -164,50 +164,54 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     parent: "haushaltselektronik",
     hidden: true,
   },
-  drones: { name: "Drohnen", singularName: "Drohne", parent: "fotografie" },
-  nas: { name: "NAS-Server", singularName: "NAS-Server", parent: "computer" },
+  drohnen: { name: "Drohnen", singularName: "Drohne", parent: "fotografie" },
+  "nas-systeme": {
+    name: "NAS-Server",
+    singularName: "NAS-Server",
+    parent: "computer",
+  },
   "pc-komponenten": {
     name: "PC-Komponenten",
     singularName: "PC-Komponente",
     parent: "computer",
   },
-  gpu: {
+  grafikkarten: {
     name: "Grafikkarten",
     singularName: "Grafikkarte",
     parent: "pc-komponenten",
   },
-  motherboards: {
+  mainboards: {
     name: "Mainboards",
     singularName: "Mainboard",
     parent: "pc-komponenten",
   },
-  ram: {
+  arbeitsspeicher: {
     name: "Arbeitsspeicher",
     singularName: "Arbeitsspeicher",
     parent: "pc-komponenten",
   },
-  "pc-cases": {
+  "pc-gehaeuse": {
     name: "PC-Gehäuse",
     singularName: "PC-Gehäuse",
     parent: "pc-komponenten",
   },
-  "power-supplies": {
+  netzteile: {
     name: "Netzteile",
     singularName: "Netzteil",
     parent: "pc-komponenten",
   },
-  "cpu-coolers": {
+  "cpu-kuehler": {
     name: "CPU-Kühler",
     singularName: "CPU-Kühler",
     parent: "pc-komponenten",
   },
-  storage: {
+  laufwerke: {
     name: "Laufwerke",
     singularName: "Laufwerk",
     parent: "pc-komponenten",
   },
-  ssds: { name: "SSDs", singularName: "SSD", parent: "pc-komponenten" },
-  "smartwatch-accessories": {
+  ssds: { name: "SSDs", singularName: "SSD", parent: "elektroartikel" },
+  "smartwatch-zubehoer": {
     name: "Smartwatch-Zubehör",
     singularName: "Smartwatch-Zubehör",
     parent: "telekommunikation",
@@ -222,28 +226,28 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     singularName: "Smartwatch",
     parent: "telekommunikation",
   },
-  consoles: {
+  spielekonsolen: {
     name: "Spielekonsolen",
     singularName: "Konsole",
     parent: "gaming-elektrospielzeug",
   },
-  cameras: {
+  digitalkameras: {
     name: "Digitalkameras",
     singularName: "Digitalkamera",
     parent: "fotografie",
   },
-  keyboards: {
+  tastaturen: {
     name: "Tastaturen",
     singularName: "Tastatur",
     parent: "computer",
   },
-  mice: { name: "Mäuse", singularName: "Maus", parent: "computer" },
-  "mouse-pads": {
+  maeuse: { name: "Mäuse", singularName: "Maus", parent: "computer" },
+  mauspads: {
     name: "Mauspads",
     singularName: "Mauspad",
     parent: "computer",
   },
-  "external-storage": {
+  "externe-speicher": {
     name: "Externe Speicher",
     singularName: "Externer Speicher",
     parent: "computer",
@@ -253,82 +257,82 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     singularName: "Speicherkarte",
     parent: "fotografie",
   },
-  "docking-stations": {
+  dockingstationen: {
     name: "Docking-Stationen",
     singularName: "Docking-Station",
     parent: "computer",
   },
-  "network-switches": {
+  "netzwerk-switches": {
     name: "Netzwerk-Switches",
     singularName: "Switch",
     parent: "telekommunikation",
   },
-  "network-cards": {
+  netzwerkkarten: {
     name: "Netzwerkkarten",
     singularName: "Netzwerkkarte",
     parent: "pc-komponenten",
   },
-  cables: { name: "Kabel & Adapter", parent: "elektroartikel" },
-  "laptop-stands": { name: "Laptop-Ständer", parent: "computer" },
-  ups: { name: "USV", parent: "pc-komponenten" },
-  "cable-management": { name: "Kabelmanagement", parent: "pc-komponenten" },
-  "monitor-arms": {
+  "kabel-adapter": { name: "Kabel & Adapter", parent: "elektroartikel" },
+  "laptop-staender": { name: "Laptop-Ständer", parent: "computer" },
+  "usv-anlagen": { name: "USV", parent: "pc-komponenten" },
+  kabelmanagement: { name: "Kabelmanagement", parent: "pc-komponenten" },
+  monitorhalterungen: {
     name: "Monitorhalterungen",
     singularName: "Monitorhalterung",
     parent: "computer",
   },
-  "desk-accessories": {
+  "schreibtisch-zubehoer": {
     name: "Schreibtisch-Zubehör",
     singularName: "Schreibtisch-Zubehör",
     parent: "computer",
   },
-  "office-chairs": {
-    name: "Bürostühle",
-    singularName: "Bürostuhl",
-    parent: "computer",
-  },
-  "standing-desks": {
-    name: "Stehschreibtische",
-    singularName: "Stehschreibtisch",
-    parent: "computer",
-  },
-  "tablet-accessories": {
-    name: "Tablet-Zubehör",
-    singularName: "Tablet-Zubehör",
-    parent: "computer",
-  },
-  "phone-accessories": {
-    name: "Handy-Zubehör",
-    singularName: "Handy-Zubehör",
-    parent: "telekommunikation",
-  },
-  "game-controllers": {
-    name: "Game-Controller",
-    singularName: "Game-Controller",
-    parent: "gaming-elektrospielzeug",
-  },
-  "vr-headsets": {
-    name: "VR-Brillen",
-    singularName: "VR-Brille",
-    parent: "gaming-elektrospielzeug",
-  },
-  microphones: {
-    name: "Mikrofone",
-    singularName: "Mikrofon",
-    parent: "hifi-audio",
-  },
-  "gaming-chairs": {
+  "gaming-stuehle": {
     name: "Gaming-Stühle",
     singularName: "Gaming-Stuhl",
     parent: "gaming-elektrospielzeug",
   },
+  buerostuehle: {
+    name: "Bürostühle",
+    singularName: "Bürostuhl",
+    parent: "computer",
+  },
+  stehschreibtische: {
+    name: "Stehschreibtische",
+    singularName: "Stehschreibtisch",
+    parent: "computer",
+  },
+  "tablet-zubehoer": {
+    name: "Tablet-Zubehör",
+    singularName: "Tablet-Zubehör",
+    parent: "computer",
+  },
+  "handy-zubehoer": {
+    name: "Handy-Zubehör",
+    singularName: "Handy-Zubehör",
+    parent: "telekommunikation",
+  },
+  "gamepad-controller": {
+    name: "Game-Controller",
+    singularName: "Game-Controller",
+    parent: "gaming-elektrospielzeug",
+  },
+  "vr-brillen": {
+    name: "VR-Brillen",
+    singularName: "VR-Brille",
+    parent: "gaming-elektrospielzeug",
+  },
+  mikrofone: {
+    name: "Mikrofone",
+    singularName: "Mikrofon",
+    parent: "hifi-audio",
+  },
   webcams: { name: "Webcams", singularName: "Webcam", parent: "computer" },
-  "capture-cards": {
+  "capture-karten": {
     name: "Capture-Karten",
     singularName: "Capture-Karte",
     parent: "pc-komponenten",
   },
-  cpu: {
+  prozessoren: {
     name: "Prozessoren",
     singularName: "Prozessor",
     parent: "pc-komponenten",
@@ -384,17 +388,10 @@ export const CATEGORY_MANIFEST: Record<CategorySlug, CategoryManifestEntry> = {
     singularName: "Kompaktkamera",
     parent: "fotografie",
   },
-  games: {
+  videospiele: {
     name: "Games",
     singularName: "Game",
     parent: "gaming-elektrospielzeug",
-    hidden: true,
-  },
-  prozessoren: { name: "Prozessoren", parent: "pc-komponenten", hidden: true },
-  monitore: { name: "Monitore", parent: "computer", hidden: true },
-  arbeitsspeicher: {
-    name: "Arbeitsspeicher",
-    parent: "pc-komponenten",
     hidden: true,
   },
 };

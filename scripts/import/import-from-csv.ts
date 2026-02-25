@@ -367,7 +367,7 @@ async function main() {
 
         // 2. Category-Specific Differentiators
         switch (categorySlug) {
-          case "gpu":
+          case "grafikkarten":
             const gpuChip = deepContext.match(
               /\b(RTX|GTX|RX|Arc)\s*\d+[a-z]*\s*(Ti|Super|XT|XTX)?\b/i,
             );
@@ -406,7 +406,6 @@ async function main() {
             const gpuLen = deepContext.match(/(\d+)\s*mm\s*(Länge|Length)/i);
             if (gpuLen) specs.Length = gpuLen[0];
             break;
-          case "cpu":
           case "prozessoren":
             const socket = deepContext.match(
               /(AM\d+|LGA\s*\d+|sTR\d+|Socket\s*\S+|Sockel\s*\S+)/i,
@@ -427,7 +426,6 @@ async function main() {
             const cpuGen = deepContext.match(/(\d+)\.\s*(Gen|Generation)/i);
             if (cpuGen) specs.Generation = cpuGen[0];
             break;
-          case "ram":
           case "arbeitsspeicher":
             const ddr = deepContext.match(/(DDR\d|LPDDR\d)/i);
             if (ddr) specs.Memory_Type = ddr[0];
@@ -438,7 +436,7 @@ async function main() {
             const lat = deepContext.match(/(CL\d+|C\d+)/i);
             if (lat) specs.Latency = lat[0];
             break;
-          case "motherboards":
+          case "mainboards":
             const mbSocket = deepContext.match(
               /(AM\d+|LGA\s*\d+|sTR\d+|Socket\s*\S+|Sockel\s*\S+)/i,
             );
@@ -447,7 +445,7 @@ async function main() {
             if (chipset) specs.Chipset = chipset[0];
             break;
           case "monitore":
-          case "tvs":
+          case "fernseher":
             const monScreen = deepContext.match(
               /(\d+[\.,]?\d*)\s*(Zoll|Inch|")/i,
             );
@@ -513,8 +511,7 @@ async function main() {
             const len = deepContext.match(/(\d+(?:[\.,]\d+)?)\s*mm/i);
             if (len) specs.Min_Cutting_Length = len[0];
             break;
-          case "fotografie":
-          case "cameras":
+          case "digitalkameras":
           case "systemkameras":
           case "kompaktkameras":
             const mp = deepContext.match(
@@ -530,7 +527,7 @@ async function main() {
             const iso = deepContext.match(/ISO\s*(\d+)-(\d+)/i);
             if (iso) specs.ISO_Range = iso[0];
             break;
-          case "drones":
+          case "drohnen":
             const flight = deepContext.match(/(\d+)\s*(min|Minuten|Minutes)/i);
             if (flight) specs.Flight_Time_Min = flight[1];
             const dVideo = deepContext.match(/\b(4K|5\.4K|2\.7K|8K)\b/i);
@@ -722,7 +719,7 @@ function mapCategory(
   // Cables & Adapters (Global check to prevent them landing in device categories)
   if (/\b(kabel|cable|adapter)\b/i.test(t) && !/\b(tv|monitor)\b/i.test(t)) {
     // careful not to catch "TV with cable" but often "USB Cable" is clear
-    return "cables";
+    return "kabel-adapter";
   }
 
   // SSD Cases / Enclosures
@@ -731,7 +728,7 @@ function mapCategory(
     /\b(ssd|festplatte|hdd)\b/i.test(t) &&
     !/\b(pc|computer)\b/i.test(t) // avoid PC cases
   ) {
-    return "external-storage";
+    return "externe-speicher";
   }
 
   // Soundbars (Title override)
@@ -781,24 +778,24 @@ function mapCategory(
     // Storage
     "solid state drives": "ssds",
     "interne ssd": "ssds",
-    "externe solid state drives": "external-storage",
-    "externe festplatten": "external-storage",
-    // "festplatten": "hard-drives", <-- Too generic, often contains SSDs. Fallback to Tree logic.
+    "externe solid state drives": "externe-speicher",
+    "externe festplatten": "externe-speicher",
+    // "festplatten": "festplatten", <-- Too generic, often contains SSDs. Fallback to Tree logic.
     "micro sd": "speicherkarten",
     // PC Components
-    grafikkarten: "gpu",
-    mainboards: "motherboards",
-    arbeitsspeicher: "ram",
-    prozessoren: "cpu",
-    prozessorlüfter: "cpu-coolers",
-    "pc-gehäuse": "pc-cases",
-    "pc-netzteile": "power-supplies",
+    grafikkarten: "grafikkarten",
+    mainboards: "mainboards",
+    arbeitsspeicher: "arbeitsspeicher",
+    prozessoren: "prozessoren",
+    prozessorlüfter: "cpu-kuehler",
+    "pc-gehäuse": "pc-gehaeuse",
+    "pc-netzteile": "netzteile",
     // Peripherals
-    monitore: "monitors",
-    mäuse: "mice",
-    tastaturen: "keyboards",
-    "bluetooth-kopfhörer": "headphones",
-    "lautsprecher, smart speaker": "speakers",
+    monitore: "monitore",
+    mäuse: "maeuse",
+    tastaturen: "tastaturen",
+    "bluetooth-kopfhörer": "kopfhoerer",
+    "lautsprecher, smart speaker": "lautsprecher",
     // Computers
     "normale laptops": "notebooks",
     tablets: "tablets",
@@ -813,10 +810,10 @@ function mapCategory(
     "3d-drucker": "3d-drucker",
     "tintenstrahl, tintenstrahldrucker": "multifunktionsdrucker",
     // TV & Networking
-    "fernseher, smart-tvs": "tvs",
-    router: "routers",
+    "fernseher, smart-tvs": "fernseher",
+    router: "wlan-router",
     // Gaming
-    konsolen: "consoles",
+    konsolen: "spielekonsolen",
   };
 
   // Exact match on subcategory (most reliable)
@@ -832,18 +829,18 @@ function mapCategory(
     // COMPUTER_DRIVE_OR_STORAGE: "ssds", // Too generic, can be HDD or SSD
     FLASH_MEMORY: "speicherkarten",
     // PC Components
-    VIDEO_CARD: "gpu",
-    MOTHERBOARD: "motherboards",
-    INTERNAL_MEMORY: "ram",
-    COMPUTER_PROCESSOR: "cpu",
-    ELECTRONIC_COMPONENT_FAN: "cpu-coolers",
-    COMPUTER_CHASSIS: "pc-cases",
-    SYSTEM_POWER_DEVICE: "power-supplies",
+    VIDEO_CARD: "grafikkarten",
+    MOTHERBOARD: "mainboards",
+    INTERNAL_MEMORY: "arbeitsspeicher",
+    COMPUTER_PROCESSOR: "prozessoren",
+    ELECTRONIC_COMPONENT_FAN: "cpu-kuehler",
+    COMPUTER_CHASSIS: "pc-gehaeuse",
+    SYSTEM_POWER_DEVICE: "netzteile",
     // Peripherals
-    MONITOR: "monitors",
-    INPUT_MOUSE: "mice",
-    KEYBOARDS: "keyboards",
-    HEADPHONES: "headphones",
+    MONITOR: "monitore",
+    INPUT_MOUSE: "maeuse",
+    KEYBOARDS: "tastaturen",
+    HEADPHONES: "kopfhoerer",
     // Computers
     NOTEBOOK_COMPUTER: "notebooks",
     TABLET_COMPUTER: "tablets",
@@ -851,18 +848,18 @@ function mapCategory(
     CELLULAR_PHONE: "smartphones",
     WEARABLE_COMPUTER: "smartwatches",
     // Cameras
-    CAMERA_DIGITAL: "cameras",
+    CAMERA_DIGITAL: "digitalkameras",
     // Printers
     PRINTER: "multifunktionsdrucker",
     "3D_PRINTER": "3d-drucker",
     // TV & Networking
-    TELEVISION: "tvs",
-    NETWORKING_ROUTER: "routers",
+    TELEVISION: "fernseher",
+    NETWORKING_ROUTER: "wlan-router",
     // Gaming
-    VIDEO_GAME_CONSOLE: "consoles",
-    VIDEO_GAME: "games",
-    PHYSICAL_VIDEO_GAME_SOFTWARE: "games",
-    DOWNLOADABLE_VIDEO_GAME: "games",
+    VIDEO_GAME_CONSOLE: "spielekonsolen",
+    VIDEO_GAME: "videospiele",
+    PHYSICAL_VIDEO_GAME_SOFTWARE: "videospiele",
+    DOWNLOADABLE_VIDEO_GAME: "videospiele",
   };
 
   if (pt && TYPE_TO_CATEGORY[pt]) {
@@ -878,7 +875,7 @@ function mapCategory(
   if (tr.includes("solid state drives") || tr.includes("interne ssd"))
     return "ssds";
   if (tr.includes("externe festplatten") || tr.includes("externe ssd"))
-    return "external-storage";
+    return "externe-speicher";
   if (
     (tr.includes("interner speicher") && tr.includes("festplatten")) ||
     tr.includes("festplatten - intern")
@@ -887,41 +884,42 @@ function mapCategory(
     if (/\b(ssd|nvme)\b/i.test(t)) return "ssds";
     if (/\b(sd|sdxc|sdhc|microsd|microsdxc|microsdhc|uhs)\b/i.test(t))
       return "speicherkarten";
-    return "hard-drives";
+    return "festplatten";
   }
   if (tr.includes("speicherkarten")) return "speicherkarten";
 
   // PC Components
-  if (tr.includes("grafikkarten")) return "gpu";
+  if (tr.includes("grafikkarten")) return "grafikkarten";
   if (tr.includes("mainboards") || tr.includes("motherboards")) {
     if (/raspberry pi/i.test(t)) return null; // Exclude Raspberry Pi
-    return "motherboards";
+    return "mainboards";
   }
-  if (tr.includes("arbeitsspeicher") || tr.includes("ddr-sdram")) return "ram";
-  if (tr.includes("prozessoren") || tr.includes("cpus")) return "cpu";
+  if (tr.includes("arbeitsspeicher") || tr.includes("ddr-sdram"))
+    return "arbeitsspeicher";
+  if (tr.includes("prozessoren") || tr.includes("cpus")) return "prozessoren";
   if (tr.includes("cpu-kühler") || tr.includes("prozessorlüfter"))
-    return "cpu-coolers";
-  if (tr.includes("pc-gehäuse")) return "pc-cases";
+    return "cpu-kuehler";
+  if (tr.includes("pc-gehäuse")) return "pc-gehaeuse";
   if (tr.includes("netzteile") && !tr.includes("notebook")) {
     if (/raspberry pi/i.test(t)) return null; // Exclude RPi power supplies
-    return "power-supplies";
+    return "netzteile";
   }
 
   // Peripherals
   if (tr.includes("monitore") || tr.includes("computerbildschirme"))
-    return "monitors";
-  if (tr.includes("mäuse") && !tr.includes("mauspad")) return "mice";
-  if (tr.includes("tastaturen")) return "keyboards";
+    return "monitore";
+  if (tr.includes("mäuse") && !tr.includes("mauspad")) return "maeuse";
+  if (tr.includes("tastaturen")) return "tastaturen";
   if (tr.includes("headsets") || tr.includes("kopfhörer")) {
     // VR Headsets (Meta Quest, etc.)
-    if (/meta quest|oculus|vr headset|vr-brille/i.test(t)) return "vr-headsets";
-    return "headphones";
+    if (/meta quest|oculus|vr headset|vr-brille/i.test(t)) return "vr-brillen";
+    return "kopfhoerer";
   }
-  if (tr.includes("vr-brillen")) return "vr-headsets";
+  if (tr.includes("vr-brillen")) return "vr-brillen";
   if (tr.includes("webcams")) return "webcams";
   if (tr.includes("soundbars")) return "soundbars";
-  if (tr.includes("lautsprecher")) return "speakers";
-  if (tr.includes("mikrofone")) return "microphones";
+  if (tr.includes("lautsprecher")) return "lautsprecher";
+  if (tr.includes("mikrofone")) return "mikrofone";
 
   // Computers
   if (
@@ -939,9 +937,9 @@ function mapCategory(
   // Cameras
   if (tr.includes("spiegellose systemkameras") || tr.includes("systemkameras"))
     return "systemkameras";
-  if (tr.includes("digitalkameras")) return "cameras";
+  if (tr.includes("digitalkameras")) return "digitalkameras";
   if (tr.includes("kompaktkameras")) return "kompaktkameras";
-  if (tr.includes("drohnen")) return "drones";
+  if (tr.includes("drohnen")) return "drohnen";
 
   // Printers
   if (tr.includes("3d-drucker")) return "3d-drucker";
@@ -950,13 +948,13 @@ function mapCategory(
     return "multifunktionsdrucker";
 
   // TV & Networking
-  if (tr.includes("fernseher") || tr.includes("tvs")) return "tvs";
-  if (tr.includes("router") || tr.includes("repeater")) return "routers";
+  if (tr.includes("fernseher") || tr.includes("tvs")) return "fernseher";
+  if (tr.includes("router") || tr.includes("repeater")) return "wlan-router";
 
   // Gaming
   if (tr.includes("spielekonsolen") || tr.includes("konsolen"))
-    return "consoles";
-  if (tr.includes("games") || tr.includes("videospiele")) return "games";
+    return "spielekonsolen";
+  if (tr.includes("games") || tr.includes("videospiele")) return "videospiele";
 
   // ============================================================================
   // 4. TITLE-BASED FALLBACK (Last Resort - Only for products with no Sub/Type/Tree)
@@ -973,8 +971,8 @@ function mapCategory(
     /\b(hdd|festplatte)\b/i.test(t) &&
     /\b(7200|5400|rpm|3\.5|2\.5)\b/i.test(t)
   ) {
-    if (/\bextern/i.test(t)) return "external-storage";
-    return "hard-drives";
+    if (/\bextern/i.test(t)) return "externe-speicher";
+    return "festplatten";
   }
 
   // Mouse detection (for products in wrong CSV)
@@ -982,7 +980,7 @@ function mapCategory(
     /\b(mouse|gaming-maus|deathadder|mx master|basilisk)\b/i.test(t) &&
     !t.includes("tastatur")
   ) {
-    return "mice";
+    return "maeuse";
   }
 
   // ============================================================================

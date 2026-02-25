@@ -10,7 +10,7 @@ import { db } from "../../src/db";
 // Keywords that should NOT appear in each category (refined to reduce false positives)
 const VIOLATIONS: Record<string, string[]> = {
   // Headphones should not have storage products
-  headphones: [
+  kopfhoerer: [
     "SSD",
     "NVMe",
     "Festplatte HDD",
@@ -29,20 +29,20 @@ const VIOLATIONS: Record<string, string[]> = {
   // Notebooks is clean - gaming laptops can have RTX GPUs
   notebooks: ["Desktop Tower ATX"],
   // CPU: "ohne Kühler" is fine (means without cooler), only catch actual coolers
-  cpu: ["CPU-Kühler", "Wasserkühler AIO", "Tower Kühler"],
+  prozessoren: ["CPU-Kühler", "Wasserkühler AIO", "Tower Kühler"],
   // GPU: Cable in product name is normal for GPU accessories, but GPU itself shouldn't be in this category
-  gpu: ["Halterung Ständer", "GPU Bracket"],
+  grafikkarten: ["Halterung Ständer", "GPU Bracket"],
   // RAM should not have storage
-  ram: ["Interne SSD", "Externe Festplatte", "USB Stick"],
+  arbeitsspeicher: ["Interne SSD", "Externe Festplatte", "USB Stick"],
   // Monitors: "Laptop Monitor" or "für MacBook Pro/Air" means portable monitor, not MacBook
   // Only catch actual laptops being miscategorized
-  monitors: ["Notebook Intel i7", "MacBook Air M4"],
+  monitore: ["Notebook Intel i7", "MacBook Air M4"],
   // Hard drives: strict - no SSDs
-  "hard-drives": ["NVMe SSD", "M.2 SSD", "Interne SSD"],
+  festplatten: ["NVMe SSD", "M.2 SSD", "Interne SSD"],
   // External storage: "Desktop kompatibel" is fine for portables
-  "external-storage": ["Ratchet", "Spider-Man"],
+  "externe-speicher": ["Ratchet", "Spider-Man"],
   // Power supplies: no Raspberry Pi kits
-  "power-supplies": ["Raspberry Pi Starter", "Raspberry Pi 4 Kit"],
+  netzteile: ["Raspberry Pi Starter", "Raspberry Pi 4 Kit"],
 };
 
 async function validate() {

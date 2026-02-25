@@ -1,3 +1,4 @@
+import { CATEGORY_MAP } from "./category-definitions";
 import { CATEGORY_MANIFEST, CategoryManifestEntry } from "./category-manifest";
 import { CategoryData, CategorySlug } from "./category-types";
 
@@ -5,10 +6,21 @@ import { CategoryData, CategorySlug } from "./category-types";
  * Get full URL path for a category
  */
 export function getCategoryPath(categorySlug: string): string {
-  const category = CATEGORY_MANIFEST[categorySlug as CategorySlug];
-  if (!category) return "/";
+  // 1. Direct manifest lookup (canonical slug)
+  if (CATEGORY_MANIFEST[categorySlug as CategorySlug]) {
+    return `/${categorySlug}`;
+  }
 
-  return `/${categorySlug}`;
+  // 2. Alias lookup (check CATEGORY_MAP for aliases)
+  const canonicalSlug = Object.keys(CATEGORY_MAP).find((slug) =>
+    CATEGORY_MAP[slug as CategorySlug]?.aliases?.includes(categorySlug),
+  );
+
+  if (canonicalSlug) {
+    return `/${canonicalSlug}`;
+  }
+
+  return "/";
 }
 
 /**

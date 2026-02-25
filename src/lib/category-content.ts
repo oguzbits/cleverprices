@@ -15,7 +15,7 @@ export const categoryContent: Partial<Record<CategorySlug, CategoryContent>> = {
     intro:
       "Find the best value electronics by comparing price per unit (GB, TB, Watt). We track real-time prices across major retailers.",
   },
-  "hard-drives": {
+  festplatten: {
     title: "Best Hard Drives & SSDs (Price per TB)",
     intro:
       "Finding the best storage value requires looking beyond the sticker price. We calculate the true cost per terabyte for hundreds of HDDs and SSDs daily. Whether you need a lightning-fast Gen4 NVMe for your PS5 or a high-capacity drive for your NAS, our price-per-TB comparison helps you spot the best deals instantly.",
@@ -32,7 +32,7 @@ export const categoryContent: Partial<Record<CategorySlug, CategoryContent>> = {
       },
     ],
   },
-  ram: {
+  arbeitsspeicher: {
     title: "Best RAM Deals (Price per GB)",
     intro:
       "Memory prices fluctuate constantly. We track the price per gigabyte for DDR4 and DDR5 kits to ensure you get the most capacity for your money. From budget 16GB kits to high-end 64GB RGB modules, find the sweet spot for your build.",
@@ -49,7 +49,7 @@ export const categoryContent: Partial<Record<CategorySlug, CategoryContent>> = {
       },
     ],
   },
-  "power-supplies": {
+  netzteile: {
     title: "Best Power Supplies (Price per Watt)",
     intro:
       "A quality PSU is the heart of your PC. We compare power supplies based on price per watt, efficiency, and modularity. calculate the true value of Gold and Platinum rated units to power your GPU safely.",
@@ -66,32 +66,32 @@ export const categoryContent: Partial<Record<CategorySlug, CategoryContent>> = {
       },
     ],
   },
-  cpu: {
+  prozessoren: {
     title: "Best CPUs (Compare Processors)",
     intro:
       "Compare Intel and AMD processors by price, core count, and performance. Find the best CPU deals for gaming, content creation, and workstation builds.",
   },
-  gpu: {
+  grafikkarten: {
     title: "Best Graphics Cards (Compare GPUs)",
     intro:
       "Compare NVIDIA GeForce and AMD Radeon graphics cards by price and VRAM. Find the best GPU deals for gaming and creative workloads.",
   },
-  monitors: {
+  monitore: {
     title: "Best Monitors (Compare Displays)",
     intro:
       "Compare computer monitors by price, resolution, refresh rate, and panel type. Find the best deals on 4K, ultrawide, and gaming displays.",
   },
-  keyboards: {
+  tastaturen: {
     title: "Best Keyboards (Compare Prices)",
     intro:
       "Compare mechanical and membrane keyboards by price, switch type, and features. Find the best deals on gaming and productivity keyboards.",
   },
-  mice: {
+  maeuse: {
     title: "Best Computer Mice (Compare Prices)",
     intro:
       "Compare gaming and productivity mice by price, DPI, and ergonomics. Find the best deals from Logitech, Razer, and more.",
   },
-  headphones: {
+  kopfhoerer: {
     title: "Best Headphones (Compare Prices)",
     intro:
       "Compare over-ear, in-ear, and gaming headsets by price and features. Find the best deals on noise-cancelling and wireless headphones.",
@@ -101,33 +101,33 @@ export const categoryContent: Partial<Record<CategorySlug, CategoryContent>> = {
     intro:
       "Compare HD and 4K webcams for streaming, video calls, and content creation. Find the best deals on Logitech, Razer, and more.",
   },
-  "external-storage": {
+  "externe-speicher": {
     title: "External Storage (Price per TB)",
     intro:
       "Compare external hard drives and portable SSDs by price per TB. Find the best value on WD, Seagate, Samsung, and SanDisk.",
   },
-  routers: {
+  "wlan-router": {
     title: "WiFi Routers (Compare Prices)",
     intro:
       "Compare WiFi 6 and WiFi 7 routers from ASUS, TP-Link, Netgear, and more. Find the best mesh systems.",
   },
-  nas: {
+  "nas-systeme": {
     title: "NAS Systems (Compare Prices)",
     intro:
       "Compare network attached storage from Synology, QNAP, and more. Find the best home server and media storage deals.",
   },
 
-  speakers: {
+  lautsprecher: {
     title: "Computer Speakers (Compare Prices)",
     intro:
       "Compare PC speakers, soundbars, and 2.1 audio systems. Find deals from Logitech, Creative, and more.",
   },
-  microphones: {
+  mikrofone: {
     title: "Microphones (Compare Prices)",
     intro:
       "Compare USB and XLR microphones for streaming, gaming, and podcasting. Find deals on Blue, Rode, and Shure.",
   },
-  "gaming-chairs": {
+  "gaming-stuehle": {
     title: "Gaming Chairs (Compare Prices)",
     intro:
       "Compare gaming chairs from Secretlab, Noblechairs, and more. Find ergonomic chairs for long sessions.",
@@ -142,103 +142,103 @@ export const categoryContent: Partial<Record<CategorySlug, CategoryContent>> = {
     intro:
       "Compare smartwatches from Apple, Samsung, Garmin, and Fitbit. Find fitness trackers and smart bands.",
   },
-  cables: {
+  "kabel-adapter": {
     title: "Cables & Adapters (Compare Prices)",
     intro:
       "Compare USB-C, HDMI, and DisplayPort cables. Find adapters and accessories for your setup.",
   },
-  "laptop-stands": {
+  "laptop-staender": {
     title: "Laptop Stands (Compare Prices)",
     intro:
       "Compare laptop stands, risers, and cooling pads. Improve your ergonomic workspace setup.",
   },
-  "mouse-pads": {
+  mauspads: {
     title: "Mouse Pads (Compare Prices)",
     intro:
       "Compare gaming mouse pads and desk mats. Find extended XXL pads and RGB options.",
   },
-  "docking-stations": {
+  dockingstationen: {
     title: "Docking Stations (Compare Prices)",
     intro:
       "Compare USB-C and Thunderbolt docking stations. Expand your laptop connectivity.",
   },
-  ups: {
+  "usv-anlagen": {
     title: "UPS Battery Backup (Compare Prices)",
     intro:
       "Compare uninterruptible power supplies from APC, CyberPower, and Eaton. Protect your equipment.",
   },
-  "pc-cases": {
+  "pc-gehaeuse": {
     title: "PC Cases (Compare Prices)",
     intro:
       "Compare computer cases from Fractal Design, NZXT, Corsair, and more. ATX, mATX, and ITX options.",
   },
-  "cpu-coolers": {
+  "cpu-kuehler": {
     title: "CPU Coolers (Compare Prices)",
     intro:
       "Compare air and AIO liquid CPU coolers. Find deals on Noctua, be quiet!, Corsair, and more.",
   },
 
-  "network-switches": {
+  "netzwerk-switches": {
     title: "Network Switches (Compare Prices)",
     intro:
       "Compare network switches from TP-Link, Netgear, and Ubiquiti. Managed and unmanaged options.",
   },
-  "network-cards": {
+  netzwerkkarten: {
     title: "Network Cards (Compare Prices)",
     intro:
       "Compare WiFi and Ethernet adapters. PCIe and USB network cards for desktop and laptop.",
   },
-  "cable-management": {
+  kabelmanagement: {
     title: "Cable Management (Compare Prices)",
     intro:
       "Compare cable management solutions. Cable ties, sleeves, trays, and organizers.",
   },
-  "monitor-arms": {
+  monitorhalterungen: {
     title: "Monitor Arms (Compare Prices)",
     intro:
       "Compare monitor arms and mounts. Single and dual monitor options from Ergotron and more.",
   },
-  "desk-accessories": {
+  "schreibtisch-zubehoer": {
     title: "Desk Accessories (Compare Prices)",
     intro:
       "Compare desk accessories. Desk lamps, organizers, and workspace essentials.",
   },
-  "office-chairs": {
+  buerostuehle: {
     title: "Office Chairs (Compare Prices)",
     intro:
       "Compare ergonomic office chairs from Herman Miller, Steelcase, and affordable alternatives.",
   },
-  "standing-desks": {
+  stehschreibtische: {
     title: "Standing Desks (Compare Prices)",
     intro:
       "Compare standing desks and sit-stand desks. Electric and manual height-adjustable options.",
   },
-  "tablet-accessories": {
+  "tablet-zubehoer": {
     title: "Tablet Accessories (Compare Prices)",
     intro:
       "Compare tablet cases, stands, and styluses for iPad and Android tablets.",
   },
-  "phone-accessories": {
+  "handy-zubehoer": {
     title: "Phone Accessories (Compare Prices)",
     intro:
       "Compare phone cases, wireless chargers, and accessories for iPhone and Android.",
   },
-  "game-controllers": {
+  "gamepad-controller": {
     title: "Game Controllers (Compare Prices)",
     intro:
       "Compare game controllers and gamepads from Xbox, PlayStation, and third-party brands.",
   },
-  "vr-headsets": {
+  "vr-brillen": {
     title: "VR Headsets (Compare Prices)",
     intro:
       "Compare VR headsets from Meta Quest, HTC Vive, and Valve Index. Standalone and PC VR.",
   },
-  "capture-cards": {
+  "capture-karten": {
     title: "Capture Cards (Compare Prices)",
     intro:
       "Compare capture cards from Elgato, AVerMedia, and more. USB and PCIe streaming options.",
   },
-  motherboards: {
+  mainboards: {
     title: "Best Motherboards (Compare Boards)",
     intro:
       "Compare motherboards for Intel and AMD builds. Find the best Z790, B650, and X670 boards for your gaming or productivity PC.",
@@ -248,7 +248,7 @@ export const categoryContent: Partial<Record<CategorySlug, CategoryContent>> = {
     intro:
       "Compare smartphone prices from top brands like Apple, Samsung, Google, and Xiaomi. Find the best deals on the latest iPhones and Android devices.",
   },
-  tvs: {
+  fernseher: {
     title: "Best TVs (Compare Prices)",
     intro:
       "Compare 4K, OLED, and QLED TV prices. Find the best deals on televisions from LG, Samsung, Sony, and more for home theater and gaming.",
@@ -258,7 +258,7 @@ export const categoryContent: Partial<Record<CategorySlug, CategoryContent>> = {
     intro:
       "Compare laptop prices from Apple, Dell, Lenovo, HP, and more. Find the best deals on MacBooks, gaming laptops, and ultrabooks.",
   },
-  consoles: {
+  spielekonsolen: {
     title: "Best Consoles (Compare Prices)",
     intro:
       "Compare prices for PlayStation 5, Xbox Series X/S, and Nintendo Switch. Find the best deals on gaming consoles and bundles.",

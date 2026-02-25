@@ -5,6 +5,7 @@ import {
   getBreadcrumbs,
   getCategoryBySlug,
   getChildCategories,
+  isCategoryNotEmptyRecursive,
   stripCategoryIcon,
   type Category,
   type CategorySlug,
@@ -49,17 +50,9 @@ export async function generateStaticParams() {
 
   const categories = Object.values(allCategories).filter((c) => !c.hidden);
 
-  // Generates all non-empty categories at runtime
+  // Generates alert non-empty categories at runtime
   return categories
-    .filter((c) => {
-      const children = getChildCategories(c.slug);
-      if (children.length > 0) {
-        // Parent: include if any child is non-empty
-        return children.some((child) => nonEmptySlugs.includes(child.slug));
-      }
-      // Child: include if non-empty
-      return nonEmptySlugs.includes(c.slug);
-    })
+    .filter((c) => isCategoryNotEmptyRecursive(c.slug, nonEmptySlugs))
     .map((c) => ({ categorySlug: c.slug }));
 }
 
@@ -92,11 +85,10 @@ export async function generateMetadata({
 
   // 2. Check if category is empty to set noindex (prevent Soft 404s)
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
-  const children = getChildCategories(categorySlug as CategorySlug);
-  const isEmpty =
-    children.length > 0
-      ? !children.some((child) => nonEmptySlugs.includes(child.slug))
-      : !nonEmptySlugs.includes(categorySlug);
+  const isEmpty = !isCategoryNotEmptyRecursive(
+    categorySlug as CategorySlug,
+    nonEmptySlugs,
+  );
 
   // If empty, set noindex to prevent Soft 404s
   if (isEmpty) {
@@ -152,6 +144,12 @@ export default async function DedicatedCategoryPage({
   const category = await getCategoryBySlug(categorySlug);
   if (!category) notFound();
 
+  // Redirect to canonical slug if visited via alias
+  if (category.slug !== categorySlug) {
+    const { redirect } = await import("next/navigation");
+    redirect(`/${category.slug}`);
+  }
+
   return (
     <CategoryPageContent
       categorySlug={categorySlug as CategorySlug}
@@ -172,15 +170,12 @@ async function CategoryPageContent({
 }) {
   // 1. Initial checks (Fast, usually cached)
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
-  const children = getChildCategories(categorySlug);
-  const isEmpty =
-    children.length > 0
-      ? !children.some((child) => nonEmptySlugs.includes(child.slug))
-      : !nonEmptySlugs.includes(categorySlug);
+  const isEmpty = !isCategoryNotEmptyRecursive(categorySlug, nonEmptySlugs);
 
   if (isEmpty) notFound();
 
   // 2. Identify view type
+  const children = getChildCategories(categorySlug);
   const isParent = children.length > 0;
 
   if (isParent) {

@@ -481,7 +481,7 @@ class KeepaDataSource implements DataSourceProvider {
       gtin, // Extended Field
       mpn, // Extended Field
       title: product.title || product.asin,
-      category: "hard-drives", // Default category - would need to map from Keepa categories
+      category: "festplatten", // Default category - would need to map from Keepa categories
       imageUrl,
       specifications,
       offers,

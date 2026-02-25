@@ -28,13 +28,14 @@ const categories: {
   icon: React.ComponentType<{ className?: string }>;
 }[] = [
   { slug: "elektroartikel", label: "Elektroartikel", icon: Grid3X3 },
-  { slug: "cpu", label: "Prozessoren", icon: Cpu },
-  { slug: "gpu", label: "Grafikkarten", icon: Video },
-  { slug: "ram", label: "Arbeitsspeicher", icon: MemoryStick },
+  { slug: "prozessoren", label: "Prozessoren", icon: Cpu },
+  { slug: "grafikkarten", label: "Grafikkarten", icon: Video },
+  { slug: "arbeitsspeicher", label: "Arbeitsspeicher", icon: MemoryStick },
   { slug: "ssds", label: "SSDs", icon: HardDrive },
-  { slug: "power-supplies", label: "Netzteile", icon: Zap },
-  { slug: "monitors", label: "Monitore", icon: Monitor },
-  { slug: "motherboards", label: "Mainboards", icon: CircuitBoard },
+  { slug: "festplatten", label: "HDDs", icon: HardDrive },
+  { slug: "netzteile", label: "Netzteile", icon: Zap },
+  { slug: "monitore", label: "Monitore", icon: Monitor },
+  { slug: "mainboards", label: "Mainboards", icon: CircuitBoard },
   { slug: "smartphones", label: "Smartphones", icon: Smartphone },
 ];
 

@@ -408,7 +408,7 @@ class AmazonPaApiSource implements DataSourceProvider {
 
     const items = data.SearchResult?.Items || [];
     return items.map((item) =>
-      this.transformItem(item, options?.category || "hard-drives", country),
+      this.transformItem(item, options?.category || "festplatten", country),
     );
   }
 
@@ -480,7 +480,7 @@ class AmazonPaApiSource implements DataSourceProvider {
 
     const items = data.ItemsResult?.Items || [];
     return items.map((item) =>
-      this.transformItem(item, "hard-drives", country),
+      this.transformItem(item, "festplatten", country),
     );
   }
 

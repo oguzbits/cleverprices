@@ -39,12 +39,12 @@ interface SearchModalProps {
 const POPULAR_SEARCH_CONFIG = [
   {
     label: "32GB DDR5 RAM",
-    category: "ram",
+    category: "arbeitsspeicher",
     params: { technology: "DDR5", minCapacity: "32", maxCapacity: "32" },
   },
   {
     label: "DDR4 16GB",
-    category: "ram",
+    category: "arbeitsspeicher",
     params: { technology: "DDR4", minCapacity: "16", maxCapacity: "16" },
   },
   {
@@ -69,7 +69,7 @@ const POPULAR_SEARCH_CONFIG = [
   },
   {
     label: "850W Gold PSU",
-    category: "power-supplies",
+    category: "netzteile",
     params: { technology: "80+ Gold", minCapacity: "850", maxCapacity: "850" },
   },
 ];

@@ -55,14 +55,22 @@ export const getCategoryBySlug = cache(
   async (
     slug: string,
   ): Promise<(Category & { breadcrumbs: Category[] }) | undefined> => {
-    const category = allCategories[slug as CategorySlug];
+    // 1. Try direct lookup (fastest)
+    let category: Category | undefined = allCategories[slug as CategorySlug];
+
+    // 2. Try alias lookup if not found
+    if (!category) {
+      category = _cachedAllCategories.find((cat) =>
+        cat.aliases?.includes(slug),
+      );
+    }
 
     if (!category) return undefined;
 
     // Enhance with breadcrumbs
     return {
       ...category,
-      breadcrumbs: getBreadcrumbs(slug as CategorySlug),
+      breadcrumbs: getBreadcrumbs(category.slug),
     };
   },
 );
@@ -173,6 +181,30 @@ const _cachedAnalyticalCategories = _cachedAllCategories.filter(
 );
 
 // Cache: Standard categories
-const _cachedStandardCategories = _cachedAllCategories.filter(
+export const _cachedStandardCategories = _cachedAllCategories.filter(
   (cat) => cat.categoryType === "standard" && !cat.hidden,
 );
+
+/**
+ * Recursively check if a category or any of its children (and their children)
+ * have products according to the provided list of non-empty category slugs.
+ */
+export function isCategoryNotEmptyRecursive(
+  categorySlug: CategorySlug,
+  nonEmptySlugs: string[],
+): boolean {
+  // 1. Check if the category itself has products
+  if (nonEmptySlugs.includes(categorySlug)) {
+    return true;
+  }
+
+  // 2. Check if any children have products
+  const children = getChildCategories(categorySlug);
+  if (children.length === 0) {
+    return false;
+  }
+
+  return children.some((child) =>
+    isCategoryNotEmptyRecursive(child.slug, nonEmptySlugs),
+  );
+}

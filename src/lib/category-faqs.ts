@@ -1,5 +1,5 @@
-import type { CategorySlug } from "./categories";
 import type { FAQItem } from "@/components/category/FAQSchema";
+import type { CategorySlug } from "./categories";
 
 /**
  * Category FAQs for structured data (SEO)
@@ -10,7 +10,7 @@ const categoryFAQs: Partial<Record<CategorySlug, FAQItem[]>> = {
   electronics: [],
 
   // Hard Drives & SSDs
-  "hard-drives": [
+  festplatten: [
     {
       question: "What is the best value SSD right now?",
       answer:
@@ -39,7 +39,7 @@ const categoryFAQs: Partial<Record<CategorySlug, FAQItem[]>> = {
   ],
 
   // RAM & Memory
-  ram: [
+  arbeitsspeicher: [
     {
       question: "How much RAM do I need for gaming in 2025?",
       answer:
@@ -68,7 +68,7 @@ const categoryFAQs: Partial<Record<CategorySlug, FAQItem[]>> = {
   ],
 
   // Power Supplies
-  "power-supplies": [
+  netzteile: [
     {
       question: "How many watts do I need for my gaming PC?",
       answer:
@@ -98,47 +98,47 @@ const categoryFAQs: Partial<Record<CategorySlug, FAQItem[]>> = {
   ],
 
   // Hidden categories - no FAQs needed
-  cpu: [],
-  gpu: [],
-  monitors: [],
-  keyboards: [],
-  mice: [],
-  headphones: [],
+  prozessoren: [],
+  grafikkarten: [],
+  monitore: [],
+  tastaturen: [],
+  maeuse: [],
+  kopfhoerer: [],
   webcams: [],
-  "external-storage": [],
-  routers: [],
-  nas: [],
+  "externe-speicher": [],
+  "wlan-router": [],
+  "nas-systeme": [],
 
-  speakers: [],
-  microphones: [],
-  "gaming-chairs": [],
+  lautsprecher: [],
+  mikrofone: [],
+  "gaming-stuehle": [],
   tablets: [],
   smartwatches: [],
-  cables: [],
-  "laptop-stands": [],
-  "mouse-pads": [],
-  "docking-stations": [],
-  ups: [],
-  "pc-cases": [],
-  "cpu-coolers": [],
+  "kabel-adapter": [],
+  "laptop-staender": [],
+  mauspads: [],
+  dockingstationen: [],
+  "usv-anlagen": [],
+  "pc-gehaeuse": [],
+  "cpu-kuehler": [],
 
-  "network-switches": [],
-  "network-cards": [],
-  "cable-management": [],
-  "monitor-arms": [],
-  "desk-accessories": [],
-  "office-chairs": [],
-  "standing-desks": [],
-  "tablet-accessories": [],
-  "phone-accessories": [],
-  "game-controllers": [],
-  "vr-headsets": [],
-  "capture-cards": [],
-  motherboards: [],
+  "netzwerk-switches": [],
+  netzwerkkarten: [],
+  kabelmanagement: [],
+  monitorhalterungen: [],
+  "schreibtisch-zubehoer": [],
+  buerostuehle: [],
+  stehschreibtische: [],
+  "tablet-zubehoer": [],
+  "handy-zubehoer": [],
+  "gamepad-controller": [],
+  "vr-brillen": [],
+  "capture-karten": [],
+  mainboards: [],
   smartphones: [],
-  tvs: [],
+  fernseher: [],
   notebooks: [],
-  consoles: [],
+  spielekonsolen: [],
 };
 
 /**

@@ -1,5 +1,9 @@
 import { getAllBlogPosts } from "@/lib/blog";
-import { getCategoryHierarchy } from "@/lib/categories";
+import {
+  allCategories,
+  getCategoryHierarchy,
+  isCategoryNotEmptyRecursive,
+} from "@/lib/categories";
 import { getAlternateLanguages } from "@/lib/metadata";
 import {
   getAllProductSlugs,
@@ -111,38 +115,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   });
 
-  // 2. Parent categories
-  categoryHierarchy.forEach((hierarchy) => {
-    // A parent category is included if at least one of its children is non-empty
-    const activeChildren = hierarchy.children.filter(
-      (child) => !child.hidden && nonEmptyCategorySlugs.includes(child.slug),
-    );
+  // 2. All active categories
+  Object.values(allCategories).forEach((category) => {
+    if (category.hidden) return;
 
-    if (activeChildren.length === 0) return;
+    // Use recursive check to see if category should be in sitemap
+    if (!isCategoryNotEmptyRecursive(category.slug, nonEmptyCategorySlugs)) {
+      return;
+    }
 
-    const path = `/${hierarchy.parent.slug}`;
+    const path = `/${category.slug}`;
+    const isParent =
+      categoryHierarchy.some((h) => h.parent.slug === category.slug) &&
+      category.parent === undefined;
+
     categoryRoutes.push({
       url: `${baseUrl}${path}`,
       lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.8,
+      changeFrequency: (isParent ? "weekly" : "daily") as any,
+      priority: isParent ? 0.8 : 0.9,
       alternates: {
         languages: getAlternateLanguages(path),
       },
-    });
-
-    // 3. Child categories
-    activeChildren.forEach((child) => {
-      const fullPath = `/${child.slug}`;
-      categoryRoutes.push({
-        url: `${baseUrl}${fullPath}`,
-        lastModified: new Date(),
-        changeFrequency: "daily" as const,
-        priority: 0.9,
-        alternates: {
-          languages: getAlternateLanguages(fullPath),
-        },
-      });
     });
   });
 

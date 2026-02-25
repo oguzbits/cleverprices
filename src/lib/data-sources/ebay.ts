@@ -289,7 +289,7 @@ class EbayDataSource implements DataSourceProvider {
 
     const items = result.searchResult[0].item || [];
     return items.map((item) =>
-      this.transformItem(item, options?.category || "hard-drives", country),
+      this.transformItem(item, options?.category || "festplatten", country),
     );
   }
 
