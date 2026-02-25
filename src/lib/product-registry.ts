@@ -445,9 +445,9 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
     return fetchNonEmpty();
   }
 
-  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v56"], {
+  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v57"], {
     revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["categories-non-empty", "v56"],
+    tags: ["categories-non-empty", "v57"],
   })();
 }
 
