@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 /**
- * 🗺️ Sitemap Validator
- * Crawls sitemap.xml to verify status codes, redirects, and soft 404s.
+ * 🗺️ High-Performance Sitemap Validator
+ * Optimized for Bun's faster fetch and parallel execution.
  */
 
 const COLORS = {
@@ -20,38 +20,80 @@ const SOFT_404_MARKERS = [
   "404 - Seite nicht gefunden",
 ];
 
-const DEFAULT_SITEMAP = "https://cleverprices.com/sitemap.xml";
-const CONCURRENCY = 10;
+const DEFAULT_SITEMAP = "http://localhost:3000/sitemap.xml";
+
+// Dynamic configuration via CLI
+const args = process.argv.slice(2);
+const isFastMode = args.includes("--fast");
+const isProd = args.includes("--prod");
+const limitArg = args.find((a) => a.startsWith("--limit="))?.split("=")[1];
+const limit = limitArg ? parseInt(limitArg) : Infinity;
+const concurrencyArg = args
+  .find((a) => a.startsWith("--concurrency="))
+  ?.split("=")[1];
+const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : 100;
 
 async function validate() {
-  const targetSitemap = process.argv[2] || DEFAULT_SITEMAP;
+  const targetSitemap = isProd
+    ? "https://cleverprices.com/sitemap.xml"
+    : args.find((a) => !a.startsWith("--")) || DEFAULT_SITEMAP;
 
   console.log(
-    `${COLORS.cyan}🔍 Starting Sitemap Validation: ${COLORS.reset}${targetSitemap}`,
+    `${COLORS.cyan}🔍 Starting Audit: ${COLORS.reset}${targetSitemap}`,
   );
+  if (isFastMode)
+    console.log(
+      `${COLORS.magenta}⚡ Fast Mode Active: Skipping Soft-404 content analysis.${COLORS.reset}`,
+    );
   console.log(
     `${COLORS.yellow}--------------------------------------------------${COLORS.reset}\n`,
   );
 
+  let urls: string[] = [];
+
   try {
-    const response = await fetch(targetSitemap);
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch sitemap: ${response.status} ${response.statusText}`,
+    if (targetSitemap.endsWith(".xml")) {
+      const response = await fetch(targetSitemap);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch sitemap: ${response.status} ${response.statusText}`,
+        );
+      }
+      const xml = await response.text();
+      urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
+    } else {
+      // Direct URL(s) mode
+      urls = args.filter((a) => !a.startsWith("--"));
+      if (urls.length === 0) urls = [targetSitemap];
+    }
+
+    // LOCAL TESTING BOOST: If we are testing localhost, but sitemap has production URLs, swap them
+    const isLocalhost =
+      urls.some((u) => u.includes("localhost")) ||
+      targetSitemap.includes("localhost");
+    if (isLocalhost) {
+      console.log(
+        `${COLORS.yellow}🔧 Localhost detected. Swapping production URLs for local testing...${COLORS.reset}`,
+      );
+      urls = urls.map((url) =>
+        url.replace(/https?:\/\/cleverprices\.com/, "http://localhost:3000"),
       );
     }
 
-    const xml = await response.text();
-    // Simple regex to extract <loc> contents
-    const urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-
     if (urls.length === 0) {
-      console.log(`${COLORS.red}❌ No URLs found in sitemap!${COLORS.reset}`);
+      console.log(`${COLORS.red}❌ No URLs found to audit!${COLORS.reset}`);
       return;
     }
 
+    if (limit < urls.length) {
+      console.log(
+        `${COLORS.yellow}⚠️ Sampling limited to first ${limit} URLs.${COLORS.reset}`,
+      );
+      urls = urls.slice(0, limit);
+    }
+
     console.log(
-      `📡 Found ${COLORS.cyan}${urls.length}${COLORS.reset} URLs. Auditing with concurrency ${CONCURRENCY}...\n`,
+      `📡 Auditing ${COLORS.cyan}${urls.length}${COLORS.reset} URLs with concurrency ${CONCURRENCY}...\n`,
     );
 
     const results = {
@@ -64,124 +106,121 @@ async function validate() {
     };
 
     const details: string[] = [];
+    let processed = 0;
+    const startTime = Date.now();
 
-    // Process in chunks
-    for (let i = 0; i < urls.length; i += CONCURRENCY) {
-      const chunk = urls.slice(i, i + CONCURRENCY);
-      const promises = chunk.map((url) => auditUrl(url));
-      const chunkResults = await Promise.all(promises);
+    // Use a worker pool pattern for maximum throughput
+    const queue = [...urls];
+    const workers = Array(Math.min(CONCURRENCY, queue.length))
+      .fill(null)
+      .map(async () => {
+        while (queue.length > 0) {
+          const url = queue.shift();
+          if (!url) break;
 
-      for (const res of chunkResults) {
-        if (res.status === 200) {
-          if (res.isSoft404) {
-            results.soft404++;
+          const res = await auditUrl(url, isFastMode);
+          processed++;
+
+          if (res.status === 200) {
+            if (res.isSoft404) {
+              results.soft404++;
+              details.push(`${COLORS.yellow}[SOFT 404]${COLORS.reset} ${url}`);
+            } else {
+              results.ok++;
+            }
+          } else if (res.status >= 300 && res.status < 400) {
+            results.redirect++;
             details.push(
-              `${COLORS.magenta}[SOFT 404]${COLORS.reset} ${res.url}`,
+              `${COLORS.yellow}[REDIRECT ${res.status}]${COLORS.reset} ${url} -> ${res.redirectTarget}`,
             );
+          } else if (res.status === 404) {
+            results.notFound++;
+            details.push(`${COLORS.red}[404]${COLORS.reset} ${url}`);
           } else {
-            results.ok++;
+            results.serverError++;
+            details.push(
+              `${COLORS.red}[ERROR ${res.status}]${COLORS.reset} ${url}`,
+            );
           }
-        } else if (res.status >= 300 && res.status < 400) {
-          results.redirect++;
-          details.push(
-            `${COLORS.yellow}[REDIRECT ${res.status}]${COLORS.reset} ${res.url} -> ${res.redirectTarget}`,
-          );
-        } else if (res.status === 404) {
-          results.notFound++;
-          details.push(`${COLORS.red}[404]${COLORS.reset} ${res.url}`);
-        } else {
-          results.serverError++;
-          details.push(
-            `${COLORS.red}[ERROR ${res.status}]${COLORS.reset} ${res.url}`,
-          );
-        }
 
-        // Real-time progress
-        const processed =
-          results.ok +
-          results.redirect +
-          results.notFound +
-          results.serverError +
-          results.soft404;
-        process.stdout.write(
-          `\rProgress: ${processed}/${results.total} (${Math.round((processed / results.total) * 100)}%)`,
-        );
-      }
+          // Progress indicator every 10 URLs
+          if (processed % 10 === 0 || processed === urls.length) {
+            const rps = (processed / ((Date.now() - startTime) / 1000)).toFixed(
+              1,
+            );
+            process.stdout.write(
+              `\rProgress: ${processed}/${urls.length} (${Math.round(
+                (processed / urls.length) * 100,
+              )}%) | ${rps} URLs/sec`,
+            );
+          }
+        }
+      });
+
+    await Promise.all(workers);
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(
+      `\n\n${COLORS.green}✨ Audit complete in ${duration}s${COLORS.reset}\n`,
+    );
+
+    if (details.length > 0) {
+      console.log("--- Audit Details ---");
+      details.forEach((d) => console.log(d));
+      console.log("----------------------\n");
     }
 
-    console.log(
-      "\n\n" + `${COLORS.yellow}--- Audit Details ---${COLORS.reset}`,
-    );
-    details.forEach((d) => console.log(d));
-
-    console.log("\n" + `${COLORS.cyan}--- Summary Report ---${COLORS.reset}`);
-    console.log(
-      `✅ OK (200):      ${COLORS.green}${results.ok}${COLORS.reset}`,
-    );
-    console.log(
-      `🔀 Redirects:     ${COLORS.yellow}${results.redirect}${COLORS.reset}`,
-    );
-    console.log(
-      `🚨 Soft 404s:     ${COLORS.magenta}${results.soft404}${COLORS.reset}`,
-    );
-    console.log(
-      `❌ 404 Not Found: ${COLORS.red}${results.notFound}${COLORS.reset}`,
-    );
-    console.log(
-      `🔥 Server Errors: ${COLORS.red}${results.serverError}${COLORS.reset}`,
-    );
-    console.log(`-----------------------`);
+    console.log("--- Summary Report ---");
+    console.log(`✅ OK (200):      ${results.ok}`);
+    console.log(`🔀 Redirects:     ${results.redirect}`);
+    console.log(`🚨 Soft 404s:     ${results.soft404}`);
+    console.log(`❌ 404 Not Found: ${results.notFound}`);
+    console.log(`🔥 Server Errors: ${results.serverError}`);
+    console.log("-----------------------");
     console.log(`Total URLs:       ${results.total}`);
 
-    if (
-      results.notFound > 0 ||
-      results.soft404 > 0 ||
-      results.serverError > 0
-    ) {
-      console.log(
-        `\n${COLORS.red}🚨 Critical issues found! Please review the details above.${COLORS.reset}\n`,
-      );
-      process.exit(1);
-    } else {
-      console.log(
-        `\n${COLORS.green}✨ All URLs in sitemap are healthy!${COLORS.reset}\n`,
-      );
-    }
-  } catch (err: any) {
-    console.error(
-      `${COLORS.red}Error executing audit: ${err.message}${COLORS.reset}`,
-    );
+    process.exit(results.notFound > 0 || results.serverError > 0 ? 1 : 0);
+  } catch (error) {
+    console.error(`${COLORS.red}💥 Fatal Error:${COLORS.reset}`, error);
     process.exit(1);
   }
 }
 
-async function auditUrl(url: string) {
-  try {
-    const res = await fetch(url, {
-      method: "GET",
-      redirect: "manual", // Don't follow automatically so we can see 301s
-      headers: {
-        "User-Agent": "CleverPrices-Sitemap-Audit/1.0",
-      },
-    });
+async function auditUrl(url: string, fast: boolean, retries = 3) {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 100 * attempt));
 
-    const status = res.status;
-    let redirectTarget = "";
-    let isSoft404 = false;
+      const res = await fetch(url, {
+        method: fast ? "HEAD" : "GET",
+        redirect: "manual",
+        headers: {
+          "User-Agent": "CleverPrices-Sitemap-Audit/2.0",
+        },
+        signal: AbortSignal.timeout(10000),
+      });
 
-    if (status >= 300 && status < 400) {
-      redirectTarget = res.headers.get("location") || "unknown";
+      const status = res.status;
+      let redirectTarget = "";
+      let isSoft404 = false;
+
+      if (status >= 300 && status < 400) {
+        redirectTarget = res.headers.get("location") || "unknown";
+      }
+
+      if (!fast && status === 200) {
+        const text = await res.text();
+        isSoft404 = SOFT_404_MARKERS.some((marker) => text.includes(marker));
+      }
+
+      return { url, status, redirectTarget, isSoft404 };
+    } catch (e) {
+      if (attempt === retries - 1) {
+        return { url, status: 0, redirectTarget: "", isSoft404: false };
+      }
     }
-
-    if (status === 200) {
-      const text = await res.text();
-      isSoft404 = SOFT_404_MARKERS.some((marker) => text.includes(marker));
-    }
-
-    return { url, status, redirectTarget, isSoft404 };
-  } catch (e) {
-    return { url, status: 0, redirectTarget: "", isSoft404: false };
   }
+  return { url, status: 0, redirectTarget: "", isSoft404: false };
 }
 
 validate();

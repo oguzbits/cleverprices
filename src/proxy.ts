@@ -45,7 +45,10 @@ export function proxy(request: NextRequest) {
   // 2. SEO Category Aliases (Root Level)
   // e.g., /storage -> /hard-drives
   for (const category of Object.values(allCategories)) {
-    if (category.aliases?.includes(firstSegment)) {
+    if (
+      category.aliases?.includes(firstSegment) &&
+      category.slug !== firstSegment
+    ) {
       const url = request.nextUrl.clone();
       const remainingPath = segments.slice(1).join("/");
       url.pathname = remainingPath

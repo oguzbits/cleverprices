@@ -661,7 +661,7 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/pc-case.jpg",
-    aliases: ["gehaeuse", "pc-gehaeuse", "cases", "pc-cases"],
+    aliases: ["gehaeuse", "cases", "pc-cases"],
     popularFilters: [
       { label: "Midi-Tower", params: "type=midi-tower" },
       { label: "Big-Tower", params: "type=big-tower" },
@@ -694,7 +694,7 @@ export const CATEGORY_MAP: Record<CategorySlug, CategoryData> = {
     parent: "pc-komponenten",
     categoryType: "standard",
     imageUrl: "/images/category/cpu-cooler.jpg",
-    aliases: ["kuehler", "cpu-kuehler", "coolers", "cpu-coolers"],
+    aliases: ["kuehler", "coolers", "cpu-coolers"],
     popularFilters: [
       { label: "Luftkühler", params: "type=air" },
       { label: "Wasserkühlung (AiO)", params: "type=aio" },
