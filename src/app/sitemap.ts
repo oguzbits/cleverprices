@@ -14,6 +14,15 @@ import { getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
 import { cacheLife } from "next/cache";
 
+/**
+ * ARCHITECTURE NOTE:
+ * We force-dynamic here to prevent Next.js from rendering the sitemap during the 'build' phase.
+ * During build, the database is empty/in-memory, which would result in an empty sitemap being "baked" into the build.
+ * By using 'force-dynamic', we ensure the sitemap is generated in the production environment where the real DB is.
+ * Performant caching is still handled via the "use cache" directive below.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   "use cache";
   cacheLife("dynamic"); // 10m revalidate, 1h expire (aligned with next.config.ts)

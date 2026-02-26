@@ -283,7 +283,6 @@ export async function getAllProductSlugs(limit?: number): Promise<
     updatedAt: Date;
   }[]
 > {
-  if (IS_BUILD) return [];
   try {
     let query = db
       .select()
