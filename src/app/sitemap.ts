@@ -12,8 +12,12 @@ import {
 import { SITE_URL } from "@/lib/site-config";
 import { getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
+import { cacheLife } from "next/cache";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  "use cache";
+  cacheLife("dynamic"); // 10m revalidate, 1h expire (aligned with next.config.ts)
+
   const baseUrl = SITE_URL;
 
   // Static routes

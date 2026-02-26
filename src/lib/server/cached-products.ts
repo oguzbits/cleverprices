@@ -153,6 +153,12 @@ export async function getProductById(
   const merged = await mergeLivePrices([product], "de");
   return merged[0];
 }
+async function getCachedProductSlugs(limit?: number) {
+  "use cache";
+  cacheLife("dynamic");
+  return getAllProductSlugsSync(limit);
+}
+
 export async function getAllProductSlugs(limit?: number): Promise<
   {
     id: number;
@@ -162,7 +168,7 @@ export async function getAllProductSlugs(limit?: number): Promise<
     updatedAt: Date;
   }[]
 > {
-  return getAllProductSlugsSync(limit);
+  return getCachedProductSlugs(limit);
 }
 
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {
