@@ -56,8 +56,19 @@ Before submitting any change, verify against these rules:
 - [ ] Does this page redirect to a category if the data is missing? (Rule 1)
 - [ ] Is the URL generated via `getAbsoluteProductUrl()`? (Rule 2)
 - [ ] Are dynamic components wrapped in height-stabilized containers? (Rule 4)
-- [ ] For cached pages: Is `headers()`/`cookies()`/`isBot()` **removed** from the rendering path? (Shared Cache Stability)
 - [ ] Has the Cache Warmer been verified for this route? (Performance Guarantee)
+- [ ] For landing/hub pages: Is `connection()` used to prevent Static Bake-in of empty states during build?
+
+---
+
+### 6. The "Static Bake-in" Pitfall
+
+> [!CAUTION]
+> **Static rendering with an empty database during build bakes in "Empty States".**
+> If your site uses a "Warm-Static" architecture (where the database is only populated after build), top-level pages like the Landing Page must be signaled as dynamic.
+>
+> - **Risk**: If a page is marked `○` (Static) and it renders a "Loading..." shell or "0 Products" UI because the DB was empty during CI/CD, that empty UI is cached globally and served to users even after the DB is full.
+> - **Prevention**: Use `await connection()` in the page component to force dynamic resolution, then rely on `"use cache"` inside the content components for high-speed serving.
 
 ---
 

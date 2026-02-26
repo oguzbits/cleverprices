@@ -127,6 +127,31 @@ async function validate() {
               details.push(`${COLORS.yellow}[SOFT 404]${COLORS.reset} ${url}`);
             } else {
               results.ok++;
+
+              // Metadata Consistency Checks
+              if (!isFastMode && res.metadata) {
+                const { canonical, title, description } = res.metadata;
+
+                // 1. Canonical Match Check
+                if (canonical && canonical !== url) {
+                  results.serverError++; // Count as error for exit code
+                  details.push(
+                    `${COLORS.red}[CANONICAL MISMATCH]${COLORS.reset} ${url}\n   Expected: ${url}\n   Found:    ${canonical}`,
+                  );
+                }
+
+                // 2. Missing Metadata Checks
+                if (!title) {
+                  details.push(
+                    `${COLORS.yellow}[MISSING TITLE]${COLORS.reset} ${url}`,
+                  );
+                }
+                if (!description) {
+                  details.push(
+                    `${COLORS.yellow}[MISSING DESCRIPTION]${COLORS.reset} ${url}`,
+                  );
+                }
+              }
             }
           } else if (res.status >= 300 && res.status < 400) {
             results.redirect++;
@@ -203,6 +228,11 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
       const status = res.status;
       let redirectTarget = "";
       let isSoft404 = false;
+      let metadata = {
+        canonical: "",
+        title: "",
+        description: "",
+      };
 
       if (status >= 300 && status < 400) {
         redirectTarget = res.headers.get("location") || "unknown";
@@ -211,9 +241,24 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
       if (!fast && status === 200) {
         const text = await res.text();
         isSoft404 = SOFT_404_MARKERS.some((marker) => text.includes(marker));
+
+        // Extract metadata
+        const canonicalMatch = text.match(
+          /<link[^>]+rel="canonical"[^>]+href="([^"]+)"/i,
+        );
+        const titleMatch = text.match(/<title>([\s\S]*?)<\/title>/i);
+        const descriptionMatch = text.match(
+          /<meta[^>]+name="description"[^>]+content="([^"]+)"/i,
+        );
+
+        metadata = {
+          canonical: canonicalMatch ? canonicalMatch[1] : "",
+          title: titleMatch ? titleMatch[1].trim() : "",
+          description: descriptionMatch ? descriptionMatch[1] : "",
+        };
       }
 
-      return { url, status, redirectTarget, isSoft404 };
+      return { url, status, redirectTarget, isSoft404, metadata };
     } catch (e) {
       if (attempt === retries - 1) {
         return { url, status: 0, redirectTarget: "", isSoft404: false };

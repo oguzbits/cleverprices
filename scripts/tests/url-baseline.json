@@ -1,0 +1,26 @@
+{
+  "records": [
+    {
+      "id": "1",
+      "slug": "samsung-990-pro-2tb",
+      "type": "product",
+      "expectedPath": "/p/200000001_-samsung-990-pro-2tb"
+    },
+    {
+      "id": "900001234",
+      "slug": "external-ssd-hub",
+      "type": "product",
+      "expectedPath": "/p/900001234_-external-ssd-hub"
+    },
+    {
+      "slug": "ssds",
+      "type": "category",
+      "expectedPath": "/ssds"
+    },
+    {
+      "slug": "prozessoren",
+      "type": "category",
+      "expectedPath": "/prozessoren"
+    }
+  ]
+}

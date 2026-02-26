@@ -20,7 +20,7 @@ import {
 } from "@/lib/metadata";
 import { type FilterParams } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
-import { BRAND_DOMAIN } from "@/lib/site-config";
+import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
@@ -100,7 +100,7 @@ export async function generateMetadata({
   // If heavy filters are active, we might also want to noindex to prevent crawl waste,
   // but for now let's focus on the Soft 404 (0 results) case.
 
-  const canonicalUrl = `https://${BRAND_DOMAIN}/${category.slug}`;
+  const canonicalUrl = `${SITE_URL}/${category.slug}`;
 
   // SEO-optimized title: [Category] | Preisvergleich | Brand
   const baseTitle = `${category.name} | Preisvergleich`;

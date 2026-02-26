@@ -29,25 +29,6 @@ export function IdealoHomePage({
   livePriceMap,
 }: IdealoHomePageProps) {
   // Handle empty state - only show if we are NOT in a suspected query-failure state
-  const hasContent =
-    heroProducts.length > 0 ||
-    deals.length > 0 ||
-    bestsellers.length > 0 ||
-    newArrivals.length > 0;
-
-  if (!hasContent) {
-    return (
-      <div className="flex min-h-[600px] items-center justify-center bg-[#f5f5f5]">
-        <div className="p-12 text-center">
-          {/* Minimal placeholder to avoid "Willkommen" flicker if data is just slow */}
-          <div className="animate-pulse text-gray-400">
-            Inhalte werden geladen...
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="bg-[#f5f5f5]">
       <CategoryNav country={countryCode} />
