@@ -30,7 +30,7 @@ export default async function HomeContent({
 }: {
   country: CountryCode;
 }) {
-  cacheLife("dynamic" as any); // 5 minute revalidation for home page content
+  cacheLife("category"); // Use consistent category TTL for landing
   const countryConfig = await getCountryByCode(country);
   const countryCode = countryConfig?.code || country;
 
