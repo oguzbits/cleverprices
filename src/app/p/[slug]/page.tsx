@@ -16,6 +16,7 @@ import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
+import { cacheLife } from "next/cache";
 
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 
@@ -265,12 +266,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { condition } = await searchParams;
-  const countryCode = DEFAULT_COUNTRY;
 
   // Handle static collection for the dynamic template route
   if (slug === "[slug]" || slug === "%5Bslug%5D") {
     return null;
   }
+
+  return <ProductPageContent slug={slug} condition={condition} />;
+}
+
+async function ProductPageContent({
+  slug,
+  condition,
+}: {
+  slug: string;
+  condition?: string;
+}) {
+  "use cache";
+  cacheLife("product");
+  const countryCode = DEFAULT_COUNTRY;
 
   let action:
     | { type: "notFound" }

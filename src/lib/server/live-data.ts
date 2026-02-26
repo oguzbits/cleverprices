@@ -24,7 +24,7 @@ export async function getLivePricesForProducts(
 ) {
   "use cache";
   /* 
-     PRICE CONSISTENCY: Revalidation must be <= Page TTL (15m). 
+     PRICE CONSISTENCY: Revalidation must be <= Page TTL (20m). 
      See Single Source Of Truth: docs/architecture/CACHE_POLICY.md 
   */
   cacheLife("prices"); // Synchronized profile

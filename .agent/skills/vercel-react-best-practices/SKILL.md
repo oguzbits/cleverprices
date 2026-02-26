@@ -25,18 +25,18 @@ This project uses **Next.js 16.0.10** with special features:
 
 ## 🚫 BANNED (Never Use)
 
-| Pattern                     | Why                       | Use Instead                              |
-| --------------------------- | ------------------------- | ---------------------------------------- |
-| `middleware.ts`             | Deprecated in Next 16     | Route handlers, server actions           |
-| `useMemo()`                 | React Compiler handles    | Remove it                                |
-| `useCallback()`             | React Compiler handles    | Remove it                                |
-| `React.memo()`              | React Compiler handles    | Remove it                                |
-| `fetchCache` export         | Deprecated                | `'use cache'` directive                  |
-| Full SSG for large catalogs | Build timeout             | ISR with `cacheLife()`                   |
-| `await import()` in RSC     | Blocks Compiler, SLOW     | Static top-level `import`                |
-| `useEffect` State Sync      | Blocks Compiler, Cascades | Render-phase state sync (if (p!=s) setS) |
-| **Bot Shield Pattern**      | Consumes DB on crawl      | Skip heavy tasks for `isBot(UA)`         |
-| Re-calculating Identity     | Divergent titles/slugs    | Use `product.subtitle` from DB mapping   |
+| Pattern                       | Why                       | Use Instead                                 |
+| ----------------------------- | ------------------------- | ------------------------------------------- |
+| `middleware.ts`               | Deprecated in Next 16     | Route handlers, server actions              |
+| `useMemo()`                   | React Compiler handles    | Remove it                                   |
+| `useCallback()`               | React Compiler handles    | Remove it                                   |
+| `React.memo()`                | React Compiler handles    | Remove it                                   |
+| `fetchCache` export           | Deprecated                | `'use cache'` directive                     |
+| Full SSG for large catalogs   | Build timeout             | ISR with `cacheLife()`                      |
+| `await import()` in RSC       | Blocks Compiler, SLOW     | Static top-level `import`                   |
+| `useEffect` State Sync        | Blocks Compiler, Cascades | Render-phase state sync (if (p!=s) setS)    |
+| **isBot() / Request Context** | Breaks Shared Cache       | **REMOVED**: Use URL-pure keys for caching. |
+| Re-calculating Identity       | Divergent titles/slugs    | Use `product.subtitle` from DB mapping      |
 
 ---
 
@@ -58,9 +58,7 @@ export async function getCategoryProducts() {
 
 Avoid user-visible skeletons or flickering "shells" where headers load before content. Instead, use a **Hold-First** approach to ensure the browser holds the current page until the next one is ready.
 
-- **Pattern**: Make the main Page component `async` and `await` all critical data (including the `connection()` signal) at the top level.
-- **Why**: Next.js 15+ navigation "holds" the transition while a Server Component is executing. For a premium/Idealo experience, it is better to stay on the current page for 100-300ms than to show a flickering blank shell.
-- **Dynamic Signal**: Use `await connection()` from `next/server` to signal dynamic rendering without causing build-time crashes (Next.js 16 requirement).
+- **Dynamic Signal**: Use `await connection()` from `next/server` sparingly. In Next.js 16, this is required for dynamic routes, but for pages using `"use cache"`, it should be avoided as it can interfere with static freezing.
 - **Router Cache**: Always set `staleTimes.dynamic` to `30s` in `next.config.ts`. This ensures that when the data is warmed in Redis, the navigation "hold" is near-instant (<100ms).
 - **Implementation**:
   - Main Page component **MUST** be `async`.
@@ -105,7 +103,7 @@ Avoid user-visible skeletons or flickering "shells" where headers load before co
 - **Do NOT rely on build-time SSG** for large catalogs (database is excluded from build).
 - **Proactive Hydration**: Trigger the `warm-cache` script after deployments and price updates.
 - **Lean & Ghost Strategy**: For categories with >500 products, always use the Lean & Ghost architecture (fetch IDs/prices for filtering, hydrate full details only for the visible page) to prevent massive RSC payloads and slow server processing.
-- **Price Freshness**: Category and product pages must have a **60-second stale window** to ensure site-wide price consistency during the 20-minute Keepa update cycle.
+- **Price Freshness**: Category and product pages use a **20-minute stale window** (synchronized with Keepa). This ensures the cache warmer is the primary driver of database load, while users hit the shared cache.
 - **Safe Warming**: Ensure the warmer monitors `os.loadavg()` to avoid competing with real traffic or Google crawlers.
 
 ### 5. Network Compression (CRITICAL)

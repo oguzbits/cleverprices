@@ -331,7 +331,6 @@ async function getCategoryDeals(
 export async function getParentCategoryData(
   parentSlug: CategorySlug,
   countryCode: string = "de",
-  isBot: boolean = false, // [STABILITY SHIELD] Added to skip live merge for bots
 ): Promise<{
   bestsellers: Product[];
   newProducts: Product[];
@@ -480,13 +479,11 @@ export async function getParentCategoryData(
   // 7. MERGE LIVE PRICES ONLY FOR SELECTED PRODUCTS
   // This is the performance "Silver Bullet": We only fetch live data for the ~40 actual items shown,
   // not the 1000s of products in the entire parent category tree.
-  // [STABILITY SHIELD] Skip live merge for bots to reserve DB resources
-  const finalProducts = isBot
-    ? [...bestsellers, ...newProducts, ...deals]
-    : await mergeLivePrices(
-        [...bestsellers, ...newProducts, ...deals],
-        countryCode,
-      );
+  // [STABILITY SHIELD] Unified path for Shared Cache stability.
+  const finalProducts = await mergeLivePrices(
+    [...bestsellers, ...newProducts, ...deals],
+    countryCode,
+  );
 
   // Re-map the merged products back to their respective sections
   const productMap = new Map(finalProducts.map((p) => [p.id, p]));

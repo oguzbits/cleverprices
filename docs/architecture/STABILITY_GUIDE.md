@@ -56,7 +56,8 @@ Before submitting any change, verify against these rules:
 - [ ] Does this page redirect to a category if the data is missing? (Rule 1)
 - [ ] Is the URL generated via `getAbsoluteProductUrl()`? (Rule 2)
 - [ ] Are dynamic components wrapped in height-stabilized containers? (Rule 4)
-- [ ] Is there a `loading.tsx` fallback for dynamic pages? (Rule 5)
+- [ ] For cached pages: Is `headers()`/`cookies()`/`isBot()` **removed** from the rendering path? (Shared Cache Stability)
+- [ ] Has the Cache Warmer been verified for this route? (Performance Guarantee)
 
 ---
 
@@ -66,6 +67,6 @@ Before submitting any change, verify against these rules:
 > **Using `Suspense` without a structural fallback leads to "Frozen UI" bugs.**
 > In Next.js App Router, if a page uses `Suspense` but lacks a `loading.tsx` (or a higher-level boundary), the router may wait for the RSC payload to fully resolve before updating the URL. This makes the UI feel unresponsive or "stuck" on the previous page.
 
-- **Requirement**: Any page using internal `<Suspense>` to defer data fetching MUST have a sibling or parent `loading.tsx`.
-- **Structural Fallback**: `loading.tsx` can simply `return null;`. This is enough to provide the "Transition Path" for the router.
-- **Why**: This ensures that even if a server component is slow, the URL updates **instantly**, allowing the browser to navigate and then stream in the content.
+- **Requirement**: Core catalog pages (Category, PDP) should prioritize **"Hold-First"** navigation for a premium feel. Avoid `loading.tsx` at the page level to prevent flickering blank shells.
+- **Structural Strategy**: By awaiting data at the server level, the browser holds the current page until the next is ready. Combined with **Warm-Cache** (<100ms), this creates a "one-click jump" experience.
+- **Why**: This ensures a premium, high-confidence transition where the screen never flickers into an empty state. Valid for routes covered by the `warm-cache` protocol.

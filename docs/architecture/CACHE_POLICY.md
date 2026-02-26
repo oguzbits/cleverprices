@@ -14,13 +14,13 @@ To ensure **Absolute Price Consistency** across all pages of CleverPrices. A pro
 
 All cache profiles are defined in [next.config.ts](../../next.config.ts).
 
-| Profile    | Layer       | Revalidate | Stale | Expire | Use Case                               |
-| ---------- | ----------- | ---------- | ----- | ------ | -------------------------------------- |
-| `prices`   | **Data**    | 1m (60s)   | 60s   | 4h     | Shared price fetching (`live-data.ts`) |
-| `category` | **Page**    | 1m (60s)   | 60s   | 1d     | `/[categorySlug]` pages                |
-| `product`  | **Page**    | 1m (60s)   | 60s   | 1d     | `/p/[slug]` pages                      |
-| `dynamic`  | **Overlay** | 10m (600s) | 600s  | 1h     | Search results, filtered views         |
-| `static`   | **Meta**    | 24h        | 24h   | 30d    | Sitemaps, categories list              |
+| Profile    | Layer       | Revalidate  | Stale | Expire | Use Case                       |
+| ---------- | ----------- | ----------- | ----- | ------ | ------------------------------ |
+| `prices`   | **Data**    | 5m (300s)   | 300s  | 4h     | Mid-level cached price data    |
+| `category` | **Page**    | 20m (1200s) | 1200s | 1d     | `/[categorySlug]` pages        |
+| `product`  | **Page**    | 20m (1200s) | 1200s | 1d     | `/p/[slug]` pages              |
+| `dynamic`  | **Overlay** | 20m (1200s) | 1200s | 1h     | Search results, filtered views |
+| `static`   | **Meta**    | 24h         | 24h   | 30d    | Sitemaps, categories list      |
 
 ## 🛠️ Implementation Guardrails
 
@@ -31,13 +31,16 @@ Whenever modifying a page component:
 - Ensure it uses `cacheLife("category")` or `cacheLife("product")`.
 - Verify that sub-data fetching (via `live-data.ts`) uses `cacheLife("prices")`.
 
-### 2. Synchronization Window
+### 2. Synchronization Window & Shared Cache
 
-The maximum discrepancy window between any two views is **60 seconds**. This ensures that even during a 20-minute Keepa update cycle, prices remain globally consistent across the site.
+The stability window is set to **1200 seconds (20 minutes)**. This is intentionally synchronized with the **Keepa Worker cycle**.
+
+> [!IMPORTANT]
+> **Shared Cache Stability**: We have completely removed per-user/bot cache logic. The server MUST NOT use `headers()`, `cookies()`, or `isBot()` in the top-level rendering tree of cached pages. This ensures the warmer and human visitors share the exact same RSC entry in Redis, effectively eliminating database load during crawls.
 
 ### 3. Absolute Freshness
 
-The 1-minute `stale` window ensures that the warmer and organic visitors frequently trigger background revalidation. The 24-hour `expire` window ensures that even while revalidating, the site remains instant (TTFB < 40ms) by serving the last-known-good fallback.
+The 20-minute `stale` window ensures that after the warmer fetches a page, that version remains perfectly static and high-speed for the duration of that price cycle. The database is shielded by the cache, not by "Bot Shields".
 
 ## 🏗️ Static Generation Strategy
 
@@ -49,7 +52,8 @@ CleverPrices uses a **"Warm-Static"** model for PDPs and Category pages.
 - **Warming Phase**: After every deployment or price update (Keepa Worker), we trigger the `warm-cache` script.
 - **Runtime**:
   1. The page is proactively rendered in the background by the warmer.
-  2. It is frozen into the **Cache Life Layer** (15 minutes).
+  2. It is frozen into the **Cache Life Layer** (20 minutes).
   3. Real users (and Google) always hit **Static Cache** with < 40ms TTFB.
+  4. The cache key is **URL-pure**, ensuring total sharing between automation and humans.
 
 This strategy combines the speed of SSG with the freshness of a dynamic app, without the long build times.

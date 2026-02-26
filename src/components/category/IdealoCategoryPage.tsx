@@ -25,7 +25,6 @@ import { type FilterParams } from "@/lib/product-definitions";
 import { getCategoryProducts } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
-import { connection } from "next/server";
 
 // Sub-components
 import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
@@ -36,9 +35,6 @@ import { NicheLinks } from "./NicheLinks";
 // FAQ components for SEO
 
 import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
-
-import { isBot } from "@/lib/server/user-agent";
-import { headers } from "next/headers";
 
 interface Props {
   category: Omit<Category, "icon">;
@@ -58,17 +54,7 @@ export async function IdealoCategoryPage({
   searchParams,
   lockedFilters,
 }: Props) {
-  // Explicitly wait for the connection and searchParams to trigger the "Hold" behavior.
-  // This ensures the browser stays on the current page until the new content is ready.
-  await connection();
-
-  const [resolvedSearchParams, headersList] = await Promise.all([
-    searchParams,
-    headers(),
-  ]);
-
-  const userAgent = headersList.get("user-agent");
-  const botStatus = isBot(userAgent);
+  const [resolvedSearchParams] = await Promise.all([searchParams]);
 
   const categorySlug = category.slug;
 
@@ -76,7 +62,6 @@ export async function IdealoCategoryPage({
     categorySlug,
     countryCode,
     resolvedSearchParams,
-    botStatus,
   );
 
   const breadcrumbs = getBreadcrumbs(categorySlug).map((crumb) => ({

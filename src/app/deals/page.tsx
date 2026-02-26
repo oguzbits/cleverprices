@@ -1,6 +1,7 @@
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
 import { CATEGORY_MAP } from "@/lib/category-definitions";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
+import { cacheLife } from "next/cache";
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -13,8 +14,19 @@ export const metadata = {
 };
 
 export default async function DealsPage({ searchParams }: Props) {
-  const category = CATEGORY_MAP["deals"];
   const resolvedSearchParams = await searchParams;
+
+  return <DealsPageContent resolvedSearchParams={resolvedSearchParams} />;
+}
+
+async function DealsPageContent({
+  resolvedSearchParams,
+}: {
+  resolvedSearchParams: any;
+}) {
+  "use cache";
+  cacheLife("category");
+  const category = CATEGORY_MAP["deals"];
 
   return (
     <IdealoCategoryPage

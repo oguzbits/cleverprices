@@ -13,13 +13,13 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   cacheLife: {
     category: {
-      stale: 60, // 1 minute (Ensures site-wide price consistency)
-      revalidate: 60,
+      stale: 1200, // 20 minutes (Matches Keepa run cycle)
+      revalidate: 1200,
       expire: 86400, // 24 hours
     },
     product: {
-      stale: 60,
-      revalidate: 60,
+      stale: 1200, // 20 minutes
+      revalidate: 1200,
       expire: 86400,
     },
     static: {

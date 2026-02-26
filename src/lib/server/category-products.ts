@@ -586,7 +586,6 @@ export async function getCategoryProducts(
   categorySlug: string,
   countryCode: string,
   filterParams: FilterParams,
-  isBot: boolean = false,
 ) {
   const mappedSort = filterParams.sort
     ? mapSortParam(filterParams.sort)
@@ -787,10 +786,12 @@ export async function getCategoryProducts(
   );
 
   // Merge live prices (the final display step)
-  // [STABILITY SHIELD] Skip live merge for bots to reserve DB resources
-  const paginatedProducts = isBot
-    ? rawPaginatedProducts
-    : await mergeLivePricesIntoLocalized(rawPaginatedProducts, countryCode);
+  // [STABILITY SHIELD] Unified path for Shared Cache stability.
+  // Cache is now the shield, so we serve fresh data to everyone.
+  const paginatedProducts = await mergeLivePricesIntoLocalized(
+    rawPaginatedProducts,
+    countryCode,
+  );
 
   const contextMinPriceFinal =
     contextMinPrice === Infinity ? 0 : Math.floor(contextMinPrice);

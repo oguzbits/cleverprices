@@ -19,7 +19,7 @@ A modular set of rules to maximize search visibility and organic traffic.
 | Missing meta descriptions | Poor CTR              | Action + UVP + CTA      |
 | Generic H1s               | Low relevance         | Keyword-rich, unique H1 |
 
-- **Stability Shield Compliance**: Serving bots slightly older data (15m cached vs 1m live) is permitted to protect human performance. Googlebot rewards < 200ms TTFB more than 60s price freshness.
+- **Stability Shield Compliance**: We have removed per-bot logic to favor **Shared Cache Stability**. Serving a 20m stale cache to Googlebot is mandatory to protect database performance while maintaining < 40ms TTFB. This follows the 20-minute Keepa price cycle.
 - **Orphan pages (no internal links)**: Not crawled. Link from 3-5 related pages.
 
 ## ✅ REQUIRED

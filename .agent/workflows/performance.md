@@ -45,13 +45,13 @@ bun run perf:analyze
 
 If TTFB (Time to First Byte) is > 200ms on warm pages:
 
-- **Check**: Is `cacheLife()` applied effectively? The standard is **60s stale / 24h expire**.
-- **Accuracy**: The 60s stale window ensures price accuracy, while the 24h expire window guarantees < 100ms TTFB by serving stale data during background revalidation.
+- **Check**: Is `cacheLife()` applied effectively? The standard is **1200s stale / 24h expire** (matching Keepa cycle).
+- **Accuracy**: The 1200s stale window ensures total stability between price updates, while the 24h expire window guarantees < 40ms TTFB by serving the warmed result from memory/Redis.
 - **Action**: Run the cache warmer to prime the cache.
   ```bash
   bun run warm-cache
   ```
-- **Optimization (Bot Shield)**: Serve bots/crawlers slightly older data from Redis/SQLite instead of performing a "Live Merge" to protect DB resources.
+- **Optimization (Shared Cache Stability)**: To ensure the warmer and users share the same cache entry, `headers()` and `isBot()` have been **removed** from the rendering tree. Serve high-quality, live-merged data to everyone and let the `"use cache"` layer handle the shielding. This creates a unified 20-minute stability window synchronized with the Keepa Worker.
 - **Optimization (Worker Breather)**: Ensure background writes use the "Lazy Write" pattern (150ms delay) to keep the I/O path clear for user reads.
 - **Optimization**: Verify SQLite WAL mode and checkpoint status if DB reads are slow.
 - **Optimization (Lean & Ghost)**: For large categories, ensure `getCategoryProducts` is using the tiered fetching approach. Verify that the hydration step (`getLocalizedProductsByIds`) is only fetching active page products.
