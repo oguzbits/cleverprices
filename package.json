@@ -36,6 +36,7 @@
     "audit:react": "npx -y react-doctor@latest . --verbose --diff",
     "sitemap:check": "bun run scripts/maintenance/sitemap-validator.ts",
     "perf:analyze": "ANALYZE=true next build",
+    "test:urls": "bun run scripts/tests/url-fingerprint.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

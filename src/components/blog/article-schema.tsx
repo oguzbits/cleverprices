@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site-config";
 import { BlogPost } from "@/types/blog";
 
 interface ArticleSchemaProps {
@@ -13,21 +14,21 @@ export function ArticleSchema({ post }: ArticleSchemaProps) {
     author: {
       "@type": "Organization",
       name: "CleverPrices",
-      url: "https://cleverprices.com",
+      url: SITE_URL,
     },
     publisher: {
       "@type": "Organization",
       name: "CleverPrices",
       logo: {
         "@type": "ImageObject",
-        url: "https://cleverprices.com/icon-512.png",
+        url: `${SITE_URL}/icon-512.png`,
       },
     },
     datePublished: post.publishDate,
     dateModified: post.lastUpdated || post.publishDate,
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://cleverprices.com/blog/${post.slug}`,
+      "@id": `${SITE_URL}/blog/${post.slug}`,
     },
     // Optional: add citations/references to schema if desired
     citations: post.references || [],

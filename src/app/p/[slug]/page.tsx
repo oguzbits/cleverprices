@@ -12,7 +12,7 @@ import {
   getPDPRenderData,
 } from "@/lib/server/cached-products";
 import { logPDPPerformance } from "@/lib/server/performance-registry";
-import { BRAND_DOMAIN } from "@/lib/site-config";
+import { BRAND_DOMAIN, BRAND_NAME, SITE_URL } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
@@ -143,7 +143,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Handle Metadata redirects if needed (canonical)
     if (renderData?.redirect) {
       // We can't strictly redirect in metadata, but we can set canonical to the target
-      const canonicalUrl = `https://${BRAND_DOMAIN}${renderData.redirect}`;
+      // Use SITE_URL for local testing consistency
+      const canonicalUrl = `${SITE_URL}${renderData.redirect}`;
       return {
         title: "Produkt wird geladen...",
         alternates: { canonical: canonicalUrl },
@@ -180,7 +181,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const hasMeaningfulTitle =
       product.title &&
-      product.title.length > 10 &&
+      product.title.length > 2 &&
       product.title !== product.asin;
 
     if (!hasPrice || !hasMeaningfulTitle) {
@@ -207,7 +208,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Pattern: [Clean Name] | Preisvergleich | Brand
     const seoTitle = isParentView ? identity.fullModel : product.title;
     const baseTitle = `${seoTitle} | Preisvergleich`;
-    const title = truncateTitle(baseTitle, 60) + ` | ${BRAND_DOMAIN}`;
+    const title = truncateTitle(baseTitle, 60) + ` | ${BRAND_NAME}`;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
     // Try enriched description first
@@ -216,8 +217,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description =
       enrichedDesc ||
       (pricePerUnit && category?.unitType
-        ? `${product.title} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_DOMAIN}.`
-        : `${product.title} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_DOMAIN}.`);
+        ? `${product.title} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_NAME}.`
+        : `${product.title} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_NAME}.`);
 
     // Use the ID-prefixed slug for the canonical URL to match the sitemap exactly
     const canonicalPath = getProductPath(product.id, product.slug);

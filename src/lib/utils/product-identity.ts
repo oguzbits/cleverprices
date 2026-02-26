@@ -280,6 +280,14 @@ export const IDENTITY_CONFIG = {
     "formfaktor",
     "form factor",
     "modelljahr",
+    "storage",
+    "speicher",
+    "speicherkapazität",
+    "kapazität",
+    "capacity",
+    "ram",
+    "arbeitsspeicher",
+    "memory",
   ],
 
   /**

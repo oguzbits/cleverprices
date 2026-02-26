@@ -29,7 +29,9 @@ export function getFamilyRepresentative(
       p.prices?.["de"] ||
       (p.prices ? Object.values(p.prices)[0] : 0) ||
       999999;
-    return getPrice(a) - getPrice(b);
+    const priceDiff = getPrice(a) - getPrice(b);
+    if (priceDiff !== 0) return priceDiff;
+    return (a.id || 0) - (b.id || 0);
   });
 
   return sorted[0];

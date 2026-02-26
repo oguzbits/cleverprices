@@ -84,7 +84,7 @@ async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
   return getProductBySlugSync(slug, includeHistory);
 }
 
-async function getCachedProductById(id: number) {
+async function getCachedProductById(id: number, _version: string = "v1") {
   "use cache";
   cacheLife("product");
   return getProductByIdSync(id);
@@ -94,6 +94,7 @@ async function getCachedProductVariantsInternal(
   parentAsin: string,
   countryCode: string,
   skipFullMapping: boolean = false,
+  _version: string = "v1",
 ) {
   "use cache";
   cacheLife("product");
@@ -110,6 +111,7 @@ async function getCachedSimilarProducts(
   targetPrice: number,
   limit: number,
   countryCode: string,
+  _version: string = "v1",
 ) {
   "use cache";
   cacheLife("product");
@@ -125,19 +127,28 @@ async function getCachedSimilarProducts(
   );
 }
 
-async function getCachedProductSlugByAsinSuffix(oldSlug: string) {
+async function getCachedProductSlugByAsinSuffix(
+  oldSlug: string,
+  _version: string = "v1",
+) {
   "use cache";
   cacheLife("category"); // Redirects can be cached for a long time
   return findProductSlugByAsinSuffixSync(oldSlug);
 }
 
-async function getCachedProductByParentAsinSuffix(slug: string) {
+async function getCachedProductByParentAsinSuffix(
+  slug: string,
+  _version: string = "v1",
+) {
   "use cache";
   cacheLife("category");
   return findProductByParentAsinSuffixSync(slug);
 }
 
-async function getCachedProductBySyntheticId(id: number) {
+async function getCachedProductBySyntheticId(
+  id: number,
+  _version: string = "v1",
+) {
   "use cache";
   cacheLife("product");
   return findProductBySyntheticIdSync(id);
@@ -398,8 +409,8 @@ export async function getPDPRenderData(
             isParentView: true,
             redirect: null,
             isPermanent: false,
-            // Add a salt to bust any stale caches from previous weeks
-            _v: "v49-optimized",
+            // Add a salt to bust any stale caches
+            _v: "v71-final-canonical",
           };
         }
 
@@ -440,16 +451,13 @@ export async function getPDPRenderData(
           : [];
 
         const rep = getFamilyRepresentative([product, ...variants]) || product;
-        const familyIdentity = getFamilyIdentitySync(rep, [
-          product,
-          ...variants,
-        ]);
-        // Determine canonical slugs using latest code logic (ignoring DB drift)
-        const { slug: canonicalFamilySlug } = getFamilyIdentitySync(rep, []);
-        const { slug: canonicalProductSlug } = getFamilyIdentitySync(
-          product,
-          [],
+        const familyIdentity = getFamilyIdentitySync(
+          { ...rep, id: 900000000 + (rep.id || 0), isParentView: true },
+          [product, ...variants],
         );
+        // We use the stable slugs already computed with full sibling access via mapDbProduct
+        const canonicalFamilySlug = familyIdentity.slug;
+        const canonicalProductSlug = product.slug;
 
         const familySlugText =
           canonicalFamilySlug.split("_-")[1] || canonicalFamilySlug;
@@ -467,7 +475,7 @@ export async function getPDPRenderData(
             // It's a Hub Redirect: redirect directly to the canonical hub slug
             return {
               redirect: getProductPath(
-                rep.id || product.id,
+                900000000 + (rep.id || 0),
                 familyIdentity.slug,
               ),
               isPermanent: true,
@@ -476,8 +484,8 @@ export async function getPDPRenderData(
         }
 
         // Check if current URL is the canonical id-prefixed specific slug
-        // We use getFamilyIdentitySync to ensure the redirect target matches our latest stable logic.
-        const { slug: canonicalFullSlug } = getFamilyIdentitySync(product, []);
+        // We use the already fully consensus-aware slug from mapDbProduct.
+        const canonicalFullSlug = product.slug;
         const canonicalPath = getProductPath(product.id!, canonicalFullSlug);
         const urlSlugWithoutLeadingSlash = canonicalPath.replace("/p/", "");
 
@@ -588,7 +596,7 @@ export async function getPDPRenderData(
     isParentView,
     redirect,
     isPermanent,
-    _v: "v49-optimized",
+    _v: "v72-final-fix",
   };
 }
 

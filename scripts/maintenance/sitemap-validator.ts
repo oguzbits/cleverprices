@@ -102,6 +102,7 @@ async function validate() {
       notFound: 0,
       serverError: 0,
       soft404: 0,
+      mismatch: 0,
       total: urls.length,
     };
 
@@ -133,8 +134,16 @@ async function validate() {
                 const { canonical, title, description } = res.metadata;
 
                 // 1. Canonical Match Check
-                if (canonical && canonical !== url) {
-                  results.serverError++; // Count as error for exit code
+                let normalizedCanonical = canonical;
+                if (isLocalhost) {
+                  normalizedCanonical = canonical.replace(
+                    /https?:\/\/cleverprices\.com/,
+                    "http://localhost:3000",
+                  );
+                }
+
+                if (normalizedCanonical !== url) {
+                  results.mismatch++;
                   details.push(
                     `${COLORS.red}[CANONICAL MISMATCH]${COLORS.reset} ${url}\n   Expected: ${url}\n   Found:    ${canonical}`,
                   );
@@ -201,10 +210,15 @@ async function validate() {
     console.log(`🚨 Soft 404s:     ${results.soft404}`);
     console.log(`❌ 404 Not Found: ${results.notFound}`);
     console.log(`🔥 Server Errors: ${results.serverError}`);
+    console.log(`🔍 Mismatches:    ${results.mismatch}`);
     console.log("-----------------------");
     console.log(`Total URLs:       ${results.total}`);
 
-    process.exit(results.notFound > 0 || results.serverError > 0 ? 1 : 0);
+    process.exit(
+      results.notFound > 0 || results.serverError > 0 || results.mismatch > 0
+        ? 1
+        : 0,
+    );
   } catch (error) {
     console.error(`${COLORS.red}💥 Fatal Error:${COLORS.reset}`, error);
     process.exit(1);
@@ -243,13 +257,22 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
         isSoft404 = SOFT_404_MARKERS.some((marker) => text.includes(marker));
 
         // Extract metadata
-        const canonicalMatch = text.match(
-          /<link[^>]+rel="canonical"[^>]+href="([^"]+)"/i,
-        );
+        // Robust Extraction
+        const canonicalMatch =
+          text.match(
+            /<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i,
+          ) ||
+          text.match(
+            /<link[^>]+href=["']([^"']+)["'][^>]*rel=["']canonical["']/i,
+          );
         const titleMatch = text.match(/<title>([\s\S]*?)<\/title>/i);
-        const descriptionMatch = text.match(
-          /<meta[^>]+name="description"[^>]+content="([^"]+)"/i,
-        );
+        const descriptionMatch =
+          text.match(
+            /<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i,
+          ) ||
+          text.match(
+            /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']description["']/i,
+          );
 
         metadata = {
           canonical: canonicalMatch ? canonicalMatch[1] : "",

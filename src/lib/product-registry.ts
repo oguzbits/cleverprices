@@ -256,20 +256,20 @@ export async function findProductBySyntheticId(
   }
 
   // 4. Return the "Best" representative, but MASKED with the Synthetic ID
-  // This ensures the URL remains stable (pointing to the family) while the content is dynamic/optimal.
+  // Stability Rule: Always generate the slug from the CANONICAL product (ID-owner)
+  // while showing the dynamic representative's content (cheapest/in-stock).
   const history = await getProductPriceHistory(representative.id!, "de");
 
-  // Determine the correct slug for the Hub
-  const slugText = representative.slug.includes("_-")
-    ? representative.slug.split("_-")[1]
-    : representative.slug;
-  const syntheticSlug = `${syntheticId}_-${slugText}`;
+  const { slug: syntheticSlug } = getFamilyIdentity(
+    { ...canonicalProduct, id: syntheticId, isParentView: true },
+    [],
+  );
 
   return {
     ...representative,
-    priceHistory: history,
     id: syntheticId,
     slug: syntheticSlug,
+    priceHistory: history,
     isParentView: true,
   };
 }
@@ -301,14 +301,56 @@ export async function getAllProductSlugs(limit?: number): Promise<
       query = query.limit(limit);
     }
 
-    const allProducts = await query;
+    const rawAllProducts = await query;
+    // We must manually fetch prices for these to filter out out-of-stock items
+    // to match PDP's `hasPrice` guard, preventing empty canonical tags.
+    const priceRecords = await db
+      .select({
+        productId: prices.productId,
+        price: prices.price,
+        usedPrice: prices.usedPrice,
+      })
+      .from(prices);
+    const priceMap = new Map();
+    for (const p of priceRecords) {
+      if (!priceMap.has(p.productId))
+        priceMap.set(p.productId, { price: 0, usedPrice: 0 });
+      const current = priceMap.get(p.productId);
+      current.price = Math.max(current.price, p.price || 0);
+      current.usedPrice = Math.max(current.usedPrice, p.usedPrice || 0);
+    }
+
+    // Identify ASINs that form a Hub (Family)
+    const familyAsinRecords = await db
+      .select({ p: products.parentAsin })
+      .from(products)
+      .where(isNotNull(products.parentAsin))
+      .groupBy(products.parentAsin)
+      .having(sql`COUNT(*) > 1`);
+    const familyAsins = new Set(familyAsinRecords.map((r) => r.p!));
+
+    const allProducts = rawAllProducts.filter((p) => {
+      // Exclude variants that belong to a family (they are redirected to Hubs!)
+      if (p.parentAsin && familyAsins.has(p.parentAsin)) return false;
+
+      // Filter by Meaningful Title (same as PDP)
+      const hasMeaningfulTitle =
+        p.title && p.title.length > 2 && p.title !== p.asin;
+
+      if (!hasMeaningfulTitle) return false;
+
+      // Filter by Price (same as PDP)
+      const pr = priceMap.get(p.id);
+      const hasPrice = pr && (pr.price > 0 || pr.usedPrice > 0);
+      return hasPrice;
+    });
 
     // 2. Map products to their canonical slugs (Stateless & High-Speed)
     const results = allProducts.map((p) => {
       // Map and clean product data exactly like the PDP logic to ensure slug parity.
       // We use false for stripHeavyData to ensure all identity repairs (like M.2 stripping) are applied identically.
       const mapped = mapDbProduct(p as DbProduct, [], [], false);
-      const { slug: canonical } = getFamilyIdentity(mapped, []);
+      const canonical = mapped.slug;
       return {
         id: p.id!,
         slug: canonical,
@@ -320,41 +362,104 @@ export async function getAllProductSlugs(limit?: number): Promise<
 
     // 3. SEO BONUS: Include Hub (Parent) pages
     // These are "Alle Varianten" pages (ID prefix 900M).
-    // We fetch unique parent clusters efficiently.
-    const families = await db
+    // We join to get the title of the MIN(id) product (canonical representative).
+    // Fetch all variants grouped by parentAsin to ensure we pick the SAME representative as the PDP.
+    // We join prices with de country to match the getFamilyRepresentative logic.
+    // Selecting all core fields ensures mapDbProduct has everything it needs for tech identity repairs.
+    const familyRawResults = await db
       .select({
-        parentAsin: products.parentAsin,
-        minId: sql<number>`MIN(${products.id})`,
-        // Representative data for slug generation
-        title: sql<string>`MAX(${products.title})`,
-        brand: sql<string>`MAX(${products.brand})`,
-        category: sql<string>`MAX(${products.category})`,
+        product: products,
+        price: prices.price,
+        country: prices.country,
+        usedPrice: prices.usedPrice,
+        priceAvg90: prices.priceAvg90,
+        listPrice: prices.listPrice,
+        pricePerUnit: prices.pricePerUnit,
       })
       .from(products)
-      .where(isNotNull(products.parentAsin))
-      .groupBy(products.parentAsin)
-      .having(sql`COUNT(*) > 1`);
+      .leftJoin(
+        prices,
+        and(eq(products.id, prices.productId), eq(prices.country, "de")),
+      )
+      .where(
+        inArray(
+          products.parentAsin,
+          db
+            .select({ p: products.parentAsin })
+            .from(products)
+            .where(isNotNull(products.parentAsin))
+            .groupBy(products.parentAsin)
+            .having(sql`COUNT(*) > 1`),
+        ),
+      );
 
-    for (const fam of families) {
-      if (!fam.parentAsin) continue;
+    const familyVariants = familyRawResults.map((r) => ({
+      ...r.product,
+      price: r.price,
+      country: r.country,
+      usedPrice: r.usedPrice,
+      priceAvg90: r.priceAvg90,
+      listPrice: r.listPrice,
+      pricePerUnit: r.pricePerUnit,
+    }));
 
-      const syntheticId = 900000000 + fam.minId;
-      // Generate Hub slug (Brand + Model only, no variant traits)
+    // Group variants by parentAsin
+    const familyMap = new Map<string, any[]>();
+    for (const v of familyVariants) {
+      if (!v.parentAsin) continue;
+      if (!familyMap.has(v.parentAsin)) familyMap.set(v.parentAsin, []);
+      familyMap.get(v.parentAsin)!.push(v);
+    }
+
+    // Process each family to determine Hub slug.
+    for (const [parentAsin, rawVariants] of familyMap.entries()) {
+      // 1. Process variants for technical mapping (necessary for representative selection)
+      const allMapped = rawVariants.map((r) => {
+        const priceArray =
+          r.price || r.usedPrice
+            ? [
+                {
+                  price: r.price,
+                  usedPrice: r.usedPrice,
+                  country: r.country,
+                  priceAvg90: r.priceAvg90,
+                  listPrice: r.listPrice,
+                  pricePerUnit: r.pricePerUnit,
+                },
+              ]
+            : [];
+        return mapDbProduct(r as any, priceArray as any[], [], false);
+      });
+
+      // Filter to only variants that have a price in DE, matching PDP logic
+      const mappedVariants = allMapped.filter(
+        (v) => (v.prices?.de || 0) > 0 || (v.usedPrices?.de || 0) > 0,
+      );
+
+      if (mappedVariants.length === 0) continue;
+
+      // 2. Determine Hub Representative and Slug
+      // WE USE THE STABLE MIN-ID variant as the identity source for the Hub.
+      // This ensures canonical stability even if prices fluctuate or tie.
+      // We must pick from allMapped (regardless of price) to match getCanonicalFamilyId!
+      const rep = [...allMapped].sort((a, b) => (a.id || 0) - (b.id || 0))[0];
+      const syntheticId = 900000000 + (rep.id || 0);
+
       const { slug: hubSlug } = getFamilyIdentity(
         {
-          title: fam.title,
-          brand: fam.brand,
-          category: fam.category,
+          ...rep,
           id: syntheticId,
           isParentView: true,
         } as any,
-        [],
+        mappedVariants,
       );
 
+      // ONLY add the Hub page to the sitemap.
+      // Individual variants redirect to this Hub and shouldn't be in the sitemap.
       results.push({
         id: syntheticId,
         slug: hubSlug,
-        category: fam.category || "unknown",
+        category: rep.category || "unknown",
         enrichmentStatus: "optimized",
         updatedAt: new Date(),
       });

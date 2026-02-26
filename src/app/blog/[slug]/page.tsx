@@ -1,6 +1,7 @@
 import { BlogPostViewMDX } from "@/components/blog/blog-post-view-mdx";
 import { getAllBlogPosts, getBlogPostBySlug } from "@/lib/blog";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
+import { SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
 
 interface BlogPostPageProps {
@@ -27,12 +28,14 @@ export async function generateMetadata({
     };
   }
 
+  const path = `/blog/${post.slug}`;
+
   return {
     title: post.title,
     description: post.description,
     alternates: {
-      canonical: `https://cleverprices.com/blog/${post.slug}`,
-      languages: getAlternateLanguages(`blog/${post.slug}`),
+      canonical: `${SITE_URL}${path}`,
+      languages: getAlternateLanguages(path),
     },
     openGraph: getOpenGraph({
       title: post.title,
@@ -41,7 +44,7 @@ export async function generateMetadata({
       publishedTime: post.publishDate,
       modifiedTime: post.lastUpdated,
       authors: [post.author.name],
-      url: `https://cleverprices.com/blog/${post.slug}`,
+      url: `${SITE_URL}${path}`,
     }),
   };
 }

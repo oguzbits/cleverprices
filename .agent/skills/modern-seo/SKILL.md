@@ -73,10 +73,16 @@ export function generateMetadata({ params }) {
 }
 ```
 
-### Category Pages
-
 - Include brand + capacity in title where relevant
 - Add structured data for product lists
+
+### 4. Canonical Strategy (Idealo-style)
+
+- **Variation Collapsing**: To avoid duplicate content penalties, all variants (colors, sizes, storage) must point to a single **Hub Page**.
+- **Hub Representatives**: The Hub page uses the cheapest or primary variant as its content source but maintains a stable `900M` serial ID prefix.
+- **Slug Parity**:
+  - The sitemap generation (Lite Mode) and product rendering (Full Mode) must use identical `IDENTITY_KEYS` for slug generation.
+  - Never include individual variants in the sitemap if they are part of a family; only the Hub should be indexed.
 
 ## 🤖 Generative Engine Optimization (GEO/AEO)
 
