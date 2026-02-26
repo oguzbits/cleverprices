@@ -1,7 +1,6 @@
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
 import { CATEGORY_MAP } from "@/lib/category-definitions";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
-import { connection } from "next/server";
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -14,7 +13,6 @@ export const metadata = {
 };
 
 export default async function DealsPage({ searchParams }: Props) {
-  await connection();
   const category = CATEGORY_MAP["deals"];
   const resolvedSearchParams = await searchParams;
 
