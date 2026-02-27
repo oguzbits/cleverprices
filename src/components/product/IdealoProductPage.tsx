@@ -202,16 +202,20 @@ export async function IdealoProductPage({
                 id="product-title"
                 className="text-[20px] font-bold md:text-[24px]"
               >
-                {mergedProduct.subtitle
-                  ? mergedProduct.title
-                      .replace(mergedProduct.subtitle, "")
-                      .trim()
-                  : mergedProduct.title}{" "}
-                {!isParentView && mergedProduct.subtitle && (
-                  <span className="text-[16px] font-bold text-gray-500">
-                    {mergedProduct.subtitle}
-                  </span>
-                )}
+                {product.category === "prozessoren"
+                  ? identity.displayTitle
+                  : mergedProduct.subtitle
+                    ? mergedProduct.title
+                        .replace(mergedProduct.subtitle, "")
+                        .trim()
+                    : mergedProduct.title}{" "}
+                {!isParentView &&
+                  mergedProduct.subtitle &&
+                  product.category !== "prozessoren" && (
+                    <span className="text-[16px] font-bold text-gray-500">
+                      {mergedProduct.subtitle}
+                    </span>
+                  )}
               </h1>
               <div className="oopStage-metaInfo mb-4 flex flex-wrap items-center gap-4 sm:justify-center lg:justify-start">
                 <div className="flex items-center gap-1.5">

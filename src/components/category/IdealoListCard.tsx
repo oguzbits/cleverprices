@@ -24,6 +24,7 @@ import Image from "next/image";
 
 import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatTechText } from "@/lib/utils/formatting";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductBestseller } from "@/lib/utils/products";
 import { IdealoLivePrice } from "../product/IdealoLivePrice";
 import { IdealoStarRating } from "./IdealoStarRating";
@@ -131,10 +132,12 @@ export function IdealoListCard({
                     "mb-1 text-[14px] leading-[18px] font-bold text-[#2d2d2d]",
                   )}
                 >
-                  {product.subtitle
-                    ? product.title.replace(product.subtitle, "").trim()
-                    : product.title}
-                  {product.subtitle && (
+                  {product.category === "prozessoren"
+                    ? getProductIdentity(product).displayTitle
+                    : product.subtitle
+                      ? product.title.replace(product.subtitle, "").trim()
+                      : product.title}
+                  {product.subtitle && product.category !== "prozessoren" && (
                     <span className="ml-1.5 font-bold">{product.subtitle}</span>
                   )}
                 </div>

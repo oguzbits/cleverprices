@@ -83,6 +83,8 @@ export function generateMetadata({ params }) {
 - **Slug Parity**:
   - The sitemap generation (Lite Mode) and product rendering (Full Mode) must use identical `IDENTITY_KEYS` for slug generation.
   - Never include individual variants in the sitemap if they are part of a family; only the Hub should be indexed.
+- **Rich Titles for Premium Categories**:
+  - While slugs are clean, the `displayTitle` and `fullModel` for high-value categories like `prozessoren` must preserve trademark symbols (®, ™). This signals authority to both users and Search Engines (GEO/AEO).
 
 ## 🤖 Generative Engine Optimization (GEO/AEO)
 

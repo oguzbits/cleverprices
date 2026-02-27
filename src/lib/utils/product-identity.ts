@@ -78,16 +78,89 @@ function normalizeAccents(s: string): string {
     .replace(/\u00DF/gi, "ss")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .normalize("NFKC");
+    .normalize("NFC");
+}
+
+/**
+ * CPU Identity Engine: Automated Pattern Extraction
+ * Replaces the endless maintenance of "noise scrubbing" with "gold extraction".
+ */
+interface CpuFacts {
+  series: string; // Ryzen 9, Core i7, etc.
+  modelNumber: string; // 5950X, 12400F, etc.
+  cores: string; // 16 Kerne, 6C+8c, etc.
+  frequency: string; // 3.4 GHz, 3.50-5.30GHz, etc.
+}
+
+function extractCpuFacts(title: string, brand: string): CpuFacts {
+  // Trademarks are collapsed for whitespace but preserved for extraction
+  const t = title.replace(/\s+/g, " ").trim();
+
+  const SYM = "[™®©]*";
+
+  // 1. Extract Series (Ryzen 9, Core i7, Threadripper, Ultra 7, etc.)
+  const seriesPatterns = [
+    new RegExp(
+      `\\bRyzen${SYM}(?:\\s+[3579])?(?:\\s+Threadripper)?(?=\\b|\\s|$)`,
+      "i",
+    ),
+    new RegExp(`\\bCore${SYM}\\s+Ultra${SYM}(?:\\s+[3579])?(?=\\b|\\s|$)`, "i"),
+    new RegExp(`\\bCore${SYM}\\s+i[3579](?=\\b|\\s|$)`, "i"),
+    new RegExp(`\\bUltra${SYM}(?:\\s+[3579])?(?=\\b|\\s|$)`, "i"),
+    new RegExp(`\\bThreadripper(?:\\s+PRO)?(?=\\b|\\s|$)`, "i"),
+    new RegExp(`\\b(EPYC|Xeon|Pentium|Celeron|Athlon)${SYM}\\b`, "i"),
+  ];
+
+  let series = "";
+  for (const p of seriesPatterns) {
+    const match = t.match(p);
+    if (match) {
+      series = match[0].trim();
+      break;
+    }
+  }
+
+  // 2. Extract Model Number (The main identifier)
+  // Logic: Longest alphanumeric token after/around series that looks like a model
+  const modelPatterns = [
+    /\b[0-9]{3,5}[KFKSTM]*[X3DG]*\b/i, // Standard: 5950X, 12400F, 265K, 7800X3D
+    /\b[0-9]{3}[A-Z]{1,2}\b/i, // Ultra 285K, etc.
+    /\b[0-9]{4}WX\b/i, // Threadripper WX
+  ];
+
+  let modelNumber = "";
+  for (const p of modelPatterns) {
+    const match = t.match(p);
+    if (match) {
+      modelNumber = match[0].trim();
+      break;
+    }
+  }
+
+  // 3. Extract Cores
+  const coreMatch = t.match(
+    /\b\d+[\+\-x]?\d*\s*(?:Kerne|Cores|C|Core|Nodes|Threads)\b/i,
+  );
+  const cores = coreMatch ? coreMatch[0].trim() : "";
+
+  // 4. Extract Frequency (preserving ranges with - or /)
+  const freqMatch =
+    t.match(/\b\d+[\.,]\d+\s*[\/-]\s*\d+[\.,]\d+\s*(?:GHz|MHz)\b/i) ||
+    t.match(/\b\d+[\.,]\d+\s*(?:GHz|MHz)\b/i);
+  const frequency = freqMatch ? freqMatch[0].trim() : "";
+
+  return { series, modelNumber, cores, frequency };
 }
 
 /**
  * Standardizes tokenization for consistent identity matching.
  */
 export function getCleanTokens(s: string): string[] {
-  return normalizeAccents(s.toLowerCase())
-    .split(/[^a-z0-9]+/)
-    .filter((t) => t.length > 1 || /^\d+$/.test(t));
+  let normalized = normalizeAccents(s.toLowerCase());
+  normalized = normalized.replace(/(\d)[,.](\d)/g, "$1.$2");
+  return normalized
+    .split(/[^a-z0-9.]+/)
+    .filter((t) => t.length > 1 || /^\d+(\.\d+)?$/.test(t));
 }
 
 /**
@@ -399,6 +472,16 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const resolvedBrand = normalizeBrand(rawBrand, title, category);
   const resolvedBrandLower = resolvedBrand.toLowerCase();
 
+  // 1.5 Rich Brand Extraction (Preserve Symbols for Display)
+  const brandRegex = new RegExp(
+    `\\b${resolvedBrand.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")}[™®©]*(?:\\b|\\s|$)`,
+    "i",
+  );
+  const brandMatch =
+    title.match(brandRegex) || (product.officialTitle || "").match(brandRegex);
+  const richBrand =
+    brandMatch && brandMatch[0] ? brandMatch[0].trim() : resolvedBrand;
+
   // QA SYSTEM: Verify if the 'Modell' spec is a safe improvement over the title
   const source = product.specificationsSource || "";
   const trustedSources = ["icecat", "intel", "ebay", "google"];
@@ -582,6 +665,58 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     });
   }
 
+  // Static set for fast noise elimination, specifically for CPUs
+  const noiseTokens = new Set([
+    ...NOISE_WORDS,
+    "ghz",
+    "mhz",
+    "cache",
+    "kb",
+    "mb",
+    "smart",
+    "l2",
+    "l3",
+    "box",
+    "boxed",
+    "version",
+    "wof",
+    "tray",
+    "desktop",
+    "processor",
+    "prozessor",
+    "intel",
+    "amd",
+    "grafik",
+    "kerne",
+    "cores",
+    "thread",
+    "threads",
+    "zweikanalig",
+    "dual-channel",
+    "dual",
+    "channel",
+  ]);
+
+  if (category === "prozessoren") {
+    const cpuNoise = [
+      "vermeer",
+      "am4",
+      "am5",
+      "lga1700",
+      "lga1200",
+      "ddr4",
+      "ddr5",
+      "neu",
+      "gebraucht",
+      "oem",
+      "je",
+      "sockel",
+      "socket",
+    ];
+    cpuNoise.forEach((n) => noiseTokens.add(n));
+    noiseTokens.forEach((s) => subtractTokens.add(s));
+  }
+
   /**
    * C. SMART SIBLING CONSENSUS: Optimized for Statelessness.
    * Consensus (stripping tokens based on family frequency) is moved to the data enrichment layer.
@@ -611,7 +746,24 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     return w;
   };
 
-  const baseTitle = officialModel || title;
+  let baseTitle = officialModel || title;
+
+  // Symbol Injection Strategy: If official model lacks symbols but raw title has them, prefer raw title.
+  if (officialModel && !/[™®©]/.test(officialModel) && /[™®©]/.test(title)) {
+    // Rely on brand match and our robust cleaner
+    if (title.toLowerCase().startsWith(resolvedBrandLower)) {
+      baseTitle = title;
+    }
+  }
+
+  // Symbol Injection Strategy: If official model lacks symbols but raw title has them, prefer raw title.
+  if (officialModel && !/[™®©]/.test(officialModel) && /[™®©]/.test(title)) {
+    // Rely on brand match and our robust cleaner
+    if (title.toLowerCase().startsWith(resolvedBrandLower)) {
+      baseTitle = title;
+    }
+  }
+
   let cleanTitle = baseTitle.split(/ \- | \/ | \(| \||: |,/i)[0].trim();
 
   // Robustly strip brand from start of title to prevent duplication
@@ -645,7 +797,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   }
 
   // Clean up any leading punctuation left over (e.g. "! Dark Rock" -> "Dark Rock")
-  cleanTitle = cleanTitle.replace(/^[^a-z0-9]+/i, "");
+  // MUST preserve symbols!
+  cleanTitle = cleanTitle.replace(/^[^a-z0-9™®©]+/i, "");
 
   const rawWords = cleanTitle.split(/[\s,+\*~]+/).filter(Boolean);
   const modelWords: string[] = [];
@@ -777,7 +930,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
   const modelHead = modelWords[0] || "";
   const hubModelName = modelWords.join(" ").trim();
-  const modelTitle = `${resolvedBrand} ${hubModelName}`;
+  const modelTitle = `${richBrand} ${hubModelName}`;
 
   // 5. Variant Differentiators (Slug & Subtitle)
   const variantTokens: string[] = [];
@@ -786,6 +939,15 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   let bestFeatureKey: string | null = null;
 
   // Order of preference for "Best Feature": Color  // Add traits from variantMap in priority order
+
+  const rawSourceTitle = (
+    product.officialTitle && product.officialTitle.length > title.length
+      ? product.officialTitle
+      : title
+  ).trim();
+  const amazonTitleNorm = rawSourceTitle
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
   const traitOrder = [
     "Color",
     "Farbe",
@@ -818,6 +980,24 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   });
 
   function processTrait(val: string, k: string) {
+    if (!val || typeof val !== "string") return;
+
+    if (category === "prozessoren") {
+      // 1. List Filtering
+      if (val.includes(",") || val.includes(";")) return;
+
+      const valLower = val.toLowerCase();
+      const valNorm = valLower.replace(/[^a-z0-9]/g, "");
+
+      // 2. Noise Check
+      if (noiseTokens.has(valNorm)) return;
+
+      // 3. Amazon Anchoring - MUST be in the Amazon title
+      if (!amazonTitleNorm.includes(valNorm)) {
+        return;
+      }
+    }
+
     let displayVal = val;
     const cleanVal = val.toLowerCase().replace(/[^a-z0-9]/g, "");
     if (cleanVal === "wifi" || cleanVal === "wfi") displayVal = "Wi-Fi";
@@ -900,6 +1080,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       !isTablet &&
       !isSSD &&
       !isRAM &&
+      category !== "prozessoren" &&
       (valLower.includes("gb") || valLower.includes("tb")) &&
       !/ssd|ram/i.test(valLower)
     ) {
@@ -931,15 +1112,17 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   }
 
   // ADD STRIPPED UNITS (RECOVERY) - Fixes missing 2x16GB in RAM etc.
-  strippedUnits.forEach((unit) => {
-    const norm = unit.toLowerCase().replace(/[^a-z0-9]/g, "");
-    if (processedTokens.has(norm)) return;
-    if (!hubModelName.toLowerCase().includes(norm)) {
-      variantTokens.push(unit);
-      processedTokens.add(norm);
-      if (!oneFeatureToken) oneFeatureToken = unit;
-    }
-  });
+  if (category !== "prozessoren") {
+    strippedUnits.forEach((unit) => {
+      const norm = unit.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (processedTokens.has(norm)) return;
+      if (!hubModelName.toLowerCase().includes(norm)) {
+        variantTokens.push(unit);
+        processedTokens.add(norm);
+        if (!oneFeatureToken) oneFeatureToken = unit;
+      }
+    });
+  }
 
   // Calculate traits for high-variance check (Features only, no MPN yet)
   const traitCount = variantTokens.length;
@@ -977,8 +1160,72 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ? `${modelTitle} ${variantSuffix}`
     : modelTitle;
 
+  // 6. Dedicated CPU Naming Strategy
+  // Automated reconstruction from merged multi-source patterns.
+  if (category === "prozessoren") {
+    const factsA = extractCpuFacts(product.title || "", resolvedBrand);
+    const factsO = extractCpuFacts(product.officialTitle || "", resolvedBrand);
+
+    // Brand preservation logic (e.g. Intel®)
+    const brandRegex = new RegExp(
+      `\\b${resolvedBrand}[™®©]*(?:\\b|\\s|$)`,
+      "i",
+    );
+    const brandMatch =
+      (product.title || "").match(brandRegex) ||
+      (product.officialTitle || "").match(brandRegex);
+    const finalBrand = brandMatch ? brandMatch[0] : resolvedBrand;
+
+    const series =
+      factsA.series.length >= factsO.series.length
+        ? factsA.series
+        : factsO.series;
+    const modelNumber = factsA.modelNumber || factsO.modelNumber;
+    const cores = factsA.cores || factsO.cores;
+
+    const isRange = (f: string) => f.includes("-") || f.includes("/");
+    let frequency = factsA.frequency;
+    if (isRange(factsO.frequency)) frequency = factsO.frequency;
+    else if (!isRange(factsA.frequency) && factsO.frequency)
+      frequency = factsO.frequency;
+
+    const modelParts = [];
+    if (series) modelParts.push(series);
+    if (modelNumber) modelParts.push(modelNumber);
+    if (cores) modelParts.push(cores);
+    if (frequency) modelParts.push(frequency);
+
+    const reconstructedModel = modelParts.join(" ").trim();
+    const cleanModel = reconstructedModel.replace(/[™®©]/g, "").trim();
+    const finalDisplayTitle = `${finalBrand} ${reconstructedModel}`
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (reconstructedModel.length > 3) {
+      return {
+        brand: richBrand,
+        model: cleanModel,
+        fullModel: finalDisplayTitle,
+        shortModel: modelNumber
+          ? modelNumber.replace(/[™®©]/g, "").trim()
+          : cleanModel.split(/\s+/)[0],
+        variantLabel: "",
+        variantMap: {},
+        variantTokens: [],
+        displayTitle: finalDisplayTitle,
+        modelTitle: finalDisplayTitle,
+        variantSuffix: "",
+        mpn: mpnVal || undefined,
+        isHighVariance: false,
+        traitCount: 0,
+        isLaptop: false,
+        categoryUsed: category,
+      };
+    }
+  }
+
   return {
-    brand: resolvedBrand,
+    brand: richBrand,
     model: hubModelName,
     fullModel: modelTitle,
     shortModel: modelHead,

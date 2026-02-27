@@ -31,10 +31,10 @@ If there are design changes to product detail pages (PDPs) or category list item
 - Provide instructions like: _"Navigate to `/kategorie/3d-printers`, click a product, verify if the Keepa price chart loads, and capture a screenshot."_
 - Ensure Mobile Views are also tested since `TTFB` and `LCP` on mobile are primary business goals.
 
-## 4. Validating the "No-Database-Build"
+## 5. Symbol Consistency
 
-Run a dummy build inside Docker to ensure no SQLite `table does not exist` errors happen. This verifies the `generateStaticParams` safeguards.
+We follow a **Clean Slugs, Rich Titles** policy.
 
-```bash
-bun run docker:build
-```
+- **Slugs**: Must be sanitized (no ®, ™, or special characters).
+- **Titles**: Must be rich for certain categories (e.g., `prozessoren`). Ensure trademark symbols (® and ™) are preserved in the `displayTitle` and `fullModel` fields.
+- **Verification**: Run `bun test src/lib/utils/product-identity-regressions.test.ts` to ensure no regressions in symbol preservation.

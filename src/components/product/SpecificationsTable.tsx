@@ -212,7 +212,8 @@ export function SpecificationsTable({
       !value ||
       value === "null" ||
       value === "undefined" ||
-      ignoredKeys.has(key)
+      ignoredKeys.has(key) ||
+      key.toLowerCase().includes("kundenpreis")
     )
       return;
 
