@@ -54,7 +54,7 @@ describe("getProductIdentity", () => {
     };
     const identity = getProductIdentity(product);
     expect(identity.model).toBe("UWQHD Curved Gaming");
-    expect(identity.variantMap.size).toBe('34"');
+    expect(identity.variantMap.Size).toBe('34"');
   });
 
   it("should handle SSD model numbers and capacities", () => {
