@@ -157,40 +157,82 @@ export function sortProducts(
   sortBy: string,
   sortOrder: string,
 ): any[] {
+  let key = sortBy as string;
+
+  // Default to popularity if key is missing or 'popular'
+  if (!key || key === "popular") {
+    key = "popularityScore";
+  }
+
+  // Map 'price' sort request
+  if (key === "price") {
+    // Note: The comparison logic handles this, we just keep the key.
+  }
+
+  // Map 'capacity' sort request
+  if (key === "capacity") {
+    key = "normalizedCapacity";
+  }
+
+  const isAsc = sortOrder === "asc";
+
+  // 1. Pre-pass: Find the best value for each family to pull the Hub card up
+  const familyBest = new Map<string, any>();
+  for (const p of products) {
+    if (!p.parentAsin) continue;
+    const val = p[key];
+    if (val === undefined || val === null) continue;
+
+    if (!familyBest.has(p.parentAsin)) {
+      familyBest.set(p.parentAsin, val);
+    } else {
+      const existing = familyBest.get(p.parentAsin);
+      let isBetter = false;
+      if (typeof val === "number" && typeof existing === "number") {
+        isBetter = isAsc ? val < existing : val > existing;
+      } else {
+        const vStr = String(val);
+        const eStr = String(existing);
+        isBetter = isAsc ? vStr < eStr : vStr > eStr;
+      }
+      if (isBetter) familyBest.set(p.parentAsin, val);
+    }
+  }
+
   return [...products].sort((a, b) => {
-    let key = sortBy as string;
+    let aValue =
+      a[key] ?? (typeof a.price === "number" && key === "price" ? 0 : "");
+    let bValue =
+      b[key] ?? (typeof b.price === "number" && key === "price" ? 0 : "");
 
-    // Default to popularity if key is missing or 'popular'
-    if (!key || key === "popular") {
-      key = "popularityScore";
+    // Hubs adopt the best value of their family strictly for sorting purposes
+    if (a.isParentView && a.parentAsin && familyBest.has(a.parentAsin)) {
+      aValue = familyBest.get(a.parentAsin);
     }
-
-    // Map 'price' sort request
-    if (key === "price") {
-      const aVal = a.price || 0;
-      const bVal = b.price || 0;
-      return sortOrder === "asc" ? aVal - bVal : bVal - aVal;
+    if (b.isParentView && b.parentAsin && familyBest.has(b.parentAsin)) {
+      bValue = familyBest.get(b.parentAsin);
     }
-
-    // Map 'capacity' sort request
-    if (key === "capacity") {
-      key = "normalizedCapacity";
-    }
-
-    const aValue = a[key];
-    const bValue = b[key];
-
-    const isAsc = sortOrder === "asc";
 
     if (typeof aValue === "number" && typeof bValue === "number") {
-      return isAsc ? aValue - bValue : bValue - aValue;
+      const diff = isAsc ? aValue - bValue : bValue - aValue;
+      if (diff !== 0) return diff;
+    } else {
+      const aStr = String(aValue || "");
+      const bStr = String(bValue || "");
+      if (aStr < bStr) {
+        return isAsc ? -1 : 1;
+      } else if (aStr > bStr) {
+        return isAsc ? 1 : -1;
+      }
     }
 
-    const aStr = String(aValue || "");
-    const bStr = String(bValue || "");
+    // TIEBREAKER
+    // If we reach here, we have a tie (values are identical).
+    // If one is a Hub and the other is a variant, the Hub ALWAYS wins the tiebreaker.
+    // This perfectly places the Hub directly above its best variant.
+    if (a.isParentView && !b.isParentView) return -1;
+    if (!a.isParentView && b.isParentView) return 1;
 
-    if (aStr < bStr) return isAsc ? -1 : 1;
-    if (aStr > bStr) return isAsc ? 1 : -1;
     return 0;
   });
 }

@@ -429,6 +429,7 @@ export async function getLeanCategoryProducts(
         savings: localized.savings,
         pricePerUnit: localized.pricePerUnit,
         salesRank: localized.salesRank,
+        parentAsin: localized.parentAsin,
       };
     })
     .filter((p): p is any => p !== null);
@@ -762,11 +763,55 @@ export async function getCategoryProducts(
     });
   });
 
-  const totalFilteredCount = filteredLeanProducts.length;
+  // --- GENERATE HUB CARDS ---
+  const collapsedLeanProducts = new Map<string, any>();
+  const orphanedProducts: any[] = [];
+
+  filteredLeanProducts.forEach((p) => {
+    if (p.parentAsin) {
+      if (!collapsedLeanProducts.has(p.parentAsin)) {
+        collapsedLeanProducts.set(p.parentAsin, {
+          ...p,
+          variantCount: 1,
+          isParentView: true,
+          displayId: p.id,
+          canonicalId: p.id,
+        });
+      } else {
+        const existing = collapsedLeanProducts.get(p.parentAsin);
+        existing.variantCount += 1;
+        // Keep track of the canonical product ID (the smallest ID in the family)
+        // This is crucial for slug generation to prevent redirects!
+        if (p.id < existing.canonicalId) {
+          existing.canonicalId = p.id;
+        }
+
+        // The Hub adopts the cheapest variant's identifying specs for display
+        if (p.price > 0 && (existing.price === 0 || p.price < existing.price)) {
+          existing.displayId = p.id;
+          existing.price = p.price;
+          existing.title = p.title;
+          existing.savings = p.savings;
+        }
+      }
+    } else {
+      orphanedProducts.push(p);
+    }
+  });
+
+  // Keep ALL original products, PLUS the Hub Cards
+  const finalFilteredLeanProducts = [
+    ...filteredLeanProducts,
+    ...Array.from(collapsedLeanProducts.values()).filter(
+      (h) => h.variantCount > 1,
+    ),
+  ];
+
+  const totalFilteredCount = finalFilteredLeanProducts.length;
 
   // 4. Sort and Paginate (on Lean data)
   const sortedLeanProducts = sortProducts(
-    filteredLeanProducts,
+    finalFilteredLeanProducts,
     filters.sortBy,
     filters.sortOrder,
   );
@@ -779,8 +824,13 @@ export async function getCategoryProducts(
   // 5. HYDRATION: Fetch full objects only for the 24 visible items
   // We fetch them from the deep cache using the IDs from our lean set
   // This is surgical: we only hydrate what we actually display.
+  // Deduplicate IDs because a Hub card and its cheapest variant might share the same display ID
+  const hydrationIds = Array.from(
+    new Set(pageLeanProducts.map((p) => (p.isParentView ? p.displayId : p.id))),
+  );
+
   const rawPaginatedProducts = await getLocalizedProductsByIds(
-    pageLeanProducts.map((p) => p.id),
+    hydrationIds,
     categorySlug,
     countryCode,
   );
@@ -792,6 +842,37 @@ export async function getCategoryProducts(
     rawPaginatedProducts,
     countryCode,
   );
+
+  // Restore Hub identity (synthetic ID and Hub Slug)
+  const { getFamilyIdentity } = await import("@/lib/product-families");
+
+  const finalPaginatedProducts = pageLeanProducts
+    .map((lean) => {
+      const rawId = lean.isParentView ? lean.displayId : lean.id;
+      const rp = paginatedProducts.find((p) => p.id === rawId);
+      if (!rp) return null;
+
+      if (lean.isParentView) {
+        // Use Canonical ID to generate the Hub Slug and prevent redirects!
+        const syntheticId = 900000000 + lean.canonicalId;
+        const { slug } = getFamilyIdentity(
+          { ...rp, id: syntheticId, isParentView: true } as any,
+          [],
+        );
+
+        return {
+          ...rp,
+          isParentView: true,
+          variantCount: lean.variantCount,
+          id: syntheticId,
+          slug,
+        };
+      }
+
+      // Always clone to avoid mutating shared references if the same base variant is displayed twice
+      return { ...rp };
+    })
+    .filter(Boolean) as Product[];
 
   const contextMinPriceFinal =
     contextMinPrice === Infinity ? 0 : Math.floor(contextMinPrice);
@@ -808,16 +889,16 @@ export async function getCategoryProducts(
   };
 
   return {
-    products: paginatedProducts,
+    products: finalPaginatedProducts,
     totalCount: leanProducts.length,
     filteredCount: totalFilteredCount,
     unitLabel,
-    hasProducts: leanProducts.length > 0,
-    filters,
+    hasProducts: finalFilteredLeanProducts.length > 0,
+    filters: filterSummary,
     filterCounts: dynamicFilterCounts,
     minPriceInCategory: contextMinPriceFinal,
     maxPriceInCategory: contextMaxPriceFinal,
-    priceRanges,
+    priceRanges: calculatePriceRangeBuckets(leanMatchingNonPrice),
     lastUpdated:
       rawPaginatedProducts.length > 0
         ? rawPaginatedProducts.reduce(

@@ -72,6 +72,8 @@ export function IdealoListCard({
       return val && !fullTitle.includes(val);
     });
 
+  const isHub = !!(product as any).isParentView;
+
   return (
     <div className={cn("sr-resultList__item", "-mb-px", className)}>
       <PrefetchLink
@@ -132,14 +134,20 @@ export function IdealoListCard({
                     "mb-1 text-[14px] leading-[18px] font-bold text-[#2d2d2d]",
                   )}
                 >
-                  {product.category === "prozessoren"
-                    ? getProductIdentity(product).displayTitle
-                    : product.subtitle
-                      ? product.title.replace(product.subtitle, "").trim()
-                      : product.title}
-                  {product.subtitle && product.category !== "prozessoren" && (
-                    <span className="ml-1.5 font-bold">{product.subtitle}</span>
-                  )}
+                  {isHub
+                    ? getProductIdentity(product).modelTitle
+                    : product.category === "prozessoren"
+                      ? getProductIdentity(product).displayTitle
+                      : product.subtitle
+                        ? product.title.replace(product.subtitle, "").trim()
+                        : product.title}
+                  {product.subtitle &&
+                    !isHub &&
+                    product.category !== "prozessoren" && (
+                      <span className="ml-1.5 font-bold">
+                        {product.subtitle}
+                      </span>
+                    )}
                 </div>
               </div>
 
@@ -154,19 +162,24 @@ export function IdealoListCard({
                 )}
               >
                 <span>
-                  <p className="sr-productSummary__mainDetails productSummary__mainDetails--categoryPage">
-                    <span>{formatTechText(descriptionParts.join(", "))}</span>
-                  </p>
-                  {product.variationAttributes && hasUniqueVariation && (
-                    <p className="mt-1 text-[11px] font-medium text-orange-600">
-                      Version: {formatTechText(product.variationAttributes)}
+                  {!isHub && descriptionParts.length > 0 && (
+                    <p className="sr-productSummary__mainDetails productSummary__mainDetails--categoryPage">
+                      <span>{formatTechText(descriptionParts.join(", "))}</span>
                     </p>
                   )}
-                  {product.isVariantGroup && (
-                    <p className="text-idealo-text-primary mt-1 text-[12px]">
-                      {product.variantCount} Varianten
-                    </p>
-                  )}
+                  {!isHub &&
+                    product.variationAttributes &&
+                    hasUniqueVariation && (
+                      <p className="mt-1 text-[11px] font-medium text-orange-600">
+                        Version: {formatTechText(product.variationAttributes)}
+                      </p>
+                    )}
+                  {(product as any).isParentView &&
+                    (product as any).variantCount > 1 && (
+                      <p className="text-idealo-text-primary mt-1 text-[12px]">
+                        {(product as any).variantCount} Varianten
+                      </p>
+                    )}
                 </span>
               </div>
             </div>
@@ -213,7 +226,7 @@ export function IdealoListCard({
             productId={product.id!}
             countryCode={countryCode}
             initialPrice={product.price}
-            showAb={product.isVariantGroup}
+            showAb={!!(product as any).isParentView}
             className="text-primary text-[20px]"
             livePriceData={livePriceData}
           />

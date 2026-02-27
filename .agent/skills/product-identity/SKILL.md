@@ -34,6 +34,11 @@ We separate the **Indexing Identity** (Slugs) from the **Display Identity** (Ric
 - **Required**: Must include Brand, Family (e.g., Core Ultra 7), Model (e.g., 265K), Cores, and Clock Speed if available.
 - **Symbols**: Always preserve `®` and `™` in the display output.
 
+### Category Hub Sorting (`Hub Cards`)
+
+- **Ranking Strategy**: Hub cards must dynamically adopt the "best" relevant metric (e.g., lowest price, highest popularity) of their individual variants.
+- **Tie-breakers**: When a variant and its parent Hub card share the exact same metric, the Hub card _always_ wins the tiebreaker and appears immediately above its variant cohort.
+
 ## Regression Prevention
 
 Always run the identity regression suite after any change:
