@@ -18,7 +18,8 @@ The `getLeanCategoryProducts` function serves as the high-speed engine for the c
 - **Database Optimization**: Powered by `getRawProductsByCategory` which selects only `filteringProductColumns`, bypassing expensive sibling lookups and JSON parsing for the initial product set.
 - **TTFB Impact**: Extremely low, as Redis/Memory can parse this instantly.
 - **Fast-Path Mapping**: If DB data is already enriched, we skip heavy Regex parsing and identity resolution, reducing CPU cycles by ~90% per item.
-- **Single-Pass Processing**: Filtering, sorting, and facet counting occur in a single optimized loop to minimize GC pressure and memory allocations.
+- **Single-Pass Processing**: Filtering, sorting, and facet counting occur in a single optimized loop.
+- **Async Canonical ID Resolution**: After grouping variants into Hubs, we use `Promise.all` + `getCanonicalFamilyId` to resolve stable canonical IDs for top-level cards. This is done concurrently before final sorting to maintain performance while ensuring ID stability.
 
 ### 2. The "Ghost" Product Hydration
 

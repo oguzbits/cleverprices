@@ -7,6 +7,8 @@ export interface LocalizedProduct {
   slug: string;
   asin: string;
   title: string;
+  modelTitle?: string;
+  variantSuffix?: string;
   subtitle?: string;
   price: number;
   usedPrice?: number;
@@ -39,6 +41,7 @@ export interface LocalizedProduct {
   specificationsSource?: string;
   officialTitle?: string;
   mpn?: string;
+  canonicalId?: number | null;
 }
 
 export interface FilterParams {
@@ -132,6 +135,7 @@ export const liteProductColumns = {
 // ULTRA-lean columns for the filtering tier
 export const filteringProductColumns = {
   id: products.id,
+  slug: products.slug,
   asin: products.asin,
   title: products.title,
   brand: products.brand,
@@ -148,6 +152,10 @@ export const filteringProductColumns = {
   monthlySold: products.monthlySold,
   parentAsin: products.parentAsin,
   variationAttributes: products.variationAttributes,
+  canonicalId: products.canonicalId,
+  officialSpecifications: products.officialSpecifications,
+  specificationsSource: products.specificationsSource,
+  officialTitle: products.officialTitle,
 };
 
 export interface Product {
@@ -155,6 +163,8 @@ export interface Product {
   slug: string;
   asin: string;
   title: string;
+  modelTitle?: string; // Pre-computed SSOT title
+  variantSuffix?: string; // Pre-computed SSOT variant suffix
   rawTitle?: string;
   subtitle?: string;
   category: string;

@@ -14,7 +14,10 @@ import {
 import { translateSpecKey } from "@/lib/constants/spec-translations";
 import { type CountryCode } from "@/lib/countries";
 import { type Product } from "@/lib/product-definitions";
-import { getFamilyIdentity } from "@/lib/product-families";
+import {
+  getFamilyIdentity,
+  getFamilyRepresentative,
+} from "@/lib/product-families";
 import {
   getProductVariants,
   getSimilarProducts,
@@ -49,6 +52,7 @@ interface IdealoProductPageProps {
   parentSlug?: string;
   parentTitle?: string;
   parentFullModel?: string;
+  canonicalId?: number;
 }
 
 export async function IdealoProductPage({
@@ -61,21 +65,31 @@ export async function IdealoProductPage({
   parentSlug: passedParentSlug,
   parentTitle: passedParentTitle,
   parentFullModel: passedFullModel,
+  canonicalId,
 }: IdealoProductPageProps) {
   const isParentView = initialIsParentView;
 
-  // 1. DATA IS ALREADY MERGED: This component receives already-merged data
-  // HUB STABILITY FIX: Use the actual family representative to derive the parent slug.
-  // This ensures that regardless of which variant page you are on, the "Alle Varianten"
-  // link always points to the same canonical hub ID, avoiding 302 redirects.
   const mergedProduct = product;
-  const mergedVariants = variants;
-  const allFamilyMembers = [mergedProduct, ...mergedVariants];
-  const representative =
-    [...allFamilyMembers].sort((a, b) => (a.id || 0) - (b.id || 0))[0] ||
-    mergedProduct;
+  const rawVariants = variants;
 
   const identity = getProductIdentity(mergedProduct);
+  const targetModelKey = (identity.modelTitle || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
+
+  const mergedVariants = rawVariants.filter((v) => {
+    const vIden = getProductIdentity(v as any);
+    const vModelKey = (vIden.modelTitle || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+    return vModelKey === targetModelKey;
+  });
+
+  const allFamilyMembers = [mergedProduct, ...mergedVariants];
+
+  const representative =
+    getFamilyRepresentative(allFamilyMembers as any) || mergedProduct;
+
   const repIdentity =
     representative.id === mergedProduct.id
       ? identity
@@ -85,18 +99,21 @@ export async function IdealoProductPage({
     selectedCondition ||
     (mergedProduct.condition === "Renewed" ? "renewed" : "new");
 
-  const realId = (representative.id || 0) % 100000000;
+  const realId = (canonicalId || representative.id || 0) % 100000000;
   const syntheticId = 900000000 + realId;
   const parentRep = { ...representative, syntheticId };
-  const { slug: autoParentSlug } = getFamilyIdentity(
-    parentRep,
-    allFamilyMembers,
-  );
+  const {
+    slug: autoParentSlug,
+    modelTitle: autoParentTitle,
+    fullModel: autoFullModel,
+  } = getFamilyIdentity({ ...parentRep, isParentView: true }, allFamilyMembers);
 
   const parentSlug = passedParentSlug || autoParentSlug;
 
-  const parentTitle = passedParentTitle || repIdentity.modelTitle;
-  const hubFullModel = passedFullModel || repIdentity.fullModel;
+  const parentTitle =
+    passedParentTitle || autoParentTitle || repIdentity.modelTitle;
+  const hubFullModel =
+    passedFullModel || autoFullModel || repIdentity.fullModel;
   const variantName = identity.variantSuffix || "Standard";
 
   const schemaBreadcrumbs = [
@@ -119,7 +136,13 @@ export async function IdealoProductPage({
 
   return (
     <div className="bg-background min-h-screen">
-      <ProductSchema product={mergedProduct} countryCode={countryCode} />
+      <ProductSchema
+        product={mergedProduct}
+        countryCode={countryCode}
+        rating={product.rating || 4.5}
+        reviewCount={product.reviewCount || 0}
+        isHub={isParentView}
+      />
       <BreadcrumbSchema items={schemaBreadcrumbs} />
 
       <link rel="preconnect" href="https://m.media-amazon.com" />
@@ -202,20 +225,12 @@ export async function IdealoProductPage({
                 id="product-title"
                 className="text-[20px] font-bold md:text-[24px]"
               >
-                {product.category === "prozessoren"
-                  ? identity.displayTitle
-                  : mergedProduct.subtitle
-                    ? mergedProduct.title
-                        .replace(mergedProduct.subtitle, "")
-                        .trim()
-                    : mergedProduct.title}{" "}
-                {!isParentView &&
-                  mergedProduct.subtitle &&
-                  product.category !== "prozessoren" && (
-                    <span className="text-[16px] font-bold text-gray-500">
-                      {mergedProduct.subtitle}
-                    </span>
-                  )}
+                {isParentView ? parentTitle : identity.modelTitle}
+                {!isParentView && identity.variantSuffix && (
+                  <span className="ml-1.5 text-[16px] font-bold text-gray-500">
+                    {identity.variantSuffix}
+                  </span>
+                )}
               </h1>
               <div className="oopStage-metaInfo mb-4 flex flex-wrap items-center gap-4 sm:justify-center lg:justify-start">
                 <div className="flex items-center gap-1.5">
@@ -582,6 +597,7 @@ async function ParentHeroImage({
 }) {
   const variants =
     passedVariants || (await getProductVariants(product, countryCode));
+
   const uniqueImages: string[] = [];
   variants.forEach((v) => {
     if (v.image && !uniqueImages.includes(v.image)) {

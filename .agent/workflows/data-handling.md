@@ -57,3 +57,11 @@ To prevent discrepancies between Category Pages, Landing Pages, and Product Deta
     - **Grid Cards**: Use `{product.title.replace(product.subtitle, "")}` for the model and `{product.subtitle}` for the variant details.
     - **PDP H1**: MUST follow the same replacement logic using the product fields. **NEVER** re-calculate identity strings in components for display purposes.
 4.  **Testing**: Any changes to identity logic must be verified against `src/lib/utils/identity-consistency.test.ts` to ensure no divergence.
+
+## 7. Category Hub Sorting (Hub vs Variant)
+
+When grouping products into families (Hubs) on category pages, follow these rules to ensure the Hub card is correctly positioned:
+
+1.  **Metric Adoption**: The Hub card must adopt the _best_ value (e.g., lowest price, highest popularity) of its own variants.
+2.  **Explicit Tie-breaker**: In the `sortProducts` utility, implement a strict tie-breaker. If a Hub card and its variant have the same score, the Hub card **MUST** return `-1` (win the tie) to appear first.
+3.  **Test Coverage**: Always update `src/lib/utils/category-utils.test.ts` when modifying sorting logic.

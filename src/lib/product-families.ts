@@ -63,6 +63,8 @@ export function getFamilyIdentity(
 ): {
   slug: string;
   title: string;
+  modelTitle: string;
+  fullModel: string;
   brand: string;
   variantSuffix: string;
   displaySubtitle: string;
@@ -140,7 +142,9 @@ export function getFamilyIdentity(
 
   return {
     slug: `${idPrefix}_-${textSlug}`,
-    title: identity.fullModel,
+    title: identity.fullModel, // Fallback for backwards compatibility
+    modelTitle: identity.modelTitle,
+    fullModel: identity.fullModel,
     brand,
     variantSuffix: identity.variantSuffix,
     displaySubtitle: identity.variantSuffix, // Use concise suffix (Color + MPN) as the Source of Truth

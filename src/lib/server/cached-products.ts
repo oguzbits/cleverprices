@@ -14,6 +14,7 @@ import {
   getAllProductSlugs as getAllProductSlugsSync,
   getAllProducts as getAllProductsSync,
   getBestDeals as getBestDealsSync,
+  getCanonicalFamilyId,
   getDiverseMostPopular as getDiverseMostPopularSync,
   getMostPopular as getMostPopularSync,
   getNewArrivals as getNewArrivalsSync,
@@ -343,11 +344,27 @@ export async function getPDPRenderData(
         const isSlugMatch = product.slug === slug || product.id === id;
 
         if (isSlugMatch) {
-          const variants = await getCachedProductVariantsInternal(
+          const rawVariants = await getCachedProductVariantsInternal(
             product.parentAsin || product.asin,
             countryCode,
             true, // isLean
           );
+
+          // 1. Filter variants by series (modelTitle) to avoid mixing e.g. ASUS Prime and ROG Strix
+          const { getProductIdentity } =
+            await import("../utils/product-identity");
+          const hubIdentity = getProductIdentity(product);
+          const hubModelKey = (hubIdentity.modelTitle || "")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "");
+
+          const variants = rawVariants.filter((v) => {
+            const vIden = getProductIdentity(v as any);
+            const vModelKey = (vIden.modelTitle || "")
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "");
+            return vModelKey === hubModelKey;
+          });
 
           // 1. Merge prices for all (No history yet)
           const mergedAll = await mergeLivePrices(
@@ -388,7 +405,14 @@ export async function getPDPRenderData(
             }
           }
 
-          // 4. Align Hub product with Representative metadata
+          // 4. Resolve the STABLE canonical ID
+          const canonicalId = await getCanonicalFamilyId(
+            product.parentAsin,
+            product.id || 0,
+            product.modelTitle,
+          );
+
+          // 5. Align Hub product with Representative metadata
           if (rep && rep.id !== effectiveProduct.id) {
             effectiveProduct = {
               ...effectiveProduct,
@@ -407,10 +431,11 @@ export async function getPDPRenderData(
             product: effectiveProduct,
             variants: mergedAll.slice(1),
             isParentView: true,
+            canonicalId,
             redirect: null,
             isPermanent: false,
             // Add a salt to bust any stale caches
-            _v: "v71-final-canonical",
+            _v: "v72-stable-hub-id",
           };
         }
 

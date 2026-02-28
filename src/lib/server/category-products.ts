@@ -7,6 +7,7 @@ import {
   type Product,
 } from "@/lib/product-definitions";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { parseVariationAttributes } from "@/lib/utils/variants";
 import { cacheLife } from "next/cache";
@@ -93,6 +94,8 @@ export function mapRawToLocalizedProduct(
       slug: p.slug,
       asin: p.asin,
       title: p.title,
+      modelTitle: p.modelTitle || getProductIdentity(p).modelTitle,
+      variantSuffix: p.variantSuffix || getProductIdentity(p).variantSuffix,
       subtitle: p.subtitle || undefined,
       price: priceVal,
       usedPrice: p.usedPrices?.[countryCode] ?? undefined,
@@ -119,8 +122,12 @@ export function mapRawToLocalizedProduct(
       lastUpdated: p.pricesLastUpdated?.[countryCode],
       variationAttributes: p.variationAttributes || undefined,
       parentAsin: p.parentAsin || undefined,
-      specificationsSource: p.specificationsSource || undefined,
+      officialSpecifications:
+        typeof p.officialSpecifications === "string"
+          ? JSON.parse(p.officialSpecifications)
+          : p.officialSpecifications,
       officialTitle: p.officialTitle || undefined,
+      specificationsSource: p.specificationsSource || undefined,
       mpn: p.mpn || undefined,
     } as LocalizedProduct;
   }
@@ -153,6 +160,11 @@ export function mapRawToLocalizedProduct(
     parentAsin,
     lastUpdated,
   } = getLocalizedProductData(p, countryCode);
+
+  // SSOT: Direct identity extraction for consistent titles across category and PDP
+  const identity = getProductIdentity({ ...p, title });
+  const modelTitle = p.modelTitle || identity.modelTitle;
+  const variantSuffix = p.variantSuffix || identity.variantSuffix;
 
   // Filter out products with no valid price - they shouldn't appear in listings
   if (!price || price <= 0) return null;
@@ -321,6 +333,8 @@ export function mapRawToLocalizedProduct(
     slug: p.slug,
     asin,
     title,
+    modelTitle,
+    variantSuffix,
     subtitle: p.subtitle,
     price: price || 0,
     usedPrice: usedPrice || undefined,
@@ -347,9 +361,13 @@ export function mapRawToLocalizedProduct(
     listPrice: displayListPrice,
     parentAsin,
     variationAttributes: p.variationAttributes,
-    specificationsSource: p.specificationsSource,
+    officialSpecifications:
+      typeof p.officialSpecifications === "string"
+        ? JSON.parse(p.officialSpecifications)
+        : p.officialSpecifications,
     officialTitle: p.officialTitle,
     mpn: p.mpn,
+    specificationsSource: p.specificationsSource,
   } as LocalizedProduct;
 }
 
@@ -361,7 +379,7 @@ export function mapRawToLocalizedProduct(
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v61", // Cache buster
+  version: string = "v78", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
@@ -392,7 +410,7 @@ export async function getCachedLocalizedCategoryProducts(
 export async function getLeanCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v61",
+  version: string = "v78",
 ) {
   "use cache";
   cacheLife("category");
@@ -412,27 +430,9 @@ export async function getLeanCategoryProducts(
     .map((p) => {
       const localized = mapRawToLocalizedProduct(p, countryCode, categorySlug);
       if (!localized) return null;
-
-      return {
-        id: localized.id,
-        title: localized.title,
-        brand: localized.brand,
-        price: localized.price,
-        popularityScore: localized.popularityScore,
-        condition: localized.condition,
-        capacity: localized.capacity,
-        normalizedCapacity: localized.normalizedCapacity,
-        formFactor: localized.formFactor,
-        technology: localized.technology,
-        socket: localized.socket,
-        cores: localized.cores,
-        savings: localized.savings,
-        pricePerUnit: localized.pricePerUnit,
-        salesRank: localized.salesRank,
-        parentAsin: localized.parentAsin,
-      };
+      return localized;
     })
-    .filter((p): p is any => p !== null);
+    .filter((p): p is LocalizedProduct => p !== null);
 }
 
 /**
@@ -644,7 +644,7 @@ export async function getCategoryProducts(
   const leanProducts = await getLeanCategoryProducts(
     categorySlug,
     countryCode,
-    "v61",
+    "v78",
   );
 
   const category = allCategories[categorySlug as CategorySlug];
@@ -667,6 +667,8 @@ export async function getCategoryProducts(
 
   const filteredLeanProducts: any[] = [];
   const leanMatchingNonPrice: any[] = [];
+  const orphanedProducts: any[] = [];
+  const familyVariants = new Map<string, LocalizedProduct[]>();
 
   let contextMinPrice = Infinity;
   let contextMaxPrice = -Infinity;
@@ -736,10 +738,23 @@ export async function getCategoryProducts(
     if (matchesAllFields) {
       leanMatchingNonPrice.push(p);
 
-      // [PERFORMANCE] Track min/max inline to avoid expensive Math.min/max(...spread)
+      // [PERFORMANCE] Track min/max inline
       if (p.price > 0) {
         if (p.price < contextMinPrice) contextMinPrice = p.price;
         if (p.price > contextMaxPrice) contextMaxPrice = p.price;
+      }
+
+      if (p.parentAsin) {
+        const pIdentity = getProductIdentity(p as any);
+        const familyKey = `${p.parentAsin}_${(pIdentity.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "")}`;
+        if (familyKey) {
+          if (!familyVariants.has(familyKey)) familyVariants.set(familyKey, []);
+          familyVariants.get(familyKey)!.push(p);
+        } else {
+          orphanedProducts.push(p);
+        }
+      } else {
+        orphanedProducts.push(p);
       }
     }
 
@@ -764,40 +779,59 @@ export async function getCategoryProducts(
   });
 
   // --- GENERATE HUB CARDS ---
+  const { getFamilyIdentity, getFamilyRepresentative } =
+    await import("../product-families");
+  const { getCanonicalFamilyId } = await import("../product-registry");
   const collapsedLeanProducts = new Map<string, any>();
-  const orphanedProducts: any[] = [];
 
-  filteredLeanProducts.forEach((p) => {
-    if (p.parentAsin) {
-      if (!collapsedLeanProducts.has(p.parentAsin)) {
-        collapsedLeanProducts.set(p.parentAsin, {
-          ...p,
-          variantCount: 1,
+  const familyEntries = Array.from(familyVariants.entries());
+
+  await Promise.all(
+    familyEntries.map(async ([familyKey, variants]) => {
+      // Collect all variants that match filters for this hub
+      const matchingVariants = variants.filter((v: any) => {
+        const matchesPrice =
+          (!filters.minPrice || v.price >= filters.minPrice) &&
+          (!filters.maxPrice || (v.price > 0 && v.price <= filters.maxPrice));
+        return matchesPrice;
+      });
+
+      if (matchingVariants.length === 0) return;
+
+      const representative = getFamilyRepresentative(matchingVariants as any);
+      if (!representative) return;
+
+      // RESOLVE STABLE CANONICAL ID: This ensures the Hub ID doesn't change
+      // when the cheapest representative changes.
+      const canonicalId = await getCanonicalFamilyId(
+        representative.parentAsin,
+        representative.id || 0,
+        representative.modelTitle,
+      );
+
+      const familyIdentity = getFamilyIdentity(
+        {
+          ...representative,
           isParentView: true,
-          displayId: p.id,
-          canonicalId: p.id,
-        });
-      } else {
-        const existing = collapsedLeanProducts.get(p.parentAsin);
-        existing.variantCount += 1;
-        // Keep track of the canonical product ID (the smallest ID in the family)
-        // This is crucial for slug generation to prevent redirects!
-        if (p.id < existing.canonicalId) {
-          existing.canonicalId = p.id;
-        }
+          syntheticId: canonicalId,
+        } as any,
+        variants as any,
+      );
 
-        // The Hub adopts the cheapest variant's identifying specs for display
-        if (p.price > 0 && (existing.price === 0 || p.price < existing.price)) {
-          existing.displayId = p.id;
-          existing.price = p.price;
-          existing.title = p.title;
-          existing.savings = p.savings;
-        }
-      }
-    } else {
-      orphanedProducts.push(p);
-    }
-  });
+      // Hub adopts the consensus identity
+      collapsedLeanProducts.set(familyKey, {
+        ...representative,
+        isParentView: true,
+        variantCount: variants.length,
+        displayId: representative.id,
+        canonicalId: canonicalId,
+        title: familyIdentity.modelTitle || familyIdentity.fullModel,
+        modelTitle: familyIdentity.modelTitle,
+        variantSuffix: familyIdentity.variantSuffix,
+        slug: familyIdentity.slug,
+      });
+    }),
+  );
 
   // Keep ALL original products, PLUS the Hub Cards
   const finalFilteredLeanProducts = [
@@ -843,9 +877,6 @@ export async function getCategoryProducts(
     countryCode,
   );
 
-  // Restore Hub identity (synthetic ID and Hub Slug)
-  const { getFamilyIdentity } = await import("@/lib/product-families");
-
   const finalPaginatedProducts = pageLeanProducts
     .map((lean) => {
       const rawId = lean.isParentView ? lean.displayId : lean.id;
@@ -853,23 +884,19 @@ export async function getCategoryProducts(
       if (!rp) return null;
 
       if (lean.isParentView) {
-        // Use Canonical ID to generate the Hub Slug and prevent redirects!
-        const syntheticId = 900000000 + lean.canonicalId;
-        const { slug } = getFamilyIdentity(
-          { ...rp, id: syntheticId, isParentView: true } as any,
-          [],
-        );
-
+        const syntheticId = 900000000 + (lean.canonicalId || lean.id);
         return {
           ...rp,
           isParentView: true,
           variantCount: lean.variantCount,
           id: syntheticId,
-          slug,
+          slug: lean.slug,
+          title: lean.title,
+          modelTitle: lean.modelTitle,
+          variantSuffix: lean.variantSuffix,
         };
       }
 
-      // Always clone to avoid mutating shared references if the same base variant is displayed twice
       return { ...rp };
     })
     .filter(Boolean) as Product[];
@@ -878,8 +905,6 @@ export async function getCategoryProducts(
     contextMinPrice === Infinity ? 0 : Math.floor(contextMinPrice);
   const contextMaxPriceFinal =
     contextMaxPrice === -Infinity ? 1000 : Math.ceil(contextMaxPrice);
-
-  const priceRanges = calculatePriceRangeBuckets(leanMatchingNonPrice);
 
   const pagination = {
     currentPage: page,

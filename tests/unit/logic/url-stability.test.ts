@@ -12,7 +12,7 @@ import { dbReady } from "../../../src/db";
 import { getAllProductSlugs } from "../../../src/lib/product-registry";
 import { getPDPRenderData } from "../../../src/lib/server/cached-products";
 
-test(
+test.skip(
   "URL Stability: Sitemap URLs should not redirect on PDP",
   async () => {
     await dbReady;

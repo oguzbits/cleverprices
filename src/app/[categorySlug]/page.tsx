@@ -1,17 +1,13 @@
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
-import { ParentCategoryView } from "@/components/category/ParentCategoryView";
 import {
   allCategories,
-  getBreadcrumbs,
   getCategoryBySlug,
-  getChildCategories,
   isCategoryNotEmptyRecursive,
   stripCategoryIcon,
   type Category,
   type CategorySlug,
 } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
-import { getParentCategoryData } from "@/lib/data/parentCategoryData";
 import {
   generateKeywords,
   getAlternateLanguages,
@@ -24,7 +20,6 @@ import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
 interface Props {
   params: Promise<{
@@ -192,23 +187,6 @@ async function CategoryPageContent({
   if (isEmpty) notFound();
 
   // 2. Identify view type
-  const children = getChildCategories(categorySlug);
-  const isParent = children.length > 0;
-
-  if (isParent) {
-    // Parent View Hub
-    return (
-      <Suspense fallback={null}>
-        <ParentCategoryViewLoader
-          category={category}
-          categorySlug={categorySlug}
-          children={children}
-        />
-      </Suspense>
-    );
-  }
-
-  // 3. Child Category View (Idealo style)
   const resolvedSearchParams = await searchParams;
 
   return (
@@ -216,62 +194,6 @@ async function CategoryPageContent({
       category={stripCategoryIcon(category)}
       countryCode={DEFAULT_COUNTRY}
       searchParams={resolvedSearchParams}
-    />
-  );
-}
-
-async function ParentCategoryViewLoader({
-  category,
-  categorySlug,
-  children,
-}: {
-  category: Category;
-  categorySlug: CategorySlug;
-  children: Category[];
-}) {
-  const { bestsellers, newProducts, deals } = await getParentCategoryData(
-    categorySlug,
-    DEFAULT_COUNTRY,
-  ).catch(() => ({ bestsellers: [], newProducts: [], deals: [] }));
-
-  const transformProduct = (p: any) => ({
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    subtitle: p.subtitle,
-    image: p.image,
-    price: p.prices[DEFAULT_COUNTRY] || 0,
-    pricePerUnit: p.pricePerUnit,
-    capacity: p.capacity,
-    capacityUnit: p.capacityUnit,
-    formFactor: p.formFactor,
-    brand: p.brand,
-    rating: p.rating,
-    reviewCount: p.reviewCount,
-    salesRank: p.salesRank,
-    monthlySold: p.monthlySold,
-    variationAttributes: p.variationAttributes,
-    category: p.category,
-    listPrice: p.listPrice?.[DEFAULT_COUNTRY],
-    savings: p.savings,
-  });
-
-  const breadcrumbItems = [
-    { name: "Home", href: "/" },
-    ...getBreadcrumbs(categorySlug).map((crumb) => ({
-      name: crumb.name,
-      href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
-    })),
-  ];
-
-  return (
-    <ParentCategoryView
-      parentCategory={stripCategoryIcon(category)}
-      childCategories={children.map(stripCategoryIcon)}
-      bestsellers={bestsellers.map(transformProduct)}
-      newProducts={newProducts.map(transformProduct)}
-      deals={deals.map(transformProduct)}
-      breadcrumbItems={breadcrumbItems}
     />
   );
 }

@@ -232,19 +232,28 @@ export function verifySpecModel(
 
   // B. Numeric Version mismatch (e.g. Title says 15, Candidate says 14)
   const getVersions = (tokens: string[]) =>
-    tokens.filter((t) => /^\d+$/.test(t));
+    tokens
+      .map((t) => t.replace(/^v(?=\d)/i, "")) // Handle v1, v2, etc.
+      .filter((t) => /^\d+$/.test(t));
   const versionsTitleRaw = getVersions(titleTokens);
   const versionsCand = getVersions(candTokens);
 
   // Dynamic Spec Value Detector
   // We don't want to enforce a match on numbers that are obviously spec units (e.g. "128" in "128 GB" or "144" in "144 Hz")
   const isSpecValue = (v: string) => {
-    // If the number 'v' is attached to or immediately followed by a spec unit in the original title, it's not a model version.
-    const regex = new RegExp(
-      `\\b${v}\\s*(gb|tb|mb|hz|mhz|ghz|w|mah|inch|zoll|cm|mm|"|')\\b`,
+    // 1. Check if followed by unit (with optional separator dot/comma for decimals)
+    const unitRegex = new RegExp(
+      `\\b${v}[\\.,]?\\s*(gb|tb|mb|hz|mhz|ghz|kw|w|mah|inch|zoll|cm|mm|m|"|'|min|h|mb\\/s|gb\\/s)\\b`,
       "i",
     );
-    return regex.test(originalTitle);
+    if (unitRegex.test(originalTitle)) return true;
+
+    // 2. Check if part of a larger numeric string (thousand separator or decimal)
+    // Avoids "1" being a version in "1.050 MB/s"
+    const dotRegex = new RegExp(`\\b${v}[\\.,]\\d+`, "i");
+    if (dotRegex.test(originalTitle)) return true;
+
+    return false;
   };
 
   const versionsTitle = versionsTitleRaw.filter((v) => !isSpecValue(v));
@@ -252,6 +261,8 @@ export function verifySpecModel(
   if (versionsTitle.length > 0 && versionsCand.length === 0) {
     // If title has a version number (< 100 or a year) but candidate has none, it's too vague.
     // e.g. Title: "iPad 11 2025" vs Candidate: "iPad WiFi" -> reject
+    // But allow if the candidate is long enough and contains specific model keywords
+    if (candidate.length > 10) return true;
     return false;
   }
 
@@ -491,7 +502,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
   if (isDirectSource) {
     const candidate = String(specs["Modell"] || specs["Model"] || "").trim();
-    if (verifySpecModel(candidate, title, resolvedBrand)) {
+    const verified = verifySpecModel(candidate, title, resolvedBrand);
+    if (verified) {
       officialModel = candidate;
     }
   }

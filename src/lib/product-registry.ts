@@ -44,8 +44,11 @@ export {
   superLitePriceColumns,
 };
 
-import { getFamilyIdentity } from "./product-families";
-import { calculateSiblingConsensus } from "./utils/product-identity";
+import { getFamilyIdentity, getFamilyRepresentative } from "./product-families";
+import {
+  calculateSiblingConsensus,
+  getProductIdentity,
+} from "./utils/product-identity";
 import { mapDbProduct } from "./utils/product-mapping";
 
 /**
@@ -124,27 +127,58 @@ export const getProductById = cache(async function getProductById(
  * Get the stable canonical ID for a family (Smallest ID in the family).
  * This ensures all variants point to the same Hub ID regardless of price/condition.
  */
-const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
+export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
   parentAsin: string | undefined,
   currentId: number,
+  modelTitle?: string,
 ): Promise<number> {
   if (!parentAsin) return currentId;
 
   const fetchCanonicalId = async () => {
     await dbReady;
-    const [result] = await db
-      .select({ id: products.id })
+    const allVariants = await db
+      .select({
+        id: products.id,
+        title: products.title,
+        brand: products.brand,
+        category: products.category,
+        officialTitle: products.officialTitle,
+        officialSpecifications: products.officialSpecifications,
+        variationAttributes: products.variationAttributes,
+        specificationsSource: products.specificationsSource,
+      })
       .from(products)
       .where(eq(products.parentAsin, parentAsin))
-      .orderBy(asc(products.id))
-      .limit(1);
-    return result?.id ?? currentId;
+      .orderBy(asc(products.id));
+
+    if (allVariants.length === 0) return currentId;
+
+    // If no modelTitle provided, use the first ID overall for that family
+    if (!modelTitle) return allVariants[0].id;
+
+    // Split based on specific series (matches category page expansion logic)
+    const targetKey = modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "");
+    const { getProductIdentity } = await import("./utils/product-identity");
+
+    for (const v of allVariants) {
+      const iden = getProductIdentity(v as any);
+      const key = (iden.modelTitle || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
+      if (key === targetKey) {
+        return v.id;
+      }
+    }
+
+    return allVariants[0].id;
   };
 
-  // Cache for performance as this is called for every variant link
-  return unstable_cache(fetchCanonicalId, [`canonical-id-v1-${parentAsin}`], {
+  const cacheKey = modelTitle
+    ? `${parentAsin}-${modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "")}`
+    : parentAsin;
+  return unstable_cache(fetchCanonicalId, [`canonical-id-v2-${cacheKey}`], {
     revalidate: PRODUCT_REVALIDATE_SECONDS,
-    tags: ["canonical-id"],
+    tags: ["products", `family-${parentAsin}`],
   })();
 });
 
@@ -191,64 +225,52 @@ export async function findProductBySyntheticId(
 
   const realId = syntheticId - 900000000;
 
-  // 1. Fetch the requested "Canonical" product (used for ID stability)
+  // 1. Fetch requested product (used for ID stability)
   const canonicalProduct = await getProductById(realId);
   if (!canonicalProduct) return undefined;
 
+  // 1.5 Series Identification
+  const identity = getProductIdentity(canonicalProduct);
+  const modelTitle = identity.modelTitle;
+
   // 2. CANONICAL HUB ENFORCEMENT
-  // If the requested product is part of a family, we must ensure we are using the TRUE canonical ID.
-  // If not, we return the canonical one so the page can redirect.
   if (canonicalProduct.parentAsin) {
     const canonicalRealId = await getCanonicalFamilyId(
       canonicalProduct.parentAsin,
       realId,
+      modelTitle,
     );
     const canonicalSyntheticId = 900000000 + canonicalRealId;
 
     if (canonicalRealId !== realId) {
       const actualCanonical = await getProductById(canonicalRealId);
       if (actualCanonical) {
-        // Recursively call to get the best representative for the TRUE canonical ID
         return findProductBySyntheticId(canonicalSyntheticId);
       }
     }
   }
 
   // 3. DYNAMIC REPRESENTATIVE SELECTION (Robustness Layer)
-  // Instead of blindly returning the canonical product (which might be old/OOS),
-  // we fetch all variants and pick the "Best" one to visually represent the family.
+  // We fetch matching siblings (same series) to pick the best face for the hub
   let representative = canonicalProduct;
 
   if (canonicalProduct.parentAsin) {
-    // We use country code 'de' as default for hub optimization
-    const variants = await getProductVariants(canonicalProduct, "de");
+    const rawVariants = await getProductVariants(canonicalProduct, "de");
 
-    if (variants.length > 0) {
-      // Sort variants to find the best "Face" for the family
-      // Priority:
-      // 1. Has Price (In Stock)
-      // 2. Is New Condition
-      // 3. Has Image
-      // 4. Newer (higher ID/createdAt)
-      const bestVariant = variants.sort((a, b) => {
-        const priceA = a.prices["de"] || 0;
-        const priceB = b.prices["de"] || 0;
-        const hasPriceA = priceA > 0;
-        const hasPriceB = priceB > 0;
+    if (rawVariants.length > 0) {
+      const targetModelKey = (modelTitle || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "");
 
-        if (hasPriceA !== hasPriceB) return hasPriceA ? -1 : 1;
+      const variants = rawVariants.filter((v) => {
+        const vIden = getProductIdentity(v);
+        const vModelKey = (vIden.modelTitle || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "");
+        return vModelKey === targetModelKey;
+      });
 
-        const isNewA = a.condition === "New";
-        const isNewB = b.condition === "New";
-        if (isNewA !== isNewB) return isNewA ? -1 : 1;
-
-        const hasImgA = !!a.image;
-        const hasImgB = !!b.image;
-        if (hasImgA !== hasImgB) return hasImgA ? -1 : 1;
-
-        return (b.id || 0) - (a.id || 0); // Prefer newer items
-      })[0];
-
+      const bestVariant = getFamilyRepresentative(variants as any);
       if (bestVariant) {
         representative = bestVariant;
       }
@@ -256,11 +278,9 @@ export async function findProductBySyntheticId(
   }
 
   // 4. Return the "Best" representative, but MASKED with the Synthetic ID
-  // Stability Rule: Always generate the slug from the CANONICAL product (ID-owner)
-  // while showing the dynamic representative's content (cheapest/in-stock).
   const history = await getProductPriceHistory(representative.id!, "de");
 
-  const { slug: syntheticSlug } = getFamilyIdentity(
+  const familyIdentity = getFamilyIdentity(
     { ...canonicalProduct, id: syntheticId, isParentView: true },
     [],
   );
@@ -268,10 +288,12 @@ export async function findProductBySyntheticId(
   return {
     ...representative,
     id: syntheticId,
-    slug: syntheticSlug,
+    slug: familyIdentity.slug,
     priceHistory: history,
     isParentView: true,
-  };
+    modelTitle: familyIdentity.modelTitle,
+    variantSuffix: familyIdentity.variantSuffix,
+  } as any;
 }
 
 export async function getAllProductSlugs(limit?: number): Promise<
@@ -858,7 +880,21 @@ export async function findProductSlugByAsinSuffix(
         .limit(1),
     );
     if (p) {
-      const { slug: canonical } = getFamilyIdentity(p as any, []);
+      const iden = getProductIdentity(p);
+      const canonicalRealId = await getCanonicalFamilyId(
+        (p as any).parentAsin || undefined,
+        p.id,
+        iden.modelTitle,
+      );
+      const canonicalProduct = await getProductById(canonicalRealId);
+      const { slug: canonical } = getFamilyIdentity(
+        {
+          ...(canonicalProduct || p),
+          id: 900000000 + (canonicalProduct?.id ?? p.id),
+          isParentView: true,
+        },
+        [],
+      );
       return canonical;
     }
   }
@@ -885,7 +921,21 @@ export async function findProductSlugByAsinSuffix(
       )
       .limit(1);
     if (p) {
-      const { slug: canonical } = getFamilyIdentity(p as any, []);
+      const iden = getProductIdentity(p);
+      const canonicalRealId = await getCanonicalFamilyId(
+        (p as any).parentAsin || undefined,
+        p.id,
+        iden.modelTitle,
+      );
+      const canonicalProduct = await getProductById(canonicalRealId);
+      const { slug: canonical } = getFamilyIdentity(
+        {
+          ...(canonicalProduct || p),
+          id: 900000000 + (canonicalProduct?.id ?? p.id),
+          isParentView: true,
+        },
+        [],
+      );
       return canonical;
     }
   }

@@ -38,8 +38,9 @@ const mockProduct = (
   prices: { de: 100 },
 });
 
-const ARTIFACT_DIR =
-  "/Users/oguz/.gemini/antigravity/brain/78b5eeae-abbd-4bfa-a683-f7eebca9793d";
+import { tmpdir } from "os";
+
+const ARTIFACT_DIR = tmpdir();
 
 const TEST_MATRIX = [
   // 1. SMARTPHONES

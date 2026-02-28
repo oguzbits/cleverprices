@@ -26,6 +26,7 @@ import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatTechText } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductBestseller } from "@/lib/utils/products";
+import { getProductPath } from "@/lib/utils/url";
 import { IdealoLivePrice } from "../product/IdealoLivePrice";
 import { IdealoStarRating } from "./IdealoStarRating";
 
@@ -73,6 +74,11 @@ export function IdealoGridCard({
     });
 
   const isHub = !!(product as any).isParentView;
+  const identity = getProductIdentity(product);
+
+  const displayModelTitle = product.modelTitle || identity.modelTitle;
+  const displayVariantSuffix = product.variantSuffix || identity.variantSuffix;
+
   console.log(
     `IdealoGridCard Render: ID: ${product.id} TITLE: ${product.title} isParentView: ${(product as any).isParentView} isHub: ${isHub} slug: ${product.slug}`,
   );
@@ -87,7 +93,7 @@ export function IdealoGridCard({
       )}
     >
       <PrefetchLink
-        href={`/p/${product.slug}`}
+        href={getProductPath(product.id, product.slug)}
         className={cn(
           "sr-resultItemTile sr-resultItemTile--GRID",
           "relative flex h-full flex-col",
@@ -154,20 +160,12 @@ export function IdealoGridCard({
                     "mb-1 line-clamp-3 text-[14px] leading-[18px] font-bold hyphens-auto text-[#2d2d2d]",
                   )}
                 >
-                  {isHub
-                    ? getProductIdentity(product).modelTitle
-                    : product.category === "prozessoren"
-                      ? getProductIdentity(product).displayTitle
-                      : product.subtitle
-                        ? product.title.replace(product.subtitle, "").trim()
-                        : product.title}
-                  {product.subtitle &&
-                    !isHub &&
-                    product.category !== "prozessoren" && (
-                      <span className="ml-1.5 font-bold">
-                        {product.subtitle}
-                      </span>
-                    )}
+                  {displayModelTitle}
+                  {displayVariantSuffix && !isHub && (
+                    <span className="ml-1.5 font-bold">
+                      {displayVariantSuffix}
+                    </span>
+                  )}
                 </div>
               </div>
 

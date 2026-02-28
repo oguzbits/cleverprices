@@ -26,6 +26,7 @@ import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatTechText } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductBestseller } from "@/lib/utils/products";
+import { getProductPath } from "@/lib/utils/url";
 import { IdealoLivePrice } from "../product/IdealoLivePrice";
 import { IdealoStarRating } from "./IdealoStarRating";
 
@@ -73,11 +74,15 @@ export function IdealoListCard({
     });
 
   const isHub = !!(product as any).isParentView;
+  const identity = getProductIdentity(product);
+
+  const displayModelTitle = product.modelTitle || identity.modelTitle;
+  const displayVariantSuffix = product.variantSuffix || identity.variantSuffix;
 
   return (
     <div className={cn("sr-resultList__item", "-mb-px", className)}>
       <PrefetchLink
-        href={`/p/${product.slug}`}
+        href={getProductPath(product.id, product.slug)}
         className={cn(
           "sr-resultItemTile sr-resultItemTile--LIST",
           "relative flex flex-row items-stretch",
@@ -134,20 +139,12 @@ export function IdealoListCard({
                     "mb-1 text-[14px] leading-[18px] font-bold text-[#2d2d2d]",
                   )}
                 >
-                  {isHub
-                    ? getProductIdentity(product).modelTitle
-                    : product.category === "prozessoren"
-                      ? getProductIdentity(product).displayTitle
-                      : product.subtitle
-                        ? product.title.replace(product.subtitle, "").trim()
-                        : product.title}
-                  {product.subtitle &&
-                    !isHub &&
-                    product.category !== "prozessoren" && (
-                      <span className="ml-1.5 font-bold">
-                        {product.subtitle}
-                      </span>
-                    )}
+                  {displayModelTitle}
+                  {displayVariantSuffix && !isHub && (
+                    <span className="ml-1.5 font-bold">
+                      {displayVariantSuffix}
+                    </span>
+                  )}
                 </div>
               </div>
 

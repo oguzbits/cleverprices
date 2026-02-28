@@ -206,7 +206,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     // SEO-optimized Title: Ensure it stays under 65 chars
     // Pattern: [Clean Name] | Preisvergleich | Brand
-    const seoTitle = isParentView ? identity.fullModel : product.title;
+    const seoTitle = isParentView ? identity.modelTitle : identity.displayTitle;
     const baseTitle = `${seoTitle} | Preisvergleich`;
     const title = truncateTitle(baseTitle, 60) + ` | ${BRAND_NAME}`;
 
@@ -217,8 +217,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description =
       enrichedDesc ||
       (pricePerUnit && category?.unitType
-        ? `${product.title} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_NAME}.`
-        : `${product.title} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_NAME}.`);
+        ? `${identity.displayTitle} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_NAME}.`
+        : `${identity.displayTitle} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_NAME}.`);
 
     // Use the ID-prefixed slug for the canonical URL to match the sitemap exactly
     const canonicalPath = getProductPath(product.id, product.slug);
@@ -329,6 +329,7 @@ async function ProductPageContent({
             countryCode={countryCode}
             selectedCondition={condition as any}
             isParentView={parentViewMode}
+            canonicalId={data?.canonicalId}
           />
         );
       }

@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
 import type { Product } from "@/lib/product-definitions";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductPath } from "@/lib/utils/url";
 import Image from "next/image";
 import Link from "next/link";
@@ -36,6 +37,7 @@ export function SimilarProducts({
     <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
       {products.map((product) => {
         const price = product.prices[countryCode];
+        const identity = getProductIdentity(product);
 
         return (
           <Link
@@ -50,7 +52,7 @@ export function SimilarProducts({
                   {product.image ? (
                     <Image
                       src={product.image}
-                      alt={product.title}
+                      alt={identity.displayTitle}
                       fill
                       sizes="(max-width: 768px) 50vw, 25vw"
                       className="object-contain p-2"
@@ -72,7 +74,7 @@ export function SimilarProducts({
 
                   {/* Title - truncated, no underline on hover */}
                   <h3 className="line-clamp-2 text-sm font-medium no-underline">
-                    {product.title}
+                    {identity.displayTitle}
                   </h3>
 
                   {/* Capacity Badge */}
@@ -120,6 +122,7 @@ export function SimilarProductsCompact({
     <ul className="space-y-2">
       {products.map((product) => {
         const price = product.prices[countryCode];
+        const identity = getProductIdentity(product);
 
         return (
           <li key={product.slug}>
@@ -132,7 +135,7 @@ export function SimilarProductsCompact({
                 {product.image && (
                   <Image
                     src={product.image}
-                    alt={product.title}
+                    alt={identity.displayTitle}
                     fill
                     sizes="40px"
                     className="object-contain p-1"
@@ -143,7 +146,9 @@ export function SimilarProductsCompact({
 
               {/* Info */}
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{product.title}</p>
+                <p className="truncate text-sm font-medium">
+                  {identity.displayTitle}
+                </p>
                 {price && (
                   <p className="text-muted-foreground text-xs">
                     {currencySymbol}

@@ -21,6 +21,15 @@ The "Lean & Ghost" architecture is a two-tier data fetching strategy designed to
   - Use `getProductsByIds` to fetch full records for exactly those 24 items.
   - This ensures heavy JSON blobs (specs, official specs) are only deserialized for visible items.
 
+### 3. Family Grouping (Hub Cards)
+
+- **Goal**: Consolidate product variants into a single "Hub" card to improve scannability.
+- **Implementation**:
+  - In the **Lean Tier**, group products by `parentAsin`.
+  - Create a synthetic "parentView" object for each family.
+  - The Hub card must adopt the _best_ metrics (e.g., lowest price) of its members for sorting.
+  - Apply an explicit tie-breaker in sorting: Hub cards always rank above their specific variants if they share the same best score.
+
 ## Benefits
 
 - **Memory Efficiency**: Avoids loading 2,000+ heavy objects into the server's RAM.

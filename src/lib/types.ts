@@ -2,6 +2,9 @@ export interface LeanProduct {
   id?: number;
   slug: string;
   title: string;
+  modelTitle?: string;
+  variantSuffix?: string;
+  specificationsSource?: string | null;
   subtitle?: string;
   image?: string;
   price: number;

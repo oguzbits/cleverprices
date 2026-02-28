@@ -300,6 +300,8 @@ export function mapDbProduct(
   const {
     slug: canonicalSlug,
     title: familyTitle,
+    modelTitle,
+    variantSuffix,
     displaySubtitle,
   } = getFamilyIdentity(item, siblings || [], consensus);
 
@@ -309,6 +311,8 @@ export function mapDbProduct(
       ? `${familyTitle} ${displaySubtitle}`
       : familyTitle;
   item.subtitle = displaySubtitle;
+  item.modelTitle = modelTitle;
+  item.variantSuffix = variantSuffix;
 
   // Identity and titles are set. We strip huge blobs if requested to stay under cache limits.
   if (stripHeavyData) {

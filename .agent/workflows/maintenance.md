@@ -49,6 +49,14 @@ Price updates automatically trigger the cache warmer in production. To run a man
 bun run warm-cache --lite [slug1] [slug2]
 ```
 
+## 6. Canonical ID Alignment
+
+If Hub links are still resulting in redirects, the `canonical_id` column might be stale. Run this SQL fix:
+
+```bash
+sqlite3 data/cleverprices.db "UPDATE products SET canonical_id = (SELECT MIN(id) FROM products p2 WHERE p2.parent_asin = products.parent_asin) WHERE parent_asin IS NOT NULL;"
+```
+
 ## Execution Policy
 
 These scripts should be run manually (or proposed by an AI agent) whenever there are widespread data issues or before a major marketing launch.

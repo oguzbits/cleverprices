@@ -12,6 +12,7 @@ import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
 import type { Product } from "@/lib/product-definitions";
 import { BRAND_DOMAIN, BRAND_NAME } from "@/lib/site-config";
+import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductCanonicalUrl } from "@/lib/utils/url";
 
 interface ProductSchemaProps {
@@ -19,6 +20,7 @@ interface ProductSchemaProps {
   countryCode: CountryCode;
   rating?: number;
   reviewCount?: number;
+  isHub?: boolean;
 }
 
 export function ProductSchema({
@@ -26,7 +28,9 @@ export function ProductSchema({
   countryCode,
   rating,
   reviewCount,
+  isHub = false,
 }: ProductSchemaProps) {
+  const identity = getProductIdentity(product);
   const countryConfig = getCountryByCode(countryCode);
   const currency = countryConfig?.currency || "USD";
 
@@ -50,9 +54,9 @@ export function ProductSchema({
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: product.title,
+    name: isHub ? identity.modelTitle : identity.displayTitle,
     description:
-      `${product.title} - ${product.brand} ${product.category} mit ${product.capacity} ${product.capacityUnit} Kapazität. ${product.technology || ""} ${product.formFactor || ""}`.trim(),
+      `${isHub ? identity.modelTitle : identity.displayTitle} - ${product.brand} ${product.category}.`.trim(),
     brand: {
       "@type": "Brand",
       name: product.brand,

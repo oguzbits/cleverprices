@@ -38,6 +38,24 @@ We separate the **Indexing Identity** (Slugs) from the **Display Identity** (Ric
 
 - **Ranking Strategy**: Hub cards must dynamically adopt the "best" relevant metric (e.g., lowest price, highest popularity) of their individual variants.
 - **Tie-breakers**: When a variant and its parent Hub card share the exact same metric, the Hub card _always_ wins the tiebreaker and appears immediately above its variant cohort.
+- **Canonical ID Stability (Redirect Prevention)**: Hub card links must always use the family's GLOBAL canonical ID (minimum ID across all variants in the DB) via `getCanonicalFamilyId`. This prevents redirects and ensures stable IDs even if price-leading variants change.
+- **Spec-Source Consistency**: To prevent title mismatch between Category and PDP, both pages must fetch the same representative `specificationsSource`. If the Category page uses a different representative than the Hub entry, titles will flip-flop.
+
+## Display Consistency (Single Source of Truth)
+
+To ensure a professional and unified user experience, all product titles across the platform (Category Grids, Lists, PDP, Meta Titles, and Schema) must use the `getProductIdentity` engine.
+
+### 1. Unified Components
+
+- **`identity.modelTitle`**: Use for the primary product name (e.g., "AMD Ryzen 7 9800X3D" or "Apple iPhone 17 Pro").
+- **`identity.variantSuffix`**: Use for variant-specific traits (e.g., "4.7 GHz" or "Tiefblau 256 GB").
+- **`identity.displayTitle`**: The full cleaned title. Use for List items and Meta/SEO titles.
+
+### 2. Rendering Pattern
+
+- **Hub View**: Show only `modelTitle`.
+- **Variant View**: Show `modelTitle` + `variantSuffix` (usually styled with different weights/colors).
+- **SEO/Meta**: Use `displayTitle` for specific variants to capture search intent; use `modelTitle` for Hubs.
 
 ## Regression Prevention
 
