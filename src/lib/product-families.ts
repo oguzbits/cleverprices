@@ -5,6 +5,17 @@ import {
 } from "./utils/product-identity";
 
 /**
+ * Builds an Idealo-style clean title for RAM products.
+ *
+ * Hub format:     "{Brand} {Series} {Capacity} {DDRx-Speed} {CL}"
+ *                 e.g. "Crucial Pro OC 64GB DDR5-6000 CL40"
+ * Variant format: same + " {MPN}"
+ *                 e.g. "Crucial Pro OC 64GB DDR5-6000 CL40 CP2K32G60C40U5B"
+ *
+ * Exported so category-products.ts can use it for lean variant titles too.
+ */
+
+/**
  * Single Source of Truth for "Which product represents the whole family?".
  * Logic:
  * 1. Prefer "New" condition.
@@ -140,14 +151,34 @@ export function getFamilyIdentity(
   // Variants: 200,000,000 + ID
   const idPrefix = (isHub ? 900000000 : 200000000) + rawId;
 
+  // 7. RAM Title Enhancement (Idealo-style):
+  // Hub:     "Crucial Pro OC 64GB DDR5-6000 CL40"
+  // Variant: "Crucial Pro OC 64GB DDR5-6000 CL40 CP2K32G60C40U5B"
+  // Slugs are not touched.
+  const isRam =
+    (representative.category || "").toLowerCase() === "arbeitsspeicher" ||
+    (representative.category || "").toLowerCase() === "ram";
+
+  if (isRam) {
+    return {
+      slug: `${idPrefix}_-${textSlug}`,
+      title: isHub ? identity.modelTitle : identity.displayTitle,
+      modelTitle: identity.modelTitle,
+      fullModel: identity.fullModel,
+      brand,
+      variantSuffix: identity.variantSuffix,
+      displaySubtitle: identity.variantSuffix,
+    };
+  }
+
   return {
     slug: `${idPrefix}_-${textSlug}`,
-    title: identity.fullModel, // Fallback for backwards compatibility
+    title: identity.fullModel,
     modelTitle: identity.modelTitle,
     fullModel: identity.fullModel,
     brand,
     variantSuffix: identity.variantSuffix,
-    displaySubtitle: identity.variantSuffix, // Use concise suffix (Color + MPN) as the Source of Truth
+    displaySubtitle: identity.variantSuffix,
   };
 }
 

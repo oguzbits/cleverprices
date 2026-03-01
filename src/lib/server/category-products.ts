@@ -6,6 +6,7 @@ import {
   type LocalizedProduct,
   type Product,
 } from "@/lib/product-definitions";
+import { getFamilyIdentity } from "@/lib/product-families";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getLocalizedProductData } from "@/lib/utils/products";
@@ -150,6 +151,7 @@ export function mapRawToLocalizedProduct(
       "tablets",
       "notebooks",
       "ram",
+      "arbeitsspeicher",
     ].includes(actualCategory);
   const {
     price,
@@ -165,6 +167,19 @@ export function mapRawToLocalizedProduct(
   const identity = getProductIdentity({ ...p, title });
   const modelTitle = p.modelTitle || identity.modelTitle;
   const variantSuffix = p.variantSuffix || identity.variantSuffix;
+
+  const isRamCategory =
+    actualCategory === "arbeitsspeicher" || actualCategory === "ram";
+  let displayTitle = title;
+  // RAM: use Idealo-style clean title and compute canonical slug at runtime
+  // so category card links always match the PDP URL (avoids stale-DB-slug redirects)
+  let canonicalSlug = p.slug;
+  if (isRamCategory) {
+    displayTitle = identity.displayTitle;
+    // getFamilyIdentity produces the same slug the PDP uses — use it for the card link
+    const ramFamilyIdentity = getFamilyIdentity({ ...p, title }, []);
+    canonicalSlug = ramFamilyIdentity.slug;
+  }
 
   // Filter out products with no valid price - they shouldn't appear in listings
   if (!price || price <= 0) return null;
@@ -330,9 +345,9 @@ export function mapRawToLocalizedProduct(
 
   return {
     id: p.id || 0,
-    slug: p.slug,
+    slug: canonicalSlug,
     asin,
-    title,
+    title: displayTitle,
     modelTitle,
     variantSuffix,
     subtitle: p.subtitle,
@@ -379,7 +394,7 @@ export function mapRawToLocalizedProduct(
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v78", // Cache buster
+  version: string = "v97", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
@@ -410,7 +425,7 @@ export async function getCachedLocalizedCategoryProducts(
 export async function getLeanCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v78",
+  version: string = "v97",
 ) {
   "use cache";
   cacheLife("category");
@@ -644,7 +659,7 @@ export async function getCategoryProducts(
   const leanProducts = await getLeanCategoryProducts(
     categorySlug,
     countryCode,
-    "v78",
+    "v58",
   );
 
   const category = allCategories[categorySlug as CategorySlug];

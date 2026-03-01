@@ -444,6 +444,194 @@ function isIdentityToken(token: string, consensus: SiblingConsensus): boolean {
   return freq >= 0.7; // Appears in 70% of siblings
 }
 
+/**
+ * Extracts structured RAM facts from an Amazon title + official specs.
+ * Returns the series name, total capacity, DDR speed string, and CL latency.
+ * Mirrors the Idealo pattern: "Brand Series TotalCapacity DDRx-Speed CLx"
+ */
+function extractRamFacts(
+  rawTitle: string,
+  brand: string,
+  mpn: string,
+  specs: Record<string, any>,
+): { series: string; capacity: string; ddr: string; cl: string } {
+  const title = rawTitle || "";
+
+  // ── 1. Capacity ───────────────────────────────────────────────────────────
+  // Gather ALL capacity candidates (spec, title word-boundary, kit total, embedded model name)
+  // and pick the LARGEST. This is critical for kit products where the spec often stores
+  // the per-stick capacity (e.g. "8 GB") while the title encodes the total ("16GB" from
+  // "VENGEANCELPX16GB (2x 8GB)"). Taking the max always gives the correct total.
+  let capacity = "";
+  const capCandidates: Array<{ num: number; unit: string; raw: string }> = [];
+
+  const toMB = (n: number, u: string) =>
+    u === "TB" ? n * 1024 * 1024 : u === "GB" ? n * 1024 : n;
+
+  // Source 0: Spec field (may be per-stick for kits, so just one candidate)
+  const specCap = String(
+    specs["Kapazität"] ||
+      specs["Capacity"] ||
+      specs["Speicherkapazität"] ||
+      specs["RAM-Kapazität"] ||
+      "",
+  ).trim();
+  const capSpecMatch = specCap.match(/^(\d+(?:\.\d+)?)\s?(GB|TB|MB)/i);
+  if (capSpecMatch) {
+    capCandidates.push({
+      num: parseFloat(capSpecMatch[1]),
+      unit: capSpecMatch[2].toUpperCase(),
+      raw: capSpecMatch[1] + capSpecMatch[2].toUpperCase(),
+    });
+  }
+
+  // Source 1: Standard word-boundary matches e.g. "32GB", "2 TB"
+  for (const m of title.matchAll(/\b(\d+(?:\.\d+)?)\s?(GB|TB|MB)\b/gi)) {
+    capCandidates.push({
+      num: parseFloat(m[1]),
+      unit: m[2].toUpperCase(),
+      raw: m[1] + m[2].toUpperCase(),
+    });
+  }
+
+  // Source 2: Kit patterns — "(2x16GB)", "(2x 8GB)" → compute real total
+  for (const m of title.matchAll(
+    /\(\s*(\d+)\s*[xX×]\s*(\d+(?:\.\d+)?)\s*(GB|TB|MB)\s*\)/gi,
+  )) {
+    const total = parseInt(m[1]) * parseFloat(m[2]);
+    const unit = m[3].toUpperCase();
+    capCandidates.push({ num: total, unit, raw: `${total}${unit}` });
+  }
+
+  // Source 3: Embedded in model names without word boundary — "VENGEANCELPX16GB"
+  for (const m of title.matchAll(/[a-zA-Z](\d+(?:\.\d+)?)(GB|TB|MB)/gi)) {
+    capCandidates.push({
+      num: parseFloat(m[1]),
+      unit: m[2].toUpperCase(),
+      raw: m[1] + m[2].toUpperCase(),
+    });
+  }
+
+  if (capCandidates.length) {
+    const sorted = capCandidates.sort(
+      (a, b) => toMB(b.num, b.unit) - toMB(a.num, a.unit),
+    );
+    capacity = sorted[0].raw;
+  }
+
+  // ── 2. DDR Generation + Speed ─────────────────────────────────────────────
+  let ddr = "";
+  const specTyp = String(
+    specs["Typ"] || specs["Speichertyp"] || specs["Type"] || "",
+  ).trim();
+  const specSpeed = String(
+    specs["Taktfrequenz"] ||
+      specs["Speed"] ||
+      specs["Geschwindigkeit"] ||
+      specs["Frequenz"] ||
+      "",
+  ).trim();
+
+  // From spec: type = "DDR5", speed = "6000 MHz" → "DDR5-6000"
+  const ddrTypeMatch = specTyp.match(/^(DDR\d+)/i);
+  const speedMhzMatch = specSpeed.match(/(\d{3,5})\s*(?:MHz|Mhz|mhz)?/);
+  if (ddrTypeMatch && speedMhzMatch) {
+    ddr = `${ddrTypeMatch[1].toUpperCase()}-${speedMhzMatch[1]}`;
+  } else if (ddrTypeMatch && !speedMhzMatch) {
+    // Try to find speed in title
+    const titleSpeedMatch = title.match(/\b(DDR\d+)[- _](\d{4,5})\b/i);
+    if (titleSpeedMatch) {
+      ddr = `${titleSpeedMatch[1].toUpperCase()}-${titleSpeedMatch[2]}`;
+    } else if (ddrTypeMatch) {
+      ddr = ddrTypeMatch[1].toUpperCase();
+    }
+  } else {
+    // Fallback: extract combined DDR pattern from title
+    const titleDdrMatch = title.match(/\b(DDR\d+)[- _](\d{4,5})\b/i);
+    if (titleDdrMatch) {
+      ddr = `${titleDdrMatch[1].toUpperCase()}-${titleDdrMatch[2]}`;
+    } else {
+      const titleDdrOnly = title.match(/\b(DDR\d+)\b/i);
+      if (titleDdrOnly) ddr = titleDdrOnly[1].toUpperCase();
+    }
+  }
+
+  // ── 3. Latency ────────────────────────────────────────────────────────────
+  let cl = "";
+  const specCl = String(
+    specs["Latenz"] || specs["CAS Latency"] || specs["CAS-Latenz"] || "",
+  ).trim();
+  const clSpecMatch = specCl.match(/(?:CL\s*)?(\d+)/i);
+  if (clSpecMatch) {
+    cl = `CL${clSpecMatch[1]}`;
+  } else {
+    // From title: "CL30", "30-36-36-76" (take first number)
+    const titleClMatch = title.match(/\bCL[\s-]?(\d+)\b/i);
+    if (titleClMatch) cl = `CL${titleClMatch[1]}`;
+  }
+
+  // ── 4. Series Name ────────────────────────────────────────────────────────
+  // Step 1: take everything before the first spec cluster in the title.
+  // Step 2: strip brand tokens, the MPN, and all spec-like tokens.
+  let series = "";
+
+  // Split title at the first occurrence of a capacity, DDR, or frequency token.
+  const seriesMatch = title.match(
+    /^(.*?)\s*\b(?:\d+\s*(?:GB|TB|MB)\b|DDR\d+|\d{4,5}\s*MHz)/i,
+  );
+  let candidate = seriesMatch ? seriesMatch[1].trim() : title.trim();
+
+  // Strip parenthetical kit specs like "(2x16GB)", "(2X 16GB)", "(2 x 16GB)"
+  // Also handles unclosed parens left over from the split: "(2X "
+  candidate = candidate
+    .replace(/\(\s*\d+\s*[xX×]\s*\d+\s*(?:GB|TB|MB)?[^)]*\)/gi, "")
+    .replace(/\(\s*\d+\s*[xX×][^)]*$/gi, "") // unclosed opening paren
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  // Strip brand name words (handles "Patriot Memory" → match "Patriot" brand)
+  const brandWords = brand.toLowerCase().split(/\s+/);
+  const candidateWords = candidate.split(/\s+/);
+  let startIdx = 0;
+  for (const bw of brandWords) {
+    if (
+      candidateWords[startIdx] &&
+      candidateWords[startIdx].toLowerCase().replace(/[^a-z0-9]/g, "") ===
+        bw.replace(/[^a-z0-9]/g, "")
+    ) {
+      startIdx++;
+    } else {
+      break;
+    }
+  }
+  // Also strip remaining brand-word tokens that may appear after a secondary brand mention
+  let remaining = candidateWords.slice(startIdx);
+  remaining = remaining
+    .filter(
+      (w) =>
+        !brandWords.includes(w.toLowerCase().replace(/[^a-z0-9]/g, "")) &&
+        !/^(ram|ddr\d*|ssd|dimm|sodimm|memory|arbeitsspeicher|kit|desktop|notebook|dual|single|rgb|led|expo|xmp)$/i.test(
+          w,
+        ) &&
+        w.length > 0 &&
+        // Not the MPN
+        w.toLowerCase() !== mpn.toLowerCase(),
+    )
+    // Remove embedded capacity suffix from model names like "VENGEANCELPX32GB" → "VENGEANCELPX"
+    .map((w) => w.replace(/(\d+(?:\.\d+)?)(GB|TB|MB)$/i, "").trim())
+    .filter(Boolean);
+  series = remaining.join(" ").trim();
+
+  // Clean up trailing/leading noise
+  series = series
+    .replace(/[,;]+$/, "")
+    .replace(/^[,;]+/, "")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return { series, capacity, ddr, cl };
+}
+
 export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const rawBrand = (product.brand || "").trim();
   const title = (product.title || "").trim();
@@ -458,8 +646,10 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     notebooks: "laptops",
     netzteile: "power-supplies",
     psu: "power-supplies",
+    arbeitsspeicher: "ram",
   };
   const category = categoryMap[rawCategory] || rawCategory;
+  const isRAM = category === "ram";
   const isTablet =
     category.includes("tablet") || title.toLowerCase().includes("ipad");
   const isSmartphone = category === "smartphones";
@@ -543,6 +733,47 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         .split(/[\s,]+/)
         .find((w) => /^[a-z]{1,2}\d+[a-z\d\/]{3,}$/i.test(w)) || ""
     ).toUpperCase();
+
+  // 3c. RAM NAMING STRATEGY (Idealo-style)
+  // Short-circuits the generic parser entirely for RAM products.
+  // Hub:     "Brand Series Capacity DDRx-Speed CLx"
+  // Variant: "Brand Series Capacity DDRx-Speed CLx MPN"
+  if (isRAM) {
+    const { series, capacity, ddr, cl } = extractRamFacts(
+      title,
+      resolvedBrand,
+      mpnVal,
+      specs,
+    );
+
+    const hubParts = [series, capacity, ddr, cl].filter(Boolean);
+    const hubCore = hubParts.join(" ").trim();
+    const modelTitle = `${resolvedBrand} ${hubCore}`
+      .replace(/\s+/g, " ")
+      .trim();
+    const variantSuffix = mpnVal || "";
+    const displayTitle = variantSuffix
+      ? `${modelTitle} ${variantSuffix}`
+      : modelTitle;
+
+    return {
+      brand: richBrand,
+      model: hubCore,
+      fullModel: modelTitle,
+      shortModel: series || hubCore.split(" ")[0] || resolvedBrand,
+      variantLabel: variantSuffix,
+      variantMap: {},
+      variantTokens: variantSuffix ? [variantSuffix] : [],
+      displayTitle,
+      modelTitle,
+      variantSuffix,
+      mpn: mpnVal || undefined,
+      isHighVariance: false,
+      traitCount: variantSuffix ? 1 : 0,
+      isLaptop: false,
+      categoryUsed: category,
+    };
+  }
 
   // 4. Identity Loop (Scalable Logic)
   const subtractTokens = new Set<string>();
@@ -776,7 +1007,10 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
   }
 
-  let cleanTitle = baseTitle.split(/ \- | \/ | \(| \||: |,/i)[0].trim();
+  // 3c. Title Cleanup (Splitting at common separators to find core Model)
+  // For RAM, we avoid splitting at '(' because it often contains critical specs (e.g. 2x16GB)
+  const splitRegex = isRAM ? / \- | \/ | \||: |,/i : / \- | \/ | \(| \||: |,/i;
+  let cleanTitle = baseTitle.split(splitRegex)[0].trim();
 
   // Robustly strip brand from start of title to prevent duplication
   // Handle cases where brand has punctuation (be quiet!) that might vary
@@ -822,6 +1056,56 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const rawLower = normalized.toLowerCase();
     const cleanLower = rawLower.replace(/[^a-z0-9]/g, "");
     if (!cleanLower || cleanLower === resolvedBrandLower) return;
+
+    // [Part 2] Token Deduplication Logic
+    const tokenNorm = cleanLower;
+    if (tokenNorm && index > 0) {
+      // If we already have this exact token in modelWords or strippedUnits, skip it
+      const alreadyInModel = modelWords.some(
+        (w) => w.toLowerCase().replace(/[^a-z0-9]/g, "") === tokenNorm,
+      );
+      const alreadyInStripped = strippedUnits.some(
+        (u) => u.toLowerCase().replace(/[^a-z0-9]/g, "") === tokenNorm,
+      );
+      if (alreadyInModel || alreadyInStripped) return;
+    }
+
+    // [Part 2] Aggressive RAM Spec Stripping
+    if (isRAM) {
+      // Clear out anything that looks like capacity, DDR, speed, CL, or "Memory" noise
+      // We use cleanWord to preserve dashes (e.g. DDR5-6000)
+      const testWord = cleanWord.toLowerCase();
+
+      const isSpec =
+        /^(ddr\d|cl\d+|kit|memory|arbeitsspeicher|ssd|ram|dimm|sodimm|u?dimm|desktop|notebook|pc\d\-?\d+|[\d.]+mhz)$/.test(
+          testWord,
+        ) ||
+        // Combined patterns: ddr5-6000, cl36-38-38-80
+        /^(ddr\d+|cl\d+)[\-_\s]*\d+.*$/i.test(testWord) ||
+        // Capacity catch: 32gb, 64gb, 32gbx2, 2x16gb, 16gbx2, 2x16, 16x2
+        /^\d+\s*x\s*\d+\s*[xg]b$/i.test(testWord) ||
+        /^\d+\s*[xg]b(\s*x\s*\d+)?$/i.test(testWord) ||
+        /^x\s*\d+$/i.test(testWord) ||
+        // Timing catch: 16-18-18-38
+        /^\d+[\-\.]\d+[\-\.]\d+[\-\.]\d+$/.test(testWord);
+
+      if (isSpec) {
+        // Normalize the unit for reuse: strip trailing symbols strictly
+        const normUnit = cleanWord.replace(/[()\[\]",\.]+/g, "");
+        if (
+          normUnit &&
+          normUnit.length > 1 &&
+          !strippedUnits.some(
+            (u) =>
+              u.toLowerCase().replace(/[^a-z0-9]/g, "") ===
+              normUnit.toLowerCase().replace(/[^a-z0-9]/g, ""),
+          )
+        ) {
+          strippedUnits.push(normUnit);
+        }
+        return;
+      }
+    }
 
     // Protection for Official Models: If we have an official model name,
     // we bypass the aggressive noise word stripping to respect the source's intent.
@@ -945,7 +1229,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const modelTitle = `${richBrand} ${hubModelName}`;
 
   // 5. Variant Differentiators (Slug & Subtitle)
-  const variantTokens: string[] = [];
+  let variantTokens: string[] = [];
   const processedTokens = new Set<string>();
   let oneFeatureToken: string | null = null; // Track color or primary trait for high-variance products
   let bestFeatureKey: string | null = null;
@@ -1143,13 +1427,37 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
   // LOGIC SWITCH: If high variance, use "One Feature + MPN" instead of listing everything.
   // This prevents overly long titles while keeping them distinct.
+  // [Part 4] RAM Spec Refinement (Deduplication)
+  if (isRAM) {
+    // 1. If we have a speed-prefixed DDR (e.g. DDR5-6000), remove the plain DDR (e.g. DDR5)
+    const hasSpeedDDR = variantTokens.some((t) => /^ddr\d+-\d+$/i.test(t));
+    if (hasSpeedDDR) {
+      variantTokens = variantTokens.filter((t) => !/^ddr\d+$/i.test(t));
+    }
+
+    // 2. If we have a kit spec (e.g. 2x16GB), remove the total capacity (e.g. 32GB) IF it matches
+    const kitSpec = variantTokens.find((t) =>
+      /^\d+x\d+g?b$/i.test(t.toLowerCase()),
+    );
+    if (kitSpec) {
+      const match = kitSpec.toLowerCase().match(/^(\d+)x(\d+)g?b$/);
+      if (match) {
+        const total = parseInt(match[1]) * parseInt(match[2]);
+        const totalStr = `${total}gb`;
+        variantTokens = variantTokens.filter(
+          (t) => t.toLowerCase() !== totalStr,
+        );
+      }
+    }
+  }
+
   let variantSuffix = "";
-  if (isHighVariance && mpnVal && mpnVal.length > 3) {
+  if (isHighVariance && mpnVal && mpnVal.length > 3 && !isRAM) {
     variantSuffix = (
       oneFeatureToken ? `${oneFeatureToken} ${mpnVal}` : mpnVal
     ).trim();
   } else {
-    // For low variance, list all tokens found (Color, Storage, etc.).
+    // For low variance (or RAM), list all tokens found (Color, Storage, etc.).
     // IDEALO Pattern: If we have "Cellular", we don't need "Wi-Fi" (it's redundant/implied).
     const hasCellular = variantTokens.some((t) =>
       /cellular|5g|lte/i.test(t.toLowerCase()),
@@ -1159,6 +1467,11 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       : variantTokens;
 
     variantSuffix = filteredTokens.join(" ").trim();
+
+    // For RAM, always append MPN if it's unique
+    if (isRAM && mpnVal && !variantSuffix.includes(mpnVal)) {
+      variantSuffix = `${variantSuffix} ${mpnVal}`.trim();
+    }
   }
 
   const variantLabel =
