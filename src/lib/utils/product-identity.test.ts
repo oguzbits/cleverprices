@@ -276,3 +276,176 @@ describe("dynamic spec vs version checking", () => {
     // Does it fail? Wait, let's just make the candidate match the title tiers so we only test versions.
   });
 });
+
+describe("RAM Naming Strategy (Idealo-style)", () => {
+  it("should generate clean Hub and Variant titles for Corsair Vengeance (Idealo style)", () => {
+    const product = {
+      id: 200004494,
+      title:
+        "CORSAIR Vengeance DDR5 RAM 32GB (2x16GB) 6000MHz CL30-36-36-76 1.40V Desktop-Arbeitsspeicher – Grau (CMK32GX5M2B6000Z30)",
+      category: "arbeitsspeicher",
+      brand: "Corsair",
+      mpn: "CMK32GX5M2B6000Z30",
+      officialSpecifications: JSON.stringify({
+        Kapazität: "32 GB",
+        Typ: "DDR5",
+        Taktfrequenz: "6000 MHz",
+        Latenz: "CL30",
+      }),
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).toBe(
+      "Corsair Vengeance 32GB Kit (2x16GB) DDR5-6000 CL30",
+    );
+    expect(identity.displayTitle).toBe(
+      "Corsair Vengeance 32GB Kit (2x16GB) DDR5-6000 CL30 CMK32GX5M2B6000Z30",
+    );
+  });
+
+  it("should handle mixed brand tokens and noise in Patriot RAM titles", () => {
+    const product = {
+      id: 900004152,
+      title:
+        "Patriot Memory Viper Venom RGB Single DDR5 RAM LED 16GB 6000MHz CL30 - PVVR516G60C30",
+      category: "arbeitsspeicher",
+      brand: "Patriot",
+      mpn: "PVVR516G60C30",
+      officialSpecifications: JSON.stringify({
+        Kapazität: "16 GB",
+        Typ: "DDR5",
+        Taktfrequenz: "6000 MHz",
+        Latenz: "CL30",
+      }),
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).toBe(
+      "Patriot Viper Venom RGB 16GB DDR5-6000 CL30",
+    );
+  });
+
+  it("should correctly calculate total capacity even if spec only lists per-stick capacity", () => {
+    const product = {
+      id: 200004022,
+      title:
+        "Corsair VENGEANCELPX16GB (2x 8GB) DDR4 3200(Pc4-25600) C16 1.35V Desktop Memory - Schwarz",
+      category: "arbeitsspeicher",
+      brand: "Corsair",
+      mpn: "CMK16GX4M2E3200C16",
+      officialSpecifications: JSON.stringify({
+        Kapazität: "8 GB", // Per-stick spec from DB
+        Typ: "DDR4",
+        Taktfrequenz: "3200 MHz",
+        Latenz: "CL16",
+      }),
+    };
+    const identity = getProductIdentity(product as any);
+    // Should compute 16GB from kit pattern OR embedded model name, taking max over the 8GB spec.
+    expect(identity.modelTitle).toBe(
+      "Corsair VENGEANCELPX 16GB Kit (2x8GB) DDR4-3200 CL16",
+    );
+  });
+
+  it("should strip unclosed parentheses fragments left by spec splitting", () => {
+    const product = {
+      id: 200004021,
+      title: "Corsair VENGEANCELPX32GB (2X 16GB DDR4-3200 CMK32GX4M2E3200C16", // Missing closing paren in some raw titles
+      category: "arbeitsspeicher",
+      brand: "Corsair",
+      mpn: "CMK32GX4M2E3200C16",
+      officialSpecifications: JSON.stringify({
+        Typ: "DDR4",
+        Taktfrequenz: "3200 MHz",
+      }),
+    };
+    const identity = getProductIdentity(product as any);
+    // Should NOT have "(2X" in the series/model title.
+    expect(identity.modelTitle).not.toContain("(2X");
+    expect(identity.modelTitle).toContain("32GB");
+  });
+
+  it("should handle Crucial Pro with DDR5-6000 cleanly", () => {
+    const product = {
+      title: "Crucial Pro DDR5 (2x16GB) 32GB DDR5-6000 CL36 CP2K16G60C36U5B",
+      category: "arbeitsspeicher",
+      brand: "Crucial",
+      mpn: "CP2K16G60C36U5B",
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).toBe(
+      "Crucial Pro 32GB Kit (2x16GB) DDR5-6000 CL36",
+    );
+  });
+
+  it("should handle kit patterns without parentheses: '2x8GB'", () => {
+    const product = {
+      title: "Kingston FURY Beast 2x8GB DDR4-3200",
+      category: "arbeitsspeicher",
+      brand: "Kingston",
+      mpn: "KF432C16BBK2/16",
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).toContain("16GB Kit (2x8GB)"); // 2x8 = 16
+    expect(identity.modelTitle).not.toContain("Beast 2x8GB"); // Should be stripped from series part specifically
+  });
+
+  it("should handle 'C16' latency notation", () => {
+    const product = {
+      title: "Corsair Vengeance LPX 16GB (1x16GB) DDR4 3200MHz C16",
+      category: "arbeitsspeicher",
+      brand: "Corsair",
+      mpn: "CMK16GX4M1E3200C16",
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).toContain("CL16");
+  });
+
+  it("should handle lone 4-digit speeds without MHz/MTs if category is RAM", () => {
+    const product = {
+      title: "TeamGroup T-Force Delta RGB DDR5 32GB 6000 CL30",
+      category: "arbeitsspeicher",
+      brand: "TeamGroup",
+      mpn: "FF3D532G6000HC30DC01",
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).toContain("DDR5-6000");
+  });
+
+  it("should handle MT/s unit in title and specs", () => {
+    const product = {
+      title: "Crucial 32GB Kit (2x16GB) DDR5 5600MT/s CL46",
+      category: "arbeitsspeicher",
+      brand: "Crucial",
+      mpn: "CT2K16G56C46U5",
+      officialSpecifications: JSON.stringify({
+        Type: "DDR5",
+        Speed: "5600 MT/s",
+      }),
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).toContain("DDR5-5600");
+  });
+
+  it("should strip MPN from series even if it has noise like brackets in title", () => {
+    const product = {
+      title: "Corsair Vengeance LPX 32GB [CMK32GX4M2E3200C16] DDR4",
+      category: "arbeitsspeicher",
+      brand: "Corsair",
+      mpn: "CMK32GX4M2E3200C16",
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).not.toContain("CMK32GX");
+    expect(identity.modelTitle).toBe("Corsair Vengeance LPX 32GB DDR4");
+  });
+
+  it("should strip DIMM/SODIMM and other technical noise from series", () => {
+    const product = {
+      title: "Crucial 16GB DDR4 3200 MT/s CL22 SODIMM",
+      category: "arbeitsspeicher",
+      brand: "Crucial",
+      mpn: "CT16G4SFRA32A",
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.modelTitle).not.toContain("SODIMM");
+    expect(identity.modelTitle).toBe("Crucial 16GB DDR4-3200 CL22");
+  });
+});

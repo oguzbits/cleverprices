@@ -147,7 +147,7 @@ describe("Global Cross-Category Identity Validation", () => {
       });
 
       const { slug } = getFamilyIdentity(p, []);
-      expect(slug).toContain("vengeance-rgb-ddr5-32gb-2x-16gb-corsair");
+      expect(slug).toContain("vengeance-rgb-32gb-kit-2x16gb-ddr5-6000-corsair");
     });
   });
 

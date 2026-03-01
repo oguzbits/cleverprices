@@ -34,6 +34,18 @@ We separate the **Indexing Identity** (Slugs) from the **Display Identity** (Ric
 - **Required**: Must include Brand, Family (e.g., Core Ultra 7), Model (e.g., 265K), Cores, and Clock Speed if available.
 - **Symbols**: Always preserve `®` and `™` in the display output.
 
+### RAM (`arbeitsspeicher`)
+
+- **Naming Pattern**: `[Brand] [Series] [Total Capacity] [DDR]-[Speed] [CL] [MPN]`
+- **Consolidation Rule**: Always compute the **Total Capacity** by prioritizing title-encoded kit patterns (e.g., `2x16GB` or `(2x8GB)`) or embedded model names (e.g., `VENGEANCELPX32GB`) over the database spec field, which may only list the per-stick capacity.
+- **Advanced Extractions**:
+  - **Speed**: Handles `MHz` and `MT/s`. Includes fallback for lone 4-digit speeds (e.g., `6000`) if they map to typical RAM frequencies.
+  - **Latency**: Supports `CL30` and `C30` notations, or trailing timing values like `16-18-18-36`.
+  - **Branding**: Aggressively strips MPNs (even if in brackets `[MPN]`), form factors (`DIMM`, `SODIMM`), and category noise (`Kit`, `Module`, `Dual`, `RGB`) from the series name to prevent redundancy.
+- **Series Extraction**: Strip embedded capacity and kit specifiers from the series name to prevent redundancy (e.g., `VENGEANCELPX32GB` → `VENGEANCELPX`).
+- **Clean Suffix**: The `variantSuffix` should contain only the MPN to ensure clean Hub vs. Variant differentiation.
+- **Cache Dependency**: Any change to RAM identity logic **MUST** be accompanied by a global cache version bump in `cached-products.ts` and `category-products.ts` to prevent slug mismatch and redirects.
+
 ### Category Hub Sorting (`Hub Cards`)
 
 - **Ranking Strategy**: Hub cards must dynamically adopt the "best" relevant metric (e.g., lowest price, highest popularity) of their individual variants.

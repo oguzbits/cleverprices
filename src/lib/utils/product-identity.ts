@@ -454,21 +454,23 @@ function extractRamFacts(
   brand: string,
   mpn: string,
   specs: Record<string, any>,
-): { series: string; capacity: string; ddr: string; cl: string } {
+): { series: string; capacity: string; ddr: string; cl: string; kit: string } {
   const title = rawTitle || "";
 
   // ── 1. Capacity ───────────────────────────────────────────────────────────
-  // Gather ALL capacity candidates (spec, title word-boundary, kit total, embedded model name)
-  // and pick the LARGEST. This is critical for kit products where the spec often stores
-  // the per-stick capacity (e.g. "8 GB") while the title encodes the total ("16GB" from
-  // "VENGEANCELPX16GB (2x 8GB)"). Taking the max always gives the correct total.
   let capacity = "";
-  const capCandidates: Array<{ num: number; unit: string; raw: string }> = [];
+  let kit = "";
+  const capCandidates: Array<{
+    num: number;
+    unit: string;
+    raw: string;
+    kit?: string;
+  }> = [];
 
   const toMB = (n: number, u: string) =>
     u === "TB" ? n * 1024 * 1024 : u === "GB" ? n * 1024 : n;
 
-  // Source 0: Spec field (may be per-stick for kits, so just one candidate)
+  // Source 0: Spec field
   const specCap = String(
     specs["Kapazität"] ||
       specs["Capacity"] ||
@@ -494,16 +496,23 @@ function extractRamFacts(
     });
   }
 
-  // Source 2: Kit patterns — "(2x16GB)", "(2x 8GB)" → compute real total
+  // Source 2: Kit patterns with parens — "(2x16GB)", "(2x 8GB)"
   for (const m of title.matchAll(
     /\(\s*(\d+)\s*[xX×]\s*(\d+(?:\.\d+)?)\s*(GB|TB|MB)\s*\)/gi,
   )) {
-    const total = parseInt(m[1]) * parseFloat(m[2]);
+    const pods = parseInt(m[1]);
+    const perPod = parseFloat(m[2]);
+    const total = pods * perPod;
     const unit = m[3].toUpperCase();
-    capCandidates.push({ num: total, unit, raw: `${total}${unit}` });
+    capCandidates.push({
+      num: total,
+      unit,
+      raw: `${total}${unit}`,
+      kit: `${pods}x${perPod}${unit}`,
+    });
   }
 
-  // Source 3: Embedded in model names without word boundary — "VENGEANCELPX16GB"
+  // Source 3: Embedded in model names — "VENGEANCELPX16GB"
   for (const m of title.matchAll(/[a-zA-Z](\d+(?:\.\d+)?)(GB|TB|MB)/gi)) {
     capCandidates.push({
       num: parseFloat(m[1]),
@@ -512,11 +521,29 @@ function extractRamFacts(
     });
   }
 
+  // Source 4: Kit patterns without parens — "2x8GB", "2 x 8 GB"
+  for (const m of title.matchAll(
+    /\b(\d+)\s*[xX×]\s*(\d+(?:\.\d+)?)\s*(GB|TB|MB)\b/gi,
+  )) {
+    const pods = parseInt(m[1]);
+    const perPod = parseFloat(m[2]);
+    const total = pods * perPod;
+    const unit = m[3].toUpperCase();
+    capCandidates.push({
+      num: total,
+      unit,
+      raw: `${total}${unit}`,
+      kit: `${pods}x${perPod}${unit}`,
+    });
+  }
+
   if (capCandidates.length) {
     const sorted = capCandidates.sort(
       (a, b) => toMB(b.num, b.unit) - toMB(a.num, a.unit),
     );
     capacity = sorted[0].raw;
+    // Prefer kit info from the same candidate if possible
+    kit = sorted[0].kit || capCandidates.find((c) => c.kit)?.kit || "";
   }
 
   // ── 2. DDR Generation + Speed ─────────────────────────────────────────────
@@ -532,27 +559,32 @@ function extractRamFacts(
       "",
   ).trim();
 
-  // From spec: type = "DDR5", speed = "6000 MHz" → "DDR5-6000"
   const ddrTypeMatch = specTyp.match(/^(DDR\d+)/i);
-  const speedMhzMatch = specSpeed.match(/(\d{3,5})\s*(?:MHz|Mhz|mhz)?/);
-  if (ddrTypeMatch && speedMhzMatch) {
-    ddr = `${ddrTypeMatch[1].toUpperCase()}-${speedMhzMatch[1]}`;
-  } else if (ddrTypeMatch && !speedMhzMatch) {
-    // Try to find speed in title
-    const titleSpeedMatch = title.match(/\b(DDR\d+)[- _](\d{4,5})\b/i);
-    if (titleSpeedMatch) {
-      ddr = `${titleSpeedMatch[1].toUpperCase()}-${titleSpeedMatch[2]}`;
-    } else if (ddrTypeMatch) {
-      ddr = ddrTypeMatch[1].toUpperCase();
-    }
+  const speedMatchRegex = /(\d{4,5})\s*(?:MHz|Mhz|mhz|MT\/s|mt\/s)?/;
+  const speedSpecMatch = specSpeed.match(speedMatchRegex);
+
+  if (ddrTypeMatch && speedSpecMatch) {
+    ddr = `${ddrTypeMatch[1].toUpperCase()}-${speedSpecMatch[1]}`;
   } else {
-    // Fallback: extract combined DDR pattern from title
-    const titleDdrMatch = title.match(/\b(DDR\d+)[- _](\d{4,5})\b/i);
-    if (titleDdrMatch) {
-      ddr = `${titleDdrMatch[1].toUpperCase()}-${titleDdrMatch[2]}`;
+    // Try to find combined "DDR5-6000" in title
+    const titleCombinedMatch = title.match(/\b(DDR\d+)[- _](\d{4,5})\b/i);
+    if (titleCombinedMatch) {
+      ddr = `${titleCombinedMatch[1].toUpperCase()}-${titleCombinedMatch[2]}`;
     } else {
-      const titleDdrOnly = title.match(/\b(DDR\d+)\b/i);
-      if (titleDdrOnly) ddr = titleDdrOnly[1].toUpperCase();
+      const ddrOnlyMatch = ddrTypeMatch || title.match(/\b(DDR\d+)\b/i);
+      // Look for speed with unit OR lone 4-digit number in typical RAM range (2133-8400)
+      const speedOnlyMatch =
+        speedSpecMatch ||
+        title.match(/\b(\d{4,5})\s*(?:MHz|MT\/s)\b/i) ||
+        title.match(
+          /\b(2133|2400|2666|2933|3000|3200|3600|4000|4400|4800|5200|5600|6000|6400|7200|8000|8400)\b/,
+        );
+
+      if (ddrOnlyMatch && speedOnlyMatch) {
+        ddr = `${ddrOnlyMatch[1].toUpperCase()}-${speedOnlyMatch[1]}`;
+      } else if (ddrOnlyMatch) {
+        ddr = ddrOnlyMatch[1].toUpperCase();
+      }
     }
   }
 
@@ -561,36 +593,42 @@ function extractRamFacts(
   const specCl = String(
     specs["Latenz"] || specs["CAS Latency"] || specs["CAS-Latenz"] || "",
   ).trim();
-  const clSpecMatch = specCl.match(/(?:CL\s*)?(\d+)/i);
+  const clSpecMatch = specCl.match(/(?:CL|C)\s*(\d+)/i);
   if (clSpecMatch) {
     cl = `CL${clSpecMatch[1]}`;
   } else {
-    // From title: "CL30", "30-36-36-76" (take first number)
-    const titleClMatch = title.match(/\bCL[\s-]?(\d+)\b/i);
-    if (titleClMatch) cl = `CL${titleClMatch[1]}`;
+    // From title: "CL30", "C30", "30-36-36-76"
+    const titleClMatch = title.match(/\b(?:CL|C)[\s-]?(\d+)\b/i);
+    if (titleClMatch) {
+      cl = `CL${titleClMatch[1]}`;
+    } else {
+      // Look for lone numbers that look like latencies in range 10-60 near other specs
+      const loneClMatch = title.match(/\s(\d{2})-\d{2}-\d{2}/);
+      if (loneClMatch) cl = `CL${loneClMatch[1]}`;
+    }
   }
 
   // ── 4. Series Name ────────────────────────────────────────────────────────
-  // Step 1: take everything before the first spec cluster in the title.
-  // Step 2: strip brand tokens, the MPN, and all spec-like tokens.
   let series = "";
 
-  // Split title at the first occurrence of a capacity, DDR, or frequency token.
-  const seriesMatch = title.match(
-    /^(.*?)\s*\b(?:\d+\s*(?:GB|TB|MB)\b|DDR\d+|\d{4,5}\s*MHz)/i,
-  );
-  let candidate = seriesMatch ? seriesMatch[1].trim() : title.trim();
+  // Split title at the first spec-like cluster
+  const seriesSplitRegex =
+    /\b(?:\d+\s*(?:GB|TB|MB)\b|DDR\d+|\d{4,5}\s*(?:MHz|MT\/s))/i;
+  const splitIdx = title.search(seriesSplitRegex);
+  let candidate =
+    splitIdx !== -1 ? title.substring(0, splitIdx).trim() : title.trim();
 
-  // Strip parenthetical kit specs like "(2x16GB)", "(2X 16GB)", "(2 x 16GB)"
-  // Also handles unclosed parens left over from the split: "(2X "
+  // Strip noise including kit patterns and mixed specs
   candidate = candidate
     .replace(/\(\s*\d+\s*[xX×]\s*\d+\s*(?:GB|TB|MB)?[^)]*\)/gi, "")
-    .replace(/\(\s*\d+\s*[xX×][^)]*$/gi, "") // unclosed opening paren
+    .replace(/\b\d+\s*[xX×]\s*\d+\s*(?:GB|TB|MB)?\b/gi, "")
+    .replace(/\(\s*\d+\s*[xX×][^)]*$/gi, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 
-  // Strip brand name words (handles "Patriot Memory" → match "Patriot" brand)
   const brandWords = brand.toLowerCase().split(/\s+/);
+  const mpnNorm = mpn.toLowerCase().replace(/[^a-z0-9]/g, "");
+
   const candidateWords = candidate.split(/\s+/);
   let startIdx = 0;
   for (const bw of brandWords) {
@@ -604,32 +642,34 @@ function extractRamFacts(
       break;
     }
   }
-  // Also strip remaining brand-word tokens that may appear after a secondary brand mention
+
   let remaining = candidateWords.slice(startIdx);
   remaining = remaining
-    .filter(
-      (w) =>
-        !brandWords.includes(w.toLowerCase().replace(/[^a-z0-9]/g, "")) &&
-        !/^(ram|ddr\d*|ssd|dimm|sodimm|memory|arbeitsspeicher|kit|desktop|notebook|dual|single|rgb|led|expo|xmp)$/i.test(
-          w,
-        ) &&
-        w.length > 0 &&
-        // Not the MPN
-        w.toLowerCase() !== mpn.toLowerCase(),
-    )
-    // Remove embedded capacity suffix from model names like "VENGEANCELPX32GB" → "VENGEANCELPX"
+    .filter((w) => {
+      const wLower = w.toLowerCase();
+      const wNorm = wLower.replace(/[^a-z0-9]/g, "");
+
+      if (brandWords.includes(wNorm)) return false;
+      if (mpnNorm && (wNorm.includes(mpnNorm) || mpnNorm.includes(wNorm)))
+        return false;
+
+      const isNoise =
+        /^(ram|ddr\d*|ssd|dimm|sodimm|memory|arbeitsspeicher|kit|desktop|notebook|dual|single|expo|xmp|module?|pc\d*|cl\d*)$/i.test(
+          wNorm,
+        );
+      return !isNoise && w.length > 0;
+    })
     .map((w) => w.replace(/(\d+(?:\.\d+)?)(GB|TB|MB)$/i, "").trim())
     .filter(Boolean);
-  series = remaining.join(" ").trim();
 
-  // Clean up trailing/leading noise
+  series = remaining.join(" ").trim();
   series = series
     .replace(/[,;]+$/, "")
     .replace(/^[,;]+/, "")
     .replace(/\s{2,}/g, " ")
     .trim();
 
-  return { series, capacity, ddr, cl };
+  return { series, capacity, ddr, cl, kit };
 }
 
 export function getProductIdentity(product: Partial<Product>): ProductIdentity {
@@ -739,14 +779,15 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   // Hub:     "Brand Series Capacity DDRx-Speed CLx"
   // Variant: "Brand Series Capacity DDRx-Speed CLx MPN"
   if (isRAM) {
-    const { series, capacity, ddr, cl } = extractRamFacts(
+    const { series, capacity, ddr, cl, kit } = extractRamFacts(
       title,
       resolvedBrand,
       mpnVal,
       specs,
     );
 
-    const hubParts = [series, capacity, ddr, cl].filter(Boolean);
+    const kitText = kit ? `Kit (${kit})` : "";
+    const hubParts = [series, capacity, kitText, ddr, cl].filter(Boolean);
     const hubCore = hubParts.join(" ").trim();
     const modelTitle = `${resolvedBrand} ${hubCore}`
       .replace(/\s+/g, " ")

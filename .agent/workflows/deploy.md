@@ -47,14 +47,22 @@ This workflow ensures all checks pass before pushing changes, which are then aut
    bun run db:DANGEROUS-overwrite-prod --force
    ```
 
-6. **Git Push for Dokploy**
+6. **Global Identity Synchronization**
+   If you have modified product identity logic (especially RAM, CPUs, or slug generation in `src/lib/utils/product-identity.ts`), you **MUST** bump the cache version in both `src/lib/server/cached-products.ts` and `src/lib/server/category-products.ts` before pushing. This flushes the stale DB-sourced slugs and title caches.
+
+   ```bash
+   # Find current vXX and increment it globally
+   # e.g. v58 -> v59
+   ```
+
+7. **Git Push for Dokploy**
    Pushing to the `main` branch will automatically trigger a Dokploy deployment from the GitHub repository source.
 
    ```bash
    git push origin main
    ```
 
-7. **Proactive Cache Warming**
+8. **Proactive Cache Warming**
    After the deployment is live, trigger a site-wide warm cycle to ensure instant load times and immediate price consistency across all pages.
    ```bash
    bun run warm-cache --lite
