@@ -891,10 +891,20 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const mpnVal =
     (product.mpn || variantMap.MPN || "").trim().toUpperCase() ||
     (
-      title
-        .split(/[\s,]+/)
-        .find((w) => /^[a-z]{0,2}\d+[a-z\d\/-]*$/i.test(w) && w.length >= 4) ||
-      ""
+      title.split(/[\s,]+/).find((w) => {
+        const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
+        // Exclude pure numbers that look like resolution components for displays (1080, 1440, 3440, 3840)
+        if (isDisplay && /^\d{4}$/.test(wNorm)) {
+          if (/^(1080|1440|2160|3440|3840)$/.test(wNorm)) return false;
+        }
+        return (
+          /^[a-z]{0,2}\d+[a-z\d\/-]*$/i.test(w) &&
+          w.length >= 4 &&
+          !/^\d{3,4}x\d{3,4}$/i.test(wNorm) &&
+          !/^\d+hz/i.test(w) &&
+          !/^\d+ms/i.test(w)
+        );
+      }) || ""
     )
       .replace(/[,;]+$/, "")
       .toUpperCase();
@@ -1398,6 +1408,22 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         "monitor",
         "display",
         "gaming",
+        "4kmonitor",
+        "uhdmonitor",
+        "qhdmonitor",
+        "wqhdmonitor",
+        "fhdmonitor",
+        "uwqhdmonitor",
+        "gamingmonitor",
+        "curvedmonitor",
+        "4k-monitor",
+        "uhd-monitor",
+        "qhd-monitor",
+        "wqhd-monitor",
+        "fhd-monitor",
+        "uwqhd-monitor",
+        "gaming-monitor",
+        "curved-monitor",
       ];
       if (displayStrippable.includes(cleanLower)) {
         return;
@@ -2083,7 +2109,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ]);
 
     const specsCutoffRegex =
-      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|2x|3x|4x|5x|6x|cdm2|cdm|\d+r|\d+w|\d+cdm2|\d+cdm|\d+nits?|\d+cd|\d+hz.*|\d+ms.*)$/i;
+      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|2x|3x|4x|5x|6x|cdm2|cdm|\d+r|\d+w|\d+cdm2|\d+cdm|\d+nits?|\d+cd|\d+hz.*|\d+ms.*|\d+bit)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
 
     const isBatchNumber = (w: string) => {
@@ -2190,11 +2216,11 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       if (isBatch && i > 0) continue;
       // Skip tech dots
       if (isTechDot) continue;
-      // Final guard against numeric noise (lone numbers < 100 that aren't MPNs)
-      if (/^\d{1,2}$/.test(wNorm)) continue;
+      // Final guard against numeric noise (lone numbers < 100 or resolution parts like 3440, 1440)
+      if (/^\d{1,2}$/.test(wNorm) || /^\d{4}$/.test(wNorm)) continue;
       // Final guard against pure tech noise leaks in modelWords
       if (
-        /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|curved|gaming|ultrawide|usb-c|usbc|monitor|display|series)$/.test(
+        /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled)(monitor|display)?$/i.test(
           wNorm,
         )
       )
@@ -2216,6 +2242,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const cleanDisplayModel = uniqueWords
       .map((w: string) => {
         // Strip regional suffixes from model names for monitors (e.g. -WAEU, .AEU)
+        // Guard: Don't strip "-bit" or "-QD"
+        if (/-bit$/i.test(w) || /-qd$/i.test(w)) return w;
         return w.replace(/[-.](?:[A-Z]{3,4}|AE|WAEU|AEU)$/i, "");
       })
       .filter((w: string) => {
@@ -2228,7 +2256,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         if (/^\d+(hz|ms).*$/i.test(wNorm)) return false;
         if (/^\d{3,4}x\d{3,4}$/.test(wNorm)) return false;
         if (
-          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|curved|gaming|ultrawide|usb-c|usbc|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|monitor|display|series)$/.test(
+          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|monitor|display|series|bit|qdoled|qd-oled)(monitor|display)?$/i.test(
             wNorm,
           )
         )
@@ -2244,8 +2272,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     // SANITY CHECK: If it still looks like a full sentence/description, truncate it.
     let finalModel = cleanDisplayModel;
     if (finalModel.length > 50 || finalModel.split(" ").length > 6) {
-      // If we have an MPN, just use that + Brand.
-      // If not, take only the first 3 words.
       if (modelMPN && modelMPN.length > 3) {
         finalModel = modelMPN;
       } else {

@@ -156,6 +156,13 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
       input: "HP 532sf 300cd/m²",
       expected: "HP 532sf",
     },
+    {
+      id: 25,
+      brand: "ASUS",
+      input:
+        "ASUS ROG Strix OLED XG27ACDMS 27 Zoll WQHD Gaming Monitor (280 Hz, 0.03ms GtG, G-Sync, FreeSync, AdaptiveSync, ELMB, 10-bit QD-OLED Panel, 16:9, 2560x1440, DP 1.4, HDMI 2.1, USB-C mit 15W, Ergo.)",
+      expected: "ASUS ROG Strix OLED XG27ACDMS",
+    },
   ];
 
   it("should match Idealo reference titles for all cases", () => {
