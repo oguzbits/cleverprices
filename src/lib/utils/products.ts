@@ -77,7 +77,7 @@ export function calculateProductMetrics(
   if (
     categoryConfig?.unitType === "core" ||
     category === "cpu" ||
-    category === "prozessoren"
+    category === "processors-cpus"
   ) {
     return p;
   }

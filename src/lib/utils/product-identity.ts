@@ -152,6 +152,84 @@ function extractCpuFacts(title: string, brand: string): CpuFacts {
   return { series, modelNumber, cores, frequency };
 }
 
+interface DisplayFacts {
+  size: string;
+  resolution: string;
+  refreshRate: string;
+  panel: string;
+  curved?: boolean;
+  ultraWide?: boolean;
+  usbC?: boolean;
+  gaming?: boolean;
+  hdr?: boolean;
+}
+
+/**
+ * Display Identity Engine: Extracts size, resolution, and hz from monitors/TVs.
+ */
+function extractDisplayFacts(title: string): DisplayFacts {
+  const t = title.replace(/\s+/g, " ").trim();
+
+  // 1. Extract Size (e.g., 27", 34, 27 Zoll, 65 Inch, 68.4cm)
+  const sizeMatch = t.match(
+    /(\d+(?:[\.,]\d+)?)\s*(?:Zoll|Inch|cm|\"|(?=\s|$))/i,
+  );
+  let size = sizeMatch ? sizeMatch[1].replace(",", ".") + '"' : "";
+  if (size.endsWith('cm"')) size = size.replace('cm"', "");
+
+  // Validation: Size must be realistic for display (e.g. 10-100)
+  const sizeVal = parseFloat(size);
+  if (isNaN(sizeVal) || sizeVal < 10 || sizeVal > 110) size = "";
+
+  // 2. Extract Resolution (4K, UHD, QHD, WQHD, FHD, etc.)
+  const resPatterns = [
+    /\b4K\b/i,
+    /\bUHD\b/i,
+    /\bQHD\b/i,
+    /\bWQHD\b/i,
+    /\b(FHD|Full HD|1920x1080|3840\s*x\s*2160)\b/i,
+    /\b(3440x1440|2560x1440)\b/i,
+  ];
+  let resolution = "";
+  for (const p of resPatterns) {
+    const match = t.match(p);
+    if (match) {
+      resolution = match[0].toUpperCase().replace(/\s+/g, "");
+      if (resolution === "FULLHD" || resolution === "1920X1080")
+        resolution = "FHD";
+      if (resolution === "3840X2160") resolution = "4K";
+      break;
+    }
+  }
+
+  // 3. Extract Refresh Rate (e.g., 144Hz, 240 Hz)
+  const refreshMatch = t.match(/(\d+)\s*Hz\b/i);
+  const refreshRate = refreshMatch ? refreshMatch[1] + "Hz" : "";
+
+  // 4. Extract Panel (OLED, QLED, IPS, VA, TN)
+  const panelMatch = t.match(/\b(OLED|QLED|IPS|VA|TN)\b/i);
+  const panel = panelMatch ? panelMatch[1].toUpperCase() : "";
+
+  // 5. Special Features
+  const curved = /\b(Curved|Gewölbt)\b/i.test(t);
+  const ultraWide = /\bultra-?wide\b/i.test(t);
+  const usbC = /\busb-?c\b/i.test(t);
+  const gaming = /\bgaming\b/i.test(t);
+  const hdr = /\b(hdr\d*|hdr10|hdr400|hdr600|hdr1000)\b/i.test(t);
+
+  return {
+    size: size ? (size.includes('"') ? size : size + '"') : "",
+    resolution,
+    refreshRate,
+    panel,
+    curved,
+    ultraWide,
+    usbC,
+    gaming,
+    hdr,
+  };
+}
+
 /**
  * Standardizes tokenization for consistent identity matching.
  */
@@ -675,7 +753,11 @@ function extractRamFacts(
 export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const rawBrand = (product.brand || "").trim();
   const title = (product.title || "").trim();
-  const rawCategory = (product.category || "").toLowerCase();
+  const rawCategory = (
+    product.category ||
+    product.category_id ||
+    ""
+  ).toLowerCase();
 
   // 1. Category and Alias Normalization
   const categoryMap: Record<string, string> = {
@@ -687,6 +769,40 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     netzteile: "power-supplies",
     psu: "power-supplies",
     arbeitsspeicher: "ram",
+    monitore: "monitors",
+    fernseher: "televisions",
+    prozessoren: "processors-cpus",
+    grafikkarten: "graphics-cards",
+    mainboards: "motherboards",
+    kopfhoerer: "headphones",
+    lautsprecher: "speakers",
+    soundbars: "soundbars",
+    tastaturen: "keyboards",
+    maeuse: "mice",
+    "wlan-router": "routers",
+    haushaltselektronik: "household-electronics",
+    kuehlschraenke: "refrigerators",
+    waschmaschinen: "washing-machines",
+    geschirrspueler: "dishwashers",
+    backoefen: "ovens",
+    kochfelder: "cooktops",
+    waeschetrockner: "dryers",
+    kuechenmaschinen: "kitchen-machines",
+    mikrowellen: "microwaves",
+    dunstabzugshauben: "cooker-hoods",
+    gefrierschraenke: "freezers",
+    herde: "stoves",
+    festplatten: "hard-drives",
+    "nas-systeme": "nas",
+    "pc-gehaeuse": "pc-cases",
+    "cpu-kuehler": "cpu-coolers",
+    laufwerke: "drives",
+    spielekonsolen: "consoles",
+    videospiele: "games",
+    digitalkameras: "cameras",
+    systemkameras: "system-cameras",
+    speicherkarten: "memory-cards",
+    objektive: "lenses",
   };
   const category = categoryMap[rawCategory] || rawCategory;
   const isRAM = category === "ram";
@@ -981,7 +1097,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "channel",
   ]);
 
-  if (category === "prozessoren") {
+  if (category === "processors-cpus") {
     const cpuNoise = [
       "vermeer",
       "am4",
@@ -1030,7 +1146,15 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     return w;
   };
 
-  let baseTitle = officialModel || title;
+  // Determine the primary source for identity extraction.
+  // We prefer officialModel if available, otherwise we use the richest available title.
+  const longestTitle =
+    product.officialTitle &&
+    product.officialTitle.length > (product.title || "").length
+      ? product.officialTitle
+      : product.title || "";
+
+  let baseTitle = officialModel || longestTitle;
 
   // Symbol Injection Strategy: If official model lacks symbols but raw title has them, prefer raw title.
   if (officialModel && !/[™®©]/.test(officialModel) && /[™®©]/.test(title)) {
@@ -1049,8 +1173,15 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   }
 
   // 3c. Title Cleanup (Splitting at common separators to find core Model)
-  // For RAM, we avoid splitting at '(' because it often contains critical specs (e.g. 2x16GB)
-  const splitRegex = isRAM ? / \- | \/ | \||: |,/i : / \- | \/ | \(| \||: |,/i;
+  // For RAM, monitors, and TVs, we avoid splitting at '(' because it often contains critical specs (e.g. 2x16GB, 3440x1440)
+  const isDisplay =
+    category.includes("monitor") ||
+    category.includes("display") ||
+    category.includes("televis") ||
+    category.includes("tv") ||
+    category.includes("fernseher");
+  const splitRegex =
+    isRAM || isDisplay ? / \/ | \||: /i : / \- | \/ | \(| \||: |,/i;
   let cleanTitle = baseTitle.split(splitRegex)[0].trim();
 
   // Robustly strip brand from start of title to prevent duplication
@@ -1087,11 +1218,13 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   // MUST preserve symbols!
   cleanTitle = cleanTitle.replace(/^[^a-z0-9™®©]+/i, "");
 
-  const rawWords = cleanTitle.split(/[\s,+\*~]+/).filter(Boolean);
+  const rawWords = cleanTitle
+    .split(isDisplay ? /[\s,+\*~-]+/ : /[\s,+\*~]+/)
+    .filter(Boolean);
   const modelWords: string[] = [];
   const strippedUnits: string[] = [];
 
-  rawWords.forEach((word, index) => {
+  rawWords.forEach((word: string, index: number) => {
     const cleanWord = word.replace(/^[(\[",\.]+|[)\]",\.]+/g, "");
     const normalized = normalizeAccents(cleanWord);
     const rawLower = normalized.toLowerCase();
@@ -1100,6 +1233,12 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     // [Part 2] Token Deduplication Logic
     const tokenNorm = cleanLower;
+    // Protect "plus" from being stripped as common noise
+    if (tokenNorm === "plus") {
+      modelWords.push(word);
+      return;
+    }
+
     if (tokenNorm && index > 0) {
       // If we already have this exact token in modelWords or strippedUnits, skip it
       const alreadyInModel = modelWords.some(
@@ -1242,7 +1381,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       cleanLower === mpnVal.toLowerCase().replace(/[^a-z0-9]/g, "")
     ) {
       const looksLikeSKU = mpnVal.length > 6 || /[\/\-]/.test(mpnVal);
-      if (looksLikeSKU && modelWords.length > 0) return;
+      if (looksLikeSKU && modelWords.length > 0 && !isDisplay) return;
     }
 
     // Strip if in noise list AND not protected (and not in official trust path)
@@ -1319,7 +1458,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   function processTrait(val: string, k: string) {
     if (!val || typeof val !== "string") return;
 
-    if (category === "prozessoren") {
+    if (category === "processors-cpus") {
       // 1. List Filtering
       if (val.includes(",") || val.includes(";")) return;
 
@@ -1357,10 +1496,10 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     let cleanedDisplayVal = displayVal;
 
     currentModelWords.forEach((mw) => {
-      // Don't strip pure numbers (like 65) if they are immediately followed by a unit
+      // Don't strip pure numbers (like 65) if they are immediately followed by a unit or "Plus"
       if (/^\d+$/.test(mw)) {
         const unitRegex = new RegExp(
-          `\\b${mw}\\s*(gb|tb|mb|hz|inch|zoll|\\")\\b`,
+          `\\b${mw}\\s*(gb|tb|mb|hz|inch|zoll|\\"|plus)\\b`,
           "i",
         );
         if (unitRegex.test(cleanedDisplayVal)) return;
@@ -1417,7 +1556,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       !isTablet &&
       !isSSD &&
       !isRAM &&
-      category !== "prozessoren" &&
+      category !== "processors-cpus" &&
       (valLower.includes("gb") || valLower.includes("tb")) &&
       !/ssd|ram/i.test(valLower)
     ) {
@@ -1449,7 +1588,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   }
 
   // ADD STRIPPED UNITS (RECOVERY) - Fixes missing 2x16GB in RAM etc.
-  if (category !== "prozessoren") {
+  if (category !== "processors-cpus") {
     strippedUnits.forEach((unit) => {
       const norm = unit.toLowerCase().replace(/[^a-z0-9]/g, "");
       if (processedTokens.has(norm)) return;
@@ -1522,13 +1661,13 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
           .trim()
       : Array.from(new Set(variantTokens)).join(" ").trim();
 
-  const displayTitle = variantSuffix
+  let displayTitle = variantSuffix
     ? `${modelTitle} ${variantSuffix}`
     : modelTitle;
 
   // 6. Dedicated CPU Naming Strategy
   // Automated reconstruction from merged multi-source patterns.
-  if (category === "prozessoren") {
+  if (category === "processors-cpus") {
     const factsA = extractCpuFacts(product.title || "", resolvedBrand);
     const factsO = extractCpuFacts(product.officialTitle || "", resolvedBrand);
 
@@ -1588,6 +1727,446 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         categoryUsed: category,
       };
     }
+  }
+
+  // 7. Dedicated Display Naming Strategy (Monitors & TVs)
+  if (isDisplay) {
+    const facts = extractDisplayFacts(title);
+
+    const subtractTokens = new Set<string>();
+    const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    if (facts.size) {
+      const sizeNorm = norm(facts.size);
+      // Only subtract if it's a full trait mention with units,
+      // not just a bare count that might be the model name (e.g. Dell 34)
+      if (title.toLowerCase().includes(facts.size.toLowerCase())) {
+        subtractTokens.add(sizeNorm);
+      }
+    }
+    if (facts.resolution) {
+      subtractTokens.add(norm(facts.resolution));
+      // Also catch the raw resolution if it was mapped (e.g. 1920x1080 -> FHD)
+      const resMatch = title.match(/\b(1920x1080|2560x1440|3440x1440)\b/i);
+      if (resMatch) subtractTokens.add(norm(resMatch[0]));
+    }
+    if (facts.panel) subtractTokens.add(norm(facts.panel));
+    if (facts.refreshRate) subtractTokens.add(norm(facts.refreshRate));
+    if (facts.usbC) subtractTokens.add("usbc");
+    if (facts.curved) {
+      subtractTokens.add("curved");
+      subtractTokens.add("gewolbt");
+    }
+    if (facts.gaming) subtractTokens.add("gaming");
+    if (facts.hdr) subtractTokens.add("hdr");
+    if (facts.ultraWide) subtractTokens.add("ultrawide");
+
+    // MINIMALIST: Strip bare size numbers (e.g. "34" from "Dell 34 Plus")
+    if (facts.size) {
+      const numericSize = facts.size.replace(/[^0-9.]/g, "");
+      if (numericSize) {
+        subtractTokens.add(numericSize);
+        // Also strip common decimal variations (68.4 -> 68, 684)
+        if (numericSize.includes(".")) {
+          subtractTokens.add(numericSize.replace(".", ""));
+          subtractTokens.add(numericSize.split(".")[0]);
+        }
+      }
+    }
+
+    // Clear aspect ratios and tech jargon that commonly appears in Amazon monitor titles
+    const aspectMatch = title.match(/\b(16:9|21:9|32:9)\b/);
+    if (aspectMatch) subtractTokens.add(aspectMatch[0].replace(/:/g, ""));
+
+    // Extract common resolution components to strip them individually
+    const resRawMatch = title.match(/\b(\d{4})\s*x\s*(\d{4})\b/);
+    if (resRawMatch) {
+      subtractTokens.add(resRawMatch[1]);
+      subtractTokens.add(resRawMatch[2]);
+      subtractTokens.add("x");
+    }
+
+    const dciP3Match = title.match(/\bdci-p3\s*(\d+%?)\b/i);
+    if (dciP3Match) {
+      subtractTokens.add("dcip3");
+      subtractTokens.add(dciP3Match[1].replace(/%/g, ""));
+    }
+
+    const percentageMatch = title.match(/(\d+)%\b/);
+    if (percentageMatch) subtractTokens.add(percentageMatch[1]);
+
+    // Filter model words: remove things we've already extracted as traits
+    // and technical noise that shouldn't be in the model name or slug
+    const stripList = [
+      "Zoll",
+      "Inch",
+      "Monitor",
+      "Display",
+      "TV",
+      "Smart",
+      "1ms",
+      "5ms",
+      "sRGB",
+      "cd/m2",
+      "Fast",
+      "Office",
+      "Business",
+      "Home",
+      "Schwarz",
+      "Weiss",
+      "Weiß",
+      "Silber",
+      "Grau",
+      "Black",
+      "White",
+      "Silver",
+      "Gray",
+      "Grey",
+      "32",
+      "75",
+      "27",
+      "34",
+      "Lautsrecher",
+      "Lautsprecher",
+      "Speaker",
+      "Speakers",
+      "Reaktionszeit",
+      "Response",
+      "Time",
+      "HDMI",
+      "DisplayPort",
+      "VESA",
+      "ELMB",
+      "HDR",
+      "Sync",
+      "FreeSync",
+      "GSync",
+      "G-Sync",
+      "Hz",
+      "ms",
+      "IPS",
+      "VA",
+      "TN",
+      "Resolution",
+      "Super",
+      "Ultra",
+      "Pro",
+      "Gaming",
+      "Premium",
+      "Contrast",
+      "Nits",
+      "sRGB",
+      "Color",
+      "Gamut",
+      "UHD",
+      "4K",
+      "FHD",
+      "QHD",
+      "WQHD",
+      "HD",
+      "QLED",
+      "cm",
+      "Ultra",
+      "UHD",
+      "Resolution",
+      "Super",
+      "AE",
+      "AMD",
+      "NVIDIA",
+      "DisplayHD",
+      "FreeSync",
+      "GSync",
+      "Sync",
+      "Adaptive",
+      "Premium",
+      "Professional",
+      "Business",
+      "Home",
+      "Gebraucht",
+      "B-Ware",
+      "Refurbished",
+      "Renewed",
+      "Office",
+      "Work",
+      "Elite",
+      "UltraSharp",
+      "Series",
+      "Inch",
+      "Zoll",
+      "Monitor",
+      "Display",
+      "TV",
+      "HDR10",
+      "HDR400",
+      "HDR600",
+      "HDR1000",
+      "400",
+      "600",
+      "1000",
+      "99",
+      "100",
+      // Common cm sizes for monitors to strip (noise)
+      "60",
+      "61",
+      "62",
+      "68",
+      "684", // Normalized 68.4
+      "69",
+      "70",
+      "80",
+      "81",
+      "86",
+      "108",
+      "120",
+      "138",
+      "163",
+      "164",
+      "165",
+      "189",
+    ].map((s) => s.toLowerCase().replace(/[^a-z0-9]/g, ""));
+
+    // HARDCORE MINIMALIST: Specs Cutoff
+    // If we see any of these words, we stop extraction entirely to prevent technical leakage
+    const DISPLAY_SERIES_WHITELIST = new Set([
+      "rog",
+      "strix",
+      "gaming",
+      "tuf",
+      "ultragear",
+      "odyssey",
+      "oled",
+      "qled",
+      "qd-oled",
+      "mini-led",
+      "master",
+      "proart",
+      "ultrasharp",
+      "essential",
+      "studio",
+      "display",
+      "curved",
+      "ultrawide",
+      "legion",
+      "nitro",
+      "swift",
+      "pro",
+      "plus",
+      "mini",
+      "led",
+      "master",
+      "studio",
+      "max",
+      "ultra",
+      "g",
+      "s",
+      "e",
+      "p",
+    ]);
+
+    const specsCutoffRegex =
+      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|ips|va|curved|ultrawide|usb-c|usbc|hdmi|displayport|adaptive-sync|adaptivesync|g-sync|gsync|freesync|gtg|dci-p3|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|plus|cm|wuxga|wqxga|wfhd|professional|gebraucht|bware|b-ware|fast|oled|qled|amoled|tft|lcd|led|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|2x|3x|4x|5x|6x)$/i;
+    const inchPattern = /^\d+["”']|^\d+zoll$/i;
+
+    const isBatchNumber = (w: string) => {
+      const clean = w.replace(/[^a-z0-9]/gi, "");
+      return /^[a-z]\d{6,}$/i.test(clean) || /^\d{9,}$/.test(clean);
+    };
+
+    // Identify a potential MPN from the words if one isn't explicitly provided
+    // For monitors, this is usually a mix of letters and numbers like S3425DW or 27UP650K
+    // We search FROM THE END as Amazon titles often put the model code last
+    let modelMPN = mpnVal;
+
+    // For monitors/TVs, we ALWAYS try to find a more "human-readable" model code in the title
+    // because the provided 'mpnVal' is often a raw part number (e.g. 90LM0B40-B01B71)
+    // while the title contains the consumer-facing model (e.g. VG257Q5A).
+    const isHumanReadable = (m: string) => {
+      if (!m) return false;
+      const clean = m.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (isBatchNumber(clean)) return false;
+      // Displays often have very long MPNs (e.g. LS27DG600SUXEN is 14 chars)
+      const maxLen = isDisplay ? 20 : 12;
+      if (clean.length > maxLen) return false;
+      return true;
+    };
+
+    // For displays, identify ALL valid MPN/model code candidates
+    const mpnCandidates = new Set<string>();
+    if (isDisplay) {
+      for (const w of rawWords) {
+        const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (
+          wNorm.length >= 2 &&
+          /[a-z]/i.test(wNorm) &&
+          /[0-9]/.test(wNorm) &&
+          !specsCutoffRegex.test(wNorm) &&
+          !isBatchNumber(wNorm) &&
+          (wNorm.length > 5 || (wNorm.length >= 2 && !/^\d+$/.test(wNorm)))
+        ) {
+          mpnCandidates.add(wNorm);
+          if (!modelMPN || wNorm.length > modelMPN.length) {
+            modelMPN = w.replace(/[()]/g, "");
+          }
+        }
+      }
+    }
+    const modelMpnNorm = modelMPN
+      ? modelMPN.toLowerCase().replace(/[^a-z0-9]/g, "")
+      : "";
+    const hasTechnicalDots = (w: string) => /\d+\.\d+/.test(w); // e.g., 86.4, 1.4
+
+    let stopped = false;
+    const displayModelWords: string[] = [];
+    for (let i = 0; i < rawWords.length; i++) {
+      const w = rawWords[i];
+      // Skip purely non-alphanumeric tokens (like bare hyphens or symbols)
+      if (!/[a-z0-9]/i.test(w)) continue;
+
+      const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+      // Avoid repeating the brand name in the model part
+      if (wNorm === resolvedBrandLower) continue;
+
+      const isMpn =
+        mpnCandidates.has(wNorm) || (modelMpnNorm && wNorm === modelMpnNorm);
+      const isSeries = DISPLAY_SERIES_WHITELIST.has(wNorm);
+
+      // EXEMPT: Protect the Model Code and ALWAYS push it
+      if (isMpn) {
+        displayModelWords.push(w.replace(/[()]/g, ""));
+        stopped = true;
+        continue;
+      }
+
+      // Series names (ROG, Strix, TUF, Odyssey) are preserved if they appear BEFORE the MPN
+      if (isSeries && !stopped) {
+        displayModelWords.push(w);
+        continue;
+      }
+
+      const isBatch = isBatchNumber(w);
+      const isTechDot = hasTechnicalDots(w);
+
+      if (
+        (specsCutoffRegex.test(wNorm) ||
+          inchPattern.test(w) ||
+          isBatch ||
+          isTechDot) &&
+        !isSeries &&
+        i > 0 &&
+        !(wNorm === "series" && i < 3)
+      ) {
+        stopped = true;
+      }
+
+      if (stopped) continue;
+
+      // Skip batch numbers if they aren't the primary model
+      if (isBatch && i > 0) continue;
+      // Skip tech dots
+      if (isTechDot) continue;
+      // Final guard against numeric noise (lone numbers < 100 that aren't MPNs)
+      if (/^\d{1,2}$/.test(wNorm)) continue;
+
+      displayModelWords.push(w);
+    }
+
+    const uniqueWords: string[] = [];
+    const seenWords = new Set<string>();
+    for (const w of displayModelWords) {
+      const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!seenWords.has(wNorm)) {
+        uniqueWords.push(w);
+        seenWords.add(wNorm);
+      }
+    }
+
+    const cleanDisplayModel = uniqueWords
+      .map((w: string) => {
+        // Strip regional suffixes from model names for monitors (e.g. -WAEU, .AEU)
+        return w.replace(/[-.](?:[A-Z]{3,4}|AE|WAEU|AEU)$/i, "");
+      })
+      .filter((w: string) => {
+        const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
+        // Protect whitelist words first
+        if (DISPLAY_SERIES_WHITELIST.has(wNorm)) return true;
+
+        // Final guard against pure tech noise leaks
+        if (/^\d+(cm|hz|inch|zoll|%|ms)$/.test(wNorm)) return false;
+        if (/^\d{3,4}x\d{3,4}$/.test(wNorm)) return false;
+        if (
+          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|fhd|uhd|curved|gaming|ultrawide|usb-c|usbc|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|monitor|display|series)$/.test(
+            wNorm,
+          )
+        )
+          return false;
+        if (/^(400|600|1000|waeu|aeu|ae|office|business|home)$/.test(wNorm))
+          return false;
+        if (wNorm.length < 2 && !/^\d$/.test(wNorm)) return false;
+        return true;
+      })
+      .join(" ")
+      .trim();
+
+    // SANITY CHECK: If it still looks like a full sentence/description, truncate it.
+    let finalModel = cleanDisplayModel;
+    if (finalModel.length > 50 || finalModel.split(" ").length > 6) {
+      // If we have an MPN, just use that + Brand.
+      // If not, take only the first 3 words.
+      if (modelMPN && modelMPN.length > 3) {
+        finalModel = modelMPN;
+      } else {
+        finalModel = finalModel.split(" ").slice(0, 3).join(" ");
+      }
+    }
+
+    const coreModelTitle = `${richBrand} ${finalModel}`.trim();
+    displayTitle = coreModelTitle;
+
+    // We still assemble the "full" title for internal reference or fallback
+    const featureParts = [
+      facts.size,
+      facts.panel,
+      facts.resolution,
+      facts.curved ? "Curved" : null,
+      facts.ultraWide ? "UltraWide" : null,
+      facts.usbC ? "USB-C" : null,
+      facts.gaming ? "Gaming" : null,
+      facts.hdr ? "HDR" : null,
+      facts.refreshRate,
+    ].filter(Boolean);
+
+    const fullModelTitle =
+      featureParts.length > 0
+        ? `${coreModelTitle} ${featureParts.join(" ")}`
+        : coreModelTitle;
+
+    // Recalculate variantSuffix for monitors to avoid jargon leaks (like 100hz) in slugs
+    // Monitors are usually single-variant per MPN, so suffix is rarely needed
+    const monitorVariantSuffix = "";
+
+    return {
+      brand: richBrand,
+      model: cleanDisplayModel || finalModel || richBrand,
+      fullModel: fullModelTitle,
+      shortModel:
+        modelMPN ||
+        displayModelWords[0] ||
+        cleanDisplayModel ||
+        finalModel ||
+        richBrand,
+      variantLabel: monitorVariantSuffix,
+      variantMap,
+      variantTokens: [], // Monitors don't need high-variance trait tokens
+      displayTitle: displayTitle,
+      modelTitle: coreModelTitle,
+      variantSuffix: monitorVariantSuffix,
+      mpn: modelMPN || mpnVal || undefined,
+      isHighVariance: false,
+      traitCount: variantTokens.length,
+      isLaptop: false,
+      categoryUsed: category,
+    };
   }
 
   return {

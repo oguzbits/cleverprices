@@ -79,11 +79,29 @@ export function getFamilyIdentity(
   brand: string;
   variantSuffix: string;
   displaySubtitle: string;
+  categoryUsed: string;
 } {
   // 1. Basic Identity (Stateless: Core Model + Own Traits)
   const identity = getProductIdentity(representative);
+  if (representative.id === 3833) {
+    console.error(
+      `TRACE 3833 (getFamilyIdentity): Title="${identity.displayTitle}", Model="${identity.model}", MPN="${identity.mpn}"`,
+    );
+  }
   const brand = identity.brand || "Generic";
   const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+  const categoryUsed = (
+    representative.category ||
+    (representative as any).category_id ||
+    ""
+  ).toLowerCase();
+  const isDisplay =
+    categoryUsed.includes("monitor") ||
+    categoryUsed.includes("display") ||
+    categoryUsed.includes("televis") ||
+    categoryUsed.includes("tv") ||
+    categoryUsed.includes("fernseher");
 
   // 2. Determine Scope
   const isHub =
@@ -99,8 +117,18 @@ export function getFamilyIdentity(
     (isHub ? representative.id : undefined);
 
   // 3. Core Model Construction
-  let modelPart = normalizeAccents(identity.model)
-    .toLowerCase()
+  let modelPart = normalizeAccents(identity.model).toLowerCase();
+
+  // Strip brand from model if it's duplicated (e.g. "ASUS TUF ASUS" -> "ASUS TUF")
+  // For monitors/TVs, we are very careful not to strip digits or model codes that might overlap with short brands
+  if (brandSlug) {
+    const brandPattern = new RegExp(`\\b${brandSlug}\\b`, "gi");
+    if (!isDisplay) {
+      modelPart = modelPart.replace(brandPattern, "");
+    }
+  }
+
+  modelPart = modelPart
     .replace(new RegExp(`\\b${identity.categoryUsed}s?\\b`, "gi"), "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
@@ -159,7 +187,7 @@ export function getFamilyIdentity(
     (representative.category || "").toLowerCase() === "arbeitsspeicher" ||
     (representative.category || "").toLowerCase() === "ram";
 
-  if (isRam) {
+  if (isRam || isDisplay) {
     return {
       slug: `${idPrefix}_-${textSlug}`,
       title: isHub ? identity.modelTitle : identity.displayTitle,
@@ -168,6 +196,7 @@ export function getFamilyIdentity(
       brand,
       variantSuffix: identity.variantSuffix,
       displaySubtitle: identity.variantSuffix,
+      categoryUsed: identity.categoryUsed,
     };
   }
 
@@ -179,6 +208,7 @@ export function getFamilyIdentity(
     brand,
     variantSuffix: identity.variantSuffix,
     displaySubtitle: identity.variantSuffix,
+    categoryUsed: identity.categoryUsed,
   };
 }
 

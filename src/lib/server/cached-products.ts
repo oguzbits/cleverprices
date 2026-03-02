@@ -40,7 +40,7 @@ async function getCachedBestDeals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v58",
+  _version: string = "v59",
 ) {
   "use cache";
   cacheLife("category");
@@ -51,7 +51,7 @@ async function getCachedMostPopular(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v58",
+  _version: string = "v59",
 ) {
   "use cache";
   cacheLife("category");
@@ -62,7 +62,7 @@ async function getCachedNewArrivals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v58",
+  _version: string = "v59",
 ) {
   "use cache";
   cacheLife("category");
@@ -72,7 +72,7 @@ async function getCachedNewArrivals(
 async function getCachedDiverseMostPopular(
   itemsPerCategory: number,
   countryCode: string,
-  _version: string = "v58",
+  _version: string = "v59",
 ) {
   "use cache";
   cacheLife("category");
@@ -85,7 +85,7 @@ async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
   return getProductBySlugSync(slug, includeHistory);
 }
 
-async function getCachedProductById(id: number, _version: string = "v52") {
+async function getCachedProductById(id: number, _version: string = "v53") {
   "use cache";
   cacheLife("product");
   return getProductByIdSync(id);
@@ -95,7 +95,7 @@ async function getCachedProductVariantsInternal(
   parentAsin: string,
   countryCode: string,
   skipFullMapping: boolean = false,
-  _version: string = "v58",
+  _version: string = "v59",
 ) {
   "use cache";
   cacheLife("product");
@@ -112,7 +112,7 @@ async function getCachedSimilarProducts(
   targetPrice: number,
   limit: number,
   countryCode: string,
-  _version: string = "v58",
+  _version: string = "v59",
 ) {
   "use cache";
   cacheLife("product");
@@ -130,7 +130,7 @@ async function getCachedSimilarProducts(
 
 async function getCachedProductSlugByAsinSuffix(
   oldSlug: string,
-  _version: string = "v58",
+  _version: string = "v59",
 ) {
   "use cache";
   cacheLife("category"); // Redirects can be cached for a long time
@@ -139,7 +139,7 @@ async function getCachedProductSlugByAsinSuffix(
 
 async function getCachedProductByParentAsinSuffix(
   slug: string,
-  _version: string = "v58",
+  _version: string = "v59",
 ) {
   "use cache";
   cacheLife("category");
@@ -148,7 +148,7 @@ async function getCachedProductByParentAsinSuffix(
 
 async function getCachedProductBySyntheticId(
   id: number,
-  _version: string = "v52",
+  _version: string = "v53",
 ) {
   "use cache";
   cacheLife("product");
@@ -202,7 +202,7 @@ export async function getBestDeals(
     limit,
     countryCode,
     condition,
-    "v7",
+    "v8",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -216,7 +216,7 @@ async function getMostPopular(
     limit,
     countryCode,
     condition,
-    "v7",
+    "v8",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -230,7 +230,7 @@ export async function getNewArrivals(
     limit,
     countryCode,
     condition,
-    "v7",
+    "v8",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -242,7 +242,7 @@ export async function getDiverseMostPopular(
   const products = await getCachedDiverseMostPopular(
     itemsPerCategory,
     countryCode,
-    "v7",
+    "v8",
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -322,7 +322,7 @@ async function findProductByParentAsinSuffix(
 export async function getPDPRenderData(
   slug: string,
   countryCode: string = "de",
-  _version: string = "v52",
+  _version: string = "v53",
 ) {
   "use cache";
   cacheLife("product");
@@ -436,7 +436,7 @@ export async function getPDPRenderData(
             redirect: null,
             isPermanent: false,
             // Add a salt to bust any stale caches
-            _v: "v72-stable-hub-id",
+            _v: "v73-stable-hub-id",
           };
         }
 
@@ -534,7 +534,7 @@ export async function getPDPRenderData(
           isParentView: false,
           redirect: null,
           isPermanent: false,
-          _v: "v48-optimized",
+          _v: "v49-optimized",
         };
       }
     }
@@ -622,7 +622,7 @@ export async function getPDPRenderData(
     isParentView,
     redirect,
     isPermanent,
-    _v: "v72-final-fix",
+    _v: "v73-final-fix",
   };
 }
 

@@ -741,7 +741,8 @@ export async function getCategoryProducts(
     // C. Price Match Status
     const matchesPrice =
       (!filters.minPrice || p.price >= filters.minPrice) &&
-      (!filters.maxPrice || (p.price > 0 && p.price <= filters.maxPrice));
+      (!filters.maxPrice || (p.price > 0 && p.price <= filters.maxPrice)) &&
+      p.price > 0;
 
     // D. Final Logic
     const matchesAllFields = filterFields.every((f) => matches[f]);
@@ -807,7 +808,8 @@ export async function getCategoryProducts(
       const matchingVariants = variants.filter((v: any) => {
         const matchesPrice =
           (!filters.minPrice || v.price >= filters.minPrice) &&
-          (!filters.maxPrice || (v.price > 0 && v.price <= filters.maxPrice));
+          (!filters.maxPrice || (v.price > 0 && v.price <= filters.maxPrice)) &&
+          v.price > 0;
         return matchesPrice;
       });
 

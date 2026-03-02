@@ -228,14 +228,19 @@ export function mapDbProduct(
     rawSpecs["Model Year"];
 
   // CPU fallback
-  if (p.category === "cpu" || p.category === "motherboards") {
+  if (
+    p.category === "cpu" ||
+    p.category === "prozessoren" ||
+    p.category === "motherboards" ||
+    p.category === "mainboards"
+  ) {
     if (!socket) {
       const socketMatch = (p.title || "").match(
         /(AM[45]|LGA\s?(\d{4})|sTRX4|sWRX8|Socket\s?[A-Z0-9]+|TR4|FM[12]|LGA\s?115[0156])/i,
       );
       if (socketMatch) socket = socketMatch[0].toUpperCase().replace(/\s+/, "");
     }
-    if (!cores && p.category === "cpu") {
+    if (!cores && (p.category === "cpu" || p.category === "prozessoren")) {
       const coreMatch = (p.title || "").match(/(\d+)\s?-?\s?(Core|Kerne)/i);
       if (coreMatch) cores = parseInt(coreMatch[1]).toString();
     }

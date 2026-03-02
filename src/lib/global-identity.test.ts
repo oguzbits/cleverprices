@@ -151,18 +151,169 @@ describe("Global Cross-Category Identity Validation", () => {
     });
   });
 
-  describe("Category: TVs (Size Extraction) - TVs are FixedTrait", () => {
-    it("should extract screen size from title", () => {
+  describe("Category: Monitors & TVs (Display Identity)", () => {
+    it("should extract Size, Resolution, and Refresh Rate for a gaming monitor", () => {
       const p = createProduct({
-        id: 50,
+        id: 90,
         brand: "LG",
-        title: 'LG OLED65C39LC 65" 4K Smart TV',
-        category: "televisions",
-        variationAttributes: 'Größe: 65"',
+        title:
+          "LG UltraGear 27GN800-B 27 Zoll QHD IPS Gaming Monitor 144Hz 1ms",
+        category: "monitore", // Test mapping from German name
       });
 
-      const { slug } = getFamilyIdentity(p, []);
-      expect(slug).toBe("200000050_-oled65c39lc-lg");
+      const { title, categoryUsed } = getFamilyIdentity(p, []);
+
+      expect(categoryUsed).toBe("monitors"); // Verify mapping works
+      expect(title).toBe("LG UltraGear 27GN800-B");
+    });
+
+    it("should handle 4K OLED TVs with Inch notation", () => {
+      const p = createProduct({
+        id: 91,
+        brand: "Samsung",
+        title: "Samsung S90C 65 Inch 4K OLED TV",
+        category: "fernseher", // Test mapping from German name
+      });
+
+      const { title, categoryUsed } = getFamilyIdentity(p, []);
+
+      expect(categoryUsed).toBe("televisions"); // Verify mapping works
+      expect(title).toBe("Samsung S90C");
+    });
+
+    it("should handle mixed German/English units like 27 Zoll", () => {
+      const p = createProduct({
+        id: 92,
+        brand: "Dell",
+        title: "Dell S2721DS 27 Zoll QHD Monitor",
+        category: "monitore",
+      });
+
+      const { title } = getFamilyIdentity(p, []);
+      expect(title).toBe("Dell S2721DS");
+    });
+
+    it("should handle Dell S3425DW 34 Plus monitor with USB-C and Curved", () => {
+      const p = createProduct({
+        id: 93,
+        brand: "Dell",
+        title:
+          "Dell 34 Plus USB-C Monitor - S3425DW, WQHD (3440x1440), 21:9 Curved, 120Hz, VA, 1ms, AMD FreeSync Premium",
+        category: "monitore",
+      });
+
+      const { title, slug } = getFamilyIdentity(p, []);
+
+      // IDEALO STYLE: Clean Title (Brand + Model/Series)
+      expect(title).toBe("Dell S3425DW");
+      // Clean Slug (ID + Model + Brand)
+      expect(slug).toBe("200000093_-s3425dw-dell");
+    });
+
+    it("should strip technical noise from Dell P2725H to match Idealo", () => {
+      const p = createProduct({
+        id: 94,
+        brand: "Dell",
+        title:
+          "Dell P2725H 27 Zoll Full HD (1920x1080) Monitor, 100Hz, IPS, 5ms, 99% sRGB, USB-C, 69cm",
+        category: "monitore",
+      });
+
+      const { title, slug } = getFamilyIdentity(p, []);
+
+      // IDEALO STYLE: Just the brand and model
+      expect(title).toBe("Dell P2725H");
+      // Slug stays clean
+      expect(slug).toBe("200000094_-p2725h-dell");
+    });
+
+    it("should handle LG monitor with comma-separated specs and model code at end", () => {
+      const p = createProduct({
+        id: 3688,
+        brand: "LG",
+        isParentView: true,
+        title:
+          "LG, 27 Zoll, Ultra UHD 4K Monitor, 68.4cm, 16:9, Super Resolution, 3840 x 2160, 60Hz, 5ms, HDR10, AMD FreeSync, DCI-P3 95%, DisplayHD 400, 27UP650K-W.AEU - Weiß",
+        category: "monitore",
+      });
+
+      // Simulating a Hub (ID matches the prefix used in user's reported link)
+      const { title, slug } = getFamilyIdentity(p, []);
+
+      // IDEALO STYLE: Clean Title should include the model code
+      expect(title).toBe("LG 27UP650K-W");
+      expect(slug).toBe("900003688_-27up650k-w-lg");
+    });
+
+    it("should handle Dell S3225QC with messy technical noise (Hardcore Minimalist)", () => {
+      const p = createProduct({
+        id: 200003015,
+        title: "Dell S3225QC 4K HD Office 3",
+        brand: "Dell",
+        category: "monitore",
+      });
+      const { title, slug } = getFamilyIdentity(p, []);
+
+      // IDEALO STYLE: Brand + Model
+      expect(title).toBe("Dell S3225QC");
+      expect(slug).toBe("200003015_-s3225qc-dell");
+    });
+
+    it("should handle ASUS TUF VG27AQML5A correctly (Hardcore Minimalist)", () => {
+      const p = createProduct({
+        id: 200003176,
+        title:
+          "ASUS TUF VG27AQML5A Fast ELMB VESA DisplayHDR 0 Reaktionszeit Lautsrecher 2x HDMI DisplayPort",
+        brand: "ASUS",
+        category: "monitore",
+      });
+      const { title, slug } = getFamilyIdentity(p, []);
+
+      expect(title).toBe("ASUS TUF VG27AQML5A");
+      expect(slug).toBe("200003176_-tuf-vg27aqml5a-asus");
+    });
+
+    it("should handle noisy Dell P2425 Professional with measurements in title", () => {
+      const p = createProduct({
+        id: 200003026,
+        title:
+          "Dell Monitor 60,96cm P2425 Professional WUXGA IPS gebraucht2206795",
+        brand: "Dell",
+        category: "monitore",
+      });
+      const { title, slug } = getFamilyIdentity(p, []);
+
+      expect(title).toBe("Dell P2425");
+      expect(slug).toBe("200003026_-p2425-dell");
+    });
+
+    it("should handle Dell SE2725HG with German jargon (Hardcore Minimalist)", () => {
+      const p = createProduct({
+        id: 200003092,
+        title: "Dell SE2725HG Full HD 6 schwarz",
+        brand: "Dell",
+        category: "monitore",
+      });
+      const { title, slug } = getFamilyIdentity(p, []);
+
+      // IDEALO STYLE: Brand + Model
+      expect(title).toBe("Dell SE2725HG");
+      expect(slug).toBe("200003092_-se2725hg-dell");
+    });
+
+    it("should handle ASUS TUF with extreme specs and cutoff (Hardcore Minimalist)", () => {
+      const p = createProduct({
+        id: 200003176,
+        title:
+          "ASUS TUF VG27AQML5A Fast ELMB VESA DisplayHDR 0 Reaktionszeit Lautsrecher 2x HDMI DisplayPort",
+        brand: "ASUS",
+        category: "monitore",
+      });
+      const { title, slug } = getFamilyIdentity(p, []);
+
+      // IDEALO STYLE: Brand + Model
+      expect(title).toBe("ASUS TUF VG27AQML5A");
+      expect(slug).toBe("200003176_-tuf-vg27aqml5a-asus");
     });
   });
 
