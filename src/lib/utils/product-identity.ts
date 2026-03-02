@@ -816,6 +816,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const isFixedTraitCategory =
     IDENTITY_CONFIG.FIXED_TRAIT_CATEGORIES.includes(category);
   const isDisplay =
+    category === "monitors" ||
+    category === "819" ||
     category.includes("monitor") ||
     category.includes("display") ||
     category.includes("televis") ||
@@ -2079,6 +2081,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       "qned",
       "crystal",
       "pripone",
+      "modern",
+      "mag",
       "swift",
       "zenith",
     ]);
@@ -2109,7 +2113,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ]);
 
     const specsCutoffRegex =
-      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|2x|3x|4x|5x|6x|cdm2|cdm|\d+r|\d+w|\d+cdm2|\d+cdm|\d+nits?|\d+cd|\d+hz.*|\d+ms.*|\d+bit)(monitor|display|bildschirm|fernseher|tv)?$/i;
+      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|\d+x|\d+\.\d+[a-z]?|\d+v\d+[a-z]?|\d+achsen|\d+-achsen|2x|3x|4x|5x|6x|cdm2|cdm|\d+r|\d+w|\d+cdm2|\d+cdm|\d+nits?|\d+cd|\d+hz.*|\d+ms.*|\d+bit|\d+x|\d+v\d+[a-z]?|(\d+)+[a-z]?)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
 
     const isBatchNumber = (w: string) => {
@@ -2139,14 +2143,30 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const mpnCandidates = new Set<string>();
     if (isDisplay) {
       for (const w of rawWords) {
+        // Attached Noise check (e.g. Gebraucht"123")
+        const subParts = w.split(/[^a-z0-9]/i).filter(Boolean);
+        let foundNoisePart = false;
+        for (const sp of subParts) {
+          const spNorm = sp.toLowerCase();
+          if (
+            spNorm === "gebraucht" ||
+            spNorm === "refurbished" ||
+            spNorm === "bware" ||
+            /^\d{6,}$/.test(spNorm)
+          ) {
+            foundNoisePart = true;
+            break;
+          }
+        }
+        if (foundNoisePart) continue;
+
         const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
         if (
           wNorm.length >= 2 &&
           /[a-z]/i.test(wNorm) &&
           /[0-9]/.test(wNorm) &&
           !specsCutoffRegex.test(wNorm) &&
-          !isBatchNumber(wNorm) &&
-          (wNorm.length > 5 || (wNorm.length >= 2 && !/^\d+$/.test(wNorm)))
+          !isBatchNumber(wNorm)
         ) {
           mpnCandidates.add(wNorm);
           if (!modelMPN || wNorm.length > modelMPN.length) {
@@ -2161,12 +2181,10 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const hasTechnicalDots = (w: string) => /\d+\.\d+/.test(w); // e.g., 86.4, 1.4
 
     let stopped = false;
+    let mpnFound = false;
     const displayModelWords: string[] = [];
     for (let i = 0; i < rawWords.length; i++) {
       const w = rawWords[i];
-      // Skip purely non-alphanumeric tokens (like bare hyphens or symbols)
-      if (!/[a-z0-9]/i.test(w)) continue;
-
       const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
 
       // Avoid repeating the brand name in the model part
@@ -2175,10 +2193,13 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       const isMpn =
         mpnCandidates.has(wNorm) || (modelMpnNorm && wNorm === modelMpnNorm);
       const isSeries = COMBINED_DISPLAY_SERIES.has(wNorm);
+      const isBatch = isBatchNumber(w);
+      const isTechDot = hasTechnicalDots(w);
 
       // EXEMPT: Protect the Model Code and ALWAYS push it
       if (isMpn) {
         displayModelWords.push(w.replace(/[()]/g, ""));
+        mpnFound = true;
         stopped = true;
         continue;
       }
@@ -2195,14 +2216,43 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         continue;
       }
 
-      const isBatch = isBatchNumber(w);
-      const isTechDot = hasTechnicalDots(w);
+      // If we found an MPN, we only allow short alphanumeric suffixes (like E16)
+      // BUT we must still check if they are descriptive junk/cutoff words first
+      if (mpnFound) {
+        if (
+          wNorm.length <= 4 &&
+          /[a-z]/i.test(wNorm) &&
+          /[0-9]/.test(wNorm) &&
+          !specsCutoffRegex.test(wNorm) &&
+          !isTechDot
+        ) {
+          displayModelWords.push(w);
+          continue;
+        }
+      }
+
+      // Attached Noise check (e.g. Gebraucht"123")
+      const subParts = w.split(/[^a-z0-9]/i).filter(Boolean);
+      let foundNoisePart = false;
+      for (const sp of subParts) {
+        const spNorm = sp.toLowerCase();
+        if (
+          spNorm === "gebraucht" ||
+          spNorm === "refurbished" ||
+          spNorm === "bware" ||
+          /^\d{6,}$/.test(spNorm)
+        ) {
+          foundNoisePart = true;
+          break;
+        }
+      }
 
       if (
         (specsCutoffRegex.test(wNorm) ||
           inchPattern.test(w) ||
           isBatch ||
-          isTechDot) &&
+          isTechDot ||
+          foundNoisePart) &&
         !isSeries &&
         i > 0 &&
         !(wNorm === "series" && i < 3)
