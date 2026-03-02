@@ -123,6 +123,39 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
       input: "Acer Nitro VG270U P6 Gaming Monitor",
       expected: "Acer Nitro VG270U P6",
     },
+    {
+      id: 20,
+      brand: "Dell",
+      input:
+        "Dell U2724D UltraSharp 27 Zoll QHD (2560x1440) Monitor, 120Hz, IPS Black, 5ms, 98% DCI-P3, 2X USB-C, 2X DisplayPort, HDMI, 3X USB, 3 Jahre Garantie, Silber",
+      expected: "Dell U2724D UltraSharp",
+    },
+    {
+      id: 21,
+      brand: "Dell",
+      input:
+        "Dell 27 Plus USB-C Monitor - S2725QC, 4K UHD (3840x2160), 120Hz, IPS, 4ms, AMD FreeSync Premium, 99% sRGB, Höhenverstellbar, Eingebaute Lautsprecher, 2 USB-C, 2 HDMI, 2 USB, 3 Jahre Garantie",
+      expected: "Dell Plus S2725QC",
+    },
+    {
+      id: 22,
+      brand: "MSI",
+      input:
+        "MSI MAG 321CUPDE QD-OLED 32 Zoll UHD Curved Gaming Monitor - 1700R, 3840 x 2160 Quantum Dot OLED Panel, 165Hz / 0,03ms, 99% DCI-P3, Delta E≤2, DisplayHDR True Black 400, DP 1. 4a, HDMI 2.1, USB Type-C",
+      expected: "MSI MAG 321CUPDE",
+    },
+    {
+      id: 23,
+      brand: "ASUS",
+      input: "ASUS ROG Strix OLED XG32UCWMG 15W",
+      expected: "ASUS ROG Strix OLED XG32UCWMG",
+    },
+    {
+      id: 24,
+      brand: "HP",
+      input: "HP 532sf 300cd/m²",
+      expected: "HP 532sf",
+    },
   ];
 
   it("should match Idealo reference titles for all cases", () => {
@@ -132,6 +165,17 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
         title: c.input,
         category: "monitors",
       });
+
+      if (identity.displayTitle !== c.expected) {
+        console.log(`CASE ${c.id} FAIL:`, {
+          input: c.input,
+          expected: c.expected,
+          received: identity.displayTitle,
+          modelWords: identity.modelTitle,
+          variantTokens: identity.variantTokens,
+          mpn: identity.mpn,
+        });
+      }
 
       // We expect the 'displayTitle' to match the Idealo reference
       expect(identity.displayTitle).toBe(c.expected);

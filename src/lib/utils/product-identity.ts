@@ -815,6 +815,12 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     title.toLowerCase().includes("macbook");
   const isFixedTraitCategory =
     IDENTITY_CONFIG.FIXED_TRAIT_CATEGORIES.includes(category);
+  const isDisplay =
+    category.includes("monitor") ||
+    category.includes("display") ||
+    category.includes("televis") ||
+    category.includes("tv") ||
+    category.includes("fernseher");
 
   // 2. Data Sourcing (Official vs Retailer)
   let officialModel: string | null =
@@ -887,8 +893,11 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     (
       title
         .split(/[\s,]+/)
-        .find((w) => /^[a-z]{1,2}\d+[a-z\d\/]{3,}$/i.test(w)) || ""
-    ).toUpperCase();
+        .find((w) => /^[a-z]{0,2}\d+[a-z\d\/-]*$/i.test(w) && w.length >= 4) ||
+      ""
+    )
+      .replace(/[,;]+$/, "")
+      .toUpperCase();
 
   // 3c. RAM NAMING STRATEGY (Idealo-style)
   // Short-circuits the generic parser entirely for RAM products.
@@ -988,10 +997,12 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "80",
     "fully",
     "modular",
-    /* 
-       "mit", "und", "with", "and" 
-       REMOVED to allow preservation in model names (e.g. "AirPods 4 mit Active Noise Cancellation")
-    */
+    "usb",
+    "monitor",
+    "p3",
+    "dci-p3",
+    "ms",
+    "plus",
   ];
   NOISE_WORDS.forEach((s) => subtractTokens.add(s));
 
@@ -1126,7 +1137,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const fixTechCasing = (w: string) => {
     const clean = w.toLowerCase().replace(/[^a-z0-9]/g, "");
     if (
-      /^(oled|qled|hdtv|uhd|fhd|wqhd|rtx|gtx|rx|xt|ti|super|oc|ai|5g|4g|lte|wifi|usb)$/.test(
+      /^(oled|qled|hdtv|uhd|fhd|wqhd|rtx|gtx|rx|xt|ti|super|oc|ai|5g|4g|lte|wifi|usb|ips)$/.test(
         clean,
       )
     )
@@ -1134,13 +1145,14 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     if (/^m[1-9]$/.test(clean)) return clean.toUpperCase();
     if (/^s\d+$/.test(clean)) return clean.toUpperCase();
     if (
-      /^(macbook|iphone|ipad|pixel|galaxy|thinkpad|zenbook|vivobook|legion)$/i.test(
+      /^(macbook|iphone|ipad|pixel|galaxy|thinkpad|zenbook|vivobook|legion|ultrasharp)$/i.test(
         clean,
       )
     ) {
       if (clean === "macbook") return "MacBook";
       if (clean === "iphone") return "iPhone";
       if (clean === "ipad") return "iPad";
+      if (clean === "ultrasharp") return "UltraSharp";
       return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase();
     }
     return w;
@@ -1172,14 +1184,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
   }
 
-  // 3c. Title Cleanup (Splitting at common separators to find core Model)
-  // For RAM, monitors, and TVs, we avoid splitting at '(' because it often contains critical specs (e.g. 2x16GB, 3440x1440)
-  const isDisplay =
-    category.includes("monitor") ||
-    category.includes("display") ||
-    category.includes("televis") ||
-    category.includes("tv") ||
-    category.includes("fernseher");
   const splitRegex =
     isRAM || isDisplay ? / \/ | \||: /i : / \- | \/ | \(| \||: |,/i;
   let cleanTitle = baseTitle.split(splitRegex)[0].trim();
@@ -1218,9 +1222,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   // MUST preserve symbols!
   cleanTitle = cleanTitle.replace(/^[^a-z0-9™®©]+/i, "");
 
-  const rawWords = cleanTitle
-    .split(isDisplay ? /[\s,+\*~-]+/ : /[\s,+\*~]+/)
-    .filter(Boolean);
+  const rawWords = cleanTitle.split(/[\s,+\*~]+/).filter(Boolean);
   const modelWords: string[] = [];
   const strippedUnits: string[] = [];
 
@@ -1342,6 +1344,85 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       return;
     }
 
+    if (isDisplay) {
+      const displayStrippable = [
+        "ips",
+        "oled",
+        "va",
+        "tn",
+        "qled",
+        "quantum",
+        "dot",
+        "curved",
+        "backlight",
+        "black",
+        "silver",
+        "vesa",
+        "freesync",
+        "gsync",
+        "g-sync",
+        "adaptive-sync",
+        "adaptive",
+        "hdr",
+        "hdr10",
+        "hdr400",
+        "hdr600",
+        "hdr1000",
+        "speaker",
+        "speakers",
+        "audio",
+        "height",
+        "adjustable",
+        "tilt",
+        "swivel",
+        "pivot",
+        "stand",
+        "vga",
+        "dvi",
+        "hdmi",
+        "displayport",
+        "dp",
+        "usb-c",
+        "type-c",
+        "thunderbolt",
+        "kvm",
+        "power",
+        "delivery",
+        "pd",
+        "qhd",
+        "wqhd",
+        "uwqhd",
+        "fhd",
+        "uhd",
+        "dcip3",
+        "monitor",
+        "display",
+        "gaming",
+      ];
+      if (displayStrippable.includes(cleanLower)) {
+        return;
+      }
+
+      // Strip resolution specs (e.g. 2560x1440, 3840x2160, 4K, 5K)
+      if (/^\d+x\d+$/i.test(cleanLower)) return;
+      if (/^[458]k$/i.test(cleanLower)) return;
+
+      // Strip refresh rate (e.g. 144hz, 165hz, 240hz, 165HzDP)
+      if (/^\d+hz.*$/i.test(cleanLower)) return;
+
+      // Strip response time (e.g. 1ms, 0.5ms, 5ms)
+      if (/^\d+(\.\d+)?ms.*$/i.test(cleanLower)) return;
+
+      // Strip curved radius (e.g. 1500R, 1700R)
+      if (/^\d+r$/i.test(cleanLower)) return;
+
+      // Strip brightness (e.g. 300cd/m², 400cd)
+      if (cleanLower.includes("cd/m") || cleanLower.includes("nits")) return;
+
+      // Strip percentages (e.g. 98%, 99%)
+      if (/^\d+%?$/.test(cleanWord)) return;
+    }
+
     // 3. Identification & Protection
     const hasNum = /\d/.test(normalized);
     const hasLetter = /[a-z]/i.test(normalized);
@@ -1356,7 +1437,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     // Protect tech series
     const isProtectedTech =
-      /^(rtx|gtx|rx|ti|super|m\d|s\d+|pro|air|max|ultra|pixel|iphone|ipad|galaxy|macbook|artisan|aero|legion|tuf|rog|omen|mfp|gaming)$/i.test(
+      /^(rtx|gtx|rx|ti|super|m\d|s\d+|pro|air|max|ultra|pixel|iphone|ipad|galaxy|macbook|artisan|aero|legion|tuf|rog|omen|mfp|gaming|ultrasharp|plus)$/i.test(
         cleanLower,
       );
     const isActuallyProtected =
@@ -1369,13 +1450,20 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     // Specific strip: 'x' as separator in resolution (3440 x 1440)
     if (cleanLower === "x" && index > 0 && index < rawWords.length - 1) {
-      const prevC = rawWords[index - 1].replace(/[^a-z0-9]/g, "");
-      const nextC = rawWords[index + 1].replace(/[^a-z0-9]/g, "");
+      const prevWord = rawWords[index - 1];
+      const nextWord = rawWords[index + 1];
+      const prevC = prevWord.replace(/[^a-z0-9]/g, "");
+      const nextC = nextWord.replace(/[^a-z0-9]/g, "");
+
+      // Only strip if strictly numeric on both sides (resolution)
+      // If the word containing 'x' was split from a model (e.g. 32GS95UX),
+      // it should have been handled by the model logic/tokenization already.
       if (/^\d+$/.test(prevC) && /^\d+$/.test(nextC)) return;
     }
 
-    // Strip if it's the discovered MPN (always move MPN to variant suffix)
+    // Strip if it's the discovered MPN (always move MPN to suffix)
     // BUT only if we have other descriptive words (to avoid empty models like RM750e)
+    // AND NEVER for displays/TVs as their models often are their MPNs
     if (
       mpnVal &&
       cleanLower === mpnVal.toLowerCase().replace(/[^a-z0-9]/g, "")
@@ -1394,13 +1482,32 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
 
     // Final clean swap & Deduplication
-    const formatted = fixTechCasing(cleanWord.replace(/[,\-:\/]+$/, ""));
+    let formatted = fixTechCasing(cleanWord.replace(/[,\-:\/]+$/, ""));
     const formattedLower = formatted?.toLowerCase();
-    if (
-      formatted &&
-      !modelWords.some((w) => w.toLowerCase() === formattedLower)
-    ) {
-      modelWords.push(formatted);
+
+    // Suffix Preservation: If this word matches our discovered MPN after cleaning,
+    // and we're in a display category, use the full MPN to preserve suffixes like -B or -DE.
+    // We do this AFTER fixTechCasing to ensure the MPN overrides any standard formatting.
+    if (isDisplay && mpnVal) {
+      const mpnClean = mpnVal.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const tokenClean = cleanLower; // Use the loop's cleanLower for accuracy
+      if (tokenClean === mpnClean) {
+        formatted = mpnVal;
+      }
+    }
+
+    if (formatted) {
+      const formattedLowerMatch = formatted.toLowerCase();
+      const existingIndex = modelWords.findIndex(
+        (w) => w.toLowerCase() === formattedLowerMatch,
+      );
+      if (existingIndex !== -1) {
+        if (formatted.length > modelWords[existingIndex].length) {
+          modelWords[existingIndex] = formatted;
+        }
+      } else {
+        modelWords.push(formatted);
+      }
     }
   });
 
@@ -1927,44 +2034,56 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     // HARDCORE MINIMALIST: Specs Cutoff
     // If we see any of these words, we stop extraction entirely to prevent technical leakage
-    const DISPLAY_SERIES_WHITELIST = new Set([
+    const CORE_DISPLAY_SERIES = new Set([
       "rog",
       "strix",
-      "gaming",
       "tuf",
       "ultragear",
       "odyssey",
-      "oled",
-      "qled",
-      "qd-oled",
-      "mini-led",
-      "master",
       "proart",
       "ultrasharp",
-      "essential",
-      "studio",
+      "predator",
+      "alienware",
+      "nitro",
+      "viera",
+      "bravia",
+      "aquos",
+      "thinq",
+      "nanocell",
+      "qned",
+      "crystal",
+      "pripone",
+      "swift",
+      "zenith",
+    ]);
+
+    const GENERIC_DISPLAY_SERIES = new Set([
+      "gaming",
       "display",
+      "plus",
+      "pro",
+      "mini",
+      "studio",
+      "master",
+      "led",
+      "oled",
+      "qled",
       "curved",
       "ultrawide",
-      "legion",
-      "nitro",
-      "swift",
-      "pro",
-      "plus",
-      "mini",
-      "led",
-      "master",
-      "studio",
-      "max",
-      "ultra",
+      "ultraslim",
       "g",
       "s",
       "e",
       "p",
     ]);
 
+    const COMBINED_DISPLAY_SERIES = new Set([
+      ...CORE_DISPLAY_SERIES,
+      ...GENERIC_DISPLAY_SERIES,
+    ]);
+
     const specsCutoffRegex =
-      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|ips|va|curved|ultrawide|usb-c|usbc|hdmi|displayport|adaptive-sync|adaptivesync|g-sync|gsync|freesync|gtg|dci-p3|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|plus|cm|wuxga|wqxga|wfhd|professional|gebraucht|bware|b-ware|fast|oled|qled|amoled|tft|lcd|led|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|2x|3x|4x|5x|6x)$/i;
+      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|2x|3x|4x|5x|6x|cdm2|cdm|\d+r|\d+w|\d+cdm2|\d+cdm|\d+nits?|\d+cd|\d+hz.*|\d+ms.*)$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
 
     const isBatchNumber = (w: string) => {
@@ -2029,7 +2148,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
       const isMpn =
         mpnCandidates.has(wNorm) || (modelMpnNorm && wNorm === modelMpnNorm);
-      const isSeries = DISPLAY_SERIES_WHITELIST.has(wNorm);
+      const isSeries = COMBINED_DISPLAY_SERIES.has(wNorm);
 
       // EXEMPT: Protect the Model Code and ALWAYS push it
       if (isMpn) {
@@ -2038,8 +2157,14 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         continue;
       }
 
-      // Series names (ROG, Strix, TUF, Odyssey) are preserved if they appear BEFORE the MPN
-      if (isSeries && !stopped) {
+      // Core series names are always preserved
+      if (CORE_DISPLAY_SERIES.has(wNorm)) {
+        displayModelWords.push(w);
+        continue;
+      }
+
+      // Generic series (Gaming, Display, Plus) are only preserved if they appear BEFORE the MPN/cutoff
+      if (GENERIC_DISPLAY_SERIES.has(wNorm) && !stopped) {
         displayModelWords.push(w);
         continue;
       }
@@ -2067,6 +2192,13 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       if (isTechDot) continue;
       // Final guard against numeric noise (lone numbers < 100 that aren't MPNs)
       if (/^\d{1,2}$/.test(wNorm)) continue;
+      // Final guard against pure tech noise leaks in modelWords
+      if (
+        /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|curved|gaming|ultrawide|usb-c|usbc|monitor|display|series)$/.test(
+          wNorm,
+        )
+      )
+        continue;
 
       displayModelWords.push(w);
     }
@@ -2089,13 +2221,14 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       .filter((w: string) => {
         const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
         // Protect whitelist words first
-        if (DISPLAY_SERIES_WHITELIST.has(wNorm)) return true;
+        if (COMBINED_DISPLAY_SERIES.has(wNorm)) return true;
 
         // Final guard against pure tech noise leaks
-        if (/^\d+(cm|hz|inch|zoll|%|ms)$/.test(wNorm)) return false;
+        if (/^\d+(cm|inch|zoll|%|cd|w)$/.test(wNorm)) return false;
+        if (/^\d+(hz|ms).*$/i.test(wNorm)) return false;
         if (/^\d{3,4}x\d{3,4}$/.test(wNorm)) return false;
         if (
-          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|fhd|uhd|curved|gaming|ultrawide|usb-c|usbc|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|monitor|display|series)$/.test(
+          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|curved|gaming|ultrawide|usb-c|usbc|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|monitor|display|series)$/.test(
             wNorm,
           )
         )
