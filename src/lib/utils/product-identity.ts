@@ -2113,7 +2113,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ]);
 
     const specsCutoffRegex =
-      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|\d+x|\d+\.\d+[a-z]?|\d+v\d+[a-z]?|\d+achsen|\d+-achsen|2x|3x|4x|5x|6x|cdm2|cdm|\d+r|\d+w|\d+cdm2|\d+cdm|\d+nits?|\d+cd|\d+hz.*|\d+ms.*|\d+bit|\d+x|\d+v\d+[a-z]?|(\d+)+[a-z]?)(monitor|display|bildschirm|fernseher|tv)?$/i;
+      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|\d+x|\d+\.\d+[a-z]?|\d+v\d+[a-z]?|\d+achsen|\d+-achsen|2x|3x|4x|5x|6x|cdm2|cdm|\d+r|\d+w|\d+cdm2|\d+cdm|\d+nits?|\d+cd|\d+hz.*|\d+ms.*|\d+bit|\d+x|\d+v\d+[a-z]?|(\d+)+[a-z]?|(\d+w)?stromversorgung|(\d+w)?farbraum|v\d+|(\d+x)?hdmi|usb[\d\.]+|p3.*)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
 
     const isBatchNumber = (w: string) => {
@@ -2306,7 +2306,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         if (/^\d+(hz|ms).*$/i.test(wNorm)) return false;
         if (/^\d{3,4}x\d{3,4}$/.test(wNorm)) return false;
         if (
-          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|monitor|display|series|bit|qdoled|qd-oled)(monitor|display)?$/i.test(
+          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|stromversorgung|farbraum|v\d+|hdmi|usb[\d.]*|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale)(monitor|display)?$/i.test(
             wNorm,
           )
         )
