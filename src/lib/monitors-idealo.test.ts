@@ -212,6 +212,36 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
       input: "MSI MAG 272FDE 2.0b 1.2a",
       expected: "MSI MAG 272FDE",
     },
+    {
+      id: 34,
+      brand: "BenQ",
+      input: "BenQ MA270U P3-Farbraum",
+      expected: "BenQ MA270U",
+    },
+    {
+      id: 35,
+      brand: "AOC",
+      input: "AOC CU34G4-34",
+      expected: "AOC CU34G4",
+    },
+    {
+      id: 36,
+      brand: "iiyama",
+      input: "iiyama Prolite T2252MSC-B2 7H",
+      expected: "iiyama Prolite T2252MSC-B2",
+    },
+    {
+      id: 37,
+      brand: "AOC",
+      input: "AOC 27G2ZN3-27",
+      expected: "AOC 27G2ZN3",
+    },
+    {
+      id: 38,
+      brand: "Amzfast",
+      input: "Amzfast DQHD5120x1440 2/DP AZMG49C7U",
+      expected: "Amzfast AZMG49C7U",
+    },
   ];
 
   it("should match Idealo reference titles for all cases", () => {

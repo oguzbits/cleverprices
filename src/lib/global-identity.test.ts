@@ -248,15 +248,29 @@ describe("Global Cross-Category Identity Validation", () => {
     it("should handle Dell S3225QC with messy technical noise (Hardcore Minimalist)", () => {
       const p = createProduct({
         id: 200003015,
-        title: "Dell S3225QC 4K HD Office 3",
         brand: "Dell",
+        title:
+          "Dell S3225QC 4K HD Office 3840 x 2160 Pixels, 144Hz, 1ms, IPS, HDMI, DP, USB-C",
         category: "monitore",
       });
+
       const { title, slug } = getFamilyIdentity(p, []);
 
       // IDEALO STYLE: Brand + Model
       expect(title).toBe("Dell S3225QC");
       expect(slug).toBe("200003015_-s3225qc-dell");
+    });
+
+    it("should preserve version codes like -10 and not treat them as sizes", () => {
+      const p = createProduct({
+        id: 3000,
+        brand: "Lenovo",
+        title: "Lenovo Legion 27Q-10 Monitor",
+        category: "monitore",
+      });
+
+      const { title } = getFamilyIdentity(p, []);
+      expect(title).toBe("Lenovo Legion 27Q-10");
     });
 
     it("should handle ASUS TUF VG27AQML5A correctly (Hardcore Minimalist)", () => {

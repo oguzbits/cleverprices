@@ -171,13 +171,22 @@ function extractDisplayFacts(title: string): DisplayFacts {
   const t = title.replace(/\s+/g, " ").trim();
 
   // 1. Extract Size (e.g., 27", 34, 27 Zoll, 65 Inch, 68.4cm)
-  const sizeMatch = t.match(
-    /(\d+(?:[\.,]\d+)?)\s*(?:Zoll|Inch|cm|\"|(?=\s|$))/i,
-  );
+  let sizeMatch = t.match(/(\d+(?:[\.,]\d+)?)\s*(?:Zoll|Inch|cm|(?:\"))/i);
+  if (!sizeMatch) {
+    // Fallback to standalone numbers if they look like plausible monitor sizes (13-100)
+    const standaloneMatch = t.match(/(?:\s|^|-)([1-9]\d|10\d)(?:\s|$)/);
+    if (standaloneMatch) {
+      const val = parseInt(standaloneMatch[1]);
+      if (val >= 13 && val <= 100) {
+        sizeMatch = standaloneMatch;
+      }
+    }
+  }
+
   let size = sizeMatch ? sizeMatch[1].replace(",", ".") + '"' : "";
   if (size.endsWith('cm"')) size = size.replace('cm"', "");
 
-  // Validation: Size must be realistic for display (e.g. 10-100)
+  // Validation: Size must be realistic for display (e.g. 10-110)
   const sizeVal = parseFloat(size);
   if (isNaN(sizeVal) || sizeVal < 10 || sizeVal > 110) size = "";
 
@@ -2123,7 +2132,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ]);
 
     const specsCutoffRegex =
-      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|lautsprecher|speaker|pip|pbp|pcp|pippbp|pippcp|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|[\d.]+i|[\d.]+[ab]|[\d.]+xhdmi[\d.]*|[\d.]+xdp[\d.]*|hdmi[\d.]*|dp[\d.]*|[\d.]+tmds|[\d.]+farbraum|[\d.]+ports|[\d.]+stromversorgung|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage)(monitor|display|bildschirm|fernseher|tv)?$/i;
+      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|lautsprecher|speaker|pip|pbp|pcp|pippbp|pippcp|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|[\d.]+i|[\d.]+[ab]|(dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)?\d+x\d+.*|[a-z0-9.]*\d+x\d+[a-z0-9.]*|[a-z0-9.]*(hdmi|dp|tmds|vga|farbraum|ports|stromversorgung|nits|percentage|farb|raum|dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd|res)[a-z0-9.]*|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+h.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
 
     const isBatchNumber = (w: string) => {
@@ -2278,7 +2287,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         !isCoreSeries &&
         !isIdentity &&
         !isPanel &&
-        i > 0 &&
         !(wNorm === "series" && i < 3);
 
       if (isTechNoise) {
@@ -2338,12 +2346,23 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       }
     }
 
+    const numericSize = facts.size ? facts.size.replace(/[^0-9]/g, "") : "";
+
     const cleanDisplayModel = uniqueWords
       .map((w: string) => {
         // Strip regional suffixes from model names for monitors (e.g. -WAEU, .AEU)
         // Guard: Don't strip "-bit" or "-QD"
         if (/-bit$/i.test(w) || /-qd$/i.test(w)) return w;
-        return w.replace(/[-.](?:[A-Z]{3,4}|AE|WAEU|AEU)$/i, "");
+
+        // 1. Strip common regional alpha suffixes
+        let cleaned = w.replace(/[-.](?:[A-Z]{3,4}|AE|WAEU|AEU)$/i, "");
+
+        // 2. Strip redundant numeric size suffixes (e.g. -27, -34) ONLY if they match detected size
+        if (numericSize && numericSize.length >= 2) {
+          const sizeSuffixRegex = new RegExp(`[-.]${numericSize}$`, "i");
+          cleaned = cleaned.replace(sizeSuffixRegex, "");
+        }
+        return cleaned;
       })
       .filter((w: string) => {
         const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
