@@ -2097,10 +2097,10 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const IDENTITY_DISPLAY_DESCRIPTORS = new Set([
       "plus",
       "pro",
-      "ultra",
       "mini",
       "master",
       "studio",
+      "ultrawide",
     ]);
 
     const GENERIC_DISPLAY_SERIES = new Set([
@@ -2204,7 +2204,9 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     let stopped = false;
     let mpnFound = false;
+    let hasIdentityPushed = false;
     const displayModelWords: string[] = [];
+
     for (let i = 0; i < rawWords.length; i++) {
       const w = rawWords[i];
       const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -2215,8 +2217,9 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       const isMpn =
         mpnCandidates.has(wNorm) || (modelMpnNorm && wNorm === modelMpnNorm);
       const isCoreSeries = CORE_DISPLAY_SERIES.has(wNorm);
-      const isGeneric = GENERIC_DISPLAY_SERIES.has(wNorm);
+      const isIdentity = IDENTITY_DISPLAY_DESCRIPTORS.has(wNorm);
       const isPanel = PANEL_TYPES.has(wNorm);
+      const isGeneric = GENERIC_DISPLAY_SERIES.has(wNorm);
       const isBatch = isBatchNumber(w);
       const isTechDot = hasTechnicalDots(w);
 
@@ -2225,34 +2228,15 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         displayModelWords.push(w.replace(/[()]/g, ""));
         mpnFound = true;
         stopped = true;
+        hasIdentityPushed = true;
         continue;
       }
 
       // Core series names are always preserved
       if (isCoreSeries) {
         displayModelWords.push(w);
+        hasIdentityPushed = true;
         continue;
-      }
-
-      // Generic series (Gaming, Display, Plus) are only preserved if they appear BEFORE the MPN/cutoff
-      if (isGeneric && !stopped && !(firstMpnIndex > i + 1)) {
-        displayModelWords.push(w);
-        continue;
-      }
-
-      // If we found an MPN, we only allow short alphanumeric suffixes (like E16)
-      // BUT we must still check if they are descriptive junk/cutoff words first
-      if (mpnFound) {
-        if (
-          wNorm.length <= 4 &&
-          /[a-z]/i.test(wNorm) &&
-          /[0-9]/.test(wNorm) &&
-          !specsCutoffRegex.test(wNorm) &&
-          !isTechDot
-        ) {
-          displayModelWords.push(w);
-          continue;
-        }
       }
 
       // Attached Noise check (e.g. Gebraucht"123")
@@ -2271,16 +2255,29 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         }
       }
 
-      const isIdentity = IDENTITY_DISPLAY_DESCRIPTORS.has(wNorm);
+      // Determine if this word represents technical noise
+      const matchesNoisePattern =
+        specsCutoffRegex.test(wNorm) ||
+        inchPattern.test(w) ||
+        isBatch ||
+        isTechDot ||
+        foundNoisePart;
+
+      // Generic words (Gaming, Display, etc.) are only noise if we haven't found an identity yet
+      // OR if they are part of a lookahead skip (MPN is far ahead)
+      const isActuallyNoise =
+        (matchesNoisePattern && !(isGeneric && hasIdentityPushed)) ||
+        (isGeneric &&
+          !isPanel &&
+          !isIdentity &&
+          !hasIdentityPushed &&
+          (firstMpnIndex === -1 || firstMpnIndex > i + 1));
 
       const isTechNoise =
-        (specsCutoffRegex.test(wNorm) ||
-          inchPattern.test(w) ||
-          isBatch ||
-          isTechDot ||
-          foundNoisePart ||
-          (isGeneric && !isPanel && !isIdentity && firstMpnIndex > i + 1)) &&
+        isActuallyNoise &&
         !isCoreSeries &&
+        !isIdentity &&
+        !isPanel &&
         i > 0 &&
         !(wNorm === "series" && i < 3);
 
@@ -2298,16 +2295,35 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       if (isBatch && i > 0) continue;
       // Skip tech dots
       if (isTechDot) continue;
+
       // Final guard against numeric noise (lone numbers < 200 or resolution parts like 3440, 1440)
       if ((/^\d{1,3}$/.test(wNorm) || /^\d{4}$/.test(wNorm)) && !isMpn)
         continue;
+
       // Final guard against pure tech noise leaks in modelWords
+      // Identity and Panel words are always exempt from this guard
       if (
+        !isIdentity &&
+        !isPanel &&
         /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|pip|pbp|pippbp|mprt|panel|sync|adaptive)(monitor|display)?$/i.test(
           wNorm,
         )
-      )
-        continue;
+      ) {
+        // Only skip if no identity started yet (e.g. skip "Gaming Monitor" in "Brand Gaming Monitor")
+        if (!hasIdentityPushed) continue;
+        // BUT if it's following an identity, we keep it UNLESS it's very generic technical junk like "MPRT" or "SYNC"
+        if (
+          /^(mprt|sync|pbp|pip|adaptive|resolution|percent|hdr\d*)$/i.test(
+            wNorm,
+          )
+        )
+          continue;
+      }
+
+      // If we push a word that is a strong identifier, update the flag
+      if (isIdentity || isPanel) {
+        hasIdentityPushed = true;
+      }
 
       displayModelWords.push(w);
     }
