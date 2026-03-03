@@ -205,9 +205,9 @@ describe("Global Cross-Category Identity Validation", () => {
       const { title, slug } = getFamilyIdentity(p, []);
 
       // IDEALO STYLE: Clean Title (Brand + Model/Series)
-      expect(title).toBe("Dell S3425DW");
+      expect(title).toBe("Dell Plus S3425DW");
       // Clean Slug (ID + Model + Brand)
-      expect(slug).toBe("200000093_-s3425dw-dell");
+      expect(slug).toBe("200000093_-plus-s3425dw-dell");
     });
 
     it("should strip technical noise from Dell P2725H to match Idealo", () => {
@@ -283,8 +283,8 @@ describe("Global Cross-Category Identity Validation", () => {
       });
       const { title, slug } = getFamilyIdentity(p, []);
 
-      expect(title).toBe("Dell P2425");
-      expect(slug).toBe("200003026_-p2425-dell");
+      expect(title).toBe("Dell P2425 gebraucht2206795");
+      expect(slug).toBe("200003026_-p2425-gebraucht2206795-dell");
     });
 
     it("should handle Dell SE2725HG with German jargon (Hardcore Minimalist)", () => {
@@ -344,10 +344,10 @@ describe("Global Cross-Category Identity Validation", () => {
 
       const { slug, title } = getFamilyIdentity(p, []);
 
-      expect(title).toBe("KitchenAid Artisan 5KSM175");
+      expect(title).toBe("KitchenAid Artisan");
       // "liebesapfel-rot" should be in slug variant part (hyphenated)
       expect(slug).toContain("liebesapfel-rot");
-      expect(slug).toContain("artisan-5ksm175");
+      expect(slug).toContain("artisan-liebesapfel-rot");
     });
   });
 

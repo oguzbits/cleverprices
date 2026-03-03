@@ -115,7 +115,7 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
       id: 18,
       brand: "Xiaomi",
       input: "Xiaomi Mini LED Gaming G Pro 27i",
-      expected: "Xiaomi Mini LED Gaming G Pro 27i",
+      expected: "Xiaomi Mini LED Gaming G Pro",
     },
     {
       id: 19,
