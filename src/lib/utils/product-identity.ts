@@ -2109,7 +2109,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       "mini",
       "master",
       "studio",
-      "ultrawide",
     ]);
 
     const GENERIC_DISPLAY_SERIES = new Set([
@@ -2118,7 +2117,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       ...IDENTITY_DISPLAY_DESCRIPTORS,
       ...PANEL_TYPES,
       "curved",
-      "ultrawide",
       "ultraslim",
       "g",
       "s",
@@ -2134,6 +2132,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const specsCutoffRegex =
       /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|lautsprecher|speaker|pip|pbp|pcp|pippbp|pippcp|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|[\d.]+i|[\d.]+[ab]|(dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)?\d+x\d+.*|[a-z0-9.]*\d+x\d+[a-z0-9.]*|[a-z0-9.]*(hdmi|dp|tmds|vga|farbraum|ports|stromversorgung|nits|percentage|farb|raum|dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd|res)[a-z0-9.]*|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+h.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
+    const regionalSuffixRegex =
+      /[-.](?:[A-Z]{3,4}|AE|EU|UK|DE|CH|US|WAEU|AEU)$/i;
 
     const isBatchNumber = (w: string) => {
       const clean = w.replace(/[^a-z0-9]/gi, "");
@@ -2241,8 +2241,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         continue;
       }
 
-      // Core series names are always preserved
-      if (isCoreSeries) {
+      // Core series names are usually preserved, but we strip trailing ones after MPN
+      if (isCoreSeries && !stopped) {
         displayModelWords.push(w);
         hasIdentityPushed = true;
         continue;
@@ -2355,7 +2355,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         if (/-bit$/i.test(w) || /-qd$/i.test(w)) return w;
 
         // 1. Strip common regional alpha suffixes
-        let cleaned = w.replace(/[-.](?:[A-Z]{3,4}|AE|WAEU|AEU)$/i, "");
+        let cleaned = w.replace(regionalSuffixRegex, "");
 
         // 2. Strip redundant numeric size suffixes (e.g. -27, -34) ONLY if they match detected size
         if (numericSize && numericSize.length >= 2) {
@@ -2374,7 +2374,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         if (/^\d+(hz|ms).*$/i.test(wNorm)) return false;
         if (/^\d{3,4}x\d{3,4}$/.test(wNorm)) return false;
         if (
-          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|stromversorgung|farbraum|v\d+|hdmi|usb[\d.]*|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|ports|1080p|1440p|2160p|dual|quad|achsen|achse|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+achsen)(monitor|display)?$/i.test(
+          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|stromversorgung|farbraum|v\d+|hdmi|usb[\d.]*|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|ports|1080p|1440p|2160p|dual|quad|achsen|achse|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+achsen|eyes)(monitor|display)?$/i.test(
             wNorm,
           )
         )
@@ -2389,6 +2389,15 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     // SANITY CHECK: If it still looks like a full sentence/description, truncate it.
     let finalModel = cleanDisplayModel;
+
+    // FALLBACK: If the model is empty (e.g. only noise tokens were in title)
+    // and we have an MPN, use the MPN.
+    if (!finalModel && modelMPN && modelMPN.length > 3) {
+      finalModel = modelMPN
+        .replace(/[()]/g, "")
+        .replace(regionalSuffixRegex, "");
+    }
+
     if (finalModel.length > 50 || finalModel.split(" ").length > 6) {
       if (modelMPN && modelMPN.length > 3) {
         finalModel = modelMPN;

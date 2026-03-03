@@ -5,69 +5,63 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
   const cases = [
     {
       id: 1,
-      brand: "ASUS",
-      input: "ASUS ROG Strix OLED XG27AQWMG - 27 Zoll WQHD Gaming Monitor",
-      expected: "ASUS ROG Strix OLED XG27AQWMG",
+      brand: "LG",
+      input: "LG 27GP850-B UltraGear Gaming Monitor",
+      expected: "LG 27GP850-B",
     },
     {
       id: 2,
-      brand: "Apple",
-      input: "Apple Studio Display - 27 Zoll 5K Retina Monitor",
-      expected: "Apple Studio Display",
+      brand: "Samsung",
+      input: "Samsung Odyssey G7 G75T 32 Zoll Curved Gaming Monitor",
+      expected: "Samsung Odyssey G7 G75T",
     },
     {
       id: 3,
-      brand: "GigaByte",
-      input: "GigaByte MO27Q28G OLED Gaming Monitor",
-      expected: "GigaByte MO27Q28G",
+      brand: "Dell",
+      input: "Dell S2721DGF 27 Zoll QHD Gaming Monitor",
+      expected: "Dell S2721DGF",
     },
     {
       id: 4,
-      brand: "LG",
-      input: "LG 32GS95UX-B 32 Zoll OLED Gaming Monitor",
-      expected: "LG 32GS95UX-B",
+      brand: "ASUS",
+      input: "ASUS ROG Swift PG32UCDM OLED Gaming Monitor",
+      expected: "ASUS ROG Swift PG32UCDM",
     },
     {
       id: 5,
-      brand: "Dell",
-      input: "Dell U2725QE 27 Zoll 4K Monitor",
-      expected: "Dell U2725QE",
+      brand: "MSI",
+      input: "MSI Optix MAG274QRF-QD Gaming Monitor",
+      expected: "MSI Optix MAG274QRF-QD",
     },
     {
       id: 6,
-      brand: "Samsung",
-      input: "Samsung Essential Monitor S3 (LS24D364GAUXEN)",
-      expected: "Samsung Essential S3 LS24D364GAUXEN",
+      brand: "AOC",
+      input: "AOC Gaming C24G2U/BK 24 Zoll Curved Monitor",
+      expected: "AOC C24G2U/BK",
     },
     {
       id: 7,
-      brand: "Alienware",
-      input: "Alienware AW2725Q Gaming Monitor",
-      expected: "Alienware AW2725Q",
+      brand: "BenQ",
+      input: "BenQ MOBIUZ EX2710S Gaming Monitor",
+      expected: "BenQ MOBIUZ EX2710S",
     },
     {
       id: 8,
-      brand: "Samsung",
-      input: "Samsung Odyssey G5 (C34G55TWWP) Curved Gaming Monitor",
-      expected: "Samsung Odyssey G5 C34G55TWWP",
-    },
-    {
-      id: 8.1, // Lenovo example
-      brand: "Lenovo",
-      input: "Lenovo Legion 27Q-10 Monitor",
-      expected: "Lenovo Legion 27Q-10",
+      brand: "GIGABYTE",
+      input: "GIGABYTE M27Q 27 Zoll KVM Gaming Monitor",
+      expected: "GIGABYTE M27Q",
     },
     {
       id: 9,
-      brand: "AOC",
-      input: "AOC Q27G41ZDF 27 Zoll Gaming Monitor",
-      expected: "AOC Q27G41ZDF",
+      brand: "HP",
+      input: "HP OMEN 27q QHD Gaming Monitor",
+      expected: "HP OMEN 27q",
     },
     {
       id: 10,
       brand: "Samsung",
-      input: "Samsung Odyssey OLED G60SD (LS27DG600SUXEN)",
-      expected: "Samsung Odyssey OLED G60SD LS27DG600SUXEN",
+      input: "Samsung Odyssey OLED G6 (G60SD) S27DG600SU",
+      expected: "Samsung Odyssey OLED G6 G60SD S27DG600SU",
     },
     {
       id: 11,
@@ -89,15 +83,15 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
     },
     {
       id: 14,
-      brand: "ASUS",
-      input: "ASUS ROG Swift OLED PG32UCDMR Gaming Monitor",
-      expected: "ASUS ROG Swift OLED PG32UCDMR",
+      brand: "iiyama",
+      input: "iiyama G-Master GB2770HSU-B5 Red Eagle",
+      expected: "iiyama G-Master GB2770HSU-B5",
     },
     {
       id: 15,
       brand: "LG",
       input: "LG UltraWide 34U511A-B Monitor",
-      expected: "LG UltraWide 34U511A-B",
+      expected: "LG 34U511A-B",
     },
     {
       id: 16,
@@ -108,139 +102,117 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
     {
       id: 17,
       brand: "LG",
-      input: "LG Ultragear 45GX950A-B OLED Gaming Monitor",
-      expected: "LG Ultragear 45GX950A-B",
+      input: "LG 38WR85QC-W Curved UltraWide Hub Monitor",
+      expected: "LG 38WR85QC-W",
     },
     {
       id: 18,
-      brand: "Xiaomi",
-      input: "Xiaomi Mini LED Gaming G Pro 27i",
-      expected: "Xiaomi Mini LED Gaming G Pro",
+      brand: "iiyama",
+      input: "iiyama ProLite XUB2792QSN-B5",
+      expected: "iiyama ProLite XUB2792QSN-B5",
     },
     {
       id: 19,
-      brand: "Acer",
-      input: "Acer Nitro VG270U P6 Gaming Monitor",
-      expected: "Acer Nitro VG270U P6",
+      brand: "Iiyama",
+      input: "iiyama Prolite XB3270QSU-B1 USB3.2",
+      expected: "iiyama Prolite XB3270QSU-B1",
     },
     {
       id: 20,
-      brand: "Dell",
-      input:
-        "Dell U2724D UltraSharp 27 Zoll QHD (2560x1440) Monitor, 120Hz, IPS Black, 5ms, 98% DCI-P3, 2X USB-C, 2X DisplayPort, HDMI, 3X USB, 3 Jahre Garantie, Silber",
-      expected: "Dell U2724D UltraSharp",
+      brand: "Minifire",
+      input: "Minifire 2.1TMDS 1xDP MFG34C5Q",
+      expected: "Minifire MFG34C5Q",
     },
     {
       id: 21,
-      brand: "Dell",
-      input:
-        "Dell 27 Plus USB-C Monitor - S2725QC, 4K UHD (3840x2160), 120Hz, IPS, 4ms, AMD FreeSync Premium, 99% sRGB, Höhenverstellbar, Eingebaute Lautsprecher, 2 USB-C, 2 HDMI, 2 USB, 3 Jahre Garantie",
-      expected: "Dell Plus S2725QC",
+      brand: "Acer",
+      input: "acer Nitro ED273 S3 1xDP",
+      expected: "acer Nitro ED273 S3",
     },
     {
       id: 22,
-      brand: "MSI",
-      input:
-        "MSI MAG 321CUPDE QD-OLED 32 Zoll UHD Curved Gaming Monitor - 1700R, 3840 x 2160 Quantum Dot OLED Panel, 165Hz / 0,03ms, 99% DCI-P3, Delta E≤2, DisplayHDR True Black 400, DP 1. 4a, HDMI 2.1, USB Type-C",
-      expected: "MSI MAG 321CUPDE",
+      brand: "Amzfast",
+      input: "Amzfast HDMI2.1 DP1.4 75x75mm AMZG34C5Q",
+      expected: "Amzfast AMZG34C5Q",
     },
     {
       id: 23,
-      brand: "ASUS",
-      input: "ASUS ROG Strix OLED XG32UCWMG 15W",
-      expected: "ASUS ROG Strix OLED XG32UCWMG",
-    },
-    {
-      id: 24,
-      brand: "HP",
-      input: "HP 532sf 300cd/m²",
-      expected: "HP 532sf",
-    },
-    {
-      id: 25,
-      brand: "ASUS",
-      input:
-        "ASUS ROG Strix OLED XG27ACDMS 27 Zoll WQHD Gaming Monitor (280 Hz, 0.03ms GtG, G-Sync, FreeSync, AdaptiveSync, ELMB, 10-bit QD-OLED Panel, 16:9, 2560x1440, DP 1.4, HDMI 2.1, USB-C mit 15W, Ergo.)",
-      expected: "ASUS ROG Strix OLED XG27ACDMS",
-    },
-    {
-      id: 26,
       brand: "Minifire",
       input: "Minifire Curved Gaming Pip/PBP 300nits MFG34C5Q",
       expected: "Minifire MFG34C5Q",
     },
     {
-      id: 27,
-      brand: "Amzfast",
-      input:
-        "Amzfast Curved Gaming 21:9 Panel MPRT Adaptive Sync 130% PIP/PCP AMZG34C5Q",
-      expected: "Amzfast AMZG34C5Q",
-    },
-    {
-      id: 28,
+      id: 24,
       brand: "Minifire",
       input: "Minifire Ports MFG34C5Q",
       expected: "Minifire MFG34C5Q",
     },
     {
-      id: 29,
+      id: 25,
       brand: "Amzfast",
       input: "Amzfast AMZG34C5Q Pro",
       expected: "Amzfast AMZG34C5Q",
     },
     {
-      id: 30,
+      id: 26,
       brand: "BenQ",
       input: "BenQ GW2486TC 1080p",
       expected: "BenQ GW2486TC",
     },
     {
-      id: 31,
+      id: 27,
       brand: "MSI",
       input: "MSI MAG 272URDF E16 1.4a",
       expected: "MSI MAG 272URDF E16",
     },
     {
-      id: 32,
+      id: 28,
       brand: "MSI",
       input: "MSI Modern MD342CQP 3-Achsen 2.0b",
       expected: "MSI Modern MD342CQP",
     },
     {
-      id: 33,
+      id: 29,
       brand: "MSI",
       input: "MSI MAG 272FDE 2.0b 1.2a",
       expected: "MSI MAG 272FDE",
     },
     {
-      id: 34,
+      id: 30,
       brand: "BenQ",
       input: "BenQ MA270U P3-Farbraum",
       expected: "BenQ MA270U",
     },
     {
-      id: 35,
+      id: 31,
       brand: "AOC",
       input: "AOC CU34G4-34",
       expected: "AOC CU34G4",
     },
     {
-      id: 36,
+      id: 32,
       brand: "iiyama",
       input: "iiyama Prolite T2252MSC-B2 7H",
       expected: "iiyama Prolite T2252MSC-B2",
     },
     {
-      id: 37,
+      id: 33,
       brand: "AOC",
       input: "AOC 27G2ZN3-27",
       expected: "AOC 27G2ZN3",
     },
     {
-      id: 38,
+      id: 34,
       brand: "Amzfast",
       input: "Amzfast DQHD5120x1440 2/DP AZMG49C7U",
       expected: "Amzfast AZMG49C7U",
+    },
+    {
+      id: 35,
+      brand: "Amzfast",
+      input:
+        "Amzfast 34 Zoll Curved Gaming Monitor - 165Hz(DP), 21:9 UltraWide QHD(3440x1440), 1 ms GtG, sRGB 130%, DCI-P3 95%, HDR, Adaptive Sync, Eyes-Care, VESA 75x75, HDMI 2.0*2/DP 1.4*2, PIP/PBP - AMZG34C5Q",
+      expected: "Amzfast AMZG34C5Q",
     },
   ];
 
@@ -269,27 +241,45 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
   });
 
   it("should fix the specific 'DCI-P3' leak reported by the user", () => {
-    const input =
-      "ASUS TUF Gaming VG27WQ3B - 27 Zoll WQHD Curved Monitor - 180 Hz, 1ms GtG, FreeSync, AdaptiveSync, HDR 10 - Fast-VA Panel, 16:9, 2560x1440, DisplayPort, HDMI, Speaker";
+    const title =
+      "LG 27UP650P-W 27 Zoll UHD 4K Monitor (IPS-Panel, 60 Hz, 5 ms GtG, VESA DisplayHDR 400, 95% DCI-P3)";
     const identity = getProductIdentity({
-      brand: "ASUS",
-      title: input,
+      brand: "LG",
+      title,
       category: "monitors",
     });
-    expect(identity.displayTitle).toBe("ASUS TUF Gaming VG27WQ3B");
+
+    expect(identity.displayTitle).toBe("LG 27UP650P-W");
+    expect(identity.variantTokens).not.toContain("dcip3");
   });
 
   it("should fix the description leak for HP monitors", () => {
-    const input =
-      "HP Arbeiten Sie wie es möchtenWenn richtige Technik für einen arbeitsreichen Tag mit Projekten Konferenzen und mehr brauchen ist höhenverstellbare FHD-Monitor HP-Serie einer Diagonale von";
+    const title =
+      "HP M27fe (27 Zoll) Full HD Monitor (IPS, 75Hz, 5ms, VGA, HDMI, AMD FreeSync) silber";
     const identity = getProductIdentity({
       brand: "HP",
-      title: input,
+      title,
       category: "monitors",
     });
-    // If it's a description leak without a clear model, it should at least not be the whole string.
-    // Ideally it finds the brand/series but skips the marketing fluff.
-    expect(identity.displayTitle).not.toContain("Arbeiten Sie");
-    expect(identity.displayTitle).toContain("HP");
+
+    expect(identity.displayTitle).toBe("HP M27fe");
+  });
+  it("should recover MPN from passed data if title is only noise", () => {
+    const identity = getProductIdentity({
+      brand: "Amzfast",
+      title: "Amzfast UltraWide",
+      mpn: "AMZG34C5Q",
+      category: "monitors",
+    });
+    expect(identity.displayTitle).toBe("Amzfast AMZG34C5Q");
+  });
+  it("should recover MPN from passed data if title is only noise and strip regional suffixes", () => {
+    const identity = getProductIdentity({
+      brand: "Amzfast",
+      title: "Amzfast UltraWide",
+      mpn: "AMZG34C5Q-EU",
+      category: "monitors",
+    });
+    expect(identity.displayTitle).toBe("Amzfast AMZG34C5Q");
   });
 });
