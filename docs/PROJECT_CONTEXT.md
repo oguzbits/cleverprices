@@ -123,9 +123,11 @@ Before writing any code or answering architecture questions, you MUST:
 ### 6. Analytics & SEO
 
 - **Analytics**: Web Analytics (Cookieless).
-- **SEO**:
-  - Automated `sitemap.xml`.
-  - Proper `robots.txt`.
+  - **Sitemap Indexing & Migration (Active Phase)**:
+    - **Current Goal**: Fix GSC "Stale URL" issues (urls from 30+ days ago).
+    - **Strategy**: **Tactical Flooding**. Temporarily include `scavenged` products and `generic` slugs in the sitemap to force Googlebot to discover the new structure.
+    - **Redirect Policy**: All legacy/alias redirects MUST use `permanentRedirect` (301) to transfer authority.
+    - **Status**: ~7,000 URLs in sitemap (Expanded from ~1,900).
   - JSON-LD structured data for products.
   - German-optimized metadata.
 

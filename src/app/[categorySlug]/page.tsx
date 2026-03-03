@@ -23,7 +23,7 @@ import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
 import { cacheLife } from "next/cache";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { Suspense } from "react";
 
 interface Props {
@@ -126,7 +126,8 @@ export async function generateMetadata({
     }),
     keywords: generateKeywords(category),
     // Prevent indexing of empty/hidden categories to avoid "Thin Content" marks from Google
-    robots: category.hidden ? { index: false, follow: false } : undefined,
+    robots:
+      category.hidden || isEmpty ? { index: false, follow: false } : undefined,
   };
 }
 
@@ -163,8 +164,7 @@ async function DedicatedCategoryContent({
 
   // Redirect to canonical slug if visited via alias
   if (category.slug !== categorySlug) {
-    const { redirect } = await import("next/navigation");
-    redirect(`/${category.slug}`);
+    permanentRedirect(`/${category.slug}`);
   }
 
   return (
