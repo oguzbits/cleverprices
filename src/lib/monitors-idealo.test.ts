@@ -214,6 +214,37 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
         "Amzfast 34 Zoll Curved Gaming Monitor - 165Hz(DP), 21:9 UltraWide QHD(3440x1440), 1 ms GtG, sRGB 130%, DCI-P3 95%, HDR, Adaptive Sync, Eyes-Care, VESA 75x75, HDMI 2.0*2/DP 1.4*2, PIP/PBP - AMZG34C5Q",
       expected: "Amzfast AMZG34C5Q",
     },
+    {
+      id: 36,
+      brand: "Amzfast",
+      input: "Amzfast 1500R",
+      mpn: "AMZG27C1Q",
+      expected: "Amzfast AMZG27C1Q",
+    },
+    {
+      id: 37,
+      brand: "CRUA",
+      input: "CRUA 3000R",
+      expected: "CRUA",
+    },
+    {
+      id: 38,
+      brand: "Amzfast",
+      input: "Amzfast 4000:1 Kontrast AMZG27C1",
+      expected: "Amzfast AMZG27C1",
+    },
+    {
+      id: 39,
+      brand: "KOORUI",
+      input: "KOORUI Neigungsverstellbar Augenpflege",
+      expected: "KOORUI",
+    },
+    {
+      id: 40,
+      brand: "Amzfast",
+      input: "Amzfast PC PBP/Pip AZMG49C7U",
+      expected: "Amzfast AZMG49C7U",
+    },
   ];
 
   it("should match Idealo reference titles for all cases", () => {
@@ -221,6 +252,7 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
       const identity = getProductIdentity({
         brand: c.brand,
         title: c.input,
+        mpn: (c as any).mpn,
         category: "monitors",
       });
 

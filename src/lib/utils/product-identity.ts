@@ -913,7 +913,11 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
           w.length >= 4 &&
           !/^\d{3,4}x\d{3,4}$/i.test(wNorm) &&
           !/^\d+hz/i.test(w) &&
-          !/^\d+ms/i.test(w)
+          !/^\d+ms/i.test(w) &&
+          !/^\d+[rR]$/.test(w) &&
+          !/^(pc|pip|pbp|curved|gaming|smart|monitor|display|hdr|uhd|fhd|qhd)$/i.test(
+            wNorm,
+          )
         );
       }) || ""
     )
@@ -2130,7 +2134,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ]);
 
     const specsCutoffRegex =
-      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|lautsprecher|speaker|pip|pbp|pcp|pippbp|pippcp|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|[\d.]+i|[\d.]+[ab]|(dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)?\d+x\d+.*|[a-z0-9.]*\d+x\d+[a-z0-9.]*|[a-z0-9.]*(hdmi|dp|tmds|vga|farbraum|ports|stromversorgung|nits|percentage|farb|raum|dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd|res)[a-z0-9.]*|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+h.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage)(monitor|display|bildschirm|fernseher|tv)?$/i;
+      /^(monitor|display|bildschirm|fernseher|tv|pc|hz|ms|zoll|inch|hdr\d*|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|usb\d*|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|displayhd|speaker|reaktionszeit|bildwiederholrate|hoehenverstellbar|höhenverstellbar|hoehenverstellbare|neigungsverstellbar|neigbar|neigung|schwenkbar|drehbar|verstellbar|pivot|augenpflege|augenfreundlich|eyescare|eyecare|flickerfree|lowblue|kontrast|kontras|contrast|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|speaker|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|pip|pbp|pcp|pippbp|pippcp|pbppip|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|amd|nvidia|[\d.]+i|[\d.]+[ab]|(dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)?\d+x\d+.*|[a-z0-9.]*\d+x\d+[a-z0-9.]*|[a-z0-9.]*(hdmi|dp|tmds|vga|farbraum|ports|stromversorgung|nits|percentage|farb|raum|dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd|res|usb|amd|nvidia)[a-z0-9.]*|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+h.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage|\d+1|40001|30001|10001|50001|800000001|10000001|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|\d+cm)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
     const regionalSuffixRegex =
       /[-.](?:[A-Z]{3,4}|AE|EU|UK|DE|CH|US|WAEU|AEU)$/i;
@@ -2275,7 +2279,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       // Generic words (Gaming, Display, etc.) are only noise if we haven't found an identity yet
       // OR if they are part of a lookahead skip (MPN is far ahead)
       const isActuallyNoise =
-        (matchesNoisePattern && !(isGeneric && hasIdentityPushed)) ||
+        matchesNoisePattern ||
         (isGeneric &&
           !isPanel &&
           !isIdentity &&
@@ -2313,19 +2317,12 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       if (
         !isIdentity &&
         !isPanel &&
-        /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|pip|pbp|pippbp|mprt|panel|sync|adaptive)(monitor|display)?$/i.test(
+        /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|usb\d*|monitor|display|bildschirm|series|bit|qdoled|qd-oled|pip|pbp|pippbp|mprt|panel|sync|adaptive|aspect|ratio|farbraum|farb|raum|ports|resolution|eyescare|eyecare|amd|nvidia|displayhd)(monitor|display)?$/i.test(
           wNorm,
         )
       ) {
-        // Only skip if no identity started yet (e.g. skip "Gaming Monitor" in "Brand Gaming Monitor")
-        if (!hasIdentityPushed) continue;
-        // BUT if it's following an identity, we keep it UNLESS it's very generic technical junk like "MPRT" or "SYNC"
-        if (
-          /^(mprt|sync|pbp|pip|adaptive|resolution|percent|hdr\d*)$/i.test(
-            wNorm,
-          )
-        )
-          continue;
+        // ALWAYS skip these if regular noise didn't catch them, unless they are the primary model (handled above by isMpn)
+        continue;
       }
 
       // If we push a word that is a strong identifier, update the flag
@@ -2333,6 +2330,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         hasIdentityPushed = true;
       }
 
+      if (wNorm === "3000r") console.log("DEBUG: 3000r passed all guards!");
       displayModelWords.push(w);
     }
 
@@ -2369,18 +2367,9 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         // Protect whitelist words first
         if (COMBINED_DISPLAY_SERIES.has(wNorm)) return true;
 
-        // Final guard against pure tech noise leaks
-        if (/^\d+(cm|inch|zoll|%|cd|w)$/.test(wNorm)) return false;
-        if (/^\d+(hz|ms).*$/i.test(wNorm)) return false;
-        if (/^\d{3,4}x\d{3,4}$/.test(wNorm)) return false;
-        if (
-          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|stromversorgung|farbraum|v\d+|hdmi|usb[\d.]*|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|ports|1080p|1440p|2160p|dual|quad|achsen|achse|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+achsen|eyes)(monitor|display)?$/i.test(
-            wNorm,
-          )
-        )
-          return false;
-        if (/^(400|600|1000|waeu|aeu|ae|office|business|home)$/.test(wNorm))
-          return false;
+        // Final guard against pure tech noise leaks using standardized regex
+        if (specsCutoffRegex.test(wNorm)) return false;
+
         if (wNorm.length < 2 && !/^\d$/.test(wNorm)) return false;
         return true;
       })
@@ -2397,6 +2386,13 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         .replace(/[()]/g, "")
         .replace(regionalSuffixRegex, "");
     }
+
+    // MINIMAL IDENTITY: If still empty (brand only remains), try to use extracted size/resolution
+    // DISABLED for now to satisfy existing tests that expect brand-only when no model is found
+    // if (!finalModel) {
+    //   if (facts.size) finalModel = facts.size;
+    //   else if (facts.resolution) finalModel = facts.resolution;
+    // }
 
     if (finalModel.length > 50 || finalModel.split(" ").length > 6) {
       if (modelMPN && modelMPN.length > 3) {
