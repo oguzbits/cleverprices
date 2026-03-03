@@ -194,6 +194,24 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
       input: "BenQ GW2486TC 1080p",
       expected: "BenQ GW2486TC",
     },
+    {
+      id: 31,
+      brand: "MSI",
+      input: "MSI MAG 272URDF E16 1.4a",
+      expected: "MSI MAG 272URDF E16",
+    },
+    {
+      id: 32,
+      brand: "MSI",
+      input: "MSI Modern MD342CQP 3-Achsen 2.0b",
+      expected: "MSI Modern MD342CQP",
+    },
+    {
+      id: 33,
+      brand: "MSI",
+      input: "MSI MAG 272FDE 2.0b 1.2a",
+      expected: "MSI MAG 272FDE",
+    },
   ];
 
   it("should match Idealo reference titles for all cases", () => {
