@@ -2085,19 +2085,29 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       "mag",
       "swift",
       "zenith",
+      "viewfinity",
+      "zenscreen",
+      "ultrasharp",
+      "prolite",
+      "studio",
+    ]);
+
+    const PANEL_TYPES = new Set(["led", "oled", "qled"]);
+
+    const IDENTITY_DISPLAY_DESCRIPTORS = new Set([
+      "plus",
+      "pro",
+      "ultra",
+      "mini",
+      "master",
+      "studio",
     ]);
 
     const GENERIC_DISPLAY_SERIES = new Set([
       "gaming",
       "display",
-      "plus",
-      "pro",
-      "mini",
-      "studio",
-      "master",
-      "led",
-      "oled",
-      "qled",
+      ...IDENTITY_DISPLAY_DESCRIPTORS,
+      ...PANEL_TYPES,
       "curved",
       "ultrawide",
       "ultraslim",
@@ -2113,7 +2123,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ]);
 
     const specsCutoffRegex =
-      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|\d+x|\d+\.\d+[a-z]?|\d+v\d+[a-z]?|\d+achsen|\d+-achsen|2x|3x|4x|5x|6x|cdm2|cdm|\d+r|\d+w|\d+cdm2|\d+cdm|\d+nits?|\d+cd|\d+hz.*|\d+ms.*|\d+bit|\d+x|\d+v\d+[a-z]?|(\d+)+[a-z]?|(\d+w)?stromversorgung|(\d+w)?farbraum|v\d+|(\d+x)?hdmi|usb[\d\.]+|p3.*)(monitor|display|bildschirm|fernseher|tv)?$/i;
+      /^(hz|ms|zoll|inch|hdr|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|speaker|reaktionszeit|arbeiten|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|contrast|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|lautsprecher|speaker|pip|pbp|pcp|pippbp|pippcp|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|219|329|[\d.]+i|[\d.]+xhdmi[\d.]*|[\d.]+xdp[\d.]*|hdmi[\d.]*|dp[\d.]*|[\d.]+tmds|[\d.]+farbraum|[\d.]+ports|[\d.]+stromversorgung|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
 
     const isBatchNumber = (w: string) => {
@@ -2180,6 +2190,18 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       : "";
     const hasTechnicalDots = (w: string) => /\d+\.\d+/.test(w); // e.g., 86.4, 1.4
 
+    let firstMpnIndex = -1;
+    for (let j = 0; j < rawWords.length; j++) {
+      const wjNorm = rawWords[j].toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (
+        mpnCandidates.has(wjNorm) ||
+        (modelMpnNorm && wjNorm === modelMpnNorm)
+      ) {
+        firstMpnIndex = j;
+        break;
+      }
+    }
+
     let stopped = false;
     let mpnFound = false;
     const displayModelWords: string[] = [];
@@ -2192,7 +2214,9 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
       const isMpn =
         mpnCandidates.has(wNorm) || (modelMpnNorm && wNorm === modelMpnNorm);
-      const isSeries = COMBINED_DISPLAY_SERIES.has(wNorm);
+      const isCoreSeries = CORE_DISPLAY_SERIES.has(wNorm);
+      const isGeneric = GENERIC_DISPLAY_SERIES.has(wNorm);
+      const isPanel = PANEL_TYPES.has(wNorm);
       const isBatch = isBatchNumber(w);
       const isTechDot = hasTechnicalDots(w);
 
@@ -2205,13 +2229,13 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       }
 
       // Core series names are always preserved
-      if (CORE_DISPLAY_SERIES.has(wNorm)) {
+      if (isCoreSeries) {
         displayModelWords.push(w);
         continue;
       }
 
       // Generic series (Gaming, Display, Plus) are only preserved if they appear BEFORE the MPN/cutoff
-      if (GENERIC_DISPLAY_SERIES.has(wNorm) && !stopped) {
+      if (isGeneric && !stopped && !(firstMpnIndex > i + 1)) {
         displayModelWords.push(w);
         continue;
       }
@@ -2247,17 +2271,25 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         }
       }
 
-      if (
+      const isIdentity = IDENTITY_DISPLAY_DESCRIPTORS.has(wNorm);
+
+      const isTechNoise =
         (specsCutoffRegex.test(wNorm) ||
           inchPattern.test(w) ||
           isBatch ||
           isTechDot ||
-          foundNoisePart) &&
-        !isSeries &&
+          foundNoisePart ||
+          (isGeneric && !isPanel && !isIdentity && firstMpnIndex > i + 1)) &&
+        !isCoreSeries &&
         i > 0 &&
-        !(wNorm === "series" && i < 3)
-      ) {
-        stopped = true;
+        !(wNorm === "series" && i < 3);
+
+      if (isTechNoise) {
+        if (mpnFound) {
+          stopped = true;
+        } else {
+          continue;
+        }
       }
 
       if (stopped) continue;
@@ -2266,11 +2298,12 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       if (isBatch && i > 0) continue;
       // Skip tech dots
       if (isTechDot) continue;
-      // Final guard against numeric noise (lone numbers < 100 or resolution parts like 3440, 1440)
-      if (/^\d{1,2}$/.test(wNorm) || /^\d{4}$/.test(wNorm)) continue;
+      // Final guard against numeric noise (lone numbers < 200 or resolution parts like 3440, 1440)
+      if ((/^\d{1,3}$/.test(wNorm) || /^\d{4}$/.test(wNorm)) && !isMpn)
+        continue;
       // Final guard against pure tech noise leaks in modelWords
       if (
-        /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled)(monitor|display)?$/i.test(
+        /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|pip|pbp|pippbp|mprt|panel|sync|adaptive)(monitor|display)?$/i.test(
           wNorm,
         )
       )
@@ -2306,7 +2339,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         if (/^\d+(hz|ms).*$/i.test(wNorm)) return false;
         if (/^\d{3,4}x\d{3,4}$/.test(wNorm)) return false;
         if (
-          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|stromversorgung|farbraum|v\d+|hdmi|usb[\d.]*|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale)(monitor|display)?$/i.test(
+          /^(hdr\d*|uhd|resolution|super|percent|hd|qhd|wqhd|uwqhd|fhd|uhd|4k|5k|8k|curved|gaming|ultrawide|usb-c|usbc|monitor|display|bildschirm|series|bit|qdoled|qd-oled|stromversorgung|farbraum|v\d+|hdmi|usb[\d.]*|der|die|das|the|arbeiten|sie|wie|es|moechten|brauchen|technik|tag|projekten|konferenzen|mehr|hoehenverstellbare|diagonale|ports|1080p|1440p|2160p|dual|quad)(monitor|display)?$/i.test(
             wNorm,
           )
         )

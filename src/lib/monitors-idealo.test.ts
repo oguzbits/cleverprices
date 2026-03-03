@@ -163,6 +163,37 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
         "ASUS ROG Strix OLED XG27ACDMS 27 Zoll WQHD Gaming Monitor (280 Hz, 0.03ms GtG, G-Sync, FreeSync, AdaptiveSync, ELMB, 10-bit QD-OLED Panel, 16:9, 2560x1440, DP 1.4, HDMI 2.1, USB-C mit 15W, Ergo.)",
       expected: "ASUS ROG Strix OLED XG27ACDMS",
     },
+    {
+      id: 26,
+      brand: "Minifire",
+      input: "Minifire Curved Gaming Pip/PBP 300nits MFG34C5Q",
+      expected: "Minifire MFG34C5Q",
+    },
+    {
+      id: 27,
+      brand: "Amzfast",
+      input:
+        "Amzfast Curved Gaming 21:9 Panel MPRT Adaptive Sync 130% PIP/PCP AMZG34C5Q",
+      expected: "Amzfast AMZG34C5Q",
+    },
+    {
+      id: 28,
+      brand: "Minifire",
+      input: "Minifire Ports MFG34C5Q",
+      expected: "Minifire MFG34C5Q",
+    },
+    {
+      id: 29,
+      brand: "Amzfast",
+      input: "Amzfast AMZG34C5Q Pro",
+      expected: "Amzfast AMZG34C5Q",
+    },
+    {
+      id: 30,
+      brand: "BenQ",
+      input: "BenQ GW2486TC 1080p",
+      expected: "BenQ GW2486TC",
+    },
   ];
 
   it("should match Idealo reference titles for all cases", () => {
