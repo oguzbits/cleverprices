@@ -3,10 +3,10 @@ import { IdentityStrategy } from "./types";
 
 export class MotherboardStrategy implements IdentityStrategy {
   extract(product: any): Partial<ProductIdentity> | null {
+    const rawSpecs =
+      product.officialSpecifications || product.official_specifications;
     const specs =
-      typeof product.officialSpecifications === "string"
-        ? JSON.parse(product.officialSpecifications)
-        : product.officialSpecifications || {};
+      typeof rawSpecs === "string" ? JSON.parse(rawSpecs) : rawSpecs || {};
 
     const chipset = specs.chipset || specs.Chipset;
     const socket = specs.socket || specs.Socket || specs["Socket / Prozessor"];
@@ -16,7 +16,6 @@ export class MotherboardStrategy implements IdentityStrategy {
     if (!specModel && !chipset) return null;
 
     // We want to reconstruct a clean identity: Brand + Model
-    // If we have a specific model in specs, we verify it against the title
     let model = specModel || "";
 
     if (

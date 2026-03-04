@@ -1,5 +1,9 @@
+import { CpuStrategy } from "./identity/cpus";
+import { GpuStrategy } from "./identity/gpus";
+import { MonitorStrategy } from "./identity/monitors";
 import { MotherboardStrategy } from "./identity/motherboards";
 import { SmartphoneStrategy } from "./identity/smartphones";
+import { SsdStrategy } from "./identity/ssds";
 import { CategoryStrategyMap } from "./identity/types";
 import {
   extractRealStorageFromTitle,
@@ -11,6 +15,16 @@ const STRATEGY_MAP: CategoryStrategyMap = {
   mainboards: MotherboardStrategy,
   smartphones: SmartphoneStrategy,
   handy: SmartphoneStrategy,
+  grafikkarten: GpuStrategy,
+  gpu: GpuStrategy,
+  ssds: SsdStrategy,
+  festplatten: SsdStrategy,
+  prozessoren: CpuStrategy,
+  cpu: CpuStrategy,
+  monitore: MonitorStrategy,
+  fernseher: MonitorStrategy,
+  fernsehgeraete: MonitorStrategy,
+  tvs: MonitorStrategy,
 };
 
 interface Product {
@@ -26,7 +40,7 @@ interface Product {
  * Corrects "Sub-brands" or "Series" to their actual manufacturer for slugging.
  * E.g. PlayStation -> Sony, Xbox -> Microsoft
  */
-function normalizeBrand(
+export function normalizeBrand(
   brand: string,
   title?: string,
   category?: string,

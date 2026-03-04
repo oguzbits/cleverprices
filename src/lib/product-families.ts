@@ -183,11 +183,22 @@ export function getFamilyIdentity(
   // Hub:     "Crucial Pro OC 64GB DDR5-6000 CL40"
   // Variant: "Crucial Pro OC 64GB DDR5-6000 CL40 CP2K32G60C40U5B"
   // Slugs are not touched.
-  const isRam =
-    (representative.category || "").toLowerCase() === "arbeitsspeicher" ||
-    (representative.category || "").toLowerCase() === "ram";
+  const cat = (representative.category || "").toLowerCase();
+  const isRam = cat === "arbeitsspeicher" || cat === "ram";
+  const isSpecFirst =
+    isRam ||
+    isDisplay ||
+    cat === "smartphones" ||
+    cat === "mainboards" ||
+    cat === "motherboards" ||
+    cat === "grafikkarten" ||
+    cat === "gpu" ||
+    cat === "prozessoren" ||
+    cat === "cpu" ||
+    cat === "ssds" ||
+    cat === "festplatten";
 
-  if (isRam || isDisplay) {
+  if (isSpecFirst) {
     return {
       slug: `${idPrefix}_-${textSlug}`,
       title: isHub ? identity.modelTitle : identity.displayTitle,
