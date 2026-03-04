@@ -829,6 +829,12 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const isTablet =
     category.includes("tablet") || title.toLowerCase().includes("ipad");
   const isSmartphone = category === "smartphones";
+  const isHeadphones =
+    category === "headphones" ||
+    category === "kopfhoerer" ||
+    String(product.category_id) === "819" ||
+    category.includes("headphone") ||
+    category.includes("kopfhörer");
   const isLaptop =
     category.includes("laptop") ||
     category.includes("notebook") ||
@@ -987,6 +993,14 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "kabellos",
     "kabellose",
     "bluetooth",
+    "mit-mikrofon",
+    "mikrofon",
+    "microphone",
+    "kopfbuegel",
+    "kopfbügel",
+    "headband",
+    "ohrpolster",
+    "polster",
     "kopfhoerer",
     "kopfhörer",
     "bluetoothkopfhoerer",
@@ -1007,12 +1021,32 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "over-ear",
     "overear",
     "wireless",
+    "noise",
+    "cancelling",
+    "canceling",
+    "cancellation",
     "audio",
     "sound",
     "huelle",
     "hülle",
     "case",
     "cover",
+    "hartcase",
+    "hardcase",
+    "schutzhuelle",
+    "schutzhülle",
+    "inkl",
+    "incl",
+    "inklusive",
+    "inclusive",
+    "mit",
+    "with",
+    "b-ware",
+    "bware",
+    "refurbished",
+    "erneuert",
+    "generalueberholt",
+    "generalüberholt",
     "anymode",
     "smart",
     "versandkostenfrei",
@@ -1110,7 +1144,25 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "snow",
     "volcanic",
   ];
-  COLOR_NOISE.forEach((s) => subtractTokens.add(s));
+
+  // 1. Collect all attribute values first
+  const allAttributeVals = new Set<string>();
+  Object.values(variantMap).forEach((v) => {
+    if (typeof v === "string") {
+      v.toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .forEach((t) => {
+          if (t.length > 0) allAttributeVals.add(t);
+        });
+    }
+  });
+
+  // 2. Subtract colors only if NOT in attributes
+  COLOR_NOISE.forEach((c) => {
+    if (!allAttributeVals.has(c)) {
+      subtractTokens.add(c);
+    }
+  });
 
   // Subtract all words found in variant attributes
   Object.entries(variantMap).forEach(([k, v]) => {
@@ -1522,13 +1574,30 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       /^(rtx|gtx|rx|ti|super|m\d|s\d+|pro|air|max|ultra|pixel|iphone|ipad|galaxy|macbook|artisan|aero|legion|tuf|rog|omen|mfp|gaming|ultrasharp|plus)$/i.test(
         cleanLower,
       );
+
     const isActuallyProtected =
       isModelCode ||
       (isProtectedTech &&
         (!/^m\d$/.test(cleanLower) || resolvedBrandLower === "apple")) ||
       (index === 0 && !subtractTokens.has(cleanLower)) ||
       (cleanLower.length >= 3 &&
-        /model|serie|name|evo|select/i.test(cleanLower));
+        /model|serie|name|evo|select/i.test(cleanLower)) ||
+      (isHeadphones &&
+        index > 0 &&
+        (/^(mit|ohne|with)$/.test(cleanLower) ||
+          (/^(noise|cancelling|canceling|cancellation|anc|active)$/.test(
+            cleanLower,
+          ) &&
+            /^(mit|ohne|with|active|noise|cancelling|canceling)$/i.test(
+              rawWords[index - 1]?.toLowerCase(),
+            ) &&
+            rawWords
+              .slice(0, index)
+              .some((w: string) =>
+                /^(mit|ohne|with)$/i.test(
+                  w.toLowerCase().replace(/[^a-z0-9]/g, ""),
+                ),
+              ))));
 
     // Specific strip: 'x' as separator in resolution (3440 x 1440)
     if (cleanLower === "x" && index > 0 && index < rawWords.length - 1) {
@@ -1590,6 +1659,17 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   });
 
   const modelHead = modelWords[0] || "";
+
+  // Trailing noise cleanup: if 'mit', 'ohne', 'inkl' etc are at the end, they are dangling filler
+  while (
+    modelWords.length > 1 &&
+    /^(mit|ohne|with|inkl|incl|and|und)$/i.test(
+      modelWords[modelWords.length - 1],
+    )
+  ) {
+    modelWords.pop();
+  }
+
   const hubModelName = modelWords.join(" ").trim();
   const modelTitle = `${richBrand} ${hubModelName}`;
 
@@ -1673,12 +1753,39 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     // Aggressively strip model words from variant display value to prevent duplication
     // E.g. Model: "Evo Select", Token: "Evo Select (2024)" -> "(2024)"
+    displayVal = displayVal.replace(/hartcase/gi, "Hardcase");
+    const valLowerPre = displayVal.toLowerCase();
+
+    // Avoid generic noise in attributes (e.g. "mit Hardcase" -> "Hardcase")
+    // but ONLY if the remaining val is still meaningful.
+    let cleanedDisplayVal = displayVal;
+    const variantNoise = [
+      "mit",
+      "inkl",
+      "incl",
+      "inkl.",
+      "with",
+      "hardcase",
+      "hartcase",
+      "case",
+      "hülle",
+      "huelle",
+      "cover",
+    ];
+    variantNoise.forEach((n) => {
+      // 1. Strip as prefix
+      const prefixRegex = new RegExp(`^${n}\\s+`, "i");
+      cleanedDisplayVal = cleanedDisplayVal.replace(prefixRegex, "").trim();
+
+      // 2. Strip as standalone word or at boundaries (for things like "schwarz-Hartcase")
+      const boundaryRegex = new RegExp(`[\\-\\s]${n}\\b|\\b${n}[\\-\\s]`, "gi");
+      cleanedDisplayVal = cleanedDisplayVal.replace(boundaryRegex, "").trim();
+    });
+
     const currentModelWords = [
       resolvedBrandLower,
       ...hubModelName.toLowerCase().split(/\s+/),
     ].filter(Boolean);
-
-    let cleanedDisplayVal = displayVal;
 
     currentModelWords.forEach((mw) => {
       // Don't strip pure numbers (like 65) if they are immediately followed by a unit or "Plus"
@@ -1701,7 +1808,21 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       .trim();
 
     // If stripping left us with nothing or just noise, skip this token
-    if (!cleanedDisplayVal || cleanedDisplayVal.length < 1) return;
+    const isGenericNoise = [
+      "mit",
+      "with",
+      "inkl",
+      "incl",
+      "inklusive",
+      "inclusive",
+      "bware",
+      "b-ware",
+      "hardcase",
+      "hartcase",
+    ].includes(cleanedDisplayVal.toLowerCase().replace(/[^a-z0-9]/g, ""));
+
+    if (!cleanedDisplayVal || cleanedDisplayVal.length < 1 || isGenericNoise)
+      return;
 
     const valLower = cleanedDisplayVal.toLowerCase();
     const valNorm = valLower.replace(/[^a-z0-9]/g, "");
@@ -1723,6 +1844,16 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
 
     displayVal = cleanedDisplayVal;
+
+    // Special: Redundant trait stripping
+    // e.g. "AirPods Max 2024" + "USB-C" -> "USB-C" is redundant for the 2024 model
+    if (
+      displayVal.toLowerCase() === "usb-c" &&
+      hubModelName.includes("2024") &&
+      resolvedBrandLower === "apple"
+    ) {
+      return;
+    }
 
     // Smart technical labeling: Skip for Consoles, Smartphones, and redundant categories
     const isConsole = category === "consoles";
@@ -2162,7 +2293,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       "g",
       "s",
       "e",
-      "p",
     ]);
 
     const COMBINED_DISPLAY_SERIES = new Set([

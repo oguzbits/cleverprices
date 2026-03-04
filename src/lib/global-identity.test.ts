@@ -331,7 +331,7 @@ describe("Global Cross-Category Identity Validation", () => {
     });
   });
 
-  describe("Category: Headersphones (Model Numbers)", () => {
+  describe("Category: Headphones (Model Numbers)", () => {
     it("should handle Sony WH-1000XM5", () => {
       const p = createProduct({
         id: 60,
