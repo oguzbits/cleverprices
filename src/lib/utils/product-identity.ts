@@ -1048,6 +1048,11 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "generalueberholt",
     "generalüberholt",
     "anymode",
+    "siehe",
+    "hinweis",
+    "hinweise",
+    "und",
+    "and",
     "smart",
     "versandkostenfrei",
     "inklusiv",
@@ -1663,7 +1668,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   // Trailing noise cleanup: if 'mit', 'ohne', 'inkl' etc are at the end, they are dangling filler
   while (
     modelWords.length > 1 &&
-    /^(mit|ohne|with|inkl|incl|and|und)$/i.test(
+    /^(mit|ohne|with|inkl|incl|and|und|siehe|hinweis|hinweise)$/i.test(
       modelWords[modelWords.length - 1],
     )
   ) {
