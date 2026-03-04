@@ -40,7 +40,7 @@ async function getCachedBestDeals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v59",
+  _version: string = "v100",
 ) {
   "use cache";
   cacheLife("category");
@@ -51,7 +51,7 @@ async function getCachedMostPopular(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v59",
+  _version: string = "v100",
 ) {
   "use cache";
   cacheLife("category");
@@ -62,7 +62,7 @@ async function getCachedNewArrivals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v59",
+  _version: string = "v100",
 ) {
   "use cache";
   cacheLife("category");
@@ -72,7 +72,7 @@ async function getCachedNewArrivals(
 async function getCachedDiverseMostPopular(
   itemsPerCategory: number,
   countryCode: string,
-  _version: string = "v59",
+  _version: string = "v100",
 ) {
   "use cache";
   cacheLife("category");
@@ -95,7 +95,7 @@ async function getCachedProductVariantsInternal(
   parentAsin: string,
   countryCode: string,
   skipFullMapping: boolean = false,
-  _version: string = "v59",
+  _version: string = "v100",
 ) {
   "use cache";
   cacheLife("product");
@@ -112,7 +112,7 @@ async function getCachedSimilarProducts(
   targetPrice: number,
   limit: number,
   countryCode: string,
-  _version: string = "v59",
+  _version: string = "v100",
 ) {
   "use cache";
   cacheLife("product");
@@ -130,7 +130,7 @@ async function getCachedSimilarProducts(
 
 async function getCachedProductSlugByAsinSuffix(
   oldSlug: string,
-  _version: string = "v59",
+  _version: string = "v100",
 ) {
   "use cache";
   cacheLife("category"); // Redirects can be cached for a long time
@@ -139,7 +139,7 @@ async function getCachedProductSlugByAsinSuffix(
 
 async function getCachedProductByParentAsinSuffix(
   slug: string,
-  _version: string = "v59",
+  _version: string = "v100",
 ) {
   "use cache";
   cacheLife("category");
@@ -165,7 +165,10 @@ export async function getProductById(
   const merged = await mergeLivePrices([product], "de");
   return merged[0];
 }
-async function getCachedProductSlugs(limit?: number) {
+async function getCachedProductSlugs(
+  limit?: number,
+  _version: string = "v100",
+) {
   "use cache";
   cacheLife("dynamic");
   return getAllProductSlugsSync(limit);
@@ -183,7 +186,9 @@ export async function getAllProductSlugs(limit?: number): Promise<
   return getCachedProductSlugs(limit);
 }
 
-export async function getNonEmptyCategorySlugs(): Promise<string[]> {
+export async function getNonEmptyCategorySlugs(
+  _version: string = "v100",
+): Promise<string[]> {
   "use cache";
   cacheLife("category");
   return getNonEmptyCategorySlugsSync();

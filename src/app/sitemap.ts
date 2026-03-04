@@ -26,6 +26,7 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   "use cache";
   cacheLife("dynamic"); // 10m revalidate, 1h expire (aligned with next.config.ts)
+  const _version = "v100"; // Cache buster
 
   const baseUrl = SITE_URL;
 
