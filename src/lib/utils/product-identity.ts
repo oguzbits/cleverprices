@@ -1,8 +1,17 @@
-// import type { Product } from "@/lib/product-registry"; // Removed to avoid runtime alias issues in scripts
+import { MotherboardStrategy } from "./identity/motherboards";
+import { SmartphoneStrategy } from "./identity/smartphones";
+import { CategoryStrategyMap } from "./identity/types";
 import {
   extractRealStorageFromTitle,
   parseVariationAttributes,
 } from "./variants";
+
+const STRATEGY_MAP: CategoryStrategyMap = {
+  motherboards: MotherboardStrategy,
+  mainboards: MotherboardStrategy,
+  smartphones: SmartphoneStrategy,
+  handy: SmartphoneStrategy,
+};
 
 interface Product {
   brand?: string | null;
@@ -45,7 +54,7 @@ export interface SiblingConsensus {
   total: number;
 }
 
-interface ProductIdentity {
+export interface ProductIdentity {
   brand: string;
   model: string;
   fullModel: string;
@@ -825,6 +834,42 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     objektive: "lenses",
   };
   const category = categoryMap[rawCategory] || rawCategory;
+
+  // 1b. Try strategy-based reconstruction first
+  const StrategyClass = STRATEGY_MAP[category];
+  if (StrategyClass) {
+    const strategy = new StrategyClass();
+    const strategyResult = strategy.extract(product);
+
+    if (strategyResult && strategyResult.model) {
+      const brand = normalizeBrand(rawBrand, product.title, category);
+      const model = strategyResult.model;
+      const variantMap = strategyResult.variantMap || {};
+
+      return {
+        brand,
+        model,
+        fullModel: strategyResult.fullModel || model,
+        shortModel: strategyResult.shortModel || model.split(" ")[0],
+        variantLabel: Object.values(variantMap).join(" / "),
+        variantMap,
+        displayTitle: `${brand} ${model}`,
+        modelTitle: `${brand} ${model}`,
+        variantSuffix:
+          Object.values(variantMap).length > 0
+            ? ` (${Object.values(variantMap).join(", ")})`
+            : "",
+        variantTokens: Object.values(variantMap).flatMap((v) =>
+          v.toLowerCase().split(/\s+/),
+        ),
+        traitCount: strategyResult.traitCount || 1,
+        isHighVariance: category === "smartphones",
+        isLaptop: category === "laptops" || category === "notebooks",
+        categoryUsed: category,
+        mpn: product.mpn || undefined,
+      };
+    }
+  }
   const isRAM = category === "ram";
   const isTablet =
     category.includes("tablet") || title.toLowerCase().includes("ipad");
