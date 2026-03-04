@@ -296,7 +296,10 @@ export async function findProductBySyntheticId(
   } as any;
 }
 
-export async function getAllProductSlugs(limit?: number): Promise<
+export async function getAllProductSlugs(
+  limit?: number,
+  includeVariants: boolean = false,
+): Promise<
   {
     id: number;
     slug: string;
@@ -353,7 +356,9 @@ export async function getAllProductSlugs(limit?: number): Promise<
 
     const allProducts = rawAllProducts.filter((p) => {
       // Exclude variants that belong to a family (they are redirected to Hubs!)
-      if (p.parentAsin && familyAsins.has(p.parentAsin)) return false;
+      // EXCEPT during the Tactical Flooding Phase where we want to index everything.
+      if (!includeVariants && p.parentAsin && familyAsins.has(p.parentAsin))
+        return false;
 
       // Filter by Meaningful Title (same as PDP)
       const hasMeaningfulTitle =

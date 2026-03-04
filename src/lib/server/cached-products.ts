@@ -40,7 +40,7 @@ async function getCachedBestDeals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v100",
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("category");
@@ -51,7 +51,7 @@ async function getCachedMostPopular(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v100",
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("category");
@@ -62,7 +62,7 @@ async function getCachedNewArrivals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v100",
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("category");
@@ -72,7 +72,7 @@ async function getCachedNewArrivals(
 async function getCachedDiverseMostPopular(
   itemsPerCategory: number,
   countryCode: string,
-  _version: string = "v100",
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("category");
@@ -95,7 +95,7 @@ async function getCachedProductVariantsInternal(
   parentAsin: string,
   countryCode: string,
   skipFullMapping: boolean = false,
-  _version: string = "v100",
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("product");
@@ -112,7 +112,7 @@ async function getCachedSimilarProducts(
   targetPrice: number,
   limit: number,
   countryCode: string,
-  _version: string = "v100",
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("product");
@@ -130,7 +130,7 @@ async function getCachedSimilarProducts(
 
 async function getCachedProductSlugByAsinSuffix(
   oldSlug: string,
-  _version: string = "v100",
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("category"); // Redirects can be cached for a long time
@@ -139,7 +139,7 @@ async function getCachedProductSlugByAsinSuffix(
 
 async function getCachedProductByParentAsinSuffix(
   slug: string,
-  _version: string = "v100",
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("category");
@@ -167,14 +167,18 @@ export async function getProductById(
 }
 async function getCachedProductSlugs(
   limit?: number,
-  _version: string = "v100",
+  includeVariants: boolean = false,
+  _version: string = "v101",
 ) {
   "use cache";
   cacheLife("dynamic");
-  return getAllProductSlugsSync(limit);
+  return getAllProductSlugsSync(limit, includeVariants);
 }
 
-export async function getAllProductSlugs(limit?: number): Promise<
+export async function getAllProductSlugs(
+  limit?: number,
+  includeVariants: boolean = false,
+): Promise<
   {
     id: number;
     slug: string;
@@ -183,11 +187,11 @@ export async function getAllProductSlugs(limit?: number): Promise<
     updatedAt: Date;
   }[]
 > {
-  return getCachedProductSlugs(limit);
+  return getCachedProductSlugs(limit, includeVariants);
 }
 
 export async function getNonEmptyCategorySlugs(
-  _version: string = "v100",
+  _version: string = "v101",
 ): Promise<string[]> {
   "use cache";
   cacheLife("category");
@@ -252,18 +256,6 @@ export async function getDiverseMostPopular(
   return mergeLivePrices(products, countryCode);
 }
 
-async function getProductBySlug(
-  slug: string,
-  includeHistory: boolean = false,
-  skipLiveMerge: boolean = false,
-): Promise<Product | undefined> {
-  const product = await getCachedProductBySlug(slug, includeHistory);
-  if (!product || skipLiveMerge) return product;
-
-  const merged = await mergeLivePrices([product], "de");
-  return merged[0];
-}
-
 // Note: getProductPriceHistory removed in lean schema.
 // Price history is now stored in prices.historyJson and parsed by mapDbProduct.
 
@@ -305,18 +297,6 @@ export async function getProductVariants(
   );
   if (skipLiveMerge) return variants;
   return mergeLivePrices(variants, countryCode);
-}
-
-async function findProductSlugByAsinSuffix(
-  oldSlug: string,
-): Promise<string | undefined> {
-  return getCachedProductSlugByAsinSuffix(oldSlug);
-}
-
-async function findProductByParentAsinSuffix(
-  slug: string,
-): Promise<Product | undefined> {
-  return getCachedProductByParentAsinSuffix(slug);
 }
 
 /**
