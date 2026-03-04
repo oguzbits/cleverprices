@@ -76,6 +76,7 @@ describe("Global Cross-Category Identity Validation", () => {
         title: "Samsung Galaxy S24 Ultra 512GB Titanium Gray AI Smartphone",
         category: "smartphones",
         variationAttributes: "Storage: 512GB; Color: Titanium Gray",
+        officialSpecifications: JSON.stringify({ Modell: "Galaxy S24 Ultra" }),
       });
 
       const { slug, title } = getFamilyIdentity(p, []);
@@ -110,6 +111,7 @@ describe("Global Cross-Category Identity Validation", () => {
         title: "Samsung 990 PRO 4TB NVMe SSD M.2",
         category: "ssds",
         variationAttributes: "Kapazität: 4 TB",
+        officialSpecifications: JSON.stringify({ Modell: "990 PRO" }),
       });
 
       const { slug, title } = getFamilyIdentity(p, []);
@@ -128,6 +130,9 @@ describe("Global Cross-Category Identity Validation", () => {
         title: "ASUS ROG Strix GeForce RTX 4070 Ti Super 16GB OC",
         category: "gpu",
         variationAttributes: "Speicher: 16 GB",
+        officialSpecifications: JSON.stringify({
+          Modell: "ROG Strix GeForce RTX 4070 Ti Super",
+        }),
       });
 
       const { slug, title } = getFamilyIdentity(p, []);

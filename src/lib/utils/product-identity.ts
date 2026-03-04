@@ -1122,6 +1122,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "versand",
     "plus",
     "bulk",
+    "ai",
     // Technical & Category Noise (Safe to strip when no siblings available)
     "processor",
     "prozessor",

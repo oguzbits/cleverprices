@@ -201,7 +201,7 @@ export function getFamilyIdentity(
   if (isSpecFirst) {
     return {
       slug: `${idPrefix}_-${textSlug}`,
-      title: isHub ? identity.modelTitle : identity.displayTitle,
+      title: identity.modelTitle,
       modelTitle: identity.modelTitle,
       fullModel: identity.fullModel,
       brand,
