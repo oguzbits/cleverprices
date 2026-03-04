@@ -330,9 +330,15 @@ export async function IdealoProductPage({
 
                       // If it's a boolean true, show the property name (translated if possible)
                       // Otherwise show the value itself (e.g. Brand names, Colors, etc.)
+                      const lowerKey = key.toLowerCase();
                       let displayValue = String(value);
                       if (isTrue) {
                         displayValue = translateSpecKey(key);
+                      } else if (
+                        lowerKey === "modell" ||
+                        lowerKey === "model"
+                      ) {
+                        displayValue = identity.fullModel;
                       }
 
                       return (

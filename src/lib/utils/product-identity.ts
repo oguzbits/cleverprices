@@ -346,10 +346,8 @@ export function verifySpecModel(
   const versionsTitle = versionsTitleRaw.filter((v) => !isSpecValue(v));
 
   if (versionsTitle.length > 0 && versionsCand.length === 0) {
-    // If title has a version number (< 100 or a year) but candidate has none, it's too vague.
+    // If title has a version number but candidate has none, it's too vague.
     // e.g. Title: "iPad 11 2025" vs Candidate: "iPad WiFi" -> reject
-    // But allow if the candidate is long enough and contains specific model keywords
-    if (candidate.length > 10) return true;
     return false;
   }
 
@@ -367,16 +365,29 @@ export function verifySpecModel(
   ];
 
   for (const group of TIER_CONTRADICTIONS) {
-    const titleTiers = group.filter((t) => titleTokens.includes(t));
-    const candTiers = group.filter((t) => candTokens.includes(t));
+    const titleTiers = group.filter((t: string) => titleTokens.includes(t));
+    const candTiers = group.filter((t: string) => candTokens.includes(t));
 
-    // If both title and candidate mention different tiers from the same contradiction group,
-    // they are likely different products.
+    // A. Direct Contradiction (e.g. Ultra vs SE)
     if (
       titleTiers.length > 0 &&
       candTiers.length > 0 &&
-      !titleTiers.some((t) => candTiers.includes(t))
+      !titleTiers.some((t: string) => candTiers.includes(t))
     ) {
+      return false;
+    }
+
+    // B. Presence Contradiction (e.g. Title "iPhone 15" vs Cand "iPhone 15 Pro")
+    if (
+      titleTiers.length === 0 &&
+      candTiers.length > 0 &&
+      originalTitle.length > 15
+    ) {
+      return false;
+    }
+
+    // C. Reversal (e.g. Title "iPhone 15 Pro" vs Cand "iPhone 15")
+    if (titleTiers.length > 0 && candTiers.length === 0) {
       return false;
     }
   }
@@ -826,7 +837,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     IDENTITY_CONFIG.FIXED_TRAIT_CATEGORIES.includes(category);
   const isDisplay =
     category === "monitors" ||
-    category === "819" ||
     category.includes("monitor") ||
     category.includes("display") ||
     category.includes("televis") ||
@@ -974,6 +984,40 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "original",
     "ovp",
     "neu",
+    "kabellos",
+    "kabellose",
+    "bluetooth",
+    "kopfhoerer",
+    "kopfhörer",
+    "bluetoothkopfhoerer",
+    "bluetoothkopfhörer",
+    "truewireless",
+    "earbuds",
+    "earbud",
+    "headphones",
+    "headphone",
+    "earphone",
+    "earphones",
+    "headset",
+    "headsets",
+    "in-ear",
+    "inear",
+    "on-ear",
+    "onear",
+    "over-ear",
+    "overear",
+    "wireless",
+    "audio",
+    "sound",
+    "huelle",
+    "hülle",
+    "case",
+    "cover",
+    "anymode",
+    "smart",
+    "versandkostenfrei",
+    "inklusiv",
+    "profe", // Part of professional
     "edition",
     "kit",
     "body",
@@ -1009,9 +1053,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "gaming",
     "wireless",
     "bluetooth",
-    "noise",
-    "cancelling",
-    "canceling",
     "4k",
     "8k",
     "uhd",
@@ -1513,12 +1554,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       if (looksLikeSKU && modelWords.length > 0 && !isDisplay) return;
     }
 
-    // Strip if in noise list AND not protected (and not in official trust path)
-    if (
-      subtractTokens.has(cleanLower) &&
-      !isActuallyProtected &&
-      !isOfficialModelTrustPath
-    ) {
+    // Strip if in noise list AND not protected
+    if (subtractTokens.has(cleanLower) && !isActuallyProtected) {
       return;
     }
 
@@ -2330,7 +2367,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         hasIdentityPushed = true;
       }
 
-      if (wNorm === "3000r") console.log("DEBUG: 3000r passed all guards!");
       displayModelWords.push(w);
     }
 
