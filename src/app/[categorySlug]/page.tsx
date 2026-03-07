@@ -158,6 +158,7 @@ async function DedicatedCategoryContent({
 }) {
   "use cache";
   cacheLife("category");
+  const _v = "v207"; // Bust RSC cache when identity/slug logic changes
 
   const category = await getCategoryBySlug(categorySlug);
   if (!category) notFound();

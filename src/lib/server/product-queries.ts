@@ -1,7 +1,7 @@
 import { db, dbReady, IS_BUILD } from "@/db";
 import { prices, products } from "@/db/schema";
 import { and, asc, eq, inArray } from "drizzle-orm";
-import { unstable_cache } from "next/cache";
+import { cacheLife } from "next/cache";
 import { cache } from "react";
 import { withRetry } from "../../db/utils";
 import {
@@ -11,7 +11,6 @@ import {
   superLitePriceColumns,
   type Product,
 } from "../product-definitions";
-import { CATEGORY_REVALIDATE_SECONDS } from "../site-config";
 import { mapDbProduct } from "../utils/product-mapping";
 
 /**
@@ -136,14 +135,59 @@ export async function enrichWithFullSiblings(
   return results;
 }
 
-export const getProductsByCategory = cache(async function getProductsByCategory(
+export async function getProductsByCategory(
   category: string,
   stripHeavyData: boolean = true,
   limit?: number,
   collapseFamilies: boolean = false,
 ): Promise<Product[]> {
-  if (IS_BUILD || !category) return [];
-  const fetchProducts = async () => {
+  const isScript =
+    typeof globalThis === "undefined" ||
+    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
+
+  if (isScript || IS_BUILD || !category) {
+    if (IS_BUILD || !category) return [];
+
+    // Direct sync execution for scripts/build
+    await dbReady;
+    const { prods, prs } = await withRetry(async () => {
+      let query = db
+        .select(liteProductColumns)
+        .from(products)
+        .where(eq(products.category, category));
+
+      if (limit) {
+        // @ts-ignore
+        query = query.orderBy(asc(products.salesRank)).limit(limit);
+      }
+
+      const prods = await query;
+      if (prods.length === 0) return { prods: [], prs: [] };
+
+      const ids = prods.map((p) => p.id);
+      const prs = await db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(inArray(prices.productId, ids));
+
+      return { prods, prs };
+    });
+
+    if (prods.length === 0) return [];
+    const pricesByProduct = indexPricesById(prs);
+    return enrichWithFullSiblings(
+      prods,
+      pricesByProduct,
+      "de",
+      stripHeavyData,
+      collapseFamilies,
+    );
+  }
+
+  const cachedFetch = async () => {
+    "use cache";
+    cacheLife("category");
+
     await dbReady;
     const { prods, prs } = await withRetry(async () => {
       let query = db
@@ -179,110 +223,34 @@ export const getProductsByCategory = cache(async function getProductsByCategory(
     );
   };
 
+  return cachedFetch();
+}
+
+export async function getRawProductsByCategory(
+  category: string,
+  countryCode: string = "de",
+  limit: number = 2000,
+) {
   const isScript =
     typeof globalThis === "undefined" ||
     (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
-  if (isScript) return fetchProducts();
 
-  return unstable_cache(
-    fetchProducts,
-    [`category-products-v34-${category}-${stripHeavyData}-${limit || "all"}`],
-    {
-      revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: ["category-products", `cat-${category}`, "v48"],
-    },
-  )();
-});
-
-export const getRawProductsByCategory = cache(
-  async function getRawProductsByCategory(
-    category: string,
-    countryCode: string = "de",
-    limit: number = 2000,
-  ) {
+  if (isScript || IS_BUILD || !category) {
     if (IS_BUILD || !category) return [];
-
-    const fetchProducts = async () => {
-      await dbReady;
-      const { prods, prs } = await withRetry(async () => {
-        const prods = await db
-          .select(filteringProductColumns)
-          .from(products)
-          .where(eq(products.category, category))
-          .orderBy(asc(products.salesRank))
-          .limit(limit);
-
-        if (prods.length === 0) return { prods: [], prs: [] };
-
-        const foundIds = prods.map((p) => p.id);
-        const prs = await db
-          .select(superLitePriceColumns)
-          .from(prices)
-          .where(
-            and(
-              inArray(prices.productId, foundIds),
-              eq(prices.country, countryCode),
-            ),
-          );
-
-        return { prods, prs };
-      });
-
-      if (prods.length === 0) return [];
-
-      const pricesByProduct = new Map<number, any>();
-      prs.forEach((pr) => pricesByProduct.set(pr.productId, pr));
-
-      return prods.map((p) => {
-        const live = pricesByProduct.get(p.id);
-        const code = countryCode.toLowerCase();
-        return {
-          ...p,
-          prices: { [code]: live?.price || 0 },
-          usedPrices: { [code]: live?.usedPrice || 0 },
-          warehousePrices: { [code]: live?.warehousePrice || 0 },
-          priceAvg90: { [code]: live?.priceAvg90 || 0 },
-          pricePerUnit: { [code]: live?.pricePerUnit || 0 },
-          pricesLastUpdated: { [code]: live?.lastUpdated },
-        };
-      });
-    };
-
-    const isScript =
-      typeof globalThis === "undefined" ||
-      (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
-    if (isScript) return fetchProducts();
-
-    return unstable_cache(
-      fetchProducts,
-      [`raw-category-products-v2-${category}-${countryCode}-${limit}`],
-      {
-        revalidate: CATEGORY_REVALIDATE_SECONDS,
-        tags: ["category-products", `cat-${category}`, "v61"],
-      },
-    )();
-  },
-);
-
-export const getProductsByIds = cache(async function getProductsByIds(
-  ids: number[],
-  countryCode: string = "de",
-  stripHeavyData: boolean = true,
-): Promise<Product[]> {
-  if (IS_BUILD || !ids || ids.length === 0) return [];
-  const fetchProducts = async () => {
     await dbReady;
     const { prods, prs } = await withRetry(async () => {
       const prods = await db
-        .select(liteProductColumns)
+        .select(filteringProductColumns)
         .from(products)
-        .where(inArray(products.id, ids));
+        .where(eq(products.category, category))
+        .orderBy(asc(products.salesRank))
+        .limit(limit);
 
       if (prods.length === 0) return { prods: [], prs: [] };
 
       const foundIds = prods.map((p) => p.id);
       const prs = await db
-        .select(litePriceColumns)
+        .select(superLitePriceColumns)
         .from(prices)
         .where(
           and(
@@ -295,26 +263,141 @@ export const getProductsByIds = cache(async function getProductsByIds(
     });
 
     if (prods.length === 0) return [];
-    const pricesByProduct = indexPricesById(prs);
-    return enrichWithFullSiblings(
-      prods,
-      pricesByProduct,
-      countryCode,
-      stripHeavyData,
-    );
+
+    const pricesByProduct = new Map<number, any>();
+    prs.forEach((pr) => pricesByProduct.set(pr.productId, pr));
+
+    return prods.map((p) => {
+      const live = pricesByProduct.get(p.id);
+      const code = countryCode.toLowerCase();
+      return {
+        ...p,
+        prices: { [code]: live?.price || 0 },
+        usedPrices: { [code]: live?.usedPrice || 0 },
+        warehousePrices: { [code]: live?.warehousePrice || 0 },
+        priceAvg90: { [code]: live?.priceAvg90 || 0 },
+        pricePerUnit: { [code]: live?.pricePerUnit || 0 },
+        pricesLastUpdated: { [code]: live?.lastUpdated },
+      };
+    });
+  }
+
+  const cachedFetch = async () => {
+    "use cache";
+    cacheLife("category");
+    const _v = "v207";
+
+    await dbReady;
+    const { prods, prs } = await withRetry(async () => {
+      const prods = await db
+        .select(filteringProductColumns)
+        .from(products)
+        .where(eq(products.category, category))
+        .orderBy(asc(products.salesRank))
+        .limit(limit);
+
+      if (prods.length === 0) return { prods: [], prs: [] };
+
+      const foundIds = prods.map((p) => p.id);
+      const prs = await db
+        .select(superLitePriceColumns)
+        .from(prices)
+        .where(
+          and(
+            inArray(prices.productId, foundIds),
+            eq(prices.country, countryCode),
+          ),
+        );
+
+      return { prods, prs };
+    });
+
+    if (prods.length === 0) return [];
+
+    const pricesByProduct = new Map<number, any>();
+    prs.forEach((pr) => pricesByProduct.set(pr.productId, pr));
+
+    return prods.map((p) => {
+      const live = pricesByProduct.get(p.id);
+      const code = countryCode.toLowerCase();
+      return {
+        ...p,
+        prices: { [code]: live?.price || 0 },
+        usedPrices: { [code]: live?.usedPrice || 0 },
+        warehousePrices: { [code]: live?.warehousePrice || 0 },
+        priceAvg90: { [code]: live?.priceAvg90 || 0 },
+        pricePerUnit: { [code]: live?.pricePerUnit || 0 },
+        pricesLastUpdated: { [code]: live?.lastUpdated },
+      };
+    });
   };
+
+  return cachedFetch();
+}
+
+async function fetchProductsByIdsInternal(
+  ids: number[],
+  countryCode: string = "de",
+  stripHeavyData: boolean = true,
+): Promise<Product[]> {
+  await dbReady;
+  const { prods, prs } = await withRetry(async () => {
+    const prods = await db
+      .select(liteProductColumns)
+      .from(products)
+      .where(inArray(products.id, ids));
+
+    if (prods.length === 0) return { prods: [], prs: [] };
+
+    const foundIds = prods.map((p) => p.id);
+    const prs = await db
+      .select(litePriceColumns)
+      .from(prices)
+      .where(
+        and(
+          inArray(prices.productId, foundIds),
+          eq(prices.country, countryCode),
+        ),
+      );
+
+    return { prods, prs };
+  });
+
+  if (prods.length === 0) return [];
+  const pricesByProduct = indexPricesById(prs);
+  return enrichWithFullSiblings(
+    prods,
+    pricesByProduct,
+    countryCode,
+    stripHeavyData,
+  );
+}
+
+export const getProductsByIds = cache(async function getProductsByIds(
+  ids: number[],
+  countryCode: string = "de",
+  stripHeavyData: boolean = true,
+): Promise<Product[]> {
+  if (IS_BUILD || !ids || ids.length === 0) return [];
 
   const isScript =
     typeof globalThis === "undefined" ||
     (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
-  if (isScript) return fetchProducts();
 
-  return unstable_cache(
-    fetchProducts,
-    [`products-by-ids-v1-${ids.join(",")}-${countryCode}`],
-    {
-      revalidate: CATEGORY_REVALIDATE_SECONDS,
-      tags: ["products-by-ids", ...ids.map((id) => `prod-${id}`)],
-    },
-  )();
+  if (isScript) {
+    return fetchProductsByIdsInternal(ids, countryCode, stripHeavyData);
+  }
+
+  const cachedFetch = async (
+    targetIds: number[],
+    code: string,
+    strip: boolean,
+  ) => {
+    "use cache";
+    cacheLife("product");
+    const _v = "v207";
+    return fetchProductsByIdsInternal(targetIds, code, strip);
+  };
+
+  return cachedFetch(ids, countryCode, stripHeavyData);
 });

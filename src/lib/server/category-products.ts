@@ -66,7 +66,19 @@ export function mapRawToLocalizedProduct(
   isSsd?: boolean,
   isStorageOrRam?: boolean,
 ): LocalizedProduct | null {
+  if (p.id === 3301) {
+    console.log(`[mapRawToLocalizedProduct] 3301 KEYS:`, Object.keys(p));
+    console.log(
+      `[mapRawToLocalizedProduct] 3301 officialSpecifications:`,
+      (p as any).officialSpecifications,
+    );
+    console.log(
+      `[mapRawToLocalizedProduct] 3301 official_specifications:`,
+      (p as any).official_specifications,
+    );
+  }
   // [PERFORMANCE] FAST-PATH: If this is already a localized product or a full product with merged prices
+
   // (e.g. from getAllDeals), we skip the heavy mapping logic.
   // We check for the presence of the 'prices' object which indicates p is a Product entity.
   const isProductObj = (obj: any): obj is Product =>
@@ -76,7 +88,15 @@ export function mapRawToLocalizedProduct(
     obj.id &&
     obj.specifications !== undefined;
 
-  if (isProductObj(p) && p.prices[countryCode] !== undefined) {
+  if (
+    isProductObj(p) &&
+    p.prices[countryCode] !== undefined &&
+    p.category !== "ram" &&
+    p.category !== "arbeitsspeicher" &&
+    p.category !== "smartphones" &&
+    p.category !== "tablets" &&
+    p.category !== "notebooks"
+  ) {
     const priceVal = p.prices[countryCode] as number;
     if (!priceVal || priceVal <= 0) return null;
 
@@ -172,8 +192,10 @@ export function mapRawToLocalizedProduct(
     "arbeitsspeicher",
     "ram",
     "smartphones",
+    "handy",
     "tablets",
     "notebooks",
+    "laptops",
   ].includes(actualCategory);
 
   let displayTitle = title;
@@ -382,12 +404,13 @@ export function mapRawToLocalizedProduct(
     parentAsin,
     variationAttributes: p.variationAttributes,
     officialSpecifications:
-      typeof p.officialSpecifications === "string"
-        ? JSON.parse(p.officialSpecifications)
-        : p.officialSpecifications,
-    officialTitle: p.officialTitle,
+      typeof (p.officialSpecifications || p.official_specifications) ===
+      "string"
+        ? JSON.parse(p.officialSpecifications || p.official_specifications)
+        : p.officialSpecifications || p.official_specifications,
+    officialTitle: p.officialTitle || p.official_title,
     mpn: p.mpn,
-    specificationsSource: p.specificationsSource,
+    specificationsSource: p.specificationsSource || p.specifications_source,
   } as LocalizedProduct;
 }
 
@@ -399,7 +422,7 @@ export function mapRawToLocalizedProduct(
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v99", // Cache buster
+  version: string = "v207", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
@@ -430,7 +453,7 @@ export async function getCachedLocalizedCategoryProducts(
 export async function getLeanCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v99",
+  version: string = "v207",
 ) {
   "use cache";
   cacheLife("category");
@@ -664,7 +687,7 @@ export async function getCategoryProducts(
   const leanProducts = await getLeanCategoryProducts(
     categorySlug,
     countryCode,
-    "v99",
+    "v201",
   );
 
   const category = allCategories[categorySlug as CategorySlug];

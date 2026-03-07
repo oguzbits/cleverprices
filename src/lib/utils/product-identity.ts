@@ -935,13 +935,19 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
   // 2. Data Sourcing (Official vs Retailer)
   let officialModel: string | null =
-    (product.officialTitle || "").trim() || null;
+    (product.officialTitle || product.official_title || "").trim() || null;
 
-  const specs = product.officialSpecifications
-    ? typeof product.officialSpecifications === "string"
-      ? JSON.parse(product.officialSpecifications)
-      : product.officialSpecifications
-    : product.specifications || {};
+  const rawOfficial =
+    product.officialSpecifications || product.official_specifications;
+  const rawCatchAll = product.specifications || product.specifications; // Catch-all might also be snake_case in some results
+
+  const specs = rawOfficial
+    ? typeof rawOfficial === "string"
+      ? JSON.parse(rawOfficial)
+      : rawOfficial
+    : (typeof rawCatchAll === "string"
+        ? JSON.parse(rawCatchAll)
+        : rawCatchAll) || {};
 
   const resolvedBrand = normalizeBrand(rawBrand, title, category);
   const resolvedBrandLower = resolvedBrand.toLowerCase();
@@ -957,7 +963,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     brandMatch && brandMatch[0] ? brandMatch[0].trim() : resolvedBrand;
 
   // QA SYSTEM: Verify if the 'Modell' spec is a safe improvement over the title
-  const source = product.specificationsSource || "";
+  const source =
+    product.specificationsSource || product.specifications_source || "";
   const trustedSources = ["icecat", "intel", "ebay", "google"];
   const isDirectSource = trustedSources.some((s) =>
     source.toLowerCase().includes(s),

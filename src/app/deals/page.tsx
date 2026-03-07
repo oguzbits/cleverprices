@@ -33,6 +33,7 @@ async function DealsPageContent({
 }) {
   "use cache";
   cacheLife("category");
+  const _v = "v207"; // Bust RSC cache when identity/slug logic changes
   const category = CATEGORY_MAP["deals"];
 
   return (

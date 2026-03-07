@@ -22,6 +22,7 @@ import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
+import { getFamilyIdentity } from "@/lib/product-families";
 import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatTechText } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
@@ -79,10 +80,27 @@ export function IdealoListCard({
   const displayModelTitle = product.modelTitle || identity.modelTitle;
   const displayVariantSuffix = product.variantSuffix || identity.variantSuffix;
 
+  // Compute canonical slug at render time for identity-driven categories.
+  const IDENTITY_CATEGORIES = [
+    "smartphones",
+    "tablets",
+    "notebooks",
+    "laptops",
+    "handy",
+  ];
+  const useLiveSlug =
+    IDENTITY_CATEGORIES.includes(product.category || "") && !isHub;
+  const liveSlug = useLiveSlug
+    ? getFamilyIdentity(product as any, []).slug
+    : undefined;
+  const cardHref = liveSlug
+    ? `/p/${liveSlug}`
+    : getProductPath(product.id, product.slug);
+
   return (
     <div className={cn("sr-resultList__item", "-mb-px", className)}>
       <PrefetchLink
-        href={getProductPath(product.id, product.slug)}
+        href={cardHref}
         className={cn(
           "sr-resultItemTile sr-resultItemTile--LIST",
           "relative flex flex-row items-stretch",

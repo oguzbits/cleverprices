@@ -21,13 +21,9 @@ import {
   sql,
   SQL,
 } from "drizzle-orm";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { cache } from "react";
 import { withRetry } from "../db/utils";
-import {
-  CATEGORY_REVALIDATE_SECONDS,
-  PRODUCT_REVALIDATE_SECONDS,
-} from "./site-config";
 
 // Lightweight price columns - lean schema (Drizzle ORM skill: query-select-columns)
 import {
@@ -123,6 +119,55 @@ export const getProductById = cache(async function getProductById(
   return product;
 });
 
+async function fetchCanonicalIdInternal(
+  parentAsin?: string | null,
+  currentId?: number,
+  modelTitle?: string,
+) {
+  "use cache";
+  cacheLife("product");
+  const _v = "v3"; // Version bump
+
+  if (!parentAsin) return currentId;
+
+  await dbReady;
+  const allVariants = await db
+    .select({
+      id: products.id,
+      title: products.title,
+      brand: products.brand,
+      category: products.category,
+      officialTitle: products.officialTitle,
+      officialSpecifications: products.officialSpecifications,
+      variationAttributes: products.variationAttributes,
+      specificationsSource: products.specificationsSource,
+    })
+    .from(products)
+    .where(eq(products.parentAsin, parentAsin))
+    .orderBy(asc(products.id));
+
+  if (allVariants.length === 0) return currentId!;
+
+  // If no modelTitle provided, use the first ID overall for that family
+  if (!modelTitle) return allVariants[0].id;
+
+  // Split based on specific series (matches category page expansion logic)
+  const targetKey = modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const { getProductIdentity } = await import("./utils/product-identity");
+
+  for (const v of allVariants) {
+    const iden = getProductIdentity(v as any);
+    const key = (iden.modelTitle || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "");
+    if (key === targetKey) {
+      return v.id;
+    }
+  }
+
+  return allVariants[0].id;
+}
+
 /**
  * Get the stable canonical ID for a family (Smallest ID in the family).
  * This ensures all variants point to the same Hub ID regardless of price/condition.
@@ -132,9 +177,11 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
   currentId: number,
   modelTitle?: string,
 ): Promise<number> {
-  if (!parentAsin) return currentId;
+  const isScript =
+    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
 
-  const fetchCanonicalId = async () => {
+  if (isScript) {
+    if (!parentAsin) return currentId;
     await dbReady;
     const allVariants = await db
       .select({
@@ -152,35 +199,43 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
       .orderBy(asc(products.id));
 
     if (allVariants.length === 0) return currentId;
-
-    // If no modelTitle provided, use the first ID overall for that family
     if (!modelTitle) return allVariants[0].id;
-
-    // Split based on specific series (matches category page expansion logic)
     const targetKey = modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "");
     const { getProductIdentity } = await import("./utils/product-identity");
-
     for (const v of allVariants) {
       const iden = getProductIdentity(v as any);
       const key = (iden.modelTitle || "")
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "");
-      if (key === targetKey) {
-        return v.id;
-      }
+      if (key === targetKey) return v.id;
     }
-
     return allVariants[0].id;
-  };
+  }
 
-  const cacheKey = modelTitle
-    ? `${parentAsin}-${modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "")}`
-    : parentAsin;
-  return unstable_cache(fetchCanonicalId, [`canonical-id-v2-${cacheKey}`], {
-    revalidate: PRODUCT_REVALIDATE_SECONDS,
-    tags: ["products", `family-${parentAsin}`],
-  })();
+  return (await fetchCanonicalIdInternal(
+    parentAsin,
+    currentId,
+    modelTitle,
+  )) as number;
 });
+
+async function fetchHistoryInternal(productId: number, countryCode: string) {
+  "use cache";
+  cacheLife("product");
+  const _v = "v2"; // Version bump
+  await dbReady;
+  const [pr] = await db
+    .select({ historyJson: prices.historyJson })
+    .from(prices)
+    .where(
+      and(eq(prices.productId, productId), eq(prices.country, countryCode)),
+    )
+    .limit(1);
+
+  if (!pr?.historyJson) return [];
+  const { parseHistoryJson } = await import("./utils/product-mapping");
+  return parseHistoryJson(pr.historyJson);
+}
 
 /**
  * Fetch only price history for a specific product and country.
@@ -190,7 +245,11 @@ async function getProductPriceHistory(
   productId: number,
   countryCode: string = "de",
 ): Promise<{ date: string; price: number }[]> {
-  const fetchHistory = async () => {
+  const isScript =
+    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
+
+  if (isScript) {
+    await dbReady;
     const [pr] = await db
       .select({ historyJson: prices.historyJson })
       .from(prices)
@@ -202,16 +261,9 @@ async function getProductPriceHistory(
     if (!pr?.historyJson) return [];
     const { parseHistoryJson } = await import("./utils/product-mapping");
     return parseHistoryJson(pr.historyJson);
-  };
+  }
 
-  return unstable_cache(
-    fetchHistory,
-    [`product-history-v1-${productId}-${countryCode}`],
-    {
-      revalidate: PRODUCT_REVALIDATE_SECONDS,
-      tags: [`product-history-${productId}`],
-    },
-  )();
+  return fetchHistoryInternal(productId, countryCode);
 }
 
 /**
@@ -512,6 +564,44 @@ const MEMORY_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
  * Get all category slugs that have at least one product with "optimized" status.
  * Used for filtering the sitemap and preventing thin content.
  */
+async function fetchNonEmptyInternal() {
+  await dbReady;
+  try {
+    const results = await db
+      .select({ category: products.category })
+      .from(products)
+      .where(
+        inArray(products.enrichmentStatus, [
+          "optimized",
+          "processed",
+          "scavenged",
+        ]),
+      )
+      .groupBy(products.category);
+
+    if (results.length === 0 && process.env.NODE_ENV === "production") {
+      throw new Error(
+        "No non-empty categories found. Database might be empty or syncing.",
+      );
+    }
+
+    const categories = results.map((r) => r.category);
+
+    // Update memory cache
+    MEMORY_NON_EMPTY_CATEGORIES = { data: categories, timestamp: Date.now() };
+
+    return categories;
+  } catch (e) {
+    if (!IS_BUILD) {
+      console.error(
+        `[DB Error] getNonEmptyCategorySlugs failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
+      throw e;
+    }
+    return [];
+  }
+}
+
 export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   if (IS_BUILD) {
     // During build, we return all non-hidden categories from the manifest
@@ -530,56 +620,22 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
     return MEMORY_NON_EMPTY_CATEGORIES.data;
   }
 
-  const fetchNonEmpty = async () => {
-    await dbReady;
-    try {
-      const results = await db
-        .select({ category: products.category })
-        .from(products)
-        .where(
-          inArray(products.enrichmentStatus, [
-            "optimized",
-            "processed",
-            "scavenged",
-          ]),
-        )
-        .groupBy(products.category);
-
-      if (results.length === 0 && process.env.NODE_ENV === "production") {
-        throw new Error(
-          "No non-empty categories found. Database might be empty or syncing.",
-        );
-      }
-
-      const categories = results.map((r) => r.category);
-
-      // Update memory cache
-      MEMORY_NON_EMPTY_CATEGORIES = { data: categories, timestamp: Date.now() };
-
-      return categories;
-    } catch (e) {
-      if (!IS_BUILD) {
-        console.error(
-          `[DB Error] getNonEmptyCategorySlugs failed: ${e instanceof Error ? e.message : String(e)}`,
-        );
-        throw e;
-      }
-      return [];
-    }
-  };
-
   const isScript =
     typeof globalThis === "undefined" ||
     (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
 
   if (isScript) {
-    return fetchNonEmpty();
+    return fetchNonEmptyInternal();
   }
 
-  return unstable_cache(fetchNonEmpty, ["non-empty-categories-v57"], {
-    revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["categories-non-empty", "v57"],
-  })();
+  const cachedFetch = async () => {
+    "use cache";
+    cacheLife("category");
+    const version = "v205"; // Version bump
+    return fetchNonEmptyInternal();
+  };
+
+  return cachedFetch();
 }
 
 /**
@@ -803,14 +859,14 @@ export const getProductBySlug = cache(async function getProductBySlug(
     return fetchProductBySlug(slug, includeHistory);
   }
 
-  return unstable_cache(
-    fetchProductBySlug,
-    [`product-slug-v7-${slug}-${includeHistory}`],
-    {
-      revalidate: PRODUCT_REVALIDATE_SECONDS,
-      tags: [`product-v7-${slug}`],
-    },
-  )(slug, includeHistory);
+  const cachedFetch = async () => {
+    "use cache";
+    cacheLife("product");
+    const [_v, _s, _h] = ["v8", slug, includeHistory]; // Version bump
+    return fetchProductBySlug(slug, includeHistory);
+  };
+
+  return cachedFetch();
 });
 
 const fetchProductByAsin = async (
@@ -853,10 +909,14 @@ export const getProductByAsin = cache(async function getProductByAsin(
     return fetchProductByAsin(asin);
   }
 
-  return unstable_cache(fetchProductByAsin, [`product-asin-v1-${asin}`], {
-    revalidate: PRODUCT_REVALIDATE_SECONDS,
-    tags: [`product-v1-asin-${asin}`],
-  })(asin);
+  const cachedFetch = async () => {
+    "use cache";
+    cacheLife("product");
+    const [_v, _a] = ["v2", asin]; // Version bump
+    return fetchProductByAsin(asin);
+  };
+
+  return cachedFetch();
 });
 
 /**
@@ -1151,14 +1211,20 @@ export const getSimilarProducts = cache(async function getSimilarProducts(
     );
   }
 
-  return unstable_cache(
-    fetchSimilarProducts,
-    [`similar-products-v20-${product.category}-${countryCode}`], // Key parts (args are hashed automatically)
-    {
-      revalidate: PRODUCT_REVALIDATE_SECONDS,
-      tags: [`similar-v20-${product.category}`],
-    },
-  )(product.category, product.slug, currentPrice, limit, countryCode);
+  const cachedFetch = async () => {
+    "use cache";
+    cacheLife("product");
+    const [_v] = ["v21"]; // Version bump
+    return fetchSimilarProducts(
+      product.category,
+      product.slug,
+      currentPrice,
+      limit,
+      countryCode,
+    );
+  };
+
+  return cachedFetch();
 });
 
 export async function searchProducts(
@@ -1325,62 +1391,65 @@ const getProductsByBrand = cache(async function getProductsByBrand(
   return enrichWithFullSiblings(prods, pricesByProduct, "de", false);
 });
 
-const getCachedDeals = unstable_cache(
-  async (limit: number, countryCode: string, condition?: string) => {
-    await dbReady;
-    try {
-      // Lean schema: use consolidated `price` column instead of amazonPrice/newPrice
-      const whereConditions: (SQL | undefined)[] = [
-        eq(prices.country, countryCode),
-        gt(prices.priceAvg90, 0),
-        gt(prices.price, 0), // Consolidated "clever" price
-      ];
+const getCachedDeals = async (
+  limit: number,
+  countryCode: string,
+  condition?: string,
+) => {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("deals", limit.toString(), countryCode, condition || "any");
 
-      if (condition) {
-        whereConditions.push(eq(products.condition, condition as any));
-        if (condition === "New") {
-          whereConditions.push(
-            sql`${products.title} NOT LIKE '%Generalüberholt%'`,
-          );
-          whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
-          whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
-        }
+  await dbReady;
+  try {
+    // ...
+
+    // Lean schema: use consolidated `price` column instead of amazonPrice/newPrice
+    const whereConditions: (SQL | undefined)[] = [
+      eq(prices.country, countryCode),
+      gt(prices.priceAvg90, 0),
+      gt(prices.price, 0), // Consolidated "clever" price
+    ];
+
+    if (condition) {
+      whereConditions.push(eq(products.condition, condition as any));
+      if (condition === "New") {
+        whereConditions.push(
+          sql`${products.title} NOT LIKE '%Generalüberholt%'`,
+        );
+        whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
+        whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
       }
-
-      const results = await withRetry(() =>
-        db
-          .select({
-            product: liteProductColumns,
-            price: litePriceColumns,
-          })
-          .from(products)
-          .innerJoin(prices, eq(products.id, prices.productId))
-          .where(and(...whereConditions))
-          .orderBy(
-            desc(
-              // Deal percentage: (90-day avg - current price) / 90-day avg
-              sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90}`,
-            ),
-          )
-          .limit(limit),
-      );
-
-      const prods = results.map((r) => r.product);
-      const pricesByProduct = indexPricesById(results.map((r) => r.price));
-      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
-    } catch (e) {
-      console.warn(
-        `[DB Warning] Failed to fetch deals: ${e instanceof Error ? e.message : String(e)}`,
-      );
-      return [];
     }
-  },
-  ["best-deals-v15"],
-  {
-    revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "deals", "v15"],
-  },
-);
+
+    const results = await withRetry(() =>
+      db
+        .select({
+          product: liteProductColumns,
+          price: litePriceColumns,
+        })
+        .from(products)
+        .innerJoin(prices, eq(products.id, prices.productId))
+        .where(and(...whereConditions))
+        .orderBy(
+          desc(
+            // Deal percentage: (90-day avg - current price) / 90-day avg
+            sql`(${prices.priceAvg90} - ${prices.price}) / ${prices.priceAvg90}`,
+          ),
+        )
+        .limit(limit),
+    );
+
+    const prods = results.map((r) => r.product);
+    const pricesByProduct = indexPricesById(results.map((r) => r.price));
+    return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
+  } catch (e) {
+    console.warn(
+      `[DB Warning] Failed to fetch deals: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    return [];
+  }
+};
 
 export const getBestDeals = cache(async function getBestDeals(
   limit: number = 8,
@@ -1420,83 +1489,79 @@ export const getBestDeals = cache(async function getBestDeals(
   }
 });
 
-const getCachedPopular = unstable_cache(
-  async (limit: number, countryCode: string, condition?: string) => {
-    await dbReady;
-    try {
-      const whereConditions: SQL[] = [];
-      if (condition) {
-        whereConditions.push(eq(products.condition, condition as any));
-        if (condition === "New") {
-          whereConditions.push(
-            sql`${products.title} NOT LIKE '%Generalüberholt%'`,
-          );
-          whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
-          whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
-        }
+const getCachedPopular = async (
+  limit: number,
+  countryCode: string,
+  condition?: string,
+) => {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("popular", limit.toString(), countryCode, condition || "any");
+
+  await dbReady;
+  try {
+    const whereConditions: SQL[] = [];
+    if (condition) {
+      whereConditions.push(eq(products.condition, condition as any));
+      if (condition === "New") {
+        whereConditions.push(
+          sql`${products.title} NOT LIKE '%Generalüberholt%'`,
+        );
+        whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
+        whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
       }
-
-      const prods = await withRetry(() =>
-        db
-          .select(liteProductColumns)
-          .from(products)
-          .where(
-            whereConditions.length > 0 ? and(...whereConditions) : undefined,
-          )
-          .orderBy(
-            asc(sql`COALESCE(${products.salesRank}, 10000000)`),
-            desc(products.reviewCount),
-            desc(products.rating),
-          )
-          .limit(limit),
-      );
-
-      console.log(
-        `[DB DEBUG] getCachedPopular found ${prods.length} products with limit ${limit}`,
-      );
-      if (prods.length === 0) return [];
-
-      const ids = prods.map((p) => p.id);
-      const prs = await withRetry(() =>
-        db
-          .select(litePriceColumns)
-          .from(prices)
-          .where(
-            and(
-              inArray(prices.productId, ids),
-              eq(prices.country, countryCode),
-            ),
-          ),
-      );
-
-      const pricesByProduct = indexPricesById(prs);
-      console.log(
-        `[DB DEBUG] getCachedPopular: products=${prods.length}, prices=${prs.length} for ${countryCode}`,
-      );
-
-      // Group by parentAsin
-      const families = new Map<string, any[]>();
-      for (const p of prods) {
-        if (p.parentAsin) {
-          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-          families.get(p.parentAsin)!.push(p);
-        }
-      }
-
-      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
-    } catch (e) {
-      console.warn(
-        `[DB Warning] Failed to fetch popular: ${e instanceof Error ? e.message : String(e)}`,
-      );
-      return [];
     }
-  },
-  ["popular-deals-v15"],
-  {
-    revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "v15"],
-  },
-);
+
+    const prods = await withRetry(() =>
+      db
+        .select(liteProductColumns)
+        .from(products)
+        .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
+        .orderBy(
+          asc(sql`COALESCE(${products.salesRank}, 10000000)`),
+          desc(products.reviewCount),
+          desc(products.rating),
+        )
+        .limit(limit),
+    );
+
+    console.log(
+      `[DB DEBUG] getCachedPopular found ${prods.length} products with limit ${limit}`,
+    );
+    if (prods.length === 0) return [];
+
+    const ids = prods.map((p) => p.id);
+    const prs = await withRetry(() =>
+      db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(
+          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+        ),
+    );
+
+    const pricesByProduct = indexPricesById(prs);
+    console.log(
+      `[DB DEBUG] getCachedPopular: products=${prods.length}, prices=${prs.length} for ${countryCode}`,
+    );
+
+    // Group by parentAsin
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
+  } catch (e) {
+    console.warn(
+      `[DB Warning] Failed to fetch popular: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    return [];
+  }
+};
 
 export const getMostPopular = cache(async function getMostPopular(
   limit: number = 8,
@@ -1552,13 +1617,18 @@ export const getMostPopular = cache(async function getMostPopular(
  * This uses a SQL Window Function to ensure we get candidates from all categories
  * instead of just 200 items from the most popular category.
  */
-const fetchDiversePopular = unstable_cache(
-  async (itemsPerCategory: number, countryCode: string) => {
-    if (IS_BUILD) return [];
-    await dbReady;
-    try {
-      const result = await client.execute({
-        sql: `
+const fetchDiversePopular = async (
+  itemsPerCategory: number,
+  countryCode: string,
+) => {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("diverse-popular", itemsPerCategory.toString(), countryCode, "v200");
+  if (IS_BUILD) return [];
+  await dbReady;
+  try {
+    const result = await client.execute({
+      sql: `
     WITH RankedProducts AS (
       SELECT 
         id,
@@ -1572,60 +1642,51 @@ const fetchDiversePopular = unstable_cache(
     )
     SELECT id FROM RankedProducts WHERE rank <= ?
   `,
-        args: [itemsPerCategory],
-      });
-      const ids = result.rows.map((r: any) => Number(r.id));
+      args: [itemsPerCategory],
+    });
+    const ids = result.rows.map((r: any) => Number(r.id));
 
-      if (ids.length === 0) return [];
+    if (ids.length === 0) return [];
 
-      const prods = await withRetry(() =>
-        db
-          .select(liteProductColumns)
-          .from(products)
-          .where(inArray(products.id, ids)),
-      );
+    const prods = await withRetry(() =>
+      db
+        .select(liteProductColumns)
+        .from(products)
+        .where(inArray(products.id, ids)),
+    );
 
-      console.log(
-        `[DB DEBUG] fetchDiversePopular found ${prods.length} products`,
-      );
+    console.log(
+      `[DB DEBUG] fetchDiversePopular found ${prods.length} products`,
+    );
 
-      const prs = await withRetry(() =>
-        db
-          .select(litePriceColumns)
-          .from(prices)
-          .where(
-            and(
-              inArray(prices.productId, ids),
-              eq(prices.country, countryCode),
-            ),
-          ),
-      );
+    const prs = await withRetry(() =>
+      db
+        .select(litePriceColumns)
+        .from(prices)
+        .where(
+          and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
+        ),
+    );
 
-      const pricesByProduct = indexPricesById(prs);
+    const pricesByProduct = indexPricesById(prs);
 
-      // Group by parentAsin
-      const families = new Map<string, any[]>();
-      for (const p of prods) {
-        if (p.parentAsin) {
-          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-          families.get(p.parentAsin)!.push(p);
-        }
+    // Group by parentAsin
+    const families = new Map<string, any[]>();
+    for (const p of prods) {
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
       }
-
-      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
-    } catch (e) {
-      console.warn(
-        `[DB Warning] Failed to fetch diverse popular: ${e instanceof Error ? e.message : String(e)}`,
-      );
-      return [];
     }
-  },
-  ["diverse-popular-v15"],
-  {
-    revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "popular", "diverse", "v15"],
-  },
-);
+
+    return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
+  } catch (e) {
+    console.warn(
+      `[DB Warning] Failed to fetch diverse popular: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    return [];
+  }
+};
 
 export const getDiverseMostPopular = cache(async function getDiverseMostPopular(
   itemsPerCategory: number = 10,
@@ -1645,67 +1706,59 @@ export const getDiverseMostPopular = cache(async function getDiverseMostPopular(
   return fetchDiversePopular(itemsPerCategory, countryCode);
 });
 
-const getCachedNew = unstable_cache(
-  async (limit: number, countryCode: string, condition?: string) => {
-    await dbReady;
-    try {
-      const whereConditions: SQL[] = [];
-      if (condition) {
-        whereConditions.push(eq(products.condition, condition as any));
-        if (condition === "New") {
-          whereConditions.push(
-            sql`${products.title} NOT LIKE '%Generalüberholt%'`,
-          );
-          whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
-          whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
-        }
-      }
+const getCachedNew = async (
+  limit: number,
+  countryCode: string,
+  condition?: string,
+) => {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("new-products", limit.toString(), countryCode, condition || "any");
 
-      const prods = await db
+  await dbReady;
+  try {
+    const whereConditions: SQL[] = [];
+    if (condition) {
+      whereConditions.push(eq(products.condition, condition as any));
+      if (condition === "New") {
+        whereConditions.push(
+          sql`${products.title} NOT LIKE '%Generalüberholt%'`,
+        );
+        whereConditions.push(sql`${products.title} NOT LIKE '%erneuert%'`);
+        whereConditions.push(sql`${products.title} NOT LIKE '%Renewed%'`);
+      }
+    }
+
+    const prods = await withRetry(() =>
+      db
         .select(liteProductColumns)
         .from(products)
         .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
         .orderBy(desc(products.createdAt))
-        .limit(limit);
+        .limit(limit),
+    );
 
-      console.log(
-        `[DB DEBUG] getCachedNew found ${prods.length} products for ${countryCode} (condition: ${condition})`,
-      );
-      if (prods.length === 0) return [];
+    if (prods.length === 0) return [];
 
-      const ids = prods.map((p) => p.id);
-      const prs = await db
+    const ids = prods.map((p) => p.id);
+    const prs = await withRetry(() =>
+      db
         .select(litePriceColumns)
         .from(prices)
         .where(
           and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-        );
+        ),
+    );
 
-      const pricesByProduct = indexPricesById(prs);
-
-      // Group by parentAsin
-      const families = new Map<string, any[]>();
-      for (const p of prods) {
-        if (p.parentAsin) {
-          if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-          families.get(p.parentAsin)!.push(p);
-        }
-      }
-
-      return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
-    } catch (e) {
-      console.warn(
-        `[DB Warning] Failed to fetch new arrivals: ${e instanceof Error ? e.message : String(e)}`,
-      );
-      return [];
-    }
-  },
-  ["new-arrivals-v15"],
-  {
-    revalidate: CATEGORY_REVALIDATE_SECONDS,
-    tags: ["products", "new", "v15"],
-  },
-);
+    const pricesByProduct = indexPricesById(prs);
+    return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
+  } catch (e) {
+    console.warn(
+      `[DB Warning] Failed to fetch new products: ${e instanceof Error ? e.message : String(e)}`,
+    );
+    return [];
+  }
+};
 
 export async function getNewArrivals(
   limit: number = 8,

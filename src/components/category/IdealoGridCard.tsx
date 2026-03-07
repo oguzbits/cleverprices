@@ -22,6 +22,7 @@ import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
+import { getFamilyIdentity } from "@/lib/product-families";
 import { type LeanProduct } from "@/lib/types";
 import { formatCurrency, formatTechText } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
@@ -79,8 +80,26 @@ export function IdealoGridCard({
   const displayModelTitle = product.modelTitle || identity.modelTitle;
   const displayVariantSuffix = product.variantSuffix || identity.variantSuffix;
 
+  // For identity-driven categories, compute the canonical slug at render time.
+  // This makes the card immune to stale DB slugs or cached identity changes.
+  const IDENTITY_CATEGORIES = [
+    "smartphones",
+    "tablets",
+    "notebooks",
+    "laptops",
+    "handy",
+  ];
+  const useLiveSlug =
+    IDENTITY_CATEGORIES.includes(product.category || "") && !isHub;
+  const liveSlug = useLiveSlug
+    ? getFamilyIdentity(product as any, []).slug
+    : undefined;
+  const cardHref = liveSlug
+    ? `/p/${liveSlug}`
+    : getProductPath(product.id, product.slug);
+
   console.log(
-    `IdealoGridCard Render: ID: ${product.id} TITLE: ${product.title} isParentView: ${(product as any).isParentView} isHub: ${isHub} slug: ${product.slug}`,
+    `IdealoGridCard Render: ID: ${product.id} CAT: ${product.category} IDENTITY_MODEL: ${identity.modelTitle} SLUG: ${product.slug}`,
   );
 
   return (
@@ -93,7 +112,7 @@ export function IdealoGridCard({
       )}
     >
       <PrefetchLink
-        href={getProductPath(product.id, product.slug)}
+        href={cardHref}
         className={cn(
           "sr-resultItemTile sr-resultItemTile--GRID",
           "relative flex h-full flex-col",

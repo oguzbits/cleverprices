@@ -3,7 +3,7 @@
 import { client } from "@/db";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { searchProducts } from "@/lib/product-registry";
-import { unstable_cache } from "next/cache";
+import { cacheLife } from "next/cache";
 
 export interface SearchCategory {
   name: string;
@@ -268,31 +268,23 @@ const getInternalSearchResults = async (
  * Internal search function that hits the database.
  * Wrapped by unstable_cache for cross-user performance.
  */
-const getCachedSearchResults = unstable_cache(
-  async (query: string, limit: number): Promise<SearchResults> => {
-    return getInternalSearchResults(query, limit);
-  },
-  ["search-results-v5"], // Bumped version
-  {
-    revalidate: 3600, // Cache for 1 hour
-    tags: ["search"],
-  },
-);
-
-/**
- * LIVE Search Action
- */
 export const performSearch = async (
   query: string,
   limit: number = 6,
 ): Promise<SearchResults> => {
   if (!query || query.length < 2) return { categories: [], products: [] };
 
+  const cachedFetch = async () => {
+    "use cache";
+    cacheLife("category");
+    const _v = "v6"; // Version bump
+    return getInternalSearchResults(query, limit);
+  };
+
   try {
-    return await getCachedSearchResults(query, limit);
+    return await cachedFetch();
   } catch (error: any) {
     console.error(`Perform Search Crash [query="${query}"]:`, error.message);
-    // Fallback to fresh search if cache fails (though unlikely)
     return await getInternalSearchResults(query, limit);
   }
 };
