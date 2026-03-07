@@ -25,8 +25,9 @@ export class SmartphoneStrategy implements IdentityStrategy {
     // 1. Model extraction with Title vs Spec reconciliation
     // Model regex: handles digit-only, letter suffix (e/a/s), and named variants (Pro Max, Ultra, Air, etc.)
     // We allow iPhone Air/SE without numbers as they are valid standalone names.
+    // Expanded to cover Xperia, Redmi, Poco, Moto, etc.
     const titleModelMatch = title.match(
-      /\b(Pixel\s\d+[a-z]?(?:\s(?:Pro\sXL|Pro|XL|Fold|aFold))?|iPhone\s(?:\d+[a-z]?|Air|SE)(?:\s(?:Pro\sMax|Pro|Plus|Air))?|Galaxy\s(?:S|A|Z)\d+[a-z]?(?:\sPlus|\sUltra|\sFE|\sFold|\sFlip)?)\b/i,
+      /\b(Pixel\s\d+[a-z]?(?:\s(?:Pro\sXL|Pro|XL|Fold|aFold))?|iPhone\s(?:\d+[a-z]?|Air|SE)(?:\s(?:Pro\sMax|Pro|Plus|Air))?|Galaxy\s(?:S|A|Z)\d+[a-z]?(?:\sPlus|\sUltra|\sFE|\sFold|\sFlip)?|Xperia\s(?:\d+|[A-Z]+)\s?[A-Z]*\d*(?:\s(?:VI|VII|V|IV|III|II|I))?|Redmi\s(?:Note\s)?\d+[a-z]?(?:\s(?:Pro\+|Pro|Plus|Max|5G))?|Poco\s[A-Z]\d+(?:\s(?:Pro|GT|5G))?|Moto\s(?:G|Edge|Moto)\s?\d+[a-z]?(?:\s(?:Pro|Plus|Ultra|5G))?)\b/i,
     );
     const titleModel = titleModelMatch ? titleModelMatch[0] : null;
 

@@ -1375,10 +1375,55 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
   // Determine the primary source for identity extraction.
   // We prefer officialModel if available, otherwise we use the richest available title.
-  const longestTitle =
-    product.officialTitle &&
-    product.officialTitle.length > (product.title || "").length
+  // CRITICAL: Filter out "trash" titles that are SEO spam or accessories (e.g. "Smartphone Makro Objektiv für...")
+  const isTrashTitle = (t: string) => {
+    const low = t.toLowerCase();
+    const trashKeywords = [
+      "hülle",
+      "case",
+      "cover",
+      "schutz",
+      "folie",
+      "glas",
+      "panzerglas",
+      "kabel",
+      "adapter",
+      "stecker",
+      "ladegeraet",
+      "ladegerät",
+      "ersatz",
+      "objektiv",
+      "linse",
+      "makro",
+      "weitwinkel",
+      "halterung",
+      "fuer sony",
+      "fuer apple",
+      "fuer samsung",
+      "fuer iphone",
+      "fuer galaxy",
+      "für sony",
+      "für apple",
+      "für samsung",
+      "für iphone",
+      "für galaxy",
+      "for sony",
+      "for apple",
+      "for samsung",
+      "for iphone",
+      "for galaxy",
+    ];
+    return trashKeywords.some((k) => low.includes(k));
+  };
+
+  const officialTitle =
+    product.officialTitle && !isTrashTitle(product.officialTitle)
       ? product.officialTitle
+      : null;
+
+  const longestTitle =
+    officialTitle && officialTitle.length > (product.title || "").length
+      ? officialTitle
       : product.title || "";
 
   let baseTitle = officialModel || longestTitle;
