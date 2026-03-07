@@ -46,8 +46,30 @@ export function parseVariationAttributes(
  */
 export function parseCapacityToGB(val: string): number {
   const v = val.toLowerCase().trim();
-  const num = parseFloat(v.match(/[0-9.]+/)?.[0] || "0");
-  if (v.includes("tb")) return num * 1024;
+
+  // Extract numeric part robustly
+  // Handle "1.024" or "1,024" correctly for units TB/GB/MB
+  // If it's a 4-digit number with a dot (1.024), and we are looking at storage,
+  // it's likely a thousand-separator mistake in the source data.
+  let numStr = v.match(/[0-9.,]+/)?.[0] || "0";
+
+  // If the number is like "1.000" or "1.024" and followed by TB/GB/MB,
+  // we check if it's more likely a thousand separator.
+  if (/^\d\.\d{3}$/.test(numStr)) {
+    numStr = numStr.replace(".", "");
+  } else {
+    numStr = numStr.replace(",", ".");
+  }
+
+  const num = parseFloat(numStr);
+  if (v.includes("tb")) {
+    // HEURISTIC: If the number is >= 1000 and the unit is TB,
+    // it's almost certainly confused source data that meant GB.
+    // e.g. "1.024 TB" -> parsed as 1024 -> return 1024 GB (1 TB)
+    // e.g. "1024 TB" -> return 1024 GB (1 TB)
+    if (num >= 1000) return num;
+    return num * 1024;
+  }
   if (v.includes("mb")) return num / 1024;
   return num; // Default GB
 }

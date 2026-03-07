@@ -175,9 +175,9 @@ export function mapDbProduct(
 
       if (dbStorageGB !== targetCapacityGB) {
         // Correct the spec table to match the actual variation
-        const unit = targetCapacityGB >= 1000 ? "TB" : "GB";
+        const unit = targetCapacityGB >= 1024 ? "TB" : "GB";
         const val =
-          targetCapacityGB >= 1000 ? targetCapacityGB / 1000 : targetCapacityGB;
+          targetCapacityGB >= 1024 ? targetCapacityGB / 1024 : targetCapacityGB;
         rawSpecs["Speicherkapazität"] = `${val} ${unit}`;
 
         // Also update variation attributes in memory so identity logic is correct

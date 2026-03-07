@@ -1,6 +1,7 @@
 import { ProductIdentity, verifySpecModel } from "../product-identity";
 import {
   extractRealStorageFromTitle,
+  parseCapacityToGB,
   parseVariationAttributes,
 } from "../variants";
 import { IdentityStrategy } from "./types";
@@ -22,9 +23,10 @@ export class SmartphoneStrategy implements IdentityStrategy {
     const title = product.title || "";
 
     // 1. Model extraction with Title vs Spec reconciliation
-    // Model regex: handles digit-only, letter suffix (e/a/s), and named variants (Pro Max, Ultra, etc.)
+    // Model regex: handles digit-only, letter suffix (e/a/s), and named variants (Pro Max, Ultra, Air, etc.)
+    // We allow iPhone Air/SE without numbers as they are valid standalone names.
     const titleModelMatch = title.match(
-      /\b(Pixel\s\d+[a-z]?(?:\s(?:Pro\sXL|Pro|XL|Fold|aFold))?|iPhone\s\d+[a-z]?(?:\sPro\sMax|\sPro|\sPlus|\sAir)?|Galaxy\s(?:S|A|Z)\d+[a-z]?(?:\sPlus|\sUltra|\sFE|\sFold|\sFlip)?)\b/i,
+      /\b(Pixel\s\d+[a-z]?(?:\s(?:Pro\sXL|Pro|XL|Fold|aFold))?|iPhone\s(?:\d+[a-z]?|Air|SE)(?:\s(?:Pro\sMax|Pro|Plus|Air))?|Galaxy\s(?:S|A|Z)\d+[a-z]?(?:\sPlus|\sUltra|\sFE|\sFold|\sFlip)?)\b/i,
     );
     const titleModel = titleModelMatch ? titleModelMatch[0] : null;
 
@@ -40,12 +42,27 @@ export class SmartphoneStrategy implements IdentityStrategy {
       ? titleModel.slice(brand.length).trim()
       : titleModel;
 
-    if (
+    // CRYPTIC MODEL CHECK: If spec model is just a technical code (e.g. A3526, SM-S928B, A2633 (Cdma + Gsm))
+    // and we have a descriptive title model, prefer the title.
+    const isCrypticSpec =
+      /^A\d{4}/i.test(cleanSpec || "") || // Apple technical codes (A2633, A3526, etc.)
+      /^SM-[A-Z0-9]+$/i.test(cleanSpec || "") || // Samsung technical codes (SM-S928B)
+      (/^[A-Z0-9]{5,15}$/.test(cleanSpec || "") &&
+        !/[a-z]/.test(cleanSpec || "")); // General cryptic ALL-CAPS codes (PB7Y0043SE)
+
+    if (isCrypticSpec && titleModel) {
+      model = titleModel;
+    } else if (
       cleanTitle &&
       cleanSpec &&
-      cleanTitle.toLowerCase().includes(cleanSpec.toLowerCase()) &&
-      cleanTitle.length > cleanSpec.length
+      (cleanTitle.toLowerCase().includes(cleanSpec.toLowerCase()) ||
+        (cleanTitle.toLowerCase().includes("air") &&
+          cleanSpec.toLowerCase().includes("air"))) &&
+      (cleanTitle.length > cleanSpec.length ||
+        (cleanSpec.match(/\d+/) && !cleanTitle.match(/\d+/)))
     ) {
+      // Preference: Title-based model is preferred if it's more specific OR
+      // if the spec adds a version number (like iPhone 17 Air) that isn't in the title (iPhone Air)
       model = titleModel;
     } else if (!specModel && titleModel) {
       model = titleModel;
@@ -95,23 +112,31 @@ export class SmartphoneStrategy implements IdentityStrategy {
     // Attributes from variation attributes (Fallback)
     const attrs = parseVariationAttributes(product.variationAttributes);
 
-    const storage =
+    const storageRaw =
+      attrs.Storage ||
+      attrs.Speicher ||
       realVal(specs.storage) ||
       realVal(specs.Storage) ||
       realVal(specs["Interner Speicher"]) ||
       realVal(specs["Interne Speicherkapazität"]) ||
-      attrs.Storage ||
-      attrs.Speicher ||
       extractRealStorageFromTitle(title);
 
+    // Normalize storage (e.g. 1.024 TB -> 1 TB)
+    let storage = storageRaw;
+    if (storageRaw) {
+      const gb = parseCapacityToGB(storageRaw);
+      if (gb >= 1024) storage = `${gb / 1024} TB`;
+      else if (gb > 0) storage = `${gb} GB`;
+    }
+
     let color =
+      attrs.Color ||
+      attrs.Farbe ||
       realVal(specs.color) ||
       realVal(specs.Color) ||
       realVal(specs["Farbe"]) ||
       realVal(specs["Produktfarbe"]) ||
-      realVal(specs["Gehäusefarbe"]) ||
-      attrs.Color ||
-      attrs.Farbe;
+      realVal(specs["Gehäusefarbe"]);
 
     // Title-based color recovery for smartphones.
     // Triggered when specs have no color OR only a placeholder value.
@@ -220,4 +245,5 @@ export class SmartphoneStrategy implements IdentityStrategy {
     };
   }
 }
+
 

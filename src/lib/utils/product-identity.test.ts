@@ -196,6 +196,32 @@ describe("getProductIdentity", () => {
     // 'with' would have been stripped in the old-path.
     expect(identity.model).toBe("AirPods 4 with Active Noise Cancellation");
   });
+
+  it("should override cryptic technical model codes (e.g. A3526) with title-extracted model", () => {
+    const product = {
+      title: "Apple iPhone 17 Pro Max 256 GB Tiefblau",
+      brand: "Apple",
+      category: "smartphones",
+      officialSpecifications: {
+        Modell: "A3526",
+      },
+    };
+    const identity = getProductIdentity(product);
+    expect(identity.model).toBe("iPhone 17 Pro Max");
+  });
+
+  it("should override technical model codes with suffixes (e.g. A2633 (Cdma + Gsm))", () => {
+    const product = {
+      title: "Apple iPhone 13, 128GB, Mitternacht (Generalüberholt)",
+      brand: "Apple",
+      category: "smartphones",
+      officialSpecifications: {
+        Modell: "A2633 (Cdma + Gsm)",
+      },
+    };
+    const identity = getProductIdentity(product);
+    expect(identity.model).toBe("iPhone 13");
+  });
 });
 
 describe("dynamic spec vs version checking", () => {
@@ -447,5 +473,17 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
     const identity = getProductIdentity(product as any);
     expect(identity.modelTitle).not.toContain("SODIMM");
     expect(identity.modelTitle).toBe("Crucial 16GB DDR4-3200 CL22");
+  });
+
+  it("should normalize storage capacity in smartphones (e.g. 1.024 TB -> 1 TB)", () => {
+    const product = {
+      title: "Apple iPhone 17 Pro 1.024 TB Tiefblau",
+      brand: "Apple",
+      category: "smartphones",
+      variationAttributes: "Farbe: Tiefblau; Storage: 1.024 TB",
+    };
+    const identity = getProductIdentity(product as any);
+    expect(identity.variantMap.storage).toBe("1 TB");
+    expect(identity.variantSuffix).toContain("1 TB");
   });
 });

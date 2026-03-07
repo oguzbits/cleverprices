@@ -40,7 +40,7 @@ async function getCachedBestDeals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("category");
@@ -51,7 +51,7 @@ async function getCachedMostPopular(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("category");
@@ -62,7 +62,7 @@ async function getCachedNewArrivals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("category");
@@ -72,7 +72,7 @@ async function getCachedNewArrivals(
 async function getCachedDiverseMostPopular(
   itemsPerCategory: number,
   countryCode: string,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("category");
@@ -82,14 +82,14 @@ async function getCachedDiverseMostPopular(
 async function getCachedProductBySlug(
   slug: string,
   includeHistory: boolean,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("product");
   return getProductBySlugSync(slug, includeHistory);
 }
 
-async function getCachedProductById(id: number, _version: string = "v205") {
+async function getCachedProductById(id: number, _version: string = "v211") {
   "use cache";
   cacheLife("product");
   return getProductByIdSync(id);
@@ -99,7 +99,7 @@ async function getCachedProductVariantsInternal(
   parentAsin: string,
   countryCode: string,
   skipFullMapping: boolean = false,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("product");
@@ -116,7 +116,7 @@ async function getCachedSimilarProducts(
   targetPrice: number,
   limit: number,
   countryCode: string,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("product");
@@ -134,7 +134,7 @@ async function getCachedSimilarProducts(
 
 async function getCachedProductSlugByAsinSuffix(
   oldSlug: string,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("category"); // Redirects can be cached for a long time
@@ -143,7 +143,7 @@ async function getCachedProductSlugByAsinSuffix(
 
 async function getCachedProductByParentAsinSuffix(
   slug: string,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("category");
@@ -152,7 +152,7 @@ async function getCachedProductByParentAsinSuffix(
 
 async function getCachedProductBySyntheticId(
   id: number,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("product");
@@ -172,7 +172,7 @@ export async function getProductById(
 async function getCachedProductSlugs(
   limit?: number,
   includeVariants: boolean = false,
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("dynamic");
@@ -195,7 +195,7 @@ export async function getAllProductSlugs(
 }
 
 export async function getNonEmptyCategorySlugs(
-  _version: string = "v205",
+  _version: string = "v211",
 ): Promise<string[]> {
   const cachedFetch = async () => {
     "use cache";
@@ -315,7 +315,7 @@ export async function getProductVariants(
 export async function getPDPRenderData(
   slug: string,
   countryCode: string = "de",
-  _version: string = "v205",
+  _version: string = "v211",
 ) {
   "use cache";
   cacheLife("product");
@@ -334,8 +334,12 @@ export async function getPDPRenderData(
       // Hub Mode
       product = await getCachedProductBySyntheticId(id);
       if (product) {
-        // Robust slug check: allow match if slug text or ID prefix matches (helps with synthetic slugs)
-        const isSlugMatch = product.slug === slug || product.id === id;
+        // Strict slug check for Hubs: ensure the text part matches the canonical version
+        const isSlugMatch = product.slug === slug;
+
+        if (id === 900003105) {
+          console.log(`[TRACE 3105 Hub] URL Slug: ${slug}, Canonical Slug: ${product.slug}, Match: ${isSlugMatch}`);
+        }
 
         if (isSlugMatch) {
           const rawVariants = await getCachedProductVariantsInternal(

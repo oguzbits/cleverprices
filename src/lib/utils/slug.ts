@@ -17,6 +17,7 @@
  * // → "samsung-990-pro-4tb-6dd1"
  */
 import { getProductIdentity } from "./product-identity";
+import { parseCapacityToGB } from "./variants";
 
 /**
  * Generate URL-safe slug from title with uniqueness guarantee.
@@ -87,10 +88,14 @@ export function generateProductSlug(
 
   if (attributes?.size) addIfNew(attributes.size);
   if (attributes?.storage) {
-    // Ensure storage has unit if missing (simple heuristic)
-    let s = attributes.storage;
-    if (/^\d+$/.test(s)) s += "gb";
-    addIfNew(s);
+    // Robust normalization for storage slugs
+    const gb = parseCapacityToGB(attributes.storage);
+    if (gb > 0) {
+      if (gb >= 1024) addIfNew(`${gb / 1024}tb`);
+      else addIfNew(`${gb}gb`);
+    } else {
+      addIfNew(attributes.storage);
+    }
   }
   if (attributes?.ram) addIfNew(attributes.ram);
   if (attributes?.color) addIfNew(attributes.color);

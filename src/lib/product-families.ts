@@ -139,7 +139,7 @@ export function getFamilyIdentity(
     // Use the unified variant suffix as the slug differentiator
     variantPart = normalizeAccents(identity.variantSuffix)
       .toLowerCase()
-      .replace(/(\d+)\s*(GB|TB|MB|WH)/gi, "$1$2") // Collapse only pure capacity units
+      .replace(/\b(\d+)\s*(GB|TB|MB|WH)\b/gi, "$1$2") // Collapse only pure capacity units
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "");
   }
