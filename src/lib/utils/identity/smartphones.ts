@@ -29,18 +29,37 @@ export class SmartphoneStrategy implements IdentityStrategy {
       specs["Interner Speicher"] ||
       extractRealStorageFromTitle(title);
 
-    let color = specs.color || specs.Color || specs["Farbe"];
+    let color =
+      specs.color ||
+      specs.Color ||
+      specs["Farbe"] ||
+      specs["Produktfarbe"] ||
+      specs["Gehäusefarbe"];
 
     // Title-based color recovery for smartphones
     if (!color) {
       const commonColors = [
+        "Titanium Gray",
+        "Titanium Grey",
+        "Titanium Black",
+        "Titanium Blue",
+        "Titanium Violet",
+        "Titanium Yellow",
+        "Titanium Green",
+        "Titanium Orange",
+        "Space Gray",
+        "Space Grey",
         "Obsidian",
         "Hazel",
         "Porcelain",
-        "Rose",
+        "Peony",
+        "Iris",
+        "Wintergreen",
+        "Rose Quartz",
+        "Aloe",
         "Mint",
         "Bay",
-        "Aloe",
+        "Rose",
         "Titanium",
         "Black",
         "White",
@@ -54,8 +73,6 @@ export class SmartphoneStrategy implements IdentityStrategy {
         "Graphite",
         "Midnight",
         "Starlight",
-        "Space Gray",
-        "Space Grey",
         "Natural",
         "Desert",
       ];

@@ -168,17 +168,22 @@ export function mapRawToLocalizedProduct(
   const modelTitle = p.modelTitle || identity.modelTitle;
   const variantSuffix = p.variantSuffix || identity.variantSuffix;
 
-  const isRamCategory =
-    actualCategory === "arbeitsspeicher" || actualCategory === "ram";
+  const useIdentityForDisplay = [
+    "arbeitsspeicher",
+    "ram",
+    "smartphones",
+    "tablets",
+    "notebooks",
+  ].includes(actualCategory);
+
   let displayTitle = title;
-  // RAM: use Idealo-style clean title and compute canonical slug at runtime
+  // Use identity-style clean title and compute canonical slug at runtime
   // so category card links always match the PDP URL (avoids stale-DB-slug redirects)
   let canonicalSlug = p.slug;
-  if (isRamCategory) {
+  if (useIdentityForDisplay) {
     displayTitle = identity.displayTitle;
-    // getFamilyIdentity produces the same slug the PDP uses — use it for the card link
-    const ramFamilyIdentity = getFamilyIdentity({ ...p, title }, []);
-    canonicalSlug = ramFamilyIdentity.slug;
+    const variantFamilyIdentity = getFamilyIdentity({ ...p, title }, []);
+    canonicalSlug = variantFamilyIdentity.slug;
   }
 
   // Filter out products with no valid price - they shouldn't appear in listings
@@ -394,7 +399,7 @@ export function mapRawToLocalizedProduct(
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v97", // Cache buster
+  version: string = "v99", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
@@ -425,7 +430,7 @@ export async function getCachedLocalizedCategoryProducts(
 export async function getLeanCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v97",
+  version: string = "v99",
 ) {
   "use cache";
   cacheLife("category");
@@ -659,7 +664,7 @@ export async function getCategoryProducts(
   const leanProducts = await getLeanCategoryProducts(
     categorySlug,
     countryCode,
-    "v58",
+    "v99",
   );
 
   const category = allCategories[categorySlug as CategorySlug];
