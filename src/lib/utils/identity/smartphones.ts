@@ -12,6 +12,7 @@ export class SmartphoneStrategy implements IdentityStrategy {
     const specModel =
       specs.model ||
       specs.Model ||
+      specs["Modell"] ||
       specs["Modellbezeichnung"] ||
       specs["Marketingname"];
     const brand = product.brand || "";
@@ -27,12 +28,51 @@ export class SmartphoneStrategy implements IdentityStrategy {
       specs.Storage ||
       specs["Interner Speicher"] ||
       extractRealStorageFromTitle(title);
-    const color = specs.color || specs.Color || specs["Farbe"];
+
+    let color = specs.color || specs.Color || specs["Farbe"];
+
+    // Title-based color recovery for smartphones
+    if (!color) {
+      const commonColors = [
+        "Obsidian",
+        "Hazel",
+        "Porcelain",
+        "Rose",
+        "Mint",
+        "Bay",
+        "Aloe",
+        "Titanium",
+        "Black",
+        "White",
+        "Blue",
+        "Green",
+        "Pink",
+        "Yellow",
+        "Purple",
+        "Gold",
+        "Silver",
+        "Graphite",
+        "Midnight",
+        "Starlight",
+        "Space Gray",
+        "Space Grey",
+        "Natural",
+        "Desert",
+      ];
+      const lowerTitle = title.toLowerCase();
+      for (const c of commonColors) {
+        if (lowerTitle.includes(c.toLowerCase())) {
+          color = c;
+          break;
+        }
+      }
+    }
+
     const ram = specs.ram || specs.RAM || specs["Arbeitsspeicher (RAM)"];
 
     const variantMap: Record<string, string> = {};
-    if (storage) variantMap.storage = String(storage);
     if (color) variantMap.color = String(color);
+    if (storage) variantMap.storage = String(storage);
     if (ram) variantMap.ram = String(ram);
 
     return {

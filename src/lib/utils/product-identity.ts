@@ -340,6 +340,14 @@ export function verifySpecModel(
     }
   }
 
+  // Symmetric Check: If Candidate has a differentiator (9a) that Title is missing (9)
+  for (const d of diffsCand) {
+    if (!diffsTitle.includes(d)) {
+      const base = d.replace(/[a-z]+$/i, "");
+      if (titleTokens.includes(base)) return false;
+    }
+  }
+
   // B. Numeric Version mismatch (e.g. Title says 15, Candidate says 14)
   const getVersions = (tokens: string[]) =>
     tokens
@@ -857,27 +865,44 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     if (strategyResult && strategyResult.model) {
       const brand = normalizeBrand(rawBrand, product.title, category);
-      const model = strategyResult.model;
+      let model = strategyResult.model;
+
+      // Deduplicate brand from model
+      const brandLower = brand.toLowerCase();
+      if (model.toLowerCase().startsWith(brandLower)) {
+        model = model.slice(brand.length).trim();
+      }
+
       const variantMap = strategyResult.variantMap || {};
+
+      const variantValues = Object.values(variantMap).filter(Boolean);
+      const isSmartphone = category === "smartphones" || category === "handy";
+      const variantSuffix = isSmartphone
+        ? variantValues.join(" ").trim()
+        : variantValues.length > 0
+          ? ` (${variantValues.join(", ")})`
+          : "";
+
+      const modelTitle = `${brand} ${model}`.trim();
+      const displayTitle = variantSuffix
+        ? `${modelTitle} ${variantSuffix}`
+        : modelTitle;
 
       return {
         brand,
         model,
-        fullModel: strategyResult.fullModel || model,
+        fullModel: strategyResult.fullModel || displayTitle,
         shortModel: strategyResult.shortModel || model.split(" ")[0],
-        variantLabel: Object.values(variantMap).join(" / "),
+        variantLabel: variantValues.join(" / "),
         variantMap,
-        displayTitle: `${brand} ${model}`,
-        modelTitle: `${brand} ${model}`,
-        variantSuffix:
-          Object.values(variantMap).length > 0
-            ? ` (${Object.values(variantMap).join(", ")})`
-            : "",
-        variantTokens: Object.values(variantMap).flatMap((v) =>
+        displayTitle,
+        modelTitle,
+        variantSuffix,
+        variantTokens: variantValues.flatMap((v) =>
           v.toLowerCase().split(/\s+/),
         ),
-        traitCount: strategyResult.traitCount || 1,
-        isHighVariance: category === "smartphones",
+        traitCount: strategyResult.traitCount || variantValues.length,
+        isHighVariance: isSmartphone,
         isLaptop: category === "laptops" || category === "notebooks",
         categoryUsed: category,
         mpn: product.mpn || undefined,
@@ -1894,6 +1919,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const modelNorm = hubModelName.toLowerCase().replace(/[^a-z0-9]/g, "");
 
     // Bi-directional inclusion check: prevent "iPhone" in "iPhone 15" AND "iPhone 15" in "iPhone"
+    // (This is a second pass after stripping, mainly for units/numbers)
     if (
       valNorm &&
       (modelNorm.includes(valNorm) || valNorm.includes(modelNorm)) &&
@@ -1909,6 +1935,18 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
 
     displayVal = cleanedDisplayVal;
+
+    // [EARLY REDUNDANCY CHECK] Use original trait (before stripping) to catch subtler conflicts
+    // e.g. Model "Pixel 9a" vs Trait "Pixel 9" should be seen as redundant/conflicting
+    const rawValNorm = val.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    if (
+      rawValNorm &&
+      (modelNorm.includes(rawValNorm) || rawValNorm.includes(modelNorm)) &&
+      !/^\d+$/.test(rawValNorm)
+    ) {
+      return;
+    }
 
     // Special: Redundant trait stripping
     // e.g. "AirPods Max 2024" + "USB-C" -> "USB-C" is redundant for the 2024 model

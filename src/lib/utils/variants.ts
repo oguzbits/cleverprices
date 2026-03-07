@@ -295,6 +295,13 @@ const SmartphoneStrategy: NormalizationStrategy = (key, value, ctx) => {
       effectiveColor.toLowerCase().includes("titanium")
     ) {
       const specifics = [
+        "Obsidian",
+        "Hazel",
+        "Porcelain",
+        "Bay",
+        "Rose",
+        "Mint",
+        "Aloe",
         "Silverblue",
         "Whitesilver",
         "Gray",
