@@ -222,6 +222,22 @@ describe("getProductIdentity", () => {
     const identity = getProductIdentity(product);
     expect(identity.model).toBe("iPhone 13");
   });
+
+  it("should reject 'Ghost Specs' that have zero overlap with title (e.g. Lalaloopsy on iPhone)", () => {
+    const product = {
+      title: "Apple iPhone 15 128 GB - Blau (Generalüberholt)",
+      brand: "Apple",
+      category: "smartphones",
+      officialSpecifications: {
+        Marke: "Rubie's",
+        Modell: "Lalaloopsy Mittens Deluxe",
+      },
+    };
+    const identity = getProductIdentity(product);
+    // Should NOT use "Lalaloopsy", but fallback to title-based "iPhone 15"
+    expect(identity.model).toBe("iPhone 15");
+    expect(identity.model).not.toContain("Lalaloopsy");
+  });
 });
 
 describe("dynamic spec vs version checking", () => {

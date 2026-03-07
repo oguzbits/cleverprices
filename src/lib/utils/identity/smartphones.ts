@@ -1,4 +1,8 @@
-import { ProductIdentity, verifySpecModel } from "../product-identity";
+import {
+  getProductIdentity,
+  getCleanTokens,
+  verifySpecModel,
+} from "../product-identity";
 import {
   extractRealStorageFromTitle,
   parseCapacityToGB,
@@ -79,7 +83,7 @@ export class SmartphoneStrategy implements IdentityStrategy {
       brand.toLowerCase() === "samsung";
 
     if (!verifySpecModel(model, title, brand)) {
-      // If verification fails, we STILL check for brand mismatch even for high confidence brands
+      // If verification fails, we STILL check for brand mismatch or absolute lack of overlap
       const candLower = model.toLowerCase();
       const otherBrands = [
         "apple",
@@ -96,12 +100,26 @@ export class SmartphoneStrategy implements IdentityStrategy {
         "xiaomi",
         "motorola",
         "nokia",
+        "rubie", // Added from the 'Lalaloopsy' ghost spec case
+        "disney",
+        "lego",
+        "hasbro",
+        "mattel",
       ];
       const hasBrandMismatch = otherBrands.some(
         (b) => candLower.includes(b) && brandLower !== b,
       );
 
-      if (hasBrandMismatch || !isHighConfidenceBrand) {
+      // Strict Overlap Check: Even for high confidence brands, there must be AT LEAST one common token
+      // (excluding the brand itself) to prevent "wildly wrong" spec assignments.
+      const tokensCand = getCleanTokens(model);
+      const tokensTitle = getCleanTokens(title);
+      const overlap = tokensCand.filter(
+        (t) => tokensTitle.includes(t) && t !== brandLower,
+      );
+      const hasZeroOverlap = overlap.length === 0;
+
+      if (hasBrandMismatch || !isHighConfidenceBrand || hasZeroOverlap) {
         return null;
       }
     }
