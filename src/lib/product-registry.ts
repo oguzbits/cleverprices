@@ -362,7 +362,7 @@ export async function getAllProductSlugs(
 > {
   try {
     let query = db
-      .select()
+      .select(filteringProductColumns)
       .from(products)
       .orderBy(
         // 1. Optimized products first (Google loves specifications)
@@ -440,108 +440,103 @@ export async function getAllProductSlugs(
     });
 
     // 3. SEO BONUS: Include Hub (Parent) pages
-    // These are "Alle Varianten" pages (ID prefix 900M).
-    // We join to get the title of the MIN(id) product (canonical representative).
-    // Fetch all variants grouped by parentAsin to ensure we pick the SAME representative as the PDP.
-    // We join prices with de country to match the getFamilyRepresentative logic.
-    // Selecting all core fields ensures mapDbProduct has everything it needs for tech identity repairs.
-    const familyRawResults = await db
-      .select({
-        product: products,
-        price: prices.price,
-        country: prices.country,
-        usedPrice: prices.usedPrice,
-        priceAvg90: prices.priceAvg90,
-        listPrice: prices.listPrice,
-        pricePerUnit: prices.pricePerUnit,
-      })
+    // We only need to fetch enough data to reconstruct technical identities for Hubs.
+    // Instead of fetching all variants for all families (which is massive),
+    // we fetch only families that have at least one variant with a price (Germany).
+    const familiesWithPrice = await db
+      .select({ parentAsin: products.parentAsin })
       .from(products)
-      .leftJoin(
+      .innerJoin(
         prices,
         and(eq(products.id, prices.productId), eq(prices.country, "de")),
       )
       .where(
-        inArray(
-          products.parentAsin,
-          db
-            .select({ p: products.parentAsin })
-            .from(products)
-            .where(isNotNull(products.parentAsin))
-            .groupBy(products.parentAsin)
-            .having(sql`COUNT(*) > 1`),
+        and(
+          isNotNull(products.parentAsin),
+          or(gt(prices.price, 0), gt(prices.usedPrice, 0)),
         ),
-      );
+      )
+      .groupBy(products.parentAsin)
+      .having(sql`COUNT(*) > 1`);
 
-    const familyVariants = familyRawResults.map((r) => ({
-      ...r.product,
-      price: r.price,
-      country: r.country,
-      usedPrice: r.usedPrice,
-      priceAvg90: r.priceAvg90,
-      listPrice: r.listPrice,
-      pricePerUnit: r.pricePerUnit,
-    }));
+    const parentAsins = familiesWithPrice
+      .map((f) => f.parentAsin)
+      .filter(Boolean) as string[];
 
-    // Group variants by parentAsin
-    const familyMap = new Map<string, any[]>();
-    for (const v of familyVariants) {
-      if (!v.parentAsin) continue;
-      if (!familyMap.has(v.parentAsin)) familyMap.set(v.parentAsin, []);
-      familyMap.get(v.parentAsin)!.push(v);
-    }
+    if (parentAsins.length > 0) {
+      // Chunk the parentAsins to avoid SQL variable limit issues and manage memory
+      const CHUNK_SIZE = 100;
+      for (let i = 0; i < parentAsins.length; i += CHUNK_SIZE) {
+        const chunk = parentAsins.slice(i, i + CHUNK_SIZE);
+        const familyRawResults = await db
+          .select({
+            product: filteringProductColumns,
+            price: prices.price,
+            country: prices.country,
+            usedPrice: prices.usedPrice,
+          })
+          .from(products)
+          .leftJoin(
+            prices,
+            and(eq(products.id, prices.productId), eq(prices.country, "de")),
+          )
+          .where(
+            and(inArray(products.parentAsin, chunk), eq(prices.country, "de")),
+          );
 
-    // Process each family to determine Hub slug.
-    for (const [parentAsin, rawVariants] of familyMap.entries()) {
-      // 1. Process variants for technical mapping (necessary for representative selection)
-      const allMapped = rawVariants.map((r) => {
-        const priceArray =
-          r.price || r.usedPrice
-            ? [
-                {
-                  price: r.price,
-                  usedPrice: r.usedPrice,
-                  country: r.country,
-                  priceAvg90: r.priceAvg90,
-                  listPrice: r.listPrice,
-                  pricePerUnit: r.pricePerUnit,
-                },
-              ]
-            : [];
-        return mapDbProduct(r as any, priceArray as any[], [], false);
-      });
+        // Group variants by parentAsin
+        const familyMap = new Map<string, any[]>();
+        for (const r of familyRawResults) {
+          if (!r.product.parentAsin) continue;
+          if (!familyMap.has(r.product.parentAsin))
+            familyMap.set(r.product.parentAsin, []);
+          familyMap.get(r.product.parentAsin)!.push({
+            ...r.product,
+            price: r.price || 0,
+            usedPrice: r.usedPrice || 0,
+            country: r.country,
+          });
+        }
 
-      // Filter to only variants that have a price in DE, matching PDP logic
-      const mappedVariants = allMapped.filter(
-        (v) => (v.prices?.de || 0) > 0 || (v.usedPrices?.de || 0) > 0,
-      );
+        // Process each family in the current chunk
+        for (const [parentAsin, rawVariants] of familyMap.entries()) {
+          const allMapped = rawVariants.map((r) => {
+            const priceArray =
+              r.price > 0 || r.usedPrice > 0
+                ? [
+                    {
+                      price: r.price,
+                      usedPrice: r.usedPrice,
+                      country: r.country,
+                    },
+                  ]
+                : [];
+            return mapDbProduct(r as any, priceArray as any, [], false);
+          });
 
-      if (mappedVariants.length === 0) continue;
+          const mappedVariants = allMapped.filter(
+            (v) => (v.prices?.de || 0) > 0 || (v.usedPrices?.de || 0) > 0,
+          );
+          if (mappedVariants.length <= 1) continue; // Skip singletons after price filter
 
-      // 2. Determine Hub Representative and Slug
-      // WE USE THE STABLE MIN-ID variant as the identity source for the Hub.
-      // This ensures canonical stability even if prices fluctuate or tie.
-      // We must pick from allMapped (regardless of price) to match getCanonicalFamilyId!
-      const rep = [...allMapped].sort((a, b) => (a.id || 0) - (b.id || 0))[0];
-      const syntheticId = 900000000 + (rep.id || 0);
+          const rep = [...allMapped].sort(
+            (a, b) => (a.id || 0) - (b.id || 0),
+          )[0];
+          const syntheticId = 900000000 + (rep.id || 0);
+          const { slug: hubSlug } = getFamilyIdentity(
+            { ...rep, id: syntheticId, isParentView: true } as any,
+            mappedVariants,
+          );
 
-      const { slug: hubSlug } = getFamilyIdentity(
-        {
-          ...rep,
-          id: syntheticId,
-          isParentView: true,
-        } as any,
-        mappedVariants,
-      );
-
-      // ONLY add the Hub page to the sitemap.
-      // Individual variants redirect to this Hub and shouldn't be in the sitemap.
-      results.push({
-        id: syntheticId,
-        slug: hubSlug,
-        category: rep.category || "unknown",
-        enrichmentStatus: "optimized",
-        updatedAt: new Date(),
-      });
+          results.push({
+            id: syntheticId,
+            slug: hubSlug,
+            category: rep.category || "unknown",
+            enrichmentStatus: "optimized",
+            updatedAt: new Date(),
+          });
+        }
+      }
     }
 
     return results;

@@ -338,7 +338,9 @@ export async function getPDPRenderData(
         const isSlugMatch = product.slug === slug;
 
         if (id === 900003105) {
-          console.log(`[TRACE 3105 Hub] URL Slug: ${slug}, Canonical Slug: ${product.slug}, Match: ${isSlugMatch}`);
+          console.log(
+            `[TRACE 3105 Hub] URL Slug: ${slug}, Canonical Slug: ${product.slug}, Match: ${isSlugMatch}`,
+          );
         }
 
         if (isSlugMatch) {
@@ -567,7 +569,16 @@ export async function getPDPRenderData(
     }
   }
 
-  if (!product) return null;
+  if (!product) {
+    const idValue = idMatch ? parseInt(idMatch[1]) : 0;
+    if (idValue >= 200000000 && idValue < 1000000000) {
+      // 500 is safer for SEO than 404 for existing IDs if the DB is under load
+      throw new Error(
+        `Product match failed for ID prefix: ${idValue}. This is likely a transient database connection issue under high load.`,
+      );
+    }
+    return null;
+  }
 
   // 2. Fetch Dependent Data in Parallel (Only if still here)
   let variants: Product[] = [];

@@ -156,6 +156,8 @@ export const filteringProductColumns = {
   officialSpecifications: products.officialSpecifications,
   specificationsSource: products.specificationsSource,
   officialTitle: products.officialTitle,
+  enrichmentStatus: products.enrichmentStatus,
+  updatedAt: products.updatedAt,
 };
 
 export interface Product {

@@ -31,9 +31,14 @@ const limit = limitArg ? parseInt(limitArg) : Infinity;
 const concurrencyArg = args
   .find((a) => a.startsWith("--concurrency="))
   ?.split("=")[1];
-const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : 5;
+
+// LOCAL SAFETY: Default to 2 concurrency for local to prevent OOM/Next.js freeze
+const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : isProd ? 5 : 2;
+
 const delayArg = args.find((a) => a.startsWith("--delay="))?.split("=")[1];
-const DELAY = delayArg ? parseInt(delayArg) : 0;
+// DEFAULT DELAY: 100ms for prod, 50ms for local to be gentler on the server
+const DEFAULT_DELAY = isProd ? 100 : 50;
+const DELAY = delayArg ? parseInt(delayArg) : DEFAULT_DELAY;
 
 export async function validateSitemap() {
   const targetSitemap = isProd
@@ -258,8 +263,14 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
 
       const status = res.status;
 
-      // AUTO-RETRY ON 404 (Transient load issue protection)
-      if (status === 404 && attempt < retries - 1) {
+      if ((status === 404 || status >= 500) && attempt < retries - 1) {
+        if (status >= 500) {
+          console.log(
+            `${COLORS.red}[${status}]${COLORS.reset} Transient Server Error. Retrying...`,
+          );
+        }
+        // Exponential backoff
+        await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
         continue;
       }
 
