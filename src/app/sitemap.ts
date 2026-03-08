@@ -12,7 +12,6 @@ import {
 import { SITE_URL } from "@/lib/site-config";
 import { getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
-import { cacheLife } from "next/cache";
 
 /**
  * ARCHITECTURE NOTE:
@@ -24,10 +23,6 @@ import { cacheLife } from "next/cache";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  "use cache";
-  cacheLife("dynamic"); // 10m revalidate, 1h expire (aligned with next.config.ts)
-  const _version = "v101"; // Cache buster
-
   const baseUrl = SITE_URL;
 
   // Static routes
@@ -90,8 +85,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   // Product pages - high priority for SEO
-  // TACTICAL FLOODING: We include ALL products (including variants) to help Google discover the new URL structure.
-  const allProducts = await getAllProductSlugs(undefined, true);
+  // CLEAN SITEMAP: We exclude variants (they redirect to Hubs) to prevent 'Redirect error' in GSC.
+  const allProducts = await getAllProductSlugs(undefined, false);
   // SEO SAFETY: Only include products that have reached "optimized" status (enriched with Icecat/eBay)
   // This ensures Google only committed to stable, high-quality URLs.
   const products = allProducts.filter(
