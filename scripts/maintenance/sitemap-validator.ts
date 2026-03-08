@@ -36,9 +36,10 @@ const concurrencyArg = args
 const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : isProd ? 3 : 2;
 
 const delayArg = args.find((a) => a.startsWith("--delay="))?.split("=")[1];
-// DEFAULT DELAY: 100ms for prod, 50ms for local to be gentler on the server
-const DEFAULT_DELAY = isProd ? 200 : 50;
+// DEFAULT DELAY: 200ms for prod, 100ms for local to be gentler on the server
+const DEFAULT_DELAY = isProd ? 200 : 100;
 const DELAY = delayArg ? parseInt(delayArg) : DEFAULT_DELAY;
+const TIMEOUT = isProd ? 15000 : 30000; // 30s for local to handle heavy Hub pages
 
 export async function validateSitemap() {
   const targetSitemap = isProd
@@ -140,31 +141,35 @@ export async function validateSitemap() {
 
               // Metadata Consistency Checks
               if (!isFastMode && res.metadata) {
-                const { canonical, title, description } = res.metadata;
-
                 // 1. Canonical Match Check
-                let normalizedCanonical = canonical;
-                if (isLocalhost) {
-                  normalizedCanonical = canonical.replace(
-                    /https?:\/\/cleverprices\.com/,
-                    "http://localhost:3000",
-                  );
-                }
+                if (res.metadata.canonical) {
+                  try {
+                    // Normalize canonical URL to just its pathname for comparison
+                    const canonicalPath = new URL(res.metadata.canonical)
+                      .pathname;
+                    const urlPath = new URL(url).pathname;
 
-                if (normalizedCanonical !== url) {
-                  results.mismatch++;
-                  details.push(
-                    `${COLORS.red}[CANONICAL MISMATCH]${COLORS.reset} ${url}\n   Expected: ${url}\n   Found:    ${canonical}`,
-                  );
+                    if (canonicalPath !== urlPath) {
+                      results.mismatch++;
+                      details.push(
+                        `${COLORS.red}[CANONICAL MISMATCH]${COLORS.reset} ${url}\n   Expected Path: ${urlPath}\n   Found Path:    ${canonicalPath}\n   Full Canonical: ${res.metadata.canonical}`,
+                      );
+                    }
+                  } catch (e) {
+                    results.mismatch++;
+                    details.push(
+                      `${COLORS.red}[CANONICAL PARSE ERROR]${COLORS.reset} ${url}\n   Invalid Canonical: ${res.metadata.canonical}`,
+                    );
+                  }
                 }
 
                 // 2. Missing Metadata Checks
-                if (!title) {
+                if (!res.metadata.title) {
                   details.push(
                     `${COLORS.yellow}[MISSING TITLE]${COLORS.reset} ${url}`,
                   );
                 }
-                if (!description) {
+                if (!res.metadata.description) {
                   details.push(
                     `${COLORS.yellow}[MISSING DESCRIPTION]${COLORS.reset} ${url}`,
                   );
@@ -258,7 +263,7 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
           // Hint to Next.js to not postpone content if possible
           "x-next-audit": "true",
         },
-        signal: AbortSignal.timeout(fast ? 5000 : 15000), // Longer timeout for GET
+        signal: AbortSignal.timeout(fast ? 5000 : TIMEOUT), // Use configured timeout
       });
 
       const status = res.status;

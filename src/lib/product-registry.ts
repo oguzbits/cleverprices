@@ -453,6 +453,7 @@ export async function getAllProductSlugs(
       .where(
         and(
           isNotNull(products.parentAsin),
+          sql`${products.parentAsin} != ''`,
           or(gt(prices.price, 0), gt(prices.usedPrice, 0)),
         ),
       )

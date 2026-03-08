@@ -319,7 +319,7 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   cacheLife("product");
-  const _v = "v75-final-stable-ids"; // Cache bust to ensure 404 -> 500 fix takes effect
+  const _v = "v76-final-stable-ids"; // Cache bust to ensure 404 -> 500 fix takes effect
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
