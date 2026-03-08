@@ -1,4 +1,4 @@
-import { cacheLife } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { getCategoryBySlug } from "../categories";
 import { type CountryCode } from "../countries";
 import { dataAggregator } from "../data-sources";
@@ -172,10 +172,10 @@ export async function getProductById(
 async function getCachedProductSlugs(
   limit?: number,
   includeVariants: boolean = false,
-  _version: string = "v213",
 ) {
   "use cache";
-  cacheLife("dynamic");
+  cacheLife("product");
+  cacheTag("sitemap-slugs");
   return getAllProductSlugsSync(limit, includeVariants);
 }
 
@@ -319,7 +319,7 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   cacheLife("product");
-  const _v = "v76-final-stable-ids"; // Cache bust to ensure 404 -> 500 fix takes effect
+  const _v = "v77-strict-id-safety"; // Force clear to apply 404->500 fix reliably
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -332,8 +332,13 @@ export async function getPDPRenderData(
   if (idMatch) {
     const id = parseInt(idMatch[1]);
     if (id >= 900000000) {
-      // Hub Mode
       product = await getCachedProductBySyntheticId(id);
+
+      if (!product) {
+        console.error(`[CRITICAL] Synthetic Hub ID ${id} not found: ${slug}`);
+        throw new Error(`Hub ID ${id} missing from database.`);
+      }
+
       if (product) {
         // Strict slug check for Hubs: ensure the text part matches the canonical version
         const isSlugMatch = product.slug === slug;
@@ -571,14 +576,12 @@ export async function getPDPRenderData(
   }
 
   if (!product) {
-    const idValue = idMatch ? parseInt(idMatch[1]) : 0;
-    if (idValue >= 200000000 && idValue < 1000000000) {
-      // 500 is safer for SEO than 404 for existing IDs if the DB is under load.
-      // We throw here instead of returning null to force a 500 response.
-      console.error(`[CRITICAL] ID-prefixed product not found in DB: ${slug}`);
-      throw new Error(
-        `Product match failed for ID prefix: ${idValue}. This is likely a transient database connection issue under high load.`,
-      );
+    if (idMatch) {
+      const idValue = parseInt(idMatch[1]);
+      if (idValue >= 200000000 && idValue < 1000000000) {
+        console.error(`[CRITICAL] ID-prefixed product not found: ${slug}`);
+        throw new Error(`Product ID ${idValue} not found in DB.`);
+      }
     }
     return null;
   }
