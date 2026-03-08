@@ -1,5 +1,4 @@
-import { ProductIdentity } from "../product-identity";
-import { IdentityStrategy } from "./types";
+import { IdentityStrategy, ProductIdentity } from "./types";
 
 export class CpuStrategy implements IdentityStrategy {
   extract(product: any): Partial<ProductIdentity> | null {

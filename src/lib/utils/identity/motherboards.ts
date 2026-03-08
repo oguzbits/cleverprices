@@ -1,5 +1,5 @@
-import { ProductIdentity, verifySpecModel } from "../product-identity";
-import { IdentityStrategy } from "./types";
+import { verifySpecModel } from "../product-identity";
+import { IdentityStrategy, ProductIdentity } from "./types";
 
 export class MotherboardStrategy implements IdentityStrategy {
   extract(product: any): Partial<ProductIdentity> | null {

@@ -4,7 +4,7 @@ import { MonitorStrategy } from "./identity/monitors";
 import { MotherboardStrategy } from "./identity/motherboards";
 import { SmartphoneStrategy } from "./identity/smartphones";
 import { SsdStrategy } from "./identity/ssds";
-import { CategoryStrategyMap } from "./identity/types";
+import { CategoryStrategyMap, ProductIdentity } from "./identity/types";
 import {
   extractRealStorageFromTitle,
   parseVariationAttributes,
@@ -68,23 +68,7 @@ export interface SiblingConsensus {
   total: number;
 }
 
-export interface ProductIdentity {
-  brand: string;
-  model: string;
-  fullModel: string;
-  shortModel: string;
-  variantLabel: string;
-  variantMap: Record<string, string>;
-  displayTitle: string;
-  modelTitle: string;
-  variantSuffix: string;
-  variantTokens: string[];
-  mpn?: string;
-  isHighVariance: boolean;
-  traitCount: number;
-  isLaptop: boolean;
-  categoryUsed: string;
-}
+// ProductIdentity moved to ./identity/types.ts
 
 /**
  * Robustly removes accents and standardizes special characters.

@@ -1,14 +1,10 @@
-import {
-  getProductIdentity,
-  getCleanTokens,
-  verifySpecModel,
-} from "../product-identity";
+import { getCleanTokens, verifySpecModel } from "../product-identity";
 import {
   extractRealStorageFromTitle,
   parseCapacityToGB,
   parseVariationAttributes,
 } from "../variants";
-import { IdentityStrategy } from "./types";
+import { IdentityStrategy, ProductIdentity } from "./types";
 
 export class SmartphoneStrategy implements IdentityStrategy {
   extract(product: any): Partial<ProductIdentity> | null {
@@ -264,5 +260,3 @@ export class SmartphoneStrategy implements IdentityStrategy {
     };
   }
 }
-
-
