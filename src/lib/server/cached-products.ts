@@ -319,6 +319,7 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   cacheLife("product");
+  const _v = "v75-final-stable-ids"; // Cache bust to ensure 404 -> 500 fix takes effect
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -572,7 +573,9 @@ export async function getPDPRenderData(
   if (!product) {
     const idValue = idMatch ? parseInt(idMatch[1]) : 0;
     if (idValue >= 200000000 && idValue < 1000000000) {
-      // 500 is safer for SEO than 404 for existing IDs if the DB is under load
+      // 500 is safer for SEO than 404 for existing IDs if the DB is under load.
+      // We throw here instead of returning null to force a 500 response.
+      console.error(`[CRITICAL] ID-prefixed product not found in DB: ${slug}`);
       throw new Error(
         `Product match failed for ID prefix: ${idValue}. This is likely a transient database connection issue under high load.`,
       );

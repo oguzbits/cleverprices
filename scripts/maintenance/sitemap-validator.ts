@@ -33,11 +33,11 @@ const concurrencyArg = args
   ?.split("=")[1];
 
 // LOCAL SAFETY: Default to 2 concurrency for local to prevent OOM/Next.js freeze
-const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : isProd ? 5 : 2;
+const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : isProd ? 3 : 2;
 
 const delayArg = args.find((a) => a.startsWith("--delay="))?.split("=")[1];
 // DEFAULT DELAY: 100ms for prod, 50ms for local to be gentler on the server
-const DEFAULT_DELAY = isProd ? 100 : 50;
+const DEFAULT_DELAY = isProd ? 200 : 50;
 const DELAY = delayArg ? parseInt(delayArg) : DEFAULT_DELAY;
 
 export async function validateSitemap() {
@@ -266,7 +266,11 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
       if ((status === 404 || status >= 500) && attempt < retries - 1) {
         if (status >= 500) {
           console.log(
-            `${COLORS.red}[${status}]${COLORS.reset} Transient Server Error. Retrying...`,
+            `${COLORS.red}[${status}]${COLORS.reset} Server Error. Retrying...`,
+          );
+        } else if (status === 404) {
+          console.log(
+            `${COLORS.yellow}[404]${COLORS.reset} Suspected transient mismatch. Retrying...`,
           );
         }
         // Exponential backoff
