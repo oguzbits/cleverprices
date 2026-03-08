@@ -31,7 +31,9 @@ const limit = limitArg ? parseInt(limitArg) : Infinity;
 const concurrencyArg = args
   .find((a) => a.startsWith("--concurrency="))
   ?.split("=")[1];
-const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : 100;
+const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : 5;
+const delayArg = args.find((a) => a.startsWith("--delay="))?.split("=")[1];
+const DELAY = delayArg ? parseInt(delayArg) : 0;
 
 export async function validateSitemap() {
   const targetSitemap = isProd
@@ -101,6 +103,7 @@ export async function validateSitemap() {
       redirect: 0,
       notFound: 0,
       serverError: 0,
+      timeout: 0,
       soft404: 0,
       mismatch: 0,
       total: urls.length,
@@ -120,6 +123,7 @@ export async function validateSitemap() {
           if (!url) break;
 
           const res = await auditUrl(url, isFastMode);
+          if (DELAY > 0) await new Promise((r) => setTimeout(r, DELAY));
           processed++;
 
           if (res.status === 200) {
@@ -170,6 +174,11 @@ export async function validateSitemap() {
           } else if (res.status === 404) {
             results.notFound++;
             details.push(`${COLORS.red}[404]${COLORS.reset} ${url}`);
+          } else if (res.status === 0) {
+            results.timeout++;
+            details.push(
+              `${COLORS.magenta}[TIMEOUT/CONN ERROR]${COLORS.reset} ${url}`,
+            );
           } else {
             results.serverError++;
             details.push(
@@ -210,6 +219,7 @@ export async function validateSitemap() {
     console.log(`🚨 Soft 404s:     ${results.soft404}`);
     console.log(`❌ 404 Not Found: ${results.notFound}`);
     console.log(`🔥 Server Errors: ${results.serverError}`);
+    console.log(`⏳ Timeouts:      ${results.timeout}`);
     console.log(`🔍 Mismatches:    ${results.mismatch}`);
     console.log("-----------------------");
     console.log(`Total URLs:       ${results.total}`);
@@ -228,18 +238,31 @@ export async function validateSitemap() {
 async function auditUrl(url: string, fast: boolean, retries = 3) {
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
-      if (attempt > 0) await new Promise((r) => setTimeout(r, 100 * attempt));
+      if (attempt > 0) {
+        // Longer delay for retries to allow server to breathe
+        await new Promise((r) => setTimeout(r, 500 * attempt));
+      }
 
       const res = await fetch(url, {
         method: fast ? "HEAD" : "GET",
         redirect: "manual",
         headers: {
           "User-Agent": "CleverPrices-Sitemap-Audit/2.0",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          // Hint to Next.js to not postpone content if possible
+          "x-next-audit": "true",
         },
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(fast ? 5000 : 15000), // Longer timeout for GET
       });
 
       const status = res.status;
+
+      // AUTO-RETRY ON 404 (Transient load issue protection)
+      if (status === 404 && attempt < retries - 1) {
+        continue;
+      }
+
       let redirectTarget = "";
       let isSoft404 = false;
       let metadata = {
@@ -257,7 +280,6 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
         isSoft404 = SOFT_404_MARKERS.some((marker) => text.includes(marker));
 
         // Extract metadata
-        // Robust Extraction
         const canonicalMatch =
           text.match(
             /<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i,
@@ -277,7 +299,9 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
         metadata = {
           canonical: canonicalMatch ? canonicalMatch[1] : "",
           title: titleMatch ? titleMatch[1].trim() : "",
-          description: descriptionMatch ? descriptionMatch[1] : "",
+          description: descriptionMatch
+            ? (descriptionMatch[1] || "").substring(0, 100)
+            : "",
         };
       }
 

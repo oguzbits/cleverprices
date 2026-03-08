@@ -221,13 +221,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         : `${identity.displayTitle} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_NAME}.`);
 
     // Use the ID-prefixed slug for the canonical URL to match the sitemap exactly
-    const canonicalPath = getProductPath(product.id, product.slug);
+    const effectiveId = renderData?.canonicalId || product.id;
+    const canonicalPath = getProductPath(effectiveId, product.slug);
 
     return {
       title,
       description,
       alternates: {
-        canonical: getProductCanonicalUrl(product.id, product.slug),
+        canonical: getProductCanonicalUrl(effectiveId, product.slug),
         languages: getAlternateLanguages(canonicalPath),
       },
       openGraph: getOpenGraph({
@@ -342,7 +343,9 @@ async function ProductPageContent({
       throw error;
     }
     console.error(`[Page Error] Product ${slug}:`, error);
-    action = { type: "notFound" };
+    // CRITICAL: Do NOT fall back to notFound for database/server errors
+    // This prevents mass de-indexing during temporary DB outages.
+    throw error;
   }
 
   if (action?.type === "redirect") {
