@@ -126,7 +126,7 @@ function robotsMatcher(
   return longestMatch.type;
 }
 
-async function validate() {
+export async function validateRobots() {
   console.log(
     `${RB_COLORS.cyan}🔍 Running Robots.txt Safety Audit...${RB_COLORS.reset}\n`,
   );
@@ -212,4 +212,4 @@ async function validate() {
   }
 }
 
-validate();
+validateRobots();

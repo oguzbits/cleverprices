@@ -33,7 +33,7 @@ const concurrencyArg = args
   ?.split("=")[1];
 const CONCURRENCY = concurrencyArg ? parseInt(concurrencyArg) : 100;
 
-async function validate() {
+export async function validateSitemap() {
   const targetSitemap = isProd
     ? "https://cleverprices.com/sitemap.xml"
     : args.find((a) => !a.startsWith("--")) || DEFAULT_SITEMAP;
@@ -291,4 +291,4 @@ async function auditUrl(url: string, fast: boolean, retries = 3) {
   return { url, status: 0, redirectTarget: "", isSoft404: false };
 }
 
-validate();
+validateSitemap();

@@ -45,7 +45,7 @@ const VIOLATIONS: Record<string, string[]> = {
   netzteile: ["Raspberry Pi Starter", "Raspberry Pi 4 Kit"],
 };
 
-async function validate() {
+export async function validateCategories() {
   console.log("🔍 Category Validation Report\n");
 
   let totalViolations = 0;
@@ -80,4 +80,4 @@ async function validate() {
   }
 }
 
-validate().catch(console.error);
+validateCategories().catch(console.error);
