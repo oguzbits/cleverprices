@@ -205,6 +205,10 @@ export function SpecificationsTable({
     "Empfohlener Kundenpreis",
     "Datenblatt",
     "Source",
+    "gtin",
+    "ean",
+    "upc",
+    "asin",
   ]);
 
   Object.entries(specs).forEach(([key, value]) => {
