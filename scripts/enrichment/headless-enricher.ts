@@ -17,9 +17,13 @@ class SophisticatedEnricher {
     const limitArg = args.find((a) => !a.startsWith("-")) || "10";
     const limit = parseInt(limitArg) || 10;
     const targetId = args.find((a) => a.startsWith("--id="))?.split("=")[1];
+    const categoryArg = args
+      .find((a) => a.startsWith("--category="))
+      ?.split("=")[1];
+    const categoryList = categoryArg ? categoryArg.split(",") : null;
 
     console.log(
-      `🚀 Starting Stealth Enrichment (Concurrency: ${this.concurrency}, Limit: ${limit}, Target ID: ${targetId || "none"})...`,
+      `🚀 Starting Stealth Enrichment (Concurrency: ${this.concurrency}, Limit: ${limit}, Target ID: ${targetId || "none"}, Categories: ${categoryArg || "all"})...`,
     );
 
     const candidates = await db
@@ -45,6 +49,9 @@ class SophisticatedEnricher {
                 "processed",
                 "scavenged",
               ]),
+              categoryList
+                ? inArray(products.category, categoryList)
+                : undefined,
             ),
       )
       .orderBy(asc(products.lastEnrichedAt))
@@ -137,7 +144,7 @@ class SophisticatedEnricher {
     try {
       specs = await this.scrapeAlternate(page, product);
       if (specs) source = "alternate";
-    } catch (e) {
+    } catch (e: any) {
       console.error(`   ⚠️ Alternate Error: ${e.message}`);
     }
 
@@ -145,7 +152,7 @@ class SophisticatedEnricher {
       try {
         specs = await this.scrapeCyberport(page, product);
         if (specs) source = "cyberport";
-      } catch (e) {
+      } catch (e: any) {
         // console.error(`   ⚠️ Cyberport Error: ${e.message}`);
       }
     }

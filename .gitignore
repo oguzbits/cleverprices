@@ -58,6 +58,7 @@ logs/worker-state.json
 
 # planning/documentation
 /.planning/
+/audit-report.html
 
 # disabled/future configs
 /.future/
