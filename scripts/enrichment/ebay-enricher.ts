@@ -10,7 +10,7 @@ import { EBAY_FIELD_MAP, normalizeEbayValue } from "./ebay-mapper";
  */
 const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-class RateLimitError extends Error {
+export class RateLimitError extends Error {
   constructor() {
     super("RATE_LIMIT");
   }
@@ -160,16 +160,19 @@ export class EbayEnricher {
       }
 
       // Fallback: If no aspects in summary, only THEN get details
-      const details = await this.getItemDetails(summary.itemId, mkt);
-      if (!details) continue;
-      const aspectCount = details.localizedAspects?.length || 0;
+      // Limit to scanning only top 3 items if no aspects found to conserve rate limit quota
+      if (summary.itemId && candidates.indexOf(summary) < 3) {
+        const details = await this.getItemDetails(summary.itemId, mkt);
+        if (!details) continue;
+        const aspectCount = details.localizedAspects?.length || 0;
 
-      if (aspectCount > maxAspects) {
-        maxAspects = aspectCount;
-        bestItem = details;
+        if (aspectCount > maxAspects) {
+          maxAspects = aspectCount;
+          bestItem = details;
+        }
+
+        if (aspectCount > 10) break; // Decent enough
       }
-
-      if (aspectCount > 12) break;
     }
 
     return bestItem;

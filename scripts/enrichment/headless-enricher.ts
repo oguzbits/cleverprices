@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
-import { chromium, type Page } from "playwright";
+import { type Page } from "playwright";
 import { db, products } from "../../src/db";
 import { getProductIdentity } from "../../src/lib/utils/product-identity";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
@@ -22,8 +22,10 @@ class SophisticatedEnricher {
       ?.split("=")[1];
     const categoryList = categoryArg ? categoryArg.split(",") : null;
 
+    const skipAlternate = args.some((a) => a === "--skip-alternate");
+
     console.log(
-      `🚀 Starting Stealth Enrichment (Concurrency: ${this.concurrency}, Limit: ${limit}, Target ID: ${targetId || "none"}, Categories: ${categoryArg || "all"})...`,
+      `🚀 Starting Stealth Enrichment (Concurrency: ${this.concurrency}, Limit: ${limit}, Target ID: ${targetId || "none"}, Categories: ${categoryArg || "all"}, Skip Alternate: ${skipAlternate})...`,
     );
 
     const candidates = await db
@@ -86,7 +88,12 @@ class SophisticatedEnricher {
     if (targets.length === 0) return console.log("✅ No targets found.");
     console.log(`📋 Processing ${targets.length} targets.`);
 
-    const browser = await chromium.launch({ headless: true });
+    const { chromium } = await import("playwright");
+    const browser = await chromium.launch({
+      headless: true,
+      channel: "chrome", // Try to use installed Chrome
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
 
     for (let i = 0; i < targets.length; i += this.concurrency) {
       const chunk = targets.slice(i, i + this.concurrency);
@@ -100,7 +107,7 @@ class SophisticatedEnricher {
           const page = await context.newPage();
           await this.applyStealth(page);
           try {
-            await this.enrichProduct(page, product);
+            await this.enrichProduct(page, product, skipAlternate);
           } catch (err) {
             console.error(`❌ Thread Error [ID: ${product.id}]:`, err);
           } finally {
@@ -117,6 +124,9 @@ class SophisticatedEnricher {
   }
 
   private async applyStealth(page: Page) {
+    await page.setExtraHTTPHeaders({
+      "Accept-Language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
+    });
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "webdriver", { get: () => undefined });
       // @ts-ignore
@@ -134,26 +144,42 @@ class SophisticatedEnricher {
     });
   }
 
-  private async enrichProduct(page: Page, product: any) {
+  private async enrichProduct(
+    page: Page,
+    product: any,
+    skipAlternate: boolean,
+  ) {
     console.log(
       `\n🔍 [ID: ${product.id}] ${product.title.substring(0, 50)}...`,
     );
     let specs: Record<string, any> | null = null;
     let source = "";
 
+    // 1. Try Galaxus First (BEST Source: Unblocked + High Density)
     try {
-      specs = await this.scrapeAlternate(page, product);
-      if (specs) source = "alternate";
+      specs = await this.scrapeGalaxus(page, product);
+      if (specs) source = "galaxus";
     } catch (e: any) {
-      console.error(`   ⚠️ Alternate Error: ${e.message}`);
+      console.error(`   ⚠️ Galaxus Error: ${e.message}`);
     }
 
+    // 2. Try Cyberport Second
     if (!specs) {
       try {
         specs = await this.scrapeCyberport(page, product);
         if (specs) source = "cyberport";
       } catch (e: any) {
         // console.error(`   ⚠️ Cyberport Error: ${e.message}`);
+      }
+    }
+
+    // 3. Try Alternate as Fallback if not skipped
+    if (!specs && !skipAlternate) {
+      try {
+        specs = await this.scrapeAlternate(page, product);
+        if (specs) source = "alternate";
+      } catch (e: any) {
+        // console.error(`   ⚠️ Alternate Error: ${e.message}`);
       }
     }
 
@@ -185,7 +211,7 @@ class SophisticatedEnricher {
         await db
           .update(products)
           .set({
-            lastEnrichedAt: new Date(), // touch to prevent immediate re-processing
+            lastEnrichedAt: new Date(),
           })
           .where(eq(products.id, product.id));
       }
@@ -206,20 +232,30 @@ class SophisticatedEnricher {
     product: any,
   ): Promise<Record<string, any> | null> {
     const identity = getProductIdentity(product);
-    const gtinList = (product.gtin || "")
+    const gtinListRaw = (product.gtin || "")
       .split(",")
-      .map((s: string) => s.trim().replace(/^0+/, ""));
+      .map((s: string) => s.trim());
+    const gtinList = gtinListRaw.map((s: string) => s.replace(/^0+/, ""));
     const firstGtin = gtinList[0] || "";
+    const firstGtinRaw = gtinListRaw[0] || "";
+    const firstGtinPadded =
+      firstGtinRaw.length === 12 ? "0" + firstGtinRaw : firstGtinRaw;
 
     // Clean model for search
     const cleanModel = identity.model
       .replace(/Smartphone|Handy|Tablet|Laptop|Notebook|Prozessor/gi, "")
       .trim();
-    const queries = [firstGtin, `${product.brand || ""} ${cleanModel}`].filter(
-      (q) => q && q.length > 5,
-    );
 
-    for (const q of queries) {
+    const queries = [
+      firstGtinPadded,
+      firstGtinRaw,
+      `${product.brand || ""} ${cleanModel}`,
+    ].filter((q) => q && q.length > 5);
+
+    // Remove duplicates
+    const finalQueries = [...new Set(queries)];
+
+    for (const q of finalQueries) {
       try {
         console.log(`   🔎 Alternate: Querying "${q}"`);
         await page.goto(
@@ -232,8 +268,14 @@ class SophisticatedEnricher {
         await this.handleCookies(page);
 
         // Anti-bot check
-        if ((await page.title()) === "Alternate.de - Robot Check") {
-          console.log("   🚫 Alternate BOT Block.");
+        let pageTitle = await page.title();
+        if (
+          pageTitle === "Alternate.de - Robot Check" ||
+          pageTitle === "Nur einen Moment..."
+        ) {
+          console.log(
+            `   🚫 Alternate BOT/Cloudflare Block (Title: ${pageTitle}).`,
+          );
           return null;
         }
 
@@ -322,6 +364,19 @@ class SophisticatedEnricher {
                 await page.waitForLoadState("domcontentloaded");
                 await this.handleCookies(page);
 
+                // Post-click BOT check
+                pageTitle = await page.title();
+                if (
+                  pageTitle === "Alternate.de - Robot Check" ||
+                  pageTitle.includes("Moment") ||
+                  pageTitle.includes("Sicherheits")
+                ) {
+                  console.log(
+                    `   🚫 Alternate BOT/Cloudflare Block on PDP (Title: ${pageTitle}).`,
+                  );
+                  return null;
+                }
+
                 const tableData = await this.extractTableData(page);
                 if (tableData) {
                   let foundGtin = "";
@@ -366,41 +421,208 @@ class SophisticatedEnricher {
     return null;
   }
 
+  private async scrapeGalaxus(
+    page: Page,
+    product: any,
+  ): Promise<Record<string, any> | null> {
+    const rawGtin = (product.gtin || "").split(",")[0].trim();
+    const gtin = rawGtin.length === 12 ? "0" + rawGtin : rawGtin;
+
+    const identity = getProductIdentity(product);
+    const queries = [gtin, `${product.brand || ""} ${identity.model}`].filter(
+      (q) => q && q.length > 3,
+    );
+
+    for (const q of queries) {
+      console.log(`   🔎 Galaxus: Querying "${q}"`);
+      try {
+        await page.goto(
+          `https://www.galaxus.de/de/search?q=${encodeURIComponent(q)}`,
+          {
+            timeout: 30000,
+            waitUntil: "networkidle",
+          },
+        );
+        console.log(`   📄 Galaxus Title: "${await page.title()}"`);
+        await this.handleCookies(page);
+
+        const isPDP =
+          (await page.locator('[data-test="addToCartButton"]').count()) > 0;
+
+        if (!isPDP) {
+          // Wait longer for results to render
+          await page.waitForTimeout(5000);
+          // Galaxus search results use a grid or list.
+          const results = page.locator(
+            'a[data-test="product-card-link"], [data-test="product-grid"] a, article a[href*="/product/"], a[href*="/s1/product/"]',
+          );
+          if ((await results.count()) > 0) {
+            console.log(`   🔗 Galaxus: Opening first search result`);
+            await results.first().click({ force: true });
+            await page.waitForLoadState("domcontentloaded");
+            await this.handleCookies(page);
+          } else {
+            console.log(`   ⚠️ Galaxus: No results for "${q}"`);
+            continue;
+          }
+        }
+
+        // Metadata GTIN verify (Safety)
+        const gtinMatch = await page.evaluate((targetGtin) => {
+          const scripts = Array.from(
+            document.querySelectorAll('script[type="application/ld+json"]'),
+          );
+          for (const s of scripts) {
+            try {
+              const json = JSON.parse(s.textContent || "");
+              if (
+                json.gtin13 === targetGtin ||
+                json.gtin12 === targetGtin ||
+                json.gtin === targetGtin
+              )
+                return true;
+            } catch {}
+          }
+          return false;
+        }, gtin);
+
+        if (!gtinMatch && gtin) {
+          console.log(
+            `   ⏭️ Galaxus: GTIN mismatch in metadata. Proceeding cautiously.`,
+          );
+        }
+
+        // 3. Extract specs
+        return await this.extractGalaxusDOM(page);
+      } catch (e: any) {
+        console.error(`   ⚠️ Galaxus Error: ${e.message}`);
+      }
+    }
+    return null;
+  }
+
+  private async extractGalaxusDOM(
+    page: Page,
+  ): Promise<Record<string, string> | null> {
+    // Expand technical data if button exists
+    const expandBtn = page.locator(
+      '[data-test="showMoreButton-specifications"], button:has-text("Mehr anzeigen")',
+    );
+    if ((await expandBtn.count()) > 0) {
+      await expandBtn
+        .first()
+        .click({ force: true })
+        .catch(() => {});
+      await page.waitForTimeout(1000); // Wait for expansion
+    }
+
+    return await page.evaluate((fieldMap) => {
+      const specs: Record<string, string> = {};
+      // Galaxus uses a table structure in their "Eigenschaften" section
+      const rows = Array.from(document.querySelectorAll("tr"));
+      rows.forEach((row) => {
+        const td = Array.from(row.querySelectorAll("td"));
+        if (td.length >= 2) {
+          const label = td[0].textContent?.trim().replace(/i$/, "") || "";
+          const value = td[1].textContent?.trim();
+          if (label && value) {
+            const internalKey = (fieldMap as any)[label] || label;
+            // Prevent taking long descriptions
+            if (value.length > 200) return;
+            specs[internalKey] = value;
+          }
+        }
+      });
+      return Object.keys(specs).length > 5 ? specs : null;
+    }, RETAILER_FIELD_MAP);
+  }
+
   private async scrapeCyberport(
     page: Page,
     product: any,
   ): Promise<Record<string, any> | null> {
-    const gtin = product.gtin.split(",")[0].trim();
-    console.log(`   🔎 Cyberport: Querying "${gtin}"`);
-    try {
-      await page.goto(`https://www.cyberport.de/search?q=${gtin}`, {
-        waitUntil: "domcontentloaded",
-        timeout: 10000,
-      });
-      const nextData = await page.evaluate(() => {
-        const script = document.getElementById("__NEXT_DATA__");
-        if (!script) return null;
-        try {
-          const json = JSON.parse(script.textContent || "");
-          const p =
-            json.props?.pageProps?.searchResult?.products?.[0] ||
-            json.props?.pageProps?.product;
-          if (p && p.attributes) return p;
-          return null;
-        } catch {
-          return null;
+    const rawGtin = (product.gtin || "").split(",")[0].trim();
+    // Padding 12 to 13 digits for search accuracy
+    const gtin = rawGtin.length === 12 ? "0" + rawGtin : rawGtin;
+    const identity = getProductIdentity(product);
+
+    const queries = [gtin, `${product.brand || ""} ${identity.model}`].filter(
+      (q) => q && q.length > 5,
+    );
+
+    for (const q of queries) {
+      console.log(`   🔎 Cyberport: Querying "${q}"`);
+      try {
+        await page.goto(
+          `https://www.cyberport.de/search?q=${encodeURIComponent(q)}`,
+          {
+            waitUntil: "domcontentloaded",
+            timeout: 10000,
+          },
+        );
+        await this.handleCookies(page);
+        await page.waitForTimeout(1000); // Wait for potential title update/redirect
+
+        const pageTitle = await page.title();
+        console.log(`   📄 Cyberport Title: "${pageTitle}"`);
+        if (
+          !pageTitle ||
+          pageTitle.toLowerCase().includes("blocked") ||
+          pageTitle.includes("Nur einen Moment") ||
+          pageTitle.includes("Access Denied") ||
+          pageTitle.includes("Sicherheits")
+        ) {
+          console.log(
+            `   🚫 Cyberport BOT/Cloudflare Block (Title: ${pageTitle || "EMPTY"}).`,
+          );
+          continue; // Try next query or give up
+        }
+
+        // Check if direct product page
+        const hasTechnicalData =
+          (await page.locator(".box-technical-data").count()) > 0;
+
+        if (hasTechnicalData) {
+          return await this.extractCyberportDOM(page);
+        }
+
+        // Check for search result (GTIN should ideally lead to 1 product)
+        const firstResult = page.locator(
+          "a.product-image[data-product-id], a.productBox",
+        );
+        if ((await firstResult.count()) > 0) {
+          console.log(`   🔗 Cyberport: Opening first search result`);
+          await firstResult.first().click({ force: true });
+          await page.waitForLoadState("domcontentloaded");
+          await this.handleCookies(page);
+          return await this.extractCyberportDOM(page);
+        }
+      } catch (e: any) {
+        // console.error(`   ⚠️ Cyberport Error: ${e.message}`);
+      }
+    }
+    return null;
+  }
+
+  private async extractCyberportDOM(
+    page: Page,
+  ): Promise<Record<string, string> | null> {
+    return await page.evaluate((fieldMap) => {
+      const specs: Record<string, string> = {};
+      const rows = document.querySelectorAll(".box-technical-data table tr");
+
+      rows.forEach((row) => {
+        const label = row.querySelector("td.label")?.textContent?.trim();
+        const value = row.querySelector("td.value")?.textContent?.trim();
+
+        if (label && value) {
+          const internalKey = (fieldMap as any)[label] || label;
+          specs[internalKey] = value;
         }
       });
-      if (nextData && nextData.attributes) {
-        const specs: Record<string, string> = {};
-        nextData.attributes.forEach((attr: any) => {
-          const internalKey = RETAILER_FIELD_MAP[attr.name] || attr.name;
-          specs[internalKey] = attr.value;
-        });
-        return specs;
-      }
-    } catch (e) {}
-    return null;
+
+      return Object.keys(specs).length > 0 ? specs : null;
+    }, RETAILER_FIELD_MAP);
   }
 
   private async extractTableData(

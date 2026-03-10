@@ -75,6 +75,12 @@ export const RETAILER_FIELD_MAP: Record<string, string> = {
   Speichergröße: "Interne Speicherkapazität",
   Speichertakt: "Speichertaktfrequenz",
   Bus: "Schnittstelle",
+  Gehäusefarbe: "Produktfarbe",
+  Pixelauflösung: "Display-Auflösung",
+  Länge: "Tiefe",
+  "RAM-Kapazität": "Arbeitsspeicher",
+  Speicherkapazität: "Interner Speicher",
+  "Bildschirmdiagonale (Zoll)": "Display-Größe",
 };
 
 export const RETAILER_VALUE_TRANSLATIONS: Record<string, string> = {
