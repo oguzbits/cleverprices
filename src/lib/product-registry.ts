@@ -967,38 +967,53 @@ export async function findProductSlugByAsinSuffix(
     const suffix = shortSuffixMatch[1].toUpperCase();
 
     // Safety: LIKE '%XXXX' is a full table scan O(N).
-    // We only do this if N is small or we have no other choice.
-    // In CleverPrices, we'll keep it but ensure it's the last resort.
+    // However, for redirect recovery, we search both ASIN and Parent ASIN.
     const [p] = await db
-      .select({ id: products.id, slug: products.slug })
+      .select({ id: products.id, slug: products.slug, parentAsin: products.parentAsin })
       .from(products)
       .where(
-        and(
+        or(
           sql`${products.asin} LIKE ${"%" + suffix}`,
-          // Optimization: usually these are in the same category or related
-          // but since we don't know the category from the slug easily,
-          // we just limit to 1.
-        ),
+          sql`${products.parentAsin} LIKE ${"%" + suffix}`
+        )
       )
       .limit(1);
+
     if (p) {
-      const iden = getProductIdentity(p);
+      // If it's a specific variant, we might want to redirect to the Hub or the Variant.
+      // For migration recovery, redirecting to the variant's new canonical slug is safest.
+      const iden = getProductIdentity(p as any);
       const canonicalRealId = await getCanonicalFamilyId(
-        (p as any).parentAsin || undefined,
+        p.parentAsin || undefined,
         p.id,
         iden.modelTitle,
       );
+      
       const canonicalProduct = await getProductById(canonicalRealId);
       const { slug: canonical } = getFamilyIdentity(
         {
           ...(canonicalProduct || p),
           id: 900000000 + (canonicalProduct?.id ?? p.id),
           isParentView: true,
+          parentAsin: p.parentAsin ?? undefined,
         },
         [],
       );
       return canonical;
     }
+  }
+
+  // 3. Deep Fallback: Fuzzy Slug Match
+  // If the old slug matches the text part of a new ID-prefixed slug
+  // e.g. "apple-iphone-15" matches "200000123_-apple-iphone-15"
+  const [fuzzyP] = await db
+    .select({ slug: products.slug })
+    .from(products)
+    .where(sql`${products.slug} LIKE ${"%_-" + oldSlug}`)
+    .limit(1);
+
+  if (fuzzyP) {
+    return fuzzyP.slug;
   }
 
   return undefined;

@@ -148,7 +148,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       return {
         title: "Produkt wird geladen...",
         alternates: { canonical: canonicalUrl },
-        robots: { index: false, follow: true },
       };
     }
 
