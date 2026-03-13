@@ -196,6 +196,10 @@ export function mapRawToLocalizedProduct(
     "tablets",
     "notebooks",
     "laptops",
+    "monitors",
+    "monitore",
+    "televisions",
+    "fernseher",
   ].includes(actualCategory);
 
   let displayTitle = title;
