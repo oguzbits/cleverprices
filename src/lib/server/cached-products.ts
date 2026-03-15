@@ -335,8 +335,8 @@ export async function getPDPRenderData(
       product = await getCachedProductBySyntheticId(id);
 
       if (!product) {
-        console.error(`[CRITICAL] Synthetic Hub ID ${id} not found: ${slug}`);
-        throw new Error(`Hub ID ${id} missing from database.`);
+        console.warn(`[SEO 404] Synthetic Hub ID ${id} not found: ${slug}`);
+        return null;
       }
 
       if (product) {
@@ -579,8 +579,8 @@ export async function getPDPRenderData(
     if (idMatch) {
       const idValue = parseInt(idMatch[1]);
       if (idValue >= 200000000 && idValue < 1000000000) {
-        console.error(`[CRITICAL] ID-prefixed product not found: ${slug}`);
-        throw new Error(`Product ID ${idValue} not found in DB.`);
+        console.warn(`[SEO 404] ID-prefixed product not found: ${slug}`);
+        return null;
       }
     }
     return null;

@@ -168,6 +168,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       product.prices[countryCode] || Object.values(product.prices)[0];
 
     // GSC Fix: Align metadata with content guards to prevent Soft 404 indexing
+    // SEO PIVOT: Allow indexing of out-of-stock items IF they have high-quality specs.
+    // This turns "Thin Content" (Soft 404) into "Useful Hardware Specs" (Indexable).
     const hasPrice =
       isParentViewMode ||
       product.prices[countryCode] ||
@@ -178,12 +180,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       (product.usedPrices &&
         Object.values(product.usedPrices).some((p) => Number(p) > 0));
 
+    const hasHighQualityContent =
+      product.officialSpecifications || product.specifications;
+
     const hasMeaningfulTitle =
       product.title &&
       product.title.length > 2 &&
       product.title !== product.asin;
 
-    if (!hasPrice || !hasMeaningfulTitle) {
+    if ((!hasPrice && !hasHighQualityContent) || !hasMeaningfulTitle) {
       return {
         title: "Produkt nicht gefunden - CleverPrices",
         robots: { index: false },
