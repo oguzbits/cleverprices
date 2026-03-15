@@ -86,9 +86,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Product pages - high priority for SEO
   // CLEAN SITEMAP: We exclude variants (they redirect to Hubs) to prevent 'Redirect error' in GSC.
+  // We include processed and pending products to maintain original crawl scope without flooding.
   const allProducts = await getAllProductSlugs(undefined, false);
-  // SEO SAFETY: Only include products that have reached "optimized" status (enriched with Icecat/eBay)
-  // This ensures Google only committed to stable, high-quality URLs.
+  
   const products = allProducts.filter(
     (p) =>
       p.enrichmentStatus === "optimized" ||

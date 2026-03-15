@@ -361,26 +361,28 @@ export async function getAllProductSlugs(
   }[]
 > {
   try {
+    // 1. Fetch products with identity-critical columns
     let query = db
-      .select(filteringProductColumns)
+      .select({
+        ...filteringProductColumns,
+        specifications: products.specifications,
+        officialSpecifications: products.officialSpecifications,
+      })
       .from(products)
       .orderBy(
-        // 1. Optimized products first (Google loves specifications)
         sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
-        // 2. Then by Sales Rank (smaller is more popular)
         asc(products.salesRank),
-        // 3. Then by newest updates
         desc(products.updatedAt),
       );
 
     if (limit) {
-      // @ts-ignore - Drizzle limit works
+      // @ts-ignore
       query = query.limit(limit);
     }
 
     const rawAllProducts = await query;
-    // We must manually fetch prices for these to filter out out-of-stock items
-    // to match PDP's `hasPrice` guard, preventing empty canonical tags.
+
+    // 2. Fetch prices (optimized map)
     const priceRecords = await db
       .select({
         productId: prices.productId,
@@ -388,156 +390,107 @@ export async function getAllProductSlugs(
         usedPrice: prices.usedPrice,
       })
       .from(prices);
+
     const priceMap = new Map();
     for (const p of priceRecords) {
       if (!priceMap.has(p.productId))
         priceMap.set(p.productId, { price: 0, usedPrice: 0 });
       const current = priceMap.get(p.productId);
       current.price = Math.max(current.price, p.price || 0);
-      current.usedPrice = Math.max(current.usedPrice, p.usedPrice || 0);
+      current.used_price = Math.max(current.used_price, p.usedPrice || 0);
     }
 
-    // Identify ASINs that form a Hub (Family)
-    const familyAsinRecords = await db
-      .select({ p: products.parentAsin })
-      .from(products)
-      .where(isNotNull(products.parentAsin))
-      .groupBy(products.parentAsin)
-      .having(sql`COUNT(*) > 1`);
-    const familyAsins = new Set(familyAsinRecords.map((r) => r.p!));
+    // 3. Group by family
+    const families = new Map<string, any[]>();
+    const singletons: any[] = [];
 
-    const allProducts = rawAllProducts.filter((p) => {
-      // Exclude variants that belong to a family (they are redirected to Hubs!)
-      // EXCEPT during the Tactical Flooding Phase where we want to index everything.
-      if (!includeVariants && p.parentAsin && familyAsins.has(p.parentAsin))
-        return false;
+    for (const p of rawAllProducts) {
+      // Basic quality check (Same as PDP)
+      const hasMeaningfulTitle = p.title && p.title.length > 2 && p.title !== p.asin;
+      if (!hasMeaningfulTitle) continue;
 
-      // Filter by Meaningful Title (same as PDP)
-      const hasMeaningfulTitle =
-        p.title && p.title.length > 2 && p.title !== p.asin;
-
-      if (!hasMeaningfulTitle) return false;
-
-      // Filter by Price (same as PDP)
       const pr = priceMap.get(p.id);
-      const hasPrice = pr && (pr.price > 0 || pr.usedPrice > 0);
-      return hasPrice;
-    });
+      if (!(pr && (pr.price > 0 || pr.used_price > 0))) continue;
 
-    // 2. Map products to their canonical slugs (Stateless & High-Speed)
-    const results = allProducts.map((p) => {
-      // Map and clean product data exactly like the PDP logic to ensure slug parity.
-      // We use false for stripHeavyData to ensure all identity repairs (like M.2 stripping) are applied identically.
+      if (p.parentAsin) {
+        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
+        families.get(p.parentAsin)!.push(p);
+      } else {
+        singletons.push(p);
+      }
+    }
+
+    const results: {
+      id: number;
+      slug: string;
+      category: string;
+      enrichmentStatus?: string | null;
+      updatedAt: Date;
+    }[] = [];
+
+    // 4. Process Singletons (They always get their own page)
+    for (const p of singletons) {
       const mapped = mapDbProduct(p as DbProduct, [], [], false);
-      const canonical = mapped.slug;
-      return {
+      results.push({
         id: p.id!,
-        slug: canonical,
+        slug: mapped.slug,
         category: p.category,
         enrichmentStatus: p.enrichmentStatus,
         updatedAt: p.updatedAt || new Date(),
-      };
-    });
+      });
+    }
 
-    // 3. SEO BONUS: Include Hub (Parent) pages
-    // We only need to fetch enough data to reconstruct technical identities for Hubs.
-    // Instead of fetching all variants for all families (which is massive),
-    // we fetch only families that have at least one variant with a price (Germany).
-    const familiesWithPrice = await db
-      .select({ parentAsin: products.parentAsin })
-      .from(products)
-      .innerJoin(
-        prices,
-        and(eq(products.id, prices.productId), eq(prices.country, "de")),
-      )
-      .where(
-        and(
-          isNotNull(products.parentAsin),
-          sql`${products.parentAsin} != ''`,
-          or(gt(prices.price, 0), gt(prices.usedPrice, 0)),
-        ),
-      )
-      .groupBy(products.parentAsin)
-      .having(sql`COUNT(*) > 1`);
+    // 5. Process Families
+    for (const [parentAsin, variants] of families.entries()) {
+      const allMapped = variants.map((v) => {
+        const pr = priceMap.get(v.id!);
+        const priceArray = [{ price: pr.price, usedPrice: pr.used_price, country: "de" }];
+        return mapDbProduct(v as any, priceArray as any, variants, false);
+      });
 
-    const parentAsins = familiesWithPrice
-      .map((f) => f.parentAsin)
-      .filter(Boolean) as string[];
+      // If only one variant actually exists in this family, treat it as a singleton (No Hub)
+      if (allMapped.length === 1) {
+        const p = variants[0];
+        results.push({
+          id: p.id!,
+          slug: allMapped[0].slug,
+          category: p.category,
+          enrichmentStatus: p.enrichmentStatus,
+          updatedAt: p.updatedAt || new Date(),
+        });
+        continue;
+      }
 
-    if (parentAsins.length > 0) {
-      // Chunk the parentAsins to avoid SQL variable limit issues and manage memory
-      const CHUNK_SIZE = 100;
-      for (let i = 0; i < parentAsins.length; i += CHUNK_SIZE) {
-        const chunk = parentAsins.slice(i, i + CHUNK_SIZE);
-        const familyRawResults = await db
-          .select({
-            product: filteringProductColumns,
-            price: prices.price,
-            country: prices.country,
-            usedPrice: prices.usedPrice,
-          })
-          .from(products)
-          .leftJoin(
-            prices,
-            and(eq(products.id, prices.productId), eq(prices.country, "de")),
-          )
-          .where(
-            and(inArray(products.parentAsin, chunk), eq(prices.country, "de")),
-          );
-
-        // Group variants by parentAsin
-        const familyMap = new Map<string, any[]>();
-        for (const r of familyRawResults) {
-          if (!r.product.parentAsin) continue;
-          if (!familyMap.has(r.product.parentAsin))
-            familyMap.set(r.product.parentAsin, []);
-          familyMap.get(r.product.parentAsin)!.push({
-            ...r.product,
-            price: r.price || 0,
-            usedPrice: r.usedPrice || 0,
-            country: r.country,
-          });
-        }
-
-        // Process each family in the current chunk
-        for (const [parentAsin, rawVariants] of familyMap.entries()) {
-          const allMapped = rawVariants.map((r) => {
-            const priceArray =
-              r.price > 0 || r.usedPrice > 0
-                ? [
-                    {
-                      price: r.price,
-                      usedPrice: r.usedPrice,
-                      country: r.country,
-                    },
-                  ]
-                : [];
-            return mapDbProduct(r as any, priceArray as any, [], false);
-          });
-
-          const mappedVariants = allMapped.filter(
-            (v) => (v.prices?.de || 0) > 0 || (v.usedPrices?.de || 0) > 0,
-          );
-          if (mappedVariants.length <= 1) continue; // Skip singletons after price filter
-
-          const rep = [...allMapped].sort(
-            (a, b) => (a.id || 0) - (b.id || 0),
-          )[0];
-          const syntheticId = 900000000 + (rep.id || 0);
-          const { slug: hubSlug } = getFamilyIdentity(
-            { ...rep, id: syntheticId, isParentView: true } as any,
-            mappedVariants,
-          );
-
+      // Multi-variant Family:
+      
+      // A. Add individual variants if requested
+      if (includeVariants) {
+        for (let i = 0; i < variants.length; i++) {
           results.push({
-            id: syntheticId,
-            slug: hubSlug,
-            category: rep.category || "unknown",
-            enrichmentStatus: "optimized",
-            updatedAt: new Date(),
+            id: variants[i].id!,
+            slug: allMapped[i].slug,
+            category: variants[i].category,
+            enrichmentStatus: variants[i].enrichmentStatus,
+            updatedAt: variants[i].updatedAt || new Date(),
           });
         }
       }
+
+      // B. Add the Hub (Parent) page (High Priority SEO)
+      const rep = [...allMapped].sort((a, b) => (a.id || 0) - (b.id || 0))[0];
+      const syntheticId = 900000000 + (rep.id || 0);
+      const { slug: hubSlug } = getFamilyIdentity(
+        { ...rep, id: syntheticId, isParentView: true } as any,
+        allMapped,
+      );
+
+      results.push({
+        id: syntheticId,
+        slug: hubSlug,
+        category: rep.category || "unknown",
+        enrichmentStatus: variants.some(v => v.enrichmentStatus === "processed") ? "processed" : "pending",
+        updatedAt: new Date(),
+      });
     }
 
     return results;
