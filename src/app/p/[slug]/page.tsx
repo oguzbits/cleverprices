@@ -189,10 +189,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       product.title !== product.asin;
 
     if ((!hasPrice && !hasHighQualityContent) || !hasMeaningfulTitle) {
-      return {
-        title: "Produkt nicht gefunden - CleverPrices",
-        robots: { index: false },
-      };
+      notFound();
     }
     const isParentView = isParentViewMode;
     const siblings = isParentView ? renderData?.variants || [] : [];
@@ -238,7 +235,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       openGraph: getOpenGraph({
         title: `${seoTitle} Preisvergleich | ${BRAND_DOMAIN}`,
         description,
-        url: getProductCanonicalUrl(product.id, product.slug),
+        url: getProductCanonicalUrl(effectiveId, product.slug),
         locale: "de_DE",
         type: "article",
         images: product.image
@@ -322,21 +319,45 @@ async function ProductPageContent({
         logPDPPerformance(slug, startTime);
         action = { type: "notFound" };
       } else {
-        // 1. All data is now pre-fetched in parallel within the getPDPRenderData bundle
-        const category = data?.category;
-        const allVariantsRaw = (data?.variants || []) as Product[];
+        // GSC Fix: Align with metadata guards to prevent Soft 404
+        const hasPrice =
+          parentViewMode ||
+          product.prices[countryCode] ||
+          product.usedPrices?.[countryCode] ||
+          Object.values(product.prices).some(
+            (p) => typeof p === "number" && p > 0,
+          ) ||
+          (product.usedPrices &&
+            Object.values(product.usedPrices).some((p) => Number(p) > 0));
 
-        renderContent = (
-          <IdealoProductPage
-            product={product}
-            variants={allVariantsRaw}
-            category={category}
-            countryCode={countryCode}
-            selectedCondition={condition as any}
-            isParentView={parentViewMode}
-            canonicalId={data?.canonicalId}
-          />
-        );
+        const hasHighQualityContent =
+          product.officialSpecifications || product.specifications;
+
+        const hasMeaningfulTitle =
+          product.title &&
+          product.title.length > 2 &&
+          product.title !== product.asin;
+
+        if ((!hasPrice && !hasHighQualityContent) || !hasMeaningfulTitle) {
+          logPDPPerformance(slug, startTime);
+          action = { type: "notFound" };
+        } else {
+          // 1. All data is now pre-fetched in parallel within the getPDPRenderData bundle
+          const category = data?.category;
+          const allVariantsRaw = (data?.variants || []) as Product[];
+
+          renderContent = (
+            <IdealoProductPage
+              product={product}
+              variants={allVariantsRaw}
+              category={category}
+              countryCode={countryCode}
+              selectedCondition={condition as any}
+              isParentView={parentViewMode}
+              canonicalId={data?.canonicalId}
+            />
+          );
+        }
       }
     }
   } catch (error: any) {

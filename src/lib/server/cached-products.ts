@@ -44,7 +44,7 @@ async function getCachedBestDeals(
 ) {
   "use cache";
   cacheLife("category");
-  return getBestDealsSync(limit, countryCode, condition);
+  return await getBestDealsSync(limit, countryCode, condition);
 }
 
 async function getCachedMostPopular(
@@ -55,7 +55,7 @@ async function getCachedMostPopular(
 ) {
   "use cache";
   cacheLife("category");
-  return getMostPopularSync(limit, countryCode, condition);
+  return await getMostPopularSync(limit, countryCode, condition);
 }
 
 async function getCachedNewArrivals(
@@ -66,7 +66,7 @@ async function getCachedNewArrivals(
 ) {
   "use cache";
   cacheLife("category");
-  return getNewArrivalsSync(limit, countryCode, condition);
+  return await getNewArrivalsSync(limit, countryCode, condition);
 }
 
 async function getCachedDiverseMostPopular(
@@ -76,7 +76,7 @@ async function getCachedDiverseMostPopular(
 ) {
   "use cache";
   cacheLife("category");
-  return getDiverseMostPopularSync(itemsPerCategory, countryCode);
+  return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
 
 async function getCachedProductBySlug(
@@ -86,13 +86,13 @@ async function getCachedProductBySlug(
 ) {
   "use cache";
   cacheLife("product");
-  return getProductBySlugSync(slug, includeHistory);
+  return await getProductBySlugSync(slug, includeHistory);
 }
 
 async function getCachedProductById(id: number, _version: string = "v214") {
   "use cache";
   cacheLife("product");
-  return getProductByIdSync(id);
+  return await getProductByIdSync(id);
 }
 
 async function getCachedProductVariantsInternal(
@@ -103,7 +103,7 @@ async function getCachedProductVariantsInternal(
 ) {
   "use cache";
   cacheLife("product");
-  return getProductVariantsSync(
+  return await getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
     skipFullMapping,
@@ -121,7 +121,7 @@ async function getCachedSimilarProducts(
   "use cache";
   cacheLife("product");
   // We call the sync version directly to avoid double wrapping
-  return getSimilarProductsSync(
+  return await getSimilarProductsSync(
     {
       category,
       slug: excludedSlug,
@@ -138,7 +138,7 @@ async function getCachedProductSlugByAsinSuffix(
 ) {
   "use cache";
   cacheLife("category"); // Redirects can be cached for a long time
-  return findProductSlugByAsinSuffixSync(oldSlug);
+  return await findProductSlugByAsinSuffixSync(oldSlug);
 }
 
 async function getCachedProductByParentAsinSuffix(
@@ -147,7 +147,7 @@ async function getCachedProductByParentAsinSuffix(
 ) {
   "use cache";
   cacheLife("category");
-  return findProductByParentAsinSuffixSync(slug);
+  return await findProductByParentAsinSuffixSync(slug);
 }
 
 async function getCachedProductBySyntheticId(
@@ -156,7 +156,7 @@ async function getCachedProductBySyntheticId(
 ) {
   "use cache";
   cacheLife("product");
-  return findProductBySyntheticIdSync(id);
+  return await findProductBySyntheticIdSync(id);
 }
 
 export async function getProductById(
@@ -319,7 +319,7 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   cacheLife("product");
-  const _v = "v77-strict-id-safety"; // Force clear to apply 404->500 fix reliably
+  const _v = "v80-unified-flow";
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -556,11 +556,17 @@ export async function getPDPRenderData(
         isPermanent: true,
       };
     } else {
-      // Legacy ASIN/Parent Suffix checks
+      // Legacy ASIN/Parent Suffix checks (REPAIRING: Ensure we redirect to ID-prefixed canonical)
       const asinSlug = await getCachedProductSlugByAsinSuffix(slug);
       if (asinSlug && asinSlug !== slug) {
+        // Resolve the ID if possible to get a fully-prefixed URL
+        const tmpProd = await getCachedProductBySlug(asinSlug, false);
         return {
-          redirect: getProductPath(undefined, asinSlug),
+          product: tmpProd || null as any,
+          variants: [],
+          category: null,
+          isParentView: false,
+          redirect: getProductPath(tmpProd?.id, asinSlug),
           isPermanent: true,
         };
       }
@@ -568,6 +574,10 @@ export async function getPDPRenderData(
       if (product) {
         const { slug: newSlug } = getFamilyIdentitySync(product, []);
         return {
+          product,
+          variants: [],
+          category: null,
+          isParentView: false,
           redirect: getProductPath(product.id, newSlug),
           isPermanent: true,
         };
@@ -578,8 +588,9 @@ export async function getPDPRenderData(
   if (!product) {
     if (idMatch) {
       const idValue = parseInt(idMatch[1]);
+      // If it looks like a canonical ID but is not in our DB, it's a hard 404
       if (idValue >= 200000000 && idValue < 1000000000) {
-        console.warn(`[SEO 404] ID-prefixed product not found: ${slug}`);
+        console.warn(`[SEO 404] Canonical ID not in DB: ${slug}`);
         return null;
       }
     }
@@ -630,13 +641,13 @@ export async function getPDPRenderData(
   }
 
   return {
-    product: product!,
+    product: product || (null as any),
     variants,
     category,
     isParentView,
     redirect,
     isPermanent,
-    _v: "v73-final-fix",
+    _v,
   };
 }
 

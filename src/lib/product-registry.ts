@@ -410,7 +410,11 @@ export async function getAllProductSlugs(
       if (!hasMeaningfulTitle) continue;
 
       const pr = priceMap.get(p.id);
-      if (!(pr && (pr.price > 0 || pr.used_price > 0))) continue;
+      const hasPrice = pr && (pr.price > 0 || pr.used_price > 0);
+      const hasSpecs = p.officialSpecifications || p.specifications;
+
+      // Unify with PDP logic: Include if it has a price OR high-quality specs
+      if (!hasPrice && !hasSpecs) continue;
 
       if (p.parentAsin) {
         if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
@@ -524,6 +528,7 @@ async function fetchNonEmptyInternal() {
           "optimized",
           "processed",
           "scavenged",
+          "pending",
         ]),
       )
       .groupBy(products.category);
