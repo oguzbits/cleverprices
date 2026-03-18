@@ -1,5 +1,23 @@
 import { prices, products, type Price } from "@/db/schema";
 
+// Virtual Category Mapping
+// Many categories in our manifest are actually specific views of a larger DB category.
+// For example, 'apple-iphone' is actually 'smartphones' with 'brand=Apple'.
+// Without this mapping, these high-intent SEO pages would appear empty and be noindexed.
+export const VIRTUAL_CATEGORY_MAP: Record<
+  string,
+  { dbCategory: string; forcedFilters?: Record<string, string[]> }
+> = {
+  "apple-iphone": {
+    dbCategory: "smartphones",
+    forcedFilters: { brand: ["Apple"] },
+  },
+  "samsung-galaxy": {
+    dbCategory: "smartphones",
+    forcedFilters: { brand: ["Samsung"] },
+  },
+};
+
 // Lightweight price columns - lean schema
 
 export interface LocalizedProduct {

@@ -116,7 +116,7 @@ export async function generateMetadata({
     description,
     alternates: {
       canonical: canonicalUrl,
-      languages: getAlternateLanguages(`/${categorySlug}`),
+      languages: getAlternateLanguages(`/${category.slug}`),
     },
     openGraph: getOpenGraph({
       title: `${category.name} Preisvergleich | ${BRAND_DOMAIN}`,

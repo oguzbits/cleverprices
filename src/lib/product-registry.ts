@@ -31,6 +31,7 @@ import {
   litePriceColumns,
   liteProductColumns,
   superLitePriceColumns,
+  VIRTUAL_CATEGORY_MAP,
 } from "./product-definitions";
 
 export {
@@ -540,6 +541,14 @@ async function fetchNonEmptyInternal() {
     }
 
     const categories = results.map((r) => r.category);
+
+    // [GSC FIX] Add virtual categories (e.g. apple-iphone) if their base DB category (e.g. smartphones) is non-empty.
+    // This ensures they appear in the sitemap and pass the "isEmpty" check in the app.
+    Object.entries(VIRTUAL_CATEGORY_MAP).forEach(([virtualSlug, config]) => {
+      if (categories.includes(config.dbCategory) && !categories.includes(virtualSlug)) {
+        categories.push(virtualSlug);
+      }
+    });
 
     // Update memory cache
     MEMORY_NON_EMPTY_CATEGORIES = { data: categories, timestamp: Date.now() };

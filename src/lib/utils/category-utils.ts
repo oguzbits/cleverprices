@@ -72,25 +72,28 @@ export function filterProducts(
       return false;
     }
 
-    // 2. Brand
-    if (filters.brand?.length > 0 && !filters.brand.includes(p.brand || "")) {
-      return false;
+    // 2. Brand (Case-insensitive)
+    if (filters.brand?.length > 0) {
+      const pBrandLower = (p.brand || "").toLowerCase();
+      if (!filters.brand.some((b) => b.toLowerCase() === pBrandLower)) {
+        return false;
+      }
     }
 
-    // 3. Socket
-    if (
-      filters.socket?.length > 0 &&
-      !filters.socket.includes((p as any).socket || "")
-    ) {
-      return false;
+    // 3. Socket (Case-insensitive)
+    if (filters.socket?.length > 0) {
+      const pSocketLower = ((p as any).socket || "").toLowerCase();
+      if (!filters.socket.some((s) => s.toLowerCase() === pSocketLower)) {
+        return false;
+      }
     }
 
-    // 4. Cores
-    if (
-      filters.cores?.length > 0 &&
-      !filters.cores.includes(((p as any).cores || "").toString())
-    ) {
-      return false;
+    // 4. Cores (Case-insensitive)
+    if (filters.cores?.length > 0) {
+      const pCoresLower = String((p as any).cores || "").toLowerCase();
+      if (!filters.cores.some((c) => c.toLowerCase() === pCoresLower)) {
+        return false;
+      }
     }
 
     // 5. Capacity (as exact choice)
@@ -139,8 +142,8 @@ export function filterProducts(
 
         const selected = filters[group.field];
         if (Array.isArray(selected) && selected.length > 0) {
-          const pVal = String((p as any)[group.field] || "");
-          if (!selected.includes(pVal)) return false;
+          const pValLower = String((p as any)[group.field] || "").toLowerCase();
+          if (!selected.some((s) => s.toLowerCase() === pValLower)) return false;
         }
       }
     }

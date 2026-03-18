@@ -1,7 +1,7 @@
 # CleverPrices Indexing Pipeline: Audit & Resolution Log
 
-**Date**: March 17, 2026
-**Status**: Resolved & Ready for GSC Validation
+**Date**: March 18, 2026
+**Status**: 🚀 Fully Audited & Hardened for GSC Validation
 
 This document tracks the persistent Google Search Console (GSC) indexing issues and the definitive architectural repairs implemented on March 16-17, 2026. This serves as a "Source of Truth" to prevent circular troubleshooting in future audits.
 
@@ -9,12 +9,15 @@ This document tracks the persistent Google Search Console (GSC) indexing issues 
 
 ## 📅 Audit Overview (March 17, 2026)
 
-| Metric | Status before March 16 | Status after Repairs |
-| :--- | :--- | :--- |
-| **Soft 404s** (B0FPG... / WD-Black...) | High (Flagged daily) | 📉 Expected to drop to Zero |
-| **New URL Indexing** (IDs 200M+) | Stalled (Month-old URLs missing) | 📈 Restored (Unified Signals) |
-| **Metadata Consistency** | Mixed (Canonical ≠ OpenGraph) | ✅ 100% Unified |
-| **Redirect Logic** | Lazy (No ID prefixing) | 🚀 Forced ID Prefixing (301) |
+| Metric | Status before March 16 | Status after Repairs | GSC Report Fix |
+| :--- | :--- | :--- | :--- |
+| **Soft 404s** | High (Flagged daily) | 📉 Expected to drop to Zero | Fixed (Rules 1, 5, 6) |
+| **New URL Indexing** | Stalled (Month-old URLs missing) | 📈 Restored (Unified Signals) | Fixed (Rules 2, 3, 5) |
+| **Metadata Consistency** | Mixed (Canonical ≠ OpenGraph) | ✅ 100% Unified | Fixed (Rules 2 & 7) |
+| **Redirect Logic** | Lazy (No ID prefixing) | 🚀 Forced ID Prefixing (301) | Fixed (Rule 3) |
+| **Virtual Categories** | ❌ Empty/Noindexed | ✅ Correctly Populated | Fixed (Rule 5) |
+| **Filter Logic** | ❌ Case-Sensitive | ✅ Case-Insensitive (UX/SEO) | Fixed (Rule 6) |
+| **Canonical Mismatch** | Alias inconsistencies | ✅ Category Slug Force | Fixed (Rule 7) |
 
 ---
 
@@ -67,10 +70,41 @@ curl -I http://localhost:3000/p/this-does-not-exist
 ---
 
 ## 🔮 Future Proofing: Avoid These Mistakes
-1. **Never use `noindex` for missing pages**: Always use `notFound()`.
-2. **Never change ID prefix logic**: The `200000000` prefix is now our "Permanent Truth."
-3. **Always sync OG tags with Canonical**: They must always match exactly.
-4. **Always wait for Cache**: If adding a new "use cache" function, ensure every nested call is awaited.
+---
+1.  **Never use `noindex` for missing pages**: Always use `notFound()`.
+2.  **Never change ID prefix logic**: The `200000000` prefix is now our "Permanent Truth."
+3.  **Always sync OG tags with Canonical**: They must always match exactly.
+4.  **Always wait for Cache**: If adding a new "use cache" function, ensure every nested call is awaited.
+5.  **Always map Virtual Categories**: Any SEO-friendly category slug MUST have a record in `VIRTUAL_CATEGORY_MAP` or `CATEGORY_MANIFEST`.
+6.  **Always use Case-Insensitive Filters**: Ensure `.toLowerCase()` is used in `filterProducts` and server-side loops.
+
+---
+
+## 🛠️ Additional Fixes (March 18)
+
+### 5. Virtual Category Mapping (SEO Landing Pages)
+- **Problem**: Pages like `/apple-iphone` and `/samsung-galaxy` were appearing empty and being noindexed because they didn't map to the underlying `smartphones` database category.
+- **Resolution**: Created `VIRTUAL_CATEGORY_MAP` in `src/lib/product-definitions.ts` to map SEO slugs to base DB categories with forced filters (e.g., `brand: Apple`).
+
+### 6. Case-Insensitive Filtering (UX & SEO)
+- **Problem**: URL parameters like `?brand=apple` failed to match `brand: Apple` in the DB, leading to empty result pages and Soft 404s.
+- **Resolution**: Updated `filterProducts` and `getCategoryProducts` to use `.toLowerCase()` for all string-based filter comparisons.
+
+### 7. Canonical Alignment for Category Aliases
+- **Problem**: Visiting a category alias (e.g., `/processors` -> `/prozessoren`) produced hreflang links pointing to the alias instead of the canonical slug.
+- **Resolution**: Updated `generateMetadata` in `src/app/[categorySlug]/page.tsx` to always use `category.slug` (the canonical) for generating `languages` in `alternates`.
+
+---
+
+## 📋 GSC Validation Record (For manual fix validation)
+
+| Issue Type | Resolution Logic | Fix Status |
+| :--- | :--- | :--- |
+| **Excluded by ‘noindex’ tag** | Fixed mapping for virtual categories so they no longer return 0 products. | ✅ Resolved |
+| **Soft 404** (Empty Pages) | Populated virtual categories + implemented strict 404 (notFound()) for junk. | ✅ Resolved |
+| **Soft 404** (Filter Casing) | Implemented case-insensitive matching for brands, sockets, and cores. | ✅ Resolved |
+| **Page with redirect** | 301 Permanent Redirects for all alias and non-prefixed product URLs. | ✅ Resolved |
+| **Canonical Mismatch** | Unified Canonical, OG URL, and Hreflang to point strictly to the canonical slug. | ✅ Resolved |
 
 ---
 **Audit Log Managed by CleverPrices AI Architecture Team.**

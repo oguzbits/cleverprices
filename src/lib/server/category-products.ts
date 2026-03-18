@@ -5,6 +5,7 @@ import {
   type FilterParams,
   type LocalizedProduct,
   type Product,
+  VIRTUAL_CATEGORY_MAP,
 } from "@/lib/product-definitions";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
@@ -462,12 +463,15 @@ export async function getLeanCategoryProducts(
   "use cache";
   cacheLife("category");
 
+  const virtual = VIRTUAL_CATEGORY_MAP[categorySlug];
+  const queryCategory = virtual ? virtual.dbCategory : categorySlug;
+
   let rawProducts;
   if (categorySlug === "deals") {
     rawProducts = await getAllDeals(1000, countryCode);
   } else {
     rawProducts = await getRawProductsByCategory(
-      categorySlug,
+      queryCategory,
       countryCode,
       2000,
     );
@@ -477,6 +481,18 @@ export async function getLeanCategoryProducts(
     .map((p) => {
       const localized = mapRawToLocalizedProduct(p, countryCode, categorySlug);
       if (!localized) return null;
+
+      // Apply forced filters for virtual categories (e.g. apple-iphone must only show Apple brand)
+      if (virtual?.forcedFilters) {
+        const matchesAll = Object.entries(virtual.forcedFilters).every(
+          ([field, allowedValues]) => {
+            const valLower = String((localized as any)[field] || "").toLowerCase();
+            return allowedValues.some((v) => v.toLowerCase() === valLower);
+          },
+        );
+        if (!matchesAll) return null;
+      }
+
       return localized;
     })
     .filter((p): p is LocalizedProduct => p !== null);
@@ -688,6 +704,7 @@ export async function getCategoryProducts(
   });
 
   // 1. Fetch LEAN products for filtering/sorting (High Speed)
+  // [GSC FIX] getLeanCategoryProducts now handles mapping of virtual categories (e.g. apple-iphone -> smartphones)
   const leanProducts = await getLeanCategoryProducts(
     categorySlug,
     countryCode,
@@ -700,10 +717,10 @@ export async function getCategoryProducts(
   // [PERFORMANCE] Pre-compute filter values once to avoid redundant work in the 2000-item loop
   const searchLower = filters.search?.toLowerCase() || "";
   const filterSummary = {
-    socket: new Set(filters.socket || []),
-    cores: new Set(filters.cores || []),
-    condition: new Set(filters.condition || []),
-    brand: new Set(filters.brand || []),
+    socket: new Set((filters.socket || []).map((s: string) => s.toLowerCase())),
+    cores: new Set((filters.cores || []).map((c: string) => c.toLowerCase())),
+    condition: new Set((filters.condition || []).map((c: string) => c.toLowerCase())),
+    brand: new Set((filters.brand || []).map((b: string) => b.toLowerCase())),
   };
 
   // 3. Optimized Single-Pass Processing (Filtering, Facet Counting, Price Ranges)
@@ -723,8 +740,9 @@ export async function getCategoryProducts(
   leanProducts.forEach((p) => {
     // A. Field Match Status
     const matches: Record<string, boolean> = {};
+    const pBrandLower = (p.brand || "").toLowerCase();
     matches.brand =
-      !filterSummary.brand.size || filterSummary.brand.has(p.brand || "");
+      !filterSummary.brand.size || filterSummary.brand.has(pBrandLower);
 
     category?.filterGroups?.forEach((group) => {
       if (group.field === "brand") return;
@@ -737,11 +755,15 @@ export async function getCategoryProducts(
             ? String(p.normalizedCapacity || p.capacity || "")
             : String((p as any)[group.field] || "");
 
+        const pValLower = pVal.toLowerCase();
+
         // Support both array and single value
         if (Array.isArray(selected)) {
-          matches[group.field] = selected.includes(pVal);
+          matches[group.field] = selected.some(
+            (s) => s.toLowerCase() === pValLower,
+          );
         } else {
-          matches[group.field] = selected === pVal;
+          matches[group.field] = selected.toLowerCase() === pValLower;
         }
       }
     });
@@ -750,9 +772,10 @@ export async function getCategoryProducts(
     const matchesSearch =
       !searchLower || p.title.toLowerCase().includes(searchLower);
 
-    const pCondition = p.condition || "New";
+    const pConditionLower = (p.condition || "New").toLowerCase();
     const matchesCondition =
-      !filterSummary.condition.size || filterSummary.condition.has(pCondition);
+      !filterSummary.condition.size ||
+      filterSummary.condition.has(pConditionLower);
 
     // Capacity Range (Storage/PSU)
     const cap = p.capacity || 0;
