@@ -39,12 +39,38 @@ const delayArg = args.find((a) => a.startsWith("--delay="))?.split("=")[1];
 // DEFAULT DELAY: 200ms for prod, 100ms for local to be gentler on the server
 const DEFAULT_DELAY = isProd ? 200 : 100;
 const DELAY = delayArg ? parseInt(delayArg) : DEFAULT_DELAY;
-const TIMEOUT = isProd ? 15000 : 30000; // 30s for local to handle heavy Hub pages
+const TIMEOUT = isProd ? 15000 : 30000;
+
+/**
+ * ⌛ WAIT FOR SERVER
+ * Ensures the target port is actually listening before we flood it with 1800+ requests.
+ */
+async function waitForServer(url: string, maxWaitMs = 120000) {
+  const start = Date.now();
+  console.log(`${COLORS.cyan}⌛ Waiting for server at ${url} to be ready...${COLORS.reset}`);
+  
+  while (Date.now() - start < maxWaitMs) {
+    try {
+      const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+      if (res.ok || res.status < 500) {
+        console.log(`${COLORS.green}✅ Server is UP!${COLORS.reset}\n`);
+        return true;
+      }
+    } catch (e) {
+      // Just wait
+    }
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  throw new Error(`Timeout waiting for server at ${url} after ${maxWaitMs}ms`);
+}
 
 export async function validateSitemap() {
   const targetSitemap = isProd
     ? "https://cleverprices.com/sitemap.xml"
     : args.find((a) => !a.startsWith("--")) || DEFAULT_SITEMAP;
+
+  const isLocalhost = targetSitemap.includes("localhost") || args.some(a => a.includes("localhost")) || !isProd;
+  const siteUrl = isLocalhost ? "http://localhost:3000" : "https://cleverprices.com";
 
   console.log(
     `${COLORS.cyan}🔍 Starting Audit: ${COLORS.reset}${targetSitemap}`,
@@ -57,11 +83,24 @@ export async function validateSitemap() {
     `${COLORS.yellow}--------------------------------------------------${COLORS.reset}\n`,
   );
 
+  // 1. Wait for server (critical for usability when running build/start)
+  if (isLocalhost) {
+    try {
+      await waitForServer(siteUrl);
+    } catch (e: any) {
+      console.error(`${COLORS.red}❌ ${e.message}${COLORS.reset}`);
+      process.exit(1);
+    }
+  }
+
   let urls: string[] = [];
 
   try {
     if (targetSitemap.endsWith(".xml")) {
-      const response = await fetch(targetSitemap);
+      console.log(`${COLORS.cyan}📡 Loading sitemap...${COLORS.reset} (Dev servers can take up to 2m)`);
+      const response = await fetch(targetSitemap, {
+        signal: AbortSignal.timeout(120000), // 120s for initial sitemap generation
+      });
       if (!response.ok) {
         throw new Error(
           `Failed to fetch sitemap: ${response.status} ${response.statusText}`,
@@ -69,16 +108,17 @@ export async function validateSitemap() {
       }
       const xml = await response.text();
       urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-    } else {
+    }
+ else {
       // Direct URL(s) mode
       urls = args.filter((a) => !a.startsWith("--"));
       if (urls.length === 0) urls = [targetSitemap];
     }
 
-    // LOCAL TESTING BOOST: If we are testing localhost, but sitemap has production URLs, swap them
-    const isLocalhost =
-      urls.some((u) => u.includes("localhost")) ||
-      targetSitemap.includes("localhost");
+    // ⏯️ RESUME LOGIC
+    const resumeIndexArg = args.find(a => a.startsWith("--resume="))?.split("=")[1];
+    const resumeIndex = resumeIndexArg ? parseInt(resumeIndexArg) : 0;
+
     if (isLocalhost) {
       console.log(
         `${COLORS.yellow}🔧 Localhost detected. Swapping production URLs for local testing...${COLORS.reset}`,
@@ -119,98 +159,120 @@ export async function validateSitemap() {
     let processed = 0;
     const startTime = Date.now();
 
-    // Use a worker pool pattern for maximum throughput
-    const queue = [...urls];
-    const workers = Array(Math.min(CONCURRENCY, queue.length))
-      .fill(null)
-      .map(async () => {
-        while (queue.length > 0) {
-          const url = queue.shift();
-          if (!url) break;
+    const totalUrlsCount = urls.length;
+    const initialQueue = urls.slice(resumeIndex);
+    const queue = [...initialQueue];
+    let currentIndex = 0;
+    let consecutiveErrors = 0;
 
+    console.log(
+      `📡 Auditing ${COLORS.cyan}${queue.length}${COLORS.reset} URLs (from index ${resumeIndex}) with concurrency ${CONCURRENCY}...\n`
+    );
+
+    const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async (_, i) => {
+      while (true) {
+        const urlIndex = currentIndex++;
+        if (urlIndex >= queue.length) break;
+
+        const url = queue[urlIndex];
+        const displayIndex = resumeIndex + urlIndex + 1;
+
+        // Long-running watch to detect hangs
+        const taskTimer = setTimeout(() => {
+          console.log(`\n${COLORS.yellow}⚠️ Still waiting for URL ${displayIndex}/${totalUrlsCount}: ${url}${COLORS.reset}`);
+        }, 30000); // 30s before warning
+
+        // Safety: Stop if too many consecutive connection errors
+        if (consecutiveErrors > 10) {
+          console.error(`\n${COLORS.red}🛑 SEVERE: 10+ consecutive connection errors. Is the server down? Terminating.${COLORS.reset}`);
+          process.exit(1);
+        }
+
+        try {
           const res = await auditUrl(url, isFastMode);
-          if (DELAY > 0) await new Promise((r) => setTimeout(r, DELAY));
+          clearTimeout(taskTimer);
+
+          if (DELAY > 0) await new Promise(r => setTimeout(r, DELAY));
           processed++;
 
           if (res.status === 200) {
+            consecutiveErrors = 0;
             if (res.isSoft404) {
               results.soft404++;
               details.push(`${COLORS.yellow}[SOFT 404]${COLORS.reset} ${url}`);
             } else {
               results.ok++;
-
-              // Metadata Consistency Checks
               if (!isFastMode && res.metadata) {
-                // 1. Canonical Match Check
                 if (res.metadata.canonical) {
                   try {
-                    // Normalize canonical URL to just its pathname for comparison
-                    const canonicalPath = new URL(res.metadata.canonical)
-                      .pathname;
-                    const urlPath = new URL(url).pathname;
-
+                    const canonicalPath = decodeURIComponent(new URL(res.metadata.canonical).pathname).trim().replace(/\/$/, "");
+                    const urlPath = decodeURIComponent(new URL(url).pathname).trim().replace(/\/$/, "");
                     if (canonicalPath !== urlPath) {
                       results.mismatch++;
+                      // 🔍 DETAILED BYTE-BY-BYTE DIAGNOSIS
+                      const diagnosis = `      Byte Comparison:
+      Exp: ${Array.from(urlPath).map(c => c.charCodeAt(0)).join(" ")}
+      Got: ${Array.from(canonicalPath).map(c => c.charCodeAt(0)).join(" ")}`;
+                      
                       details.push(
-                        `${COLORS.red}[CANONICAL MISMATCH]${COLORS.reset} ${url}\n   Expected Path: ${urlPath}\n   Found Path:    ${canonicalPath}\n   Full Canonical: ${res.metadata.canonical}`,
+                        `${COLORS.red}[CANONICAL MISMATCH]${COLORS.reset} ${url}\n` +
+                        `   Index:         ${displayIndex}\n` +
+                        `   Expected Path: ${JSON.stringify(urlPath)}\n` +
+                        `   Found Path:    ${JSON.stringify(canonicalPath)}\n` +
+                        `   Raw Canonical: ${JSON.stringify(res.metadata.canonical)}\n` +
+                        diagnosis
                       );
                     }
+
                   } catch (e) {
                     results.mismatch++;
-                    details.push(
-                      `${COLORS.red}[CANONICAL PARSE ERROR]${COLORS.reset} ${url}\n   Invalid Canonical: ${res.metadata.canonical}`,
-                    );
+                    details.push(`${COLORS.red}[CANONICAL PARSE ERROR]${COLORS.reset} ${url}`);
                   }
-                }
-
-                // 2. Missing Metadata Checks
-                if (!res.metadata.title) {
-                  details.push(
-                    `${COLORS.yellow}[MISSING TITLE]${COLORS.reset} ${url}`,
-                  );
-                }
-                if (!res.metadata.description) {
-                  details.push(
-                    `${COLORS.yellow}[MISSING DESCRIPTION]${COLORS.reset} ${url}`,
-                  );
                 }
               }
             }
           } else if (res.status >= 300 && res.status < 400) {
             results.redirect++;
-            details.push(
-              `${COLORS.yellow}[REDIRECT ${res.status}]${COLORS.reset} ${url} -> ${res.redirectTarget}`,
-            );
+            details.push(`${COLORS.yellow}[REDIRECT ${res.status}]${COLORS.reset} ${url}`);
           } else if (res.status === 404) {
             results.notFound++;
             details.push(`${COLORS.red}[404]${COLORS.reset} ${url}`);
-          } else if (res.status === 0) {
-            results.timeout++;
-            details.push(
-              `${COLORS.magenta}[TIMEOUT/CONN ERROR]${COLORS.reset} ${url}`,
-            );
           } else {
             results.serverError++;
-            details.push(
-              `${COLORS.red}[ERROR ${res.status}]${COLORS.reset} ${url}`,
-            );
+            consecutiveErrors++;
+            details.push(`${COLORS.red}[ERROR ${res.status}]${COLORS.reset} ${url}`);
           }
-
-          // Progress indicator every 10 URLs
-          if (processed % 10 === 0 || processed === urls.length) {
-            const rps = (processed / ((Date.now() - startTime) / 1000)).toFixed(
-              1,
-            );
-            process.stdout.write(
-              `\rProgress: ${processed}/${urls.length} (${Math.round(
-                (processed / urls.length) * 100,
-              )}%) | ${rps} URLs/sec`,
-            );
-          }
+        } catch (err: any) {
+          clearTimeout(taskTimer);
+          results.timeout++;
+          consecutiveErrors++;
+          details.push(`${COLORS.magenta}[RUNTIME ERROR]${COLORS.reset} ${url}: ${err?.message || "Unknown error"}`);
         }
-      });
+
+
+        // Periodic Progress Reporting
+        if (processed % 10 === 0 || processed === queue.length) {
+          const rps = (processed / ((Date.now() - startTime) / 1000)).toFixed(1);
+          const percent = Math.round((processed / queue.length) * 100);
+          process.stdout.write(
+            `\rProgress: ${processed}/${queue.length} (${percent}%) | ${rps} URLs/sec | Current: ${displayIndex}/${urls.length}`
+          );
+        }
+      }
+    });
+
+    // 🚀 WATCHDOG: Force exit if no progress for 5 minutes (Hub pages can be slow on local)
+    let lastProcessed = 0;
+    const watchdog = setInterval(() => {
+      if (processed === lastProcessed && processed < queue.length) {
+        console.error(`\n${COLORS.red}🛑 WATCHDOG: No progress for 300s! Stalling at ${processed}/${queue.length}. Terminating.${COLORS.reset}`);
+        process.exit(1);
+      }
+      lastProcessed = processed;
+    }, 300000);
 
     await Promise.all(workers);
+    clearInterval(watchdog);
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(

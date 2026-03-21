@@ -124,12 +124,13 @@ async function fetchCanonicalIdInternal(
   parentAsin?: string | null,
   currentId?: number,
   modelTitle?: string,
+  depth: number = 0,
 ) {
   "use cache";
   cacheLife("product");
-  const _v = "v3"; // Version bump
+  const _v = "v4"; // Version bump
 
-  if (!parentAsin) return currentId;
+  if (depth > 5 || !parentAsin) return currentId!;
 
   await dbReady;
   const allVariants = await db
@@ -154,7 +155,6 @@ async function fetchCanonicalIdInternal(
 
   // Split based on specific series (matches category page expansion logic)
   const targetKey = modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "");
-  const { getProductIdentity } = await import("./utils/product-identity");
 
   for (const v of allVariants) {
     const iden = getProductIdentity(v as any);
@@ -177,6 +177,7 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
   parentAsin: string | undefined,
   currentId: number,
   modelTitle?: string,
+  depth: number = 0,
 ): Promise<number> {
   const isScript =
     typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
@@ -202,7 +203,6 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
     if (allVariants.length === 0) return currentId;
     if (!modelTitle) return allVariants[0].id;
     const targetKey = modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "");
-    const { getProductIdentity } = await import("./utils/product-identity");
     for (const v of allVariants) {
       const iden = getProductIdentity(v as any);
       const key = (iden.modelTitle || "")
@@ -217,6 +217,7 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
     parentAsin,
     currentId,
     modelTitle,
+    depth,
   )) as number;
 });
 
@@ -273,6 +274,7 @@ async function getProductPriceHistory(
  */
 export async function findProductBySyntheticId(
   syntheticId: number,
+  depth: number = 0,
 ): Promise<Product | undefined> {
   if (syntheticId < 900000000) return undefined;
 
@@ -295,10 +297,10 @@ export async function findProductBySyntheticId(
     );
     const canonicalSyntheticId = 900000000 + canonicalRealId;
 
-    if (canonicalRealId !== realId) {
+    if (canonicalRealId !== realId && depth < 5) {
       const actualCanonical = await getProductById(canonicalRealId);
       if (actualCanonical) {
-        return findProductBySyntheticId(canonicalSyntheticId);
+        return findProductBySyntheticId(canonicalSyntheticId, depth + 1);
       }
     }
   }
@@ -306,6 +308,7 @@ export async function findProductBySyntheticId(
   // 3. DYNAMIC REPRESENTATIVE SELECTION (Robustness Layer)
   // We fetch matching siblings (same series) to pick the best face for the hub
   let representative = canonicalProduct;
+  let variants: Product[] = [];
 
   if (canonicalProduct.parentAsin) {
     const rawVariants = await getProductVariants(canonicalProduct, "de");
@@ -315,7 +318,7 @@ export async function findProductBySyntheticId(
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "");
 
-      const variants = rawVariants.filter((v) => {
+      variants = rawVariants.filter((v) => {
         const vIden = getProductIdentity(v);
         const vModelKey = (vIden.modelTitle || "")
           .toLowerCase()
@@ -335,7 +338,7 @@ export async function findProductBySyntheticId(
 
   const familyIdentity = getFamilyIdentity(
     { ...canonicalProduct, id: syntheticId, isParentView: true },
-    [],
+    variants || [],
   );
 
   return {
@@ -445,7 +448,7 @@ export async function getAllProductSlugs(
       });
     }
 
-    // 5. Process Families
+    // 5. Process Families: Simple grouping by Parent ASIN for the sitemap.
     for (const [parentAsin, variants] of families.entries()) {
       const allMapped = variants.map((v) => {
         const pr = priceMap.get(v.id!);
@@ -466,7 +469,7 @@ export async function getAllProductSlugs(
         continue;
       }
 
-      // Multi-variant Family:
+      // Multi-variant Family Hub:
       
       // A. Add individual variants if requested
       if (includeVariants) {
@@ -481,7 +484,7 @@ export async function getAllProductSlugs(
         }
       }
 
-      // B. Add the Hub (Parent) page (High Priority SEO)
+      // B. Add the Hub (Parent) page (Highest priority)
       const rep = [...allMapped].sort((a, b) => (a.id || 0) - (b.id || 0))[0];
       const syntheticId = 900000000 + (rep.id || 0);
       const { slug: hubSlug } = getFamilyIdentity(

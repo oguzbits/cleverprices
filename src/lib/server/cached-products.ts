@@ -30,6 +30,7 @@ import {
   mergeLivePrices,
   mergeLivePricesSelective,
 } from "./live-data";
+import { getProductIdentity } from "../utils/product-identity";
 
 /**
  * --- PRIVATE CACHED DATA FETCHERS ---
@@ -152,11 +153,17 @@ async function getCachedProductByParentAsinSuffix(
 
 async function getCachedProductBySyntheticId(
   id: number,
-  _version: string = "v214",
+  depth: number = 0,
+  _version: string = "v215",
 ) {
   "use cache";
   cacheLife("product");
-  return await findProductBySyntheticIdSync(id);
+  // Safety: Prevent infinite recursion if canonical resolution loops
+  if (depth > 5) {
+    console.error(`[SEO CRITICAL] Infinite recursion detected for ID ${id}`);
+    return undefined;
+  }
+  return await findProductBySyntheticIdSync(id, depth);
 }
 
 export async function getProductById(
@@ -332,13 +339,18 @@ export async function getPDPRenderData(
   if (idMatch) {
     const id = parseInt(idMatch[1]);
     if (id >= 900000000) {
-      product = await getCachedProductBySyntheticId(id);
+      product = await getCachedProductBySyntheticId(id, 0);
 
       if (!product) {
         console.warn(`[SEO 404] Synthetic Hub ID ${id} not found: ${slug}`);
         return null;
       }
 
+      // TRACE: Product 5301 has been causing hangs/timeouts in sitemap audit.
+      const isTargetTrack = id === 900005301 || (product.id && product.id >= 200005301 && product.id <= 200005304);
+      if (isTargetTrack) {
+        console.log(`[TRACE 5301] Rendering Hub/Product ${id} with slug ${slug}`);
+      }
       if (product) {
         // Strict slug check for Hubs: ensure the text part matches the canonical version
         const isSlugMatch = product.slug === slug;
@@ -357,8 +369,6 @@ export async function getPDPRenderData(
           );
 
           // 1. Filter variants by series (modelTitle) to avoid mixing e.g. ASUS Prime and ROG Strix
-          const { getProductIdentity } =
-            await import("../utils/product-identity");
           const hubIdentity = getProductIdentity(product);
           const hubModelKey = (hubIdentity.modelTitle || "")
             .toLowerCase()
