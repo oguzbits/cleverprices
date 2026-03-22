@@ -404,9 +404,25 @@ export async function getAllProductSlugs(
       current.used_price = Math.max(current.used_price, p.usedPrice || 0);
     }
 
-    // 3. Group by family
-    const families = new Map<string, any[]>();
-    const singletons: any[] = [];
+    // 3. Group ALL products by family first (Critical for slug consensus)
+    const fullFamilies = new Map<string, any[]>();
+    for (const p of rawAllProducts) {
+      if (p.parentAsin) {
+        if (!fullFamilies.has(p.parentAsin)) fullFamilies.set(p.parentAsin, []);
+        fullFamilies.get(p.parentAsin)!.push(p);
+      }
+    }
+
+    const results: {
+      id: number;
+      slug: string;
+      category: string;
+      enrichmentStatus?: string | null;
+      updatedAt: Date;
+    }[] = [];
+
+    // 4. Filter and Map Products
+    const processedFamilies = new Set<string>();
 
     for (const p of rawAllProducts) {
       // Basic quality check (Same as PDP)
@@ -420,85 +436,85 @@ export async function getAllProductSlugs(
       // Unify with PDP logic: Include if it has a price OR high-quality specs
       if (!hasPrice && !hasSpecs) continue;
 
-      if (p.parentAsin) {
-        if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
-        families.get(p.parentAsin)!.push(p);
-      } else {
-        singletons.push(p);
-      }
-    }
-
-    const results: {
-      id: number;
-      slug: string;
-      category: string;
-      enrichmentStatus?: string | null;
-      updatedAt: Date;
-    }[] = [];
-
-    // 4. Process Singletons (They always get their own page)
-    for (const p of singletons) {
-      const mapped = mapDbProduct(p as DbProduct, [], [], false);
-      results.push({
-        id: p.id!,
-        slug: mapped.slug,
-        category: p.category,
-        enrichmentStatus: p.enrichmentStatus,
-        updatedAt: p.updatedAt || new Date(),
-      });
-    }
-
-    // 5. Process Families: Simple grouping by Parent ASIN for the sitemap.
-    for (const [parentAsin, variants] of families.entries()) {
-      const allMapped = variants.map((v) => {
-        const pr = priceMap.get(v.id!);
-        const priceArray = [{ price: pr.price, usedPrice: pr.used_price, country: "de" }];
-        return mapDbProduct(v as any, priceArray as any, variants, false);
-      });
-
-      // If only one variant actually exists in this family, treat it as a singleton (No Hub)
-      if (allMapped.length === 1) {
-        const p = variants[0];
+      if (!p.parentAsin) {
+        // Singleton
+        const mapped = mapDbProduct(p as DbProduct, [], [], false);
         results.push({
           id: p.id!,
-          slug: allMapped[0].slug,
+          slug: mapped.slug,
           category: p.category,
           enrichmentStatus: p.enrichmentStatus,
           updatedAt: p.updatedAt || new Date(),
         });
-        continue;
-      }
+      } else {
+        // Part of a family - we only process each family once if includeVariants is false
+        // but we ALWAYS use the fullFamilies map for consensus
+        const variants = fullFamilies.get(p.parentAsin)!;
+        
+        // Optimization: Map all siblings once per family to share consensus
+        const allMapped = variants.map((v) => {
+          const vPr = priceMap.get(v.id!);
+          const priceArray = vPr ? [{ price: vPr.price, usedPrice: vPr.used_price, country: "de" }] : [];
+          // Pass the FULL variants list here for CORRECT consensus
+          return mapDbProduct(v as any, priceArray as any, variants, false);
+        });
 
-      // Multi-variant Family Hub:
-      
-      // A. Add individual variants if requested
-      if (includeVariants) {
-        for (let i = 0; i < variants.length; i++) {
-          results.push({
-            id: variants[i].id!,
-            slug: allMapped[i].slug,
-            category: variants[i].category,
-            enrichmentStatus: variants[i].enrichmentStatus,
-            updatedAt: variants[i].updatedAt || new Date(),
-          });
+        if (includeVariants) {
+          // If variants are requested, add this specific product
+          const selfIndex = variants.findIndex(v => v.id === p.id);
+          if (selfIndex !== -1) {
+            results.push({
+              id: p.id!,
+              slug: allMapped[selfIndex].slug,
+              category: p.category,
+              enrichmentStatus: p.enrichmentStatus,
+              updatedAt: p.updatedAt || new Date(),
+            });
+          }
+        }
+
+        // Add the Hub (Parent) page if not already added for this family
+        if (!processedFamilies.has(p.parentAsin)) {
+          processedFamilies.add(p.parentAsin);
+          
+          const goodVariantsIndices = variants.map((v, i) => {
+             const m = allMapped[i];
+             const mPr = m.prices["de"];
+             const mUsedPr = m.usedPrices?.["de"];
+             const isGood = (mPr && mPr > 0) || (mUsedPr && mUsedPr > 0) || m.officialSpecifications || m.specifications;
+             return isGood ? i : -1;
+          }).filter(i => i !== -1);
+
+          if (goodVariantsIndices.length > 1) {
+             const goodMapped = goodVariantsIndices.map(i => allMapped[i]);
+             const rep = getFamilyRepresentative(goodMapped as any);
+             const repId = (rep as any).id || 0;
+             const syntheticId = 900000000 + (repId % 100000000);
+             const repIndex = variants.findIndex(v => v.id === repId);
+             const { slug: hubSlug } = getFamilyIdentity(
+               { ...rep, id: syntheticId, isParentView: true } as any,
+               allMapped, // Use full list for Hub identity too
+             );
+
+             results.push({
+               id: syntheticId,
+               slug: hubSlug,
+               category: (rep as any).category || "unknown",
+               enrichmentStatus: variants.some(v => v.enrichmentStatus === "processed") ? "processed" : "pending",
+               updatedAt: (repIndex !== -1 ? variants[repIndex].updatedAt : null) || new Date(),
+             });
+          } else if (goodVariantsIndices.length === 1 && !includeVariants) {
+            const idx = goodVariantsIndices[0];
+            results.push({
+              id: variants[idx].id!,
+              slug: allMapped[idx].slug,
+              category: variants[idx].category,
+              enrichmentStatus: variants[idx].enrichmentStatus,
+              updatedAt: variants[idx].updatedAt || new Date(),
+            });
+          }
         }
       }
-
-      // B. Add the Hub (Parent) page (Highest priority)
-      const rep = [...allMapped].sort((a, b) => (a.id || 0) - (b.id || 0))[0];
-      const syntheticId = 900000000 + (rep.id || 0);
-      const { slug: hubSlug } = getFamilyIdentity(
-        { ...rep, id: syntheticId, isParentView: true } as any,
-        allMapped,
-      );
-
-      results.push({
-        id: syntheticId,
-        slug: hubSlug,
-        category: rep.category || "unknown",
-        enrichmentStatus: variants.some(v => v.enrichmentStatus === "processed") ? "processed" : "pending",
-        updatedAt: new Date(),
-      });
     }
 
     return results;

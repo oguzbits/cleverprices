@@ -34,46 +34,58 @@ describe("Product Families Logic", () => {
       expect(result?.id).toBe(2);
     });
 
-    it("should pick cheapest among multiple 'New' items", () => {
+    it("should pick by Sales Rank/ID among multiple 'New' items (Stability)", () => {
       const variants = [
-        createMockProduct({ id: 1, condition: "New", prices: { de: 200 } }),
-        createMockProduct({ id: 2, condition: "New", prices: { de: 150 } }),
-        createMockProduct({ id: 3, condition: "New", prices: { de: 300 } }),
+        createMockProduct({ id: 1, condition: "New", salesRank: 10, prices: { de: 200 } }),
+        createMockProduct({ id: 2, condition: "New", salesRank: 5, prices: { de: 250 } }), // Better rank wins despite price
+        createMockProduct({ id: 3, condition: "New", salesRank: 100, prices: { de: 150 } }),
       ];
 
       const result = getFamilyRepresentative(variants);
       expect(result?.id).toBe(2);
     });
 
-    it("should fallback to cheapest Overall if NO 'New' items exist", () => {
+    it("should tie-break by ID if Sales Rank is missing", () => {
       const variants = [
-        createMockProduct({ id: 1, condition: "Renewed", prices: { de: 80 } }),
-        createMockProduct({ id: 2, condition: "Used", prices: { de: 60 } }), // Cheapest overall
+        createMockProduct({ id: 10, condition: "New", prices: { de: 100 } }),
+        createMockProduct({ id: 5, condition: "New", prices: { de: 150 } }), // Lower ID wins for stability
+      ];
+
+      const result = getFamilyRepresentative(variants);
+      expect(result?.id).toBe(5);
+    });
+
+    it("should fallback to best Rank/ID Overall if NO 'New' items exist", () => {
+      const variants = [
+        createMockProduct({ id: 1, condition: "Renewed", salesRank: 10, prices: { de: 80 } }),
+        createMockProduct({ id: 2, condition: "Used", salesRank: 5, prices: { de: 60 } }), // Better rank wins
       ];
 
       const result = getFamilyRepresentative(variants);
       expect(result?.id).toBe(2);
     });
 
-    it("should handle LocalizedProduct shape (flattened 'price' field)", () => {
+    it("should handle LocalizedProduct shape (flattened 'price' field) and pick by Rank/ID", () => {
       // Simulate category page data where price is a number, not an object
       const variants = [
         createMockProduct({
           id: 1,
           condition: "New",
+          salesRank: 1,
           price: 120,
           prices: undefined,
         }),
         createMockProduct({
           id: 2,
           condition: "New",
+          salesRank: 10,
           price: 90,
           prices: undefined,
-        }), // Cheapest
+        }),
       ];
 
       const result = getFamilyRepresentative(variants);
-      expect(result?.id).toBe(2);
+      expect(result?.id).toBe(1); // Rank 1 wins despite higher price
     });
 
     it("should return undefined for empty list", () => {

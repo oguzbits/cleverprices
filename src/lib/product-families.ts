@@ -33,16 +33,24 @@ export function getFamilyRepresentative(
 
   const candidates = newItems.length > 0 ? newItems : variants;
   const sorted = [...candidates].sort((a, b) => {
-    // Helper to get active price
+    // 1. Prioritize Sales Rank for stability and quality (Lower is better)
+    const rankA = (a as any).salesRank ?? 999999;
+    const rankB = (b as any).salesRank ?? 999999;
+    if (rankA !== rankB) return rankA - rankB;
+
+    // 2. Secondary tie-breaker: ID (Absolute stability for URLs)
+    const idA = (a as any).id || 0;
+    const idB = (b as any).id || 0;
+    if (idA !== idB) return idA - idB;
+
+    // 3. Last resort: Price (Unstable, only used if ranks and IDs are identical/missing)
     const getPrice = (p: any) =>
-      p.price || // Prioritize flattened price (LocalizedProduct)
+      p.price ||
       p.prices?.de ||
       p.prices?.["de"] ||
       (p.prices ? Object.values(p.prices)[0] : 0) ||
       999999;
-    const priceDiff = getPrice(a) - getPrice(b);
-    if (priceDiff !== 0) return priceDiff;
-    return (a.id || 0) - (b.id || 0);
+    return getPrice(a) - getPrice(b);
   });
 
   return sorted[0];
