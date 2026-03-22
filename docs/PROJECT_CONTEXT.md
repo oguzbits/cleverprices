@@ -124,10 +124,13 @@ Before writing any code or answering architecture questions, you MUST:
 
 - **Analytics**: Web Analytics (Cookieless).
   - **Sitemap Indexing & Migration (Active Phase)**:
-    - **Current Goal**: Fix GSC "Stale URL" issues (urls from 30+ days ago).
-    - **Strategy**: **Tactical Flooding**. Temporarily include `scavenged` products and `generic` slugs in the sitemap to force Googlebot to discover the new structure.
-    - **Redirect Policy**: All legacy/alias redirects MUST use `permanentRedirect` (301) to transfer authority.
-    - **Status**: ~7,000 URLs in sitemap (Expanded from ~1,900).
+    - **Current Goal**: Resolve GSC crawl drop and "noindex" exclusion of product pages.
+    - **Strategy**: **High-Quality Hub-First**. Exclude `scavenged` products (~13k) from the sitemap to prioritize impressions and authority. Focus on the ~2k `optimized/processed` Hub products.
+    - **Resolution Highlights**:
+      - [x] **200 Shell Redirect Fix**: Moved redirects to `generateMetadata` in `page.tsx`. This is the **primary driver** for crawl speed recovery (eliminates client-side redirects from blank shells).
+      - [x] **Soft 404 Guard**: Replaced `noindex` shell with `notFound()`.
+      - [x] **Crawl Waste Removal**: Added `noindex` to active category filters (brand/sort) to preserve budget for canonical URLs.
+    - **Status**: **Success-Pending**. ~2,000 high-quality URLs in sitemap. Redirects fully server-side.
   - JSON-LD structured data for products.
   - German-optimized metadata.
 

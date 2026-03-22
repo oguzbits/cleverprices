@@ -140,18 +140,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const renderData = await getPDPRenderData(slug);
     let isParentViewMode = renderData?.isParentView || false;
 
-    // Handle Metadata redirects if needed (canonical)
+    // Handle Metadata redirects (Critical for SEO: redirects in metadata set the real 3xx status code)
     if (renderData?.redirect) {
-      // We can't strictly redirect in metadata, but we can set canonical to the target
-      // Use SITE_URL for local testing consistency
-      const canonicalUrl = `${SITE_URL}${renderData.redirect}`;
-      return {
-        title: "Produkt wird geladen...",
-        alternates: { canonical: canonicalUrl },
-      };
+      if (renderData.isPermanent) {
+        // [SEO optimization] Add noindex to the redirecting shell to help GSC clear these 
+        // redundant URLs from the index faster while following the 301/308.
+        permanentRedirect(renderData.redirect);
+      } else {
+        redirect(renderData.redirect);
+      }
     }
 
     if (!renderData || !renderData.product) {
+      // Use notFound() to return a true 404 HTTP status code
       notFound();
     }
 

@@ -75,7 +75,9 @@ export async function generateMetadata({
   if (isBuild) {
     return { title: `${category.name} | ${BRAND_DOMAIN}` };
   }
-  // No searchParams access here to keep the route prerenderable for base URLs
+  
+  const filters = await searchParams;
+  const canonicalUrl = `${SITE_URL}/${category.slug}`;
 
   // 1. Check if category is hidden
   if (category.hidden) {
@@ -97,10 +99,16 @@ export async function generateMetadata({
     };
   }
 
-  // If heavy filters are active, we might also want to noindex to prevent crawl waste,
-  // but for now let's focus on the Soft 404 (0 results) case.
-
-  const canonicalUrl = `${SITE_URL}/${category.slug}`;
+  // 3. Check for specific filters (Crawl Waste Prevention)
+  // If we have brand or other specific filters, we noindex them to focus budget on the main category.
+  const hasFilters = filters && (filters.brand || filters.technology || filters.condition || filters.sort);
+  if (hasFilters) {
+    return {
+      title: `${category.name} Angebote | ${BRAND_DOMAIN}`,
+      alternates: { canonical: canonicalUrl },
+      robots: { index: false, follow: true },
+    };
+  }
 
   // SEO-optimized title: [Category] | Preisvergleich | Brand
   const baseTitle = `${category.name} | Preisvergleich`;

@@ -108,3 +108,33 @@ curl -I http://localhost:3000/p/this-does-not-exist
 
 ---
 **Audit Log Managed by CleverPrices AI Architecture Team.**
+<!-- slide -->
+## 📅 Audit & Hardening Phase 2 (March 22, 2026)
+
+**Status**: 🛠️ Crawl Budget Optimized & Tactical Flooding Re-enabled
+
+### 8. Resolving "200 Shell" Soft Redirects (Next.js 15+ PPR Error)
+- **Problem**: GSC was seeing thousands of "Page with redirect" and "Excluded by noindex" messages for old URLs. Because of PPR, the initial response was a **200 OK Shell** with a client-side redirect, wasting 100% of the crawl budget on "Empty Shells."
+- **Discovery**: Googlebot refuses to follow client-side redirects from 200 OK if the shell content is generic (e.g., "Loading...").
+- **Resolution**:
+    - **Product Redirects**: Moved `redirect()` and `permanentRedirect()` calls from the main page body into `generateMetadata`.
+    - **Impact**: Next.js now issues a real **301/308 HTTP Status Code** immediately, allowing Google to transfer domain authority to the new URLs without indexing the "Shell."
+
+### 9. Category Filter Noindexing (Crawl Waste Killer)
+- **Problem**: Google was stuck crawling thousands of brand/sort combinations (e.g., `/smartphones?brand=Apple`) which are duplicate content of the main categories.
+- **Resolution**: Updated `generateMetadata` in `/[categorySlug]/page.tsx` to explicitly set `robots: { index: false }` for any URL with active search parameters.
+- **GSC Impact**: Will clear "Excluded" reports for valid business reasons, preserving budget for the 1.8k canonical pages.
+
+### 10. Strategy Pivot: Quality Over Flooding (March 23 Final Verdict)
+- **Decision**: Rejected "Tactical Flooding" with `scavenged` products.
+- **Reasoning**: A sitemap containing 13,000 low-quality pages dilutes the site's authority and causes "Thin Content" flags in GSC, harming impressions.
+- **Final Strategy**: Maintain a high-quality sitemap (~1.9k URLs) of `optimized` and `processed` Hub pages. Rely on the **Technical Redirect Fix (Status 301)** and **True 404 Status Codes** to inform Google of the site structure changes.
+
+---
+**Final Verification Record (March 23 Alignment)**
+| Issue Type | Resolution | Fix Status |
+| :--- | :--- | :--- |
+| **"noindex" Excluded** | Active for redundant filter views | ✅ Strategic |
+| **Soft 404** (Loading Stub) | Removed by metadata-level 301 redirects | ✅ Resolved |
+| **Thin Content Risk** | Prevented by excluding scavenged data | ✅ Stabilized |
+| **Overall Indexing** | Focus on ~2k High-Intent Hub Pages | 🚀 Optimized |
