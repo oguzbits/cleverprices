@@ -1,7 +1,5 @@
 import { cacheLife, cacheTag } from "next/cache";
 import { getCategoryBySlug } from "../categories";
-import { type CountryCode } from "../countries";
-import { dataAggregator } from "../data-sources";
 import { type Product } from "../product-definitions";
 import {
   getFamilyIdentity as getFamilyIdentitySync,
@@ -12,11 +10,9 @@ import {
   findProductBySyntheticId as findProductBySyntheticIdSync,
   findProductSlugByAsinSuffix as findProductSlugByAsinSuffixSync,
   getAllProductSlugs as getAllProductSlugsSync,
-  getAllProducts as getAllProductsSync,
   getBestDeals as getBestDealsSync,
   getCanonicalFamilyId,
   getDiverseMostPopular as getDiverseMostPopularSync,
-  getMostPopular as getMostPopularSync,
   getNewArrivals as getNewArrivalsSync,
   getNonEmptyCategorySlugs as getNonEmptyCategorySlugsSync,
   getProductById as getProductByIdSync,
@@ -24,13 +20,13 @@ import {
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
+import { getProductIdentity } from "../utils/product-identity";
 import { getProductPath } from "../utils/url";
 import {
   getLivePriceForProduct,
   mergeLivePrices,
   mergeLivePricesSelective,
 } from "./live-data";
-import { getProductIdentity } from "../utils/product-identity";
 
 /**
  * --- PRIVATE CACHED DATA FETCHERS ---
@@ -46,17 +42,6 @@ async function getCachedBestDeals(
   "use cache";
   cacheLife("category");
   return await getBestDealsSync(limit, countryCode, condition);
-}
-
-async function getCachedMostPopular(
-  limit: number,
-  countryCode: string,
-  condition?: any,
-  _version: string = "v214",
-) {
-  "use cache";
-  cacheLife("category");
-  return await getMostPopularSync(limit, countryCode, condition);
 }
 
 async function getCachedNewArrivals(
@@ -213,30 +198,12 @@ export async function getNonEmptyCategorySlugs(
   return cachedFetch();
 }
 
-async function getAllProducts(): Promise<Product[]> {
-  return getAllProductsSync();
-}
-
 export async function getBestDeals(
   limit: number = 8,
   countryCode: string = "de",
   condition?: any,
 ): Promise<Product[]> {
   const products = await getCachedBestDeals(
-    limit,
-    countryCode,
-    condition,
-    "v8",
-  );
-  return mergeLivePrices(products, countryCode);
-}
-
-async function getMostPopular(
-  limit: number = 8,
-  countryCode: string = "de",
-  condition?: any,
-): Promise<Product[]> {
-  const products = await getCachedMostPopular(
     limit,
     countryCode,
     condition,
@@ -269,15 +236,6 @@ export async function getDiverseMostPopular(
     "v8",
   );
   return mergeLivePrices(products, countryCode);
-}
-
-// Note: getProductPriceHistory removed in lean schema.
-// Price history is now stored in prices.historyJson and parsed by mapDbProduct.
-
-async function getUnifiedProduct(asin: string, countryCode: CountryCode) {
-  "use cache";
-  cacheLife("fast"); // Live product data from Keepa/PA-API should use 'fast' (1 min)
-  return dataAggregator.fetchProduct(asin, countryCode);
 }
 
 export async function getSimilarProducts(
@@ -347,9 +305,13 @@ export async function getPDPRenderData(
       }
 
       // TRACE: Product 5301 has been causing hangs/timeouts in sitemap audit.
-      const isTargetTrack = id === 900005301 || (product.id && product.id >= 200005301 && product.id <= 200005304);
+      const isTargetTrack =
+        id === 900005301 ||
+        (product.id && product.id >= 200005301 && product.id <= 200005304);
       if (isTargetTrack) {
-        console.log(`[TRACE 5301] Rendering Hub/Product ${id} with slug ${slug}`);
+        console.log(
+          `[TRACE 5301] Rendering Hub/Product ${id} with slug ${slug}`,
+        );
       }
       if (product) {
         // Strict slug check for Hubs: ensure the text part matches the canonical version
@@ -472,7 +434,7 @@ export async function getPDPRenderData(
           if (slug !== canonical) {
             return {
               redirect: getProductPath(product.id, canonical),
-              isPermanent: product.enrichmentStatus === "optimized",
+              isPermanent: true,
             };
           }
           isParentView = true;
@@ -543,10 +505,19 @@ export async function getPDPRenderData(
           countryCode,
           true,
         );
+        // 5. Resolve the STABLE canonical ID for the Hub
+        const hubId = await getCanonicalFamilyId(
+          product.parentAsin,
+          product.id || 0,
+          product.modelTitle,
+        );
+        const canonicalId = 900000000 + (hubId % 100000000);
+
         return {
           product: merged.find((p) => p.id === realId) || merged[0],
           variants: merged.filter((p) => p.id !== realId),
           isParentView: false,
+          canonicalId,
           redirect: null,
           isPermanent: false,
           _v: "v49-optimized",
@@ -572,7 +543,7 @@ export async function getPDPRenderData(
         // Resolve the ID if possible to get a fully-prefixed URL
         const tmpProd = await getCachedProductBySlug(asinSlug, false);
         return {
-          product: tmpProd || null as any,
+          product: tmpProd || (null as any),
           variants: [],
           category: null,
           isParentView: false,
@@ -659,10 +630,4 @@ export async function getPDPRenderData(
     isPermanent,
     _v,
   };
-}
-
-async function findProductBySyntheticId(
-  id: number,
-): Promise<Product | undefined> {
-  return getCachedProductBySyntheticId(id);
 }

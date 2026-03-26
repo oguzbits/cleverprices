@@ -8,12 +8,17 @@ export function getProductPath(
   id: string | number | undefined,
   slug: string,
 ): string {
-  // If slug already has the canonical ID prefix (###_-), use it as is
-  if (slug.includes("_-")) {
-    return `/p/${slug}`;
+  // 1. Clean up slug if it already has a prefix to avoid Double Prefix bugs or ID mismatches
+  let cleanSlug = slug;
+  const prefixMatch = slug.match(/^\d+_-/);
+  if (prefixMatch) {
+    // If NO target ID is provided, use the existing prefix (Legacy/Safe path)
+    if (!id) return `/p/${slug}`;
+    // If a target ID is provided, strip the old prefix to replace it correctly below
+    cleanSlug = slug.substring(prefixMatch[0].length);
   }
 
-  if (!id) return `/p/${slug}`;
+  if (!id) return `/p/${cleanSlug}`;
 
   const numId = typeof id === "string" ? parseInt(id, 10) : id;
 
@@ -21,7 +26,7 @@ export function getProductPath(
   // - Sub-100M IDs (real DB IDs) get the 200M variant prefix
   // - 900M+ IDs (synthetic hub IDs) stay as is
   const prefix = numId < 100000000 ? 200000000 : 0;
-  return `/p/${prefix + numId}_-${slug}`;
+  return `/p/${prefix + numId}_-${cleanSlug}`;
 }
 
 /**
