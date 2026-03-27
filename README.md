@@ -20,10 +20,10 @@ Open [http://localhost:3000](http://localhost:3000) to view the site.
 
 CleverPrices is powered by an automated **Maintenance Engine** (GitHub Actions) that ensures data is always fresh:
 
-- **Hourly Updates**: Every hour on the hour (`0 * * * *`), the maintenance workflow runs.
-- **Price Updates**: Uses **Dynamic Scaling** (300-1000 items) based on token budget. Captures the "Daily Low" for long-term charts.
-- **Product Enrichment**: Multi-source engine (Icecat, eBay, Intel) back-fills high-quality technical specs. Uses **Smart Sinking** to maintain variant accuracy across ASIN families.
-- **Cache Warming**: Automatically triggers a `warm-cache` script after updates to ensure 100ms response times for users.
+- **Update Frequency**: Every **20 minutes**.
+- **Phase 1**: Price updates using Keepa (Smart diffing).
+- **Phase 2**: Multi-source enrichment (Icecat, eBay, SIF firewall).
+- **Phase 3**: Proactive **Cache Warming** of the Redis layer.
 - **Persistent Local DB**: All maintenance scripts connect directly to the local SQLite database mounted as a Docker volume.
 
 To run maintenance tasks manually:
@@ -145,11 +145,10 @@ src/
 ## Technology Stack
 
 - **Framework**: [Next.js 16](https://nextjs.org/) (App Router, Cache Components)
-- **Engine**: [React 19](https://react.dev/) (React Compiler enabled)
-- **Database**: [SQLite](https://sqlite.org/) (Local-first persistence)
-- **Data Source**: [Keepa API](https://keepa.com/) (Amazon price data)
-- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
-- **Package Manager**: [Bun](https://bun.sh/)
+- **Core**: Next.js 16 (App Router) + React 19 (Compiler enabled).
+- **Data Architecture**: Local-first LibSQL (SQLite) persistent store with a **Redis memory layer** for near-instant (sub-40ms) delivery.
+- **Styling**: Tailwind CSS 4 with semantic tokens (**No hex colors**, **no var()**).
+- **Automation**: Bun-powered worker engine for price tracking and data enrichment.
 
 ---
 

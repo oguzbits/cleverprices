@@ -16,10 +16,10 @@ Before writing any code or answering architecture questions, you MUST:
 - **Framework**: Next.js 16 (App Router) with React 19 Compiler.
 - **Styling**: Tailwind CSS 4 with `shadcn/ui` components.
 - **State**: URL-based state management via native Next.js hooks.
-- [x] **Database**: Local SQLite with Drizzle ORM.
+- [x] **Database**: Local-first LibSQL (SQLite) persistent store with a **Redis-powered** memory-first read layer.
 - [x] **Price Consistency**: Strict Tiered TTL Policy (Pages: 20m, Data: 5m). See **[CACHE_POLICY.md](architecture/CACHE_POLICY.md)**.
-- [x] **Data Source**: Keepa API (Primary) for automated price tracking.
-- [x] **Performance**: Fully memory-mapped DB (256MB) + Next.js `cacheComponents` + **O(1) Detail Fetching** + **Request-Level Deduplication**.
+- [x] **Data Source**: Keepa API (Primary) for automated price tracking (updated every 20 minutes).
+- [x] **Performance**: Fully memory-mapped DB (256MB) + Next.js `cacheComponents` + **Redis Serving** + **O(1) Detail Fetching** + **Request-Level Deduplication**.
 
 ## 🚨 STRICT TECH CONSTRAINTS (DO NOT VIOLATE)
 
@@ -61,8 +61,8 @@ Before writing any code or answering architecture questions, you MUST:
   - `ebay_raw_data`: Full raw JSON snapshots from eBay API for future "mass remapping" and data analysis.
   - `keepa_features`: Raw Amazon description bullets.
 - **Sync Strategy**:
-  - **Automated Engine**: GitHub Action (`daily-maintenance.yml`) runs **hourly**.
-  - **Price Refresh**: Batches of 500 products (stale-first) per hour.
+  - **Automated Engine**: GitHub Action (`daily-maintenance.yml`) runs **every 20 minutes**.
+  - **Price Refresh**: Batches of 500 products (stale-first) per cycle.
   - **Multi-Source Enrichment**:
     - **Icecat**: Primary authority for technical sheets.
     - **eBay Browse API**: Secondary authority; uses GTIN and smart keyword matching. (Raw eBay results are stored as snapshots).

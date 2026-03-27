@@ -4,9 +4,11 @@ CleverPrices uses a **Local Maintenance Engine** powered by **Dokploy Cron Jobs*
 
 ---
 
+
+
 ## ⚡ How it Works
 
-The maintenance engine runs on a recurring schedule (defined in Dokploy) and performs three critical phases:
+The maintenance engine runs on a **20-minute recurring schedule** (defined in Dokploy) and performs three critical phases:
 
 ### Phase 1: Price Updates
 
