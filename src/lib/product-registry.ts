@@ -354,6 +354,7 @@ export async function findProductBySyntheticId(
 export async function getAllProductSlugs(
   limit?: number,
   includeVariants: boolean = false,
+  fastMode: boolean = false,
 ): Promise<
   {
     id: number;
@@ -464,9 +465,22 @@ export async function getAllProductSlugs(
       // Unify with PDP logic: Include if it has a price OR high-quality specs
       if (!hasPrice && !hasSpecs) continue;
 
+      if (fastMode) {
+        // [PERFORMANCE] Fast mode returns the database slugs directly.
+        // Extremely fast, ideal for sitemaps where 301 redirects to canonical are acceptable.
+        results.push({
+          id: p.id!,
+          slug: p.slug,
+          category: p.category,
+          enrichmentStatus: p.enrichmentStatus,
+          updatedAt: p.updatedAt || new Date(),
+        });
+        continue;
+      }
+
       if (!p.parentAsin) {
         // Singleton
-        const mapped = mapDbProduct(p as DbProduct, [], [], false);
+        const mapped = mapDbProduct(p as DbProduct, [], [], true);
         results.push({
           id: p.id!,
           slug: mapped.slug,
@@ -488,7 +502,7 @@ export async function getAllProductSlugs(
             ? [{ price: vPr.price, usedPrice: vPr.used_price, country: "de" }]
             : [];
           // Pass the FULL variants list here for CORRECT consensus
-          return mapDbProduct(v as any, priceArray as any, variants, false);
+          return mapDbProduct(v as any, priceArray as any, variants, true);
         });
 
         if (includeVariants) {

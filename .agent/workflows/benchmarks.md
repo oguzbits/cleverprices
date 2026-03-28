@@ -14,6 +14,8 @@ We compete on speed. Mobile users expect immediate loads.
   - _Check:_ Are Hero images unoptimized? Is the SQLite DB blocking the initial render? (Refer to `/performance`).
 - **TTFB (Time To First Byte)**: Must be fast via Redis/Static Generation.
   - _Check:_ Ensure `generateStaticParams` uses the DoD (Dynamic-on-Demand) policy to avoid slow build-time hydration.
+- **Sitemap Latency**: Generation must be under 5s (local) / 2s (prod).
+  - _Check:_ Run `bun run sitemap:check`. (Protects against "mapping bloat" in sitemap calculation).
 
 ## 2. React / Code Quality Benchmarks
 

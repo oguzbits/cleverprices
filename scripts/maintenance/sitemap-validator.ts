@@ -97,17 +97,32 @@ export async function validateSitemap() {
 
   try {
     if (targetSitemap.endsWith(".xml")) {
+      const fetchStart = Date.now();
       console.log(`${COLORS.cyan}📡 Loading sitemap...${COLORS.reset} (Dev servers can take up to 2m)`);
       const response = await fetch(targetSitemap, {
-        signal: AbortSignal.timeout(120000), // 120s for initial sitemap generation
+        signal: AbortSignal.timeout(120000), // 120s max for extreme cases
       });
+      const fetchDuration = Date.now() - fetchStart;
+      
       if (!response.ok) {
         throw new Error(
           `Failed to fetch sitemap: ${response.status} ${response.statusText}`,
         );
       }
+      
       const xml = await response.text();
       urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
+      
+      const SITEMAP_LATENCY_THRESHOLD = isLocalhost ? 5000 : 2000; // 5s local, 2s prod
+      
+      if (fetchDuration > SITEMAP_LATENCY_THRESHOLD) {
+        console.error(`\n${COLORS.red}🚨 PERFORMANCE REGRESSION DETECTED${COLORS.reset}`);
+        console.error(`${COLORS.red}Sitemap generation took ${fetchDuration}ms, which exceeds the threshold of ${SITEMAP_LATENCY_THRESHOLD}ms.${COLORS.reset}`);
+        console.error(`${COLORS.yellow}Action Required: Check if "fastMode" is enabled in getAllProductSlugs() calls within sitemap.ts.${COLORS.reset}\n`);
+        process.exit(1);
+      } else {
+        console.log(`${COLORS.green}✅ Sitemap generated in ${fetchDuration}ms (Benchmark Passed)${COLORS.reset}\n`);
+      }
     }
  else {
       // Direct URL(s) mode

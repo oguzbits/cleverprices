@@ -1,7 +1,7 @@
 import { getAllBlogPosts } from "@/lib/blog";
 import {
   allCategories,
-  getCategoryHierarchy,
+  getCategoryPath,
   isCategoryNotEmptyRecursive,
 } from "@/lib/categories";
 import { getAlternateLanguages } from "@/lib/metadata";
@@ -29,84 +29,54 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   cacheTag("sitemap", "sitemap-slugs");
   const baseUrl = SITE_URL;
 
-  // Static routes
+  // Static routes (German-first priorities)
   const staticRoutes: MetadataRoute.Sitemap = [
     { path: "", priority: 1.0 },
     { path: "/blog", priority: 0.8 },
     { path: "/faq", priority: 0.7 },
-    {
-      path: "/privacy",
-      priority: 0.5,
-      customTrans: { de: "/datenschutz" },
-      hidden: true,
-    },
-    {
-      path: "/datenschutz",
-      priority: 0.5,
-      customTrans: { de: "/datenschutz" },
-    },
-    {
-      path: "/legal-notice",
-      priority: 0.5,
-      customTrans: { de: "/impressum" },
-      hidden: true,
-    },
-    { path: "/impressum", priority: 0.5, customTrans: { de: "/impressum" } },
+    { path: "/datenschutz", priority: 0.5 },
+    { path: "/agb", priority: 0.5 },
+    { path: "/impressum", priority: 0.5 },
     { path: "/deals", priority: 0.9 },
-  ]
-    .filter((route) => !(route as any).hidden)
-    .map(({ path, priority, customTrans }) => {
-      // Determine the base path for alternates
-      // For legal pages, 'privacy' and 'legal-notice' are the base paths for all en-REGION variants
-      let alternatesPath = path;
-      if (path === "/datenschutz") alternatesPath = "/privacy";
-      if (path === "/impressum") alternatesPath = "/legal-notice";
-
-      return {
-        url: `${baseUrl}${path}`,
-        lastModified: new Date(),
-        changeFrequency: "daily" as const,
-        priority,
-        alternates: {
-          languages: getAlternateLanguages(alternatesPath, customTrans),
-        },
-      };
-    });
-
-  // Blog posts
-  const blogPosts = await getAllBlogPosts();
-  const blogRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => {
-    const postPath = `/blog/${post.slug}`;
+  ].map((route) => {
     return {
-      url: `${baseUrl}${postPath}`,
-      lastModified: new Date(post.lastUpdated || post.publishDate),
-      changeFrequency: "daily" as const,
-      priority: 0.7,
+      url: `${baseUrl}${route.path}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: route.priority,
       alternates: {
-        languages: getAlternateLanguages(postPath),
+        languages: getAlternateLanguages(route.path),
+      },
+    };
+  });
+
+  // Blog routes
+  const posts = await getAllBlogPosts();
+  const blogRoutes: MetadataRoute.Sitemap = posts.map((post) => {
+    const path = `/blog/${post.slug}`;
+    return {
+      url: `${baseUrl}${path}`,
+      lastModified: new Date(post.lastUpdated || post.publishDate),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+      alternates: {
+        languages: getAlternateLanguages(path),
       },
     };
   });
 
   // Product pages - high priority for SEO
-  // CLEAN SITEMAP: We exclude variants (they redirect to Hubs) to prevent 'Redirect error' in GSC.
-  // We include processed and pending products to maintain original crawl scope without flooding.
-  const allProducts = await getAllProductSlugs(undefined, false);
-  
-  const products = allProducts.filter(
-    (p) =>
-      p.enrichmentStatus === "optimized" ||
-      p.enrichmentStatus === "processed" ||
-      p.enrichmentStatus === "pending",
-  );
+  // [PERFORMANCE] Using fastMode=true to bypass consensus mapping.
+  // This uses slugs directly from the database for instant generation (<1s).
+  const allProducts = await getAllProductSlugs(undefined, false, true);
 
-  const productRoutes: MetadataRoute.Sitemap = products.map((product) => {
+  const productRoutes: MetadataRoute.Sitemap = allProducts.map((product) => {
     const productPath = getProductPath(product.id, product.slug);
     return {
       url: `${baseUrl}${productPath}`,
       lastModified: product.updatedAt,
       changeFrequency: "daily" as const,
-      priority: 0.9, // High priority - these are our main content
+      priority: 0.9,
       alternates: {
         languages: getAlternateLanguages(productPath),
       },
@@ -114,45 +84,41 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   // Category routes
-  const categoryHierarchy = getCategoryHierarchy();
   const nonEmptyCategorySlugs = await getNonEmptyCategorySlugs();
-  const categoryRoutes: MetadataRoute.Sitemap = [];
-
-  // 1. Categories listing page
-  categoryRoutes.push({
-    url: `${baseUrl}/categories`,
-    lastModified: new Date(),
-    changeFrequency: "daily" as const,
-    priority: 0.8,
-    alternates: {
-      languages: getAlternateLanguages("/categories"),
-    },
-  });
-
-  // 2. All active categories
-  Object.values(allCategories).forEach((category) => {
-    if (category.hidden) return;
-
-    // Use recursive check to see if category should be in sitemap
-    if (!isCategoryNotEmptyRecursive(category.slug, nonEmptyCategorySlugs)) {
-      return;
-    }
-
-    const path = `/${category.slug}`;
-    const isParent =
-      categoryHierarchy.some((h) => h.parent.slug === category.slug) &&
-      category.parent === undefined;
-
-    categoryRoutes.push({
-      url: `${baseUrl}${path}`,
+  const categoryRoutes: MetadataRoute.Sitemap = [
+    {
+      url: `${baseUrl}/categories`,
       lastModified: new Date(),
-      changeFrequency: (isParent ? "weekly" : "daily") as any,
-      priority: isParent ? 0.8 : 0.9,
+      changeFrequency: "daily" as const,
+      priority: 0.8,
       alternates: {
-        languages: getAlternateLanguages(path),
+        languages: getAlternateLanguages("/categories"),
       },
-    });
-  });
+    },
+    ...Object.values(allCategories)
+      .map((category) => {
+        if (category.hidden) return;
+
+        // Use recursive check to see if category should be in sitemap
+        if (
+          !isCategoryNotEmptyRecursive(category.slug, nonEmptyCategorySlugs)
+        ) {
+          return;
+        }
+
+        const categoryPath = getCategoryPath(category.slug);
+        return {
+          url: `${baseUrl}${categoryPath}`,
+          lastModified: new Date(),
+          changeFrequency: "daily" as const,
+          priority: 0.8,
+          alternates: {
+            languages: getAlternateLanguages(categoryPath),
+          },
+        };
+      })
+      .filter((route): route is any => !!route),
+  ];
 
   return [...staticRoutes, ...blogRoutes, ...productRoutes, ...categoryRoutes];
 }

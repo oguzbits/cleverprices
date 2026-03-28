@@ -21,6 +21,21 @@
       "slug": "prozessoren",
       "type": "category",
       "expectedPath": "/prozessoren"
+    },
+    {
+      "slug": "datenschutz",
+      "type": "static",
+      "expectedPath": "/datenschutz"
+    },
+    {
+      "slug": "agb",
+      "type": "static",
+      "expectedPath": "/agb"
+    },
+    {
+      "slug": "impressum",
+      "type": "static",
+      "expectedPath": "/impressum"
     }
   ]
 }

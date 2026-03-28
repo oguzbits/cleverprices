@@ -577,9 +577,15 @@ const isBuild =
   process.env.NEXT_PHASE === "phase-production-build" ||
   process.env.BUILD_PHASE === "1";
 
-if (isBuild) {
+const isCI = !!(
+  process.env.CI ||
+  process.env.DOKPLOY ||
+  process.env.GITHUB_ACTIONS
+);
+
+if (isBuild && isCI) {
   console.log(
-    "🛠️  CLEVERPRICES BUILD PHASE DETECTED - Applying build-time constraints...",
+    "🛠️  CLEVERPRICES CI BUILD DETECTED - Applying memory-safety constraints...",
   );
   if (nextConfig.experimental) {
     nextConfig.experimental.workerThreads = false;

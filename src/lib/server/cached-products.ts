@@ -172,18 +172,18 @@ async function getCachedProductSlugs(
 }
 
 export async function getAllProductSlugs(
-  limit?: number,
-  includeVariants: boolean = false,
-): Promise<
-  {
-    id: number;
-    slug: string;
-    category: string;
-    enrichmentStatus?: string | null;
-    updatedAt: Date;
-  }[]
-> {
-  return getCachedProductSlugs(limit, includeVariants);
+  _version: string = "v214",
+  includeVariants: boolean = true,
+  fastMode: boolean = false,
+): Promise<any[]> {
+  const cachedFetch = async (v: boolean, f: boolean) => {
+    "use cache";
+    cacheLife("product");
+    cacheTag("sitemap-slugs");
+    const [_v] = [_version];
+    return getAllProductSlugsSync(undefined, v, f);
+  };
+  return cachedFetch(includeVariants, fastMode);
 }
 
 export async function getNonEmptyCategorySlugs(

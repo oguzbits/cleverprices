@@ -33,6 +33,9 @@ async function runTest() {
     } else if (record.type === "category") {
       // Categories currently use the slug directly as path
       actualPath = `/${record.slug}`;
+    } else if (record.type === "static") {
+      // Static routes use the slug as the core path
+      actualPath = `/${record.slug}`;
     }
 
     if (actualPath === record.expectedPath) {
