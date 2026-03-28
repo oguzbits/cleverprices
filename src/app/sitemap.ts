@@ -12,6 +12,7 @@ import {
 import { SITE_URL } from "@/lib/site-config";
 import { getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
+import { cacheLife, cacheTag } from "next/cache";
 
 /**
  * ARCHITECTURE NOTE:
@@ -23,6 +24,9 @@ import { MetadataRoute } from "next";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  "use cache";
+  cacheLife("product");
+  cacheTag("sitemap", "sitemap-slugs");
   const baseUrl = SITE_URL;
 
   // Static routes

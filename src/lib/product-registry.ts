@@ -13,7 +13,6 @@ import {
   gt,
   gte,
   inArray,
-  isNotNull,
   like,
   lt,
   lte,
@@ -366,13 +365,41 @@ export async function getAllProductSlugs(
 > {
   try {
     // 1. Fetch products with identity-critical columns
+    // [PERFORMANCE] Filters in SQL to avoid mapping thousands of non-critical products
     let query = db
       .select({
-        ...filteringProductColumns,
+        id: products.id,
+        asin: products.asin,
+        slug: products.slug,
+        title: products.title,
+        brand: products.brand,
+        category: products.category,
+        parentAsin: products.parentAsin,
+        variationAttributes: products.variationAttributes,
+        officialTitle: products.officialTitle,
+        enrichmentStatus: products.enrichmentStatus,
+        updatedAt: products.updatedAt,
         specifications: products.specifications,
         officialSpecifications: products.officialSpecifications,
+        salesRank: products.salesRank,
+        capacity: products.capacity,
+        capacityUnit: products.capacityUnit,
+        normalizedCapacity: products.normalizedCapacity,
+        technology: products.technology,
+        condition: products.condition,
+        rating: products.rating,
+        reviewCount: products.reviewCount,
+        imageUrl: products.imageUrl,
+        mpn: products.mpn,
       })
       .from(products)
+      .where(
+        inArray(products.enrichmentStatus, [
+          "optimized",
+          "processed",
+          "pending",
+        ]),
+      )
       .orderBy(
         sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
         asc(products.salesRank),
@@ -426,7 +453,8 @@ export async function getAllProductSlugs(
 
     for (const p of rawAllProducts) {
       // Basic quality check (Same as PDP)
-      const hasMeaningfulTitle = p.title && p.title.length > 2 && p.title !== p.asin;
+      const hasMeaningfulTitle =
+        p.title && p.title.length > 2 && p.title !== p.asin;
       if (!hasMeaningfulTitle) continue;
 
       const pr = priceMap.get(p.id);
@@ -447,72 +475,85 @@ export async function getAllProductSlugs(
           updatedAt: p.updatedAt || new Date(),
         });
       } else {
-        // Part of a family - we only process each family once if includeVariants is false
-        // but we ALWAYS use the fullFamilies map for consensus
+        // Part of a family - handle the entire family AT ONCE and skip subsequent members
+        if (processedFamilies.has(p.parentAsin)) continue;
+        processedFamilies.add(p.parentAsin);
+
         const variants = fullFamilies.get(p.parentAsin)!;
-        
+
         // Optimization: Map all siblings once per family to share consensus
         const allMapped = variants.map((v) => {
           const vPr = priceMap.get(v.id!);
-          const priceArray = vPr ? [{ price: vPr.price, usedPrice: vPr.used_price, country: "de" }] : [];
+          const priceArray = vPr
+            ? [{ price: vPr.price, usedPrice: vPr.used_price, country: "de" }]
+            : [];
           // Pass the FULL variants list here for CORRECT consensus
           return mapDbProduct(v as any, priceArray as any, variants, false);
         });
 
         if (includeVariants) {
-          // If variants are requested, add this specific product
-          const selfIndex = variants.findIndex(v => v.id === p.id);
-          if (selfIndex !== -1) {
+          // Add ALL mapped variants from this family
+          allMapped.forEach((m, idx) => {
+            const v = variants[idx];
             results.push({
-              id: p.id!,
-              slug: allMapped[selfIndex].slug,
-              category: p.category,
-              enrichmentStatus: p.enrichmentStatus,
-              updatedAt: p.updatedAt || new Date(),
+              id: v.id!,
+              slug: m.slug,
+              category: v.category,
+              enrichmentStatus: v.enrichmentStatus,
+              updatedAt: v.updatedAt || new Date(),
             });
-          }
+          });
         }
 
-        // Add the Hub (Parent) page if not already added for this family
-        if (!processedFamilies.has(p.parentAsin)) {
-          processedFamilies.add(p.parentAsin);
-          
-          const goodVariantsIndices = variants.map((v, i) => {
-             const m = allMapped[i];
-             const mPr = m.prices["de"];
-             const mUsedPr = m.usedPrices?.["de"];
-             const isGood = (mPr && mPr > 0) || (mUsedPr && mUsedPr > 0) || m.officialSpecifications || m.specifications;
-             return isGood ? i : -1;
-          }).filter(i => i !== -1);
+        // Add the Hub (Parent) page if multiple good variants exist
+        const goodVariantsIndices = variants
+          .map((v, i) => {
+            const m = allMapped[i];
+            const mPr = m.prices["de"];
+            const mUsedPr = m.usedPrices?.["de"];
+            const isGood =
+              (mPr && mPr > 0) ||
+              (mUsedPr && mUsedPr > 0) ||
+              m.officialSpecifications ||
+              m.specifications;
+            return isGood ? i : -1;
+          })
+          .filter((i) => i !== -1);
 
-          if (goodVariantsIndices.length > 1) {
-             const goodMapped = goodVariantsIndices.map(i => allMapped[i]);
-             const rep = getFamilyRepresentative(goodMapped as any);
-             const repId = (rep as any).id || 0;
-             const syntheticId = 900000000 + (repId % 100000000);
-             const repIndex = variants.findIndex(v => v.id === repId);
-             const { slug: hubSlug } = getFamilyIdentity(
-               { ...rep, id: syntheticId, isParentView: true } as any,
-               allMapped, // Use full list for Hub identity too
-             );
+        if (goodVariantsIndices.length > 1) {
+          const goodMapped = goodVariantsIndices.map((i) => allMapped[i]);
+          const rep = getFamilyRepresentative(goodMapped as any);
+          const repId = (rep as any).id || 0;
+          const syntheticId = 900000000 + (repId % 100000000);
+          const repIndex = variants.findIndex((v) => v.id === repId);
+          const { slug: hubSlug } = getFamilyIdentity(
+            { ...rep, id: syntheticId, isParentView: true } as any,
+            allMapped, // Use full list for Hub identity too
+          );
 
-             results.push({
-               id: syntheticId,
-               slug: hubSlug,
-               category: (rep as any).category || "unknown",
-               enrichmentStatus: variants.some(v => v.enrichmentStatus === "processed") ? "processed" : "pending",
-               updatedAt: (repIndex !== -1 ? variants[repIndex].updatedAt : null) || new Date(),
-             });
-          } else if (goodVariantsIndices.length === 1 && !includeVariants) {
-            const idx = goodVariantsIndices[0];
-            results.push({
-              id: variants[idx].id!,
-              slug: allMapped[idx].slug,
-              category: variants[idx].category,
-              enrichmentStatus: variants[idx].enrichmentStatus,
-              updatedAt: variants[idx].updatedAt || new Date(),
-            });
-          }
+          results.push({
+            id: syntheticId,
+            slug: hubSlug,
+            category: (rep as any).category || "unknown",
+            enrichmentStatus: variants.some(
+              (v) => v.enrichmentStatus === "processed",
+            )
+              ? "processed"
+              : "pending",
+            updatedAt:
+              (repIndex !== -1 ? variants[repIndex].updatedAt : null) ||
+              new Date(),
+          });
+        } else if (goodVariantsIndices.length === 1 && !includeVariants) {
+          // If only one good product and we aren't including variants, just add that one product
+          const idx = goodVariantsIndices[0];
+          results.push({
+            id: variants[idx].id!,
+            slug: allMapped[idx].slug,
+            category: variants[idx].category,
+            enrichmentStatus: variants[idx].enrichmentStatus,
+            updatedAt: variants[idx].updatedAt || new Date(),
+          });
         }
       }
     }
@@ -564,7 +605,10 @@ async function fetchNonEmptyInternal() {
     // [GSC FIX] Add virtual categories (e.g. apple-iphone) if their base DB category (e.g. smartphones) is non-empty.
     // This ensures they appear in the sitemap and pass the "isEmpty" check in the app.
     Object.entries(VIRTUAL_CATEGORY_MAP).forEach(([virtualSlug, config]) => {
-      if (categories.includes(config.dbCategory) && !categories.includes(virtualSlug)) {
+      if (
+        categories.includes(config.dbCategory) &&
+        !categories.includes(virtualSlug)
+      ) {
         categories.push(virtualSlug);
       }
     });
@@ -955,13 +999,17 @@ export async function findProductSlugByAsinSuffix(
     // Safety: LIKE '%XXXX' is a full table scan O(N).
     // However, for redirect recovery, we search both ASIN and Parent ASIN.
     const [p] = await db
-      .select({ id: products.id, slug: products.slug, parentAsin: products.parentAsin })
+      .select({
+        id: products.id,
+        slug: products.slug,
+        parentAsin: products.parentAsin,
+      })
       .from(products)
       .where(
         or(
           sql`${products.asin} LIKE ${"%" + suffix}`,
-          sql`${products.parentAsin} LIKE ${"%" + suffix}`
-        )
+          sql`${products.parentAsin} LIKE ${"%" + suffix}`,
+        ),
       )
       .limit(1);
 
@@ -974,7 +1022,7 @@ export async function findProductSlugByAsinSuffix(
         p.id,
         iden.modelTitle,
       );
-      
+
       const canonicalProduct = await getProductById(canonicalRealId);
       const { slug: canonical } = getFamilyIdentity(
         {
