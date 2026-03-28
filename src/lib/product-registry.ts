@@ -13,6 +13,7 @@ import {
   gt,
   gte,
   inArray,
+  isNotNull,
   like,
   lt,
   lte,
@@ -366,7 +367,47 @@ export async function getAllProductSlugs(
 > {
   try {
     // 1. Fetch products with identity-critical columns
-    // [PERFORMANCE] Filters in SQL to avoid mapping thousands of non-critical products
+    if (fastMode) {
+      // 🚀 [ULTRA-FAST MODE] Use a single specialized SQL join for sitemap-scale exports.
+      // Bypasses JavaScript filtering, overhead of 6,000+ objects, and redundant price fetches.
+      const fastResults = await db
+        .select({
+          id: products.id,
+          slug: products.slug,
+          category: products.category,
+          enrichmentStatus: products.enrichmentStatus,
+          updatedAt: products.updatedAt,
+        })
+        .from(products)
+        .leftJoin(prices, eq(products.id, prices.productId))
+        .where(
+          and(
+            inArray(products.enrichmentStatus, [
+              "optimized",
+              "processed",
+              "pending",
+            ]),
+            // SEO Requirement: Only include in sitemap if it has a price OR specifications
+            or(
+              and(eq(prices.country, "de"), gt(prices.price, 0)),
+              isNotNull(products.specifications),
+              isNotNull(products.officialSpecifications)
+            )
+          )
+        )
+        .groupBy(products.id)
+        .orderBy(asc(products.salesRank)); // Fast indexed sort
+
+      return fastResults.map(r => ({
+        id: r.id!,
+        slug: r.slug,
+        category: r.category,
+        enrichmentStatus: r.enrichmentStatus,
+        updatedAt: r.updatedAt || new Date(),
+      }));
+    }
+
+    // 1. Fetch products with basic metadata (Standard Slow Path)
     let query = db
       .select({
         id: products.id,
@@ -395,16 +436,23 @@ export async function getAllProductSlugs(
       })
       .from(products)
       .where(
-        inArray(products.enrichmentStatus, [
-          "optimized",
-          "processed",
-          "pending",
-        ]),
+        and(
+          inArray(products.enrichmentStatus, [
+            "optimized",
+            "processed",
+            "pending",
+          ]),
+          // Same filter for consistency even in slow path
+          or(
+            isNotNull(products.specifications),
+            isNotNull(products.officialSpecifications),
+            sql`id IN (SELECT product_id FROM prices WHERE price > 0)`
+          )
+        )
       )
       .orderBy(
         sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
-        asc(products.salesRank),
-        desc(products.updatedAt),
+        asc(products.salesRank)
       );
 
     if (limit) {
@@ -432,7 +480,7 @@ export async function getAllProductSlugs(
       current.used_price = Math.max(current.used_price, p.usedPrice || 0);
     }
 
-    // 3. Group ALL products by family first (Critical for slug consensus)
+    // 3. Group ALL products by family first
     const fullFamilies = new Map<string, any[]>();
     for (const p of rawAllProducts) {
       if (p.parentAsin) {
@@ -449,38 +497,12 @@ export async function getAllProductSlugs(
       updatedAt: Date;
     }[] = [];
 
-    // 4. Filter and Map Products
     const processedFamilies = new Set<string>();
 
     for (const p of rawAllProducts) {
-      // Basic quality check (Same as PDP)
-      const hasMeaningfulTitle =
-        p.title && p.title.length > 2 && p.title !== p.asin;
-      if (!hasMeaningfulTitle) continue;
-
-      const pr = priceMap.get(p.id);
-      const hasPrice = pr && (pr.price > 0 || pr.used_price > 0);
-      const hasSpecs = p.officialSpecifications || p.specifications;
-
-      // Unify with PDP logic: Include if it has a price OR high-quality specs
-      if (!hasPrice && !hasSpecs) continue;
-
-      if (fastMode) {
-        // [PERFORMANCE] Fast mode returns the database slugs directly.
-        // Extremely fast, ideal for sitemaps where 301 redirects to canonical are acceptable.
-        results.push({
-          id: p.id!,
-          slug: p.slug,
-          category: p.category,
-          enrichmentStatus: p.enrichmentStatus,
-          updatedAt: p.updatedAt || new Date(),
-        });
-        continue;
-      }
-
       if (!p.parentAsin) {
         // Singleton
-        const mapped = mapDbProduct(p as DbProduct, [], [], true);
+        const mapped = mapDbProduct(p as any, [], [], true);
         results.push({
           id: p.id!,
           slug: mapped.slug,
@@ -489,24 +511,20 @@ export async function getAllProductSlugs(
           updatedAt: p.updatedAt || new Date(),
         });
       } else {
-        // Part of a family - handle the entire family AT ONCE and skip subsequent members
         if (processedFamilies.has(p.parentAsin)) continue;
         processedFamilies.add(p.parentAsin);
 
         const variants = fullFamilies.get(p.parentAsin)!;
 
-        // Optimization: Map all siblings once per family to share consensus
         const allMapped = variants.map((v) => {
           const vPr = priceMap.get(v.id!);
           const priceArray = vPr
             ? [{ price: vPr.price, usedPrice: vPr.used_price, country: "de" }]
             : [];
-          // Pass the FULL variants list here for CORRECT consensus
           return mapDbProduct(v as any, priceArray as any, variants, true);
         });
 
         if (includeVariants) {
-          // Add ALL mapped variants from this family
           allMapped.forEach((m, idx) => {
             const v = variants[idx];
             results.push({
@@ -519,15 +537,12 @@ export async function getAllProductSlugs(
           });
         }
 
-        // Add the Hub (Parent) page if multiple good variants exist
         const goodVariantsIndices = variants
           .map((v, i) => {
             const m = allMapped[i];
             const mPr = m.prices["de"];
-            const mUsedPr = m.usedPrices?.["de"];
             const isGood =
               (mPr && mPr > 0) ||
-              (mUsedPr && mUsedPr > 0) ||
               m.officialSpecifications ||
               m.specifications;
             return isGood ? i : -1;
@@ -542,7 +557,7 @@ export async function getAllProductSlugs(
           const repIndex = variants.findIndex((v) => v.id === repId);
           const { slug: hubSlug } = getFamilyIdentity(
             { ...rep, id: syntheticId, isParentView: true } as any,
-            allMapped, // Use full list for Hub identity too
+            allMapped,
           );
 
           results.push({
@@ -559,7 +574,6 @@ export async function getAllProductSlugs(
               new Date(),
           });
         } else if (goodVariantsIndices.length === 1 && !includeVariants) {
-          // If only one good product and we aren't including variants, just add that one product
           const idx = goodVariantsIndices[0];
           results.push({
             id: variants[idx].id!,
@@ -576,7 +590,8 @@ export async function getAllProductSlugs(
   } catch (e) {
     if (!IS_BUILD) {
       console.warn(
-        "[Product Registry] Database missing or inaccessible in getAllProductSlugs.",
+        "[Product Registry] Database error in getAllProductSlugs:",
+        e,
       );
     }
     return [];

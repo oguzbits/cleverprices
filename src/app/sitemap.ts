@@ -24,9 +24,10 @@ import { cacheLife, cacheTag } from "next/cache";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  "use cache";
-  cacheLife("product");
-  cacheTag("sitemap", "sitemap-slugs");
+  // 🧪 CACHE DISABLED TEMPORARILY FOR VERIFICATION
+  // "use cache";
+  // cacheLife("product");
+  // cacheTag("sitemap", "sitemap-slugs");
   const baseUrl = SITE_URL;
 
   // Static routes (German-first priorities)
