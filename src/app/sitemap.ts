@@ -3,6 +3,7 @@ import {
   allCategories,
   getCategoryPath,
   isCategoryNotEmptyRecursive,
+  type CategorySlug,
 } from "@/lib/categories";
 import { getAlternateLanguages } from "@/lib/metadata";
 import {
@@ -10,7 +11,7 @@ import {
   getNonEmptyCategorySlugs,
 } from "@/lib/server/cached-products";
 import { SITE_URL } from "@/lib/site-config";
-import { getProductPath } from "@/lib/utils/url";
+import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -24,6 +25,9 @@ import { cacheLife, cacheTag } from "next/cache";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const totalStart = Date.now();
+  console.log("🗺️  Sitemap: Starting generation...");
+
   // 🧪 CACHE DISABLED TEMPORARILY FOR VERIFICATION
   // "use cache";
   // cacheLife("product");
@@ -31,6 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = SITE_URL;
 
   // Static routes (German-first priorities)
+  console.time("⏱️  Sitemap: Static Routes");
   const staticRoutes: MetadataRoute.Sitemap = [
     { path: "", priority: 1.0 },
     { path: "/blog", priority: 0.8 },
@@ -50,76 +55,73 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       },
     };
   });
+  console.timeEnd("⏱️  Sitemap: Static Routes");
 
   // Blog routes
-  const posts = await getAllBlogPosts();
-  const blogRoutes: MetadataRoute.Sitemap = posts.map((post) => {
-    const path = `/blog/${post.slug}`;
+  console.time("⏱️  Sitemap: Blog Posts");
+  const blogPosts = await getAllBlogPosts();
+  const blogRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => {
     return {
-      url: `${baseUrl}${path}`,
+      url: `${baseUrl}/blog/${post.slug}`,
       lastModified: new Date(post.lastUpdated || post.publishDate),
       changeFrequency: "weekly" as const,
-      priority: 0.8,
+      priority: 0.7,
       alternates: {
-        languages: getAlternateLanguages(path),
+        languages: getAlternateLanguages(`/blog/${post.slug}`),
       },
     };
   });
+  console.timeEnd("⏱️  Sitemap: Blog Posts");
 
-  // Product pages - high priority for SEO
-  // [PERFORMANCE] Using fastMode=true to bypass consensus mapping.
-  // This uses slugs directly from the database for instant generation (<1s).
+  // Product routes
+  console.time("⏱️  Sitemap: Products (FastMode)");
   const allProducts = await getAllProductSlugs(undefined, false, true);
-
   const productRoutes: MetadataRoute.Sitemap = allProducts.map((product) => {
-    const productPath = getProductPath(product.id, product.slug);
     return {
-      url: `${baseUrl}${productPath}`,
-      lastModified: product.updatedAt,
+      url: getProductCanonicalUrl(product.id, product.slug),
+      lastModified: new Date(product.updatedAt),
       changeFrequency: "daily" as const,
-      priority: 0.9,
+      priority: 0.6,
       alternates: {
-        languages: getAlternateLanguages(productPath),
+        languages: getAlternateLanguages(
+          getProductPath(product.id, product.slug),
+        ),
       },
     };
   });
+  console.timeEnd("⏱️  Sitemap: Products (FastMode)");
 
   // Category routes
-  const nonEmptyCategorySlugs = await getNonEmptyCategorySlugs();
-  const categoryRoutes: MetadataRoute.Sitemap = [
-    {
-      url: `${baseUrl}/categories`,
-      lastModified: new Date(),
-      changeFrequency: "daily" as const,
-      priority: 0.8,
-      alternates: {
-        languages: getAlternateLanguages("/categories"),
-      },
-    },
-    ...Object.values(allCategories)
-      .map((category) => {
-        if (category.hidden) return;
+  console.time("⏱️  Sitemap: Categories");
+  const categorySlugs = await getNonEmptyCategorySlugs();
+  const categoryRoutes: MetadataRoute.Sitemap = categorySlugs
+    .map((slug) => {
+      const category = allCategories[slug as CategorySlug];
+      if (!category || category.hidden) return null;
 
-        // Use recursive check to see if category should be in sitemap
-        if (
-          !isCategoryNotEmptyRecursive(category.slug, nonEmptyCategorySlugs)
-        ) {
-          return;
-        }
+      // Recursive check to ensure category or its children have products
+      if (!isCategoryNotEmptyRecursive(category.slug, categorySlugs)) {
+        return null;
+      }
 
-        const categoryPath = getCategoryPath(category.slug);
-        return {
-          url: `${baseUrl}${categoryPath}`,
-          lastModified: new Date(),
-          changeFrequency: "daily" as const,
-          priority: 0.8,
-          alternates: {
-            languages: getAlternateLanguages(categoryPath),
-          },
-        };
-      })
-      .filter((route): route is any => !!route),
-  ];
+      const categoryPath = getCategoryPath(category.slug);
+      return {
+        url: `${baseUrl}${categoryPath}`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+        alternates: {
+          languages: getAlternateLanguages(categoryPath),
+        },
+      };
+    })
+    .filter((route): route is any => !!route);
+  console.timeEnd("⏱️  Sitemap: Categories");
+
+  const totalDuration = Date.now() - totalStart;
+  console.log(
+    `🗺️  Sitemap: Complete! (Total: ${totalDuration}ms, Items: ${staticRoutes.length + blogRoutes.length + productRoutes.length + categoryRoutes.length})`,
+  );
 
   return [...staticRoutes, ...blogRoutes, ...productRoutes, ...categoryRoutes];
 }
