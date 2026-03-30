@@ -377,6 +377,8 @@ export async function getAllProductSlugs(
           category: products.category,
           enrichmentStatus: products.enrichmentStatus,
           updatedAt: products.updatedAt,
+          parentAsin: products.parentAsin,
+          asin: products.asin,
         })
         .from(products)
         .leftJoin(prices, eq(products.id, prices.productId))
@@ -391,15 +393,18 @@ export async function getAllProductSlugs(
             or(
               and(eq(prices.country, "de"), gt(prices.price, 0)),
               isNotNull(products.specifications),
-              isNotNull(products.officialSpecifications)
-            )
-          )
+              isNotNull(products.officialSpecifications),
+            ),
+          ),
         )
-        .groupBy(products.id)
+        // If includeVariants is false, we group by parentAsin (or asin for singletons) 
+        // to only return one representative per family.
+        .groupBy(includeVariants ? products.id : sql`COALESCE(${products.parentAsin}, ${products.asin})`)
         .orderBy(asc(products.salesRank)); // Fast indexed sort
 
-      return fastResults.map(r => ({
-        id: r.id!,
+      return fastResults.map((r) => ({
+        // For Hubs in sitemap, we use the 900M prefix logic to ensure they point to /p/900... hub pages
+        id: (!includeVariants && r.parentAsin) ? 900000000 + (r.id! % 100000000) : r.id!,
         slug: r.slug,
         category: r.category,
         enrichmentStatus: r.enrichmentStatus,

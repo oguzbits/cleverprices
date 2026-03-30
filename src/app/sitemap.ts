@@ -11,7 +11,7 @@ import {
   getNonEmptyCategorySlugs,
 } from "@/lib/server/cached-products";
 import { SITE_URL } from "@/lib/site-config";
-import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
+import { getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
 import { cacheLife, cacheTag } from "next/cache";
 
@@ -25,13 +25,13 @@ import { cacheLife, cacheTag } from "next/cache";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  "use cache";
+  cacheLife("product");
+  const _v = "v216-hubs-only";
+  cacheTag("sitemap", "sitemap-slugs", _v);
+
   const totalStart = Date.now();
   console.log("🗺️  Sitemap: Starting generation...");
-
-  // 🧪 CACHE DISABLED TEMPORARILY FOR VERIFICATION
-  // "use cache";
-  // cacheLife("product");
-  // cacheTag("sitemap", "sitemap-slugs");
   const baseUrl = SITE_URL;
 
   // Static routes (German-first priorities)
@@ -61,46 +61,49 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   console.time("⏱️  Sitemap: Blog Posts");
   const blogPosts = await getAllBlogPosts();
   const blogRoutes: MetadataRoute.Sitemap = blogPosts.map((post) => {
+    const path = `/blog/${post.slug}`;
     return {
-      url: `${baseUrl}/blog/${post.slug}`,
+      url: `${baseUrl}${path}`,
       lastModified: new Date(post.lastUpdated || post.publishDate),
       changeFrequency: "weekly" as const,
       priority: 0.7,
       alternates: {
-        languages: getAlternateLanguages(`/blog/${post.slug}`),
+        languages: getAlternateLanguages(path),
       },
     };
   });
   console.timeEnd("⏱️  Sitemap: Blog Posts");
 
-  // Product routes
-  console.time("⏱️  Sitemap: Products (FastMode)");
-  const allProducts = await getAllProductSlugs(undefined, false, true);
-  const productRoutes: MetadataRoute.Sitemap = allProducts.map((product) => {
+  // Product routes (Hub-Only Indexing)
+  console.time("⏱️  Sitemap: Product Hubs");
+  // includeVariants: false ensures we only get the 'Series' hubs (Synthetic IDs 900M+)
+  const allHubs = await getAllProductSlugs(undefined, false, true);
+  const productRoutes: MetadataRoute.Sitemap = allHubs.map((product) => {
+    const path = getProductPath(product.id, product.slug);
     return {
-      url: getProductCanonicalUrl(product.id, product.slug),
+      url: `${baseUrl}${path}`,
       lastModified: new Date(product.updatedAt),
       changeFrequency: "daily" as const,
       priority: 0.6,
       alternates: {
-        languages: getAlternateLanguages(
-          getProductPath(product.id, product.slug),
-        ),
+        languages: getAlternateLanguages(path),
       },
     };
   });
-  console.timeEnd("⏱️  Sitemap: Products (FastMode)");
+  console.timeEnd("⏱️  Sitemap: Product Hubs");
 
   // Category routes
   console.time("⏱️  Sitemap: Categories");
-  const categorySlugs = await getNonEmptyCategorySlugs();
-  const categoryRoutes: MetadataRoute.Sitemap = categorySlugs
+  const nonEmptyCategorySlugs = await getNonEmptyCategorySlugs();
+  const allCategorySlugs = Object.keys(allCategories) as CategorySlug[];
+
+  const categoryRoutes: MetadataRoute.Sitemap = allCategorySlugs
     .map((slug) => {
-      const category = allCategories[slug as CategorySlug];
+      const category = allCategories[slug];
       if (!category || category.hidden) return null;
 
-      // Recursive check to ensure category or its children have products
-      if (!isCategoryNotEmptyRecursive(category.slug, categorySlugs)) {
+      // Recursive check: Include category if it OR any of its children have products
+      if (!isCategoryNotEmptyRecursive(category.slug, nonEmptyCategorySlugs)) {
         return null;
       }
 
@@ -119,9 +122,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   console.timeEnd("⏱️  Sitemap: Categories");
 
   const totalDuration = Date.now() - totalStart;
+  const totalItems =
+    staticRoutes.length +
+    blogRoutes.length +
+    productRoutes.length +
+    categoryRoutes.length;
   console.log(
-    `🗺️  Sitemap: Complete! (Total: ${totalDuration}ms, Items: ${staticRoutes.length + blogRoutes.length + productRoutes.length + categoryRoutes.length})`,
+    `🗺️  Sitemap: Complete! (Total: ${totalDuration}ms, Items: ${totalItems})`,
   );
 
-  return [...staticRoutes, ...blogRoutes, ...productRoutes, ...categoryRoutes];
+  return [...staticRoutes, ...blogRoutes, ...categoryRoutes, ...productRoutes];
 }
