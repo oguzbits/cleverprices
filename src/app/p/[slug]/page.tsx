@@ -222,15 +222,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? `${identity.displayTitle} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_NAME}.`
         : `${identity.displayTitle} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_NAME}.`);
 
-    // Use the ID-prefixed slug for the canonical URL to match the sitemap exactly
+    // [SEO Triad Fix] Use ONLY the canonical ID and Slug resolved by getPDPRenderData
+    // This removes the mismatch between Hubs (900M) and Variants (200M) in GSC.
     const effectiveId = renderData?.canonicalId || product.id;
-    const canonicalPath = getProductPath(effectiveId, product.slug);
+    const effectiveSlug = renderData?.canonicalSlug || product.slug;
+    const canonicalPath = getProductPath(effectiveId, effectiveSlug);
 
     return {
       title,
       description,
       alternates: {
-        canonical: getProductCanonicalUrl(effectiveId, product.slug),
+        canonical: getProductCanonicalUrl(effectiveId, effectiveSlug),
         languages: getAlternateLanguages(canonicalPath),
       },
       openGraph: getOpenGraph({

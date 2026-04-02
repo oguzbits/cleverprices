@@ -383,37 +383,28 @@ export async function getPDPRenderData(
             }
           }
 
-          // 4. Resolve the STABLE canonical ID
-          const canonicalId = await getCanonicalFamilyId(
-            product.parentAsin,
+          // 5. Resolve the STABLE canonical ID and SLUG for the Hub
+          const canonicalIdResult = await getCanonicalFamilyId(
+            product.parentAsin || product.asin,
             product.id || 0,
             product.modelTitle,
           );
-
-          // 5. Align Hub product with Representative metadata
-          if (rep && rep.id !== effectiveProduct.id) {
-            effectiveProduct = {
-              ...effectiveProduct,
-              prices: rep.prices,
-              priceHistory: rep.priceHistory,
-              savings: rep.savings,
-              pricesLastUpdated: rep.pricesLastUpdated,
-              condition: rep.condition,
-            };
-          } else if (rep) {
-            // Even if same product, ensure history is attached
-            effectiveProduct.priceHistory = rep.priceHistory;
-          }
+          const canonicalId = 900000000 + (canonicalIdResult % 100000000);
+          const { slug: canonicalSlug } = getFamilyIdentitySync(
+            { ...product, id: canonicalId, isParentView: true } as any,
+            mergedAll,
+          );
 
           return {
             product: effectiveProduct,
             variants: mergedAll.slice(1),
             isParentView: true,
             canonicalId,
+            canonicalSlug,
             redirect: null,
             isPermanent: false,
             // Add a salt to bust any stale caches
-            _v: "v73-stable-hub-id",
+            _v: "v218-canonical-parity",
           };
         }
 
@@ -505,22 +496,29 @@ export async function getPDPRenderData(
           countryCode,
           true,
         );
-        // 5. Resolve the STABLE canonical ID for the Hub
-        const hubId = await getCanonicalFamilyId(
+        // 5. Resolve the STABLE canonical ID and SLUG for the Hub
+        const hubIdVal = await getCanonicalFamilyId(
           product.parentAsin,
           product.id || 0,
           product.modelTitle,
         );
-        const canonicalId = 900000000 + (hubId % 100000000);
+        const canonicalId = 900000000 + (hubIdVal % 100000000);
+
+        // Fetch official hub slug to avoid mismatched canonical tags in GSC
+        const { slug: canonicalSlug } = getFamilyIdentitySync(
+          { ...product, id: canonicalId, isParentView: true } as any,
+          [product, ...variants],
+        );
 
         return {
           product: merged.find((p) => p.id === realId) || merged[0],
           variants: merged.filter((p) => p.id !== realId),
           isParentView: false,
           canonicalId,
+          canonicalSlug,
           redirect: null,
           isPermanent: false,
-          _v: "v49-optimized",
+          _v: "v218-canonical-parity",
         };
       }
     }
