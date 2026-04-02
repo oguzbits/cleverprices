@@ -284,7 +284,9 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   cacheLife("product");
-  const _v = "v80-unified-flow";
+  const [_salt] = ["v218-canonical-parity"];
+  cacheTag("pdp", "pdp-" + slug, _salt);
+  const _v = "v218-canonical-parity";
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
