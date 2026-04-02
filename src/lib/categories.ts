@@ -191,10 +191,13 @@ export const _cachedStandardCategories = _cachedAllCategories.filter(
  */
 export function isCategoryNotEmptyRecursive(
   categorySlug: CategorySlug,
-  nonEmptySlugs: string[],
+  nonEmptySlugs: string[] | Set<string>,
 ): boolean {
+  const slugSet =
+    nonEmptySlugs instanceof Set ? nonEmptySlugs : new Set(nonEmptySlugs);
+
   // 1. Check if the category itself has products
-  if (nonEmptySlugs.includes(categorySlug)) {
+  if (slugSet.has(categorySlug)) {
     return true;
   }
 
@@ -205,6 +208,6 @@ export function isCategoryNotEmptyRecursive(
   }
 
   return children.some((child) =>
-    isCategoryNotEmptyRecursive(child.slug, nonEmptySlugs),
+    isCategoryNotEmptyRecursive(child.slug, slugSet),
   );
 }
