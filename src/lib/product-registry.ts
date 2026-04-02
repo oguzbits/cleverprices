@@ -368,20 +368,24 @@ export async function getAllProductSlugs(
   try {
     // 1. Fetch products with identity-critical columns
     if (fastMode) {
-      // 🚀 [ULTRA-FAST MODE] Use a single specialized SQL join for sitemap-scale exports.
-      // Bypasses JavaScript filtering, overhead of 6,000+ objects, and redundant price fetches.
-      const fastResults = await db
+      // 🚀 [ULTRA-FAST MODE] Optimized selection for sitemap-scale exports.
+      // Bypasses JavaScript filtering, overhead of thousands of objects, and redundant joins.
+      const rawResults = await db
         .select({
           id: products.id,
           slug: products.slug,
+          title: products.title,
           category: products.category,
           enrichmentStatus: products.enrichmentStatus,
           updatedAt: products.updatedAt,
           parentAsin: products.parentAsin,
           asin: products.asin,
+          brand: products.brand,
+          specifications: products.specifications,
+          officialSpecifications: products.officialSpecifications,
+          salesRank: products.salesRank,
         })
         .from(products)
-        .leftJoin(prices, eq(products.id, prices.productId))
         .where(
           and(
             inArray(products.enrichmentStatus, [
@@ -389,27 +393,62 @@ export async function getAllProductSlugs(
               "processed",
               "pending",
             ]),
-            // SEO Requirement: Only include in sitemap if it has a price OR specifications
+            // GSC Fix: Only include items that don't look like ASIN-titles or junk names
+            sql`length(title) > 2 AND title != asin`,
+            // SEO Guard: Items must have either specs or a known price (subquery for speed)
             or(
-              and(eq(prices.country, "de"), gt(prices.price, 0)),
               isNotNull(products.specifications),
               isNotNull(products.officialSpecifications),
+              sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
             ),
           ),
         )
-        // If includeVariants is false, we group by parentAsin (or asin for singletons) 
-        // to only return one representative per family.
-        .groupBy(includeVariants ? products.id : sql`COALESCE(${products.parentAsin}, ${products.asin})`)
-        .orderBy(asc(products.salesRank)); // Fast indexed sort
+        // Order by salesRank to ensure consistent representative selection during manual grouping
+        .orderBy(asc(products.salesRank));
 
-      return fastResults.map((r) => ({
-        // For Hubs in sitemap, we use the 900M prefix logic to ensure they point to /p/900... hub pages
-        id: (!includeVariants && r.parentAsin) ? 900000000 + (r.id! % 100000000) : r.id!,
-        slug: r.slug,
-        category: r.category,
-        enrichmentStatus: r.enrichmentStatus,
-        updatedAt: r.updatedAt || new Date(),
-      }));
+      const processedResults: any[] = [];
+      const parentMap = new Map<string, any>();
+
+      for (const r of rawResults) {
+        if (!includeVariants && r.parentAsin) {
+          // Keep only the highest-ranked member as the Hub representative
+          if (!parentMap.has(r.parentAsin)) {
+            // For Hubs, we MUST calculate the canonical ID-prefixed slug exactly like the Product Page
+            // to avoid 301 Redirect Chains in GSC.
+            const hubId = 900000000 + (r.id! % 100000000);
+            const { slug: hubSlug } = getFamilyIdentity(
+              {
+                ...r,
+                id: hubId,
+                isParentView: true,
+              } as any,
+              [], // Sibling consensus is optional for fastMode
+            );
+
+            const hub = {
+              id: hubId,
+              slug: hubSlug,
+              category: r.category,
+              enrichmentStatus: r.enrichmentStatus,
+              updatedAt: r.updatedAt || new Date(),
+            };
+            parentMap.set(r.parentAsin, hub);
+            processedResults.push(hub);
+          }
+          continue;
+        }
+
+        // Standard Product or Variant
+        processedResults.push({
+          id: r.id!,
+          slug: r.slug,
+          category: r.category,
+          enrichmentStatus: r.enrichmentStatus,
+          updatedAt: r.updatedAt || new Date(),
+        });
+      }
+
+      return processedResults;
     }
 
     // 1. Fetch products with basic metadata (Standard Slow Path)

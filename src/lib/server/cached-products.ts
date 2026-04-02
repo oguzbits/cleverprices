@@ -139,7 +139,7 @@ async function getCachedProductByParentAsinSuffix(
 async function getCachedProductBySyntheticId(
   id: number,
   depth: number = 0,
-  _version: string = "v215",
+  _version: string = "v217",
 ) {
   "use cache";
   cacheLife("product");
@@ -172,7 +172,7 @@ async function getCachedProductSlugs(
 }
 
 export async function getAllProductSlugs(
-  _version: string = "v214",
+  _version: string = "v217",
   includeVariants: boolean = true,
   fastMode: boolean = false,
 ): Promise<any[]> {
@@ -187,7 +187,7 @@ export async function getAllProductSlugs(
 }
 
 export async function getNonEmptyCategorySlugs(
-  _version: string = "v214",
+  _version: string = "v217",
 ): Promise<string[]> {
   const cachedFetch = async () => {
     "use cache";
@@ -280,7 +280,7 @@ export async function getProductVariants(
 export async function getPDPRenderData(
   slug: string,
   countryCode: string = "de",
-  _version: string = "v214",
+  _version: string = "v217",
 ) {
   "use cache";
   cacheLife("product");
