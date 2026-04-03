@@ -284,9 +284,9 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   cacheLife("product");
-  const [_salt] = ["v220-sync-parity"];
-  cacheTag("pdp-v220-sync", "pdp-" + slug, _salt);
-  const _v = "v220-sync-parity";
+  const [_salt] = ["v222-REBOOT-FINAL"];
+  cacheTag("pdp-v222-reboot", "pdp-" + slug, _salt);
+  const _v = "v222-REBOOT-FINAL";
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;

@@ -210,7 +210,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Pattern: [Clean Name] | Preisvergleich | Brand
     const seoTitle = isParentView ? identity.modelTitle : identity.displayTitle;
     const baseTitle = `${seoTitle} | Preisvergleich`;
-    const title = truncateTitle(baseTitle, 60) + ` | ${BRAND_NAME}`;
+    // [Dokploy Deployment Test] Hard-coded prefix to confirm builds are reaching prod
+    const title = "FIX-" + truncateTitle(baseTitle, 60) + ` | ${BRAND_NAME}`;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
     // Try enriched description first
@@ -231,6 +232,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title,
       description,
+      other: {
+        "debug-id": String(effectiveId),
+        "debug-v": "v222-REBOOT",
+      },
       alternates: {
         canonical: getProductCanonicalUrl(effectiveId, effectiveSlug),
         languages: getAlternateLanguages(canonicalPath),
