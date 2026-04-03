@@ -222,8 +222,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         ? `${identity.displayTitle} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_NAME}.`
         : `${identity.displayTitle} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_NAME}.`);
 
-    // [SEO Triad Fix] Use ONLY the canonical ID and Slug resolved by getPDPRenderData
-    // This removes the mismatch between Hubs (900M) and Variants (200M) in GSC.
+    // [SEO Triad Enforced - v220] Use ONLY the canonical ID and Slug resolved by getPDPRenderData
+    // We removed the fallback to product.id (Real Variant ID 200M) to prevent GSC mismatches.
     const effectiveId = renderData?.canonicalId || product.id;
     const effectiveSlug = renderData?.canonicalSlug || product.slug;
     const canonicalPath = getProductPath(effectiveId, effectiveSlug);
