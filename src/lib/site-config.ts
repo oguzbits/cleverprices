@@ -78,7 +78,7 @@ export const DEFAULT_TITLE = `Hardware Preisvergleich Deutschland | Bester Preis
 /**
  * Title template for Next.js metadata
  */
-export const TITLE_TEMPLATE = `%s | ${BRAND_DOMAIN}`;
+export const TITLE_TEMPLATE = "%s";
 
 /**
  * Author/creator name for metadata

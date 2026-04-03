@@ -403,8 +403,9 @@ export async function getAllProductSlugs(
             ),
           ),
         )
-        // Order by salesRank to ensure consistent representative selection during manual grouping
-        .orderBy(asc(products.salesRank));
+        // Order by ID (asc) to ensure the first one encountered per parentAsin is the 'oldest' ID,
+        // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
+        .orderBy(asc(products.id));
 
       const processedResults: any[] = [];
       const parentMap = new Map<string, any>();
@@ -490,13 +491,15 @@ export async function getAllProductSlugs(
           or(
             isNotNull(products.specifications),
             isNotNull(products.officialSpecifications),
-            sql`id IN (SELECT product_id FROM prices WHERE price > 0)`
-          )
-        )
+            sql`id IN (SELECT product_id FROM prices WHERE price > 0)`,
+          ),
+        ),
       )
       .orderBy(
         sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
-        asc(products.salesRank)
+        // Order by ID (asc) to ensure the first one encountered per parentAsin is the 'oldest' ID,
+        // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
+        asc(products.id),
       );
 
     if (limit) {
@@ -586,9 +589,7 @@ export async function getAllProductSlugs(
             const m = allMapped[i];
             const mPr = m.prices["de"];
             const isGood =
-              (mPr && mPr > 0) ||
-              m.officialSpecifications ||
-              m.specifications;
+              (mPr && mPr > 0) || m.officialSpecifications || m.specifications;
             return isGood ? i : -1;
           })
           .filter((i) => i !== -1);

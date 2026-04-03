@@ -405,8 +405,8 @@ export async function getPDPRenderData(
             canonicalSlug,
             redirect: null,
             isPermanent: false,
-            // Add a salt to bust any stale caches
-            _v: "v218-canonical-parity",
+            // Salt to bust caches
+            _v: "v223-STRICT-HUB",
           };
         }
 
@@ -621,13 +621,27 @@ export async function getPDPRenderData(
     }
   }
 
+  // 5. Resolve the STABLE canonical ID and SLUG for the Hub (Always included for SEO Triad parity)
+  const hubIdVal = await getCanonicalFamilyId(
+    product.parentAsin || product.asin,
+    product.id || 0,
+    product.modelTitle,
+  );
+  const canonicalId = 900000000 + (hubIdVal % 100000000);
+  const { slug: canonicalSlug } = getFamilyIdentitySync(
+    { ...product, id: canonicalId, isParentView: true } as any,
+    [product, ...variants],
+  );
+
   return {
     product: product || (null as any),
     variants,
     category,
-    isParentView,
+    isParentView: isParentView || (product?.id || 0) >= 900000000,
+    canonicalId,
+    canonicalSlug,
     redirect,
     isPermanent,
-    _v,
+    _v: "v224-STRICT-SERIES",
   };
 }

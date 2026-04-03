@@ -12,7 +12,7 @@ import {
   getPDPRenderData,
 } from "@/lib/server/cached-products";
 import { logPDPPerformance } from "@/lib/server/performance-registry";
-import { BRAND_DOMAIN, BRAND_NAME, SITE_URL } from "@/lib/site-config";
+import { BRAND_DOMAIN, BRAND_NAME } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
@@ -143,7 +143,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Handle Metadata redirects (Critical for SEO: redirects in metadata set the real 3xx status code)
     if (renderData?.redirect) {
       if (renderData.isPermanent) {
-        // [SEO optimization] Add noindex to the redirecting shell to help GSC clear these 
+        // [SEO optimization] Add noindex to the redirecting shell to help GSC clear these
         // redundant URLs from the index faster while following the 301/308.
         permanentRedirect(renderData.redirect);
       } else {
@@ -211,7 +211,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const seoTitle = isParentView ? identity.modelTitle : identity.displayTitle;
     const baseTitle = `${seoTitle} | Preisvergleich`;
     // [Dokploy Deployment Test] Hard-coded prefix to confirm builds are reaching prod
-    const title = "FIX-" + truncateTitle(baseTitle, 60) + ` | ${BRAND_NAME}`;
+    const title = truncateTitle(baseTitle, 60) + ` | ${BRAND_NAME}`;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
     // Try enriched description first
@@ -227,23 +227,22 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // We removed the fallback to product.id (Real Variant ID 200M) to prevent GSC mismatches.
     const effectiveId = renderData?.canonicalId || product.id;
     const effectiveSlug = renderData?.canonicalSlug || product.slug;
-    const canonicalPath = getProductPath(effectiveId, effectiveSlug);
+    const canonicalPath = getProductPath(
+      effectiveId || product.id,
+      effectiveSlug || product.slug,
+    );
 
     return {
       title,
       description,
-      other: {
-        "debug-id": String(effectiveId),
-        "debug-v": "v222-REBOOT",
-      },
       alternates: {
         canonical: getProductCanonicalUrl(effectiveId, effectiveSlug),
         languages: getAlternateLanguages(canonicalPath),
       },
       openGraph: getOpenGraph({
-        title: `${seoTitle} Preisvergleich | ${BRAND_DOMAIN}`,
+        title: `${seoTitle} Preisvergleich | ${BRAND_NAME}`,
         description,
-        url: getProductCanonicalUrl(effectiveId, product.slug),
+        url: getProductCanonicalUrl(effectiveId, effectiveSlug),
         locale: "de_DE",
         type: "article",
         images: product.image
