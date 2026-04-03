@@ -284,9 +284,9 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   cacheLife("product");
-  const [_salt] = ["v222-REBOOT-FINAL"];
-  cacheTag("pdp-v222-reboot", "pdp-" + slug, _salt);
-  const _v = "v222-REBOOT-FINAL";
+  const [_salt] = ["v224-REALLY-FIXED"];
+  cacheTag("pdp-v224-final", "pdp-" + slug, _salt);
+  const _v = "v224-REALLY-FIXED";
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -406,35 +406,29 @@ export async function getPDPRenderData(
             redirect: null,
             isPermanent: false,
             // Salt to bust caches
-            _v: "v224-LOOP-FIX",
+            _v: "v224-REALLY-FIXED",
           };
         }
 
-        // Singleton or Canonical Mismatch Check:
-        // Identify WHY isSlugMatch failed.
+        // Canonical Mismatch Check for Hubs:
+        // If we are here, isSlugMatch was false. We MUST redirect to the standardized Hub URL.
         const variants = await getCachedProductVariantsInternal(
           product.parentAsin!,
           countryCode,
           true,
         );
 
-        // Standardize Singleton/Hub redirection:
-        // 1. If only 1 variant exists, redirect to the Variant Page (200,000,000+).
-        // 2. If many variants exist, redirect to the Hub (900,000,000+).
-        const isSingleton = variants.length <= 1;
-        const targetId = isSingleton
-          ? (variants[0]?.id || id - 900000000) // Redirect to Variant ID or Real ID
-          : id; // Stay on Hub ID
+        // Standardize Hub redirection:
+        // We ALWAYS stay on the Hub ID (900,000,000+) to avoid loops with variant-to-hub redirects.
+        const targetId = id; 
 
         const { slug: canonical } = getFamilyIdentitySync(
-          isSingleton
-            ? { ...product, id: targetId >= 200000000 ? targetId : 200000000 + targetId }
-            : { ...product, id: id },
+          { ...product, id: targetId >= 900000000 ? targetId : 900000000 + (targetId % 100000000), isParentView: true },
           variants,
         );
 
         const targetPath = getProductPath(
-          isSingleton ? (targetId % 100000000) : id,
+          targetId >= 900000000 ? targetId : 900000000 + (targetId % 100000000),
           canonical
         );
 
@@ -536,7 +530,7 @@ export async function getPDPRenderData(
           canonicalSlug,
           redirect: null,
           isPermanent: false,
-          _v: "v218-canonical-parity",
+          _v: "v224-REALLY-FIXED",
         };
       }
     }
@@ -658,6 +652,6 @@ export async function getPDPRenderData(
     canonicalSlug,
     redirect,
     isPermanent,
-    _v: "v224-LOOP-FIX",
+    _v: "v224-REALLY-FIXED",
   };
 }
