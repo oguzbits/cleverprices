@@ -235,6 +235,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return {
       title,
       description,
+      other: {
+        "deploy-v": "v224-STRICT-PARITY",
+      },
       alternates: {
         canonical: getProductCanonicalUrl(effectiveId, effectiveSlug),
         languages: getAlternateLanguages(canonicalPath),

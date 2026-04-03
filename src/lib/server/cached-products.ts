@@ -406,32 +406,48 @@ export async function getPDPRenderData(
             redirect: null,
             isPermanent: false,
             // Salt to bust caches
-            _v: "v223-STRICT-HUB",
+            _v: "v224-LOOP-FIX",
           };
         }
 
-        // Singleton or Canonical Mismatch Check
+        // Singleton or Canonical Mismatch Check:
+        // Identify WHY isSlugMatch failed.
         const variants = await getCachedProductVariantsInternal(
           product.parentAsin!,
           countryCode,
           true,
         );
-        if (variants.length <= 1) {
-          const { slug: canonical } = getFamilyIdentitySync(
-            { ...product, id: id - 900000000 },
-            variants,
-          );
-          return { redirect: getProductPath(id, canonical), isPermanent: true };
-        } else {
-          const { slug: canonical } = getFamilyIdentitySync(product, variants);
-          if (slug !== canonical) {
-            return {
-              redirect: getProductPath(product.id, canonical),
-              isPermanent: true,
-            };
-          }
-          isParentView = true;
+
+        // Standardize Singleton/Hub redirection:
+        // 1. If only 1 variant exists, redirect to the Variant Page (200,000,000+).
+        // 2. If many variants exist, redirect to the Hub (900,000,000+).
+        const isSingleton = variants.length <= 1;
+        const targetId = isSingleton
+          ? (variants[0]?.id || id - 900000000) // Redirect to Variant ID or Real ID
+          : id; // Stay on Hub ID
+
+        const { slug: canonical } = getFamilyIdentitySync(
+          isSingleton
+            ? { ...product, id: targetId >= 200000000 ? targetId : 200000000 + targetId }
+            : { ...product, id: id },
+          variants,
+        );
+
+        const targetPath = getProductPath(
+          isSingleton ? (targetId % 100000000) : id,
+          canonical
+        );
+
+        // Only redirect if the path truly changed to avoid loops
+        if (targetPath !== `/p/${slug}`) {
+          return {
+            redirect: targetPath,
+            isPermanent: true,
+          };
         }
+        
+        // If it got here without a redirect (e.g. valid slug match but singleton fallback), allow it to render or 404
+        isParentView = true;
       }
     } else {
       // Standard ID mode
@@ -642,6 +658,6 @@ export async function getPDPRenderData(
     canonicalSlug,
     redirect,
     isPermanent,
-    _v: "v224-STRICT-SERIES",
+    _v: "v224-LOOP-FIX",
   };
 }
