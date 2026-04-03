@@ -306,97 +306,45 @@ export async function getPDPRenderData(
         return null;
       }
 
-      // TRACE: Product 5301 has been causing hangs/timeouts in sitemap audit.
-      const isTargetTrack =
-        id === 900005301 ||
-        (product.id && product.id >= 200005301 && product.id <= 200005304);
-      if (isTargetTrack) {
-        console.log(
-          `[TRACE 5301] Rendering Hub/Product ${id} with slug ${slug}`,
-        );
-      }
       if (product) {
-        // Strict slug check for Hubs: ensure the text part matches the canonical version
-        const isSlugMatch = product.slug === slug;
+        // Resolve siblings and prices
+        const rawVariants = await getCachedProductVariantsInternal(
+          product.parentAsin || product.asin,
+          countryCode,
+          true,
+        );
+        const hubIden = getProductIdentity(product);
+        const hubModelKey = (hubIden.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+        const variants = rawVariants.filter(v => {
+          const vIdx = getProductIdentity(v as any);
+          return (vIdx.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") === hubModelKey;
+        });
 
-        if (id === 900003105) {
-          console.log(
-            `[TRACE 3105 Hub] URL Slug: ${slug}, Canonical Slug: ${product.slug}, Match: ${isSlugMatch}`,
-          );
+        const mergedAll = await mergeLivePrices([product, ...variants], countryCode, false);
+        const rep = getFamilyRepresentative(mergedAll);
+        let effectiveProduct = mergedAll[0];
+
+        if (rep) {
+          const liveData = await getLivePriceForProduct(rep.id!, countryCode, true);
+          if (liveData?.history) {
+            rep.priceHistory = liveData.history;
+            const { calculateProductSavings } = await import("../utils/products");
+            rep.savings = calculateProductSavings({
+              price: rep.prices[countryCode] || 0,
+              usedPrice: rep.usedPrices?.[countryCode] || 0,
+              warehousePrice: rep.warehousePrices?.[countryCode] || 0,
+              avg90: liveData.priceAvg90 || 0,
+            });
+          }
         }
 
-        if (isSlugMatch) {
-          const rawVariants = await getCachedProductVariantsInternal(
-            product.parentAsin || product.asin,
-            countryCode,
-            true, // isLean
-          );
+        const canIdResult = await getCanonicalFamilyId(product.parentAsin || product.asin, product.id || 0, product.modelTitle);
+        const canonicalId = 900000000 + (canIdResult % 100000000);
+        const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, mergedAll);
+        const targetPath = getProductPath(canonicalId, canonicalSlug);
 
-          // 1. Filter variants by series (modelTitle) to avoid mixing e.g. ASUS Prime and ROG Strix
-          const hubIdentity = getProductIdentity(product);
-          const hubModelKey = (hubIdentity.modelTitle || "")
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "");
-
-          const variants = rawVariants.filter((v) => {
-            const vIden = getProductIdentity(v as any);
-            const vModelKey = (vIden.modelTitle || "")
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, "");
-            return vModelKey === hubModelKey;
-          });
-
-          // 1. Merge prices for all (No history yet)
-          const mergedAll = await mergeLivePrices(
-            [product, ...variants],
-            countryCode,
-            false,
-          );
-
-          // 2. Identify the TRUE representative (cheapest) from live data
-          const rep = getFamilyRepresentative(mergedAll);
-          let effectiveProduct = mergedAll[0];
-
-          // 3. Fetch History for the chosen representative
-          // This ensures the chart on the Hub page reflects the cheapest variant
-          if (rep) {
-            const liveData = await getLivePriceForProduct(
-              rep.id!,
-              countryCode,
-              true, // includeHistory
-            );
-
-            if (liveData?.history) {
-              // Sync history to both the rep and the effective Hub product
-              rep.priceHistory = liveData.history;
-
-              // Recalculate savings/metrics for rep if history updated
-              const { calculateProductSavings } =
-                await import("../utils/products");
-              rep.savings = calculateProductSavings({
-                price: rep.prices[countryCode] || 0,
-                usedPrice: rep.usedPrices?.[countryCode] || 0,
-                warehousePrice: rep.warehousePrices?.[countryCode] || 0,
-                avg90: liveData.priceAvg90 || 0,
-              });
-            } else if (effectiveProduct.priceHistory) {
-              // Fallback to history already in effectiveProduct if live fetch failed
-              rep.priceHistory = effectiveProduct.priceHistory;
-            }
-          }
-
-          // 5. Resolve the STABLE canonical ID and SLUG for the Hub
-          const canonicalIdResult = await getCanonicalFamilyId(
-            product.parentAsin || product.asin,
-            product.id || 0,
-            product.modelTitle,
-          );
-          const canonicalId = 900000000 + (canonicalIdResult % 100000000);
-          const { slug: canonicalSlug } = getFamilyIdentitySync(
-            { ...product, id: canonicalId, isParentView: true } as any,
-            mergedAll,
-          );
-
+        // Render or Redirect check
+        if (`/p/${slug}` === targetPath) {
           return {
             product: effectiveProduct,
             variants: mergedAll.slice(1),
@@ -405,46 +353,14 @@ export async function getPDPRenderData(
             canonicalSlug,
             redirect: null,
             isPermanent: false,
-            // Salt to bust caches
             _v: "v224-REALLY-FIXED",
           };
         }
 
-        // Canonical Mismatch Check for Hubs:
-        // If we are here, isSlugMatch was false. We MUST redirect to the standardized Hub URL.
-        const variants = await getCachedProductVariantsInternal(
-          product.parentAsin!,
-          countryCode,
-          true,
-        );
-
-        // Standardize Hub redirection:
-        // We ALWAYS stay on the Hub ID (900,000,000+) to avoid loops with variant-to-hub redirects.
-        const targetId = id; 
-
-        const { slug: canonical } = getFamilyIdentitySync(
-          { ...product, id: targetId >= 900000000 ? targetId : 900000000 + (targetId % 100000000), isParentView: true },
-          variants,
-        );
-
-        const targetPath = getProductPath(
-          targetId >= 900000000 ? targetId : 900000000 + (targetId % 100000000),
-          canonical
-        );
-
-        // Only redirect if the path truly changed to avoid loops
-        if (targetPath !== `/p/${slug}`) {
-          return {
-            redirect: targetPath,
-            isPermanent: true,
-          };
-        }
-        
-        // If it got here without a redirect (e.g. valid slug match but singleton fallback), allow it to render or 404
-        isParentView = true;
+        return { redirect: targetPath, isPermanent: true };
       }
     } else {
-      // Standard ID mode
+      // Standard ID mode (Variant)
       const realId = id >= 200000000 ? id - 200000000 : id;
       product = await getCachedProductById(realId);
       if (product) {
@@ -461,66 +377,37 @@ export async function getPDPRenderData(
           { ...rep, id: 900000000 + (rep.id || 0), isParentView: true },
           [product, ...variants],
         );
-        // We use the stable slugs already computed with full sibling access via mapDbProduct
         const canonicalFamilySlug = familyIdentity.slug;
         const canonicalProductSlug = product.slug;
 
-        const familySlugText =
-          canonicalFamilySlug.split("_-")[1] || canonicalFamilySlug;
-        const productSlugText =
-          canonicalProductSlug.split("_-")[1] || canonicalProductSlug;
+        const familySlugText = canonicalFamilySlug.split("_-")[1] || canonicalFamilySlug;
+        const productSlugText = canonicalProductSlug.split("_-")[1] || canonicalProductSlug;
         const urlSlugText = slug.includes("_-") ? slug.split("_-")[1] : slug;
 
         const isFamilySlug = urlSlugText === familySlugText;
         const isSpecificSlug = urlSlugText === productSlugText;
 
         if (isFamilySlug && !isSpecificSlug) {
-          let effectiveProduct =
-            getFamilyRepresentative([product, ...variants]) || product;
-          if (effectiveProduct.id !== product.id) {
-            // It's a Hub Redirect: redirect directly to the canonical hub slug
+          let eff = getFamilyRepresentative([product, ...variants]) || product;
+          if (eff.id !== product.id) {
             return {
-              redirect: getProductPath(
-                900000000 + (rep.id || 0),
-                familyIdentity.slug,
-              ),
+              redirect: getProductPath(900000000 + (rep.id || 0), familyIdentity.slug),
               isPermanent: true,
             };
           }
         }
 
-        // Check if current URL is the canonical id-prefixed specific slug
-        // We use the already fully consensus-aware slug from mapDbProduct.
-        const canonicalFullSlug = product.slug;
-        const canonicalPath = getProductPath(product.id!, canonicalFullSlug);
-        const urlSlugWithoutLeadingSlash = canonicalPath.replace("/p/", "");
+        const canonicalPath = getProductPath(product.id!, product.slug);
+        const urlSlug = canonicalPath.replace("/p/", "");
 
-        if (slug !== urlSlugWithoutLeadingSlash) {
-          return {
-            redirect: canonicalPath,
-            isPermanent: true,
-          };
+        if (slug !== urlSlug) {
+          return { redirect: canonicalPath, isPermanent: true };
         }
 
-        // If we reach here, we have the correct product and correct slug
-        const merged = await mergeLivePricesSelective(
-          [product, ...variants],
-          countryCode,
-          true,
-        );
-        // 5. Resolve the STABLE canonical ID and SLUG for the Hub
-        const hubIdVal = await getCanonicalFamilyId(
-          product.parentAsin,
-          product.id || 0,
-          product.modelTitle,
-        );
+        const merged = await mergeLivePricesSelective([product, ...variants], countryCode, true);
+        const hubIdVal = await getCanonicalFamilyId(product.parentAsin, product.id || 0, product.modelTitle);
         const canonicalId = 900000000 + (hubIdVal % 100000000);
-
-        // Fetch official hub slug to avoid mismatched canonical tags in GSC
-        const { slug: canonicalSlug } = getFamilyIdentitySync(
-          { ...product, id: canonicalId, isParentView: true } as any,
-          [product, ...variants],
-        );
+        const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, [product, ...variants]);
 
         return {
           product: merged.find((p) => p.id === realId) || merged[0],
@@ -536,21 +423,15 @@ export async function getPDPRenderData(
     }
   }
 
-  // Fallback to Slug-based resolution if not found via ID pattern
+  // Fallback to Slug-based resolution
   if (!product) {
     product = await getCachedProductBySlug(slug, false);
     if (product) {
-      // Migrate immediately to ID-based slug
       const { slug: newSlug } = getFamilyIdentitySync(product, []);
-      return {
-        redirect: getProductPath(product.id, newSlug),
-        isPermanent: true,
-      };
+      return { redirect: getProductPath(product.id, newSlug), isPermanent: true };
     } else {
-      // Legacy ASIN/Parent Suffix checks (REPAIRING: Ensure we redirect to ID-prefixed canonical)
       const asinSlug = await getCachedProductSlugByAsinSuffix(slug);
       if (asinSlug && asinSlug !== slug) {
-        // Resolve the ID if possible to get a fully-prefixed URL
         const tmpProd = await getCachedProductBySlug(asinSlug, false);
         return {
           product: tmpProd || (null as any),
@@ -579,16 +460,12 @@ export async function getPDPRenderData(
   if (!product) {
     if (idMatch) {
       const idValue = parseInt(idMatch[1]);
-      // If it looks like a canonical ID but is not in our DB, it's a hard 404
-      if (idValue >= 200000000 && idValue < 1000000000) {
-        console.warn(`[SEO 404] Canonical ID not in DB: ${slug}`);
-        return null;
-      }
+      if (idValue >= 200000000 && idValue < 1000000000) return null;
     }
     return null;
   }
 
-  // 2. Fetch Dependent Data in Parallel (Only if still here)
+  // Parallel Fetch for residuals
   let variants: Product[] = [];
   let category: any = null;
 
@@ -596,26 +473,15 @@ export async function getPDPRenderData(
     const results = await Promise.all([
       getCategoryBySlug(product.category),
       product.parentAsin
-        ? getCachedProductVariantsInternal(
-            product.parentAsin,
-            countryCode,
-            true,
-          )
+        ? getCachedProductVariantsInternal(product.parentAsin, countryCode, true)
         : Promise.resolve([]),
     ]);
     category = results[0];
     const v = results[1] as Product[];
-
-    // Ensure PDP is fresh (Prices + History)
-    const merged = await mergeLivePricesSelective(
-      [product, ...v],
-      countryCode,
-      true,
-    );
+    const merged = await mergeLivePricesSelective([product, ...v], countryCode, true);
     product = merged[0];
     variants = merged.slice(1);
 
-    // If falling back to parent view logic (e.g. via slug resolution), apply representative logic too
     if (isParentView) {
       const rep = getFamilyRepresentative(merged);
       if (rep && rep.id !== product.id) {
@@ -631,17 +497,9 @@ export async function getPDPRenderData(
     }
   }
 
-  // 5. Resolve the STABLE canonical ID and SLUG for the Hub (Always included for SEO Triad parity)
-  const hubIdVal = await getCanonicalFamilyId(
-    product.parentAsin || product.asin,
-    product.id || 0,
-    product.modelTitle,
-  );
+  const hubIdVal = await getCanonicalFamilyId(product.parentAsin || product.asin, product.id || 0, product.modelTitle);
   const canonicalId = 900000000 + (hubIdVal % 100000000);
-  const { slug: canonicalSlug } = getFamilyIdentitySync(
-    { ...product, id: canonicalId, isParentView: true } as any,
-    [product, ...variants],
-  );
+  const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, [product, ...variants]);
 
   return {
     product: product || (null as any),
