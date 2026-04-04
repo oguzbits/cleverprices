@@ -411,19 +411,27 @@ export async function getAllProductSlugs(
       const parentMap = new Map<string, any>();
 
       for (const r of rawResults) {
-        if (!includeVariants && r.parentAsin) {
+        // GSC Fix: Canonical consistency check. If it has a parentAsin, it's a Hub.
+        const isHub = !!(r.parentAsin && r.parentAsin.length > 2);
+
+        if (!includeVariants && isHub) {
           // Keep only the highest-ranked member as the Hub representative
-          if (!parentMap.has(r.parentAsin)) {
-            // For Hubs, we MUST calculate the canonical ID-prefixed slug exactly like the Product Page
-            // to avoid 301 Redirect Chains in GSC.
-            const hubId = 900000000 + (r.id! % 100000000);
+          if (!parentMap.has(r.parentAsin!)) {
+            // Compute model title on the fly to match getCanonicalFamilyId expects
+            const identity = getProductIdentity(r as any);
+            
+            // CRITICAL: We MUST use getCanonicalFamilyId here to ensure sitemap ID matches PDP ID
+            // even if some variants are excluded from the sitemap due to enrichment status.
+            const hubIdVal = await getCanonicalFamilyId(r.parentAsin!, r.id!, identity.modelTitle || "");
+            const hubId = 900000000 + (hubIdVal % 100000000);
+            
             const { slug: hubSlug } = getFamilyIdentity(
               {
                 ...r,
                 id: hubId,
                 isParentView: true,
               } as any,
-              [], // Sibling consensus is optional for fastMode
+              [],
             );
 
             const hub = {
@@ -433,7 +441,7 @@ export async function getAllProductSlugs(
               enrichmentStatus: r.enrichmentStatus,
               updatedAt: r.updatedAt || new Date(),
             };
-            parentMap.set(r.parentAsin, hub);
+            parentMap.set(r.parentAsin!, hub);
             processedResults.push(hub);
           }
           continue;

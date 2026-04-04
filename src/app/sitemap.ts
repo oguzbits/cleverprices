@@ -27,7 +27,7 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   "use cache";
   cacheLife("product");
-  const _v = "v218-cold-hit-opt";
+  const _v = "v225-FINAL-SITEMAP-PARITY";
   cacheTag("sitemap", "sitemap-slugs", _v);
 
   const totalStart = Date.now();

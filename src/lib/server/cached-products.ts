@@ -284,9 +284,9 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   cacheLife("product");
-  const [_salt] = ["v224-REALLY-FIXED"];
-  cacheTag("pdp-v224-final", "pdp-" + slug, _salt);
-  const _v = "v224-REALLY-FIXED";
+  const [_salt] = ["v225-FINAL-SITEMAP-PARITY"];
+  cacheTag("pdp-v225-final", "pdp-" + slug, _salt);
+  const _v = "v225-FINAL-SITEMAP-PARITY";
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -406,8 +406,13 @@ export async function getPDPRenderData(
 
         const merged = await mergeLivePricesSelective([product, ...variants], countryCode, true);
         const hubIdVal = await getCanonicalFamilyId(product.parentAsin, product.id || 0, product.modelTitle);
-        const canonicalId = 900000000 + (hubIdVal % 100000000);
-        const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, [product, ...variants]);
+        
+        // GSC Fix: Only promote to Hub ID (900M) if it's actually a family (parentAsin present)
+        const canonicalId = product.parentAsin 
+          ? (900000000 + (hubIdVal % 100000000)) 
+          : (realId >= 100000000 ? realId : (realId >= 500000 ? 200000000 + realId : 100000000 + realId));
+
+        const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: !!product.parentAsin } as any, [product, ...variants]);
 
         return {
           product: merged.find((p) => p.id === realId) || merged[0],
@@ -417,7 +422,7 @@ export async function getPDPRenderData(
           canonicalSlug,
           redirect: null,
           isPermanent: false,
-          _v: "v224-REALLY-FIXED",
+          _v: "v224.1-FINAL-PARITY",
         };
       }
     }
