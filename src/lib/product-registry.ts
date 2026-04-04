@@ -128,7 +128,7 @@ async function fetchCanonicalIdInternal(
 ) {
   "use cache";
   cacheLife("product");
-  const _v = "v4"; // Version bump
+  const _v = "v227-HUB-SYNC"; // Version bump synced with GLOBAL_SALT
 
   if (depth > 5 || !parentAsin) return currentId!;
 

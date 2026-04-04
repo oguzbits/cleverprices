@@ -9,6 +9,7 @@ import { getAlternateLanguages } from "@/lib/metadata";
 import {
   getAllProductSlugs,
   getNonEmptyCategorySlugs,
+  GLOBAL_SALT,
 } from "@/lib/server/cached-products";
 import { SITE_URL } from "@/lib/site-config";
 import { getProductPath } from "@/lib/utils/url";
@@ -27,7 +28,7 @@ export const dynamic = "force-dynamic";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   "use cache";
   cacheLife("product");
-  const _v = "v226-HUB-SYNC-FINAL";
+  const _v = GLOBAL_SALT;
   cacheTag("sitemap", "sitemap-slugs", _v);
 
   const totalStart = Date.now();
@@ -108,7 +109,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   // Product routes (Hub-Only Indexing)
   console.time("⏱️  Sitemap: Product Hubs");
-  const allHubs = await getAllProductSlugs(undefined, false, true);
+  const allHubs = await getAllProductSlugs(GLOBAL_SALT, false, true);
 
   // Pre-calculate alternates to avoid overhead in the huge loop
   const productRoutes: MetadataRoute.Sitemap = allHubs.map((product) => {

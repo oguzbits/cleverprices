@@ -171,19 +171,26 @@ async function getCachedProductSlugs(
   return getAllProductSlugsSync(limit, includeVariants);
 }
 
+/**
+ * Cache Salt: Bump this to force a global flush of ALL product/sitemap metadata.
+ * Current: v227-FINAL-HUB-STABILITY
+ */
+export const GLOBAL_SALT = "v227-FINAL-HUB-STABILITY";
+
 export async function getAllProductSlugs(
-  _version: string = "v217",
+  _version: string = GLOBAL_SALT,
   includeVariants: boolean = true,
   fastMode: boolean = false,
 ): Promise<any[]> {
-  const cachedFetch = async (v: boolean, f: boolean) => {
+  const cachedFetch = async (v: boolean, f: boolean, salt: string) => {
     "use cache";
     cacheLife("product");
-    cacheTag("sitemap-slugs");
-    const [_v] = [_version];
+    cacheTag("sitemap-slugs", salt);
+    // Bind the salt to the cache key
+    const [_s] = [salt];
     return getAllProductSlugsSync(undefined, v, f);
   };
-  return cachedFetch(includeVariants, fastMode);
+  return cachedFetch(includeVariants, fastMode, _version);
 }
 
 export async function getNonEmptyCategorySlugs(
@@ -280,13 +287,13 @@ export async function getProductVariants(
 export async function getPDPRenderData(
   slug: string,
   countryCode: string = "de",
-  _version: string = "v217",
+  _version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("product");
-  const [_salt] = ["v226-HUB-SYNC-FINAL"];
-  cacheTag("pdp-v226-final", "pdp-" + slug, _salt);
-  const _v = "v226-HUB-SYNC-FINAL";
+  const [_salt] = [_version];
+  cacheTag("pdp-" + _version, "pdp-" + slug, _salt);
+  const _v = _version;
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
