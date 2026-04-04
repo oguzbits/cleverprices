@@ -128,7 +128,7 @@ async function fetchCanonicalIdInternal(
 ) {
   "use cache";
   cacheLife("product");
-  const _v = "v227-HUB-SYNC"; // Version bump synced with GLOBAL_SALT
+  const _v = "v228-HUBS"; // Version bump synced with GLOBAL_SALT
 
   if (depth > 5 || !parentAsin) return currentId!;
 
@@ -419,12 +419,14 @@ export async function getAllProductSlugs(
 
       for (const r of rawResults) {
         // Hub Identification: If it has a parentAsin OR its asin acts as a parentAsin for others
-        const actingParentAsin = r.parentAsin || (parentAsinSet.has(r.asin) ? r.asin : null);
-        const isHub = !!(actingParentAsin && actingParentAsin.length > 2);
+        // FOR PARITY: Every canonical page is a Hub (900M+), even standalone products.
+        const actingParentAsin = r.parentAsin || (parentAsinSet.has(r.asin) ? r.asin : r.asin);
+        const familyKey = actingParentAsin || r.id.toString();
 
-        if (!includeVariants && isHub) {
-          if (!parentMap.has(actingParentAsin!)) {
+        if (!includeVariants) {
+          if (!parentMap.has(familyKey)) {
             const identity = getProductIdentity(r as any);
+            // Stable Hub ID via getCanonicalFamilyId (aligned with PDP logic)
             const hubIdVal = await getCanonicalFamilyId(actingParentAsin!, r.id!, identity.modelTitle || "");
             const hubId = 900000000 + (hubIdVal % 100000000);
             
@@ -444,13 +446,13 @@ export async function getAllProductSlugs(
               enrichmentStatus: r.enrichmentStatus,
               updatedAt: r.updatedAt || new Date(),
             };
-            parentMap.set(actingParentAsin!, hub);
+            parentMap.set(familyKey, hub);
             processedResults.push(hub);
           }
           continue;
         }
 
-        // Standard Product or Variant
+        // Standard Product or Variant (only if includeVariants is true, e.g. for internal tools)
         processedResults.push({
           id: r.id!,
           slug: r.slug,
