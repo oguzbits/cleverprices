@@ -145,7 +145,7 @@ async function fetchCanonicalIdInternal(
       specificationsSource: products.specificationsSource,
     })
     .from(products)
-    .where(eq(products.parentAsin, parentAsin))
+    .where(or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)))
     .orderBy(asc(products.id));
 
   if (allVariants.length === 0) return currentId!;
@@ -197,7 +197,7 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
         specificationsSource: products.specificationsSource,
       })
       .from(products)
-      .where(eq(products.parentAsin, parentAsin))
+      .where(or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)))
       .orderBy(asc(products.id));
 
     if (allVariants.length === 0) return currentId;
@@ -407,22 +407,25 @@ export async function getAllProductSlugs(
         // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
         .orderBy(asc(products.id));
 
+      // GSC Fix: Pre-fetch all ASINs that act as parents to correctly identify Standalone Parents as Hubs
+      const parentAsinResults = await db
+        .select({ parentAsin: products.parentAsin })
+        .from(products)
+        .where(isNotNull(products.parentAsin));
+      const parentAsinSet = new Set(parentAsinResults.map(p => p.parentAsin));
+
       const processedResults: any[] = [];
       const parentMap = new Map<string, any>();
 
       for (const r of rawResults) {
-        // GSC Fix: Canonical consistency check. If it has a parentAsin, it's a Hub.
-        const isHub = !!(r.parentAsin && r.parentAsin.length > 2);
+        // Hub Identification: If it has a parentAsin OR its asin acts as a parentAsin for others
+        const actingParentAsin = r.parentAsin || (parentAsinSet.has(r.asin) ? r.asin : null);
+        const isHub = !!(actingParentAsin && actingParentAsin.length > 2);
 
         if (!includeVariants && isHub) {
-          // Keep only the highest-ranked member as the Hub representative
-          if (!parentMap.has(r.parentAsin!)) {
-            // Compute model title on the fly to match getCanonicalFamilyId expects
+          if (!parentMap.has(actingParentAsin!)) {
             const identity = getProductIdentity(r as any);
-            
-            // CRITICAL: We MUST use getCanonicalFamilyId here to ensure sitemap ID matches PDP ID
-            // even if some variants are excluded from the sitemap due to enrichment status.
-            const hubIdVal = await getCanonicalFamilyId(r.parentAsin!, r.id!, identity.modelTitle || "");
+            const hubIdVal = await getCanonicalFamilyId(actingParentAsin!, r.id!, identity.modelTitle || "");
             const hubId = 900000000 + (hubIdVal % 100000000);
             
             const { slug: hubSlug } = getFamilyIdentity(
@@ -441,7 +444,7 @@ export async function getAllProductSlugs(
               enrichmentStatus: r.enrichmentStatus,
               updatedAt: r.updatedAt || new Date(),
             };
-            parentMap.set(r.parentAsin!, hub);
+            parentMap.set(actingParentAsin!, hub);
             processedResults.push(hub);
           }
           continue;
