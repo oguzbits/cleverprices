@@ -161,6 +161,7 @@ export async function getProductById(
   const merged = await mergeLivePrices([product], "de");
   return merged[0];
 }
+
 async function getCachedProductSlugs(
   limit?: number,
   includeVariants: boolean = false,
@@ -173,9 +174,8 @@ async function getCachedProductSlugs(
 
 /**
  * Cache Salt: Bump this to force a global flush of ALL product/sitemap metadata.
- * Current: v227-FINAL-HUB-STABILITY
  */
-export const GLOBAL_SALT = "v228-HUBS-ONLY";
+export const GLOBAL_SALT = "v230-HUB-PARITY-FINALIZE";
 
 export async function getAllProductSlugs(
   _version: string = GLOBAL_SALT,
@@ -205,6 +205,19 @@ export async function getNonEmptyCategorySlugs(
   return cachedFetch();
 }
 
+/**
+ * [SEO CONSISTENCY] Promotes all products in a list to the 900M+ Hub synthetic ID space.
+ * This ensures that homepage, category, and sitemap URLs are perfectly aligned.
+ */
+function promoteListToHubIds(products: Product[]): Product[] {
+  return products.map((p) => {
+    if (!p.id || p.id >= 900000000) return p;
+    // Synthetic ID strategy: 900M + (original ID % 100M)
+    const promotedId = 900000000 + (p.id % 100000000);
+    return { ...p, id: promotedId };
+  });
+}
+
 export async function getBestDeals(
   limit: number = 8,
   countryCode: string = "de",
@@ -216,7 +229,7 @@ export async function getBestDeals(
     condition,
     "v8",
   );
-  return mergeLivePrices(products, countryCode);
+  return mergeLivePrices(promoteListToHubIds(products), countryCode);
 }
 
 export async function getNewArrivals(
@@ -230,7 +243,7 @@ export async function getNewArrivals(
     condition,
     "v8",
   );
-  return mergeLivePrices(products, countryCode);
+  return mergeLivePrices(promoteListToHubIds(products), countryCode);
 }
 
 export async function getDiverseMostPopular(
@@ -242,7 +255,7 @@ export async function getDiverseMostPopular(
     countryCode,
     "v8",
   );
-  return mergeLivePrices(products, countryCode);
+  return mergeLivePrices(promoteListToHubIds(products), countryCode);
 }
 
 export async function getSimilarProducts(
@@ -259,7 +272,7 @@ export async function getSimilarProducts(
     limit,
     countryCode,
   );
-  return mergeLivePrices(products, countryCode);
+  return mergeLivePrices(promoteListToHubIds(products), countryCode);
 }
 
 export async function getProductVariants(
@@ -293,7 +306,6 @@ export async function getPDPRenderData(
   cacheLife("product");
   const [_salt] = [_version];
   cacheTag("pdp-" + _version, "pdp-" + slug, _salt);
-  const _v = _version;
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -301,10 +313,14 @@ export async function getPDPRenderData(
   let redirect: string | null = null;
   let isPermanent = false;
 
-  // ID-Based Routing (e.g. 200000XXX_-apple-iphone)
+  // ID-Based Routing (e.g. 900000XXX_-apple-iphone)
   const idMatch = slug.match(/^(\d+)_-(.*)$/);
   if (idMatch) {
     const id = parseInt(idMatch[1]);
+    
+    // [SEO HARDENING] Standardize ID resolution logic
+    const realId = id >= 900000000 ? id - 900000000 : id >= 200000000 ? id - 200000000 : id;
+
     if (id >= 900000000) {
       product = await getCachedProductBySyntheticId(id, 0);
 
@@ -313,62 +329,60 @@ export async function getPDPRenderData(
         return null;
       }
 
-      if (product) {
-        // Resolve siblings and prices
-        const rawVariants = await getCachedProductVariantsInternal(
-          product.parentAsin || product.asin,
-          countryCode,
-          true,
-        );
-        const hubIden = getProductIdentity(product);
-        const hubModelKey = (hubIden.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
-        const variants = rawVariants.filter(v => {
-          const vIdx = getProductIdentity(v as any);
-          return (vIdx.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") === hubModelKey;
-        });
+      // Resolve siblings and prices
+      const rawVariants = await getCachedProductVariantsInternal(
+        product.parentAsin || product.asin,
+        countryCode,
+        true,
+      );
+      
+      const hubIden = getProductIdentity(product);
+      const hubModelKey = (hubIden.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+      const variants = rawVariants.filter(v => {
+        const vIdx = getProductIdentity(v as any);
+        return (vIdx.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") === hubModelKey;
+      });
 
-        const mergedAll = await mergeLivePrices([product, ...variants], countryCode, false);
-        const rep = getFamilyRepresentative(mergedAll);
-        let effectiveProduct = mergedAll[0];
+      const mergedAll = await mergeLivePrices([product, ...variants], countryCode, false);
+      const rep = getFamilyRepresentative(mergedAll);
+      let effectiveProduct = mergedAll[0];
 
-        if (rep) {
-          const liveData = await getLivePriceForProduct(rep.id!, countryCode, true);
-          if (liveData?.history) {
-            rep.priceHistory = liveData.history;
-            const { calculateProductSavings } = await import("../utils/products");
-            rep.savings = calculateProductSavings({
-              price: rep.prices[countryCode] || 0,
-              usedPrice: rep.usedPrices?.[countryCode] || 0,
-              warehousePrice: rep.warehousePrices?.[countryCode] || 0,
-              avg90: liveData.priceAvg90 || 0,
-            });
-          }
+      if (rep) {
+        const liveData = await getLivePriceForProduct(rep.id!, countryCode, true);
+        if (liveData?.history) {
+          rep.priceHistory = liveData.history;
+          const { calculateProductSavings } = await import("../utils/products");
+          rep.savings = calculateProductSavings({
+            price: rep.prices[countryCode] || 0,
+            usedPrice: rep.usedPrices?.[countryCode] || 0,
+            warehousePrice: rep.warehousePrices?.[countryCode] || 0,
+            avg90: liveData.priceAvg90 || 0,
+          });
         }
-
-        const canIdResult = await getCanonicalFamilyId(product.parentAsin || product.asin, product.id || 0, product.modelTitle);
-        const canonicalId = 900000000 + (canIdResult % 100000000);
-        const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, mergedAll);
-        const targetPath = getProductPath(canonicalId, canonicalSlug);
-
-        // Render or Redirect check
-        if (`/p/${slug}` === targetPath) {
-          return {
-            product: effectiveProduct,
-            variants: mergedAll.slice(1),
-            isParentView: true,
-            canonicalId,
-            canonicalSlug,
-            redirect: null,
-            isPermanent: false,
-            _v: "v224-REALLY-FIXED",
-          };
-        }
-
-        return { redirect: targetPath, isPermanent: true };
       }
+
+      const canIdResult = await getCanonicalFamilyId(product.parentAsin || product.asin, product.id || 0, product.modelTitle);
+      const canonicalId = 900000000 + (canIdResult % 100000000);
+      const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, mergedAll);
+      const targetPath = getProductPath(canonicalId, canonicalSlug);
+
+      // Render or Redirect check
+      if (`/p/${slug}` === targetPath) {
+        return {
+          product: effectiveProduct,
+          variants: mergedAll.slice(1),
+          isParentView: true,
+          canonicalId,
+          canonicalSlug,
+          redirect: null,
+          isPermanent: false,
+          _v: "v228.1-STRICT-HUB-PARITY",
+        };
+      }
+
+      return { redirect: targetPath, isPermanent: true };
     } else {
-      // Standard ID mode (Variant)
-      const realId = id >= 200000000 ? id - 200000000 : id;
+      // Standard ID mode (Variant or Legacy)
       product = await getCachedProductById(realId);
       if (product) {
         let variants = product.parentAsin
@@ -379,63 +393,27 @@ export async function getPDPRenderData(
             )
           : [];
 
-        const rep = getFamilyRepresentative([product, ...variants]) || product;
-        const familyIdentity = getFamilyIdentitySync(
-          { ...rep, id: 900000000 + (rep.id || 0), isParentView: true },
-          [product, ...variants],
-        );
-        const canonicalFamilySlug = familyIdentity.slug;
-        const canonicalProductSlug = product.slug;
-
-        const familySlugText = canonicalFamilySlug.split("_-")[1] || canonicalFamilySlug;
-        const productSlugText = canonicalProductSlug.split("_-")[1] || canonicalProductSlug;
-        const urlSlugText = slug.includes("_-") ? slug.split("_-")[1] : slug;
-
-        const isFamilySlug = urlSlugText === familySlugText;
-        const isSpecificSlug = urlSlugText === productSlugText;
-
-        if (isFamilySlug && !isSpecificSlug) {
-          let eff = getFamilyRepresentative([product, ...variants]) || product;
-          if (eff.id !== product.id) {
-            return {
-              redirect: getProductPath(900000000 + (rep.id || 0), familyIdentity.slug),
-              isPermanent: true,
-            };
-          }
-        }
-
-        const canonicalPath = getProductPath(product.id!, product.slug);
-        const urlSlug = canonicalPath.replace("/p/", "");
-
-        if (slug !== urlSlug) {
-          return { redirect: canonicalPath, isPermanent: true };
-        }
-
-        const merged = await mergeLivePricesSelective([product, ...variants], countryCode, true);
-        const hubIdVal = await getCanonicalFamilyId(product.parentAsin, product.id || 0, product.modelTitle);
+        const hubIdVal = await getCanonicalFamilyId(product.parentAsin || product.asin, realId, product.modelTitle);
         
-        // GSC Fix: Only promote to Hub ID (900M) if it's actually a family (parentAsin present)
-        const canonicalId = product.parentAsin 
-          ? (900000000 + (hubIdVal % 100000000)) 
-          : (realId >= 100000000 ? realId : (realId >= 500000 ? 200000000 + realId : 100000000 + realId));
+        // [SEO PARITY] UNIVERSAL HUB PROMOTION:
+        // Every product page must point to its 900M+ synthetic Hub ID.
+        const canonicalId = 900000000 + (hubIdVal % 100000000);
+        const { slug: canonicalSlug } = getFamilyIdentitySync(
+          { ...product, id: canonicalId, isParentView: true } as any, 
+          [product, ...variants]
+        );
 
-        const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: !!product.parentAsin } as any, [product, ...variants]);
-
+        // [STRICT REDIRECT] Always 301 to the canonical Hub URL.
+        const targetPath = getProductPath(canonicalId, canonicalSlug);
         return {
-          product: merged.find((p) => p.id === realId) || merged[0],
-          variants: merged.filter((p) => p.id !== realId),
-          isParentView: false,
-          canonicalId,
-          canonicalSlug,
-          redirect: null,
-          isPermanent: false,
-          _v: "v224.1-FINAL-PARITY",
+          redirect: targetPath,
+          isPermanent: true,
         };
       }
     }
   }
 
-  // Fallback to Slug-based resolution
+  // Fallback to Slug-based resolution (legacy / search results)
   if (!product) {
     product = await getCachedProductBySlug(slug, false);
     if (product) {
@@ -477,8 +455,8 @@ export async function getPDPRenderData(
     return null;
   }
 
-  // Parallel Fetch for residuals
-  let variants: Product[] = [];
+  // Final catch-all for variants/slugs that aren't routed by ID above
+  let v: Product[] = [];
   let category: any = null;
 
   if (product) {
@@ -489,39 +467,27 @@ export async function getPDPRenderData(
         : Promise.resolve([]),
     ]);
     category = results[0];
-    const v = results[1] as Product[];
+    v = results[1] as Product[];
     const merged = await mergeLivePricesSelective([product, ...v], countryCode, true);
     product = merged[0];
-    variants = merged.slice(1);
+    const variants = merged.slice(1);
 
-    if (isParentView) {
-      const rep = getFamilyRepresentative(merged);
-      if (rep && rep.id !== product.id) {
-        product = {
-          ...product,
-          prices: rep.prices,
-          priceHistory: rep.priceHistory,
-          savings: rep.savings,
-          pricesLastUpdated: rep.pricesLastUpdated,
-          condition: rep.condition,
-        };
-      }
-    }
+    const hubIdVal = await getCanonicalFamilyId(product.parentAsin || product.asin, product.id || 0, product.modelTitle);
+    const canonicalId = 900000000 + (hubIdVal % 100000000);
+    const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, [product, ...variants]);
+
+    return {
+      product: product || (null as any),
+      variants,
+      category,
+      isParentView: (product?.id || 0) >= 900000000,
+      canonicalId,
+      canonicalSlug,
+      redirect: getProductPath(canonicalId, canonicalSlug),
+      isPermanent: true,
+      _v: "v228.1-STRICT-HUB-PARITY",
+    };
   }
 
-  const hubIdVal = await getCanonicalFamilyId(product.parentAsin || product.asin, product.id || 0, product.modelTitle);
-  const canonicalId = 900000000 + (hubIdVal % 100000000);
-  const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, [product, ...variants]);
-
-  return {
-    product: product || (null as any),
-    variants,
-    category,
-    isParentView: isParentView || (product?.id || 0) >= 900000000,
-    canonicalId,
-    canonicalSlug,
-    redirect,
-    isPermanent,
-    _v: "v224-REALLY-FIXED",
-  };
+  return null;
 }

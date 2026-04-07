@@ -78,12 +78,16 @@ export function generateMetadata({ params }) {
 
 ### 4. Canonical Strategy (Idealo-style)
 
+- **Universal Hub Parity (900M+ Strategy)**: 
+  - **Single Source of Truth**: All public-facing product links **must** exclusively serve canonical Hub URLs using the `900,000,000` prefix.
+  - **Redirect Enforcement**: Any product ID < 900M (e.g., raw IDs or 200M+ variant IDs) encountered in a request must be permanently redirected (301) to its 900M+ Hub equivalent.
+  - **Link Generation**: All internal links in components (PDP, Category, Widgets) must use the `getProductPath(id, slug)` utility from `@/lib/utils/url`, which automatically promotes legacy IDs to the 900M+ space.
 - **Variation Collapsing**: To avoid duplicate content penalties, all variants (colors, sizes, storage) must point to a single **Hub Page**.
 - **Hub Representatives**: The Hub page uses the cheapest or primary variant as its content source but maintains a stable `900M` serial ID prefix.
 - **Slug Parity**:
   - The sitemap generation (Lite Mode) and product rendering (Full Mode) must use identical `IDENTITY_KEYS` for slug generation.
-  - Never include individual variants in the sitemap if they are part of a family; only the Hub should be indexed.
-- **Canonical ID Stability**: Hub URLs must be generated using the family's global minimum ID (not just the minimum of currently visible variants) to ensure stable, non-redirecting canonical links.
+  - Never include individual variants in the sitemap; only the Hub should be indexed.
+- **Canonical ID Stability**: Hub URLs must be generated using the family's global minimum ID to ensure stable, non-redirecting canonical links.
 - **Rich Titles for Premium Categories**:
   - While slugs are clean, the `displayTitle` and `fullModel` for high-value categories like `prozessoren` must preserve trademark symbols (®, ™). This signals authority to both users and Search Engines (GEO/AEO).
 
