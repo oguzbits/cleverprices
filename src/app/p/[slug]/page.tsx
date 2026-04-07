@@ -220,8 +220,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const description =
       enrichedDesc ||
       (pricePerUnit && category?.unitType
-        ? `${identity.displayTitle} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_NAME}.`
-        : `${identity.displayTitle} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_NAME}.`);
+        ? `${identity.displayTitle} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Günstig kaufen & Angebote vergleichen bei ${BRAND_NAME}.`
+        : `${identity.displayTitle} günstig kaufen. Aktueller Bestpreis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Preise vergleichen, Testberichte lesen & sparen bei ${BRAND_NAME}.`);
 
     // [SEO Triad Enforced - v220] Use ONLY the canonical ID and Slug resolved by getPDPRenderData
     // We removed the fallback to product.id (Real Variant ID 200M) to prevent GSC mismatches.
@@ -252,9 +252,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           ? [
               {
                 url: product.image,
-                width: 800,
-                height: 800,
-                alt: product.title,
+                width: 1200,
+                height: 630,
+                alt: identity.displayTitle,
               },
             ]
           : undefined,

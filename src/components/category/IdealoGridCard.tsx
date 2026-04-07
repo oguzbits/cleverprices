@@ -94,13 +94,8 @@ export function IdealoGridCard({
   const liveSlug = useLiveSlug
     ? getFamilyIdentity(product as any, []).slug
     : undefined;
-  const cardHref = liveSlug
-    ? `/p/${liveSlug}`
-    : getProductPath(product.id, product.slug);
-
-  console.log(
-    `IdealoGridCard Render: ID: ${product.id} CAT: ${product.category} IDENTITY_MODEL: ${identity.modelTitle} SLUG: ${product.slug}`,
-  );
+  // [Canonical Bridge] Ensure every link goes through getProductPath for 900M+ hardening
+  const cardHref = getProductPath(product.id, liveSlug || product.slug);
 
   return (
     <div
@@ -143,7 +138,7 @@ export function IdealoGridCard({
           {product.image ? (
             <Image
               src={product.image}
-              alt={product.title}
+              alt={identity.displayTitle}
               fill
               priority={priority}
               loading={priority ? undefined : "lazy"}
