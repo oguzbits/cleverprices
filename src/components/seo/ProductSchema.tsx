@@ -21,6 +21,8 @@ interface ProductSchemaProps {
   rating?: number;
   reviewCount?: number;
   isHub?: boolean;
+  canonicalId?: number;
+  canonicalSlug?: string;
 }
 
 export function ProductSchema({
@@ -29,6 +31,8 @@ export function ProductSchema({
   rating,
   reviewCount,
   isHub = false,
+  canonicalId,
+  canonicalSlug,
 }: ProductSchemaProps) {
   const identity = getProductIdentity(product);
   const countryConfig = getCountryByCode(countryCode);
@@ -90,7 +94,7 @@ export function ProductSchema({
         offerCount: allPrices.length,
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
-        url: getProductCanonicalUrl(product.id, product.slug),
+        url: getProductCanonicalUrl(canonicalId || product.id, canonicalSlug || product.slug),
         priceValidUntil: "2027-12-31",
       };
 
@@ -118,7 +122,7 @@ export function ProductSchema({
         price: currentPrice.toFixed(2),
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
-        url: getProductCanonicalUrl(product.id, product.slug),
+        url: getProductCanonicalUrl(canonicalId || product.id, canonicalSlug || product.slug),
         priceValidUntil: "2027-12-31",
       };
 
@@ -148,7 +152,7 @@ export function ProductSchema({
         offerCount: allPrices.length,
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
-        url: getProductCanonicalUrl(product.id, product.slug),
+        url: getProductCanonicalUrl(canonicalId || product.id, canonicalSlug || product.slug),
         priceValidUntil: "2027-12-31",
       };
     }
