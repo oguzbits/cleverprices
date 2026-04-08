@@ -174,14 +174,13 @@ export async function IdealoProductPage({
                   {isParentView ? (
                     <ParentHeroImage
                       product={mergedProduct}
-                      identity={identity}
                       countryCode={countryCode}
                       variants={mergedVariants}
                     />
                   ) : mergedProduct.image ? (
                     <Image
                       src={mergedProduct.image}
-                      alt={identity.displayTitle}
+                      alt={mergedProduct.title}
                       fill
                       className="object-contain p-2"
                       sizes="(max-width: 265px) calc(100vw - 80px), 265px"
@@ -507,7 +506,7 @@ async function CachedSidebarSimilarProducts({
               {p.image && (
                 <Image
                   src={p.image}
-                  alt={formatDisplayTitle(p.title)}
+                  alt={p.title}
                   fill
                   className="object-contain p-1.5"
                   sizes="56px"
@@ -595,12 +594,10 @@ async function CachedSimilarCarousel({
 
 async function ParentHeroImage({
   product,
-  identity,
   countryCode,
   variants: passedVariants,
 }: {
   product: Product;
-  identity: any;
   countryCode: string;
   variants?: Product[];
 }) {
@@ -621,7 +618,7 @@ async function ParentHeroImage({
         <div key={i} className="relative aspect-square">
           <Image
             src={img!}
-            alt={`${identity.modelTitle} Produktansicht ${i + 1}`}
+            alt=""
             fill
             className="object-contain mix-blend-multiply"
             sizes="120px"

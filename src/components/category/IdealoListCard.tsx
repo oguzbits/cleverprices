@@ -93,8 +93,9 @@ export function IdealoListCard({
   const liveSlug = useLiveSlug
     ? getFamilyIdentity(product as any, []).slug
     : undefined;
-  // [Canonical Bridge] Ensure every link goes through getProductPath for 900M+ hardening
-  const cardHref = getProductPath(product.id, liveSlug || product.slug);
+  const cardHref = liveSlug
+    ? `/p/${liveSlug}`
+    : getProductPath(product.id, product.slug);
 
   return (
     <div className={cn("sr-resultList__item", "-mb-px", className)}>
@@ -120,7 +121,7 @@ export function IdealoListCard({
           {product.image ? (
             <Image
               src={product.image}
-              alt={identity.displayTitle}
+              alt={product.title}
               fill
               priority={priority}
               loading={priority ? undefined : "lazy"}
