@@ -313,8 +313,14 @@ async function ProductPageContent({
 
     if (data?.redirect) {
       logPDPPerformance(slug, startTime);
-      if (data.isPermanent) permanentRedirect(data.redirect);
-      redirect(data.redirect);
+      console.log(
+        `[SEO Redirect] ${data.isPermanent ? "301/308" : "302/307"} ${slug} -> ${data.redirect}`,
+      );
+      action = {
+        type: "redirect",
+        url: data.redirect,
+        permanent: !!data.isPermanent,
+      };
     } else {
       let product = data?.product;
       const parentViewMode = data?.isParentView || false;
@@ -375,6 +381,11 @@ async function ProductPageContent({
     // CRITICAL: Do NOT fall back to notFound for database/server errors
     // This prevents mass de-indexing during temporary DB outages.
     throw error;
+  }
+
+  if (action?.type === "redirect") {
+    if (action.permanent) permanentRedirect(action.url);
+    else redirect(action.url);
   }
 
   if (action?.type === "notFound") {

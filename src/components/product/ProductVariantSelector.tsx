@@ -332,7 +332,7 @@ function AttributeSelector({
             getBestMatch(variants) || getRelaxedMatch(variants);
 
           const href = targetVariant
-            ? `${getProductPath(targetVariant.id, targetVariant.slug, true)}${
+            ? `${getProductPath(targetVariant.id, targetVariant.slug)}${
                 condition && condition !== "new"
                   ? `?condition=${condition}`
                   : ""

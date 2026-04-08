@@ -142,7 +142,6 @@ export async function IdealoProductPage({
         rating={product.rating || 4.5}
         reviewCount={product.reviewCount || 0}
         isHub={isParentView}
-        canonicalId={canonicalId}
       />
       <BreadcrumbSchema items={schemaBreadcrumbs} />
 

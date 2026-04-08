@@ -175,7 +175,7 @@ async function getCachedProductSlugs(
 /**
  * Cache Salt: Bump this to force a global flush of ALL product/sitemap metadata.
  */
-export const GLOBAL_SALT = "v231-VARIANT-RESTORED-V1";
+export const GLOBAL_SALT = "v230-HUB-PARITY-FINALIZE";
 
 export async function getAllProductSlugs(
   _version: string = GLOBAL_SALT,
@@ -307,8 +307,6 @@ export async function getPDPRenderData(
   const [_salt] = [_version];
   cacheTag("pdp-" + _version, "pdp-" + slug, _salt);
 
-  console.log(`[Cache Sync Check] Generating PDP for: ${slug} (Mode: ${_version})`);
-
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
   let isParentView = false;
@@ -395,41 +393,21 @@ export async function getPDPRenderData(
             )
           : [];
 
-        // [SEO PARITY] Resolve the canonical Hub for metadata, but allow this specific variant page to exist for UX.
-        // Google will see the rel="canonical" pointing to the Hub and consolidate signals accordingly.
         const hubIdVal = await getCanonicalFamilyId(product.parentAsin || product.asin, realId, product.modelTitle);
+        
+        // [SEO PARITY] UNIVERSAL HUB PROMOTION:
+        // Every product page must point to its 900M+ synthetic Hub ID.
         const canonicalId = 900000000 + (hubIdVal % 100000000);
         const { slug: canonicalSlug } = getFamilyIdentitySync(
           { ...product, id: canonicalId, isParentView: true } as any, 
           [product, ...variants]
         );
 
-        // [SLUG CORRECTION] 
-        // We detect if the current URL is a variant (200M+) or a legacy/other ID.
-        // If it's a variant, we ensure the slug is correct for that variant ID (200M+).
-        // If it's legacy, we redirect to the Hub (900M+).
-        const currentPrefix = parseInt(idMatch[1]);
-        const isCurrentlyVariant = currentPrefix >= 200000000 && currentPrefix < 900000000;
-        
-        const selfIdentity = getFamilyIdentitySync(product, [product, ...variants]);
-        const correctPath = getProductPath(product.id!, selfIdentity.slug, isCurrentlyVariant);
-        
-        if (`/p/${slug}` !== correctPath) {
-          return {
-            redirect: correctPath,
-            isPermanent: true,
-          };
-        }
-
+        // [STRICT REDIRECT] Always 301 to the canonical Hub URL.
+        const targetPath = getProductPath(canonicalId, canonicalSlug);
         return {
-          product,
-          variants,
-          isParentView: false,
-          canonicalId,
-          canonicalSlug,
-          redirect: null,
-          isPermanent: false,
-          _v: "v228.2-VARIANT-RENDER-ENABLED",
+          redirect: targetPath,
+          isPermanent: true,
         };
       }
     }
@@ -498,16 +476,6 @@ export async function getPDPRenderData(
     const canonicalId = 900000000 + (hubIdVal % 100000000);
     const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: true } as any, [product, ...variants]);
 
-    // [SEO PARITY] Correct slug if needed for this specific variant
-    const selfIdentity = getFamilyIdentitySync(product, [product, ...variants]);
-    const correctSelfPath = getProductPath(product.id!, selfIdentity.slug);
-    if (`/p/${slug}` !== correctSelfPath) {
-      return {
-        redirect: correctSelfPath,
-        isPermanent: true,
-      };
-    }
-
     return {
       product: product || (null as any),
       variants,
@@ -515,9 +483,9 @@ export async function getPDPRenderData(
       isParentView: (product?.id || 0) >= 900000000,
       canonicalId,
       canonicalSlug,
-      redirect: null,
-      isPermanent: false,
-      _v: "v228.2-VARIANT-RENDER-ENABLED",
+      redirect: getProductPath(canonicalId, canonicalSlug),
+      isPermanent: true,
+      _v: "v228.1-STRICT-HUB-PARITY",
     };
   }
 

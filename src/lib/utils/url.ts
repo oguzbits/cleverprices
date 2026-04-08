@@ -7,7 +7,6 @@ import { SITE_URL } from "../site-config";
 export function getProductPath(
   id: string | number | undefined,
   slug: string,
-  isVariant: boolean = false,
 ): string {
   // 1. Clean up slug if it already has a prefix to avoid Double Prefix bugs or ID mismatches
   let cleanSlug = slug;
@@ -24,13 +23,9 @@ export function getProductPath(
   const numId = typeof id === "string" ? parseInt(id, 10) : id;
 
   // Apply project-wide canonical prefixing:
-  // - Synthetic Hub space starts at 900M.
-  // - Variant exploration space starts at 200M.
-  // - 100M+ IDs (synthetic/variant IDs) stay as is
-  let prefix = 0;
-  if (numId < 100000000) {
-    prefix = isVariant ? 200000000 : 900000000;
-  }
+  // - Synthetic Hub space starts at 900M. We map all legacy/real IDs here.
+  // - 900M+ IDs (synthetic hub IDs) stay as is
+  const prefix = numId < 100000000 ? 900000000 : 0;
   return `/p/${prefix + numId}_-${cleanSlug}`;
 }
 
