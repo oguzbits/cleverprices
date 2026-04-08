@@ -3,7 +3,6 @@ import { getFamilyIdentity } from "@/lib/product-families";
 import { getProductFamilyMembers } from "@/lib/product-registry";
 import { mergeLivePrices } from "@/lib/server/live-data";
 import { cn } from "@/lib/utils";
-import { getProductPath } from "@/lib/utils/url";
 import { normalizeVariantAttributes } from "@/lib/utils/variants";
 import { Check } from "lucide-react";
 import Link from "next/link";
@@ -234,7 +233,11 @@ export async function ConditionButtons({
       {/* 1. NEW OFFER BOX */}
       {hasNew && (
         <Link
-          href={`${getProductPath(bestNewProductId, finalNewSlug)}`}
+          href={`${
+            isParentView && parentSlug
+              ? `/p/${parentSlug}`
+              : `/p/${finalNewSlug}`
+          }`}
           scroll={false}
           className={cn(
             "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",
@@ -276,7 +279,7 @@ export async function ConditionButtons({
       {/* 2. GEBRAUCHT OFFER BOX */}
       {hasUsedOverall && (
         <Link
-          href={`${getProductPath(bestUsedOverallProductId, finalUsedSlug)}?condition=used`}
+          href={`/p/${isParentView && parentSlug ? parentSlug : finalUsedSlug}?condition=used`}
           scroll={false}
           className={cn(
             "flex min-w-[140px] flex-col items-center justify-center rounded-[4px] border px-4 py-2 no-underline transition-all outline-none hover:no-underline",

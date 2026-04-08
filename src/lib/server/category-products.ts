@@ -876,9 +876,9 @@ export async function getCategoryProducts(
       // RESOLVE STABLE CANONICAL ID: This ensures the Hub ID doesn't change
       // when the cheapest representative changes.
       const canonicalId = await getCanonicalFamilyId(
-         representative.parentAsin,
-         representative.id || 0,
-         representative.modelTitle,
+        representative.parentAsin,
+        representative.id || 0,
+        representative.modelTitle,
       );
 
       const familyIdentity = getFamilyIdentity(
@@ -905,20 +905,13 @@ export async function getCategoryProducts(
     }),
   );
 
-  // [SEO FIX] STRICT PARITY MISSION:
-  // 1. We ONLY show Hub cards (900M+) from collapsedLeanProducts.
-  // 2. We ONLY show orphaned products (standalone) that didn't go into a family.
-  // This eliminates the variant-duplication issue where Google sees 10 links to the same family.
+  // Keep ALL original products, PLUS the Hub Cards
   const finalFilteredLeanProducts = [
-    ...orphanedProducts.filter(p => matchesPriceCheck(p, filters)), // Only matched standalone items
-    ...Array.from(collapsedLeanProducts.values()),
+    ...filteredLeanProducts,
+    ...Array.from(collapsedLeanProducts.values()).filter(
+      (h) => h.variantCount > 1,
+    ),
   ];
-
-  function matchesPriceCheck(p: any, f: any) {
-    return (!f.minPrice || p.price >= f.minPrice) &&
-           (!f.maxPrice || (p.price > 0 && p.price <= f.maxPrice)) &&
-           p.price > 0;
-  }
 
   const totalFilteredCount = finalFilteredLeanProducts.length;
 
@@ -962,33 +955,23 @@ export async function getCategoryProducts(
       const rp = paginatedProducts.find((p) => p.id === rawId);
       if (!rp) return null;
 
-      // [SEO PARITY] UNIVERSAL HUB PROMOTION:
-      // Every product in the listing must use its 900M+ Hub Identity.
-      // Standalone products use 900,000,000 + their real ID.
-      // Family products use 900,000,000 + their canonical representative ID.
-      const canonicalIdVal = lean.isParentView 
-        ? (lean.canonicalId || lean.id) 
-        : lean.id;
-      const syntheticId = 900000000 + (canonicalIdVal % 100000000);
+      if (lean.isParentView) {
+        const syntheticId = 900000000 + (lean.canonicalId || lean.id);
+        return {
+          ...rp,
+          isParentView: true,
+          variantCount: lean.variantCount,
+          id: syntheticId,
+          slug: lean.slug,
+          title: lean.title,
+          modelTitle: lean.modelTitle,
+          variantSuffix: lean.variantSuffix,
+        };
+      }
 
-      // Recalculate slug for the 900M ID to ensure correctness
-      const { slug: hubSlug } = getFamilyIdentity(
-        { ...rp, id: syntheticId, isParentView: true } as any,
-        []
-      );
-
-      return {
-        ...rp,
-        isParentView: true,
-        variantCount: lean.variantCount || 1,
-        id: syntheticId,
-        slug: hubSlug,
-        title: lean.title,
-        modelTitle: lean.modelTitle,
-        variantSuffix: lean.variantSuffix,
-      };
+      return { ...rp };
     })
-    .filter(Boolean) as unknown as LocalizedProduct[];
+    .filter(Boolean) as Product[];
 
   const contextMinPriceFinal =
     contextMinPrice === Infinity ? 0 : Math.floor(contextMinPrice);

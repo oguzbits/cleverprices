@@ -23,9 +23,9 @@ export function getProductPath(
   const numId = typeof id === "string" ? parseInt(id, 10) : id;
 
   // Apply project-wide canonical prefixing:
-  // - Synthetic Hub space starts at 900M. We map all legacy/real IDs here.
+  // - Sub-100M IDs (real DB IDs) get the 200M variant prefix
   // - 900M+ IDs (synthetic hub IDs) stay as is
-  const prefix = numId < 100000000 ? 900000000 : 0;
+  const prefix = numId < 100000000 ? 200000000 : 0;
   return `/p/${prefix + numId}_-${cleanSlug}`;
 }
 
