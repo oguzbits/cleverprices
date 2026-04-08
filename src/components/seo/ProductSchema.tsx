@@ -11,7 +11,7 @@
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
 import type { Product } from "@/lib/product-definitions";
-import { BRAND_DOMAIN } from "@/lib/site-config";
+import { BRAND_DOMAIN, BRAND_NAME } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductCanonicalUrl } from "@/lib/utils/url";
 
@@ -67,15 +67,12 @@ export function ProductSchema({
     },
     sku: product.asin,
     mpn: product.mpn || product.asin,
-    gtin13: product.gtin || undefined,
     category: product.category,
   };
 
-
-
   // Add image if available
-  if (product.image || product.imageUrl) {
-    schema.image = product.image || product.imageUrl;
+  if (product.image) {
+    schema.image = product.image;
   }
 
   // Add offers
@@ -92,6 +89,10 @@ export function ProductSchema({
         itemCondition: "https://schema.org/NewCondition",
         url: getProductCanonicalUrl(product.id, product.slug),
         priceValidUntil: "2027-12-31",
+        seller: {
+          "@type": "Organization",
+          name: "Amazon",
+        },
       };
 
       // Add unit price if available
@@ -119,6 +120,10 @@ export function ProductSchema({
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
         url: getProductCanonicalUrl(product.id, product.slug),
+        seller: {
+          "@type": "Organization",
+          name: "Amazon",
+        },
         priceValidUntil: "2027-12-31",
       };
 
@@ -217,25 +222,12 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
   const schema = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: items.map((item, index) => {
-      const element: Record<string, unknown> = {
-        "@type": "ListItem",
-        position: index + 1,
-        name: item.name,
-      };
-
-      if (item.href) {
-        element.item = item.href.startsWith("http")
-          ? item.href
-          : `https://${BRAND_DOMAIN}${item.href}`;
-      } else {
-        // Fallback for current page if href is missing
-        // Google requires item in BreadcrumbList
-        element.item = `https://${BRAND_DOMAIN}`;
-      }
-
-      return element;
-    }),
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.href ? `https://${BRAND_DOMAIN}${item.href}` : undefined,
+    })),
   };
 
   return (
@@ -246,3 +238,50 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
   );
 }
 
+/**
+ * Organization Schema for the website
+ */
+function OrganizationSchema() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: BRAND_NAME,
+    url: `https://${BRAND_DOMAIN}`,
+    logo: `https://${BRAND_DOMAIN}/icon.png`,
+    sameAs: [],
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
+
+/**
+ * WebSite Schema with search action
+ */
+function WebSiteSchema() {
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: BRAND_NAME,
+    url: `https://${BRAND_DOMAIN}`,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `https://${BRAND_DOMAIN}/search?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+    />
+  );
+}
