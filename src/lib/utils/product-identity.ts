@@ -3,7 +3,6 @@ import { GpuStrategy } from "./identity/gpus";
 import { MonitorStrategy } from "./identity/monitors";
 import { MotherboardStrategy } from "./identity/motherboards";
 import { SmartphoneStrategy } from "./identity/smartphones";
-import { SsdStrategy } from "./identity/ssds";
 import { CategoryStrategyMap, ProductIdentity } from "./identity/types";
 import {
   extractRealStorageFromTitle,
@@ -17,8 +16,6 @@ const STRATEGY_MAP: CategoryStrategyMap = {
   handy: SmartphoneStrategy,
   grafikkarten: GpuStrategy,
   gpu: GpuStrategy,
-  ssds: SsdStrategy,
-  festplatten: SsdStrategy,
   prozessoren: CpuStrategy,
   cpu: CpuStrategy,
   monitore: MonitorStrategy,
@@ -1432,6 +1429,9 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     isRAM || isDisplay ? / \/ | \||: /i : / \- | \/ | \(| \||: |,/i;
   let cleanTitle = baseTitle.split(splitRegex)[0].trim();
 
+  // Standardize decimals to prevent commas from acting as splitters and to protect dots
+  cleanTitle = cleanTitle.replace(/(\d)[,.](\d)/g, "$1.$2");
+
   // Robustly strip brand from start of title to prevent duplication
   // Handle cases where brand has punctuation (be quiet!) that might vary
   const brandSimple = resolvedBrandLower.replace(/[^a-z0-9]/g, "");
@@ -1471,9 +1471,14 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   const strippedUnits: string[] = [];
 
   rawWords.forEach((word: string, index: number) => {
-    const cleanWord = word.replace(/^[(\[",\.]+|[)\]",\.]+/g, "");
+    // Strip leading/trailing punctuation but preserve decimals and internal symbols
+    const cleanWord = word.replace(/^['"(\[\.,]+|['"(\]\.,]+$/g, "");
     const normalized = normalizeAccents(cleanWord);
     const rawLower = normalized.toLowerCase();
+
+    // Protection: If this is a decimal number (like 2.5), ensure we don't treat it as 25
+    const isDecimal = /^(\d+)\.(\d+)(['"]*)$/.test(cleanWord);
+
     const cleanLower = rawLower.replace(/[^a-z0-9]/g, "");
     if (!cleanLower || cleanLower === resolvedBrandLower) return;
 
@@ -1485,7 +1490,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       return;
     }
 
-    if (tokenNorm && index > 0) {
+    if (tokenNorm && index > 0 && !isDecimal) {
       // If we already have this exact token in modelWords or strippedUnits, skip it
       const alreadyInModel = modelWords.some(
         (w) => w.toLowerCase().replace(/[^a-z0-9]/g, "") === tokenNorm,
@@ -1584,6 +1589,15 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
           rawLower.includes("hz"))
       ) {
         strippedUnits.push(cleanWord);
+      } else if (
+        (isExplicitUnit || isSplitUnit) &&
+        (cleanWord === "2.5" || cleanWord === "3.5") &&
+        (category === "externe-speicher" ||
+          category === "hard-drives" ||
+          category === "ssds")
+      ) {
+        // Explicitly preserve inch notation for drives
+        strippedUnits.push(cleanWord + '"');
       }
       return;
     }
@@ -1750,12 +1764,23 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
 
     // Strip if in noise list AND not protected
-    if (subtractTokens.has(cleanLower) && !isActuallyProtected) {
+    if (subtractTokens.has(cleanLower) && !isActuallyProtected && !isDecimal) {
       return;
     }
 
     // Final clean swap & Deduplication
     let formatted = fixTechCasing(cleanWord.replace(/[,\-:\/]+$/, ""));
+
+    // Explicitly preserve inch notation for drives in the model name if not already stripped as a unit
+    if (
+      (formatted === "2.5" || formatted === "3.5") &&
+      (category === "externe-speicher" ||
+        category === "hard-drives" ||
+        category === "ssds")
+    ) {
+      formatted += '"';
+    }
+
     const formattedLower = formatted?.toLowerCase();
 
     // Suffix Preservation: If this word matches our discovered MPN after cleaning,
@@ -1956,10 +1981,18 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     // Bi-directional inclusion check: prevent "iPhone" in "iPhone 15" AND "iPhone 15" in "iPhone"
     // (This is a second pass after stripping, mainly for units/numbers)
+    const normalizedModel = hubModelName
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    const normalizedVal = displayVal.toLowerCase().replace(/[^a-z0-9]/g, "");
+    const normalizedValNoUnit = normalizedVal.replace(/ssd|ram$/g, "");
+
     if (
-      valNorm &&
-      (modelNorm.includes(valNorm) || valNorm.includes(modelNorm)) &&
-      !/^\d+$/.test(valNorm) // Don't strip pure numbers like "15" or "2024" if they are distinct
+      normalizedVal &&
+      (normalizedModel.includes(normalizedVal) ||
+        normalizedModel.includes(normalizedValNoUnit) ||
+        normalizedVal.includes(normalizedModel)) &&
+      !/^\d+$/.test(normalizedValNoUnit) // Don't strip pure numbers like "15" or "2024" if they are distinct
     ) {
       // If it's a model word match but has a number (like 2024), we might want to keep the single number part
       const matches = valLower.match(/\d+/g);
@@ -1998,6 +2031,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const isConsole = category === "consoles";
     const isSSD =
       category === "ssds" ||
+      category === "hard-drives" ||
+      category === "externe-speicher" ||
       category === "memory" ||
       /ssd|evoselect/i.test(hubModelName.toLowerCase());
 
@@ -2046,7 +2081,13 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   if (category !== "processors-cpus") {
     strippedUnits.forEach((unit) => {
       const norm = unit.toLowerCase().replace(/[^a-z0-9]/g, "");
-      if (processedTokens.has(norm)) return;
+      if (
+        processedTokens.has(norm) ||
+        Array.from(processedTokens).some(
+          (t) => t.startsWith(norm) || t.endsWith(norm),
+        )
+      )
+        return;
       if (!hubModelName.toLowerCase().includes(norm)) {
         variantTokens.push(unit);
         processedTokens.add(norm);
