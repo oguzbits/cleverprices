@@ -166,7 +166,7 @@ async function DedicatedCategoryContent({
 }) {
   "use cache";
   cacheLife("category");
-  const _v = "v207"; // Bust RSC cache when identity/slug logic changes
+  const _v = "v208"; // Bust RSC cache when identity/slug logic changes
 
   const category = await getCategoryBySlug(categorySlug);
   if (!category) notFound();
@@ -201,8 +201,10 @@ async function CategoryPageContent({
   if (isEmpty) notFound();
 
   // 2. Identify view type
-  const children = getChildCategories(categorySlug);
-  const isParent = children.length > 0;
+  const activeChildren = getChildCategories(categorySlug).filter((child) =>
+    isCategoryNotEmptyRecursive(child.slug, nonEmptySlugs),
+  );
+  const isParent = activeChildren.length > 0;
 
   if (isParent) {
     // Parent View Hub
@@ -211,7 +213,8 @@ async function CategoryPageContent({
         <ParentCategoryViewLoader
           category={category}
           categorySlug={categorySlug}
-          children={children}
+          children={activeChildren}
+          nonEmptySlugs={nonEmptySlugs}
         />
       </Suspense>
     );
@@ -233,10 +236,12 @@ async function ParentCategoryViewLoader({
   category,
   categorySlug,
   children,
+  nonEmptySlugs,
 }: {
   category: Category;
   categorySlug: CategorySlug;
   children: Category[];
+  nonEmptySlugs: string[];
 }) {
   const { bestsellers, newProducts, deals } = await getParentCategoryData(
     categorySlug,
@@ -273,10 +278,29 @@ async function ParentCategoryViewLoader({
     })),
   ];
 
+  // Filter popular filters in children to only show non-empty categories
+  const filteredChildren = children.map((child) => {
+    const stripped = stripCategoryIcon(child);
+    if (stripped.popularFilters) {
+      stripped.popularFilters = stripped.popularFilters.filter((filter) => {
+        // If it's a direct category link, check if it's empty
+        if (filter.href && filter.href.startsWith("/")) {
+          const targetSlug = filter.href.substring(1);
+          return isCategoryNotEmptyRecursive(
+            targetSlug as CategorySlug,
+            nonEmptySlugs,
+          );
+        }
+        return true;
+      });
+    }
+    return stripped;
+  });
+
   return (
     <ParentCategoryView
       parentCategory={stripCategoryIcon(category)}
-      childCategories={children.map(stripCategoryIcon)}
+      childCategories={filteredChildren}
       bestsellers={bestsellers.map(transformProduct)}
       newProducts={newProducts.map(transformProduct)}
       deals={deals.map(transformProduct)}

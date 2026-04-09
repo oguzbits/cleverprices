@@ -657,8 +657,12 @@ export async function getAllProductSlugs(
 }
 
 // Process-level cache for non-empty categories to avoid Redis roundtrips on every page load
-let MEMORY_NON_EMPTY_CATEGORIES: { data: string[]; timestamp: number } | null =
-  null;
+const CACHE_VERSION = "v208";
+let MEMORY_NON_EMPTY_CATEGORIES: {
+  data: string[];
+  timestamp: number;
+  version: string;
+} | null = null;
 const MEMORY_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
@@ -672,12 +676,22 @@ async function fetchNonEmptyInternal() {
       .select({ category: products.category })
       .from(products)
       .where(
-        inArray(products.enrichmentStatus, [
-          "optimized",
-          "processed",
-          "scavenged",
-          "pending",
-        ]),
+        and(
+          inArray(products.enrichmentStatus, [
+            "optimized",
+            "processed",
+            "scavenged",
+            "pending",
+          ]),
+          // GSC Fix: Only include items that don't look like junk names
+          sql`length(title) > 2 AND title != asin`,
+          // SEO Guard: Category must have at least one product with specs or a known price
+          or(
+            isNotNull(products.specifications),
+            isNotNull(products.officialSpecifications),
+            sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
+          ),
+        ),
       )
       .groupBy(products.category);
 
@@ -701,7 +715,11 @@ async function fetchNonEmptyInternal() {
     });
 
     // Update memory cache
-    MEMORY_NON_EMPTY_CATEGORIES = { data: categories, timestamp: Date.now() };
+    MEMORY_NON_EMPTY_CATEGORIES = {
+      data: categories,
+      timestamp: Date.now(),
+      version: CACHE_VERSION,
+    };
 
     return categories;
   } catch (e) {
@@ -728,6 +746,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   const now = Date.now();
   if (
     MEMORY_NON_EMPTY_CATEGORIES &&
+    MEMORY_NON_EMPTY_CATEGORIES.version === CACHE_VERSION &&
     now - MEMORY_NON_EMPTY_CATEGORIES.timestamp < MEMORY_CACHE_TTL_MS
   ) {
     return MEMORY_NON_EMPTY_CATEGORIES.data;
@@ -744,7 +763,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   const cachedFetch = async () => {
     "use cache";
     cacheLife("category");
-    const version = "v205"; // Version bump
+    const version = CACHE_VERSION; // Version bump
     return fetchNonEmptyInternal();
   };
 
