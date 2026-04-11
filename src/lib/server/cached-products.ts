@@ -175,7 +175,7 @@ async function getCachedProductSlugs(
  * Cache Salt: Bump this to force a global flush of ALL product/sitemap metadata.
  * Current: v227-FINAL-HUB-STABILITY
  */
-export const GLOBAL_SALT = "v229-STRICT-CATEGORIES";
+export const GLOBAL_SALT = "v230-HUB-ONLY-SITEMAP";
 
 export async function getAllProductSlugs(
   _version: string = GLOBAL_SALT,
@@ -412,24 +412,30 @@ export async function getPDPRenderData(
         }
 
         const merged = await mergeLivePricesSelective([product, ...variants], countryCode, true);
-        const hubIdVal = await getCanonicalFamilyId(product.parentAsin, product.id || 0, product.modelTitle);
+        const hubIdVal = await getCanonicalFamilyId(product.parentAsin || product.asin, product.id || 0, product.modelTitle);
         
-        // GSC Fix: Only promote to Hub ID (900M) if it's actually a family (parentAsin present)
-        const canonicalId = product.parentAsin 
-          ? (900000000 + (hubIdVal % 100000000)) 
-          : (realId >= 100000000 ? realId : (realId >= 500000 ? 200000000 + realId : 100000000 + realId));
+        // GSC Fix: Promote EVERY canonical target to a Hub ID (900M) for Sitemap Parity.
+        // Standalone products (orphans) become "Hubs of one" to ensure a consistent URL strategy.
+        const canonicalId = 900000000 + (hubIdVal % 100000000);
 
-        const { slug: canonicalSlug } = getFamilyIdentitySync({ ...product, id: canonicalId, isParentView: !!product.parentAsin } as any, [product, ...variants]);
+        const { slug: canonicalSlug } = getFamilyIdentitySync(
+          { 
+            ...product, 
+            id: canonicalId, 
+            isParentView: true // Force Hub view for all canonical targets
+          } as any, 
+          [product, ...variants]
+        );
 
         return {
           product: merged.find((p) => p.id === realId) || merged[0],
           variants: merged.filter((p) => p.id !== realId),
-          isParentView: false,
+          isParentView: true,
           canonicalId,
           canonicalSlug,
           redirect: null,
           isPermanent: false,
-          _v: "v224.1-FINAL-PARITY",
+          _v: "v230-HUB-ONLY-SITEMAP",
         };
       }
     }

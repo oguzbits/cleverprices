@@ -420,14 +420,15 @@ export async function getAllProductSlugs(
       for (const r of rawResults) {
         // Hub Identification: If it has a parentAsin OR its asin acts as a parentAsin for others
         // FOR PARITY: Every canonical page is a Hub (900M+), even standalone products.
-        const actingParentAsin = r.parentAsin || (parentAsinSet.has(r.asin) ? r.asin : r.asin);
+        const actingParentAsin = r.parentAsin || r.asin;
         const familyKey = actingParentAsin || r.id.toString();
 
         if (!includeVariants) {
           if (!parentMap.has(familyKey)) {
             const identity = getProductIdentity(r as any);
             // Stable Hub ID via getCanonicalFamilyId (aligned with PDP logic)
-            const hubIdVal = await getCanonicalFamilyId(actingParentAsin!, r.id!, identity.modelTitle || "");
+            // If it has no parentAsin, getCanonicalFamilyId will use r.asin to find its own canonical ID
+            const hubIdVal = await getCanonicalFamilyId(actingParentAsin, r.id!, identity.modelTitle || "");
             const hubId = 900000000 + (hubIdVal % 100000000);
             
             const { slug: hubSlug } = getFamilyIdentity(
@@ -561,11 +562,17 @@ export async function getAllProductSlugs(
 
     for (const p of rawAllProducts) {
       if (!p.parentAsin) {
-        // Singleton
+        // Singleton - Convert to Hub for Parity
+        const hubId = 900000000 + (p.id! % 100000000);
         const mapped = mapDbProduct(p as any, [], [], true);
+        const { slug: hubSlug } = getFamilyIdentity(
+          { ...mapped, id: hubId, isParentView: true } as any,
+          [],
+        );
+
         results.push({
-          id: p.id!,
-          slug: mapped.slug,
+          id: hubId,
+          slug: hubSlug,
           category: p.category,
           enrichmentStatus: p.enrichmentStatus,
           updatedAt: p.updatedAt || new Date(),
@@ -607,7 +614,7 @@ export async function getAllProductSlugs(
           })
           .filter((i) => i !== -1);
 
-        if (goodVariantsIndices.length > 1) {
+        if (goodVariantsIndices.length >= 1) {
           const goodMapped = goodVariantsIndices.map((i) => allMapped[i]);
           const rep = getFamilyRepresentative(goodMapped as any);
           const repId = (rep as any).id || 0;
@@ -630,15 +637,6 @@ export async function getAllProductSlugs(
             updatedAt:
               (repIndex !== -1 ? variants[repIndex].updatedAt : null) ||
               new Date(),
-          });
-        } else if (goodVariantsIndices.length === 1 && !includeVariants) {
-          const idx = goodVariantsIndices[0];
-          results.push({
-            id: variants[idx].id!,
-            slug: allMapped[idx].slug,
-            category: variants[idx].category,
-            enrichmentStatus: variants[idx].enrichmentStatus,
-            updatedAt: variants[idx].updatedAt || new Date(),
           });
         }
       }
