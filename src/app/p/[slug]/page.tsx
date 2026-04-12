@@ -196,22 +196,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const siblings = isParentView ? renderData?.variants || [] : [];
     const identity = getProductIdentity(product);
 
-    // Calculate price per unit for SEO
-    const pricePerUnit =
-      product.normalizedCapacity && price
-        ? (price / product.normalizedCapacity).toFixed(2)
-        : null;
-    const unitPriceText =
-      pricePerUnit && category?.unitType
-        ? ` - ${pricePerUnit}€ pro ${category.unitType}`
-        : "";
+    const displayTitle = isParentView ? identity.modelTitle : identity.displayTitle;
 
-    // SEO-optimized Title: Ensure it stays under 65 chars
-    // Pattern: [Clean Name] | Preisvergleich | Brand
-    const seoTitle = isParentView ? identity.modelTitle : identity.displayTitle;
-    const baseTitle = `${seoTitle} | Preisvergleich`;
-    // [Dokploy Deployment Test] Hard-coded prefix to confirm builds are reaching prod
-    const title = truncateTitle(baseTitle, 60) + ` | ${BRAND_NAME}`;
+    // SEO Title: Focused on "Comparison" and "Affordability"
+    // Pattern: [Product Name] Günstig Kaufen | Preisvergleich | CleverPrices
+    const BRAND_SUFFIX = ` | ${BRAND_NAME}`;
+    const ACTION_SUFFIX = " Günstig Kaufen | Preisvergleich";
+    const MAX_LENGTH = 65;
+    
+    // We truncate the title to ensure the Action + Brand are visible
+    const availableForTitle = MAX_LENGTH - (ACTION_SUFFIX.length + BRAND_SUFFIX.length);
+    const title = truncateTitle(displayTitle, availableForTitle) + ACTION_SUFFIX + BRAND_SUFFIX;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
     // Try enriched description first
@@ -219,9 +214,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const description =
       enrichedDesc ||
-      (pricePerUnit && category?.unitType
-        ? `${identity.displayTitle} Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${pricePerUnit}€/${category.unitType}). Bis zu 30% sparen bei ${BRAND_NAME}.`
-        : `${identity.displayTitle} günstig kaufen. Aktueller Preis: ${price?.toFixed(2)} ${countryConfig?.currency || "EUR"}. Jetzt Hardware-Angebote vergleichen & sparen bei ${BRAND_NAME}.`);
+      `${displayTitle} im Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${countryConfig?.currency || "EUR"}). Jetzt Top-Hardware Angebote vergleichen und sparen bei ${BRAND_NAME}.`;
 
     // [SEO Triad Enforced - v220] Use ONLY the canonical ID and Slug resolved by getPDPRenderData
     // We removed the fallback to product.id (Real Variant ID 200M) to prevent GSC mismatches.
@@ -236,14 +229,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       other: {
-        "deploy-v": "v224-STRICT-PARITY",
+        "deploy-v": "v231-UNIT-PRICE-TITLES",
       },
       alternates: {
         canonical: getProductCanonicalUrl(effectiveId, effectiveSlug),
         languages: getAlternateLanguages(canonicalPath),
       },
       openGraph: getOpenGraph({
-        title: `${seoTitle} Preisvergleich | ${BRAND_NAME}`,
+        title: `${displayTitle} Preisvergleich | ${BRAND_NAME}`,
         description,
         url: getProductCanonicalUrl(effectiveId, effectiveSlug),
         locale: "de_DE",
