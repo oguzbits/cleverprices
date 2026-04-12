@@ -163,7 +163,7 @@ export async function IdealoProductPage({
           >
             <div className="min-w-0 flex-1 px-2.5 sm:px-0 lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:-row-end-1">
               <div className="oopStage-gallery">
-                {isParentView && (
+                {isParentView && mergedVariants.length > 0 && (
                   <div className="mb-2 flex justify-center">
                     <div className="rounded-full bg-[#ffb900] px-[10px] py-[5px] text-[14px] font-medium whitespace-nowrap text-black shadow-sm">
                       Keine Variante ausgewählt.
@@ -605,12 +605,30 @@ async function ParentHeroImage({
     passedVariants || (await getProductVariants(product, countryCode));
 
   const uniqueImages: string[] = [];
+  if (product.image) {
+    uniqueImages.push(product.image);
+  }
   variants.forEach((v) => {
     if (v.image && !uniqueImages.includes(v.image)) {
       uniqueImages.push(v.image);
     }
   });
   const allImages = uniqueImages.slice(0, 4);
+
+  if (allImages.length === 1) {
+    return (
+      <div className="relative h-full w-full bg-white p-2">
+        <Image
+          src={allImages[0]!}
+          alt=""
+          fill
+          className="object-contain"
+          sizes="265px"
+          priority
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="grid h-full w-full grid-cols-2 gap-0.5 bg-white p-0">

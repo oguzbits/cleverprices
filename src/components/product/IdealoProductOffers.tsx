@@ -39,9 +39,13 @@ export async function IdealoProductOffers({
     selectedCondition === "used" || selectedCondition === "renewed";
 
   if (isParentView && product.parentAsin) {
-    let familyMembers =
-      passedVariants ||
-      (await getProductFamilyMembers(product.parentAsin, countryCode));
+    let familyMembers = passedVariants
+      ? [product, ...passedVariants]
+      : await getProductFamilyMembers(product.parentAsin, countryCode);
+
+    if (familyMembers.length === 0) {
+      familyMembers = [product];
+    }
 
     // Only merge if not already passed (pre-merged)
     if (!passedVariants) {
