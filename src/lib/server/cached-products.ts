@@ -175,7 +175,7 @@ async function getCachedProductSlugs(
  * Cache Salt: Bump this to force a global flush of ALL product/sitemap metadata.
  * Current: v227-FINAL-HUB-STABILITY
  */
-export const GLOBAL_SALT = "v232-QUALITY-SITEMAP-REFINE";
+export const GLOBAL_SALT = "v233-FINAL-QUALITY-PURGE";
 
 export async function getAllProductSlugs(
   _version: string = GLOBAL_SALT,
