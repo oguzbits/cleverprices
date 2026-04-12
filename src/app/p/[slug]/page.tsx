@@ -181,15 +181,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       (product.usedPrices &&
         Object.values(product.usedPrices).some((p) => Number(p) > 0));
 
-    const hasHighQualityContent =
-      product.officialSpecifications || product.specifications;
+    const hasImage = !!product.image && !product.image.includes("placeholder");
 
-    const hasMeaningfulTitle =
-      product.title &&
-      product.title.length > 2 &&
-      product.title !== product.asin;
+    // Guard against "Sparse Specs" (e.g. only Brand)
+    const specs = product.specifications 
+      ? (typeof product.specifications === 'string' ? JSON.parse(product.specifications) : product.specifications)
+      : {};
+    const specCount = Object.keys(specs).length;
 
-    if ((!hasPrice && !hasHighQualityContent) || !hasMeaningfulTitle) {
+    // Define what constitutes a "meaningful" title for SEO quality
+    const hasMeaningfulTitle = !!product.title && 
+      product.title.length > 4 && 
+      product.title.toLowerCase() !== product.asin?.toLowerCase();
+    
+    // Quality check: Must have (Price OR High Quality Specs) AND Meaningful Title AND Image
+    const isQualityEnough = (hasPrice || product.officialSpecifications || specCount > 3) && hasMeaningfulTitle && hasImage;
+
+    if (!isQualityEnough) {
       notFound();
     }
     const isParentView = isParentViewMode;
@@ -333,15 +341,23 @@ async function ProductPageContent({
           (product.usedPrices &&
             Object.values(product.usedPrices).some((p) => Number(p) > 0));
 
-        const hasHighQualityContent =
-          product.officialSpecifications || product.specifications;
+        const hasImage = !!product.image && !product.image.includes("placeholder");
+
+        // Guard against "Sparse Specs" (e.g. only Brand)
+        const specs = product.specifications 
+          ? (typeof product.specifications === 'string' ? JSON.parse(product.specifications) : product.specifications)
+          : {};
+        const specCount = Object.keys(specs).length;
 
         const hasMeaningfulTitle =
           product.title &&
           product.title.length > 2 &&
           product.title !== product.asin;
 
-        if ((!hasPrice && !hasHighQualityContent) || !hasMeaningfulTitle) {
+        // Unified Quality Guard
+        const isQualityEnough = (hasPrice || product.officialSpecifications || specCount > 3) && hasMeaningfulTitle && hasImage;
+
+        if (!isQualityEnough) {
           logPDPPerformance(slug, startTime);
           action = { type: "notFound" };
         } else {

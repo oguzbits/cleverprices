@@ -33,6 +33,11 @@ export function getFamilyRepresentative(
 
   const candidates = newItems.length > 0 ? newItems : variants;
   const sorted = [...candidates].sort((a, b) => {
+    // 0. Prioritize Image availability (Essential for Hub Quality)
+    const hasImageA = !!(a.image || a.imageUrl);
+    const hasImageB = !!(b.image || b.imageUrl);
+    if (hasImageA !== hasImageB) return hasImageA ? -1 : 1;
+
     // 1. Prioritize Sales Rank for stability and quality (Lower is better)
     const rankA = (a as any).salesRank ?? 999999;
     const rankB = (b as any).salesRank ?? 999999;

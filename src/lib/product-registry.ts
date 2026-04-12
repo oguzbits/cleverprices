@@ -394,12 +394,13 @@ export async function getAllProductSlugs(
               "pending",
             ]),
             // GSC Fix: Only include items that don't look like ASIN-titles or junk names
-            sql`length(title) > 2 AND title != asin`,
-            // SEO Guard: Items must have either specs or a known price (subquery for speed)
+            sql`length(title) > 5 AND title != asin`,
+            // SEO Guard: Items MUST have an image
+            isNotNull(products.imageUrl),
+            // Specs Guard: Reduce noise by skipping completely empty spec buckets at SQL level
             or(
               isNotNull(products.specifications),
-              isNotNull(products.officialSpecifications),
-              sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
+              isNotNull(products.officialSpecifications)
             ),
           ),
         )
@@ -418,16 +419,25 @@ export async function getAllProductSlugs(
       const parentMap = new Map<string, any>();
 
       for (const r of rawResults) {
-        // Hub Identification: If it has a parentAsin OR its asin acts as a parentAsin for others
-        // FOR PARITY: Every canonical page is a Hub (900M+), even standalone products.
+        // 1. Data Quality Check (Same as PDP Soft 404 logic)
+        const specs = r.specifications ? JSON.parse(r.specifications as string) : {};
+        const officialSpecs = r.officialSpecifications ? JSON.parse(r.officialSpecifications as string) : {};
+        const totalSpecs = { ...specs, ...officialSpecs };
+        const specCount = Object.keys(totalSpecs).length;
+        
+        // Strict meaningful title check (No raw ASINs)
+        const hasMeaningfulTitle = r.title.length > 5 && !/^[A-Z0-9]{10}$/.test(r.title);
+        
+        const isQualityVariant = specCount >= 3 && hasMeaningfulTitle;
+
+        // Hub Identification
         const actingParentAsin = r.parentAsin || r.asin;
         const familyKey = actingParentAsin || r.id.toString();
 
         if (!includeVariants) {
           if (!parentMap.has(familyKey)) {
             const identity = getProductIdentity(r as any);
-            // Stable Hub ID via getCanonicalFamilyId (aligned with PDP logic)
-            // If it has no parentAsin, getCanonicalFamilyId will use r.asin to find its own canonical ID
+            // Stable Hub ID via getCanonicalFamilyId
             const hubIdVal = await getCanonicalFamilyId(actingParentAsin, r.id!, identity.modelTitle || "");
             const hubId = 900000000 + (hubIdVal % 100000000);
             
@@ -440,27 +450,44 @@ export async function getAllProductSlugs(
               [],
             );
 
-            const hub = {
+            parentMap.set(familyKey, {
               id: hubId,
               slug: hubSlug,
               category: r.category,
               enrichmentStatus: r.enrichmentStatus,
               updatedAt: r.updatedAt || new Date(),
-            };
-            parentMap.set(familyKey, hub);
-            processedResults.push(hub);
+              hasQualityVariant: isQualityVariant
+            });
+          } else {
+            // If already in map, check if THIS variant is quality and promote the hub
+            const existing = parentMap.get(familyKey);
+            if (!existing.hasQualityVariant && isQualityVariant) {
+              existing.hasQualityVariant = true;
+            }
           }
           continue;
         }
 
-        // Standard Product or Variant (only if includeVariants is true, e.g. for internal tools)
-        processedResults.push({
-          id: r.id!,
-          slug: r.slug,
-          category: r.category,
-          enrichmentStatus: r.enrichmentStatus,
-          updatedAt: r.updatedAt || new Date(),
-        });
+        // Standard Product or Variant (only if includeVariants is true)
+        if (isQualityVariant) {
+          processedResults.push({
+            id: r.id!,
+            slug: r.slug,
+            category: r.category,
+            enrichmentStatus: r.enrichmentStatus,
+            updatedAt: r.updatedAt || new Date(),
+          });
+        }
+      }
+
+      if (!includeVariants) {
+        // Only include families that have at least one high-quality representative
+        for (const family of parentMap.values()) {
+          if (family.hasQualityVariant) {
+            const { hasQualityVariant, ...data } = family;
+            processedResults.push(data);
+          }
+        }
       }
 
       return processedResults;
@@ -501,11 +528,12 @@ export async function getAllProductSlugs(
             "processed",
             "pending",
           ]),
-          // Same filter for consistency even in slow path
+          // Same filter for consistency even in slow path (Require Image)
+          isNotNull(products.imageUrl),
           or(
             isNotNull(products.specifications),
             isNotNull(products.officialSpecifications),
-            sql`id IN (SELECT product_id FROM prices WHERE price > 0)`,
+            sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
           ),
         ),
       )

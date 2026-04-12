@@ -1,6 +1,6 @@
 import { db, dbReady, IS_BUILD } from "@/db";
 import { prices, products } from "@/db/schema";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { cacheLife } from "next/cache";
 import { cache } from "react";
 import { withRetry } from "../../db/utils";
@@ -154,7 +154,12 @@ export async function getProductsByCategory(
       let query = db
         .select(liteProductColumns)
         .from(products)
-        .where(eq(products.category, category));
+        .where(
+          and(
+            eq(products.category, category),
+            isNotNull(products.imageUrl),
+          )
+        );
 
       if (limit) {
         // @ts-ignore
@@ -193,7 +198,12 @@ export async function getProductsByCategory(
       let query = db
         .select(liteProductColumns)
         .from(products)
-        .where(eq(products.category, category));
+        .where(
+          and(
+            eq(products.category, category),
+            isNotNull(products.imageUrl),
+          )
+        );
 
       if (limit) {
         // @ts-ignore
@@ -242,7 +252,12 @@ export async function getRawProductsByCategory(
       const prods = await db
         .select(filteringProductColumns)
         .from(products)
-        .where(eq(products.category, category))
+        .where(
+          and(
+            eq(products.category, category),
+            isNotNull(products.imageUrl),
+          )
+        )
         .orderBy(asc(products.salesRank))
         .limit(limit);
 
@@ -292,7 +307,12 @@ export async function getRawProductsByCategory(
       const prods = await db
         .select(filteringProductColumns)
         .from(products)
-        .where(eq(products.category, category))
+        .where(
+          and(
+            eq(products.category, category),
+            isNotNull(products.imageUrl),
+          )
+        )
         .orderBy(asc(products.salesRank))
         .limit(limit);
 
