@@ -77,8 +77,11 @@ export function ProductSchema({
 
   // Add offers
   if (currentPrice || allPrices.length > 0) {
+    // Use a conditional block to choose between AggregateOffer and single Offer
     if (allPrices.length > 1 && lowestPrice && highestPrice) {
-      // Multiple prices available - use AggregateOffer
+      // Add shipping and return policy (Required for Google Merchant Listings)
+      const shippingRate = lowestPrice > 39 ? "0.00" : "4.99";
+      
       const aggregateOffer: Record<string, unknown> = {
         "@type": "AggregateOffer",
         priceCurrency: currency,
@@ -92,6 +95,41 @@ export function ProductSchema({
         seller: {
           "@type": "Organization",
           name: "Amazon",
+        },
+        shippingDetails: {
+          "@type": "OfferShippingDetails",
+          shippingRate: {
+            "@type": "MonetaryAmount",
+            value: shippingRate,
+            currency: currency,
+          },
+          deliveryTime: {
+            "@type": "ShippingDeliveryTime",
+            handlingTime: {
+              "@type": "QuantitativeValue",
+              minValue: 0,
+              maxValue: 1,
+              unitCode: "DAY",
+            },
+            transitTime: {
+              "@type": "ShippingDeliveryTime",
+              minValue: 1,
+              maxValue: 3,
+              unitCode: "DAY",
+            },
+          },
+          shippingDestination: {
+            "@type": "DefinedRegion",
+            addressCountry: "DE",
+          },
+        },
+        hasMerchantReturnPolicy: {
+          "@type": "MerchantReturnPolicy",
+          applicableCountry: "DE",
+          returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnPeriod",
+          merchantReturnDays: 30,
+          returnMethod: "https://schema.org/ReturnByMail",
+          returnFees: "https://schema.org/FreeReturn",
         },
       };
 
@@ -112,6 +150,9 @@ export function ProductSchema({
 
       schema.offers = aggregateOffer;
     } else if (currentPrice) {
+      // Standard shipping logic for single offers
+      const shippingRate = currentPrice > 39 ? "0.00" : "4.99";
+
       // Single price - use Offer
       const offer: Record<string, unknown> = {
         "@type": "Offer",
@@ -125,6 +166,41 @@ export function ProductSchema({
           name: "Amazon",
         },
         priceValidUntil: "2027-12-31",
+        shippingDetails: {
+          "@type": "OfferShippingDetails",
+          shippingRate: {
+            "@type": "MonetaryAmount",
+            value: shippingRate,
+            currency: currency,
+          },
+          deliveryTime: {
+            "@type": "ShippingDeliveryTime",
+            handlingTime: {
+              "@type": "QuantitativeValue",
+              minValue: 0,
+              maxValue: 1,
+              unitCode: "DAY",
+            },
+            transitTime: {
+              "@type": "ShippingDeliveryTime",
+              minValue: 1,
+              maxValue: 3,
+              unitCode: "DAY",
+            },
+          },
+          shippingDestination: {
+            "@type": "DefinedRegion",
+            addressCountry: "DE",
+          },
+        },
+        hasMerchantReturnPolicy: {
+          "@type": "MerchantReturnPolicy",
+          applicableCountry: "DE",
+          returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnPeriod",
+          merchantReturnDays: 30,
+          returnMethod: "https://schema.org/ReturnByMail",
+          returnFees: "https://schema.org/FreeReturn",
+        },
       };
 
       // Add unit price if available
