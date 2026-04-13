@@ -267,7 +267,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         "Preisvergleich",
         "günstig kaufen",
         `${category?.name} Preis`,
-        category?.unitType ? `Preis pro ${category.unitType}` : null,
         "beste Angebot",
         "Deutschland",
       ].filter(Boolean) as string[],

@@ -195,7 +195,7 @@ async function getCachedProductSlugs(
 /**
  * Cache Salt: Bump this to force a global flush of ALL product/sitemap metadata.
  */
-export const GLOBAL_SALT = "v240";
+export const GLOBAL_SALT = "v241";
 console.log(`[BOOT-INTERNAL] Active Salt: ${GLOBAL_SALT}`);
 
 export async function getAllProductSlugs(

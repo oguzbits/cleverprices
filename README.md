@@ -1,6 +1,6 @@
 # CleverPrices
 
-Price comparison platform focused on the **Price per Unit** metric. Optimized for the German hardware market with extreme performance and SEO efficiency.
+Price comparison platform for the German hardware market. Optimized for extreme performance and SEO efficiency with native support for specialized unit-price metrics.
 
 ## Quick Start
 
@@ -82,7 +82,7 @@ CleverPrices is architected for maximum performance and efficiency, running on *
 
 ## Key Features
 
-- **German Market Focus** - Optimized for DE hardware pricing with support for unit price analysis (e.g., € per TB).
+- **German Market Focus** - Optimized for DE hardware pricing with support for specialized unit price metrics (e.g., € per TB) in relevant categories.
 - **SEO & Redirects** - Automatic redirects for legacy country URLs (US, UK, CA, FR, ES, IT).
 - **High Performance Caching** - Utilizes Next.js 16 "use cache" directive and Cache Components for extreme speed.
 - **Image Optimization** - Custom URL-based transformation (Size & Quality).
