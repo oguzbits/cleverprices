@@ -408,26 +408,54 @@ export async function getAllProductSlugs(
         // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
         .orderBy(asc(products.id));
 
-      // GSC Fix: Pre-fetch all ASINs that act as parents to correctly identify Standalone Parents as Hubs
-      const parentAsinResults = await db
-        .select({ parentAsin: products.parentAsin })
-        .from(products)
-        .where(isNotNull(products.parentAsin));
-      const parentAsinSet = new Set(parentAsinResults.map(p => p.parentAsin));
-
       const processedResults: any[] = [];
       const parentMap = new Map<string, any>();
 
+      // Identify unique families and their representatives first
+      const familyRepresentativeMap = new Map<string, typeof rawResults[0]>();
+      for (const r of rawResults) {
+        const actingParentAsin = r.parentAsin || r.asin;
+        const familyKey = actingParentAsin || r.id.toString();
+        if (!includeVariants) {
+          if (!familyRepresentativeMap.has(familyKey)) {
+            familyRepresentativeMap.set(familyKey, r);
+          }
+        }
+      }
+
+      // Parallelize canonical ID resolution (O(Families) instead of O(Products))
+      const familyKeys = Array.from(familyRepresentativeMap.keys());
+      const resContexts = await Promise.all(
+        familyKeys.map(async (key) => {
+          const r = familyRepresentativeMap.get(key)!;
+          const actingParentAsin = r.parentAsin || r.asin;
+          const identity = getProductIdentity(r as any);
+          const hubIdVal = await getCanonicalFamilyId(
+            actingParentAsin,
+            r.id!,
+            identity.modelTitle || "",
+          );
+          return { key, hubIdVal };
+        }),
+      );
+
+      const hubIdMap = new Map(resContexts.map((c) => [c.key, c.hubIdVal]));
+
       for (const r of rawResults) {
         // 1. Data Quality Check (Same as PDP Soft 404 logic)
-        const specs = r.specifications ? JSON.parse(r.specifications as string) : {};
-        const officialSpecs = r.officialSpecifications ? JSON.parse(r.officialSpecifications as string) : {};
+        const specs = r.specifications
+          ? JSON.parse(r.specifications as string)
+          : {};
+        const officialSpecs = r.officialSpecifications
+          ? JSON.parse(r.officialSpecifications as string)
+          : {};
         const totalSpecs = { ...specs, ...officialSpecs };
         const specCount = Object.keys(totalSpecs).length;
-        
+
         // Strict meaningful title check (No raw ASINs)
-        const hasMeaningfulTitle = r.title.length > 5 && !/^[A-Z0-9]{10}$/.test(r.title);
-        
+        const hasMeaningfulTitle =
+          r.title.length > 5 && !/^[A-Z0-9]{10}$/.test(r.title);
+
         const isQualityVariant = specCount >= 3 && hasMeaningfulTitle;
 
         // Hub Identification
@@ -436,11 +464,9 @@ export async function getAllProductSlugs(
 
         if (!includeVariants) {
           if (!parentMap.has(familyKey)) {
-            const identity = getProductIdentity(r as any);
-            // Stable Hub ID via getCanonicalFamilyId
-            const hubIdVal = await getCanonicalFamilyId(actingParentAsin, r.id!, identity.modelTitle || "");
+            const hubIdVal = hubIdMap.get(familyKey)!;
             const hubId = 900000000 + (hubIdVal % 100000000);
-            
+
             const { slug: hubSlug } = getFamilyIdentity(
               {
                 ...r,
@@ -456,19 +482,18 @@ export async function getAllProductSlugs(
               category: r.category,
               enrichmentStatus: r.enrichmentStatus,
               updatedAt: r.updatedAt || new Date(),
-              hasQualityVariant: isQualityVariant
+              hasQualityVariant: isQualityVariant,
             });
           } else {
             // If already in map, check if THIS variant is quality and promote the hub
             const existing = parentMap.get(familyKey);
-            if (!existing.hasQualityVariant && isQualityVariant) {
+            if (existing !== undefined && !existing.hasQualityVariant && isQualityVariant) {
               existing.hasQualityVariant = true;
             }
           }
           continue;
         }
 
-        // Standard Product or Variant (only if includeVariants is true)
         if (isQualityVariant) {
           processedResults.push({
             id: r.id!,
@@ -715,7 +740,7 @@ async function fetchNonEmptyInternal() {
           or(
             isNotNull(products.specifications),
             isNotNull(products.officialSpecifications),
-            sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
+            sql`EXISTS (SELECT 1 FROM prices WHERE prices.product_id = products.id AND price > 0 AND country = 'de')`,
           ),
         ),
       )
