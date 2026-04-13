@@ -301,6 +301,7 @@ async function ProductPageContent({
 }) {
   "use cache";
   cacheLife("product");
+  console.log(`[DEPLOY-CHECK] Rendering PDP for ${slug} using SALT: ${GLOBAL_SALT}`);
   const [_v] = [_version];
   const countryCode = DEFAULT_COUNTRY;
 
