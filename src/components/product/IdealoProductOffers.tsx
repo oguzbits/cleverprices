@@ -52,42 +52,39 @@ export async function IdealoProductOffers({
       familyMembers = await mergeLivePrices(familyMembers, countryCode);
     }
 
-    let minPrice = Infinity;
-    let bestItem: {
-      product: Product;
-      price?: number;
-      type?: "new" | "renewed" | "warehouse";
-    } | null = null;
+    // Hub Mode: Show one offer per unique variation (color, size, etc.)
+    const uniqueVariations = new Map<string, typeof productsToShow[0]>();
 
     familyMembers.forEach((m) => {
-      // ... (rest of the logic remains same)
+      const p = m.prices[countryCode];
+      const wp = m.usedPrices?.[countryCode];
+      const cond = (m.condition || "").toLowerCase();
+      const variantKey = m.variationAttributes || String(m.id);
+
+      // Rule: New takes precedence over Used for the same variation on a Hub
       if (isUsedTrack) {
-        const cond = (m.condition || "").toLowerCase();
-        const rp = m.prices[countryCode];
-        if (cond === "renewed" && rp && rp > 0) {
-          if (rp < minPrice) {
-            minPrice = rp;
-            bestItem = { product: m, price: rp, type: "renewed" };
+        if (cond === "renewed" && p && p > 0) {
+          const current = uniqueVariations.get(variantKey);
+          if (!current || p < (current.price || Infinity)) {
+            uniqueVariations.set(variantKey, { product: m, price: p, type: "renewed" });
           }
-        }
-        const wp = m.usedPrices?.[countryCode];
-        if (wp && wp > 0) {
-          if (wp < minPrice) {
-            minPrice = wp;
-            bestItem = { product: m, price: wp, type: "warehouse" };
+        } else if (wp && wp > 0) {
+          const current = uniqueVariations.get(variantKey);
+          if (!current || wp < (current.price || Infinity)) {
+            uniqueVariations.set(variantKey, { product: m, price: wp, type: "warehouse" });
           }
         }
       } else {
-        const p = m.prices[countryCode];
-        if ((m.condition || "").toLowerCase() !== "renewed" && p && p > 0) {
-          if (p < minPrice) {
-            minPrice = p;
-            bestItem = { product: m, price: p, type: "new" };
+        if (cond !== "renewed" && cond !== "used" && p && p > 0) {
+          const current = uniqueVariations.get(variantKey);
+          if (!current || p < (current.price || Infinity)) {
+            uniqueVariations.set(variantKey, { product: m, price: p, type: "new" });
           }
         }
       }
     });
-    if (bestItem) productsToShow = [bestItem];
+
+    productsToShow = Array.from(uniqueVariations.values()).sort((a, b) => (a.price || 0) - (b.price || 0));
   } else {
     // Normal mode: current product + identical siblings (same specs)
     let targets = [product];

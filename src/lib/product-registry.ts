@@ -17,6 +17,7 @@ import {
   like,
   lt,
   lte,
+  ne,
   or,
   sql,
   SQL,
@@ -1327,6 +1328,7 @@ const fetchSimilarProducts = async (
   targetPrice: number,
   limit: number,
   countryCode: string,
+  parentAsin?: string,
 ) => {
   if (IS_BUILD) return [];
   await dbReady;
@@ -1336,7 +1338,6 @@ const fetchSimilarProducts = async (
   const maxPrice = targetPrice > 0 ? targetPrice * 1.5 : 10000;
 
   // 2. Fetch candidates using an indexed range query
-  // We join prices and products to get only what we need
   const candidates = await withRetry(async () => {
     return await db
       .select({
@@ -1351,15 +1352,15 @@ const fetchSimilarProducts = async (
           eq(prices.country, countryCode),
           gt(prices.price, minPrice),
           lt(prices.price, maxPrice),
-          sql`${products.slug} != ${excludedSlug}`,
+          ne(products.slug, excludedSlug),
+          parentAsin ? ne(products.parentAsin, parentAsin) : sql`1=1`,
         ),
       )
-      .orderBy(asc(products.salesRank)) // Suggest popular similar products
-      .limit(Math.min(limit * 4, 100)); // Fetch a buffer for final sorting
+      .orderBy(asc(products.salesRank))
+      .limit(Math.min(limit * 4, 100));
   });
 
   if (candidates.length === 0) {
-    // Fallback: If no price-filtered results, get popular in category
     const fallback = await db
       .select({
         product: liteProductColumns,
@@ -1371,7 +1372,8 @@ const fetchSimilarProducts = async (
         and(
           eq(products.category, category),
           eq(prices.country, countryCode),
-          sql`${products.slug} != ${excludedSlug}`,
+          ne(products.slug, excludedSlug),
+          parentAsin ? ne(products.parentAsin, parentAsin) : sql`1=1`,
         ),
       )
       .orderBy(asc(products.salesRank))
@@ -1380,7 +1382,6 @@ const fetchSimilarProducts = async (
     return fallback.map((c) => mapDbProduct(c.product as DbProduct, []));
   }
 
-  // 3. Final refinement in memory for closest price matches
   const sorted = candidates.sort((a, b) => {
     const priceA = a.priceVal || 0;
     const priceB = b.priceVal || 0;
@@ -1410,6 +1411,7 @@ export const getSimilarProducts = cache(async function getSimilarProducts(
       currentPrice,
       limit,
       countryCode,
+      product.parentAsin,
     );
   }
 
@@ -1423,6 +1425,7 @@ export const getSimilarProducts = cache(async function getSimilarProducts(
       currentPrice,
       limit,
       countryCode,
+      product.parentAsin,
     );
   };
 
