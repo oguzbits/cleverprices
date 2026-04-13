@@ -351,18 +351,30 @@ export async function getPDPRenderData(
         const targetPath = getProductPath(canonicalId, canonicalSlug);
 
         // Render or Redirect check
-        if (`/p/${slug}` === targetPath) {
-          return {
-            product: effectiveProduct,
-            variants: mergedAll.slice(1),
-            isParentView: true,
-            canonicalId,
-            canonicalSlug,
-            redirect: null,
-            isPermanent: false,
-            _v: "v224-REALLY-FIXED",
+        // Final Hub Enrichment: Inherit best data from family representative
+        if (rep && rep.id !== effectiveProduct.id) {
+          effectiveProduct = {
+            ...effectiveProduct,
+            prices: rep.prices,
+            priceHistory: rep.priceHistory,
+            savings: rep.savings,
+            pricesLastUpdated: rep.pricesLastUpdated,
+            condition: rep.condition,
+            image: rep.image || effectiveProduct.image,
+            imageUrl: rep.imageUrl || effectiveProduct.imageUrl,
           };
         }
+
+        return {
+          product: effectiveProduct,
+          variants: mergedAll.slice(1),
+          isParentView: true,
+          canonicalId,
+          canonicalSlug,
+          redirect: null,
+          isPermanent: false,
+          _v: _version,
+        };
 
         return { redirect: targetPath, isPermanent: true };
       }
@@ -427,15 +439,31 @@ export async function getPDPRenderData(
           [product, ...variants]
         );
 
+        let renderProduct = merged.find((p) => p.id === realId) || merged[0];
+        
+        // Final Hub Enrichment: Inherit best data from family representative
+        if (rep && rep.id !== renderProduct.id) {
+          renderProduct = {
+            ...renderProduct,
+            prices: rep.prices,
+            priceHistory: rep.priceHistory,
+            savings: rep.savings,
+            pricesLastUpdated: rep.pricesLastUpdated,
+            condition: rep.condition,
+            image: rep.image || renderProduct.image,
+            imageUrl: rep.imageUrl || renderProduct.imageUrl,
+          };
+        }
+
         return {
-          product: merged.find((p) => p.id === realId) || merged[0],
+          product: renderProduct,
           variants: merged.filter((p) => p.id !== realId),
           isParentView: true,
           canonicalId,
           canonicalSlug,
           redirect: null,
           isPermanent: false,
-          _v: "v230-HUB-ONLY-SITEMAP",
+          _v: _version,
         };
       }
     }
@@ -530,6 +558,6 @@ export async function getPDPRenderData(
     canonicalSlug,
     redirect,
     isPermanent,
-    _v: "v224-REALLY-FIXED",
+    _v: _version,
   };
 }
