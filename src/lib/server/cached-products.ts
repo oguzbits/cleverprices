@@ -480,7 +480,7 @@ export async function getPDPRenderData(
         return {
           product: renderProduct,
           variants: merged.filter((p) => p.id !== realId),
-          isParentView: true,
+          isParentView: false,
           canonicalId,
           canonicalSlug,
           redirect: null,
