@@ -6,8 +6,6 @@ mock.module("next/cache", () => {
   const m = {
     cacheLife: () => {},
     cacheTag: () => {},
-    revalidateTag: () => {},
-    revalidatePath: () => {},
     unstable_cache: (fn: any) => fn,
     unstable_noStore: () => {},
   };

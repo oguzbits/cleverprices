@@ -22,7 +22,7 @@ import {
   sql,
   SQL,
 } from "drizzle-orm";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife } from "next/cache";
 import { cache as reactCache } from "react";
 import { withRetry } from "../db/utils";
 import {
@@ -125,8 +125,6 @@ async function fetchCanonicalIdInternal(
 ) {
   "use cache";
   cacheLife("product");
-  const _v = "v228-HUBS"; // Version bump synced with GLOBAL_SALT
-
   if (depth > 5 || !parentAsin) return currentId!;
 
   await dbReady;
@@ -1607,7 +1605,7 @@ const getCachedDeals = async (
 ) => {
   "use cache";
   cacheLife("hours");
-  cacheTag("deals", limit.toString(), countryCode, condition || "any");
+
 
   await dbReady;
   try {
@@ -1705,7 +1703,7 @@ const getCachedPopular = async (
 ) => {
   "use cache";
   cacheLife("hours");
-  cacheTag("popular", limit.toString(), countryCode, condition || "any");
+
 
   await dbReady;
   try {
@@ -1832,7 +1830,7 @@ const fetchDiversePopular = async (
 ) => {
   "use cache";
   cacheLife("hours");
-  cacheTag("diverse-popular", itemsPerCategory.toString(), countryCode, "v200");
+
   if (IS_BUILD) return [];
   await dbReady;
   try {
@@ -1922,7 +1920,7 @@ const getCachedNew = async (
 ) => {
   "use cache";
   cacheLife("hours");
-  cacheTag("new-products", limit.toString(), countryCode, condition || "any");
+
 
   await dbReady;
   try {

@@ -12,7 +12,7 @@ import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { parseVariationAttributes } from "@/lib/utils/variants";
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife } from "next/cache";
 import { getBestPrice } from "../utils/price-selection";
 import { calculateProductSavings } from "../utils/products";
 import { getLivePricesForProducts } from "./live-data";
@@ -22,7 +22,6 @@ import {
   getRawProductsByCategory,
 } from "./product-queries";
 import { calculateDesirabilityScore } from "./scoring";
-import { GLOBAL_SALT } from "./cached-products";
 
 /**
  * Maps the IdealoTopBar sort parameter to sortBy and sortOrder values
@@ -428,11 +427,9 @@ export function mapRawToLocalizedProduct(
 export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = "v207", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
   cacheLife("category");
-  cacheTag("category", "products", version);
 
   let rawProducts;
   if (categorySlug === "deals") {
@@ -460,11 +457,9 @@ export async function getCachedLocalizedCategoryProducts(
 export async function getLeanCategoryProducts(
   categorySlug: string,
   countryCode: string,
-  version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("category");
-  cacheTag("category", "products", `category-${categorySlug}`, version);
 
   const virtual = VIRTUAL_CATEGORY_MAP[categorySlug];
   const queryCategory = virtual ? virtual.dbCategory : categorySlug;
@@ -713,7 +708,6 @@ export async function getCategoryProducts(
   const leanProducts = await getLeanCategoryProducts(
     categorySlug,
     countryCode,
-    GLOBAL_SALT,
   );
 
   const category = allCategories[categorySlug as CategorySlug];

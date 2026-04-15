@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from "next/cache";
+import { cacheLife } from "next/cache";
 import { getCategoryBySlug } from "../categories";
 import { type Product } from "../product-definitions";
 import {
@@ -31,18 +31,16 @@ import {
 /**
  * --- PRIVATE CACHED DATA FETCHERS ---
  * These handle the "static" or long-term data like specs, images, and basic info.
+ * Caching is TTL-only via cacheLife profiles — no tags, no manual salts.
  */
 
 async function getCachedBestDeals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("category");
-  cacheTag("products", "deals", _version);
-  const [_salt] = [_version];
   return await getBestDealsSync(limit, countryCode, condition);
 }
 
@@ -50,47 +48,33 @@ async function getCachedNewArrivals(
   limit: number,
   countryCode: string,
   condition?: any,
-  _version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("category");
-  cacheTag("products", "arrivals", _version);
-  const [_salt] = [_version];
   return await getNewArrivalsSync(limit, countryCode, condition);
 }
 
 async function getCachedDiverseMostPopular(
   itemsPerCategory: number,
   countryCode: string,
-  _version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("category");
-  cacheTag("products", "popular", _version);
-  const [_salt] = [_version];
   return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
 
 async function getCachedProductBySlug(
   slug: string,
   includeHistory: boolean,
-  _version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("product");
-  cacheTag("products", _version);
-  const [_salt] = [_version];
   return await getProductBySlugSync(slug, includeHistory);
 }
 
-async function getCachedProductById(
-  id: number,
-  _version: string = GLOBAL_SALT,
-) {
+async function getCachedProductById(id: number) {
   "use cache";
   cacheLife("product");
-  cacheTag("products", _version);
-  const [_salt] = [_version];
   return await getProductByIdSync(id);
 }
 
@@ -98,12 +82,9 @@ async function getCachedProductVariantsInternal(
   parentAsin: string,
   countryCode: string,
   skipFullMapping: boolean = false,
-  _version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("product");
-  cacheTag("products", _version);
-  const [_salt] = [_version];
   return await getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -117,12 +98,9 @@ async function getCachedSimilarProducts(
   targetPrice: number,
   limit: number,
   countryCode: string,
-  _version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("product");
-  const [_salt] = [_version];
-  // We call the sync version directly to avoid double wrapping
   return await getSimilarProductsSync(
     {
       category,
@@ -134,34 +112,21 @@ async function getCachedSimilarProducts(
   );
 }
 
-async function getCachedProductSlugByAsinSuffix(
-  oldSlug: string,
-  _version: string = GLOBAL_SALT,
-) {
+async function getCachedProductSlugByAsinSuffix(oldSlug: string) {
   "use cache";
   cacheLife("category"); // Redirects can be cached for a long time
-  const [_salt] = [_version];
   return await findProductSlugByAsinSuffixSync(oldSlug);
 }
 
-async function getCachedProductByParentAsinSuffix(
-  slug: string,
-  _version: string = GLOBAL_SALT,
-) {
+async function getCachedProductByParentAsinSuffix(slug: string) {
   "use cache";
   cacheLife("category");
-  const [_salt] = [_version];
   return await findProductByParentAsinSuffixSync(slug);
 }
 
-async function getCachedProductBySyntheticId(
-  id: number,
-  depth: number = 0,
-  _version: string = GLOBAL_SALT,
-) {
+async function getCachedProductBySyntheticId(id: number, depth: number = 0) {
   "use cache";
   cacheLife("product");
-  const [_salt] = [_version];
   // Safety: Prevent infinite recursion if canonical resolution loops
   if (depth > 5) {
     console.error(`[SEO CRITICAL] Infinite recursion detected for ID ${id}`);
@@ -170,78 +135,42 @@ async function getCachedProductBySyntheticId(
   return await findProductBySyntheticIdSync(id, depth);
 }
 
-async function getCachedNonEmptyCategorySlugs(_version: string = GLOBAL_SALT) {
+async function getCachedNonEmptyCategorySlugs() {
   "use cache";
   cacheLife("category");
-  cacheTag("category", "category-slugs", _version);
-  const [_salt] = [_version];
   return getNonEmptyCategorySlugsSync();
 }
 
 export async function getProductById(
   id: number,
   skipLiveMerge: boolean = false,
-  _version: string = GLOBAL_SALT,
 ): Promise<Product | undefined> {
-  const product = await getCachedProductById(id, _version);
+  const product = await getCachedProductById(id);
   if (!product || skipLiveMerge) return product;
 
   const merged = await mergeLivePrices([product], "de");
   return merged[0];
 }
 
-async function getCachedProductSlugs(
-  limit?: number,
-  includeVariants: boolean = false,
-  _version: string = GLOBAL_SALT,
-) {
-  "use cache";
-  cacheLife("product");
-  const [_salt] = [_version];
-  cacheTag("sitemap-slugs", _salt);
-  return getAllProductSlugsSync(limit, includeVariants);
-}
-
-/**
- * Cache Salt: Bump this to force a global flush of ALL product/sitemap metadata.
- */
-export const GLOBAL_SALT = "v243";
-console.log(`[BOOT-INTERNAL] Active Salt: ${GLOBAL_SALT}`);
-
 export async function getAllProductSlugs(
-  _version: string = GLOBAL_SALT,
   includeVariants: boolean = true,
   fastMode: boolean = false,
 ): Promise<any[]> {
-  const cachedFetch = async (v: boolean, f: boolean, salt: string) => {
-    "use cache";
-    cacheLife("static");
-    cacheTag("sitemap-slugs", salt);
-    // Bind the salt to the cache key
-    const [_s] = [salt];
-    return getAllProductSlugsSync(undefined, v, f);
-  };
-  return cachedFetch(includeVariants, fastMode, _version);
+  "use cache";
+  cacheLife("static");
+  return getAllProductSlugsSync(undefined, includeVariants, fastMode);
 }
 
-export async function getNonEmptyCategorySlugs(
-  _version: string = GLOBAL_SALT,
-): Promise<string[]> {
-  return getCachedNonEmptyCategorySlugs(_version);
+export async function getNonEmptyCategorySlugs(): Promise<string[]> {
+  return getCachedNonEmptyCategorySlugs();
 }
 
 export async function getBestDeals(
   limit: number = 8,
   countryCode: string = "de",
   condition?: any,
-  _version: string = GLOBAL_SALT,
 ): Promise<Product[]> {
-  const products = await getCachedBestDeals(
-    limit,
-    countryCode,
-    condition,
-    _version,
-  );
+  const products = await getCachedBestDeals(limit, countryCode, condition);
   return mergeLivePrices(products, countryCode);
 }
 
@@ -249,26 +178,18 @@ export async function getNewArrivals(
   limit: number = 8,
   countryCode: string = "de",
   condition?: any,
-  _version: string = GLOBAL_SALT,
 ): Promise<Product[]> {
-  const products = await getCachedNewArrivals(
-    limit,
-    countryCode,
-    condition,
-    _version,
-  );
+  const products = await getCachedNewArrivals(limit, countryCode, condition);
   return mergeLivePrices(products, countryCode);
 }
 
 export async function getDiverseMostPopular(
   itemsPerCategory: number = 10,
   countryCode: string = "de",
-  _version: string = GLOBAL_SALT,
 ): Promise<Product[]> {
   const products = await getCachedDiverseMostPopular(
     itemsPerCategory,
     countryCode,
-    _version,
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -277,9 +198,7 @@ export async function getSimilarProducts(
   product: Product,
   limit: number = 4,
   countryCode: string = "de",
-  _version: string = GLOBAL_SALT,
 ): Promise<Product[]> {
-  // Use current (potentially fresh) price for similarity lookup
   const currentPrice = product.prices[countryCode] || 0;
   const products = await getCachedSimilarProducts(
     product.category,
@@ -287,7 +206,6 @@ export async function getSimilarProducts(
     currentPrice,
     limit,
     countryCode,
-    _version,
   );
   return mergeLivePrices(products, countryCode);
 }
@@ -297,7 +215,6 @@ export async function getProductVariants(
   countryCode: string = "de",
   skipLiveMerge: boolean = false,
   skipFullMapping: boolean = false,
-  _version: string = GLOBAL_SALT,
 ): Promise<Product[]> {
   if (!product.parentAsin) return [product];
 
@@ -305,7 +222,6 @@ export async function getProductVariants(
     product.parentAsin,
     countryCode,
     skipFullMapping,
-    _version,
   );
   if (skipLiveMerge) return variants;
   return mergeLivePrices(variants, countryCode);
@@ -319,13 +235,9 @@ export async function getProductVariants(
 export async function getPDPRenderData(
   slug: string,
   countryCode: string = "de",
-  _version: string = GLOBAL_SALT,
 ) {
   "use cache";
   cacheLife("product");
-  const [_salt] = [_version];
-  cacheTag("pdp-" + _version, "pdp-" + slug, _salt);
-  const _v = _version;
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -338,7 +250,7 @@ export async function getPDPRenderData(
   if (idMatch) {
     const id = parseInt(idMatch[1]);
     if (id >= 900000000) {
-      product = await getCachedProductBySyntheticId(id, 0, _version);
+      product = await getCachedProductBySyntheticId(id, 0);
 
       if (!product) {
         console.warn(`[SEO 404] Synthetic Hub ID ${id} not found: ${slug}`);
@@ -351,7 +263,6 @@ export async function getPDPRenderData(
           product.parentAsin || product.asin,
           countryCode,
           true,
-          _version,
         );
         const hubIden = getProductIdentity(product);
         const hubModelKey = (hubIden.modelTitle || "")
@@ -402,9 +313,7 @@ export async function getPDPRenderData(
           { ...product, id: canonicalId, isParentView: true } as any,
           mergedAll,
         );
-        const targetPath = getProductPath(canonicalId, canonicalSlug);
 
-        // Render or Redirect check
         // Final Hub Enrichment: Inherit best data from family representative
         if (rep && rep.id !== effectiveProduct.id) {
           effectiveProduct = {
@@ -427,20 +336,18 @@ export async function getPDPRenderData(
           canonicalSlug,
           redirect: null,
           isPermanent: false,
-          _v: _version,
         };
       }
     } else {
       // Standard ID mode (Variant)
       const realId = id >= 200000000 ? id - 200000000 : id;
-      product = await getCachedProductById(realId, _version);
+      product = await getCachedProductById(realId);
       if (product) {
         const variants = product.parentAsin
           ? await getCachedProductVariantsInternal(
               product.parentAsin,
               countryCode,
               true,
-              _version,
             )
           : [];
 
@@ -529,7 +436,6 @@ export async function getPDPRenderData(
           canonicalSlug,
           redirect: null,
           isPermanent: false,
-          _v: _version,
         };
       }
     }
@@ -537,7 +443,7 @@ export async function getPDPRenderData(
 
   // Fallback to Slug-based resolution
   if (!product) {
-    product = await getCachedProductBySlug(slug, false, _version);
+    product = await getCachedProductBySlug(slug, false);
     if (product) {
       const { slug: newSlug } = getFamilyIdentitySync(product, []);
       return {
@@ -545,9 +451,9 @@ export async function getPDPRenderData(
         isPermanent: true,
       };
     } else {
-      const asinSlug = await getCachedProductSlugByAsinSuffix(slug, _version);
+      const asinSlug = await getCachedProductSlugByAsinSuffix(slug);
       if (asinSlug && asinSlug !== slug) {
-        const tmpProd = await getCachedProductBySlug(asinSlug, false, _version);
+        const tmpProd = await getCachedProductBySlug(asinSlug, false);
         return {
           product: tmpProd || (null as any),
           variants: [],
@@ -557,7 +463,7 @@ export async function getPDPRenderData(
           isPermanent: true,
         };
       }
-      product = await getCachedProductByParentAsinSuffix(slug, _version);
+      product = await getCachedProductByParentAsinSuffix(slug);
       if (product) {
         const { slug: newSlug } = getFamilyIdentitySync(product, []);
         return {
@@ -592,7 +498,6 @@ export async function getPDPRenderData(
             product.parentAsin,
             countryCode,
             true,
-            _version,
           )
         : Promise.resolve([]),
     ]);
@@ -643,6 +548,5 @@ export async function getPDPRenderData(
     canonicalSlug,
     redirect,
     isPermanent,
-    _v: _version,
   };
 }

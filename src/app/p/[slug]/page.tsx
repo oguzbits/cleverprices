@@ -10,7 +10,6 @@ import { type Product } from "@/lib/product-definitions";
 import {
   getAllProductSlugs,
   getPDPRenderData,
-  GLOBAL_SALT,
 } from "@/lib/server/cached-products";
 import { logPDPPerformance } from "@/lib/server/performance-registry";
 import { BRAND_DOMAIN, BRAND_NAME } from "@/lib/site-config";
@@ -310,18 +309,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
 async function ProductPageContent({
   slug,
   condition,
-  _version = GLOBAL_SALT,
 }: {
   slug: string;
   condition?: string;
-  _version?: string;
 }) {
   "use cache";
   cacheLife("product");
-  console.log(
-    `[DEPLOY-CHECK] Rendering PDP for ${slug} using SALT: ${GLOBAL_SALT}`,
-  );
-  const [_v] = [_version];
   const countryCode = DEFAULT_COUNTRY;
 
   let action:
@@ -334,7 +327,7 @@ async function ProductPageContent({
     const startTime = performance.now();
 
     // 1. Fetch essential DB data via High-Speed Cache Bundle
-    const data = await getPDPRenderData(slug, countryCode, _version);
+    const data = await getPDPRenderData(slug, countryCode);
 
     if (data?.redirect) {
       logPDPPerformance(slug, startTime);
