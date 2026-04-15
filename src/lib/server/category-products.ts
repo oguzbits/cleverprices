@@ -12,7 +12,7 @@ import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { parseVariationAttributes } from "@/lib/utils/variants";
-import { cacheLife } from "next/cache";
+import * as nextCache from "next/cache";
 import { getBestPrice } from "../utils/price-selection";
 import { calculateProductSavings } from "../utils/products";
 import { getLivePricesForProducts } from "./live-data";
@@ -430,7 +430,12 @@ export async function getCachedLocalizedCategoryProducts(
   version: string = "v207", // Cache buster
 ): Promise<LocalizedProduct[]> {
   "use cache";
-  cacheLife("category");
+  try {
+    nextCache.cacheLife?.("category");
+  } catch (e) {}
+  try {
+    nextCache.cacheTag?.("category", "products", version);
+  } catch (e) {}
 
   let rawProducts;
   if (categorySlug === "deals") {
@@ -461,7 +466,12 @@ export async function getLeanCategoryProducts(
   version: string = "v207",
 ) {
   "use cache";
-  cacheLife("category");
+  try {
+    nextCache.cacheLife?.("category");
+  } catch (e) {}
+  try {
+    nextCache.cacheTag?.("category", "products", "lean-category", version);
+  } catch (e) {}
 
   const virtual = VIRTUAL_CATEGORY_MAP[categorySlug];
   const queryCategory = virtual ? virtual.dbCategory : categorySlug;

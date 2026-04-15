@@ -138,7 +138,7 @@ async function main() {
           `\n⚖️ Phase 1: Compliance Sync (Daily Price Updates - Target: ${priceLimit})`,
         );
         execSync(
-          `bun run update-prices ${country} --stale --limit=${priceLimit}`,
+          `bun run update-prices ${country} --stale --purge --limit=${priceLimit}`,
           {
             stdio: "inherit",
             env: { ...process.env, DB_LOCAL: "1" },
@@ -153,7 +153,7 @@ async function main() {
           );
           try {
             execSync(
-              `bun run worker:enrich ${country} --limit=${enrichmentLimit}`,
+              `bun run worker:enrich ${country} --purge --limit=${enrichmentLimit}`,
               {
                 stdio: "inherit",
                 env: { ...process.env, DB_LOCAL: "1" },

@@ -8,9 +8,10 @@ import {
   getBestDeals,
   getDiverseMostPopular,
   getNewArrivals,
+  GLOBAL_SALT,
 } from "@/lib/server/cached-products";
 import { getLivePricesForProducts as getPricesFromDb } from "@/lib/server/live-data";
-import { cacheLife } from "next/cache";
+import * as nextCache from "next/cache";
 
 async function fetchHomeData(countryCode: string) {
   try {
@@ -30,7 +31,12 @@ export default async function HomeContent({
 }: {
   country: CountryCode;
 }) {
-  cacheLife("category"); // Use consistent category TTL for landing
+  try {
+    nextCache.cacheLife?.("category"); // Use consistent category TTL for landing
+  } catch (e) {}
+  try {
+    nextCache.cacheTag?.("home", "landing", GLOBAL_SALT);
+  } catch (e) {}
   const countryConfig = await getCountryByCode(country);
   const countryCode = countryConfig?.code || country;
 

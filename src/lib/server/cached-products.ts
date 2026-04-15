@@ -1,4 +1,4 @@
-import { cacheLife, cacheTag } from "next/cache";
+import * as nextCache from "next/cache";
 import { getCategoryBySlug } from "../categories";
 import { type Product } from "../product-definitions";
 import {
@@ -40,7 +40,12 @@ async function getCachedBestDeals(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("category");
+  try {
+    nextCache.cacheLife?.("category");
+  } catch (e) {}
+  try {
+    nextCache.cacheTag?.("products", "deals", _version);
+  } catch (e) {}
   const [_salt] = [_version];
   return await getBestDealsSync(limit, countryCode, condition);
 }
@@ -52,7 +57,12 @@ async function getCachedNewArrivals(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("category");
+  try {
+    nextCache.cacheLife?.("category");
+  } catch (e) {}
+  try {
+    nextCache.cacheTag?.("products", "arrivals", _version);
+  } catch (e) {}
   const [_salt] = [_version];
   return await getNewArrivalsSync(limit, countryCode, condition);
 }
@@ -63,7 +73,12 @@ async function getCachedDiverseMostPopular(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("category");
+  try {
+    nextCache.cacheLife?.("category");
+  } catch (e) {}
+  try {
+    nextCache.cacheTag?.("products", "popular", _version);
+  } catch (e) {}
   const [_salt] = [_version];
   return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
@@ -74,7 +89,9 @@ async function getCachedProductBySlug(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("product");
+  try {
+    nextCache.cacheLife?.("product");
+  } catch (e) {}
   const [_salt] = [_version];
   return await getProductBySlugSync(slug, includeHistory);
 }
@@ -84,7 +101,9 @@ async function getCachedProductById(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("product");
+  try {
+    nextCache.cacheLife?.("product");
+  } catch (e) {}
   const [_salt] = [_version];
   return await getProductByIdSync(id);
 }
@@ -96,7 +115,9 @@ async function getCachedProductVariantsInternal(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("product");
+  try {
+    nextCache.cacheLife?.("product");
+  } catch (e) {}
   const [_salt] = [_version];
   return await getProductVariantsSync(
     { parentAsin } as Product,
@@ -114,7 +135,9 @@ async function getCachedSimilarProducts(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("product");
+  try {
+    nextCache.cacheLife?.("product");
+  } catch (e) {}
   const [_salt] = [_version];
   // We call the sync version directly to avoid double wrapping
   return await getSimilarProductsSync(
@@ -133,7 +156,9 @@ async function getCachedProductSlugByAsinSuffix(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("category"); // Redirects can be cached for a long time
+  try {
+    nextCache.cacheLife?.("category"); // Redirects can be cached for a long time
+  } catch (e) {}
   const [_salt] = [_version];
   return await findProductSlugByAsinSuffixSync(oldSlug);
 }
@@ -143,7 +168,9 @@ async function getCachedProductByParentAsinSuffix(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("category");
+  try {
+    nextCache.cacheLife?.("category");
+  } catch (e) {}
   const [_salt] = [_version];
   return await findProductByParentAsinSuffixSync(slug);
 }
@@ -154,7 +181,9 @@ async function getCachedProductBySyntheticId(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("product");
+  try {
+    nextCache.cacheLife?.("product");
+  } catch (e) {}
   const [_salt] = [_version];
   // Safety: Prevent infinite recursion if canonical resolution loops
   if (depth > 5) {
@@ -166,8 +195,13 @@ async function getCachedProductBySyntheticId(
 
 async function getCachedNonEmptyCategorySlugs(_version: string = GLOBAL_SALT) {
   "use cache";
-  cacheLife("category");
-  const [_v] = [_version];
+  try {
+    nextCache.cacheLife?.("category");
+  } catch (e) {}
+  try {
+    nextCache.cacheTag?.("category", "category-slugs", _version);
+  } catch (e) {}
+  const [_salt] = [_version];
   return getNonEmptyCategorySlugsSync();
 }
 
@@ -189,9 +223,13 @@ async function getCachedProductSlugs(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("product");
+  try {
+    nextCache.cacheLife?.("product");
+  } catch (e) {}
   const [_salt] = [_version];
-  cacheTag("sitemap-slugs", _salt);
+  try {
+    nextCache.cacheTag?.("sitemap-slugs", _salt);
+  } catch (e) {}
   return getAllProductSlugsSync(limit, includeVariants);
 }
 
@@ -208,8 +246,12 @@ export async function getAllProductSlugs(
 ): Promise<any[]> {
   const cachedFetch = async (v: boolean, f: boolean, salt: string) => {
     "use cache";
-    cacheLife("product");
-    cacheTag("sitemap-slugs", salt);
+    try {
+      nextCache.cacheLife?.("static");
+    } catch (e) {}
+    try {
+      nextCache.cacheTag?.("sitemap-slugs", salt);
+    } catch (e) {}
     // Bind the salt to the cache key
     const [_s] = [salt];
     return getAllProductSlugsSync(undefined, v, f);
@@ -315,9 +357,13 @@ export async function getPDPRenderData(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  cacheLife("product");
+  try {
+    nextCache.cacheLife?.("product");
+  } catch (e) {}
   const [_salt] = [_version];
-  cacheTag("pdp-" + _version, "pdp-" + slug, _salt);
+  try {
+    nextCache.cacheTag?.("pdp-" + _version, "pdp-" + slug, _salt);
+  } catch (e) {}
   const _v = _version;
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)

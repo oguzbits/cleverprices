@@ -342,11 +342,11 @@ async function updatePrices(country: CountryCode): Promise<void> {
       if (affectedCategories.size > 0 && affectedCategories.size < 10) {
         const slugs = Array.from(affectedCategories).join(" ");
         console.log(`\n🎯 Triggering Targeted Cache Warmer for: ${slugs}`);
-        execSync(`bun run warm-cache ${slugs}`, { stdio: "inherit" });
+        execSync(`bun run warm-cache --purge ${slugs}`, { stdio: "inherit" });
       } else {
-        console.log("\n🔥 Triggering Cache Warmer (Lite Mode)...");
+        console.log("\n🔥 Triggering Cache Warmer (Lite Mode + Purge)...");
         // Trigger warmer in lite mode by default for speed, but ensure it runs.
-        execSync(`bun run warm-cache --lite`, { stdio: "inherit" });
+        execSync(`bun run warm-cache --lite --purge`, { stdio: "inherit" });
       }
     } catch (err) {
       console.error(
