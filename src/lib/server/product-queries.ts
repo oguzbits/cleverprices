@@ -402,7 +402,7 @@ export const getProductsByIds = cache(async function getProductsByIds(
     strip: boolean,
   ) => {
     "use cache";
-    cacheLife("product");
+    cacheLife("product_v2");
     const _v = "v207";
     return fetchProductsByIdsInternal(targetIds, code, strip);
   };

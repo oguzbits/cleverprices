@@ -484,7 +484,7 @@ async function CachedSidebarSimilarProducts({
   countryCode: CountryCode;
 }) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
 
   // Fetch similar products internally for streaming
   const similarProducts = await getSimilarProducts(product, 5, countryCode);
@@ -544,7 +544,7 @@ async function CachedSpecifications({
   isHubMode?: boolean;
 }) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
   return (
     <SpecificationsTable
       product={product}
@@ -562,7 +562,7 @@ async function CachedSimilarCarousel({
   countryCode: CountryCode;
 }) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
 
   // Fetch similar products internally for streaming
   const similarProducts = await getSimilarProducts(product, 12, countryCode);

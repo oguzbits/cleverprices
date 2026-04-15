@@ -68,13 +68,13 @@ async function getCachedProductBySlug(
   includeHistory: boolean,
 ) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
   return await getProductBySlugSync(slug, includeHistory);
 }
 
 async function getCachedProductById(id: number) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
   return await getProductByIdSync(id);
 }
 
@@ -84,7 +84,7 @@ async function getCachedProductVariantsInternal(
   skipFullMapping: boolean = false,
 ) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
   return await getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -100,7 +100,7 @@ async function getCachedSimilarProducts(
   countryCode: string,
 ) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
   return await getSimilarProductsSync(
     {
       category,
@@ -126,7 +126,7 @@ async function getCachedProductByParentAsinSuffix(slug: string) {
 
 async function getCachedProductBySyntheticId(id: number, depth: number = 0) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
   // Safety: Prevent infinite recursion if canonical resolution loops
   if (depth > 5) {
     console.error(`[SEO CRITICAL] Infinite recursion detected for ID ${id}`);

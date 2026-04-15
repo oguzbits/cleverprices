@@ -45,6 +45,11 @@ const nextConfig: NextConfig = {
       revalidate: 60,
       expire: 14400, // 4 hours
     },
+    hours: {
+      stale: 3600, // 1 hour
+      revalidate: 3600,
+      expire: 86400, // 24 hours
+    },
   },
   experimental: {
     // Cache RSC payloads in the router for 30s to prevent fresh server fetches
