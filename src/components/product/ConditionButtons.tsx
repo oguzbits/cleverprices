@@ -106,7 +106,7 @@ export async function ConditionButtons({
     }
     const normalizedCurAttrs = normalizeVariantAttributes(product);
 
-    familyMembers.forEach((m) => {
+    familyMembers.forEach((m: Product) => {
       const p = m.prices[countryCode] || 0;
       const up = m.usedPrices?.[countryCode] || 0;
       const mCond = (m.condition || "").toLowerCase();

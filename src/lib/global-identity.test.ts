@@ -1,23 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 import { getFamilyIdentity } from "./product-families";
 
-// Mock dependencies
-mock.module("@/lib/product-registry", () => ({
-  parseVariationAttributes: (attrs: string) => {
-    if (!attrs) return {};
-    return Object.fromEntries(
-      attrs.split(";").map((pair) => {
-        const [k, v] = pair.split(":");
-        return [k.trim(), v.trim()];
-      }),
-    );
-  },
-}));
-
-mock.module("next/cache", () => ({
-  cacheLife: () => {},
-  unstable_cache: (fn: any) => fn,
-}));
 
 // Helper to create mock products
 const createProduct = (overrides: any) => ({

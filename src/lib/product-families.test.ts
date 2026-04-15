@@ -1,9 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 
-mock.module("next/cache", () => ({
-  cacheLife: () => {},
-  unstable_cache: (fn: any) => fn,
-}));
+
 
 import {
   getFamilyIdentity,

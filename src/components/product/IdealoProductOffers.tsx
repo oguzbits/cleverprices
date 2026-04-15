@@ -55,7 +55,7 @@ export async function IdealoProductOffers({
     // Hub Mode: Show one offer per unique variation (color, size, etc.)
     const uniqueVariations = new Map<string, (typeof productsToShow)[0]>();
 
-    familyMembers.forEach((m) => {
+    familyMembers.forEach((m: Product) => {
       const p = m.prices[countryCode];
       const wp = m.usedPrices?.[countryCode];
       const cond = (m.condition || "").toLowerCase();
@@ -119,12 +119,12 @@ export async function IdealoProductOffers({
 
       const curAttrs = product.variationAttributes?.toLowerCase().trim();
       const identicalSiblings = familyMembers.filter(
-        (m) =>
+        (m: Product) =>
           m.id !== product.id &&
           m.variationAttributes?.toLowerCase().trim() === curAttrs,
       );
       const mergedProduct =
-        familyMembers.find((f) => f.id === product.id) || product;
+        familyMembers.find((f: Product) => f.id === product.id) || product;
       targets = [mergedProduct, ...identicalSiblings];
     } else if (!passedVariants) {
       // Single Product (No Parent) - MUST refreshed prices to match "Neu ab" if not passed
@@ -158,7 +158,7 @@ export async function IdealoProductOffers({
     // DEDUPLICATE: Only show the single best offer for this specific variant spec
     if (productsToShow.length > 1) {
       let best: (typeof productsToShow)[0] | null = null;
-      productsToShow.forEach((item) => {
+      productsToShow.forEach((item: (typeof productsToShow)[0]) => {
         if (!item.price) return;
         if (!best) {
           best = item;
@@ -309,7 +309,7 @@ export async function IdealoProductOffers({
                 {/* Payment Methods */}
                 <div className="hidden min-[600px]:flex min-[600px]:w-[18%] min-[600px]:px-[12px] min-[600px]:pt-4 min-[840px]:w-[12%]">
                   <div className="flex flex-wrap gap-[2px]">
-                    {["Visa", "PayPal", "Rechnung"].map((m) => (
+                    {["Visa", "PayPal", "Rechnung"].map((m: string) => (
                       <PaymentMethodIcon key={m} method={m} />
                     ))}
                   </div>

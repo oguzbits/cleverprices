@@ -23,44 +23,26 @@ import {
   SQL,
 } from "drizzle-orm";
 import { cacheLife, cacheTag } from "next/cache";
-import { cache } from "react";
+import { cache as reactCache } from "react";
 import { withRetry } from "../db/utils";
-
-// Lightweight price columns - lean schema (Drizzle ORM skill: query-select-columns)
+import {
+  getFamilyIdentity,
+  getFamilyRepresentative,
+} from "./product-families";
+import {
+  calculateSiblingConsensus,
+  getProductIdentity,
+} from "./utils/product-identity";
+import { mapDbProduct } from "./utils/product-mapping";
 import {
   filteringProductColumns,
   litePriceColumns,
   liteProductColumns,
   superLitePriceColumns,
   VIRTUAL_CATEGORY_MAP,
+  type LitePrice,
+  type Product
 } from "./product-definitions";
-
-export {
-  filteringProductColumns,
-  litePriceColumns,
-  liteProductColumns,
-  superLitePriceColumns,
-};
-
-import { getFamilyIdentity, getFamilyRepresentative } from "./product-families";
-import {
-  calculateSiblingConsensus,
-  getProductIdentity,
-} from "./utils/product-identity";
-import { mapDbProduct } from "./utils/product-mapping";
-
-/**
- * Product Registry - DB Adapter
- * Fetches data from SQLite database seeded with realistic data.
- */
-
-import type { LitePrice, Product } from "./product-definitions";
-
-export type { LitePrice, Product };
-
-// Re-export mapping logic for backward compatibility
-export { mapDbProduct } from "./utils/product-mapping";
-
 import {
   enrichWithFullSiblings,
   getProductsByCategory,
@@ -69,13 +51,27 @@ import {
   indexPricesById,
 } from "./server/product-queries";
 
+const cache = typeof reactCache === "function" ? reactCache : (fn: any) => fn;
+
 export {
+  filteringProductColumns,
+  litePriceColumns,
+  liteProductColumns,
+  superLitePriceColumns,
+  mapDbProduct,
   enrichWithFullSiblings,
   getProductsByCategory,
   getProductsByIds,
   getRawProductsByCategory,
   indexPricesById,
+  type LitePrice,
+  type Product
 };
+
+/**
+ * Product Registry - DB Adapter
+ * Fetches data from SQLite database seeded with realistic data.
+ */
 
 export const getProductById = cache(async function getProductById(
   id: number,
@@ -323,7 +319,7 @@ export async function findProductBySyntheticId(
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, "");
 
-      variants = rawVariants.filter((v) => {
+      variants = rawVariants.filter((v: Product) => {
         const vIden = getProductIdentity(v);
         const vModelKey = (vIden.modelTitle || "")
           .toLowerCase()
@@ -583,7 +579,7 @@ export async function getAllProductSlugs(
       query = query.limit(limit);
     }
 
-    const rawAllProducts = await query;
+    const rawAllProducts = (await query) as any[];
 
     // 2. Fetch prices (optimized map)
     const priceRecords = await db

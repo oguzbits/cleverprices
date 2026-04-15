@@ -11,7 +11,7 @@ import {
   GLOBAL_SALT,
 } from "@/lib/server/cached-products";
 import { getLivePricesForProducts as getPricesFromDb } from "@/lib/server/live-data";
-import * as nextCache from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 
 async function fetchHomeData(countryCode: string) {
   try {
@@ -31,12 +31,8 @@ export default async function HomeContent({
 }: {
   country: CountryCode;
 }) {
-  try {
-    nextCache.cacheLife?.("category"); // Use consistent category TTL for landing
-  } catch (e) {}
-  try {
-    nextCache.cacheTag?.("home", "landing", GLOBAL_SALT);
-  } catch (e) {}
+  cacheLife("category"); // Use consistent category TTL for landing
+  cacheTag("home", "landing", GLOBAL_SALT);
   const countryConfig = await getCountryByCode(country);
   const countryCode = countryConfig?.code || country;
 

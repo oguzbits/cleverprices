@@ -1,4 +1,4 @@
-import * as nextCache from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { getCategoryBySlug } from "../categories";
 import { type Product } from "../product-definitions";
 import {
@@ -40,12 +40,8 @@ async function getCachedBestDeals(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("category");
-  } catch (e) {}
-  try {
-    nextCache.cacheTag?.("products", "deals", _version);
-  } catch (e) {}
+  cacheLife("category");
+  cacheTag("products", "deals", _version);
   const [_salt] = [_version];
   return await getBestDealsSync(limit, countryCode, condition);
 }
@@ -57,12 +53,8 @@ async function getCachedNewArrivals(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("category");
-  } catch (e) {}
-  try {
-    nextCache.cacheTag?.("products", "arrivals", _version);
-  } catch (e) {}
+  cacheLife("category");
+  cacheTag("products", "arrivals", _version);
   const [_salt] = [_version];
   return await getNewArrivalsSync(limit, countryCode, condition);
 }
@@ -73,12 +65,8 @@ async function getCachedDiverseMostPopular(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("category");
-  } catch (e) {}
-  try {
-    nextCache.cacheTag?.("products", "popular", _version);
-  } catch (e) {}
+  cacheLife("category");
+  cacheTag("products", "popular", _version);
   const [_salt] = [_version];
   return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
@@ -89,9 +77,8 @@ async function getCachedProductBySlug(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("product");
-  } catch (e) {}
+  cacheLife("product");
+  cacheTag("products", _version);
   const [_salt] = [_version];
   return await getProductBySlugSync(slug, includeHistory);
 }
@@ -101,9 +88,8 @@ async function getCachedProductById(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("product");
-  } catch (e) {}
+  cacheLife("product");
+  cacheTag("products", _version);
   const [_salt] = [_version];
   return await getProductByIdSync(id);
 }
@@ -115,9 +101,8 @@ async function getCachedProductVariantsInternal(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("product");
-  } catch (e) {}
+  cacheLife("product");
+  cacheTag("products", _version);
   const [_salt] = [_version];
   return await getProductVariantsSync(
     { parentAsin } as Product,
@@ -135,9 +120,7 @@ async function getCachedSimilarProducts(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("product");
-  } catch (e) {}
+  cacheLife("product");
   const [_salt] = [_version];
   // We call the sync version directly to avoid double wrapping
   return await getSimilarProductsSync(
@@ -156,9 +139,7 @@ async function getCachedProductSlugByAsinSuffix(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("category"); // Redirects can be cached for a long time
-  } catch (e) {}
+  cacheLife("category"); // Redirects can be cached for a long time
   const [_salt] = [_version];
   return await findProductSlugByAsinSuffixSync(oldSlug);
 }
@@ -168,9 +149,7 @@ async function getCachedProductByParentAsinSuffix(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("category");
-  } catch (e) {}
+  cacheLife("category");
   const [_salt] = [_version];
   return await findProductByParentAsinSuffixSync(slug);
 }
@@ -181,9 +160,7 @@ async function getCachedProductBySyntheticId(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("product");
-  } catch (e) {}
+  cacheLife("product");
   const [_salt] = [_version];
   // Safety: Prevent infinite recursion if canonical resolution loops
   if (depth > 5) {
@@ -195,12 +172,8 @@ async function getCachedProductBySyntheticId(
 
 async function getCachedNonEmptyCategorySlugs(_version: string = GLOBAL_SALT) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("category");
-  } catch (e) {}
-  try {
-    nextCache.cacheTag?.("category", "category-slugs", _version);
-  } catch (e) {}
+  cacheLife("category");
+  cacheTag("category", "category-slugs", _version);
   const [_salt] = [_version];
   return getNonEmptyCategorySlugsSync();
 }
@@ -223,20 +196,16 @@ async function getCachedProductSlugs(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("product");
-  } catch (e) {}
+  cacheLife("product");
   const [_salt] = [_version];
-  try {
-    nextCache.cacheTag?.("sitemap-slugs", _salt);
-  } catch (e) {}
+  cacheTag("sitemap-slugs", _salt);
   return getAllProductSlugsSync(limit, includeVariants);
 }
 
 /**
  * Cache Salt: Bump this to force a global flush of ALL product/sitemap metadata.
  */
-export const GLOBAL_SALT = "v241";
+export const GLOBAL_SALT = "v242";
 console.log(`[BOOT-INTERNAL] Active Salt: ${GLOBAL_SALT}`);
 
 export async function getAllProductSlugs(
@@ -246,12 +215,8 @@ export async function getAllProductSlugs(
 ): Promise<any[]> {
   const cachedFetch = async (v: boolean, f: boolean, salt: string) => {
     "use cache";
-    try {
-      nextCache.cacheLife?.("static");
-    } catch (e) {}
-    try {
-      nextCache.cacheTag?.("sitemap-slugs", salt);
-    } catch (e) {}
+    cacheLife("static");
+    cacheTag("sitemap-slugs", salt);
     // Bind the salt to the cache key
     const [_s] = [salt];
     return getAllProductSlugsSync(undefined, v, f);
@@ -357,13 +322,9 @@ export async function getPDPRenderData(
   _version: string = GLOBAL_SALT,
 ) {
   "use cache";
-  try {
-    nextCache.cacheLife?.("product");
-  } catch (e) {}
+  cacheLife("product");
   const [_salt] = [_version];
-  try {
-    nextCache.cacheTag?.("pdp-" + _version, "pdp-" + slug, _salt);
-  } catch (e) {}
+  cacheTag("pdp-" + _version, "pdp-" + slug, _salt);
   const _v = _version;
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
@@ -396,7 +357,7 @@ export async function getPDPRenderData(
         const hubModelKey = (hubIden.modelTitle || "")
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "");
-        const variants = rawVariants.filter((v) => {
+        const variants = rawVariants.filter((v: Product) => {
           const vIdx = getProductIdentity(v as any);
           return (
             (vIdx.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") ===

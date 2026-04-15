@@ -1,4 +1,4 @@
-import * as nextCache from "next/cache";
+import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 import { GLOBAL_SALT } from "@/lib/server/cached-products";
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     console.log(`[ADMIN-PURGE] Revalidating tags:`, targetTags);
     
     for (const tag of targetTags) {
-      nextCache.revalidateTag(tag, "default");
+      revalidateTag(tag, "");
     }
 
     return NextResponse.json({ 

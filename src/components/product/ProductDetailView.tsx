@@ -403,7 +403,7 @@ export async function ProductDetailView({
                 </Link>
               </div>
               <div className="divide-y divide-zinc-100 rounded-sm border border-zinc-200 bg-white shadow-sm">
-                {similarProducts.slice(0, 3).map((p) => (
+                {similarProducts.slice(0, 3).map((p: Product) => (
                   <Link
                     key={p.slug}
                     href={`/p/${p.slug}`}
