@@ -16,7 +16,7 @@ export class MotherboardStrategy implements IdentityStrategy {
     if (!specModel && !chipset) return null;
 
     // We want to reconstruct a clean identity: Brand + Model
-    let model = specModel || "";
+    const model = specModel || "";
 
     if (
       model &&

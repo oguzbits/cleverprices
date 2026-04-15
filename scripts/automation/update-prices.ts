@@ -233,7 +233,7 @@ async function updatePrices(country: CountryCode): Promise<void> {
 
             // Calculate price per unit (Price/TB, Price/GB, etc.)
             // TODO: Implement thorough population plan per category
-            let pricePerUnit: number | null = null;
+            const pricePerUnit: number | null = null;
             /*
             if (
               bestPrice &&

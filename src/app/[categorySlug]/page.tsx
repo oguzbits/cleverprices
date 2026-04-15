@@ -75,7 +75,7 @@ export async function generateMetadata({
   if (isBuild) {
     return { title: `${category.name} | ${BRAND_DOMAIN}` };
   }
-  
+
   const filters = await searchParams;
   const canonicalUrl = `${SITE_URL}/${category.slug}`;
 
@@ -101,7 +101,9 @@ export async function generateMetadata({
 
   // 3. Check for specific filters (Crawl Waste Prevention)
   // If we have brand or other specific filters, we noindex them to focus budget on the main category.
-  const hasFilters = filters && (filters.brand || filters.technology || filters.condition || filters.sort);
+  const hasFilters =
+    filters &&
+    (filters.brand || filters.technology || filters.condition || filters.sort);
   if (hasFilters) {
     return {
       title: `${category.name} Angebote | ${BRAND_DOMAIN}`,
@@ -213,7 +215,7 @@ async function CategoryPageContent({
         <ParentCategoryViewLoader
           category={category}
           categorySlug={categorySlug}
-          children={activeChildren}
+          childCategories={activeChildren}
           nonEmptySlugs={nonEmptySlugs}
         />
       </Suspense>
@@ -235,12 +237,12 @@ async function CategoryPageContent({
 async function ParentCategoryViewLoader({
   category,
   categorySlug,
-  children,
+  childCategories,
   nonEmptySlugs,
 }: {
   category: Category;
   categorySlug: CategorySlug;
-  children: Category[];
+  childCategories: Category[];
   nonEmptySlugs: string[];
 }) {
   const { bestsellers, newProducts, deals } = await getParentCategoryData(
@@ -279,7 +281,7 @@ async function ParentCategoryViewLoader({
   ];
 
   // Filter popular filters in children to only show non-empty categories
-  const filteredChildren = children.map((child) => {
+  const filteredChildren = childCategories.map((child) => {
     const stripped = stripCategoryIcon(child);
     if (stripped.popularFilters) {
       stripped.popularFilters = stripped.popularFilters.filter((filter) => {

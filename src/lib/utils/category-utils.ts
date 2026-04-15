@@ -143,7 +143,8 @@ export function filterProducts(
         const selected = filters[group.field];
         if (Array.isArray(selected) && selected.length > 0) {
           const pValLower = String((p as any)[group.field] || "").toLowerCase();
-          if (!selected.some((s) => s.toLowerCase() === pValLower)) return false;
+          if (!selected.some((s) => s.toLowerCase() === pValLower))
+            return false;
         }
       }
     }

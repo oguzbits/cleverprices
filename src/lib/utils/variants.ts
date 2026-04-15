@@ -249,7 +249,7 @@ const UniversalStrategy: NormalizationStrategy = (key, value) => {
     ["size", "größe", "grösse", "bildschirmdiagonale", "display"].includes(k)
   ) {
     // Normalize units to "
-    let v = cleanValue
+    const v = cleanValue
       .replace(/\s*(?:Zoll|Inch|")/i, "")
       .trim()
       .replace(",", ".");

@@ -36,9 +36,24 @@ describe("Product Families Logic", () => {
 
     it("should pick by Sales Rank/ID among multiple 'New' items (Stability)", () => {
       const variants = [
-        createMockProduct({ id: 1, condition: "New", salesRank: 10, prices: { de: 200 } }),
-        createMockProduct({ id: 2, condition: "New", salesRank: 5, prices: { de: 250 } }), // Better rank wins despite price
-        createMockProduct({ id: 3, condition: "New", salesRank: 100, prices: { de: 150 } }),
+        createMockProduct({
+          id: 1,
+          condition: "New",
+          salesRank: 10,
+          prices: { de: 200 },
+        }),
+        createMockProduct({
+          id: 2,
+          condition: "New",
+          salesRank: 5,
+          prices: { de: 250 },
+        }), // Better rank wins despite price
+        createMockProduct({
+          id: 3,
+          condition: "New",
+          salesRank: 100,
+          prices: { de: 150 },
+        }),
       ];
 
       const result = getFamilyRepresentative(variants);
@@ -57,8 +72,18 @@ describe("Product Families Logic", () => {
 
     it("should fallback to best Rank/ID Overall if NO 'New' items exist", () => {
       const variants = [
-        createMockProduct({ id: 1, condition: "Renewed", salesRank: 10, prices: { de: 80 } }),
-        createMockProduct({ id: 2, condition: "Used", salesRank: 5, prices: { de: 60 } }), // Better rank wins
+        createMockProduct({
+          id: 1,
+          condition: "Renewed",
+          salesRank: 10,
+          prices: { de: 80 },
+        }),
+        createMockProduct({
+          id: 2,
+          condition: "Used",
+          salesRank: 5,
+          prices: { de: 60 },
+        }), // Better rank wins
       ];
 
       const result = getFamilyRepresentative(variants);

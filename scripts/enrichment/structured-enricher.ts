@@ -198,12 +198,14 @@ class StructuredEnricher {
             );
           }
         } else {
-          console.log(`❌ No significant structured data found. Marking as not_found.`);
+          console.log(
+            `❌ No significant structured data found. Marking as not_found.`,
+          );
           await db
             .update(products)
-            .set({ 
-              specificationsSource: "not_found", 
-              lastEnrichedAt: new Date() 
+            .set({
+              specificationsSource: "not_found",
+              lastEnrichedAt: new Date(),
             })
             .where(eq(products.id, product.id));
         }

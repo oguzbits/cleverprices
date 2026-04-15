@@ -47,11 +47,16 @@ const TIMEOUT = isProd ? 15000 : 30000;
  */
 async function waitForServer(url: string, maxWaitMs = 120000) {
   const start = Date.now();
-  console.log(`${COLORS.cyan}⌛ Waiting for server at ${url} to be ready...${COLORS.reset}`);
-  
+  console.log(
+    `${COLORS.cyan}⌛ Waiting for server at ${url} to be ready...${COLORS.reset}`,
+  );
+
   while (Date.now() - start < maxWaitMs) {
     try {
-      const res = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(2000) });
+      const res = await fetch(url, {
+        method: "HEAD",
+        signal: AbortSignal.timeout(2000),
+      });
       if (res.ok || res.status < 500) {
         console.log(`${COLORS.green}✅ Server is UP!${COLORS.reset}\n`);
         return true;
@@ -59,7 +64,7 @@ async function waitForServer(url: string, maxWaitMs = 120000) {
     } catch (e) {
       // Just wait
     }
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1000));
   }
   throw new Error(`Timeout waiting for server at ${url} after ${maxWaitMs}ms`);
 }
@@ -69,8 +74,13 @@ export async function validateSitemap() {
     ? "https://cleverprices.com/sitemap.xml"
     : args.find((a) => !a.startsWith("--")) || DEFAULT_SITEMAP;
 
-  const isLocalhost = targetSitemap.includes("localhost") || args.some(a => a.includes("localhost")) || !isProd;
-  const siteUrl = isLocalhost ? "http://localhost:3000" : "https://cleverprices.com";
+  const isLocalhost =
+    targetSitemap.includes("localhost") ||
+    args.some((a) => a.includes("localhost")) ||
+    !isProd;
+  const siteUrl = isLocalhost
+    ? "http://localhost:3000"
+    : "https://cleverprices.com";
 
   console.log(
     `${COLORS.cyan}🔍 Starting Audit: ${COLORS.reset}${targetSitemap}`,
@@ -98,40 +108,51 @@ export async function validateSitemap() {
   try {
     if (targetSitemap.endsWith(".xml")) {
       const fetchStart = Date.now();
-      console.log(`${COLORS.cyan}📡 Loading sitemap...${COLORS.reset} (Dev servers can take up to 2m)`);
+      console.log(
+        `${COLORS.cyan}📡 Loading sitemap...${COLORS.reset} (Dev servers can take up to 2m)`,
+      );
       const response = await fetch(targetSitemap, {
         signal: AbortSignal.timeout(120000), // 120s max for extreme cases
       });
       const fetchDuration = Date.now() - fetchStart;
-      
+
       if (!response.ok) {
         throw new Error(
           `Failed to fetch sitemap: ${response.status} ${response.statusText}`,
         );
       }
-      
+
       const xml = await response.text();
       urls = [...xml.matchAll(/<loc>(.*?)<\/loc>/g)].map((m) => m[1]);
-      
+
       const SITEMAP_LATENCY_THRESHOLD = isLocalhost ? 5000 : 2000; // 5s local, 2s prod
-      
+
       if (fetchDuration > SITEMAP_LATENCY_THRESHOLD) {
-        console.error(`\n${COLORS.red}🚨 PERFORMANCE REGRESSION DETECTED${COLORS.reset}`);
-        console.error(`${COLORS.red}Sitemap generation took ${fetchDuration}ms, which exceeds the threshold of ${SITEMAP_LATENCY_THRESHOLD}ms.${COLORS.reset}`);
-        console.error(`${COLORS.yellow}Action Required: Check if "fastMode" is enabled in getAllProductSlugs() calls within sitemap.ts.${COLORS.reset}\n`);
+        console.error(
+          `\n${COLORS.red}🚨 PERFORMANCE REGRESSION DETECTED${COLORS.reset}`,
+        );
+        console.error(
+          `${COLORS.red}Sitemap generation took ${fetchDuration}ms, which exceeds the threshold of ${SITEMAP_LATENCY_THRESHOLD}ms.${COLORS.reset}`,
+        );
+        console.error(
+          `${COLORS.yellow}Action Required: Check if "fastMode" is enabled in getAllProductSlugs() calls within sitemap.ts.${COLORS.reset}\n`,
+        );
         process.exit(1);
       } else {
-        console.log(`${COLORS.green}✅ Sitemap generated in ${fetchDuration}ms (Benchmark Passed)${COLORS.reset}\n`);
+        console.log(
+          `${COLORS.green}✅ Sitemap generated in ${fetchDuration}ms (Benchmark Passed)${COLORS.reset}\n`,
+        );
       }
-    }
- else {
+    } else {
       // Direct URL(s) mode
       urls = args.filter((a) => !a.startsWith("--"));
       if (urls.length === 0) urls = [targetSitemap];
     }
 
     // ⏯️ RESUME LOGIC
-    const resumeIndexArg = args.find(a => a.startsWith("--resume="))?.split("=")[1];
+    const resumeIndexArg = args
+      .find((a) => a.startsWith("--resume="))
+      ?.split("=")[1];
     const resumeIndex = resumeIndexArg ? parseInt(resumeIndexArg) : 0;
 
     if (isLocalhost) {
@@ -181,106 +202,135 @@ export async function validateSitemap() {
     let consecutiveErrors = 0;
 
     console.log(
-      `📡 Auditing ${COLORS.cyan}${queue.length}${COLORS.reset} URLs (from index ${resumeIndex}) with concurrency ${CONCURRENCY}...\n`
+      `📡 Auditing ${COLORS.cyan}${queue.length}${COLORS.reset} URLs (from index ${resumeIndex}) with concurrency ${CONCURRENCY}...\n`,
     );
 
-    const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async (_, i) => {
-      while (true) {
-        const urlIndex = currentIndex++;
-        if (urlIndex >= queue.length) break;
+    const workers = Array.from(
+      { length: Math.min(CONCURRENCY, queue.length) },
+      async (_, i) => {
+        while (true) {
+          const urlIndex = currentIndex++;
+          if (urlIndex >= queue.length) break;
 
-        const url = queue[urlIndex];
-        const displayIndex = resumeIndex + urlIndex + 1;
+          const url = queue[urlIndex];
+          const displayIndex = resumeIndex + urlIndex + 1;
 
-        // Long-running watch to detect hangs
-        const taskTimer = setTimeout(() => {
-          console.log(`\n${COLORS.yellow}⚠️ Still waiting for URL ${displayIndex}/${totalUrlsCount}: ${url}${COLORS.reset}`);
-        }, 30000); // 30s before warning
+          // Long-running watch to detect hangs
+          const taskTimer = setTimeout(() => {
+            console.log(
+              `\n${COLORS.yellow}⚠️ Still waiting for URL ${displayIndex}/${totalUrlsCount}: ${url}${COLORS.reset}`,
+            );
+          }, 30000); // 30s before warning
 
-        // Safety: Stop if too many consecutive connection errors
-        if (consecutiveErrors > 10) {
-          console.error(`\n${COLORS.red}🛑 SEVERE: 10+ consecutive connection errors. Is the server down? Terminating.${COLORS.reset}`);
-          process.exit(1);
-        }
+          // Safety: Stop if too many consecutive connection errors
+          if (consecutiveErrors > 10) {
+            console.error(
+              `\n${COLORS.red}🛑 SEVERE: 10+ consecutive connection errors. Is the server down? Terminating.${COLORS.reset}`,
+            );
+            process.exit(1);
+          }
 
-        try {
-          const res = await auditUrl(url, isFastMode);
-          clearTimeout(taskTimer);
+          try {
+            const res = await auditUrl(url, isFastMode);
+            clearTimeout(taskTimer);
 
-          if (DELAY > 0) await new Promise(r => setTimeout(r, DELAY));
-          processed++;
+            if (DELAY > 0) await new Promise((r) => setTimeout(r, DELAY));
+            processed++;
 
-          if (res.status === 200) {
-            consecutiveErrors = 0;
-            if (res.isSoft404) {
-              results.soft404++;
-              details.push(`${COLORS.yellow}[SOFT 404]${COLORS.reset} ${url}`);
-            } else {
-              results.ok++;
-              if (!isFastMode && res.metadata) {
-                if (res.metadata.canonical) {
-                  try {
-                    const canonicalPath = decodeURIComponent(new URL(res.metadata.canonical).pathname).trim().replace(/\/$/, "");
-                    const urlPath = decodeURIComponent(new URL(url).pathname).trim().replace(/\/$/, "");
-                    if (canonicalPath !== urlPath) {
+            if (res.status === 200) {
+              consecutiveErrors = 0;
+              if (res.isSoft404) {
+                results.soft404++;
+                details.push(
+                  `${COLORS.yellow}[SOFT 404]${COLORS.reset} ${url}`,
+                );
+              } else {
+                results.ok++;
+                if (!isFastMode && res.metadata) {
+                  if (res.metadata.canonical) {
+                    try {
+                      const canonicalPath = decodeURIComponent(
+                        new URL(res.metadata.canonical).pathname,
+                      )
+                        .trim()
+                        .replace(/\/$/, "");
+                      const urlPath = decodeURIComponent(new URL(url).pathname)
+                        .trim()
+                        .replace(/\/$/, "");
+                      if (canonicalPath !== urlPath) {
+                        results.mismatch++;
+                        // 🔍 DETAILED BYTE-BY-BYTE DIAGNOSIS
+                        const diagnosis = `      Byte Comparison:
+      Exp: ${Array.from(urlPath)
+        .map((c) => c.charCodeAt(0))
+        .join(" ")}
+      Got: ${Array.from(canonicalPath)
+        .map((c) => c.charCodeAt(0))
+        .join(" ")}`;
+
+                        details.push(
+                          `${COLORS.red}[CANONICAL MISMATCH]${COLORS.reset} ${url}\n` +
+                            `   Index:         ${displayIndex}\n` +
+                            `   Expected Path: ${JSON.stringify(urlPath)}\n` +
+                            `   Found Path:    ${JSON.stringify(canonicalPath)}\n` +
+                            `   Raw Canonical: ${JSON.stringify(res.metadata.canonical)}\n` +
+                            diagnosis,
+                        );
+                      }
+                    } catch (e) {
                       results.mismatch++;
-                      // 🔍 DETAILED BYTE-BY-BYTE DIAGNOSIS
-                      const diagnosis = `      Byte Comparison:
-      Exp: ${Array.from(urlPath).map(c => c.charCodeAt(0)).join(" ")}
-      Got: ${Array.from(canonicalPath).map(c => c.charCodeAt(0)).join(" ")}`;
-                      
                       details.push(
-                        `${COLORS.red}[CANONICAL MISMATCH]${COLORS.reset} ${url}\n` +
-                        `   Index:         ${displayIndex}\n` +
-                        `   Expected Path: ${JSON.stringify(urlPath)}\n` +
-                        `   Found Path:    ${JSON.stringify(canonicalPath)}\n` +
-                        `   Raw Canonical: ${JSON.stringify(res.metadata.canonical)}\n` +
-                        diagnosis
+                        `${COLORS.red}[CANONICAL PARSE ERROR]${COLORS.reset} ${url}`,
                       );
                     }
-
-                  } catch (e) {
-                    results.mismatch++;
-                    details.push(`${COLORS.red}[CANONICAL PARSE ERROR]${COLORS.reset} ${url}`);
                   }
                 }
               }
+            } else if (res.status >= 300 && res.status < 400) {
+              results.redirect++;
+              details.push(
+                `${COLORS.yellow}[REDIRECT ${res.status}]${COLORS.reset} ${url}`,
+              );
+            } else if (res.status === 404) {
+              results.notFound++;
+              details.push(`${COLORS.red}[404]${COLORS.reset} ${url}`);
+            } else {
+              results.serverError++;
+              consecutiveErrors++;
+              details.push(
+                `${COLORS.red}[ERROR ${res.status}]${COLORS.reset} ${url}`,
+              );
             }
-          } else if (res.status >= 300 && res.status < 400) {
-            results.redirect++;
-            details.push(`${COLORS.yellow}[REDIRECT ${res.status}]${COLORS.reset} ${url}`);
-          } else if (res.status === 404) {
-            results.notFound++;
-            details.push(`${COLORS.red}[404]${COLORS.reset} ${url}`);
-          } else {
-            results.serverError++;
+          } catch (err: any) {
+            clearTimeout(taskTimer);
+            results.timeout++;
             consecutiveErrors++;
-            details.push(`${COLORS.red}[ERROR ${res.status}]${COLORS.reset} ${url}`);
+            details.push(
+              `${COLORS.magenta}[RUNTIME ERROR]${COLORS.reset} ${url}: ${err?.message || "Unknown error"}`,
+            );
           }
-        } catch (err: any) {
-          clearTimeout(taskTimer);
-          results.timeout++;
-          consecutiveErrors++;
-          details.push(`${COLORS.magenta}[RUNTIME ERROR]${COLORS.reset} ${url}: ${err?.message || "Unknown error"}`);
-        }
 
-
-        // Periodic Progress Reporting
-        if (processed % 10 === 0 || processed === queue.length) {
-          const rps = (processed / ((Date.now() - startTime) / 1000)).toFixed(1);
-          const percent = Math.round((processed / queue.length) * 100);
-          process.stdout.write(
-            `\rProgress: ${processed}/${queue.length} (${percent}%) | ${rps} URLs/sec | Current: ${displayIndex}/${urls.length}`
-          );
+          // Periodic Progress Reporting
+          if (processed % 10 === 0 || processed === queue.length) {
+            const rps = (processed / ((Date.now() - startTime) / 1000)).toFixed(
+              1,
+            );
+            const percent = Math.round((processed / queue.length) * 100);
+            process.stdout.write(
+              `\rProgress: ${processed}/${queue.length} (${percent}%) | ${rps} URLs/sec | Current: ${displayIndex}/${urls.length}`,
+            );
+          }
         }
-      }
-    });
+      },
+    );
 
     // 🚀 WATCHDOG: Force exit if no progress for 5 minutes (Hub pages can be slow on local)
     let lastProcessed = 0;
     const watchdog = setInterval(() => {
       if (processed === lastProcessed && processed < queue.length) {
-        console.error(`\n${COLORS.red}🛑 WATCHDOG: No progress for 300s! Stalling at ${processed}/${queue.length}. Terminating.${COLORS.reset}`);
+        console.error(
+          `\n${COLORS.red}🛑 WATCHDOG: No progress for 300s! Stalling at ${processed}/${queue.length}. Terminating.${COLORS.reset}`,
+        );
         process.exit(1);
       }
       lastProcessed = processed;

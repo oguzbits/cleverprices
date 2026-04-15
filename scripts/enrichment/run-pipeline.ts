@@ -121,7 +121,7 @@ async function findIdsForBatch(
     fs.createReadStream(INDEX_CACHE_FILE).pipe(gunzip);
 
     let buffer = "";
-    let processedCount = 0;
+    const processedCount = 0;
     let totalBytes = 0;
     let resolved = false;
 

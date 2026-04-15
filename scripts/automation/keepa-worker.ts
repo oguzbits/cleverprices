@@ -22,7 +22,7 @@ async function main() {
   const args = process.argv.slice(2);
   let country: CountryCode = "de";
   let isContinuous = false;
-  let shouldSync = true;
+  const shouldSync = true;
 
   // Parsing arguments
   let silent = false;
@@ -215,7 +215,7 @@ async function main() {
 }
 
 // Global notify placeholder
-let globalNotify = (msg: string) => {};
+const globalNotify = (msg: string) => {};
 
 import * as Sentry from "@sentry/nextjs";
 

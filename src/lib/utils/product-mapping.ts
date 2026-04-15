@@ -131,7 +131,7 @@ export function mapDbProduct(
 
   // --- TECH DATA REPAIR LAYER ---
   // We use identitySpecs for repairs to ensure slugs are deterministic even in "lite" mode.
-  let rawSpecs = stripHeavyData ? identitySpecs : { ...parsedSpecs };
+  const rawSpecs = stripHeavyData ? identitySpecs : { ...parsedSpecs };
 
   if (
     p.category === "smartphones" ||
@@ -220,7 +220,7 @@ export function mapDbProduct(
 
   let socket = rawSpecs.Socket || rawSpecs["Socket-Typ"];
   let cores = rawSpecs.Cores || rawSpecs.Kerne;
-  let releaseDate =
+  const releaseDate =
     rawSpecs["Release Date"] ||
     rawSpecs["Erscheinungsdatum"] ||
     rawSpecs["Markteinführung"] ||

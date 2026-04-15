@@ -56,7 +56,7 @@ for (const category of STORAGE_CATEGORIES) {
         continue;
       }
 
-      let capacity = parseFloat(match[1]);
+      const capacity = parseFloat(match[1]);
       let unit = match[2].toUpperCase();
 
       // Normalize unit names (To = TB in French, Go = GB in French, G = GB)
@@ -117,8 +117,8 @@ for (const category of STORAGE_CATEGORIES) {
       continue;
     }
 
-    let capacity = parseFloat(match[1]);
-    let unit = match[2].toUpperCase();
+    const capacity = parseFloat(match[1]);
+    const unit = match[2].toUpperCase();
     let normalizedCapacity = unit === "TB" ? capacity * 1000 : capacity;
 
     // Snapping logic

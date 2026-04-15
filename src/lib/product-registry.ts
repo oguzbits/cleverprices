@@ -146,7 +146,9 @@ async function fetchCanonicalIdInternal(
       specificationsSource: products.specificationsSource,
     })
     .from(products)
-    .where(or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)))
+    .where(
+      or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)),
+    )
     .orderBy(asc(products.id));
 
   if (allVariants.length === 0) return currentId!;
@@ -198,7 +200,9 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
         specificationsSource: products.specificationsSource,
       })
       .from(products)
-      .where(or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)))
+      .where(
+        or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)),
+      )
       .orderBy(asc(products.id));
 
     if (allVariants.length === 0) return currentId;
@@ -401,7 +405,7 @@ export async function getAllProductSlugs(
             // Specs Guard: Reduce noise by skipping completely empty spec buckets at SQL level
             or(
               isNotNull(products.specifications),
-              isNotNull(products.officialSpecifications)
+              isNotNull(products.officialSpecifications),
             ),
           ),
         )
@@ -413,7 +417,7 @@ export async function getAllProductSlugs(
       const parentMap = new Map<string, any>();
 
       // Identify unique families and their representatives first
-      const familyRepresentativeMap = new Map<string, typeof rawResults[0]>();
+      const familyRepresentativeMap = new Map<string, (typeof rawResults)[0]>();
       for (const r of rawResults) {
         const actingParentAsin = r.parentAsin || r.asin;
         const familyKey = actingParentAsin || r.id.toString();
@@ -488,7 +492,11 @@ export async function getAllProductSlugs(
           } else {
             // If already in map, check if THIS variant is quality and promote the hub
             const existing = parentMap.get(familyKey);
-            if (existing !== undefined && !existing.hasQualityVariant && isQualityVariant) {
+            if (
+              existing !== undefined &&
+              !existing.hasQualityVariant &&
+              isQualityVariant
+            ) {
               existing.hasQualityVariant = true;
             }
           }

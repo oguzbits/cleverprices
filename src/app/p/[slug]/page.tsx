@@ -139,7 +139,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   try {
     const renderData = await getPDPRenderData(slug);
-    let isParentViewMode = renderData?.isParentView || false;
+    const isParentViewMode = renderData?.isParentView || false;
 
     // Handle Metadata redirects (Critical for SEO: redirects in metadata set the real 3xx status code)
     if (renderData?.redirect) {
@@ -185,18 +185,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const hasImage = !!product.image && !product.image.includes("placeholder");
 
     // Guard against "Sparse Specs" (e.g. only Brand)
-    const specs = product.specifications 
-      ? (typeof product.specifications === 'string' ? JSON.parse(product.specifications) : product.specifications)
+    const specs = product.specifications
+      ? typeof product.specifications === "string"
+        ? JSON.parse(product.specifications)
+        : product.specifications
       : {};
     const specCount = Object.keys(specs).length;
 
     // Define what constitutes a "meaningful" title for SEO quality
-    const hasMeaningfulTitle = !!product.title && 
-      product.title.length > 4 && 
+    const hasMeaningfulTitle =
+      !!product.title &&
+      product.title.length > 4 &&
       product.title.toLowerCase() !== product.asin?.toLowerCase();
-    
+
     // Quality check: Must have (Price OR High Quality Specs) AND Meaningful Title AND Image
-    const isQualityEnough = (hasPrice || product.officialSpecifications || specCount > 3) && hasMeaningfulTitle && hasImage;
+    const isQualityEnough =
+      (hasPrice || product.officialSpecifications || specCount > 3) &&
+      hasMeaningfulTitle &&
+      hasImage;
 
     if (!isQualityEnough) {
       notFound();
@@ -205,17 +211,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const siblings = isParentView ? renderData?.variants || [] : [];
     const identity = getProductIdentity(product);
 
-    const displayTitle = isParentView ? identity.modelTitle : identity.displayTitle;
+    const displayTitle = isParentView
+      ? identity.modelTitle
+      : identity.displayTitle;
 
     // SEO Title: Focused on "Comparison" and "Affordability"
     // Pattern: [Product Name] Günstig Kaufen | Preisvergleich | CleverPrices
     const BRAND_SUFFIX = ` | ${BRAND_NAME}`;
     const ACTION_SUFFIX = " Günstig Kaufen | Preisvergleich";
     const MAX_LENGTH = 65;
-    
+
     // We truncate the title to ensure the Action + Brand are visible
-    const availableForTitle = MAX_LENGTH - (ACTION_SUFFIX.length + BRAND_SUFFIX.length);
-    const title = truncateTitle(displayTitle, availableForTitle) + ACTION_SUFFIX + BRAND_SUFFIX;
+    const availableForTitle =
+      MAX_LENGTH - (ACTION_SUFFIX.length + BRAND_SUFFIX.length);
+    const title =
+      truncateTitle(displayTitle, availableForTitle) +
+      ACTION_SUFFIX +
+      BRAND_SUFFIX;
 
     // German description with Action Verb + value proposition (Max ~160 chars)
     // Try enriched description first
@@ -271,7 +283,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         "Deutschland",
       ].filter(Boolean) as string[],
     };
-  } catch (error) {
+  } catch (error: any) {
+    if (
+      error?.digest?.startsWith("NEXT_") ||
+      error?.digest === "HANGING_PROMISE_REJECTION"
+    ) {
+      throw error;
+    }
     console.error(`[Metadata Error] Product ${slug}:`, error);
     return { title: "Produkt Details - CleverPrices" };
   }
@@ -300,7 +318,9 @@ async function ProductPageContent({
 }) {
   "use cache";
   cacheLife("product");
-  console.log(`[DEPLOY-CHECK] Rendering PDP for ${slug} using SALT: ${GLOBAL_SALT}`);
+  console.log(
+    `[DEPLOY-CHECK] Rendering PDP for ${slug} using SALT: ${GLOBAL_SALT}`,
+  );
   const [_v] = [_version];
   const countryCode = DEFAULT_COUNTRY;
 
@@ -327,7 +347,7 @@ async function ProductPageContent({
         permanent: !!data.isPermanent,
       };
     } else {
-      let product = data?.product;
+      const product = data?.product;
       const parentViewMode = data?.isParentView || false;
 
       if (!product) {
@@ -345,11 +365,14 @@ async function ProductPageContent({
           (product.usedPrices &&
             Object.values(product.usedPrices).some((p) => Number(p) > 0));
 
-        const hasImage = !!product.image && !product.image.includes("placeholder");
+        const hasImage =
+          !!product.image && !product.image.includes("placeholder");
 
         // Guard against "Sparse Specs" (e.g. only Brand)
-        const specs = product.specifications 
-          ? (typeof product.specifications === 'string' ? JSON.parse(product.specifications) : product.specifications)
+        const specs = product.specifications
+          ? typeof product.specifications === "string"
+            ? JSON.parse(product.specifications)
+            : product.specifications
           : {};
         const specCount = Object.keys(specs).length;
 
@@ -359,7 +382,10 @@ async function ProductPageContent({
           product.title !== product.asin;
 
         // Unified Quality Guard
-        const isQualityEnough = (hasPrice || product.officialSpecifications || specCount > 3) && hasMeaningfulTitle && hasImage;
+        const isQualityEnough =
+          (hasPrice || product.officialSpecifications || specCount > 3) &&
+          hasMeaningfulTitle &&
+          hasImage;
 
         if (!isQualityEnough) {
           logPDPPerformance(slug, startTime);

@@ -154,7 +154,7 @@ async function enrich() {
 
             // Calculate price per unit
             // TODO: Implement thorough population plan per category
-            let pricePerUnit: number | null = null;
+            const pricePerUnit: number | null = null;
             /*
             const currentPrice = keepaPriceToDecimal(ep.stats?.current?.[1]); // Use NEW price as fallback for current
             if (

@@ -57,8 +57,8 @@ export function calculateProductMetrics(
 ): Partial<Product> {
   const price =
     overridePrice !== undefined ? overridePrice : p.prices?.["de"] || 0;
-  let category = p.category;
-  let title = p.title;
+  const category = p.category;
+  const title = p.title;
   let capacity = p.capacity;
   let capacityUnit = p.capacityUnit;
 

@@ -21,7 +21,7 @@ export class MonitorStrategy implements IdentityStrategy {
 
     if (!modelName && title) {
       const tokens = title.split(/[\s,]+/);
-      let modelParts: string[] = [];
+      const modelParts: string[] = [];
       const franchises = [
         "ultrasharp",
         "viewfinity",
@@ -60,7 +60,7 @@ export class MonitorStrategy implements IdentityStrategy {
           if (!modelIdentified) {
             modelParts.push(token);
             modelIdentified = true;
-          } 
+          }
           // If we already have a model (e.g. S70D), only take subsequent ones if they are very long (MPNs)
           else if (token.length >= 6) {
             modelParts.push(token);
@@ -90,14 +90,17 @@ export class MonitorStrategy implements IdentityStrategy {
     const refresh = specs["Wiederholfrequenz"] || specs["Refresh Rate"];
 
     // Clean model Name
-    let cleanModel = (modelName || "")
+    const cleanModel = (modelName || "")
       .replace(new RegExp(brand, "gi"), "")
       .trim();
 
     // Size Normalization (even from title if missing in specs)
     let normSize = "";
     if (size) {
-      normSize = String(size).replace(/\s*(Zoll|Inch|")\s*/gi, "").trim() + '"';
+      normSize =
+        String(size)
+          .replace(/\s*(Zoll|Inch|")\s*/gi, "")
+          .trim() + '"';
     } else {
       const sizeMatch = title.match(/(\d{2})\s*(?:"|Zoll|Inch)/i);
       if (sizeMatch) normSize = sizeMatch[1] + '"';

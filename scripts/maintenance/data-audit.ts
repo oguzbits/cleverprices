@@ -38,7 +38,7 @@ async function runAudit(category: string) {
   }
 
   let totalHealth = 0;
-  let anomalies: any[] = [];
+  const anomalies: any[] = [];
   let passing = 0;
 
   for (const p of allProducts) {

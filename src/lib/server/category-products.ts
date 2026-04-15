@@ -486,7 +486,9 @@ export async function getLeanCategoryProducts(
       if (virtual?.forcedFilters) {
         const matchesAll = Object.entries(virtual.forcedFilters).every(
           ([field, allowedValues]) => {
-            const valLower = String((localized as any)[field] || "").toLowerCase();
+            const valLower = String(
+              (localized as any)[field] || "",
+            ).toLowerCase();
             return allowedValues.some((v) => v.toLowerCase() === valLower);
           },
         );
@@ -719,7 +721,9 @@ export async function getCategoryProducts(
   const filterSummary = {
     socket: new Set((filters.socket || []).map((s: string) => s.toLowerCase())),
     cores: new Set((filters.cores || []).map((c: string) => c.toLowerCase())),
-    condition: new Set((filters.condition || []).map((c: string) => c.toLowerCase())),
+    condition: new Set(
+      (filters.condition || []).map((c: string) => c.toLowerCase()),
+    ),
     brand: new Set((filters.brand || []).map((b: string) => b.toLowerCase())),
   };
 

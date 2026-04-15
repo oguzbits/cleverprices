@@ -16,7 +16,7 @@ async function bulkAudit(category: string) {
   console.log(`📋 Found ${products.length} products to audit.`);
 
   let untrustedCount = 0;
-  let violationStats: Record<string, number> = {};
+  const violationStats: Record<string, number> = {};
 
   for (const p of products) {
     const result = await auditSourceIntegrity(p.id);

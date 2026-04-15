@@ -174,7 +174,7 @@ export function sanitizeSpecs(
   const sanitized: Record<string, unknown> = {};
 
   Object.entries(specs).forEach(([k, v]) => {
-    let cleanKey = decodeEntities(k);
+    const cleanKey = decodeEntities(k);
 
     if (typeof v === "string") {
       let decodedVal = decodeEntities(v);

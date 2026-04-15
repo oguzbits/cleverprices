@@ -88,7 +88,7 @@ async function forceUpdateAsin(asin: string, country: string = "de") {
   const now = new Date();
   const todayStr = now.toISOString().split("T")[0];
 
-  let historyObj = parseHistoryBlob(priceRecord?.historyJson);
+  const historyObj = parseHistoryBlob(priceRecord?.historyJson);
   if (bestPrice) {
     historyObj[todayStr] = Math.round(bestPrice * 100);
   }

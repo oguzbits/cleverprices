@@ -450,7 +450,7 @@ export function guardIntegrity(
         canonicalKey = "Dimensions_CM3";
     }
 
-    let stringVal = String(val).trim();
+    const stringVal = String(val).trim();
 
     // 1.5 Marketing Junk Filter (Emergency Fix)
     const lowerVal = stringVal.toLowerCase();

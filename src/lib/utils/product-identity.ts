@@ -1828,7 +1828,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   let variantTokens: string[] = [];
   const processedTokens = new Set<string>();
   let oneFeatureToken: string | null = null; // Track color or primary trait for high-variance products
-  let bestFeatureKey: string | null = null;
+  const bestFeatureKey: string | null = null;
 
   // Order of preference for "Best Feature": Color  // Add traits from variantMap in priority order
 

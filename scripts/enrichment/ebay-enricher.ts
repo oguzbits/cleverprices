@@ -69,8 +69,8 @@ export class EbayEnricher {
     const token = await this.getAccessToken();
 
     // 1. Try EXACT GTIN
-    let url = `${this.baseUrl}/item_summary/search?q=${gtin}&limit=5&fieldgroups=ASPECTS,EXTENDED,MATCHING_ITEMS`;
-    let response = await fetch(url, {
+    const url = `${this.baseUrl}/item_summary/search?q=${gtin}&limit=5&fieldgroups=ASPECTS,EXTENDED,MATCHING_ITEMS`;
+    const response = await fetch(url, {
       headers: {
         Authorization: `Bearer ${token}`,
         "X-EBAY-C-MARKETPLACE-ID": market,
@@ -79,8 +79,8 @@ export class EbayEnricher {
 
     if (response.status === 429) throw new RateLimitError();
 
-    let data = await response.json();
-    let best = await this.getBestItemFromSummaries(data.itemSummaries, market);
+    const data = await response.json();
+    const best = await this.getBestItemFromSummaries(data.itemSummaries, market);
     if (best) return { ...best, matchType: "gtin" };
 
     // 2. Try MPN

@@ -22,7 +22,7 @@ export class CpuStrategy implements IdentityStrategy {
     if (!modelName) return null;
 
     // Clean model: Avoid brand duplication
-    let cleanModel = String(modelName)
+    const cleanModel = String(modelName)
       .replace(new RegExp(brand, "gi"), "")
       .trim();
 

@@ -155,10 +155,7 @@ export async function getProductsByCategory(
         .select(liteProductColumns)
         .from(products)
         .where(
-          and(
-            eq(products.category, category),
-            isNotNull(products.imageUrl),
-          )
+          and(eq(products.category, category), isNotNull(products.imageUrl)),
         );
 
       if (limit) {
@@ -199,10 +196,7 @@ export async function getProductsByCategory(
         .select(liteProductColumns)
         .from(products)
         .where(
-          and(
-            eq(products.category, category),
-            isNotNull(products.imageUrl),
-          )
+          and(eq(products.category, category), isNotNull(products.imageUrl)),
         );
 
       if (limit) {
@@ -253,10 +247,7 @@ export async function getRawProductsByCategory(
         .select(filteringProductColumns)
         .from(products)
         .where(
-          and(
-            eq(products.category, category),
-            isNotNull(products.imageUrl),
-          )
+          and(eq(products.category, category), isNotNull(products.imageUrl)),
         )
         .orderBy(asc(products.salesRank))
         .limit(limit);
@@ -308,10 +299,7 @@ export async function getRawProductsByCategory(
         .select(filteringProductColumns)
         .from(products)
         .where(
-          and(
-            eq(products.category, category),
-            isNotNull(products.imageUrl),
-          )
+          and(eq(products.category, category), isNotNull(products.imageUrl)),
         )
         .orderBy(asc(products.salesRank))
         .limit(limit);

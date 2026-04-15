@@ -53,7 +53,7 @@ export async function IdealoProductOffers({
     }
 
     // Hub Mode: Show one offer per unique variation (color, size, etc.)
-    const uniqueVariations = new Map<string, typeof productsToShow[0]>();
+    const uniqueVariations = new Map<string, (typeof productsToShow)[0]>();
 
     familyMembers.forEach((m) => {
       const p = m.prices[countryCode];
@@ -66,25 +66,39 @@ export async function IdealoProductOffers({
         if (cond === "renewed" && p && p > 0) {
           const current = uniqueVariations.get(variantKey);
           if (!current || p < (current.price || Infinity)) {
-            uniqueVariations.set(variantKey, { product: m, price: p, type: "renewed" });
+            uniqueVariations.set(variantKey, {
+              product: m,
+              price: p,
+              type: "renewed",
+            });
           }
         } else if (wp && wp > 0) {
           const current = uniqueVariations.get(variantKey);
           if (!current || wp < (current.price || Infinity)) {
-            uniqueVariations.set(variantKey, { product: m, price: wp, type: "warehouse" });
+            uniqueVariations.set(variantKey, {
+              product: m,
+              price: wp,
+              type: "warehouse",
+            });
           }
         }
       } else {
         if (cond !== "renewed" && cond !== "used" && p && p > 0) {
           const current = uniqueVariations.get(variantKey);
           if (!current || p < (current.price || Infinity)) {
-            uniqueVariations.set(variantKey, { product: m, price: p, type: "new" });
+            uniqueVariations.set(variantKey, {
+              product: m,
+              price: p,
+              type: "new",
+            });
           }
         }
       }
     });
 
-    productsToShow = Array.from(uniqueVariations.values()).sort((a, b) => (a.price || 0) - (b.price || 0));
+    productsToShow = Array.from(uniqueVariations.values()).sort(
+      (a, b) => (a.price || 0) - (b.price || 0),
+    );
   } else {
     // Normal mode: current product + identical siblings (same specs)
     let targets = [product];
@@ -238,7 +252,7 @@ export async function IdealoProductOffers({
         <ul className="productOffers-list">
           {offers.map((offer, index) => (
             <li
-              key={`${offer.source}-${index}`}
+              key={`${offer.source}-${offer.product?.id || index}`}
               className="productOffers-listItem group flex flex-col border-b border-[#dcdcdc] bg-white p-3.5 text-xs leading-[1.4] text-[#2d2d2d] hover:bg-[#fafafa] min-[600px]:flex-row min-[600px]:flex-wrap min-[600px]:gap-0 min-[600px]:px-0 min-[600px]:py-[15px]"
             >
               {/* Mobile Title */}

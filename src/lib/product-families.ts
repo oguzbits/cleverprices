@@ -185,7 +185,7 @@ export function getFamilyIdentity(
 
   // 6. ID-Based Prefixing
   // Format: [ID]_-text-slug
-  let rawId = (syntheticId || representative.id || 0) % 100000000;
+  const rawId = (syntheticId || representative.id || 0) % 100000000;
 
   // Standardize to 9 digits:
   // Hubs: 900,000,000 + ID

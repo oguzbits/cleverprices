@@ -81,7 +81,7 @@ export function ProductSchema({
     if (allPrices.length > 1 && lowestPrice && highestPrice) {
       // Add shipping and return policy (Required for Google Merchant Listings)
       const shippingRate = lowestPrice > 39 ? "0.00" : "4.99";
-      
+
       const aggregateOffer: Record<string, unknown> = {
         "@type": "AggregateOffer",
         priceCurrency: currency,
@@ -126,7 +126,8 @@ export function ProductSchema({
         hasMerchantReturnPolicy: {
           "@type": "MerchantReturnPolicy",
           applicableCountry: "DE",
-          returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnPeriod",
+          returnPolicyCategory:
+            "https://schema.org/MerchantReturnFiniteReturnPeriod",
           merchantReturnDays: 30,
           returnMethod: "https://schema.org/ReturnByMail",
           returnFees: "https://schema.org/FreeReturn",
@@ -196,7 +197,8 @@ export function ProductSchema({
         hasMerchantReturnPolicy: {
           "@type": "MerchantReturnPolicy",
           applicableCountry: "DE",
-          returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnPeriod",
+          returnPolicyCategory:
+            "https://schema.org/MerchantReturnFiniteReturnPeriod",
           merchantReturnDays: 30,
           returnMethod: "https://schema.org/ReturnByMail",
           returnFees: "https://schema.org/FreeReturn",
