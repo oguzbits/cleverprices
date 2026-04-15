@@ -17,7 +17,7 @@ const nextConfig: NextConfig = {
       revalidate: 300,
       expire: 86400, // 24 hours
     },
-    product: {
+    product_v2: {
       stale: 300, // 5 minutes
       revalidate: 300,
       expire: 86400,

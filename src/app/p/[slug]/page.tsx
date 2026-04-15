@@ -389,15 +389,18 @@ async function ProductPageContent({
           const allVariantsRaw = (data?.variants || []) as Product[];
 
           renderContent = (
-            <IdealoProductPage
-              product={product}
-              variants={allVariantsRaw}
-              category={category}
-              countryCode={countryCode}
-              selectedCondition={condition as any}
-              isParentView={parentViewMode}
-              canonicalId={data?.canonicalId}
-            />
+            <>
+              <div id="pdp-deploy-version" data-v="v232" className="hidden" aria-hidden="true" />
+              <IdealoProductPage
+                product={product}
+                variants={allVariantsRaw}
+                category={category}
+                countryCode={countryCode}
+                selectedCondition={condition as any}
+                isParentView={parentViewMode}
+                canonicalId={data?.canonicalId}
+              />
+            </>
           );
         }
       }

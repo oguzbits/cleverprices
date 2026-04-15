@@ -237,11 +237,11 @@ export async function getPDPRenderData(
   countryCode: string = "de",
 ) {
   "use cache";
-  cacheLife("product");
+  cacheLife("product_v2");
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
-  const isParentView = false;
+  let isParentView = false;
   const redirect: string | null = null;
   const isPermanent = false;
 
@@ -340,6 +340,7 @@ export async function getPDPRenderData(
       }
     } else {
       // Standard ID mode (Variant)
+      const id = parseInt(idMatch[1]);
       const realId = id >= 200000000 ? id - 200000000 : id;
       product = await getCachedProductById(realId);
       if (product) {
@@ -427,11 +428,16 @@ export async function getPDPRenderData(
             imageUrl: rep.imageUrl || renderProduct.imageUrl,
           };
         }
+        
+        // SEAL: If we are on a 200M ID URL, we are DEFINITELY NOT a parent view.
+        if (id >= 200000000 && id < 900000000) {
+          isParentView = false;
+        }
 
         return {
           product: renderProduct,
           variants: merged.filter((p) => p.id !== realId),
-          isParentView: false,
+          isParentView: false, // Explicitly false for matched Variant IDs
           canonicalId,
           canonicalSlug,
           redirect: null,
