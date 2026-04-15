@@ -314,7 +314,7 @@ async function ProductPageContent({
   condition?: string;
 }) {
   "use cache";
-  cacheLife("product_v2");
+  cacheLife("product_v3");
   const countryCode = DEFAULT_COUNTRY;
 
   let action:
@@ -390,7 +390,7 @@ async function ProductPageContent({
 
           renderContent = (
             <>
-              <div id="pdp-deploy-version" data-v="v232" className="hidden" aria-hidden="true" />
+              <div id="pdp-deploy-version" data-v="v233" className="hidden" aria-hidden="true" />
               <IdealoProductPage
                 product={product}
                 variants={allVariantsRaw}

@@ -1136,6 +1136,10 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "plus",
     "bulk",
     "ai",
+    "combo",
+    "mehrfarbig",
+    "3d-drucker",
+    "drucker",
     // Technical & Category Noise (Safe to strip when no siblings available)
     "processor",
     "prozessor",
