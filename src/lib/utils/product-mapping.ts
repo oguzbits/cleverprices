@@ -254,6 +254,7 @@ export function mapDbProduct(
     rawTitle: p.title,
     category: p.category,
     image: p.imageUrl || "",
+    imageUrl: p.imageUrl || "",
     affiliateUrl: stripHeavyData
       ? ""
       : `https://www.amazon.de/dp/${p.asin}?tag=cleverprices-21`,

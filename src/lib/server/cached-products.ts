@@ -415,21 +415,7 @@ export async function getPDPRenderData(
 
         let renderProduct = merged.find((p) => p.id === realId) || merged[0];
 
-        // Final Hub Enrichment: Inherit best data from family representative
-        if (rep && rep.id !== renderProduct.id) {
-          renderProduct = {
-            ...renderProduct,
-            prices: rep.prices,
-            priceHistory: rep.priceHistory,
-            savings: rep.savings,
-            pricesLastUpdated: rep.pricesLastUpdated,
-            condition: rep.condition,
-            image: rep.image || renderProduct.image,
-            imageUrl: rep.imageUrl || renderProduct.imageUrl,
-          };
-        }
-        
-        // SEAL: If we are on a 200M ID URL, we are DEFINITELY NOT a parent view.
+        // 3. Variant Check: We do NOT enrich variants with Hub data to preserve color/spec integrity
         if (id >= 200000000 && id < 900000000) {
           isParentView = false;
         }
