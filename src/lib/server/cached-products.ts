@@ -265,13 +265,14 @@ export async function getPDPRenderData(
           countryCode,
           true,
         );
-        const hubModelKey = (product.modelTitle || "")
+        const identity = getProductIdentity(product);
+        const hubModelKey = (identity.modelTitle || "")
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "");
         const variants = rawVariants.filter((v: Product) => {
-          // Use pre-calculated modelTitle from mapping
+          const vIdx = getProductIdentity(v);
           return (
-            (v.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") ===
+            (vIdx.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") ===
             hubModelKey
           );
         });
@@ -344,13 +345,26 @@ export async function getPDPRenderData(
       const realId = id >= 200000000 ? id - 200000000 : id;
       product = await getCachedProductById(realId);
       if (product) {
-        const variants = product.parentAsin
+        const rawVariants = product.parentAsin
           ? await getCachedProductVariantsInternal(
               product.parentAsin,
               countryCode,
               true,
             )
           : [];
+
+        const identity = getProductIdentity(product);
+        const targetModelKey = (identity.modelTitle || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "");
+
+        const variants = rawVariants.filter((v: Product) => {
+          const vIdx = getProductIdentity(v);
+          return (
+            (vIdx.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") ===
+            targetModelKey
+          );
+        });
 
         const rep = getFamilyRepresentative([product, ...variants]) || product;
         const familyIdentity = getFamilyIdentitySync(
