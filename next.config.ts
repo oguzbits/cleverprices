@@ -9,6 +9,9 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   compress: false, // Offload compression to Traefik (Brotli)
   output: "standalone", // Required for Docker
+  generateBuildId: async () => {
+    return `build-${Date.now()}`;
+  },
   reactCompiler: true,
   cacheComponents: true,
   cacheLife: {

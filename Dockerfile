@@ -33,8 +33,7 @@ ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
 ARG SENTRY_AUTH_TOKEN
 ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 
-RUN --mount=type=cache,target=/app/.next/cache \
-    BUILD_PHASE=1 bun run build
+RUN BUILD_PHASE=1 bun run build
 
 # Stage 4: Production Runner (Unified & Optimized)
 FROM base AS worker-runner

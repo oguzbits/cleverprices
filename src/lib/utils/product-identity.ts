@@ -785,7 +785,7 @@ function extractRamFacts(
 }
 
 export function getProductIdentity(product: Partial<Product>): ProductIdentity {
-  const cacheKey = `${product.id || ""}-${product.asin || ""}-${product.title || ""}-${product.isParentView ? "P" : "V"}-${JSON.stringify(product.officialSpecifications || {})}`;
+  const cacheKey = `${product.id || ""}-${product.asin || ""}-${product.isParentView ? "P" : "V"}`;
   const cached = IDENTITY_CACHE.get(cacheKey);
   if (cached) return cached;
 
