@@ -141,34 +141,29 @@ export async function generateMetadata({
   };
 }
 
-export default async function DedicatedCategoryPage({
+export default function DedicatedCategoryPage({
   params,
   searchParams,
 }: Props) {
+  return (
+    <Suspense fallback={null}>
+      <DedicatedCategoryContent params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function DedicatedCategoryContent({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ categorySlug: string }>;
+  searchParams: Promise<FilterParams>;
+}) {
   const { categorySlug } = await params;
 
   if (categorySlug === "build-time-placeholder") {
     return null;
   }
-
-  return (
-    <DedicatedCategoryContent
-      categorySlug={categorySlug as CategorySlug}
-      searchParams={searchParams}
-    />
-  );
-}
-
-async function DedicatedCategoryContent({
-  categorySlug,
-  searchParams,
-}: {
-  categorySlug: CategorySlug;
-  searchParams: Promise<FilterParams>;
-}) {
-  "use cache";
-  cacheLife("category");
-  const _v = "v208"; // Bust RSC cache when identity/slug logic changes
 
   const category = await getCategoryBySlug(categorySlug);
   if (!category) notFound();
@@ -180,7 +175,7 @@ async function DedicatedCategoryContent({
 
   return (
     <CategoryPageContent
-      categorySlug={categorySlug}
+      categorySlug={categorySlug as CategorySlug}
       category={category}
       searchParams={searchParams}
     />
@@ -196,6 +191,9 @@ async function CategoryPageContent({
   category: Category;
   searchParams: Promise<FilterParams>;
 }) {
+  "use cache";
+  cacheLife("category");
+  const _v = "v208"; // Bust RSC cache when identity/slug logic changes
   // 1. Initial checks (Fast, usually cached)
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
   const isEmpty = !isCategoryNotEmptyRecursive(categorySlug, nonEmptySlugs);

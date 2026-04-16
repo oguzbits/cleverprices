@@ -1,4 +1,5 @@
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
+import { Suspense } from "react";
 import { CATEGORY_MAP } from "@/lib/category-definitions";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAlternateLanguages } from "@/lib/metadata";
@@ -20,13 +21,24 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function DealsPage({ searchParams }: Props) {
-  const resolvedSearchParams = await searchParams;
-
-  return <DealsPageContent resolvedSearchParams={resolvedSearchParams} />;
+export default function DealsPage({ searchParams }: Props) {
+  return (
+    <Suspense fallback={null}>
+      <DealsPageContent searchParams={searchParams} />
+    </Suspense>
+  );
 }
 
 async function DealsPageContent({
+  searchParams,
+}: {
+  searchParams: Promise<any>;
+}) {
+  const resolvedSearchParams = await searchParams;
+  return <DealsPageCache resolvedSearchParams={resolvedSearchParams} />;
+}
+
+async function DealsPageCache({
   resolvedSearchParams,
 }: {
   resolvedSearchParams: any;

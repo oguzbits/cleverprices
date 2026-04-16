@@ -383,6 +383,7 @@ export async function getAllProductSlugs(
           specifications: products.specifications,
           officialSpecifications: products.officialSpecifications,
           salesRank: products.salesRank,
+          imageUrl: products.imageUrl,
         })
         .from(products)
         .where(
@@ -441,21 +442,30 @@ export async function getAllProductSlugs(
       const hubIdMap = new Map(resContexts.map((c) => [c.key, c.hubIdVal]));
 
       for (const r of rawResults) {
-        // 1. Data Quality Check (Same as PDP Soft 404 logic)
+        // [QUALITY GUARD] Unified with PDP logic in src/app/p/[slug]/page.tsx
+        // 1. Image check
+        const hasImage = r.imageUrl && !r.imageUrl.includes("placeholder");
+
+        // 2. Specs check
         const specs = r.specifications
           ? JSON.parse(r.specifications as string)
           : {};
         const officialSpecs = r.officialSpecifications
           ? JSON.parse(r.officialSpecifications as string)
           : {};
-        const totalSpecs = { ...specs, ...officialSpecs };
-        const specCount = Object.keys(totalSpecs).length;
+        const specCount = Object.keys(specs).length;
+        const hasOfficialSpecs = Object.keys(officialSpecs).length > 0;
 
-        // Strict meaningful title check (No raw ASINs)
+        // 3. Meaningful Title (No raw ASINs, length check)
         const hasMeaningfulTitle =
-          r.title.length > 5 && !/^[A-Z0-9]{10}$/.test(r.title);
+          r.title && r.title.length > 5 && r.title !== r.asin;
 
-        const isQualityVariant = specCount >= 3 && hasMeaningfulTitle;
+        // Unified Quality Logic:
+        // Must haveImage AND hasMeaningfulTitle AND (hasOfficialSpecs OR specCount > 3)
+        const isQualityVariant =
+          !!hasImage &&
+          !!hasMeaningfulTitle &&
+          (hasOfficialSpecs || specCount > 3);
 
         // Hub Identification
         const actingParentAsin = r.parentAsin || r.asin;

@@ -19,6 +19,7 @@ import { Metadata } from "next";
 import { cacheLife } from "next/cache";
 
 import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { Suspense } from "react";
 
 export interface Props {
   params: Promise<{
@@ -294,7 +295,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function ProductPage({ params, searchParams }: Props) {
+export default function ProductPage({ params, searchParams }: Props) {
+  return (
+    <Suspense fallback={null}>
+      <ProductPageContent params={params} searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ProductPageContent({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ condition?: string }>;
+}) {
   const { slug } = await params;
   const { condition } = await searchParams;
 
@@ -303,10 +318,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
     return null;
   }
 
-  return <ProductPageContent slug={slug} condition={condition} />;
+  return <ProductPageCache slug={slug} condition={condition} />;
 }
 
-async function ProductPageContent({
+async function ProductPageCache({
   slug,
   condition,
 }: {
