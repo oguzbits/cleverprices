@@ -41,6 +41,7 @@ async function getCachedBestDeals(
 ) {
   "use cache";
   cacheLife("category");
+  const _v = "v241"; // Hidden Cache Buster
   return await getBestDealsSync(limit, countryCode, condition);
 }
 
@@ -51,6 +52,7 @@ async function getCachedNewArrivals(
 ) {
   "use cache";
   cacheLife("category");
+  const _v = "v241"; // Hidden Cache Buster
   return await getNewArrivalsSync(limit, countryCode, condition);
 }
 
@@ -60,21 +62,21 @@ async function getCachedDiverseMostPopular(
 ) {
   "use cache";
   cacheLife("category");
+  const _v = "v241"; // Hidden Cache Buster
   return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
 
-async function getCachedProductBySlug(
-  slug: string,
-  includeHistory: boolean,
-) {
+async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
   "use cache";
   cacheLife("product_v5");
+  const _v = "v241"; // Hidden Cache Buster
   return await getProductBySlugSync(slug, includeHistory);
 }
 
 async function getCachedProductById(id: number) {
   "use cache";
   cacheLife("product_v5");
+  const _v = "v241"; // Hidden Cache Buster
   return await getProductByIdSync(id);
 }
 
@@ -85,6 +87,7 @@ async function getCachedProductVariantsInternal(
 ) {
   "use cache";
   cacheLife("product_v5");
+  const _v = "v241"; // Hidden Cache Buster
   return await getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -384,7 +387,8 @@ export async function getPDPRenderData(
         const isSpecificSlug = urlSlugText === productSlugText;
 
         if (isFamilySlug && !isSpecificSlug) {
-          const eff = getFamilyRepresentative([product, ...variants]) || product;
+          const eff =
+            getFamilyRepresentative([product, ...variants]) || product;
           if (eff.id !== product.id) {
             return {
               redirect: getProductPath(
@@ -532,6 +536,12 @@ export async function getPDPRenderData(
         };
       }
     }
+
+    // EXTRA SECURITY: Even in fallback paths, explicitly block isParentView for 200M/700M IDs
+    const idValue = product.id || 0;
+    if (idValue >= 200000000 && idValue < 900000000) {
+      isParentView = false;
+    }
   }
 
   const hubIdVal = await getCanonicalFamilyId(
@@ -549,7 +559,7 @@ export async function getPDPRenderData(
     product: product || (null as any),
     variants,
     category,
-    isParentView: isParentView || (product?.id || 0) >= 900000000,
+    isParentView, // Use the strictly calculated local variable
     canonicalId,
     canonicalSlug,
     redirect,
