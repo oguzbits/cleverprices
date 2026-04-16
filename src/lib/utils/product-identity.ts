@@ -8,6 +8,8 @@ import {
   extractRealStorageFromTitle,
   parseVariationAttributes,
 } from "./variants";
+ 
+const IDENTITY_CACHE = new Map<string, any>();
 
 const STRATEGY_MAP: CategoryStrategyMap = {
   motherboards: MotherboardStrategy,
@@ -783,6 +785,10 @@ function extractRamFacts(
 }
 
 export function getProductIdentity(product: Partial<Product>): ProductIdentity {
+  const cacheKey = `${product.asin || ""}-${product.title || ""}`;
+  if (IDENTITY_CACHE.has(cacheKey)) {
+    return IDENTITY_CACHE.get(cacheKey);
+  }
   const rawBrand = (product.brand || "").trim();
   const title = (product.title || "").trim();
   const rawCategory = (
@@ -2777,7 +2783,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     // Monitors are usually single-variant per MPN, so suffix is rarely needed
     const monitorVariantSuffix = "";
 
-    return {
+    const res = {
       brand: richBrand,
       model: cleanDisplayModel || finalModel || richBrand,
       fullModel: fullModelTitle,
@@ -2799,9 +2805,12 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       isLaptop: false,
       categoryUsed: category,
     };
+
+    IDENTITY_CACHE.set(`${product.asin || ""}-${product.title || ""}`, res);
+    return res;
   }
 
-  return {
+  const result = {
     brand: richBrand,
     model: hubModelName,
     fullModel: modelTitle,
@@ -2818,4 +2827,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     isLaptop,
     categoryUsed: category,
   };
+
+  IDENTITY_CACHE.set(`${product.asin || ""}-${product.title || ""}`, result);
+  return result;
 }

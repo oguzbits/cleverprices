@@ -234,9 +234,10 @@ export async function getProductVariants(
  */
 export async function getPDPRenderData(
   slug: string,
-  countryCode: string = "de",
+  countryInput: string = "de",
 ) {
   "use cache";
+  const countryCode = countryInput.toLowerCase();
   cacheLife("product_v3");
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
@@ -264,14 +265,13 @@ export async function getPDPRenderData(
           countryCode,
           true,
         );
-        const hubIden = getProductIdentity(product);
-        const hubModelKey = (hubIden.modelTitle || "")
+        const hubModelKey = (product.modelTitle || "")
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, "");
         const variants = rawVariants.filter((v: Product) => {
-          const vIdx = getProductIdentity(v as any);
+          // Use pre-calculated modelTitle from mapping
           return (
-            (vIdx.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") ===
+            (v.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "") ===
             hubModelKey
           );
         });
