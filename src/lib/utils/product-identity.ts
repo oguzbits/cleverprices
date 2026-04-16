@@ -785,10 +785,10 @@ function extractRamFacts(
 }
 
 export function getProductIdentity(product: Partial<Product>): ProductIdentity {
-  const cacheKey = `${product.asin || ""}-${product.title || ""}`;
-  if (IDENTITY_CACHE.has(cacheKey)) {
-    return IDENTITY_CACHE.get(cacheKey);
-  }
+  const cacheKey = `${product.id || ""}-${product.asin || ""}-${product.title || ""}-${product.isParentView ? "P" : "V"}-${JSON.stringify(product.officialSpecifications || {})}`;
+  const cached = IDENTITY_CACHE.get(cacheKey);
+  if (cached) return cached;
+
   const rawBrand = (product.brand || "").trim();
   const title = (product.title || "").trim();
   const rawCategory = (
@@ -2806,7 +2806,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       categoryUsed: category,
     };
 
-    IDENTITY_CACHE.set(`${product.asin || ""}-${product.title || ""}`, res);
+    IDENTITY_CACHE.set(cacheKey, res);
     return res;
   }
 
@@ -2828,6 +2828,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     categoryUsed: category,
   };
 
-  IDENTITY_CACHE.set(`${product.asin || ""}-${product.title || ""}`, result);
+  IDENTITY_CACHE.set(cacheKey, result);
   return result;
 }
