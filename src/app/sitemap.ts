@@ -26,7 +26,7 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
 
   const totalStart = Date.now();
   console.log("🗺️  Sitemap: Starting generation...");

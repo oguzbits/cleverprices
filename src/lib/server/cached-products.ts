@@ -68,13 +68,13 @@ async function getCachedProductBySlug(
   includeHistory: boolean,
 ) {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
   return await getProductBySlugSync(slug, includeHistory);
 }
 
 async function getCachedProductById(id: number) {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
   return await getProductByIdSync(id);
 }
 
@@ -84,7 +84,7 @@ async function getCachedProductVariantsInternal(
   skipFullMapping: boolean = false,
 ) {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
   return await getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -100,7 +100,7 @@ async function getCachedSimilarProducts(
   countryCode: string,
 ) {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
   return await getSimilarProductsSync(
     {
       category,
@@ -126,7 +126,7 @@ async function getCachedProductByParentAsinSuffix(slug: string) {
 
 async function getCachedProductBySyntheticId(id: number, depth: number = 0) {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
   // Safety: Prevent infinite recursion if canonical resolution loops
   if (depth > 5) {
     console.error(`[SEO CRITICAL] Infinite recursion detected for ID ${id}`);
@@ -238,7 +238,7 @@ export async function getPDPRenderData(
 ) {
   "use cache";
   const countryCode = countryInput.toLowerCase();
-  cacheLife("product_v3");
+  cacheLife("product_v5");
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -415,7 +415,7 @@ export async function getPDPRenderData(
 
         let renderProduct = merged.find((p) => p.id === realId) || merged[0];
 
-        // 3. Variant Check: We do NOT enrich variants with Hub data to preserve color/spec integrity
+        // Variant Check: We do NOT enrich variants with Hub data to preserve individual variations (images/specs)
         if (id >= 200000000 && id < 900000000) {
           isParentView = false;
         }

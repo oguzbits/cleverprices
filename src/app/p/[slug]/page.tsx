@@ -329,7 +329,7 @@ async function ProductPageCache({
   condition?: string;
 }) {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
   const countryCode = DEFAULT_COUNTRY;
 
   let action:

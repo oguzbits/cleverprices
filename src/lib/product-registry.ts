@@ -124,7 +124,7 @@ async function fetchCanonicalIdInternal(
   depth: number = 0,
 ) {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
   if (depth > 5 || !parentAsin) return currentId!;
 
   await dbReady;
@@ -222,7 +222,7 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
 
 async function fetchHistoryInternal(productId: number, countryCode: string) {
   "use cache";
-  cacheLife("product_v3");
+  cacheLife("product_v5");
   const _v = "v2"; // Version bump
   await dbReady;
   const [pr] = await db
@@ -1057,7 +1057,7 @@ export const getProductBySlug = cache(async function getProductBySlug(
 
   const cachedFetch = async () => {
     "use cache";
-    cacheLife("product_v3");
+    cacheLife("product_v5");
     const [_v, _s, _h] = ["v8", slug, includeHistory]; // Version bump
     return fetchProductBySlug(slug, includeHistory);
   };
@@ -1107,7 +1107,7 @@ export const getProductByAsin = cache(async function getProductByAsin(
 
   const cachedFetch = async () => {
     "use cache";
-    cacheLife("product_v3");
+    cacheLife("product_v5");
     const [_v, _a] = ["v2", asin]; // Version bump
     return fetchProductByAsin(asin);
   };
@@ -1429,7 +1429,7 @@ export const getSimilarProducts = cache(async function getSimilarProducts(
 
   const cachedFetch = async () => {
     "use cache";
-    cacheLife("product_v3");
+    cacheLife("product_v5");
     const [_v] = ["v21"]; // Version bump
     return fetchSimilarProducts(
       product.category,
