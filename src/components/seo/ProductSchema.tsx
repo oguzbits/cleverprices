@@ -86,7 +86,7 @@ export function ProductSchema({
     "@type": "MerchantReturnPolicy",
     applicableCountry: "DE",
     returnPolicyCategory:
-      "https://schema.org/MerchantReturnFiniteReturnPeriod",
+      "https://schema.org/MerchantReturnFiniteReturnWindow",
     merchantReturnDays: 30,
     returnMethod: "https://schema.org/ReturnByMail",
     returnFees: "https://schema.org/FreeReturn",

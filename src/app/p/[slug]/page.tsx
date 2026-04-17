@@ -406,7 +406,7 @@ async function ProductPageCache({
 
           renderContent = (
             <>
-              <div className="hidden" data-v="v250" aria-hidden="true" />
+              <div className="hidden" data-v="v251" aria-hidden="true" />
               <IdealoProductPage
                 product={product}
                 variants={allVariantsRaw}
