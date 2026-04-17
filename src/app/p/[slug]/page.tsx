@@ -250,7 +250,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       other: {
-        "deploy-v": "v231-UNIT-PRICE-TITLES",
+        "deploy-v": "v245-SCHEMA-FIX",
       },
       alternates: {
         canonical: getProductCanonicalUrl(effectiveId, effectiveSlug),
@@ -330,6 +330,7 @@ async function ProductPageCache({
 }) {
   "use cache";
   cacheLife("product_v5");
+  const _v = "v245"; // Global Schema Flush
   const countryCode = DEFAULT_COUNTRY;
 
   let action:
@@ -405,7 +406,7 @@ async function ProductPageCache({
 
           renderContent = (
             <>
-              <div id="pdp-deploy-version" data-v="v233" className="hidden" aria-hidden="true" />
+              <div id="pdp-deploy-version" data-v="v245" className="hidden" aria-hidden="true" />
               <IdealoProductPage
                 product={product}
                 variants={allVariantsRaw}
