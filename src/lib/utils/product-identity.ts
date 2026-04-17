@@ -59,6 +59,11 @@ export function normalizeBrand(
     if (b.includes("switch")) return "Nintendo";
   }
 
+  // Safety: Prevent country codes or 2-char noise from being identified as brands
+  if (brand.length <= 2 && /^(DE|EU|UK|US|CH|AT|ES|FR|IT|PL)$/i.test(brand)) {
+    return "";
+  }
+
   return brand;
 }
 
@@ -2491,7 +2496,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ]);
 
     const specsCutoffRegex =
-      /^(monitor|display|bildschirm|fernseher|tv|pc|hz|ms|zoll|inch|hdr\d*|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|usb\d*|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|displayhd|speaker|reaktionszeit|bildwiederholrate|hoehenverstellbar|höhenverstellbar|hoehenverstellbare|neigungsverstellbar|neigbar|neigung|schwenkbar|drehbar|verstellbar|pivot|augenpflege|augenfreundlich|eyescare|eyecare|flickerfree|lowblue|kontrast|kontras|contrast|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|speaker|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|pip|pbp|pcp|pippbp|pippcp|pbppip|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|amd|nvidia|[\d.]+i|[\d.]+[ab]|(dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)?\d+x\d+.*|[a-z0-9.]*\d+x\d+[a-z0-9.]*|[a-z0-9.]*(hdmi|dp|tmds|vga|farbraum|ports|stromversorgung|nits|percentage|farb|raum|dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd|res|usb|amd|nvidia)[a-z0-9.]*|v\d+[\d.]*|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+h.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage|\d+1|40001|30001|10001|50001|800000001|10000001|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|\d+cm)(monitor|display|bildschirm|fernseher|tv)?$/i;
+      /^(monitor|display|bildschirm|fernseher|tv|pc|hz|ms|zoll|inch|hdr\d*|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|usb\d*|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|displayhd|speaker|reaktionszeit|bildwiederholrate|hoehenverstellbar|höhenverstellbar|hoehenverstellbare|neigungsverstellbar|neigbar|neigung|schwenkbar|drehbar|verstellbar|pivot|augenpflege|augenfreundlich|eyescare|eyecare|flickerfree|lowblue|kontrast|kontras|contrast|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|speaker|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|pip|pbp|pcp|pippbp|pippcp|pbppip|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|amd|nvidia|[\d.]+i|[\d.]+[ab]|(dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)?\d+x\d+.*|[a-z0-9.]*\d+x\d+[a-z0-9.]*|[a-z0-9.]*(hdmi|dp|tmds|vga|farbraum|ports|stromversorgung|nits|percentage|farb|raum|dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd|res|usb|amd|nvidia)[a-z0-9.]*|v\d+[\d.]*|de|eu|uk|at|ch|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+h.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage|\d+1|40001|30001|10001|50001|800000001|10000001|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|\d+cm)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
     const regionalSuffixRegex =
       /[-.](?:[A-Z]{3,4}|AE|EU|UK|DE|CH|US|WAEU|AEU)$/i;

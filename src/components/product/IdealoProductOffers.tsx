@@ -52,53 +52,36 @@ export async function IdealoProductOffers({
       familyMembers = await mergeLivePrices(familyMembers, countryCode);
     }
 
-    // Hub Mode: Show one offer per unique variation (color, size, etc.)
-    const uniqueVariations = new Map<string, (typeof productsToShow)[0]>();
+    // Hub Mode: Consolidated Price List - Only show the absolute cheapest offer across the entire family.
+    let bestHubItem: (typeof productsToShow)[0] | null = null;
 
     familyMembers.forEach((m: Product) => {
       const p = m.prices[countryCode];
       const wp = m.usedPrices?.[countryCode];
       const cond = (m.condition || "").toLowerCase();
-      const variantKey = m.variationAttributes || String(m.id);
 
-      // Rule: New takes precedence over Used for the same variation on a Hub
+      let itemToAdd: (typeof productsToShow)[0] | null = null;
+
       if (isUsedTrack) {
         if (cond === "renewed" && p && p > 0) {
-          const current = uniqueVariations.get(variantKey);
-          if (!current || p < (current.price || Infinity)) {
-            uniqueVariations.set(variantKey, {
-              product: m,
-              price: p,
-              type: "renewed",
-            });
-          }
+          itemToAdd = { product: m, price: p, type: "renewed" };
         } else if (wp && wp > 0) {
-          const current = uniqueVariations.get(variantKey);
-          if (!current || wp < (current.price || Infinity)) {
-            uniqueVariations.set(variantKey, {
-              product: m,
-              price: wp,
-              type: "warehouse",
-            });
-          }
+          itemToAdd = { product: m, price: wp, type: "warehouse" };
         }
       } else {
         if (cond !== "renewed" && cond !== "used" && p && p > 0) {
-          const current = uniqueVariations.get(variantKey);
-          if (!current || p < (current.price || Infinity)) {
-            uniqueVariations.set(variantKey, {
-              product: m,
-              price: p,
-              type: "new",
-            });
-          }
+          itemToAdd = { product: m, price: p, type: "new" };
+        }
+      }
+
+      if (itemToAdd) {
+        if (!bestHubItem || (itemToAdd.price || Infinity) < (bestHubItem.price || Infinity)) {
+          bestHubItem = itemToAdd;
         }
       }
     });
 
-    productsToShow = Array.from(uniqueVariations.values()).sort(
-      (a, b) => (a.price || 0) - (b.price || 0),
-    );
+    productsToShow = bestHubItem ? [bestHubItem] : [];
   } else {
     // Normal mode: current product + identical siblings (same specs)
     let targets = [product];

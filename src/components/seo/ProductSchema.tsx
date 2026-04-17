@@ -70,7 +70,7 @@ export function ProductSchema({
         unitCode: "DAY",
       },
       transitTime: {
-        "@type": "ShippingDeliveryTime",
+        "@type": "QuantitativeValue",
         minValue: 1,
         maxValue: 3,
         unitCode: "DAY",
@@ -97,9 +97,11 @@ export function ProductSchema({
     "@context": "https://schema.org",
     "@type": "Product",
     "@id": getProductCanonicalUrl(product.id, product.slug),
-    name: isHub ? identity.modelTitle : identity.displayTitle,
+    name: (isHub ? identity.modelTitle : identity.displayTitle)?.length > 2 
+      ? (isHub ? identity.modelTitle : identity.displayTitle) 
+      : (product.title || "").replace(/\s*-\s*[\w\s]+$/, "").trim(),
     description:
-      `${isHub ? identity.modelTitle : identity.displayTitle} - ${product.brand} ${product.category}.`.trim(),
+      `${(isHub ? identity.modelTitle : identity.displayTitle)?.length > 2 ? (isHub ? identity.modelTitle : identity.displayTitle) : product.title} - ${product.brand} ${product.category}.`.trim(),
     brand: {
       "@type": "Brand",
       name: product.brand,

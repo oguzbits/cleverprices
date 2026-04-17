@@ -330,7 +330,7 @@ async function ProductPageCache({
 }) {
   "use cache";
   cacheLife("product_v5");
-  const _v = "v246"; // Global Schema Flush
+  const _v = "v249"; // Hidden Cache Busterma Flush
   const countryCode = DEFAULT_COUNTRY;
 
   let action:
@@ -406,7 +406,7 @@ async function ProductPageCache({
 
           renderContent = (
             <>
-              <div id="pdp-deploy-version" data-v="v246" className="hidden" aria-hidden="true" />
+              <div className="hidden" data-v="v249" aria-hidden="true" />
               <IdealoProductPage
                 product={product}
                 variants={allVariantsRaw}
