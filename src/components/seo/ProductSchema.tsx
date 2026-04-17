@@ -135,6 +135,8 @@ export function ProductSchema({
         itemCondition: "https://schema.org/NewCondition",
         url: getProductCanonicalUrl(product.id, product.slug),
         priceValidUntil: "2027-12-31",
+        shippingDetails: [sharedShippingDetails],
+        hasMerchantReturnPolicy: [sharedReturnPolicy],
         seller: {
           "@type": "Organization",
           name: "Amazon",
@@ -166,6 +168,8 @@ export function ProductSchema({
         availability: "https://schema.org/InStock",
         itemCondition: "https://schema.org/NewCondition",
         url: getProductCanonicalUrl(product.id, product.slug),
+        shippingDetails: [sharedShippingDetails],
+        hasMerchantReturnPolicy: [sharedReturnPolicy],
         seller: {
           "@type": "Organization",
           name: "Amazon",
