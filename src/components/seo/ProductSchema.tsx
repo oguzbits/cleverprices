@@ -113,9 +113,6 @@ export function ProductSchema({
     sku: product.asin,
     mpn: product.mpn || product.asin,
     category: product.category,
-    // [Merchant Listing FIX] Move shipping/returns to product level
-    shippingDetails: [sharedShippingDetails],
-    hasMerchantReturnPolicy: [sharedReturnPolicy],
   };
 
   // Add image if available
@@ -231,19 +228,24 @@ export function ProductSchema({
   const additionalProperties: Array<{
     "@type": string;
     name: string;
-    value: string | undefined;
-  }> = [
-    {
+    value: string;
+  }> = [];
+
+  if (product.capacity && product.capacity > 0) {
+    additionalProperties.push({
       "@type": "PropertyValue",
       name: "Capacity",
-      value: `${product.capacity} ${product.capacityUnit}`,
-    },
-    {
+      value: `${product.capacity} ${product.capacityUnit || ''}`.trim(),
+    });
+  }
+
+  if (product.formFactor) {
+    additionalProperties.push({
       "@type": "PropertyValue",
       name: "Form Factor",
       value: product.formFactor,
-    },
-  ];
+    });
+  }
 
   if (product.technology) {
     additionalProperties.push({
@@ -290,50 +292,4 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
   );
 }
 
-/**
- * Organization Schema for the website
- */
-function OrganizationSchema() {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "Organization",
-    name: BRAND_NAME,
-    url: `https://${BRAND_DOMAIN}`,
-    logo: `https://${BRAND_DOMAIN}/icon.png`,
-    sameAs: [],
-  };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
-
-/**
- * WebSite Schema with search action
- */
-function WebSiteSchema() {
-  const schema = {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: BRAND_NAME,
-    url: `https://${BRAND_DOMAIN}`,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `https://${BRAND_DOMAIN}/search?q={search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
-  };
-
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
-}
