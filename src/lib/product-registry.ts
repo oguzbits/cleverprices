@@ -461,11 +461,9 @@ export async function getAllProductSlugs(
           r.title && r.title.length > 5 && r.title !== r.asin;
 
         // Unified Quality Logic:
-        // Must haveImage AND hasMeaningfulTitle AND (hasOfficialSpecs OR specCount > 3)
+        // Must haveImage AND hasMeaningfulTitle AND specCount > 3
         const isQualityVariant =
-          !!hasImage &&
-          !!hasMeaningfulTitle &&
-          (hasOfficialSpecs || specCount > 3);
+          !!hasImage && !!hasMeaningfulTitle && specCount > 3;
 
         // Hub Identification
         const actingParentAsin = r.parentAsin || r.asin;
@@ -678,7 +676,7 @@ export async function getAllProductSlugs(
             const specCount = Object.keys(specs).length;
             const hasOfficialSpecs = Object.keys(officialSpecs).length > 0;
 
-            const isGood = hasOfficialSpecs || specCount > 3;
+            const isGood = specCount > 3;
             return isGood ? i : -1;
           })
           .filter((i) => i !== -1);

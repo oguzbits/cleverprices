@@ -291,7 +291,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       throw error;
     }
     console.error(`[Metadata Error] Product ${slug}:`, error);
-    return { title: "Produkt Details - CleverPrices" };
+    return {
+      title: `Produkt Details | ${BRAND_DOMAIN}`,
+      robots: { index: false, follow: true },
+    };
   }
 }
 
@@ -335,7 +338,7 @@ async function ProductPageCache({
 }) {
   "use cache";
   cacheLife("product_v5");
-  const _v = "v249"; // Hidden Cache Busterma Flush
+  const _v = "v252-POSTPONE-FIX"; // Synchronized Cache Buster
   const countryCode = DEFAULT_COUNTRY;
 
   let action:
@@ -395,7 +398,10 @@ async function ProductPageCache({
           product.title.length > 2 &&
           product.title !== product.asin;
 
-        // Unified Quality Guard
+        // Unified Quality Logic:
+        // Must haveImage AND hasMeaningfulTitle AND specCount > 3
+        const isQualityVariant =
+          !!hasImage && !!hasMeaningfulTitle && specCount > 3;
         const isQualityEnough =
           (hasPrice || product.officialSpecifications || specCount > 3) &&
           hasMeaningfulTitle &&
