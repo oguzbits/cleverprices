@@ -199,9 +199,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       product.title.toLowerCase() !== product.asin?.toLowerCase();
 
     // Quality check: Must have (Price OR High Quality Specs) AND Meaningful Title AND Image
-    // SEO PIVOT: Relaxed specs requirement (specCount > 1) to allow indexing of more variants
     const isQualityEnough =
-      (hasPrice || product.officialSpecifications || specCount > 1) &&
+      (hasPrice || product.officialSpecifications || specCount > 3) &&
       hasMeaningfulTitle &&
       hasImage;
 
@@ -398,7 +397,7 @@ async function ProductPageCache({
 
         // Unified Quality Guard
         const isQualityEnough =
-          (hasPrice || product.officialSpecifications || specCount > 1) &&
+          (hasPrice || product.officialSpecifications || specCount > 3) &&
           hasMeaningfulTitle &&
           hasImage;
 
