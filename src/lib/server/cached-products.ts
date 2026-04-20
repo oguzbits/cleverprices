@@ -240,7 +240,7 @@ export async function getPDPRenderData(
   countryInput: string = "de",
 ) {
   "use cache";
-  const _v = "v248"; // Global Schema Flush
+  const _v = "v252-POSTPONE-FIX"; // Global Schema Flush
   const countryCode = countryInput.toLowerCase();
   cacheLife("product_v5");
 

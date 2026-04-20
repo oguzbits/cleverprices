@@ -19,7 +19,6 @@ import { Metadata } from "next";
 import { cacheLife } from "next/cache";
 
 import { notFound, permanentRedirect, redirect } from "next/navigation";
-import { Suspense } from "react";
 
 export interface Props {
   params: Promise<{
@@ -199,8 +198,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       product.title.toLowerCase() !== product.asin?.toLowerCase();
 
     // Quality check: Must have (Price OR High Quality Specs) AND Meaningful Title AND Image
+    // SEO PIVOT: Relaxed specs requirement (specCount > 1) to allow indexing of more variants
     const isQualityEnough =
-      (hasPrice || product.officialSpecifications || specCount > 3) &&
+      (hasPrice || product.officialSpecifications || specCount > 1) &&
       hasMeaningfulTitle &&
       hasImage;
 
@@ -250,7 +250,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       other: {
-        "deploy-v": "v245-SCHEMA-FIX",
+        "deploy-v": "v252-POSTPONE-FIX",
       },
       alternates: {
         canonical: getProductCanonicalUrl(effectiveId, effectiveSlug),
@@ -296,11 +296,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function ProductPage({ params, searchParams }: Props) {
-  return (
-    <Suspense fallback={null}>
-      <ProductPageContent params={params} searchParams={searchParams} />
-    </Suspense>
-  );
+  // CRITICAL: We removed the global <Suspense> wrapper here.
+  // In Next.js 15+, wrapping the entire page body in Suspense fallback={null} causes
+  // "postponed" responses (x-nextjs-postponed: 1) and 0-byte initial HTML content-length.
+  // This causes Googlebot to see an empty page with no <h1> and no <link rel="canonical">.
+  return <ProductPageContent params={params} searchParams={searchParams} />;
 }
 
 async function ProductPageContent({
@@ -406,7 +406,11 @@ async function ProductPageCache({
 
           renderContent = (
             <>
-              <div className="hidden" data-v="v251" aria-hidden="true" />
+              <div
+                className="hidden"
+                data-v="v252-POSTPONE-FIX"
+                aria-hidden="true"
+              />
               <IdealoProductPage
                 product={product}
                 variants={allVariantsRaw}
