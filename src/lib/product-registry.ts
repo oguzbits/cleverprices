@@ -673,9 +673,12 @@ export async function getAllProductSlugs(
         const goodVariantsIndices = variants
           .map((v, i) => {
             const m = allMapped[i];
-            const mPr = m.prices["de"];
-            const isGood =
-              (mPr && mPr > 0) || m.officialSpecifications || m.specifications;
+            const specs = m.specifications || {};
+            const officialSpecs = m.officialSpecifications || {};
+            const specCount = Object.keys(specs).length;
+            const hasOfficialSpecs = Object.keys(officialSpecs).length > 0;
+
+            const isGood = hasOfficialSpecs || specCount > 3;
             return isGood ? i : -1;
           })
           .filter((i) => i !== -1);

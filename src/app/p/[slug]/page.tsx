@@ -37,7 +37,8 @@ export async function generateStaticParams() {
     process.env.BUILD_PHASE === "1";
 
   if (isBuild) {
-    // Explicitly return a placeholder during build to avoid DB warnings and keep build fast.
+    // Return at least one param to satisfy Next.js 15 "Cache Component" validation requirements.
+    // We handle this placeholder inside the component to prevent dynamic API access during build.
     return [{ slug: "build-time-placeholder" }];
   }
 
@@ -311,12 +312,17 @@ async function ProductPageContent({
   searchParams: Promise<{ condition?: string }>;
 }) {
   const { slug } = await params;
-  const { condition } = await searchParams;
 
   // Handle static collection for the dynamic template route
-  if (slug === "[slug]" || slug === "%5Bslug%5D") {
-    return null;
+  if (
+    slug === "[slug]" ||
+    slug === "%5Bslug%5D" ||
+    slug === "build-time-placeholder"
+  ) {
+    return <div className="hidden" />;
   }
+
+  const { condition } = await searchParams;
 
   return <ProductPageCache slug={slug} condition={condition} />;
 }
@@ -392,7 +398,7 @@ async function ProductPageCache({
 
         // Unified Quality Guard
         const isQualityEnough =
-          (hasPrice || product.officialSpecifications || specCount > 3) &&
+          (hasPrice || product.officialSpecifications || specCount > 1) &&
           hasMeaningfulTitle &&
           hasImage;
 
