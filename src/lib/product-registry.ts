@@ -453,8 +453,7 @@ export async function getAllProductSlugs(
         const officialSpecs = r.officialSpecifications
           ? JSON.parse(r.officialSpecifications as string)
           : {};
-        const specCount = Object.keys(specs).length;
-        const hasOfficialSpecs = Object.keys(officialSpecs).length > 0;
+        const specCount = Object.keys(specs).length + Object.keys(officialSpecs).length;
 
         // 3. Meaningful Title (No raw ASINs, length check)
         const hasMeaningfulTitle =
@@ -673,8 +672,7 @@ export async function getAllProductSlugs(
             const m = allMapped[i];
             const specs = m.specifications || {};
             const officialSpecs = m.officialSpecifications || {};
-            const specCount = Object.keys(specs).length;
-            const hasOfficialSpecs = Object.keys(officialSpecs).length > 0;
+            const specCount = Object.keys(specs).length + Object.keys(officialSpecs).length;
 
             const isGood = specCount > 3;
             return isGood ? i : -1;

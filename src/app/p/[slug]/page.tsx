@@ -391,7 +391,12 @@ async function ProductPageCache({
             ? JSON.parse(product.specifications)
             : product.specifications
           : {};
-        const specCount = Object.keys(specs).length;
+        const officialSpecs = product.officialSpecifications
+          ? typeof product.officialSpecifications === "string"
+            ? JSON.parse(product.officialSpecifications)
+            : product.officialSpecifications
+          : {};
+        const specCount = Object.keys(specs).length + Object.keys(officialSpecs).length;
 
         const hasMeaningfulTitle =
           product.title &&
