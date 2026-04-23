@@ -12,7 +12,7 @@ import {
   getPDPRenderData,
 } from "@/lib/server/cached-products";
 import { logPDPPerformance } from "@/lib/server/performance-registry";
-import { BRAND_DOMAIN, BRAND_NAME } from "@/lib/site-config";
+import { BRAND_DOMAIN, BRAND_NAME, CACHE_VERSION } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
@@ -396,7 +396,8 @@ async function ProductPageCache({
             ? JSON.parse(product.officialSpecifications)
             : product.officialSpecifications
           : {};
-        const specCount = Object.keys(specs).length + Object.keys(officialSpecs).length;
+        const specCount =
+          Object.keys(specs).length + Object.keys(officialSpecs).length;
 
         const hasMeaningfulTitle =
           product.title &&
@@ -424,7 +425,7 @@ async function ProductPageCache({
             <>
               <div
                 className="hidden"
-                data-v="v252-POSTPONE-FIX"
+                data-v={CACHE_VERSION}
                 aria-hidden="true"
               />
               <IdealoProductPage

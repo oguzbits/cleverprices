@@ -1,4 +1,3 @@
-"use cache";
 
 import { IdealoHomePage } from "@/components/landing/IdealoHomePage";
 import { type CountryCode } from "@/lib/countries";
@@ -11,8 +10,12 @@ import {
 } from "@/lib/server/cached-products";
 import { getLivePricesForProducts as getPricesFromDb } from "@/lib/server/live-data";
 import { cacheLife } from "next/cache";
+import { CACHE_VERSION } from "@/lib/site-config";
 
 async function fetchHomeData(countryCode: string) {
+  "use cache";
+  cacheLife("category");
+  const _v = CACHE_VERSION;
   try {
     return await Promise.all([
       getBestDeals(40, countryCode, "New").catch(() => []),
@@ -30,12 +33,12 @@ export default async function HomeContent({
 }: {
   country: CountryCode;
 }) {
-  cacheLife("category"); // Use consistent category TTL for landing
   const countryConfig = await getCountryByCode(country);
   const countryCode = countryConfig?.code || country;
 
   // Fetch enough data for curation with margin for filtering
   const [rawDeals, rawPopular, rawNew] = await fetchHomeData(countryCode);
+  console.log(`🏠 Home Data: Deals=${rawDeals.length}, Popular=${rawPopular.length}, New=${rawNew.length}`);
 
   // Global duplicate tracker across ALL sections
   const globalSeen = new Set<string>();

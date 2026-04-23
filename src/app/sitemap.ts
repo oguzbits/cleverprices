@@ -10,7 +10,7 @@ import {
   getAllProductSlugs,
   getNonEmptyCategorySlugs,
 } from "@/lib/server/cached-products";
-import { SITE_URL } from "@/lib/site-config";
+import { CACHE_VERSION, SITE_URL } from "@/lib/site-config";
 import { getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
 import { cacheLife } from "next/cache";
@@ -25,8 +25,7 @@ import { cacheLife } from "next/cache";
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  "use cache";
-  cacheLife("product_v5");
+  const _v = CACHE_VERSION;
 
   const totalStart = Date.now();
   console.log("🗺️  Sitemap: Starting generation...");

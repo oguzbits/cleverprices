@@ -11,6 +11,7 @@ import {
   superLitePriceColumns,
   type Product,
 } from "../product-definitions";
+import { CACHE_VERSION } from "../site-config";
 import { mapDbProduct } from "../utils/product-mapping";
 
 /**
@@ -189,6 +190,7 @@ export async function getProductsByCategory(
   const cachedFetch = async () => {
     "use cache";
     cacheLife("category");
+    const _v = CACHE_VERSION;
 
     await dbReady;
     const { prods, prs } = await withRetry(async () => {
@@ -291,7 +293,7 @@ export async function getRawProductsByCategory(
   const cachedFetch = async () => {
     "use cache";
     cacheLife("category");
-    const _v = "v207";
+    const _v = CACHE_VERSION;
 
     await dbReady;
     const { prods, prs } = await withRetry(async () => {
