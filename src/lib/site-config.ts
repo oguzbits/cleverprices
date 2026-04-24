@@ -113,7 +113,8 @@ const AMAZON_TOS_LIMIT_SECONDS = 86400; // 24 hours
 export const CATEGORY_REVALIDATE_SECONDS = 3600; // 1 hour (Global category lists)
 export const PRODUCT_REVALIDATE_SECONDS = 3600; // 1 hour (Deep product details)
 const STATIC_REVALIDATE_SECONDS = 86400; // 24 hours (Legal, Blog lists, Static pages)
-export const CACHE_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || "v259-STABLE"; // Global Cache Buster
+export const CACHE_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || "v259-STABLE"; 
+
 
 // =============================================================================
 // HELPER FUNCTIONS
