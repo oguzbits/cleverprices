@@ -44,17 +44,13 @@ export function getFamilyRepresentative(
     if (rankA !== rankB) return rankA - rankB;
 
     // 2. Secondary tie-breaker: ID (Absolute stability for URLs)
-    const idA = (a as any).id || 0;
-    const idB = (b as any).id || 0;
+    const idA = a.id || 0;
+    const idB = b.id || 0;
     if (idA !== idB) return idA - idB;
 
     // 3. Last resort: Price (Unstable, only used if ranks and IDs are identical/missing)
-    const getPrice = (p: any) =>
-      p.price ||
-      p.prices?.de ||
-      p.prices?.["de"] ||
-      (p.prices ? Object.values(p.prices)[0] : 0) ||
-      999999;
+    const getPrice = (p: Product) =>
+      p.price || (p.prices ? Object.values(p.prices)[0] : 0) || 999999;
     return getPrice(a) - getPrice(b);
   });
 
@@ -100,11 +96,7 @@ export function getFamilyIdentity(
   const brand = identity.brand || "Generic";
   const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
-  const categoryUsed = (
-    representative.category ||
-    (representative as any).category_id ||
-    ""
-  ).toLowerCase();
+  const categoryUsed = (representative.category || "").toLowerCase();
   const isDisplay =
     categoryUsed.includes("monitor") ||
     categoryUsed.includes("display") ||
@@ -114,14 +106,14 @@ export function getFamilyIdentity(
 
   // 2. Determine Scope
   const isHub =
-    representative.isParentView ||
-    ((representative as any).syntheticId &&
-      (representative as any).syntheticId >= 900000000) ||
-    ((representative as any).id && (representative as any).id >= 900000000);
+    !!representative.isParentView ||
+    (!!representative.syntheticId && representative.syntheticId >= 900000000) ||
+    (!!representative.id && representative.id >= 900000000);
+
   const syntheticId =
-    (representative as any).syntheticId ||
-    ((representative as any).id && (representative as any).id >= 900000000
-      ? (representative as any).id
+    representative.syntheticId ||
+    (representative.id && representative.id >= 900000000
+      ? representative.id
       : undefined) ||
     (isHub ? representative.id : undefined);
 

@@ -235,6 +235,7 @@ export interface Product {
   listPrice?: Record<string, number>;
   pricesPerUnit?: Record<string, number>;
   isParentView?: boolean;
+  syntheticId?: number;
   icecatId?: number | null;
   specificationsSource?: string | null;
   enrichmentStatus?:
