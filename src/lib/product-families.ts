@@ -39,8 +39,8 @@ export function getFamilyRepresentative(
     if (hasImageA !== hasImageB) return hasImageA ? -1 : 1;
 
     // 1. Prioritize Sales Rank for stability and quality (Lower is better)
-    const rankA = (a as any).salesRank ?? 999999;
-    const rankB = (b as any).salesRank ?? 999999;
+    const rankA = a.salesRank ?? 999999;
+    const rankB = b.salesRank ?? 999999;
     if (rankA !== rankB) return rankA - rankB;
 
     // 2. Secondary tie-breaker: ID (Absolute stability for URLs)

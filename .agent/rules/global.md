@@ -1,4 +1,4 @@
-# CleverPrices Global Agent Rules
+# CleverPrices Global Agent Rules (Audited & Finalized)
 
 These rules apply to EVERY prompt. They represent the architectural and design "North Star" of the project.
 
@@ -13,14 +13,15 @@ These rules apply to EVERY prompt. They represent the architectural and design "
 - **Indexing Gating:** Only index high-quality pages (specCount > 3).
 
 ## 3. Strict Code Integrity (Zero-Error Delivery)
-- **Verified Imports:** You MUST verify every import path and schema field name (`src/db/schema.ts`) before writing code.
-- **Incremental Debt Reduction:** NEVER leave hardcoded debug TRACE logs, unused variables, or stale arguments/comments in a file you modify.
+- **Verified Imports:** You MUST verify file paths and schema fields (`src/db/schema.ts`) before writing code.
+- **Strict Typing:** NEVER use `as any` if the property exists in the domain interface or database schema. Propose interface extensions if data is truly dynamic.
+- **Incremental Cleanup:** Every edit MUST remove unused variables, constants, and hardcoded TRACE logs.
+- **Documentation Integrity:** You MUST update or remove JSDoc/comments when changing function signatures or logic. No stale documentation.
 - **MANDATORY DRY-RUN:** Mentally lint all code for syntax errors and unused imports before presenting.
 
-## 4. Automatic Formatting & Cleanup
-- **Post-Edit Formatting:** After any file modification, you MUST run `bunx prettier --write <TargetFile>`. This ensures changes match the local environment's formatting.
-- **Zero-Dead-Code Policy:** Every edit is an opportunity to delete dead code. If you see a variable that isn't used, delete it immediately.
+## 4. Automatic Formatting & Sync
+- **Post-Edit Formatting:** After any file modification, run `bunx prettier --write <TargetFile>`.
+- **Graphify Sync:** Rebuild the graph after modifying core logic (`product-families.ts`, `product-identity.ts`, etc.) using: `$(cat graphify-out/.graphify_python) -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"`
 
-## 5. Graphify & Build Verification
-- **Graphify Sync:** Rebuild the graph after modifying core logic (`product-families.ts`, `product-identity.ts`, etc.).
-- **Build Guard:** For complex changes, run `bun run build` or `tsc` to ensure the project still compiles before ending the turn.
+## 5. Pre-Deployment Guard
+- **Build Check:** For complex changes, run `bun run build` or `tsc` to ensure the project still compiles before ending the turn.
