@@ -62,17 +62,22 @@ export function calculateProductMetrics(
   let capacity = p.capacity;
   let capacityUnit = p.capacityUnit;
 
+  console.error(
+    `[DEBUG-METRICS-ENTRY] cat=${category}, price=${overridePrice}`,
+  );
+
   if (!category) {
-    if (process.env.BUILD_PHASE === "1")
-      console.error("[DEBUG-METRICS-EXIT-1] No category provided");
+    console.error("[DEBUG-METRICS-EXIT-1] No category provided");
     return p;
   }
 
   // Normalize category (handle aliases if possible)
-  let categoryConfig: any = allCategories[category as CategorySlug];
+  // Safety: allCategories might be uninitialized during build-time module resolution
+  const registry = allCategories || {};
+  let categoryConfig: any = registry[category as CategorySlug];
   if (!categoryConfig) {
     // Try to find by alias
-    categoryConfig = Object.values(allCategories).find((cat) =>
+    categoryConfig = Object.values(registry).find((cat: any) =>
       cat.aliases?.includes(category!),
     );
   }
@@ -83,10 +88,7 @@ export function calculateProductMetrics(
     category === "cpu" ||
     category === "processors-cpus"
   ) {
-    if (process.env.BUILD_PHASE === "1")
-      console.error(
-        `[DEBUG-METRICS-EXIT-2] Skipping CPU category: ${category}`,
-      );
+    console.error(`[DEBUG-METRICS-EXIT-2] Skipping CPU category: ${category}`);
     return p;
   }
 
@@ -133,11 +135,9 @@ export function calculateProductMetrics(
 
   // We need both price and capacity to calculate metrics
   if (!actualCapacity || !price) {
-    if (process.env.BUILD_PHASE === "1") {
-      console.error(
-        `[DEBUG-METRICS-EXIT-3] Missing values: cap=${actualCapacity}, price=${price}, cat=${category}, title=${title?.substring(0, 20)}`,
-      );
-    }
+    console.error(
+      `[DEBUG-METRICS-EXIT-3] Missing values: cap=${actualCapacity}, price=${price}, cat=${category}, title=${title?.substring(0, 20)}`,
+    );
     return p;
   }
 
@@ -160,11 +160,9 @@ export function calculateProductMetrics(
   const capacityInComparisonUnit = normalizedCapacity / toFactor;
 
   if (!capacityInComparisonUnit) {
-    if (process.env.BUILD_PHASE === "1") {
-      console.error(
-        `[DEBUG-METRICS-EXIT-4] Zero capacity after conversion: normCap=${normalizedCapacity}, fromF=${fromFactor}, toF=${toFactor}`,
-      );
-    }
+    console.error(
+      `[DEBUG-METRICS-EXIT-4] Zero capacity after conversion: normCap=${normalizedCapacity}, fromF=${fromFactor}, toF=${toFactor}`,
+    );
     return p;
   }
 
