@@ -18,8 +18,9 @@ import { isProductHighQuality } from "@/lib/utils/quality";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
 import { cacheLife } from "next/cache";
-
 import { notFound, permanentRedirect, redirect } from "next/navigation";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
 export interface Props {
   params: Promise<{
@@ -272,10 +273,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default function ProductPage({ params, searchParams }: Props) {
-  // CRITICAL: We removed the global <Suspense> wrapper here.
-  // In Next.js 15+, wrapping the entire page body in Suspense fallback={null} causes
-  // "postponed" responses (x-nextjs-postponed: 1) and 0-byte initial HTML content-length.
-  // This causes Googlebot to see an empty page with no <h1> and no <link rel="canonical">.
+  // During build phase, we wrap in Suspense to satisfy Next.js 15 "blocking route" checks.
+  // At runtime, we allow pure SSR to prevent the "blank screen" flash.
+  const isBuild =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.BUILD_PHASE === "1";
+
+  if (isBuild) {
+    return (
+      <Suspense fallback={null}>
+        <ProductPageContent params={params} searchParams={searchParams} />
+      </Suspense>
+    );
+  }
+
   return <ProductPageContent params={params} searchParams={searchParams} />;
 }
 
@@ -296,6 +307,8 @@ async function ProductPageContent({
   ) {
     return <div className="hidden" />;
   }
+
+  await connection();
 
   const { condition } = await searchParams;
 

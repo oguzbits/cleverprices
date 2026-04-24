@@ -20,10 +20,12 @@ import {
 } from "@/lib/metadata";
 import { type FilterParams } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
-import { CACHE_VERSION, BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
+import { BRAND_DOMAIN, CACHE_VERSION, SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { notFound, permanentRedirect } from "next/navigation";
+import { connection } from "next/server";
+import { Suspense } from "react";
 
 interface Props {
   params: Promise<{
@@ -141,6 +143,20 @@ export async function generateMetadata({
 }
 
 export default function DedicatedCategoryPage({ params, searchParams }: Props) {
+  // During build phase, we wrap in Suspense to satisfy Next.js 15 "blocking route" checks.
+  // At runtime, we allow pure SSR to prevent the "blank screen" flash.
+  const isBuild =
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    process.env.BUILD_PHASE === "1";
+
+  if (isBuild) {
+    return (
+      <Suspense fallback={null}>
+        <DedicatedCategoryContent params={params} searchParams={searchParams} />
+      </Suspense>
+    );
+  }
+
   return (
     <DedicatedCategoryContent params={params} searchParams={searchParams} />
   );
@@ -158,6 +174,8 @@ async function DedicatedCategoryContent({
   if (categorySlug === "build-time-placeholder") {
     return null;
   }
+
+  await connection();
 
   const category = await getCategoryBySlug(categorySlug);
   if (!category) notFound();
