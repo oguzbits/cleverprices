@@ -466,15 +466,14 @@ export async function getPDPRenderData(
         isPermanent: true,
       };
     } else {
-      const asinSlug = await getCachedProductSlugByAsinSuffix(slug);
-      if (asinSlug && asinSlug !== slug) {
-        const tmpProd = await getCachedProductBySlug(asinSlug, false);
+      const asinResult = await getCachedProductSlugByAsinSuffix(slug);
+      if (asinResult && asinResult.slug !== slug) {
         return {
-          product: tmpProd || (null as any),
+          product: null as any,
           variants: [],
           category: null,
           isParentView: false,
-          redirect: getProductPath(tmpProd?.id, asinSlug),
+          redirect: getProductPath(asinResult.id, asinResult.slug),
           isPermanent: true,
         };
       }

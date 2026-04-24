@@ -999,7 +999,7 @@ const fetchProductBySlug = cache(
     // 2. Try exact match (Legacy path)
     let result = await getProductAndPrices(slug);
 
-    // If not found, try decoding the slug
+    // 3. Try decoding the slug
     if (!result) {
       try {
         const decoded = decodeURIComponent(slug);
@@ -1008,6 +1008,25 @@ const fetchProductBySlug = cache(
         }
       } catch (e) {
         // Ignore decoding errors
+      }
+    }
+
+    // 4. Try fuzzy match (Alias/Short path)
+    if (!result && slug.length >= 3) {
+      const [p] = await withRetry(() =>
+        db
+          .select()
+          .from(products)
+          .where(like(products.slug, `${slug}%`))
+          .orderBy(asc(products.salesRank))
+          .limit(1),
+      );
+
+      if (p) {
+        const prs = await withRetry(() =>
+          db.select().from(prices).where(eq(prices.productId, p.id)),
+        );
+        result = mapDbProduct(p as any, prs as any, []);
       }
     }
 
@@ -1098,7 +1117,7 @@ export const getProductByAsin = cache(async function getProductByAsin(
  */
 export async function findProductSlugByAsinSuffix(
   oldSlug: string,
-): Promise<string | undefined> {
+): Promise<{ id: number; slug: string } | undefined> {
   if (IS_BUILD) return undefined;
   await dbReady;
   // Extract potential ASIN from old slug
@@ -1109,28 +1128,33 @@ export async function findProductSlugByAsinSuffix(
     // Indexed lookup is O(1)
     const [p] = await withRetry(() =>
       db
-        .select({ id: products.id, slug: products.slug })
+        .select({
+          id: products.id,
+          slug: products.slug,
+          parentAsin: products.parentAsin,
+        })
         .from(products)
         .where(eq(products.asin, asin))
         .limit(1),
     );
     if (p) {
-      const iden = getProductIdentity(p);
+      const iden = getProductIdentity(p as any);
       const canonicalRealId = await getCanonicalFamilyId(
-        (p as any).parentAsin || undefined,
+        p.parentAsin || undefined,
         p.id,
         iden.modelTitle,
       );
       const canonicalProduct = await getProductById(canonicalRealId);
+      const finalId = 900000000 + (canonicalProduct?.id ?? p.id);
       const { slug: canonical } = getFamilyIdentity(
         {
           ...(canonicalProduct || p),
-          id: 900000000 + (canonicalProduct?.id ?? p.id),
+          id: finalId,
           isParentView: true,
         },
         [],
       );
-      return canonical;
+      return { id: finalId, slug: canonical };
     }
   }
 
@@ -1168,16 +1192,17 @@ export async function findProductSlugByAsinSuffix(
       );
 
       const canonicalProduct = await getProductById(canonicalRealId);
+      const finalId = 900000000 + (canonicalProduct?.id ?? p.id);
       const { slug: canonical } = getFamilyIdentity(
         {
           ...(canonicalProduct || p),
-          id: 900000000 + (canonicalProduct?.id ?? p.id),
+          id: finalId,
           isParentView: true,
           parentAsin: p.parentAsin ?? undefined,
         },
         [],
       );
-      return canonical;
+      return { id: finalId, slug: canonical };
     }
   }
 
@@ -1185,13 +1210,13 @@ export async function findProductSlugByAsinSuffix(
   // If the old slug matches the text part of a new ID-prefixed slug
   // e.g. "apple-iphone-15" matches "200000123_-apple-iphone-15"
   const [fuzzyP] = await db
-    .select({ slug: products.slug })
+    .select({ id: products.id, slug: products.slug })
     .from(products)
     .where(sql`${products.slug} LIKE ${"%_-" + oldSlug}`)
     .limit(1);
 
   if (fuzzyP) {
-    return fuzzyP.slug;
+    return { id: fuzzyP.id, slug: fuzzyP.slug };
   }
 
   return undefined;
