@@ -82,14 +82,23 @@ export function calculateProductMetrics(
     return p;
   }
 
+  const ANALYTICAL_CATEGORY_SLUGS = [
+    "ssd",
+    "ssds",
+    "hard-drives",
+    "festplatten",
+    "storage",
+    "ram",
+    "arbeitsspeicher",
+    "memory",
+    "gpu",
+    "grafikkarten",
+    "netzteile",
+    "psu",
+  ];
+
   const isStorageOrMemory =
-    category === "ssd" ||
-    category === "ssds" ||
-    category === "hard-drives" ||
-    category === "storage" ||
-    category === "ram" ||
-    category === "gpu" ||
-    category === "memory" ||
+    ANALYTICAL_CATEGORY_SLUGS.includes(category?.toLowerCase() || "") ||
     categoryConfig?.unitType === "TB" ||
     categoryConfig?.unitType === "GB";
 
@@ -124,12 +133,15 @@ export function calculateProductMetrics(
     : categoryConfig?.unitType || capacityUnit || "GB";
 
   // Prevent conversion for non-storage units like 'W' or 'piece'
+  const currentUnit = (capacityUnit || "GB").toUpperCase();
+  const targetUnit = (comparisonUnit || "GB").toUpperCase();
+
   const fromFactor = isActuallyNonAnalytical
     ? 1
-    : UNIT_CONVERSION[capacityUnit || "GB"] || 1;
+    : UNIT_CONVERSION[currentUnit] || 1;
   const toFactor = isActuallyNonAnalytical
     ? 1
-    : UNIT_CONVERSION[comparisonUnit] || 1;
+    : UNIT_CONVERSION[targetUnit] || 1;
 
   const normalizedCapacity = actualCapacity * fromFactor;
   const capacityInComparisonUnit = normalizedCapacity / toFactor;
@@ -142,8 +154,8 @@ export function calculateProductMetrics(
     ...p,
     pricePerUnit,
     normalizedCapacity,
-    capacity: capacity as number,
-    capacityUnit: capacityUnit as string,
+    capacity: actualCapacity,
+    capacityUnit: finalUnit,
   };
 }
 
