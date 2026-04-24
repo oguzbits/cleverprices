@@ -96,11 +96,7 @@ export function getFamilyIdentity(
 } {
   // 1. Basic Identity (Stateless: Core Model + Own Traits)
   const identity = getProductIdentity(representative);
-  if (representative.id === 3833) {
-    console.error(
-      `TRACE 3833 (getFamilyIdentity): Title="${identity.displayTitle}", Model="${identity.model}", MPN="${identity.mpn}"`,
-    );
-  }
+
   const brand = identity.brand || "Generic";
   const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
