@@ -1,9 +1,8 @@
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
-import { Suspense } from "react";
 import { CATEGORY_MAP } from "@/lib/category-definitions";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAlternateLanguages } from "@/lib/metadata";
-import { SITE_URL } from "@/lib/site-config";
+import { CACHE_VERSION, SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
 import { cacheLife } from "next/cache";
 
@@ -22,11 +21,7 @@ export const metadata: Metadata = {
 };
 
 export default function DealsPage({ searchParams }: Props) {
-  return (
-    <Suspense fallback={null}>
-      <DealsPageContent searchParams={searchParams} />
-    </Suspense>
-  );
+  return <DealsPageContent searchParams={searchParams} />;
 }
 
 async function DealsPageContent({
@@ -45,7 +40,7 @@ async function DealsPageCache({
 }) {
   "use cache";
   cacheLife("category");
-  const _v = "v207"; // Bust RSC cache when identity/slug logic changes
+  const _v = CACHE_VERSION; // Global Build ID Cache Buster
   const category = CATEGORY_MAP["deals"];
 
   return (

@@ -20,11 +20,10 @@ import {
 } from "@/lib/metadata";
 import { type FilterParams } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
-import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
+import { CACHE_VERSION, BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
 import { cacheLife } from "next/cache";
 import { notFound, permanentRedirect } from "next/navigation";
-import { Suspense } from "react";
 
 interface Props {
   params: Promise<{
@@ -141,14 +140,9 @@ export async function generateMetadata({
   };
 }
 
-export default function DedicatedCategoryPage({
-  params,
-  searchParams,
-}: Props) {
+export default function DedicatedCategoryPage({ params, searchParams }: Props) {
   return (
-    <Suspense fallback={null}>
-      <DedicatedCategoryContent params={params} searchParams={searchParams} />
-    </Suspense>
+    <DedicatedCategoryContent params={params} searchParams={searchParams} />
   );
 }
 
@@ -193,7 +187,7 @@ async function CategoryPageContent({
 }) {
   "use cache";
   cacheLife("category");
-  const _v = "v208"; // Bust RSC cache when identity/slug logic changes
+  const _v = CACHE_VERSION; // Global Build ID Cache Buster
   // 1. Initial checks (Fast, usually cached)
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
   const isEmpty = !isCategoryNotEmptyRecursive(categorySlug, nonEmptySlugs);
@@ -209,14 +203,12 @@ async function CategoryPageContent({
   if (isParent) {
     // Parent View Hub
     return (
-      <Suspense fallback={null}>
-        <ParentCategoryViewLoader
-          category={category}
-          categorySlug={categorySlug}
-          childCategories={activeChildren}
-          nonEmptySlugs={nonEmptySlugs}
-        />
-      </Suspense>
+      <ParentCategoryViewLoader
+        category={category}
+        categorySlug={categorySlug}
+        childCategories={activeChildren}
+        nonEmptySlugs={nonEmptySlugs}
+      />
     );
   }
 

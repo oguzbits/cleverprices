@@ -311,7 +311,7 @@ async function ProductPageCache({
 }) {
   "use cache";
   cacheLife("product_v5");
-  const _v = "v252-POSTPONE-FIX"; // Synchronized Cache Buster
+  const _v = CACHE_VERSION; // Global Build ID Cache Buster
   const countryCode = DEFAULT_COUNTRY;
 
   let action:
