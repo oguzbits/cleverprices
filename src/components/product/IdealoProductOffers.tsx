@@ -75,7 +75,10 @@ export async function IdealoProductOffers({
       }
 
       if (itemToAdd) {
-        if (!bestHubItem || (itemToAdd.price || Infinity) < (bestHubItem.price || Infinity)) {
+        if (
+          !bestHubItem ||
+          (itemToAdd.price || Infinity) < (bestHubItem.price || Infinity)
+        ) {
           bestHubItem = itemToAdd;
         }
       }

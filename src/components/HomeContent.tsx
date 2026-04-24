@@ -1,4 +1,3 @@
-
 import { IdealoHomePage } from "@/components/landing/IdealoHomePage";
 import { type CountryCode } from "@/lib/countries";
 import { curateProductList } from "@/lib/product-curation";
@@ -38,7 +37,9 @@ export default async function HomeContent({
 
   // Fetch enough data for curation with margin for filtering
   const [rawDeals, rawPopular, rawNew] = await fetchHomeData(countryCode);
-  console.log(`🏠 Home Data: Deals=${rawDeals.length}, Popular=${rawPopular.length}, New=${rawNew.length}`);
+  console.log(
+    `🏠 Home Data: Deals=${rawDeals.length}, Popular=${rawPopular.length}, New=${rawNew.length}`,
+  );
 
   // Global duplicate tracker across ALL sections
   const globalSeen = new Set<string>();

@@ -80,7 +80,10 @@ export class EbayEnricher {
     if (response.status === 429) throw new RateLimitError();
 
     const data = await response.json();
-    const best = await this.getBestItemFromSummaries(data.itemSummaries, market);
+    const best = await this.getBestItemFromSummaries(
+      data.itemSummaries,
+      market,
+    );
     if (best) return { ...best, matchType: "gtin" };
 
     // 2. Try MPN

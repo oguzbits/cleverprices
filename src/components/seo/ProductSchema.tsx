@@ -85,8 +85,7 @@ export function ProductSchema({
   const sharedReturnPolicy = {
     "@type": "MerchantReturnPolicy",
     applicableCountry: "DE",
-    returnPolicyCategory:
-      "https://schema.org/MerchantReturnFiniteReturnWindow",
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
     merchantReturnDays: 30,
     returnMethod: "https://schema.org/ReturnByMail",
     returnFees: "https://schema.org/FreeReturn",
@@ -97,9 +96,12 @@ export function ProductSchema({
     "@context": "https://schema.org",
     "@type": "Product",
     "@id": getProductCanonicalUrl(product.id, product.slug),
-    name: (isHub ? identity.modelTitle : identity.displayTitle)?.length > 2 
-      ? (isHub ? identity.modelTitle : identity.displayTitle) 
-      : (product.title || "").replace(/\s*-\s*[\w\s]+$/, "").trim(),
+    name:
+      (isHub ? identity.modelTitle : identity.displayTitle)?.length > 2
+        ? isHub
+          ? identity.modelTitle
+          : identity.displayTitle
+        : (product.title || "").replace(/\s*-\s*[\w\s]+$/, "").trim(),
     description:
       `${(isHub ? identity.modelTitle : identity.displayTitle)?.length > 2 ? (isHub ? identity.modelTitle : identity.displayTitle) : product.title} - ${product.brand} ${product.category}.`.trim(),
     brand: {
@@ -235,7 +237,7 @@ export function ProductSchema({
     additionalProperties.push({
       "@type": "PropertyValue",
       name: "Capacity",
-      value: `${product.capacity} ${product.capacityUnit || ''}`.trim(),
+      value: `${product.capacity} ${product.capacityUnit || ""}`.trim(),
     });
   }
 
@@ -291,5 +293,3 @@ export function BreadcrumbSchema({ items }: BreadcrumbSchemaProps) {
     />
   );
 }
-
-

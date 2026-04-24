@@ -37,7 +37,7 @@ async function warmUrl(url: string) {
 
 async function main() {
   console.log("🚀 Starting Cache Warmer (Hybrid SSG Mode)");
-  
+
   const isPurge = process.argv.includes("--purge");
   const adminSecret = process.env.ADMIN_SECRET;
 
@@ -49,9 +49,9 @@ async function main() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${adminSecret || ""}`
+          Authorization: `Bearer ${adminSecret || ""}`,
         },
-        body: JSON.stringify({})
+        body: JSON.stringify({}),
       });
 
       if (response.ok) {
@@ -59,7 +59,10 @@ async function main() {
         console.log(`✅ Cache purged:`, data.purgedTags);
       } else {
         const errData = await response.json().catch(() => ({}));
-        console.error(`❌ Purge failed [${response.status}]:`, errData.error || "Unknown error");
+        console.error(
+          `❌ Purge failed [${response.status}]:`,
+          errData.error || "Unknown error",
+        );
       }
     } catch (e) {
       console.error("💥 Error calling purge API:", e);

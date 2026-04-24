@@ -1,7 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 import { getFamilyIdentity } from "./product-families";
 
-
 // Helper to create mock products
 const createProduct = (overrides: any) => ({
   id: 100, // Base ID

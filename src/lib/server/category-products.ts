@@ -705,10 +705,7 @@ export async function getCategoryProducts(
 
   // 1. Fetch LEAN products for filtering/sorting (High Speed)
   // [GSC FIX] getLeanCategoryProducts now handles mapping of virtual categories (e.g. apple-iphone -> smartphones)
-  const leanProducts = await getLeanCategoryProducts(
-    categorySlug,
-    countryCode,
-  );
+  const leanProducts = await getLeanCategoryProducts(categorySlug, countryCode);
 
   const category = allCategories[categorySlug as CategorySlug];
   const unitLabel = category?.unitType || "TB";

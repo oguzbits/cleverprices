@@ -8,7 +8,7 @@ import {
   extractRealStorageFromTitle,
   parseVariationAttributes,
 } from "./variants";
- 
+
 const IDENTITY_CACHE = new Map<string, any>();
 
 const STRATEGY_MAP: CategoryStrategyMap = {
