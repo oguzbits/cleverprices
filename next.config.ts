@@ -571,6 +571,10 @@ const configWithSentry = withSentryConfig(
       excludeReplayShadowDom: true,
     },
 
+    // ⚡ CI Optimization: Disable server-side source maps to save ~40s of upload time
+    // Most production errors are client-side; server-side traces remain readable but less granular.
+    disableServerSideSourceMaps: true,
+
     // Sentry Webpack Plugin Options (Fallback for legacy builds)
     // Note: Some of these are not yet supported by Sentry for Turbopack
     // but using the new structure resolves deprecation warnings in v8/v10.
@@ -596,9 +600,13 @@ if (isBuild && isCI) {
     "🛠️  CLEVERPRICES CI BUILD DETECTED - Applying memory-safety constraints...",
   );
   if (nextConfig.experimental) {
+    // Reverted to 1 CPU as requested to prevent resource contention on the production server
     nextConfig.experimental.workerThreads = false;
     nextConfig.experimental.cpus = 1;
   }
 }
 
-export default configWithSentry;
+// Only wrap with Sentry in CI/Production to avoid 70s+ local build overhead
+const exportedConfig = isCI ? configWithSentry : withBundleAnalyzer(withMDX(nextConfig));
+
+export default exportedConfig;

@@ -1,4 +1,5 @@
-import type { Product } from "@/lib/product-definitions";
+import type { LocalizedProduct, Product } from "@/lib/product-definitions";
+import type { LeanProduct } from "./types";
 import {
   getProductIdentity,
   type SiblingConsensus,
@@ -22,9 +23,17 @@ import {
  * 2. If multiple New, pick cheapest.
  * 3. If no New, pick cheapest overall (Used/Renewed).
  */
-export function getFamilyRepresentative(
-  variants: Product[],
-): Product | undefined {
+export function getFamilyRepresentative<
+  T extends {
+    condition?: string;
+    image?: string;
+    imageUrl?: string;
+    salesRank?: number;
+    id?: number;
+    price?: number;
+    prices?: Record<string, unknown>;
+  },
+>(variants: T[]): T | undefined {
   if (!variants || variants.length === 0) return undefined;
 
   const newItems = variants.filter(
@@ -49,8 +58,10 @@ export function getFamilyRepresentative(
     if (idA !== idB) return idA - idB;
 
     // 3. Last resort: Price (Unstable, only used if ranks and IDs are identical/missing)
-    const getPrice = (p: Product) =>
-      p.price || (p.prices ? Object.values(p.prices)[0] : 0) || 999999;
+    const getPrice = (p: T) =>
+      p.price ||
+      (p.prices ? (Object.values(p.prices)[0] as number) : 0) ||
+      999999;
     return getPrice(a) - getPrice(b);
   });
 
@@ -77,9 +88,9 @@ function normalizeAccents(s: string): string {
  * Logic matches the client-side ProductVariantSelector to ensure consistent URLs.
  */
 export function getFamilyIdentity(
-  representative: Product | Partial<Product>,
-  allVariants: Product[] = [],
-  consensus?: SiblingConsensus,
+  representative: Product | LocalizedProduct | LeanProduct,
+  _allVariants: (Product | LocalizedProduct | LeanProduct)[] = [],
+  _consensus?: SiblingConsensus,
 ): {
   slug: string;
   title: string;
@@ -107,8 +118,9 @@ export function getFamilyIdentity(
   // 2. Determine Scope
   const isHub =
     !!representative.isParentView ||
-    (!!representative.syntheticId && representative.syntheticId >= 900000000) ||
-    (!!representative.id && representative.id >= 900000000);
+    (!!representative.syntheticId &&
+      Number(representative.syntheticId) >= 900000000) ||
+    (!!representative.id && Number(representative.id) >= 900000000);
 
   const syntheticId =
     representative.syntheticId ||
@@ -173,7 +185,8 @@ export function getFamilyIdentity(
 
   // 6. ID-Based Prefixing
   // Format: [ID]_-text-slug
-  const rawId = (syntheticId || representative.id || 0) % 100000000;
+  const rawId =
+    (Number(syntheticId) || Number(representative.id) || 0) % 100000000;
 
   // Standardize to 9 digits:
   // Hubs: 900,000,000 + ID
@@ -228,7 +241,9 @@ export function getFamilyIdentity(
  * Single Source of Truth for Family Statistics.
  * - Counts unique variants (deduplicated by attributes).
  */
-export function getFamilyStats(variants: Product[]) {
+export function getFamilyStats(
+  variants: { id?: number; variationAttributes?: string }[],
+) {
   const uniqueVariants = new Set<string>();
 
   variants.forEach((v) => {

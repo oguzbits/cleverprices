@@ -54,7 +54,9 @@ export function IdealoListCard({
 
   // Build description parts
   const fullTitle = (
-    product.subtitle ? `${product.title} ${product.subtitle}` : product.title
+    product.subtitle
+      ? `${product.title || ""} ${product.subtitle}`
+      : product.title || ""
   ).toLowerCase();
 
   const descriptionParts = [
@@ -74,7 +76,7 @@ export function IdealoListCard({
       return val && !fullTitle.includes(val);
     });
 
-  const isHub = !!(product as any).isParentView;
+  const isHub = !!product.isParentView;
   const identity = getProductIdentity(product);
 
   const displayModelTitle = product.modelTitle || identity.modelTitle;
@@ -91,11 +93,11 @@ export function IdealoListCard({
   const useLiveSlug =
     IDENTITY_CATEGORIES.includes(product.category || "") && !isHub;
   const liveSlug = useLiveSlug
-    ? getFamilyIdentity(product as any, []).slug
+    ? getFamilyIdentity(product, []).slug
     : undefined;
   const cardHref = liveSlug
     ? `/p/${liveSlug}`
-    : getProductPath(product.id, product.slug);
+    : getProductPath(product.id || 0, product.slug || "");
 
   return (
     <div className={cn("sr-resultList__item", "-mb-px", className)}>
@@ -121,7 +123,7 @@ export function IdealoListCard({
           {product.image ? (
             <Image
               src={product.image}
-              alt={product.title}
+              alt={product.title || ""}
               fill
               priority={priority}
               loading={priority ? undefined : "lazy"}
@@ -189,10 +191,11 @@ export function IdealoListCard({
                         Version: {formatTechText(product.variationAttributes)}
                       </p>
                     )}
-                  {(product as any).isParentView &&
-                    (product as any).variantCount > 1 && (
+                  {product.isParentView &&
+                    product.variantCount &&
+                    product.variantCount > 1 && (
                       <p className="text-idealo-text-primary mt-1 text-[12px]">
-                        {(product as any).variantCount} Varianten
+                        {product.variantCount} Varianten
                       </p>
                     )}
                 </span>
@@ -232,7 +235,7 @@ export function IdealoListCard({
             reviewCount={product.reviewCount || 0}
             className="mb-2"
           />
-          {product.listPrice && product.listPrice > product.price && (
+          {product.listPrice && product.listPrice > (product.price || 0) && (
             <div className="text-idealo-text-secondary mb-0.5 text-[14px] line-through">
               {formatCurrency(product.listPrice, countryCode)}
             </div>
@@ -240,8 +243,8 @@ export function IdealoListCard({
           <IdealoLivePrice
             productId={product.id!}
             countryCode={countryCode}
-            initialPrice={product.price}
-            showAb={!!(product as any).isParentView}
+            initialPrice={product.price || 0}
+            showAb={!!product.isParentView}
             className="text-primary text-[20px]"
             livePriceData={livePriceData}
           />
@@ -263,7 +266,7 @@ export function IdealoListCard({
         </div>
 
         {/* TOP LEFT BADGE (Bestseller) */}
-        {isProductBestseller(product as any) && (
+        {isProductBestseller(product) && (
           <div className="absolute top-0 left-0 z-10">
             <span className="inline-block rounded-br-sm bg-[#0066cc] px-2.5 py-1 text-[14px] font-bold text-white shadow-sm">
               Bestseller

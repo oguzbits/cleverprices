@@ -342,9 +342,9 @@ class SophisticatedEnricher {
               const modeWords = identity.model
                 .toLowerCase()
                 .split(" ")
-                .filter((w) => w.length > 2);
+                .filter((w: string) => w.length > 2);
               const modelMatch =
-                modeWords.some((w) => linkTitle.includes(w)) ||
+                modeWords.some((w: string) => linkTitle.includes(w)) ||
                 linkTitle.includes(identity.model.toLowerCase());
 
               if (brandMatch && (modelMatch || gtinList.length > 0)) {

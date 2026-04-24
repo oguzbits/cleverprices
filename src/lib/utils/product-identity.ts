@@ -1,15 +1,17 @@
+import type { LocalizedProduct, Product } from "../product-definitions";
+import type { LeanProduct } from "../types";
 import { CpuStrategy } from "./identity/cpus";
 import { GpuStrategy } from "./identity/gpus";
 import { MonitorStrategy } from "./identity/monitors";
 import { MotherboardStrategy } from "./identity/motherboards";
 import { SmartphoneStrategy } from "./identity/smartphones";
-import { CategoryStrategyMap, ProductIdentity } from "./identity/types";
+import { CategoryStrategyMap, type ProductIdentity } from "./identity/types";
 import {
   extractRealStorageFromTitle,
   parseVariationAttributes,
 } from "./variants";
 
-const IDENTITY_CACHE = new Map<string, any>();
+const IDENTITY_CACHE = new Map<string, ProductIdentity>();
 
 const STRATEGY_MAP: CategoryStrategyMap = {
   motherboards: MotherboardStrategy,
@@ -25,15 +27,6 @@ const STRATEGY_MAP: CategoryStrategyMap = {
   fernsehgeraete: MonitorStrategy,
   tvs: MonitorStrategy,
 };
-
-interface Product {
-  brand?: string | null;
-  title?: string;
-  category?: string | null;
-  specifications?: Record<string, any> | string | null;
-  variationAttributes?: string | null;
-  [key: string]: any;
-}
 
 /**
  * Corrects "Sub-brands" or "Series" to their actual manufacturer for slugging.
@@ -103,7 +96,7 @@ interface CpuFacts {
   frequency: string; // 3.4 GHz, 3.50-5.30GHz, etc.
 }
 
-function extractCpuFacts(title: string, brand: string): CpuFacts {
+function extractCpuFacts(title: string): CpuFacts {
   // Trademarks are collapsed for whitespace but preserved for extraction
   const t = title.replace(/\s+/g, " ").trim();
 
@@ -496,12 +489,12 @@ export const IDENTITY_CONFIG = {
    * Prevents full heavy JSON parsing in loops while ensuring identity stability.
    */
   getIdentitySpecs: (
-    jsonStr: string | null | Record<string, any>,
-  ): Record<string, any> => {
+    jsonStr: string | null | Record<string, unknown>,
+  ): Record<string, unknown> => {
     if (!jsonStr) return {};
     try {
       const full = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-      const identity: Record<string, any> = {};
+      const identity: Record<string, unknown> = {};
       const keys = IDENTITY_CONFIG.IDENTITY_KEYS;
       for (const key of keys) {
         // Case-insensitive lookup for robustness
@@ -519,7 +512,9 @@ export const IDENTITY_CONFIG = {
  * SMART SIBLING CONSENSUS (DYNAMIC HUB RESOLUTION)
  * Pre-calculates token frequencies across a family to identify variation-specific noise.
  */
-export function calculateSiblingConsensus(siblings: any[]): SiblingConsensus {
+export function calculateSiblingConsensus(
+  siblings: (Product | LocalizedProduct | LeanProduct)[],
+): SiblingConsensus {
   const tokenCounts: Record<string, number> = {};
   const total = siblings.length;
 
@@ -554,13 +549,6 @@ export function calculateSiblingConsensus(siblings: any[]): SiblingConsensus {
  * Checks if a token is a global constant in the sibling family (Identity Token)
  * or a variable trait (Variation Token).
  */
-function isIdentityToken(token: string, consensus: SiblingConsensus): boolean {
-  if (consensus.total <= 1) return true; // Can't tell without siblings
-  const freq =
-    (consensus.tokenCounts[token.toLowerCase()] || 0) / consensus.total;
-  return freq >= 0.7; // Appears in 70% of siblings
-}
-
 /**
  * Extracts structured RAM facts from an Amazon title + official specs.
  * Returns the series name, total capacity, DDR speed string, and CL latency.
@@ -570,7 +558,7 @@ function extractRamFacts(
   rawTitle: string,
   brand: string,
   mpn: string,
-  specs: Record<string, any>,
+  specs: Record<string, unknown>,
 ): { series: string; capacity: string; ddr: string; cl: string; kit: string } {
   const title = rawTitle || "";
 
@@ -789,18 +777,16 @@ function extractRamFacts(
   return { series, capacity, ddr, cl, kit };
 }
 
-export function getProductIdentity(product: Partial<Product>): ProductIdentity {
+export function getProductIdentity(
+  product: Product | LocalizedProduct | LeanProduct,
+): ProductIdentity {
   const cacheKey = `${product.id || ""}-${product.asin || ""}-${product.title || ""}-${product.isParentView ? "P" : "V"}-${JSON.stringify(product.officialSpecifications || {})}`;
   const cached = IDENTITY_CACHE.get(cacheKey);
   if (cached) return cached;
 
-  const rawBrand = (product.brand || "").trim();
   const title = (product.title || "").trim();
-  const rawCategory = (
-    product.category ||
-    product.category_id ||
-    ""
-  ).toLowerCase();
+  const rawCategory = String(product.category || "").toLowerCase();
+  const rawBrand = (product.brand || "Generic").trim();
 
   // 1. Category and Alias Normalization
   const categoryMap: Record<string, string> = {
@@ -897,7 +883,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
         isHighVariance: isSmartphone,
         isLaptop: category === "laptops" || category === "notebooks",
         categoryUsed: category,
-        mpn: product.mpn || undefined,
+        mpn: (product.mpn as string) || undefined,
       };
     }
   }
@@ -915,8 +901,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     category.includes("laptop") ||
     category.includes("notebook") ||
     title.toLowerCase().includes("macbook");
-  const isFixedTraitCategory =
-    IDENTITY_CONFIG.FIXED_TRAIT_CATEGORIES.includes(category);
+
   const isDisplay =
     category === "monitors" ||
     category.includes("monitor") ||
@@ -927,7 +912,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
   // 2. Data Sourcing (Official vs Retailer)
   let officialModel: string | null =
-    (product.officialTitle || product.official_title || "").trim() || null;
+    String(product.officialTitle || product.official_title || "").trim() ||
+    null;
 
   const rawOfficial =
     product.officialSpecifications || product.official_specifications;
@@ -950,7 +936,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     "i",
   );
   const brandMatch =
-    title.match(brandRegex) || (product.officialTitle || "").match(brandRegex);
+    title.match(brandRegex) ||
+    String(product.officialTitle || "").match(brandRegex);
   const richBrand =
     brandMatch && brandMatch[0] ? brandMatch[0].trim() : resolvedBrand;
 
@@ -959,7 +946,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     product.specificationsSource || product.specifications_source || "";
   const trustedSources = ["icecat", "intel", "ebay", "google"];
   const isDirectSource = trustedSources.some((s) =>
-    source.toLowerCase().includes(s),
+    String(source).toLowerCase().includes(s),
   );
 
   if (isDirectSource) {
@@ -987,6 +974,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     product.variationAttributes || undefined,
   );
   const variantMap: Record<string, string> = { ...officialAttributes };
+  const variantValues = Object.values(variantMap).filter(Boolean);
 
   // Attribute Recovery (Title + Specs)
   if (Object.keys(variantMap).length === 0) {
@@ -999,9 +987,11 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
   // 3b. MPN Discovery (Used for stripping from model and for variant suffix)
   const mpnVal =
-    (product.mpn || variantMap.MPN || "").trim().toUpperCase() ||
+    String(product.mpn || variantMap.MPN || "")
+      .trim()
+      .toUpperCase() ||
     (
-      title.split(/[\s,]+/).find((w) => {
+      title.split(/[\s,]+/).find((w: string) => {
         const wNorm = w.toLowerCase().replace(/[^a-z0-9]/g, "");
         // Exclude pure numbers that look like resolution components for displays (1080, 1440, 3440, 3840)
         if (isDisplay && /^\d{4}$/.test(wNorm)) {
@@ -1413,12 +1403,12 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   };
 
   const officialTitle =
-    product.officialTitle && !isTrashTitle(product.officialTitle)
+    product.officialTitle && !isTrashTitle(String(product.officialTitle))
       ? product.officialTitle
       : null;
 
   const longestTitle =
-    officialTitle && officialTitle.length > (product.title || "").length
+    officialTitle && String(officialTitle).length > (product.title || "").length
       ? officialTitle
       : product.title || "";
 
@@ -1442,7 +1432,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
   const splitRegex =
     isRAM || isDisplay ? / \/ | \||: /i : / \- | \/ | \(| \||: |,/i;
-  let cleanTitle = baseTitle.split(splitRegex)[0].trim();
+  let cleanTitle = String(baseTitle).split(splitRegex)[0].trim();
 
   // Standardize decimals to prevent commas from acting as splitters and to protect dots
   cleanTitle = cleanTitle.replace(/(\d)[,.](\d)/g, "$1.$2");
@@ -1555,8 +1545,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
 
     // Protection for Official Models: If we have an official model name,
     // we bypass the aggressive noise word stripping to respect the source's intent.
-    const isOfficialModelTrustPath = !!officialModel;
-
     // 2. Unit Recognition (e.g. 128GB, 128 GB, 165Hz, 34")
     const isExplicitUnit =
       /^\d+(\.\d+)?(gb|tb|mb|wh|w|ghz|mhz|mp|hz|zoll|inch|")$/i.test(
@@ -1796,8 +1784,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       formatted += '"';
     }
 
-    const formattedLower = formatted?.toLowerCase();
-
     // Suffix Preservation: If this word matches our discovered MPN after cleaning,
     // and we're in a display category, use the full MPN to preserve suffixes like -B or -DE.
     // We do this AFTER fixTechCasing to ensure the MPN overrides any standard formatting.
@@ -1843,14 +1829,13 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   let variantTokens: string[] = [];
   const processedTokens = new Set<string>();
   let oneFeatureToken: string | null = null; // Track color or primary trait for high-variance products
-  const bestFeatureKey: string | null = null;
 
   // Order of preference for "Best Feature": Color  // Add traits from variantMap in priority order
 
-  const rawSourceTitle = (
-    product.officialTitle && product.officialTitle.length > title.length
+  const rawSourceTitle = String(
+    product.officialTitle && String(product.officialTitle).length > title.length
       ? product.officialTitle
-      : title
+      : title,
   ).trim();
   const amazonTitleNorm = rawSourceTitle
     .toLowerCase()
@@ -1920,7 +1905,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     // Aggressively strip model words from variant display value to prevent duplication
     // E.g. Model: "Evo Select", Token: "Evo Select (2024)" -> "(2024)"
     displayVal = displayVal.replace(/hartcase/gi, "Hardcase");
-    const valLowerPre = displayVal.toLowerCase();
 
     // Avoid generic noise in attributes (e.g. "mit Hardcase" -> "Hardcase")
     // but ONLY if the remaining val is still meaningful.
@@ -1991,7 +1975,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
       return;
 
     const valLower = cleanedDisplayVal.toLowerCase();
-    const valNorm = valLower.replace(/[^a-z0-9]/g, "");
+
     const modelNorm = hubModelName.toLowerCase().replace(/[^a-z0-9]/g, "");
 
     // Bi-directional inclusion check: prevent "iPhone" in "iPhone 15" AND "iPhone 15" in "iPhone"
@@ -2165,13 +2149,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     }
   }
 
-  const variantLabel =
-    isHighVariance && mpnVal && mpnVal.length > 3
-      ? Array.from(new Set([...variantTokens, mpnVal]))
-          .join(" ")
-          .trim()
-      : Array.from(new Set(variantTokens)).join(" ").trim();
-
   let displayTitle = variantSuffix
     ? `${modelTitle} ${variantSuffix}`
     : modelTitle;
@@ -2179,8 +2156,8 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
   // 6. Dedicated CPU Naming Strategy
   // Automated reconstruction from merged multi-source patterns.
   if (category === "processors-cpus") {
-    const factsA = extractCpuFacts(product.title || "", resolvedBrand);
-    const factsO = extractCpuFacts(product.officialTitle || "", resolvedBrand);
+    const factsA = extractCpuFacts(product.title || "");
+    const factsO = extractCpuFacts(String(product.officialTitle || ""));
 
     // Brand preservation logic (e.g. Intel®)
     const brandRegex = new RegExp(
@@ -2189,7 +2166,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     );
     const brandMatch =
       (product.title || "").match(brandRegex) ||
-      (product.officialTitle || "").match(brandRegex);
+      String(product.officialTitle || "").match(brandRegex);
     const finalBrand = brandMatch ? brandMatch[0] : resolvedBrand;
 
     const series =
@@ -2306,136 +2283,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     const percentageMatch = title.match(/(\d+)%\b/);
     if (percentageMatch) subtractTokens.add(percentageMatch[1]);
 
-    // Filter model words: remove things we've already extracted as traits
-    // and technical noise that shouldn't be in the model name or slug
-    const stripList = [
-      "Zoll",
-      "Inch",
-      "Monitor",
-      "Display",
-      "TV",
-      "Smart",
-      "1ms",
-      "5ms",
-      "sRGB",
-      "cd/m2",
-      "Fast",
-      "Office",
-      "Business",
-      "Home",
-      "Schwarz",
-      "Weiss",
-      "Weiß",
-      "Silber",
-      "Grau",
-      "Black",
-      "White",
-      "Silver",
-      "Gray",
-      "Grey",
-      "32",
-      "75",
-      "27",
-      "34",
-      "Lautsrecher",
-      "Lautsprecher",
-      "Speaker",
-      "Speakers",
-      "Reaktionszeit",
-      "Response",
-      "Time",
-      "HDMI",
-      "DisplayPort",
-      "VESA",
-      "ELMB",
-      "HDR",
-      "Sync",
-      "FreeSync",
-      "GSync",
-      "G-Sync",
-      "Hz",
-      "ms",
-      "IPS",
-      "VA",
-      "TN",
-      "Resolution",
-      "Super",
-      "Ultra",
-      "Pro",
-      "Gaming",
-      "Premium",
-      "Contrast",
-      "Nits",
-      "sRGB",
-      "Color",
-      "Gamut",
-      "UHD",
-      "4K",
-      "FHD",
-      "QHD",
-      "WQHD",
-      "HD",
-      "QLED",
-      "cm",
-      "Ultra",
-      "UHD",
-      "Resolution",
-      "Super",
-      "AE",
-      "AMD",
-      "NVIDIA",
-      "DisplayHD",
-      "FreeSync",
-      "GSync",
-      "Sync",
-      "Adaptive",
-      "Premium",
-      "Professional",
-      "Business",
-      "Home",
-      "Gebraucht",
-      "B-Ware",
-      "Refurbished",
-      "Renewed",
-      "Office",
-      "Work",
-      "Elite",
-      "UltraSharp",
-      "Series",
-      "Inch",
-      "Zoll",
-      "Monitor",
-      "Display",
-      "TV",
-      "HDR10",
-      "HDR400",
-      "HDR600",
-      "HDR1000",
-      "400",
-      "600",
-      "1000",
-      "99",
-      "100",
-      // Common cm sizes for monitors to strip (noise)
-      "60",
-      "61",
-      "62",
-      "68",
-      "684", // Normalized 68.4
-      "69",
-      "70",
-      "80",
-      "81",
-      "86",
-      "108",
-      "120",
-      "138",
-      "163",
-      "164",
-      "165",
-      "189",
-    ].map((s) => s.toLowerCase().replace(/[^a-z0-9]/g, ""));
-
     // HARDCORE MINIMALIST: Specs Cutoff
     // If we see any of these words, we stop extraction entirely to prevent technical leakage
     const CORE_DISPLAY_SERIES = new Set([
@@ -2496,7 +2343,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     ]);
 
     const specsCutoffRegex =
-      /^(monitor|display|bildschirm|fernseher|tv|pc|hz|ms|zoll|inch|hdr\d*|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|usb\d*|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|displayhd|speaker|reaktionszeit|bildwiederholrate|hoehenverstellbar|höhenverstellbar|hoehenverstellbare|neigungsverstellbar|neigbar|neigung|schwenkbar|drehbar|verstellbar|pivot|augenpflege|augenfreundlich|eyescare|eyecare|flickerfree|lowblue|kontrast|kontras|contrast|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|speaker|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|pip|pbp|pcp|pippbp|pippcp|pbppip|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|amd|nvidia|[\d.]+i|[\d.]+[ab]|(dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)?\d+x\d+.*|[a-z0-9.]*\d+x\d+[a-z0-9.]*|[a-z0-9.]*(hdmi|dp|tmds|vga|farbraum|ports|stromversorgung|nits|percentage|farb|raum|dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd|res|usb|amd|nvidia)[a-z0-9.]*|v\d+[\d.]*|de|eu|uk|at|ch|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+h.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage|\d+1|40001|30001|10001|50001|800000001|10000001|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|\d+cm)(monitor|display|bildschirm|fernseher|tv)?$/i;
+      /^(monitor|display|bildschirm|fernseher|tv|pc|hz|ms|zoll|inch|hdr\d*|uhd|fhd|qhd|wqhd|uwqhd|ips|va|usbc|usb\d*|hdmi|displayport|adaptivesync|gsync|freesync|gtg|dcip3|p3|bit|qdoled|qd-oled|displayhdr|displayhd|speaker|reaktionszeit|bildwiederholrate|hoehenverstellbar|höhenverstellbar|hoehenverstellbare|neigungsverstellbar|neigbar|neigung|schwenkbar|drehbar|verstellbar|pivot|augenpflege|augenfreundlich|eyescare|eyecare|flickerfree|lowblue|kontrast|kontras|contrast|diagonale|dp|vesa|elmb|lautsrecher|lautsprecher|speaker|office|business|home|schwarz|weiss|weiß|silber|grau|black|white|silver|resolution|super|ultra|gaming|premium|nits|srgb|color|gamut|4k|5k|8k|full|cm|wuxga|wqxga|wfhd|professional|gebraucht|refurbished|bware|fast|tft|lcd|tv|fernseher|produktbeschreibung|sehen|unterhaltung|produktivitaet|ob|oder|retina|garantie|years|jahre|eingebaute|pip|pbp|pcp|pippbp|pippcp|pbppip|mprt|panel|sync|adaptive|aspect|ratio|ports|1080p|1440p|2160p|dual|quad|achsen|achse|219|329|amd|nvidia|[\d.]+i|[\d.]+[ab]|(dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)?\d+x\d+.*|[a-z0-9.]*\d+x\d+[a-z0-9.]*|[a-z0-9.]*(hdmi|dp|tmds|vga|farbraum|ports|stromversorgung|nits|percentage|farb|raum|dqhd|uhd|fhd|qhd|wqhd|uwqhd|wfhd)[a-z0-9.]*|v\d+[\d.]*|de|eu|uk|at|ch|\d+x|\d+v\d+|\d+x\d+.*|\d+cdm.*|\d+cd.*|\d+hz.*|\d+ms.*|\d+w.*|\d+bit.*|\d+r.*|\d+h.*|\d+achsen|2x|3x|4x|5x|6x|[\d.]+nits?|[\d.]+percentage|percentage|\d+1|40001|30001|10001|50001|800000001|10000001|sie|wie|es|moechten|brauchen|technik|tuer|einen|tag|projekten|konferenzen|mehr|\d+cm)(monitor|display|bildschirm|fernseher|tv)?$/i;
     const inchPattern = /^\d+["”']|^\d+zoll$/i;
     const regionalSuffixRegex =
       /[-.](?:[A-Z]{3,4}|AE|EU|UK|DE|CH|US|WAEU|AEU)$/i;
@@ -2510,19 +2357,6 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     // For monitors, this is usually a mix of letters and numbers like S3425DW or 27UP650K
     // We search FROM THE END as Amazon titles often put the model code last
     let modelMPN = mpnVal;
-
-    // For monitors/TVs, we ALWAYS try to find a more "human-readable" model code in the title
-    // because the provided 'mpnVal' is often a raw part number (e.g. 90LM0B40-B01B71)
-    // while the title contains the consumer-facing model (e.g. VG257Q5A).
-    const isHumanReadable = (m: string) => {
-      if (!m) return false;
-      const clean = m.toLowerCase().replace(/[^a-z0-9]/g, "");
-      if (isBatchNumber(clean)) return false;
-      // Displays often have very long MPNs (e.g. LS27DG600SUXEN is 14 chars)
-      const maxLen = isDisplay ? 20 : 12;
-      if (clean.length > maxLen) return false;
-      return true;
-    };
 
     // For displays, identify ALL valid MPN/model code candidates
     const mpnCandidates = new Set<string>();
@@ -2820,7 +2654,7 @@ export function getProductIdentity(product: Partial<Product>): ProductIdentity {
     model: hubModelName,
     fullModel: modelTitle,
     shortModel: modelHead,
-    variantLabel,
+    variantLabel: variantValues.join(" / "),
     variantMap,
     variantTokens,
     displayTitle,

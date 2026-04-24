@@ -13,7 +13,6 @@ import {
 import { CACHE_VERSION, SITE_URL } from "@/lib/site-config";
 import { getProductPath } from "@/lib/utils/url";
 import { MetadataRoute } from "next";
-import { cacheLife } from "next/cache";
 
 /**
  * ARCHITECTURE NOTE:

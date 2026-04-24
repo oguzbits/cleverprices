@@ -3,6 +3,7 @@ import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PaymentMethodIcon } from "@/components/ui/PaymentMethodIcon";
 import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { type ProductOffer } from "@/lib/data-sources";
+import { type ProductCondition } from "@/lib/data-sources/types";
 import { type Product } from "@/lib/product-definitions";
 import { getProductFamilyMembers } from "@/lib/product-registry";
 import { mergeLivePrices } from "@/lib/server/live-data";
@@ -193,7 +194,7 @@ export async function IdealoProductOffers({
         condition:
           type === "renewed" || type === "warehouse"
             ? "used"
-            : (p.condition.toLowerCase() as any),
+            : (p.condition.toLowerCase() as ProductCondition),
         availability: "in_stock" as const,
         freeShipping: true,
         seller:

@@ -36,7 +36,7 @@ export async function IdealoLivePrice({
 
   const p = live?.price || 0;
   const up = live?.usedPrice || 0;
-  const wp = (live as any)?.warehousePrice || 0;
+  const wp = live?.warehousePrice || 0;
 
   // STRICT LOGIC:
   // If priceType is "new", we ONLY show the new price.
@@ -49,7 +49,7 @@ export async function IdealoLivePrice({
   } else {
     // Used Mode
     const up = live?.usedPrice || 0;
-    const wp = (live as any)?.warehousePrice || 0;
+    const wp = live?.warehousePrice || 0;
     // If we have live data, use the best of used/warehouse
     if (up > 0 || wp > 0) {
       if (up > 0 && wp > 0) bestPrice = Math.min(up, wp);

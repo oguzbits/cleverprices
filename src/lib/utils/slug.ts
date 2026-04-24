@@ -35,6 +35,8 @@ export function generateProductSlug(
     connectivity?: string | null;
   },
 ): string {
+  if (!title) return "";
+
   // 1. Extract Identity using the robust token-based system
   //    We pass the attributes explicitly to help `getProductIdentity` strip them from the model name
   const identity = getProductIdentity({

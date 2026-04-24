@@ -42,6 +42,7 @@ import {
   getRawProductsByCategory,
   indexPricesById,
 } from "./server/product-queries";
+import { type LeanProduct } from "./types";
 import {
   calculateSiblingConsensus,
   getProductIdentity,
@@ -871,7 +872,7 @@ export const getProductVariants = cache(async function getProductVariants(
     // Skip consensus if lean mode is requested (huge speedup for many variants)
     const consensus = skipFullMapping
       ? undefined
-      : calculateSiblingConsensus(siblings);
+      : calculateSiblingConsensus(siblings as LeanProduct[]);
 
     return rows
       .map(({ product: p, price }) => {
@@ -910,7 +911,8 @@ export const getProductVariants = cache(async function getProductVariants(
     const siblings = await getProductsByCategory(product.category, true);
 
     const matched = siblings.filter((s) => {
-      if (s.brand.toLowerCase() !== product.brand.toLowerCase()) return false;
+      if ((s.brand || "").toLowerCase() !== (product.brand || "").toLowerCase())
+        return false;
       const sIdentity = getProductIdentity(s);
       const sKey = sIdentity.model.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       return sKey === targetModelKey;

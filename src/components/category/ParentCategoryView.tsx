@@ -72,25 +72,14 @@ export function ParentCategoryView({
               <IdealoProductCarousel
                 title={`Neu in ${formatTechText(parentCategory.name)}`}
                 products={newProducts.map((p) => ({
-                  title: p.title,
-                  subtitle: p.subtitle,
-                  price: p.price,
                   id: p.id,
-                  slug: p.slug,
+                  title: p.title || "Product",
+                  subtitle: p.subtitle,
+                  price: p.price || 0,
+                  slug: p.slug || "",
                   image: p.image,
                   rating: p.rating,
                   ratingCount: p.reviewCount,
-                  categoryName:
-                    p.category !== "uncategorized"
-                      ? allCategories[p.category as CategorySlug]
-                          ?.singularName ||
-                        allCategories[p.category as CategorySlug]?.name
-                      : undefined,
-                  discountRate: p.savings
-                    ? Math.round(p.savings * 100)
-                    : undefined,
-                  isBestseller: isProductBestseller(p as any),
-                  isVariantGroup: p.isVariantGroup,
                   variationAttributes: p.variationAttributes,
                 }))}
               />
@@ -105,10 +94,10 @@ export function ParentCategoryView({
               <IdealoProductCarousel
                 title={`Deals in "${formatTechText(parentCategory.name)}"`}
                 products={deals.map((p) => ({
-                  title: p.title,
-                  price: p.price,
                   id: p.id,
-                  slug: p.slug,
+                  title: p.title || "Deal",
+                  price: p.price || 0,
+                  slug: p.slug || "",
                   image: p.image,
                   rating: p.rating,
                   ratingCount: p.reviewCount,
@@ -121,7 +110,7 @@ export function ParentCategoryView({
                   discountRate: p.savings
                     ? Math.round(p.savings * 100)
                     : undefined,
-                  isBestseller: isProductBestseller(p as any),
+                  isBestseller: isProductBestseller(p),
                   isVariantGroup: p.isVariantGroup,
                   variationAttributes: p.variationAttributes,
                 }))}

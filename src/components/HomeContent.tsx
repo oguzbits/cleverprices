@@ -8,8 +8,8 @@ import {
   getNewArrivals,
 } from "@/lib/server/cached-products";
 import { getLivePricesForProducts as getPricesFromDb } from "@/lib/server/live-data";
-import { cacheLife } from "next/cache";
 import { CACHE_VERSION } from "@/lib/site-config";
+import { cacheLife } from "next/cache";
 
 async function fetchHomeData(countryCode: string) {
   "use cache";

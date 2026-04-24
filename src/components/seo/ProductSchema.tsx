@@ -11,7 +11,7 @@
 import type { CountryCode } from "@/lib/countries";
 import { getCountryByCode } from "@/lib/countries";
 import type { Product } from "@/lib/product-definitions";
-import { BRAND_DOMAIN, BRAND_NAME } from "@/lib/site-config";
+import { BRAND_DOMAIN } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductCanonicalUrl } from "@/lib/utils/url";
 

@@ -2,8 +2,8 @@
  * Product Components Export
  */
 
-export { ProductDetailView } from "./ProductDetailView";
-export { PriceAnalysisBadge } from "./PriceAnalysisBadge";
 export { OfferComparisonTable } from "./OfferComparisonTable";
+export { PriceAnalysisBadge } from "./PriceAnalysisBadge";
+export { ProductDetailView } from "./ProductDetailView";
 export { SimilarProducts, SimilarProductsCompact } from "./SimilarProducts";
 export { SpecificationsTable } from "./SpecificationsTable";

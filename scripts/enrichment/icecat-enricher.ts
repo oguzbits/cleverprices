@@ -2,6 +2,7 @@ import { and, eq, isNotNull, not, or, sql } from "drizzle-orm";
 import { db, products } from "../../src/db";
 import { getCategorySchema } from "../../src/lib/data-quality/schemas";
 import { LocalIcecatDataSource } from "../../src/lib/data-sources/icecat-local";
+import { type LeanProduct } from "../../src/lib/types";
 import { calculateProductHealth } from "../../src/lib/utils/data-quality";
 import {
   calculateSiblingConsensus,
@@ -78,7 +79,7 @@ class IcecatEnricher {
           continue;
         }
 
-        const identity = getProductIdentity(product);
+        const identity = getProductIdentity(product as LeanProduct);
 
         // PEF Stage 2: Fetch Sibling Consensus
         // We look for products in the same category that share the same model name
@@ -93,7 +94,9 @@ class IcecatEnricher {
           )
           .limit(20);
 
-        const consensus = calculateSiblingConsensus(siblingsDocs);
+        const consensus = calculateSiblingConsensus(
+          siblingsDocs as LeanProduct[],
+        );
 
         const specs = icecatData.specifications;
         const identityContext = {
@@ -106,7 +109,7 @@ class IcecatEnricher {
         const sanitized = sanitizeSpecs(specs, identityContext, consensus);
 
         // Security Guard: Filter out leaking variants (redundant but safe to keep loop for individual logging)
-        const guardedSpecs: Record<string, any> = { ...sanitized };
+        const guardedSpecs: Record<string, unknown> = { ...sanitized };
         let rejectedCount = 0;
 
         // In PEF, sanitized already has the guarded fields.
@@ -160,8 +163,11 @@ class IcecatEnricher {
         } else {
           console.log("⚠️ Found on Icecat but insufficient specs mapping.");
         }
-      } catch (e: any) {
-        console.error(`❌ Error enriching ID ${product.id}:`, e.message);
+      } catch (e: unknown) {
+        console.error(
+          `❌ Error enriching ID ${product.id}:`,
+          (e as Error).message,
+        );
       }
     }
   }

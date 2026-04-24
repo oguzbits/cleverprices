@@ -1,5 +1,5 @@
-import { siteMetadata, getHomePageMetadata } from "@/lib/metadata";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
+import { getHomePageMetadata } from "@/lib/metadata";
 import { Metadata, Viewport } from "next";
 
 export const metadata: Metadata = getHomePageMetadata(DEFAULT_COUNTRY);

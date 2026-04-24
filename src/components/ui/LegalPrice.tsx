@@ -1,6 +1,5 @@
-import React from "react";
-import { formatCurrency } from "@/lib/utils/formatting";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils/formatting";
 
 interface LegalPriceProps {
   price: number;

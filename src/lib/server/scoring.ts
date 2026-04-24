@@ -1,4 +1,5 @@
-import { Product } from "@/lib/product-definitions";
+import { LocalizedProduct, Product } from "@/lib/product-definitions";
+import { LeanProduct } from "../types";
 
 interface ProductScore {
   popularityScore: number;
@@ -216,7 +217,7 @@ const BUDGET_BRANDS_SET = new Set(BUDGET_BRANDS);
  * and trust signals to ensure high-quality items float to the top naturally.
  */
 export function calculateDesirabilityScore(
-  p: Product,
+  p: Product | LocalizedProduct | LeanProduct,
   price: number,
   title: string,
   context: "category" | "landing" = "category",

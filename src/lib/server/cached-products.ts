@@ -38,23 +38,31 @@ import {
 async function getCachedBestDeals(
   limit: number,
   countryCode: string,
-  condition?: any,
+  condition?: string | string[],
 ) {
   "use cache";
   cacheLife("category");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
-  return await getBestDealsSync(limit, countryCode, condition);
+  // _v = CACHE_VERSION; // Hidden Cache Buster
+  return await getBestDealsSync(
+    limit,
+    countryCode,
+    condition as "New" | "Used" | "Renewed" | undefined,
+  );
 }
 
 async function getCachedNewArrivals(
   limit: number,
   countryCode: string,
-  condition?: any,
+  condition?: string | string[],
 ) {
   "use cache";
   cacheLife("category");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
-  return await getNewArrivalsSync(limit, countryCode, condition);
+  // _v = CACHE_VERSION; // Hidden Cache Buster
+  return await getNewArrivalsSync(
+    limit,
+    countryCode,
+    condition as "New" | "Used" | "Renewed" | undefined,
+  );
 }
 
 async function getCachedDiverseMostPopular(
@@ -63,21 +71,21 @@ async function getCachedDiverseMostPopular(
 ) {
   "use cache";
   cacheLife("category");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
+  // _v = CACHE_VERSION; // Hidden Cache Buster
   return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
 
 async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
   "use cache";
   cacheLife("product_v5");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
+  // _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductBySlugSync(slug, includeHistory);
 }
 
 async function getCachedProductById(id: number) {
   "use cache";
   cacheLife("product_v5");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
+  // _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductByIdSync(id);
 }
 
@@ -88,7 +96,7 @@ async function getCachedProductVariantsInternal(
 ) {
   "use cache";
   cacheLife("product_v5");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
+  // _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -244,7 +252,7 @@ export async function getPDPRenderData(
   countryInput: string = "de",
 ) {
   "use cache";
-  const _v = CACHE_VERSION; // Global Schema Flush
+  // _v = CACHE_VERSION; // Global Schema Flush
   const countryCode = countryInput.toLowerCase();
   cacheLife("product_v5");
 
@@ -436,7 +444,7 @@ export async function getPDPRenderData(
           [product, ...variants],
         );
 
-        let renderProduct = merged.find((p) => p.id === realId) || merged[0];
+        const renderProduct = merged.find((p) => p.id === realId) || merged[0];
 
         // Variant Check: We do NOT enrich variants with Hub data to preserve individual variations (images/specs)
         if (id >= 200000000 && id < 900000000) {
@@ -555,7 +563,7 @@ export async function getPDPRenderData(
   );
   const canonicalId = 900000000 + (hubIdVal % 100000000);
   const { slug: canonicalSlug } = getFamilyIdentitySync(
-    { ...product, id: canonicalId, isParentView: true } as any,
+    { ...product, id: canonicalId, isParentView: true },
     [product, ...variants],
   );
 

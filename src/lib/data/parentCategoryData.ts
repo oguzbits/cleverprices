@@ -113,7 +113,7 @@ async function getCategoryBestsellers(
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
-    const brand = product.brand.toLowerCase();
+    const brand = (product.brand || "").toLowerCase();
     const category = product.category;
     const currentBrandCount = brandCounts.get(brand) || 0;
     const currentCatCount = categoryCounts.get(category) || 0;
@@ -211,7 +211,7 @@ async function getCategoryNewProducts(
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
-    const brand = product.brand.toLowerCase();
+    const brand = (product.brand || "").toLowerCase();
     const category = product.category;
     const currentBrandCount = brandCounts.get(brand) || 0;
     const currentCatCount = categoryCounts.get(category) || 0;
@@ -300,7 +300,7 @@ async function getCategoryDeals(
   const diverseProducts: Product[] = [];
 
   for (const product of sorted) {
-    const brand = product.brand.toLowerCase();
+    const brand = (product.brand || "").toLowerCase();
     const category = product.category;
     const currentBrandCount = brandCounts.get(brand) || 0;
     const currentCatCount = categoryCounts.get(category) || 0;
@@ -367,7 +367,7 @@ export async function getParentCategoryData(
 
     for (const product of products) {
       if (excludeIds.includes(product.id!)) continue;
-      const brand = product.brand.toLowerCase();
+      const brand = (product.brand || "").toLowerCase();
       const category = product.category;
       const groupKey = getProductGroupKey(product);
 

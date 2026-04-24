@@ -1,3 +1,4 @@
+import { type CountryCode } from "@/lib/countries";
 import { type Product } from "@/lib/product-definitions";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { getProductFamilyMembers } from "@/lib/product-registry";
@@ -10,7 +11,7 @@ import { IdealoLivePrice } from "./IdealoLivePrice";
 
 interface ConditionButtonsProps {
   product: Product;
-  countryCode: string;
+  countryCode: CountryCode;
   effectiveCondition: "new" | "used" | "renewed";
   isParentView?: boolean;
   parentSlug?: string;
@@ -120,7 +121,7 @@ export async function ConditionButtons({
       if (mCond !== "renewed" && mCond !== "used" && p > 0) {
         if (newPrice === 0 || p < newPrice) {
           newPrice = p;
-          const { slug } = getFamilyIdentity(m as any, familyMembers);
+          const { slug } = getFamilyIdentity(m, familyMembers);
           newSlug = slug;
           bestNewProductId = m.id!;
           bestNewVariant = m;
@@ -157,7 +158,7 @@ export async function ConditionButtons({
       possibleUsed.forEach((item) => {
         if (!hasUsedOverall) {
           usedOverallPrice = item.price;
-          const { slug } = getFamilyIdentity(m as any, familyMembers);
+          const { slug } = getFamilyIdentity(m, familyMembers);
           usedOverallSlug = slug;
           bestUsedOverallProductId = item.id;
           usedOverallType = item.type;
@@ -172,7 +173,7 @@ export async function ConditionButtons({
             // Overall summary (e.g. "Alle Varianten") always shows absolute minimum
             if (item.price < usedOverallPrice) {
               usedOverallPrice = item.price;
-              const { slug } = getFamilyIdentity(m as any, familyMembers);
+              const { slug } = getFamilyIdentity(m, familyMembers);
               usedOverallSlug = slug;
               bestUsedOverallProductId = item.id;
               usedOverallType = item.type;
@@ -204,7 +205,7 @@ export async function ConditionButtons({
 
             if (shouldSwitch) {
               usedOverallPrice = item.price;
-              const { slug } = getFamilyIdentity(m as any, familyMembers);
+              const { slug } = getFamilyIdentity(m, familyMembers);
               usedOverallSlug = slug;
               bestUsedOverallProductId = item.id;
               usedOverallType = item.type;
@@ -257,7 +258,7 @@ export async function ConditionButtons({
           <div className="text-idealo-text-primary text-[15px] font-extrabold">
             <IdealoLivePrice
               productId={bestNewProductId}
-              countryCode={countryCode as any}
+              countryCode={countryCode}
               initialPrice={newPrice}
               priceType="new"
               livePriceData={
@@ -300,7 +301,7 @@ export async function ConditionButtons({
           <div className="text-idealo-text-primary text-[15px] font-extrabold">
             <IdealoLivePrice
               productId={bestUsedOverallProductId}
-              countryCode={countryCode as any}
+              countryCode={countryCode}
               initialPrice={usedOverallPrice}
               priceType={usedOverallType === "renewed" ? "new" : "used"}
               livePriceData={

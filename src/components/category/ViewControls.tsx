@@ -1,8 +1,5 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { LayoutGrid, List } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -10,6 +7,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
+import { LayoutGrid, List } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 interface ViewControlsProps {
   productCount: number;

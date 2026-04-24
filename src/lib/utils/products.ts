@@ -108,20 +108,26 @@ export function calculateProductMetrics(
 
   const actualCapacity = capacity || 0;
 
+  // Re-verify if the unit is analytical after extraction
+  const finalUnit = capacityUnit || "GB";
+  const isActuallyNonAnalytical = ["stück", "piece", "unit", "item"].includes(
+    finalUnit.toLowerCase(),
+  );
+
   // We need both price and capacity to calculate metrics
   if (!actualCapacity || !price) {
     return p;
   }
 
-  const comparisonUnit = isNonAnalyticalUnit
+  const comparisonUnit = isActuallyNonAnalytical
     ? capacityUnit || "Einheit"
     : categoryConfig?.unitType || capacityUnit || "GB";
 
   // Prevent conversion for non-storage units like 'W' or 'piece'
-  const fromFactor = isNonAnalyticalUnit
+  const fromFactor = isActuallyNonAnalytical
     ? 1
     : UNIT_CONVERSION[capacityUnit || "GB"] || 1;
-  const toFactor = isNonAnalyticalUnit
+  const toFactor = isActuallyNonAnalytical
     ? 1
     : UNIT_CONVERSION[comparisonUnit] || 1;
 
@@ -316,7 +322,11 @@ export function calculateProductSavings({
  * Determines if a product is a Bestseller based on strict criteria.
  * Replaces loose < 10000 rank checks with a combination of rank, volume and rating.
  */
-export function isProductBestseller(p: Partial<Product>): boolean {
+export function isProductBestseller(p: {
+  salesRank?: number;
+  monthlySold?: number;
+  rating?: number;
+}): boolean {
   const rank = p.salesRank ?? 0;
   const sold = p.monthlySold ?? 0;
   const rating = p.rating ?? 0;

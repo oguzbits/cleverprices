@@ -2,6 +2,7 @@ import { type Price as DbPrice, type Product as DbProduct } from "@/db/schema";
 import { parseHistoryBlob } from "../history-compression";
 import { type LitePrice, type Product } from "../product-definitions";
 import { getFamilyIdentity } from "../product-families";
+import { type LeanProduct } from "../types";
 import { type SiblingConsensus, IDENTITY_CONFIG } from "./product-identity";
 import { calculateProductMetrics } from "./products";
 import { parseCapacityToGB, parseVariationAttributes } from "./variants";
@@ -32,7 +33,7 @@ export function parseHistoryJson(
 export function mapDbProduct(
   p: DbProduct,
   pricesList: LitePrice[] | DbPrice[],
-  siblings: any[] = [],
+  siblings: (Product | DbProduct | LeanProduct)[] = [],
   stripHeavyData: boolean = false,
   consensus?: SiblingConsensus,
 ): Product {
@@ -81,7 +82,9 @@ export function mapDbProduct(
           "historyJson" in pr &&
           pr.historyJson
         ) {
-          historyData = parseHistoryJson(pr.historyJson as any);
+          historyData = parseHistoryJson(
+            pr.historyJson as string | Buffer | null,
+          );
         }
       }
     });
@@ -91,9 +94,9 @@ export function mapDbProduct(
   // We only parse the full JSON if we actually need it (non-lite mode).
   // Otherwise, we only extract identity-critical keys.
 
-  let identitySpecs: Record<string, any> = {};
-  let parsedSpecs: Record<string, any> = {};
-  let parsedOfficialSpecs: Record<string, any> | undefined = undefined;
+  let identitySpecs: Record<string, unknown> = {};
+  let parsedSpecs: Record<string, unknown> = {};
+  let parsedOfficialSpecs: Record<string, unknown> | undefined = undefined;
 
   if (stripHeavyData) {
     // Lite mode: skip full parsing, only extract identity keys from raw strings
@@ -105,7 +108,7 @@ export function mapDbProduct(
     // Full mode: parse everything
     try {
       parsedSpecs = p.specifications ? JSON.parse(p.specifications) : {};
-    } catch (e) {
+    } catch (_e) {
       console.error(
         `[Data Error] Failed to parse specifications for ASIN ${p.asin}`,
       );
@@ -116,7 +119,7 @@ export function mapDbProduct(
       parsedOfficialSpecs = p.officialSpecifications
         ? JSON.parse(p.officialSpecifications)
         : undefined;
-    } catch (e) {
+    } catch (_e) {
       console.error(
         `[Data Error] Failed to parse officialSpecifications for ASIN ${p.asin}`,
       );
@@ -262,18 +265,18 @@ export function mapDbProduct(
     prices: pricesObj,
     pricesLastUpdated: stripHeavyData ? {} : pricesLastUpdatedObj,
     capacity: p.capacity || 0,
-    capacityUnit: (p.capacityUnit as any) || "GB",
+    capacityUnit: (p.capacityUnit as string) || "GB",
     normalizedCapacity: p.normalizedCapacity || 0,
     formFactor: stripHeavyData ? "" : p.formFactor || "",
     technology: p.technology || "",
-    socket,
-    cores,
+    socket: socket as string | undefined,
+    cores: cores as string | undefined,
     condition:
       p.title.includes("(Generalüberholt)") ||
       p.title.includes("erneuert") ||
       p.title.includes("Renewed")
         ? "Renewed"
-        : (p.condition as any) === "Used"
+        : (p.condition as string) === "Used"
           ? "Used"
           : "New",
     brand: p.brand || "Generic",
@@ -287,7 +290,9 @@ export function mapDbProduct(
     priceHistory: stripHeavyData ? [] : historyData,
     rating: p.rating || 0,
     reviewCount: p.reviewCount || 0,
-    energyLabel: stripHeavyData ? undefined : (p.energyLabel as any),
+    energyLabel: stripHeavyData
+      ? undefined
+      : (p.energyLabel as "A" | "B" | "C" | "D" | "E" | "F" | "G"),
     salesRank: p.salesRank || undefined,
     monthlySold: p.monthlySold || 0,
     mpn: p.mpn || undefined,
@@ -297,9 +302,18 @@ export function mapDbProduct(
     usedPrices: usedPricesObj,
     warehousePrices: warehousePricesObj,
     createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
-    releaseDate,
+    releaseDate: releaseDate as string | undefined,
     specificationsSource: p.specificationsSource,
-    enrichmentStatus: p.enrichmentStatus as any,
+    enrichmentStatus: p.enrichmentStatus as
+      | "pending"
+      | "processed"
+      | "not_found"
+      | "error"
+      | "optimized"
+      | "scavenged"
+      | "untrusted_source"
+      | null
+      | undefined,
   };
 
   // Enforce canonical slug and standardized family title/subtitle using siblings consensus if available
@@ -309,7 +323,7 @@ export function mapDbProduct(
     modelTitle,
     variantSuffix,
     displaySubtitle,
-  } = getFamilyIdentity(item, siblings || [], consensus);
+  } = getFamilyIdentity(item, (siblings || []) as LeanProduct[], consensus);
 
   item.slug = canonicalSlug;
   item.title =
@@ -323,7 +337,7 @@ export function mapDbProduct(
   // Identity and titles are set. We strip huge blobs if requested to stay under cache limits.
   if (stripHeavyData) {
     item.specifications = {};
-    delete (item as any).officialSpecifications;
+    delete item.officialSpecifications;
     return item; // SKIP calculateProductMetrics for extreme speed in lists
   }
 

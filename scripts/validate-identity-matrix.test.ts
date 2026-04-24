@@ -249,7 +249,7 @@ describe("Validation Matrix", () => {
         item.title,
         item.attrs as Record<string, string>,
       );
-      const { slug, title, brand } = getFamilyIdentity(product, []);
+      const { slug, title, brand } = getFamilyIdentity(product as any, []);
 
       // Validation Rules
       // 1. Slug should contain brand at end

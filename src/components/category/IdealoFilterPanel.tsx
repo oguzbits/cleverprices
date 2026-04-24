@@ -9,7 +9,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { PriceRangeSlider } from "@/components/ui/PriceRangeSlider";
 import { FilterGroup } from "@/lib/category-types";
-import { useFilters } from "@/lib/hooks/use-filters";
+import { useFilters, type FilterState } from "@/lib/hooks/use-filters";
 import type { FilterCounts } from "@/lib/product-definitions";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -309,7 +309,8 @@ export function IdealoFilterPanel({
 
   // Generic checkbox update
   const toggleCheckbox = (field: string, value: string) => {
-    const current = (optimisticFilters as any)[field] || [];
+    const current =
+      (optimisticFilters[field as keyof FilterState] as string[]) || [];
     const next = current.includes(value)
       ? current.filter((v: string) => v !== value)
       : [...current, value];
@@ -510,7 +511,9 @@ export function IdealoFilterPanel({
           // Skip if no options OR only 1 option (no point showing a filter with no choice)
           if (options.length <= 1) return null;
 
-          const currentValues = (currentFilters as any)[group.field] || [];
+          const currentValues =
+            (currentFilters[group.field as keyof FilterState] as string[]) ||
+            [];
           const query = groupSearch[group.field] || "";
           const isExpanded = groupShowAll[group.field] || false;
 

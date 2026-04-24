@@ -1,4 +1,5 @@
 import { Product } from "@/lib/product-definitions";
+import { type LeanProduct } from "@/lib/types";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 
 /**
@@ -22,7 +23,7 @@ function generateSemanticHash(product: Partial<Product>): string {
   if (!product.title) return "unknown";
 
   // 1. Leverage existing identity resolution (strips noise, normalizes brands)
-  const identity = getProductIdentity(product);
+  const identity = getProductIdentity(product as LeanProduct);
 
   // 2. Extract specific technical traits that define a "Master Product"
   const brand = (identity.brand || "generic")

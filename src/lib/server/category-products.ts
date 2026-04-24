@@ -58,36 +58,16 @@ const CAPACITY_REGEX = /(\d+(?:\.\d+)?)\s?(TB|GB|MB)/i;
  * Ensures consistent titles, slugs, and attributes across all parts of the app.
  */
 export function mapRawToLocalizedProduct(
-  p: any,
+  p: Product,
   countryCode: string,
   categorySlug: string,
-  // Optimization flags (now optional, can be derived from p.category if not provided)
   isCpuOrMobo?: boolean,
   isCpu?: boolean,
   isSsd?: boolean,
   isStorageOrRam?: boolean,
 ): LocalizedProduct | null {
-  if (p.id === 3301) {
-    console.log(`[mapRawToLocalizedProduct] 3301 KEYS:`, Object.keys(p));
-    console.log(
-      `[mapRawToLocalizedProduct] 3301 officialSpecifications:`,
-      (p as any).officialSpecifications,
-    );
-    console.log(
-      `[mapRawToLocalizedProduct] 3301 official_specifications:`,
-      (p as any).official_specifications,
-    );
-  }
-  // [PERFORMANCE] FAST-PATH: If this is already a localized product or a full product with merged prices
-
-  // (e.g. from getAllDeals), we skip the heavy mapping logic.
-  // We check for the presence of the 'prices' object which indicates p is a Product entity.
-  const isProductObj = (obj: any): obj is Product =>
-    obj &&
-    obj.prices &&
-    typeof obj.prices === "object" &&
-    obj.id &&
-    obj.specifications !== undefined;
+  const isProductObj = (obj: Product): obj is Product =>
+    !!(obj && obj.prices && typeof obj.prices === "object" && obj.id);
 
   if (
     isProductObj(p) &&
@@ -110,7 +90,6 @@ export function mapRawToLocalizedProduct(
 
     const brand = normalizeBrand(p.brand || "Generic");
 
-    // Just ensure the structure matches LocalizedProduct
     return {
       id: p.id,
       slug: p.slug,
@@ -127,7 +106,7 @@ export function mapRawToLocalizedProduct(
       savings: p.savings || 0,
       listPrice: p.listPrice?.[countryCode] ?? undefined,
       category: p.category || categorySlug,
-      image: (p as any).image || (p as any).imageUrl || "",
+      image: p.image || p.imageUrl || "",
       brand,
       rating: p.rating || 0,
       reviewCount: p.reviewCount || 0,
@@ -184,7 +163,6 @@ export function mapRawToLocalizedProduct(
     lastUpdated,
   } = getLocalizedProductData(p, countryCode);
 
-  // SSOT: Direct identity extraction for consistent titles across category and PDP
   const identity = getProductIdentity({ ...p, title });
   const modelTitle = p.modelTitle || identity.modelTitle;
   const variantSuffix = p.variantSuffix || identity.variantSuffix;
@@ -204,8 +182,6 @@ export function mapRawToLocalizedProduct(
   ].includes(actualCategory);
 
   let displayTitle = title;
-  // Use identity-style clean title and compute canonical slug at runtime
-  // so category card links always match the PDP URL (avoids stale-DB-slug redirects)
   let canonicalSlug = p.slug;
   if (useIdentityForDisplay) {
     displayTitle = identity.displayTitle;
@@ -213,13 +189,11 @@ export function mapRawToLocalizedProduct(
     canonicalSlug = variantFamilyIdentity.slug;
   }
 
-  // Filter out products with no valid price - they shouldn't appear in listings
   if (!price || price <= 0) return null;
 
-  // 1. Extract core attributes (already pre-extracted by Product Registry)
-  let { socket, cores } = p as any;
+  let socket = p.socket;
+  let cores = p.cores;
 
-  // 1.1 Restore missing filters via lightweight parsing (Specifications JSON is stripped for speed)
   const vMap = p.variationAttributes
     ? parseVariationAttributes(p.variationAttributes)
     : {};
@@ -262,7 +236,6 @@ export function mapRawToLocalizedProduct(
       formFactor = "2.5 Zoll";
   }
 
-  // 1.2 Enforce correct condition from title (Fixes stale cache issues)
   let condition = p.condition;
   const titleLower = title.toLowerCase();
   if (
@@ -280,7 +253,6 @@ export function mapRawToLocalizedProduct(
     condition = "New";
   }
 
-  // 2. Metrics & Desirability (Initial calculation)
   const { popularityScore } = calculateDesirabilityScore(
     p,
     price || 0,
@@ -297,14 +269,13 @@ export function mapRawToLocalizedProduct(
   });
   const displayListPrice = savings > 0 ? refPrice : undefined;
 
-  // 3. Storage Capacity Extraction
   let capacity = p.capacity;
   let capacityUnit = p.capacityUnit || "";
   let normCap = p.normalizedCapacity || 0;
 
   if (storageOrRam && (!normCap || normCap === 0)) {
     if (p.specifications && typeof p.specifications === "object") {
-      const specs = p.specifications as Record<string, any>;
+      const specs = p.specifications as Record<string, unknown>;
       const sizeVal = specs.Size || specs.Capacity || specs.Speicherkapazität;
       if (sizeVal && typeof sizeVal === "string") {
         const match = sizeVal.match(CAPACITY_REGEX);
@@ -350,7 +321,6 @@ export function mapRawToLocalizedProduct(
     }
   }
 
-  // 4. Price per Unit (Initial calculation)
   const capacityMB =
     capacityUnit === "TB"
       ? capacity * 1024 * 1024
@@ -359,7 +329,6 @@ export function mapRawToLocalizedProduct(
         : capacity;
   const pricePerUnit = capacityMB > 0 ? ((price || 0) / capacityMB) * 1024 : 0;
 
-  // --- SNAP NORMALIZATION ---
   if (
     (actualCategory === "ssds" || actualCategory === "hard-drives") &&
     normCap > 0 &&
@@ -411,11 +380,17 @@ export function mapRawToLocalizedProduct(
     officialSpecifications:
       typeof (p.officialSpecifications || p.official_specifications) ===
       "string"
-        ? JSON.parse(p.officialSpecifications || p.official_specifications)
-        : p.officialSpecifications || p.official_specifications,
-    officialTitle: p.officialTitle || p.official_title,
+        ? JSON.parse(
+            (p.officialSpecifications || p.official_specifications) as string,
+          )
+        : ((p.officialSpecifications || p.official_specifications) as Record<
+            string,
+            unknown
+          >),
+    officialTitle: (p.officialTitle || p.official_title) as string,
     mpn: p.mpn,
-    specificationsSource: p.specificationsSource || p.specifications_source,
+    specificationsSource: (p.specificationsSource ||
+      p.specifications_source) as string,
   } as LocalizedProduct;
 }
 
@@ -433,15 +408,9 @@ export async function getCachedLocalizedCategoryProducts(
 
   let rawProducts;
   if (categorySlug === "deals") {
-    // Fetch a large number of deals to allow for filtering
     rawProducts = await getAllDeals(250, countryCode);
   } else {
-    // [PERFORMANCE] Limit to top 2000 products per category
-    rawProducts = await getProductsByCategory(
-      categorySlug,
-      true, // stripHeavyData
-      2000, // limit
-    );
+    rawProducts = await getProductsByCategory(categorySlug, true, 2000);
   }
 
   return rawProducts
@@ -477,16 +446,17 @@ export async function getLeanCategoryProducts(
 
   return rawProducts
     .map((p) => {
-      const localized = mapRawToLocalizedProduct(p, countryCode, categorySlug);
+      const localized = mapRawToLocalizedProduct(
+        p as Product,
+        countryCode,
+        categorySlug,
+      );
       if (!localized) return null;
 
-      // Apply forced filters for virtual categories (e.g. apple-iphone must only show Apple brand)
       if (virtual?.forcedFilters) {
         const matchesAll = Object.entries(virtual.forcedFilters).every(
           ([field, allowedValues]) => {
-            const valLower = String(
-              (localized as any)[field] || "",
-            ).toLowerCase();
+            const valLower = String(localized[field] || "").toLowerCase();
             return allowedValues.some((v) => v.toLowerCase() === valLower);
           },
         );
@@ -514,7 +484,6 @@ export async function mergeLivePricesIntoLocalized(
     const live = priceMap.get(p.id);
     if (!live) return p;
 
-    // Unified logic selection!
     const newPrice = getBestPrice({
       price: live.price,
       usedPrice: live.usedPrice,
@@ -538,9 +507,8 @@ export async function mergeLivePricesIntoLocalized(
           : p.capacity;
     const pricePerUnit = capacityMB > 0 ? (newPrice / capacityMB) * 1024 : 0;
 
-    // Recalculate popularity score as it heavily depends on price (commercial value)
     const { popularityScore } = calculateDesirabilityScore(
-      p as any,
+      p,
       newPrice,
       p.title,
       "category",
@@ -561,72 +529,6 @@ export async function mergeLivePricesIntoLocalized(
 }
 
 /**
- * Type for filter option counts: { brand: { Samsung: 213, SanDisk: 138 }, ... }
- */
-
-/**
- * Calculate smart price range buckets based on current product distribution
- */
-function calculatePriceRangeBuckets(products: LocalizedProduct[]) {
-  if (products.length === 0) return [];
-  const prices = products
-    .map((p) => p.price)
-    .filter((p) => p > 0)
-    .sort((a, b) => a - b);
-  if (prices.length === 0) return [];
-
-  const min = Math.floor(prices[0]);
-  const max = Math.ceil(prices[prices.length - 1]);
-
-  if (prices.length < 10) {
-    if (min === max) return [{ label: `${min} €`, min, max }];
-    return [{ label: `${min} € bis ${max} €`, min, max }];
-  }
-
-  const q1 = prices[Math.floor(prices.length * 0.25)];
-  const q2 = prices[Math.floor(prices.length * 0.5)];
-  const q3 = prices[Math.floor(prices.length * 0.75)];
-
-  const roundPrice = (p: number) => {
-    if (p > 500) return Math.round(p / 50) * 50;
-    if (p > 100) return Math.round(p / 10) * 10;
-    return Math.round(p / 5) * 5;
-  };
-
-  const r1 = roundPrice(q1);
-  const r2 = roundPrice(q2);
-  const r3 = roundPrice(q3);
-
-  const uniquePoints = Array.from(new Set([r1, r2, r3])).sort((a, b) => a - b);
-
-  if (uniquePoints.length === 0)
-    return [{ label: `${min} € bis ${max} €`, min, max }];
-
-  const buckets = [];
-  buckets.push({
-    label: `bis ${uniquePoints[0]} €`,
-    min: null,
-    max: uniquePoints[0],
-  });
-
-  for (let i = 0; i < uniquePoints.length - 1; i++) {
-    buckets.push({
-      label: `${uniquePoints[i]} € bis ${uniquePoints[i + 1]} €`,
-      min: uniquePoints[i],
-      max: uniquePoints[i + 1],
-    });
-  }
-
-  buckets.push({
-    label: `ab ${uniquePoints[uniquePoints.length - 1]} €`,
-    min: uniquePoints[uniquePoints.length - 1],
-    max: null,
-  });
-
-  return buckets;
-}
-
-/**
  * Hydrates only a specific set of IDs into full LocalizedProducts.
  * This is the "Ghost" part of the Lean & Ghost architecture.
  */
@@ -635,11 +537,7 @@ export async function getLocalizedProductsByIds(
   categorySlug: string,
   countryCode: string,
 ): Promise<LocalizedProduct[]> {
-  const rawProducts = await getProductsByIds(
-    ids,
-    countryCode,
-    true, // stripHeavyData (History not needed for listing)
-  );
+  const rawProducts = await getProductsByIds(ids, countryCode, true);
 
   return rawProducts
     .map((p) => mapRawToLocalizedProduct(p, countryCode, categorySlug))
@@ -669,6 +567,8 @@ export async function getCategoryProducts(
       : null,
     socket: filterParams.socket || [],
     cores: filterParams.cores || [],
+    condition: filterParams.condition || [],
+    brand: filterParams.brand || [],
     capacity: filterParams.capacity || [],
   };
 
@@ -727,9 +627,9 @@ export async function getCategoryProducts(
   if (!filterFields.includes("brand")) filterFields.push("brand");
   filterFields.forEach((f) => (dynamicFilterCounts[f] = {}));
 
-  const filteredLeanProducts: any[] = [];
-  const leanMatchingNonPrice: any[] = [];
-  const orphanedProducts: any[] = [];
+  const filteredLeanProducts: LocalizedProduct[] = [];
+  const leanMatchingNonPrice: LocalizedProduct[] = [];
+  const orphanedProducts: LocalizedProduct[] = [];
   const familyVariants = new Map<string, LocalizedProduct[]>();
 
   let contextMinPrice = Infinity;
@@ -751,7 +651,7 @@ export async function getCategoryProducts(
         const pVal =
           group.field === "capacity"
             ? String(p.normalizedCapacity || p.capacity || "")
-            : String((p as any)[group.field] || "");
+            : String(p[group.field] || "");
 
         const pValLower = pVal.toLowerCase();
 
@@ -780,12 +680,14 @@ export async function getCategoryProducts(
     let matchesCapRange = true;
     if (filters.minCapacity !== null) {
       const minValReal =
-        unitLabel === "TB" ? filters.minCapacity * 1000 : filters.minCapacity;
+        ((filters.minCapacity as number) || 0) *
+        (unitLabel === "TB" ? 1000 : 1);
       if (cap < minValReal) matchesCapRange = false;
     }
     if (filters.maxCapacity !== null) {
       const maxValReal =
-        unitLabel === "TB" ? filters.maxCapacity * 1000 : filters.maxCapacity;
+        ((filters.maxCapacity as number) || 999999) *
+        (unitLabel === "TB" ? 1000 : 1);
       if (cap > maxValReal) matchesCapRange = false;
     }
 
@@ -793,8 +695,9 @@ export async function getCategoryProducts(
 
     // C. Price Match Status
     const matchesPrice =
-      (!filters.minPrice || p.price >= filters.minPrice) &&
-      (!filters.maxPrice || (p.price > 0 && p.price <= filters.maxPrice)) &&
+      (!filters.minPrice || p.price >= (filters.minPrice as number)) &&
+      (!filters.maxPrice ||
+        (p.price > 0 && p.price <= (filters.maxPrice as number))) &&
       p.price > 0;
 
     // D. Final Logic
@@ -814,7 +717,7 @@ export async function getCategoryProducts(
       }
 
       if (p.parentAsin) {
-        const pIdentity = getProductIdentity(p as any);
+        const pIdentity = getProductIdentity(p);
         const familyKey = `${p.parentAsin}_${(pIdentity.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "")}`;
         if (familyKey) {
           if (!familyVariants.has(familyKey)) familyVariants.set(familyKey, []);
@@ -837,7 +740,7 @@ export async function getCategoryProducts(
             ? String(p.normalizedCapacity || p.capacity || "")
             : field === "brand"
               ? p.brand
-              : String((p as any)[field] || "");
+              : String(p[field] || "");
 
         if (pVal && pVal !== "0" && pVal !== "null" && pVal !== "undefined") {
           dynamicFilterCounts[field][pVal] =
@@ -851,24 +754,26 @@ export async function getCategoryProducts(
   const { getFamilyIdentity, getFamilyRepresentative } =
     await import("../product-families");
   const { getCanonicalFamilyId } = await import("../product-registry");
-  const collapsedLeanProducts = new Map<string, any>();
+  const collapsedLeanProducts = new Map<string, LocalizedProduct>();
 
   const familyEntries = Array.from(familyVariants.entries());
 
   await Promise.all(
     familyEntries.map(async ([familyKey, variants]) => {
       // Collect all variants that match filters for this hub
-      const matchingVariants = variants.filter((v: any) => {
+      const matchingVariants = variants.filter((v: LocalizedProduct) => {
         const matchesPrice =
-          (!filters.minPrice || v.price >= filters.minPrice) &&
-          (!filters.maxPrice || (v.price > 0 && v.price <= filters.maxPrice)) &&
+          (!((filters.minPrice as number | null) || 0) ||
+            v.price >= (filters.minPrice as number)) &&
+          (!((filters.maxPrice as number | null) || 0) ||
+            (v.price > 0 && v.price <= (filters.maxPrice as number))) &&
           v.price > 0;
         return matchesPrice;
       });
 
       if (matchingVariants.length === 0) return;
 
-      const representative = getFamilyRepresentative(matchingVariants as any);
+      const representative = getFamilyRepresentative(matchingVariants);
       if (!representative) return;
 
       // RESOLVE STABLE CANONICAL ID: This ensures the Hub ID doesn't change
@@ -884,8 +789,8 @@ export async function getCategoryProducts(
           ...representative,
           isParentView: true,
           syntheticId: canonicalId,
-        } as any,
-        variants as any,
+        } as Product,
+        variants as Product[],
       );
 
       // Hub adopts the consensus identity
@@ -907,7 +812,7 @@ export async function getCategoryProducts(
   const finalFilteredLeanProducts = [
     ...filteredLeanProducts,
     ...Array.from(collapsedLeanProducts.values()).filter(
-      (h) => h.variantCount > 1,
+      (h) => (h.variantCount ?? 0) > 1,
     ),
   ];
 
@@ -916,7 +821,7 @@ export async function getCategoryProducts(
   // 4. Sort and Paginate (on Lean data)
   const sortedLeanProducts = sortProducts(
     finalFilteredLeanProducts,
-    filters.sortBy,
+    filters.sortBy as string,
     filters.sortOrder,
   );
 
@@ -969,7 +874,7 @@ export async function getCategoryProducts(
 
       return { ...rp };
     })
-    .filter(Boolean) as Product[];
+    .filter(Boolean) as LocalizedProduct[];
 
   const contextMinPriceFinal =
     contextMinPrice === Infinity ? 0 : Math.floor(contextMinPrice);
@@ -1006,4 +911,52 @@ export async function getCategoryProducts(
         : null,
     pagination,
   };
+}
+
+/**
+ * Calculates price range buckets for the filter panel.
+ */
+function calculatePriceRangeBuckets(products: LocalizedProduct[]): {
+  label: string;
+  count: number;
+  min: number;
+  max: number;
+}[] {
+  if (products.length === 0) return [];
+  const prices = products.map((p) => p.price).filter((p) => p > 0);
+  if (prices.length === 0) return [];
+
+  const min = Math.min(...prices);
+  const max = Math.max(...prices);
+  const range = max - min;
+
+  if (range <= 0) {
+    return [
+      {
+        label: `${Math.floor(min)}€`,
+        count: products.length,
+        min,
+        max,
+      },
+    ];
+  }
+
+  const bucketCount = 5;
+  const bucketSize = Math.ceil(range / bucketCount);
+  const buckets = [];
+
+  for (let i = 0; i < bucketCount; i++) {
+    const bMin = min + i * bucketSize;
+    const bMax = bMin + bucketSize;
+    const count = prices.filter((p) => p >= bMin && p < bMax).length;
+    if (count > 0) {
+      buckets.push({
+        label: `${Math.floor(bMin)} - ${Math.floor(bMax)}€`,
+        count,
+        min: bMin,
+        max: bMax,
+      });
+    }
+  }
+  return buckets;
 }

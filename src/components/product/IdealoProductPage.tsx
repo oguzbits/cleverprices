@@ -78,7 +78,7 @@ export async function IdealoProductPage({
     .replace(/[^a-z0-9]+/g, "");
 
   const mergedVariants = rawVariants.filter((v) => {
-    const vIden = getProductIdentity(v as any);
+    const vIden = getProductIdentity(v);
     const vModelKey = (vIden.modelTitle || "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "");
@@ -88,7 +88,7 @@ export async function IdealoProductPage({
   const allFamilyMembers = [mergedProduct, ...mergedVariants];
 
   const representative =
-    getFamilyRepresentative(allFamilyMembers as any) || mergedProduct;
+    getFamilyRepresentative(allFamilyMembers) || mergedProduct;
 
   const repIdentity =
     representative.id === mergedProduct.id

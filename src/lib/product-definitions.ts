@@ -37,7 +37,7 @@ export interface LocalizedProduct {
   listPrice?: number;
   category: string;
   image: string;
-  brand: string;
+  brand: string | null;
   rating: number;
   reviewCount: number;
   monthlySold: number;
@@ -55,11 +55,12 @@ export interface LocalizedProduct {
   parentAsin?: string; // For grouping
   isVariantGroup?: boolean; // UI flag
   variantCount?: number; // UI flag
-  officialSpecifications?: any; // Structured official specs
+  officialSpecifications?: Record<string, unknown>; // Structured official specs
   specificationsSource?: string;
   officialTitle?: string;
   mpn?: string;
   canonicalId?: number | null;
+  [key: string]: unknown;
 }
 
 export interface FilterParams {
@@ -194,8 +195,8 @@ export interface Product {
   imageUrl?: string;
   image?: string; // Legacy field
   affiliateUrl?: string; // Optional for some views
-  gtin?: string;
-  brand: string;
+  gtin?: string | null;
+  brand: string | null;
   prices: Record<string, number>;
   usedPrices?: Record<string, number>;
   warehousePrices?: Record<string, number>;
@@ -207,8 +208,8 @@ export interface Product {
   pricesLastUpdated?: Record<string, string>;
   parentAsin?: string;
   variationAttributes?: string;
-  specifications?: Record<string, any>;
-  officialSpecifications?: Record<string, any>;
+  specifications?: Record<string, unknown>;
+  officialSpecifications?: Record<string, unknown>;
   officialTitle?: string | null;
   socket?: string;
   cores?: string;
@@ -227,7 +228,7 @@ export interface Product {
   salesRank?: number;
   priceAvg90?: Record<string, number>;
   monthlySold?: number;
-  mpn?: string;
+  mpn?: string | null;
   popularityScore?: number;
   createdAt?: string;
   releaseDate?: string;
@@ -235,6 +236,7 @@ export interface Product {
   listPrice?: Record<string, number>;
   pricesPerUnit?: Record<string, number>;
   isParentView?: boolean;
+  variantCount?: number;
   syntheticId?: number;
   icecatId?: number | null;
   specificationsSource?: string | null;
@@ -247,10 +249,12 @@ export interface Product {
     | "scavenged"
     | "untrusted_source"
     | null;
+  category_id?: string | number;
   completenessScore?: number | null;
   missingSpecs?: string | null;
   lastEnrichedAt?: Date | null;
   canonicalId?: number | null;
+  [key: string]: unknown;
 }
 
 export type LitePrice = Pick<

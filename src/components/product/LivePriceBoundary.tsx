@@ -1,3 +1,4 @@
+import { type CountryCode } from "@/lib/countries";
 import { Product } from "@/lib/product-definitions";
 import { mergeLivePrices } from "@/lib/server/live-data";
 import { IdealoLivePrice } from "./IdealoLivePrice";
@@ -20,7 +21,7 @@ export async function LivePriceHeader({
   livePriceData,
 }: {
   productId: number;
-  countryCode: string;
+  countryCode: CountryCode;
   initialPrice: number;
   livePriceData?: {
     price: number | null;
@@ -31,7 +32,7 @@ export async function LivePriceHeader({
   return (
     <IdealoLivePrice
       productId={productId}
-      countryCode={countryCode as any}
+      countryCode={countryCode}
       initialPrice={initialPrice}
       livePriceData={livePriceData}
       className="text-[28px] font-black text-[#2d2d2d]"
@@ -48,14 +49,14 @@ export async function LiveSavingsBadge({
   liveSavings,
 }: {
   product: Product;
-  countryCode: string;
+  countryCode: CountryCode;
   liveSavings?: number;
 }) {
   // Use passed-down savings or fetch if missing (for backward compatibility or other uses)
   const savings =
     liveSavings !== undefined
       ? liveSavings
-      : (await mergeLivePrices([product], countryCode as any))[0].savings;
+      : (await mergeLivePrices([product], countryCode))[0].savings;
 
   if ((savings || 0) <= 0) return null;
   return <PriceAnalysisBadge savings={savings || 0} />;

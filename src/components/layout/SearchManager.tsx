@@ -12,6 +12,7 @@ const SearchModal = dynamic(
 declare global {
   interface Window {
     triggerSearch: () => void;
+    __searchPending?: boolean;
   }
 }
 
@@ -29,9 +30,9 @@ export function SearchManager() {
     window.triggerSearch = toggle;
 
     // If a search was triggered before hydration, open it now
-    if ((window as any).__searchPending) {
+    if (window.__searchPending) {
       setOpen(true);
-      (window as any).__searchPending = false;
+      window.__searchPending = false;
     }
 
     // Global shortcut (Cmd+K / Ctrl+K)

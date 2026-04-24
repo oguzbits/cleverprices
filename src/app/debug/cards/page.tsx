@@ -1,5 +1,5 @@
-import { IdealoProductCard } from "@/components/landing/IdealoProductCard";
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
+import { IdealoProductCard } from "@/components/landing/IdealoProductCard";
 
 export default function DebugCardsPage() {
   const products = [

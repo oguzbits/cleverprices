@@ -54,7 +54,9 @@ export function IdealoGridCard({
 
   // Build description parts
   const fullTitle = (
-    product.subtitle ? `${product.title} ${product.subtitle}` : product.title
+    product.subtitle
+      ? `${product.title || ""} ${product.subtitle}`
+      : product.title || ""
   ).toLowerCase();
 
   const descriptionParts = [
@@ -74,7 +76,7 @@ export function IdealoGridCard({
       return val && !fullTitle.includes(val);
     });
 
-  const isHub = !!(product as any).isParentView;
+  const isHub = !!product.isParentView;
   const identity = getProductIdentity(product);
 
   const displayModelTitle = product.modelTitle || identity.modelTitle;
@@ -92,15 +94,11 @@ export function IdealoGridCard({
   const useLiveSlug =
     IDENTITY_CATEGORIES.includes(product.category || "") && !isHub;
   const liveSlug = useLiveSlug
-    ? getFamilyIdentity(product as any, []).slug
+    ? getFamilyIdentity(product, []).slug
     : undefined;
   const cardHref = liveSlug
     ? `/p/${liveSlug}`
-    : getProductPath(product.id, product.slug);
-
-  console.log(
-    `IdealoGridCard Render: ID: ${product.id} CAT: ${product.category} IDENTITY_MODEL: ${identity.modelTitle} SLUG: ${product.slug}`,
-  );
+    : getProductPath(product.id || 0, product.slug || "");
 
   return (
     <div
@@ -143,7 +141,7 @@ export function IdealoGridCard({
           {product.image ? (
             <Image
               src={product.image}
-              alt={product.title}
+              alt={product.title || ""}
               fill
               priority={priority}
               loading={priority ? undefined : "lazy"}
@@ -209,10 +207,11 @@ export function IdealoGridCard({
                         Version: {formatTechText(product.variationAttributes)}
                       </p>
                     )}
-                  {(product as any).isParentView &&
-                    (product as any).variantCount > 1 && (
+                  {product.isParentView &&
+                    product.variantCount &&
+                    product.variantCount > 1 && (
                       <p className="text-idealo-text-primary mt-1 text-[12px]">
-                        {(product as any).variantCount} Varianten
+                        {product.variantCount} Varianten
                       </p>
                     )}
                 </span>
@@ -228,7 +227,7 @@ export function IdealoGridCard({
               reviewCount={product.reviewCount || 0}
               className="mb-1.5"
             />
-            {product.listPrice && product.listPrice > product.price && (
+            {product.listPrice && product.listPrice > (product.price || 0) && (
               <div className="text-idealo-text-secondary mb-0.5 text-[14px] line-through">
                 {formatCurrency(product.listPrice, countryCode)}
               </div>
@@ -236,8 +235,8 @@ export function IdealoGridCard({
             <IdealoLivePrice
               productId={product.id!}
               countryCode={countryCode}
-              initialPrice={product.price}
-              showAb={!!(product as any).isParentView}
+              initialPrice={product.price || 0}
+              showAb={!!product.isParentView}
               className="text-primary text-[20px]"
               livePriceData={livePriceData}
             />
@@ -263,7 +262,7 @@ export function IdealoGridCard({
 
           {/* BADGES */}
           <div className="sr-resultItemTile__badges mt-2 flex flex-wrap gap-1">
-            {isProductBestseller(product as any) && (
+            {isProductBestseller(product) && (
               <span className="rounded-[2px] bg-[#0066cc] px-2 py-0.5 text-[11px] font-bold text-white">
                 Bestseller
               </span>

@@ -1,18 +1,20 @@
 export interface LeanProduct {
+  [key: string]: unknown;
   id?: number;
-  slug: string;
-  title: string;
+  slug?: string;
+  asin?: string;
+  price?: number;
+  title?: string;
   modelTitle?: string;
   variantSuffix?: string;
   specificationsSource?: string | null;
   subtitle?: string;
   image?: string;
-  price: number;
   pricePerUnit?: number;
-  capacity?: number;
-  capacityUnit?: string;
-  formFactor?: string;
-  brand: string;
+  capacity?: number | null;
+  capacityUnit?: string | null;
+  formFactor?: string | null;
+  brand?: string | null;
   rating?: number;
   reviewCount?: number;
   salesRank?: number;
@@ -23,4 +25,12 @@ export interface LeanProduct {
   category?: string;
   listPrice?: number;
   savings?: number;
+  isParentView?: boolean;
+  canonicalId?: number | null;
+  displayId?: number;
+  officialTitle?: string | null;
+  mpn?: string | null;
+  category_id?: number | string;
+  officialSpecifications?: Record<string, unknown> | string | null;
+  specifications?: Record<string, unknown> | string | null;
 }

@@ -58,8 +58,8 @@ export async function generateStaticParams() {
 
 // Helper to generate rich descriptions from official specs
 function generateEnrichedDescription(
-  product: any,
-  category: any,
+  product: Product,
+  category: unknown,
 ): string | null {
   if (!product.officialSpecifications) return null;
 
@@ -75,9 +75,9 @@ function generateEnrichedDescription(
 }
 
 function getEnrichedDescriptionFromSpecs(
-  product: any,
-  specs: any,
-  category: any,
+  product: Product,
+  specs: Record<string, any>,
+  category: unknown,
 ): string | null {
   if (!specs || typeof specs !== "object") return null;
 
@@ -384,7 +384,7 @@ async function ProductPageCache({
                 variants={allVariantsRaw}
                 category={category}
                 countryCode={countryCode}
-                selectedCondition={condition as any}
+                selectedCondition={condition as "new" | "used" | "renewed"}
                 isParentView={parentViewMode}
                 canonicalId={data?.canonicalId}
               />
