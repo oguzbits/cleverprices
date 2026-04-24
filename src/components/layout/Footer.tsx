@@ -1,5 +1,6 @@
 import { Logo } from "@/components/layout/Logo";
 import { COPYRIGHT_YEAR } from "@/lib/build-config";
+import { CACHE_VERSION } from "@/lib/site-config";
 import { Mail } from "lucide-react";
 import Link from "next/link";
 
@@ -140,7 +141,14 @@ export function Footer() {
               sich seit der letzten Aktualisierung geändert haben. Als
               Amazon-Partner verdiene ich an qualifizierten Verkäufen.
             </p>
-            <p>© {COPYRIGHT_YEAR} cleverprices.com. Alle Rechte vorbehalten.</p>
+            <div className="flex flex-col items-end gap-1">
+              <p>
+                © {COPYRIGHT_YEAR} cleverprices.com. Alle Rechte vorbehalten.
+              </p>
+              <p className="text-[10px] opacity-30 select-none">
+                Deploy: {CACHE_VERSION}
+              </p>
+            </div>
           </div>
         </div>
       </div>

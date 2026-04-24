@@ -14,6 +14,7 @@ import {
 import { logPDPPerformance } from "@/lib/server/performance-registry";
 import { BRAND_DOMAIN, BRAND_NAME, CACHE_VERSION } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
+import { isProductHighQuality } from "@/lib/utils/quality";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
 import { cacheLife } from "next/cache";
@@ -169,40 +170,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const price =
       product.prices[countryCode] || Object.values(product.prices)[0];
 
-    // GSC Fix: Align metadata with content guards to prevent Soft 404 indexing
-    // SEO PIVOT: Allow indexing of out-of-stock items IF they have high-quality specs.
-    // This turns "Thin Content" (Soft 404) into "Useful Hardware Specs" (Indexable).
-    const hasPrice =
-      isParentViewMode ||
-      product.prices[countryCode] ||
-      product.usedPrices?.[countryCode] ||
-      Object.values(product.prices).some(
-        (p) => typeof p === "number" && p > 0,
-      ) ||
-      (product.usedPrices &&
-        Object.values(product.usedPrices).some((p) => Number(p) > 0));
-
-    const hasImage = !!product.image && !product.image.includes("placeholder");
-
-    // Guard against "Sparse Specs" (e.g. only Brand)
-    const specs = product.specifications
-      ? typeof product.specifications === "string"
-        ? JSON.parse(product.specifications)
-        : product.specifications
-      : {};
-    const specCount = Object.keys(specs).length;
-
-    // Define what constitutes a "meaningful" title for SEO quality
-    const hasMeaningfulTitle =
-      !!product.title &&
-      product.title.length > 4 &&
-      product.title.toLowerCase() !== product.asin?.toLowerCase();
-
-    // Quality check: Must have (Price OR High Quality Specs) AND Meaningful Title AND Image
-    const isQualityEnough =
-      (hasPrice || product.officialSpecifications || specCount > 3) &&
-      hasMeaningfulTitle &&
-      hasImage;
+    // Quality check: Unified with sitemap and content guards
+    const isQualityEnough = isProductHighQuality(product, {
+      checkPrice: true,
+      countryCode: countryCode,
+      isParentView: isParentViewMode,
+    });
 
     if (!isQualityEnough) {
       notFound();
@@ -250,7 +223,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       other: {
-        "deploy-v": "v252-POSTPONE-FIX",
+        "deploy-v": CACHE_VERSION,
       },
       alternates: {
         canonical: getProductCanonicalUrl(effectiveId, effectiveSlug),
@@ -371,47 +344,12 @@ async function ProductPageCache({
         logPDPPerformance(slug, startTime);
         action = { type: "notFound" };
       } else {
-        // GSC Fix: Align with metadata guards to prevent Soft 404
-        const hasPrice =
-          parentViewMode ||
-          product.prices[countryCode] ||
-          product.usedPrices?.[countryCode] ||
-          Object.values(product.prices).some(
-            (p) => typeof p === "number" && p > 0,
-          ) ||
-          (product.usedPrices &&
-            Object.values(product.usedPrices).some((p) => Number(p) > 0));
-
-        const hasImage =
-          !!product.image && !product.image.includes("placeholder");
-
-        // Guard against "Sparse Specs" (e.g. only Brand)
-        const specs = product.specifications
-          ? typeof product.specifications === "string"
-            ? JSON.parse(product.specifications)
-            : product.specifications
-          : {};
-        const officialSpecs = product.officialSpecifications
-          ? typeof product.officialSpecifications === "string"
-            ? JSON.parse(product.officialSpecifications)
-            : product.officialSpecifications
-          : {};
-        const specCount =
-          Object.keys(specs).length + Object.keys(officialSpecs).length;
-
-        const hasMeaningfulTitle =
-          product.title &&
-          product.title.length > 2 &&
-          product.title !== product.asin;
-
         // Unified Quality Logic:
-        // Must haveImage AND hasMeaningfulTitle AND specCount > 3
-        const isQualityVariant =
-          !!hasImage && !!hasMeaningfulTitle && specCount > 3;
-        const isQualityEnough =
-          (hasPrice || product.officialSpecifications || specCount > 3) &&
-          hasMeaningfulTitle &&
-          hasImage;
+        const isQualityEnough = isProductHighQuality(product, {
+          checkPrice: true,
+          countryCode: countryCode,
+          isParentView: parentViewMode,
+        });
 
         if (!isQualityEnough) {
           logPDPPerformance(slug, startTime);

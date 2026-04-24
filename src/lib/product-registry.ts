@@ -26,23 +26,15 @@ import { cacheLife } from "next/cache";
 import { cache as reactCache } from "react";
 import { withRetry } from "../db/utils";
 import {
-  getFamilyIdentity,
-  getFamilyRepresentative,
-} from "./product-families";
-import {
-  calculateSiblingConsensus,
-  getProductIdentity,
-} from "./utils/product-identity";
-import { mapDbProduct } from "./utils/product-mapping";
-import {
   filteringProductColumns,
   litePriceColumns,
   liteProductColumns,
   superLitePriceColumns,
   VIRTUAL_CATEGORY_MAP,
   type LitePrice,
-  type Product
+  type Product,
 } from "./product-definitions";
+import { getFamilyIdentity, getFamilyRepresentative } from "./product-families";
 import {
   enrichWithFullSiblings,
   getProductsByCategory,
@@ -50,22 +42,28 @@ import {
   getRawProductsByCategory,
   indexPricesById,
 } from "./server/product-queries";
+import {
+  calculateSiblingConsensus,
+  getProductIdentity,
+} from "./utils/product-identity";
+import { mapDbProduct } from "./utils/product-mapping";
+import { isProductHighQuality } from "./utils/quality";
 
 const cache = typeof reactCache === "function" ? reactCache : (fn: any) => fn;
 
 export {
-  filteringProductColumns,
-  litePriceColumns,
-  liteProductColumns,
-  superLitePriceColumns,
-  mapDbProduct,
   enrichWithFullSiblings,
+  filteringProductColumns,
   getProductsByCategory,
   getProductsByIds,
   getRawProductsByCategory,
   indexPricesById,
+  litePriceColumns,
+  liteProductColumns,
+  mapDbProduct,
+  superLitePriceColumns,
   type LitePrice,
-  type Product
+  type Product,
 };
 
 /**
@@ -442,27 +440,8 @@ export async function getAllProductSlugs(
       const hubIdMap = new Map(resContexts.map((c) => [c.key, c.hubIdVal]));
 
       for (const r of rawResults) {
-        // [QUALITY GUARD] Unified with PDP logic in src/app/p/[slug]/page.tsx
-        // 1. Image check
-        const hasImage = r.imageUrl && !r.imageUrl.includes("placeholder");
-
-        // 2. Specs check
-        const specs = r.specifications
-          ? JSON.parse(r.specifications as string)
-          : {};
-        const officialSpecs = r.officialSpecifications
-          ? JSON.parse(r.officialSpecifications as string)
-          : {};
-        const specCount = Object.keys(specs).length + Object.keys(officialSpecs).length;
-
-        // 3. Meaningful Title (No raw ASINs, length check)
-        const hasMeaningfulTitle =
-          r.title && r.title.length > 5 && r.title !== r.asin;
-
-        // Unified Quality Logic:
-        // Must haveImage AND hasMeaningfulTitle AND specCount > 3
-        const isQualityVariant =
-          !!hasImage && !!hasMeaningfulTitle && specCount > 3;
+        // Unified Quality Logic
+        const isQualityVariant = isProductHighQuality(r);
 
         // Hub Identification
         const actingParentAsin = r.parentAsin || r.asin;
@@ -670,11 +649,7 @@ export async function getAllProductSlugs(
         const goodVariantsIndices = variants
           .map((v, i) => {
             const m = allMapped[i];
-            const specs = m.specifications || {};
-            const officialSpecs = m.officialSpecifications || {};
-            const specCount = Object.keys(specs).length + Object.keys(officialSpecs).length;
-
-            const isGood = specCount > 3;
+            const isGood = isProductHighQuality(m);
             return isGood ? i : -1;
           })
           .filter((i) => i !== -1);
@@ -1615,7 +1590,6 @@ const getCachedDeals = async (
   "use cache";
   cacheLife("hours");
 
-
   await dbReady;
   try {
     // ...
@@ -1712,7 +1686,6 @@ const getCachedPopular = async (
 ) => {
   "use cache";
   cacheLife("hours");
-
 
   await dbReady;
   try {
@@ -1929,7 +1902,6 @@ const getCachedNew = async (
 ) => {
   "use cache";
   cacheLife("hours");
-
 
   await dbReady;
   try {

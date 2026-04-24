@@ -6,6 +6,7 @@ import {
   getLocalizedProductData,
   isProductBestseller,
 } from "./utils/products";
+import { isProductHighQuality } from "./utils/quality";
 
 interface DashboardProduct {
   id?: number;
@@ -130,8 +131,6 @@ export function curateProductList(
     .map((p): CandidateItem | null => {
       // 1. Basic Data Integrity
       if (p.condition !== "New") return null;
-      if (!p.image) return null;
-      const imageUrl = p.image;
       if (excludeIds.has(p.slug)) return null;
       if (p.parentAsin && excludeParentIds.has(p.parentAsin)) return null;
 
@@ -139,7 +138,21 @@ export function curateProductList(
       if (excludeGroupKeys.has(groupKey)) return null;
 
       const { price, title } = getLocalizedProductData(p, countryCode);
-      if (!price || price <= 0) return null;
+
+      // 1. Basic Availability Guard
+      if (price === null || price <= 0) return null;
+
+      // 2. High Quality Guard (Unified Logic)
+      if (
+        !isProductHighQuality(p, {
+          checkPrice: true,
+          countryCode,
+          isParentView: false,
+        })
+      ) {
+        return null;
+      }
+
       if (price < minPrice) return null;
 
       // 2. Strict Recency Filter for "New Arrivals"
@@ -226,9 +239,9 @@ export function curateProductList(
         original: p,
         display: {
           title: title || p.title,
-          price,
+          price: price as number,
           slug: p.slug,
-          image: imageUrl,
+          image: (p.imageUrl || p.image || "") as string,
           rating: p.rating || 0,
           ratingCount: p.reviewCount || 0,
           testRating: undefined,
