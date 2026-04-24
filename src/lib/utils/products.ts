@@ -62,7 +62,11 @@ export function calculateProductMetrics(
   let capacity = p.capacity;
   let capacityUnit = p.capacityUnit;
 
-  if (!category) return p;
+  if (!category) {
+    if (process.env.BUILD_PHASE === "1")
+      console.error("[DEBUG-METRICS-EXIT-1] No category provided");
+    return p;
+  }
 
   // Normalize category (handle aliases if possible)
   let categoryConfig: any = allCategories[category as CategorySlug];
@@ -79,6 +83,10 @@ export function calculateProductMetrics(
     category === "cpu" ||
     category === "processors-cpus"
   ) {
+    if (process.env.BUILD_PHASE === "1")
+      console.error(
+        `[DEBUG-METRICS-EXIT-2] Skipping CPU category: ${category}`,
+      );
     return p;
   }
 
@@ -125,6 +133,11 @@ export function calculateProductMetrics(
 
   // We need both price and capacity to calculate metrics
   if (!actualCapacity || !price) {
+    if (process.env.BUILD_PHASE === "1") {
+      console.error(
+        `[DEBUG-METRICS-EXIT-3] Missing values: cap=${actualCapacity}, price=${price}, cat=${category}, title=${title?.substring(0, 20)}`,
+      );
+    }
     return p;
   }
 
@@ -146,7 +159,14 @@ export function calculateProductMetrics(
   const normalizedCapacity = actualCapacity * fromFactor;
   const capacityInComparisonUnit = normalizedCapacity / toFactor;
 
-  if (!capacityInComparisonUnit) return p;
+  if (!capacityInComparisonUnit) {
+    if (process.env.BUILD_PHASE === "1") {
+      console.error(
+        `[DEBUG-METRICS-EXIT-4] Zero capacity after conversion: normCap=${normalizedCapacity}, fromF=${fromFactor}, toF=${toFactor}`,
+      );
+    }
+    return p;
+  }
 
   const pricePerUnit = Number((price / capacityInComparisonUnit).toFixed(2));
 
