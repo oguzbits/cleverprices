@@ -37,9 +37,7 @@ interface Props {
 // Generate static params for categories
 // NOTE: During the build phase, the database is excluded to keep Docker images thin.
 export async function generateStaticParams() {
-  const isBuild =
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.BUILD_PHASE === "1";
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
 
   if (isBuild) {
     // Explicitly return a placeholder during build to avoid DB warnings and keep build fast.
@@ -60,9 +58,7 @@ export async function generateMetadata({
   params,
   searchParams,
 }: Props): Promise<Metadata> {
-  const isBuild =
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.BUILD_PHASE === "1";
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
 
   const { categorySlug } = await params;
   const category = await getCategoryBySlug(categorySlug);
@@ -146,13 +142,11 @@ export default async function DedicatedCategoryPage({
   params,
   searchParams,
 }: Props) {
-  // During build phase, we wrap in Suspense to satisfy Next.js 15 "blocking route" checks.
-  // At runtime, we allow pure SSR to prevent the "blank screen" flash.
-  const isBuild =
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.BUILD_PHASE === "1";
+  const { categorySlug } = await params;
 
-  if (isBuild) {
+  // Only wrap in Suspense for the build-time placeholder to satisfy Next.js 15 build requirements.
+  // At runtime (slug is real), we use pure async SSR to prevent the "blank screen" flash.
+  if (categorySlug === "build-time-placeholder") {
     return (
       <Suspense fallback={null}>
         <DedicatedCategoryContent params={params} searchParams={searchParams} />

@@ -34,9 +34,7 @@ export interface Props {
 // NOTE: During the build phase (Next.js build), the database is excluded to keep Docker images thin.
 // This function will return a placeholder during build, and relies on on-demand generation at runtime.
 export async function generateStaticParams() {
-  const isBuild =
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.BUILD_PHASE === "1";
+  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
 
   if (isBuild) {
     // Return at least one param to satisfy Next.js 15 "Cache Component" validation requirements.
@@ -273,13 +271,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ProductPage({ params, searchParams }: Props) {
-  // During build phase, we wrap in Suspense to satisfy Next.js 15 "blocking route" checks.
-  // At runtime, we allow pure SSR to prevent the "blank screen" flash.
-  const isBuild =
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    process.env.BUILD_PHASE === "1";
+  const { slug } = await params;
 
-  if (isBuild) {
+  // Only wrap in Suspense for the build-time placeholder to satisfy Next.js 15 build requirements.
+  // At runtime (slug is real), we use pure async SSR to prevent the "blank screen" flash.
+  if (slug === "build-time-placeholder") {
     return (
       <Suspense fallback={null}>
         <ProductPageContent params={params} searchParams={searchParams} />
