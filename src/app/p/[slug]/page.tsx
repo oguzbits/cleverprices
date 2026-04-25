@@ -17,7 +17,6 @@ import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductHighQuality } from "@/lib/utils/quality";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
-import { cacheLife } from "next/cache";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -283,6 +282,13 @@ export default async function ProductPage({ params, searchParams }: Props) {
     );
   }
 
+  // [Blocking Navigation Fix]
+  // We trigger the cache fetch at the top level of the segment.
+  // Since ProductPage is an async component and NOT wrapped in Suspense,
+  // the Next.js router transition will wait for this await to resolve before
+  // unmounting the old page, preventing the "blank screen" flash.
+  await getPDPRenderData(slug);
+
   return <ProductPageContent params={params} searchParams={searchParams} />;
 }
 
@@ -307,109 +313,66 @@ async function ProductPageContent({
   await connection();
 
   const { condition } = await searchParams;
-
-  return <ProductPageCache slug={slug} condition={condition} />;
-}
-
-async function ProductPageCache({
-  slug,
-  condition,
-}: {
-  slug: string;
-  condition?: string;
-}) {
-  "use cache";
-  cacheLife("product_v5");
-  const _v = CACHE_VERSION; // Global Build ID Cache Buster
   const countryCode = DEFAULT_COUNTRY;
-
-  let action:
-    | { type: "notFound" }
-    | { type: "redirect"; url: string; permanent: boolean }
-    | null = null;
-  let renderContent = null;
 
   try {
     const startTime = performance.now();
 
-    // 1. Fetch essential DB data via High-Speed Cache Bundle
+    // 1. Fetch data (Blocked by the parent call, so this is instant/memory-read)
     const data = await getPDPRenderData(slug, countryCode);
 
     if (data?.redirect) {
       logPDPPerformance(slug, startTime);
-      console.log(
-        `[SEO Redirect] ${data.isPermanent ? "301/308" : "302/307"} ${slug} -> ${data.redirect}`,
-      );
-      action = {
-        type: "redirect",
-        url: data.redirect,
-        permanent: !!data.isPermanent,
-      };
-    } else {
-      const product = data?.product;
-      const parentViewMode = data?.isParentView || false;
-
-      if (!product) {
-        logPDPPerformance(slug, startTime);
-        action = { type: "notFound" };
-      } else {
-        // Unified Quality Logic:
-        const isQualityEnough = isProductHighQuality(product, {
-          checkPrice: true,
-          countryCode: countryCode,
-          isParentView: parentViewMode,
-        });
-
-        if (!isQualityEnough) {
-          logPDPPerformance(slug, startTime);
-          action = { type: "notFound" };
-        } else {
-          // 1. All data is now pre-fetched in parallel within the getPDPRenderData bundle
-          const category = data?.category;
-          const allVariantsRaw = (data?.variants || []) as Product[];
-
-          renderContent = (
-            <>
-              <div
-                className="hidden"
-                data-v={CACHE_VERSION}
-                aria-hidden="true"
-              />
-              <IdealoProductPage
-                product={product}
-                variants={allVariantsRaw}
-                category={category}
-                countryCode={countryCode}
-                selectedCondition={condition as "new" | "used" | "renewed"}
-                isParentView={parentViewMode}
-                canonicalId={data?.canonicalId}
-              />
-            </>
-          );
-        }
-      }
+      if (data.isPermanent) permanentRedirect(data.redirect);
+      else redirect(data.redirect);
     }
-  } catch (error: any) {
+
+    const product = data?.product;
+    const parentViewMode = data?.isParentView || false;
+
+    if (!product) {
+      logPDPPerformance(slug, startTime);
+      notFound();
+    }
+
+    // Unified Quality Logic:
+    const isQualityEnough = isProductHighQuality(product, {
+      checkPrice: true,
+      countryCode: countryCode,
+      isParentView: parentViewMode,
+    });
+
+    if (!isQualityEnough) {
+      logPDPPerformance(slug, startTime);
+      notFound();
+    }
+
+    const category = data?.category;
+    const allVariantsRaw = (data?.variants || []) as Product[];
+
+    return (
+      <>
+        <div className="hidden" data-v={CACHE_VERSION} aria-hidden="true" />
+        <IdealoProductPage
+          product={product}
+          variants={allVariantsRaw}
+          category={category}
+          countryCode={countryCode}
+          selectedCondition={condition as "new" | "used" | "renewed"}
+          isParentView={parentViewMode}
+          canonicalId={data?.canonicalId}
+        />
+      </>
+    );
+  } catch (error: unknown) {
+    const err = error as { digest?: string };
     if (
-      error?.digest?.startsWith("NEXT_") ||
-      error?.digest === "HANGING_PROMISE_REJECTION"
+      err?.digest?.startsWith("NEXT_") ||
+      err?.digest === "HANGING_PROMISE_REJECTION"
     ) {
       throw error;
     }
     console.error(`[Page Error] Product ${slug}:`, error);
-    // CRITICAL: Do NOT fall back to notFound for database/server errors
-    // This prevents mass de-indexing during temporary DB outages.
     throw error;
   }
-
-  if (action?.type === "redirect") {
-    if (action.permanent) permanentRedirect(action.url);
-    else redirect(action.url);
-  }
-
-  if (action?.type === "notFound") {
-    notFound();
-  }
-
-  return renderContent;
 }

@@ -20,9 +20,8 @@ import {
 } from "@/lib/metadata";
 import { type FilterParams } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
-import { BRAND_DOMAIN, CACHE_VERSION, SITE_URL } from "@/lib/site-config";
+import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
-import { cacheLife } from "next/cache";
 import { notFound, permanentRedirect } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
@@ -154,6 +153,10 @@ export default async function DedicatedCategoryPage({
     );
   }
 
+  // [Blocking Navigation Fix]
+  // Pre-fetch category data at the segment level to ensure the router transition waits.
+  await getCategoryBySlug(categorySlug);
+
   return (
     <DedicatedCategoryContent params={params} searchParams={searchParams} />
   );
@@ -200,9 +203,11 @@ async function CategoryPageContent({
   category: Category;
   searchParams: Promise<FilterParams>;
 }) {
-  "use cache";
-  cacheLife("category");
-  const _v = CACHE_VERSION; // Global Build ID Cache Buster
+  // NOTE: We no longer use "use cache" on the component level here
+  // as it triggers a suspension that causes a blank screen flash during navigation.
+  // Instead, we rely on the function-level caching in getNonEmptyCategorySlugs,
+  // getCategoryBySlug, and getParentCategoryData.
+
   // 1. Initial checks (Fast, usually cached)
   const nonEmptySlugs = await getNonEmptyCategorySlugs();
   const isEmpty = !isCategoryNotEmptyRecursive(categorySlug, nonEmptySlugs);

@@ -114,7 +114,7 @@ export const CATEGORY_REVALIDATE_SECONDS = 3600; // 1 hour (Global category list
 export const PRODUCT_REVALIDATE_SECONDS = 3600; // 1 hour (Deep product details)
 const STATIC_REVALIDATE_SECONDS = 86400; // 24 hours (Legal, Blog lists, Static pages)
 export const CACHE_VERSION =
-  process.env.NEXT_PUBLIC_BUILD_ID || "v259-APR24-STABLE";
+  process.env.NEXT_PUBLIC_BUILD_ID || "792ddf4-APR25-STABLE";
 
 // =============================================================================
 // HELPER FUNCTIONS

@@ -10,7 +10,26 @@ const nextConfig: NextConfig = {
   compress: false, // Offload compression to Traefik (Brotli)
   output: "standalone", // Required for Docker
   generateBuildId: async () => {
-    return `build-${Date.now()}`;
+    try {
+      // Use Git hash as the unique build ID for production tracking
+      const { execSync } = require("child_process");
+      return execSync("git rev-parse --short HEAD").toString().trim();
+    } catch (e) {
+      return `build-${Date.now()}`;
+    }
+  },
+  env: {
+    // Expose the build ID to the client-side for the footer/metadata
+    NEXT_PUBLIC_BUILD_ID:
+      process.env.NEXT_PUBLIC_BUILD_ID ||
+      (function () {
+        try {
+          const { execSync } = require("child_process");
+          return execSync("git rev-parse --short HEAD").toString().trim();
+        } catch {
+          return "dev-hash";
+        }
+      })(),
   },
   reactCompiler: true,
   cacheComponents: true,
@@ -579,7 +598,7 @@ const configWithSentry = withSentryConfig(
     // Note: Some of these are not yet supported by Sentry for Turbopack
     // but using the new structure resolves deprecation warnings in v8/v10.
     // @ts-ignore
-    webpack: (config: any) => {
+    webpack: (config: unknown) => {
       return config;
     },
   },
