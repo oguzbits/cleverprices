@@ -62,12 +62,7 @@ export function calculateProductMetrics(
   let capacity = p.capacity;
   let capacityUnit = p.capacityUnit;
 
-  console.error(
-    `[DEBUG-METRICS-ENTRY] cat=${category}, price=${overridePrice}`,
-  );
-
   if (!category) {
-    console.error("[DEBUG-METRICS-EXIT-1] No category provided");
     return p;
   }
 
@@ -88,7 +83,6 @@ export function calculateProductMetrics(
     category === "cpu" ||
     category === "processors-cpus"
   ) {
-    console.error(`[DEBUG-METRICS-EXIT-2] Skipping CPU category: ${category}`);
     return p;
   }
 
@@ -135,9 +129,6 @@ export function calculateProductMetrics(
 
   // We need both price and capacity to calculate metrics
   if (!actualCapacity || !price) {
-    console.error(
-      `[DEBUG-METRICS-EXIT-3] Missing values: cap=${actualCapacity}, price=${price}, cat=${category}, title=${title?.substring(0, 20)}`,
-    );
     return p;
   }
 
@@ -160,9 +151,6 @@ export function calculateProductMetrics(
   const capacityInComparisonUnit = normalizedCapacity / toFactor;
 
   if (!capacityInComparisonUnit) {
-    console.error(
-      `[DEBUG-METRICS-EXIT-4] Zero capacity after conversion: normCap=${normalizedCapacity}, fromF=${fromFactor}, toF=${toFactor}`,
-    );
     return p;
   }
 
