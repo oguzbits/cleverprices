@@ -272,7 +272,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default function ProductPage({ params, searchParams }: Props) {
+export default async function ProductPage({ params, searchParams }: Props) {
   // During build phase, we wrap in Suspense to satisfy Next.js 15 "blocking route" checks.
   // At runtime, we allow pure SSR to prevent the "blank screen" flash.
   const isBuild =
