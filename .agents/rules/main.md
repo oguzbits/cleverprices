@@ -1,3 +1,7 @@
+---
+trigger: always_on
+---
+
 # CleverPrices Global Agent Rules (Audited & Finalized)
 
 These rules apply to EVERY prompt. They represent the architectural and design "North Star" of the project.
