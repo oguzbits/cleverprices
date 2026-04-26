@@ -5,8 +5,6 @@ import { getCountryByCode, type CountryCode } from "@/lib/countries";
 import { type ProductOffer } from "@/lib/data-sources";
 import { type ProductCondition } from "@/lib/data-sources/types";
 import { type Product } from "@/lib/product-definitions";
-import { getProductFamilyMembers } from "@/lib/product-registry";
-import { mergeLivePrices } from "@/lib/server/live-data";
 import { formatCurrency } from "@/lib/utils/formatting";
 import { Star } from "lucide-react";
 
@@ -20,7 +18,7 @@ interface OffersListProps {
   variants?: Product[]; // Pre-merged variants from server
 }
 
-export async function IdealoProductOffers({
+export function IdealoProductOffers({
   product,
   countryCode,
   selectedCondition = "new",
@@ -42,16 +40,7 @@ export async function IdealoProductOffers({
   if (isParentView && product.parentAsin) {
     let familyMembers = passedVariants
       ? [product, ...passedVariants]
-      : await getProductFamilyMembers(product.parentAsin, countryCode);
-
-    if (familyMembers.length === 0) {
-      familyMembers = [product];
-    }
-
-    // Only merge if not already passed (pre-merged)
-    if (!passedVariants) {
-      familyMembers = await mergeLivePrices(familyMembers, countryCode);
-    }
+      : [product];
 
     // Hub Mode: Consolidated Price List - Only show the absolute cheapest offer across the entire family.
     let bestHubItem: (typeof productsToShow)[0] | null = null;
@@ -91,18 +80,7 @@ export async function IdealoProductOffers({
     let targets = [product];
 
     if (product.parentAsin) {
-      let familyMembers =
-        passedVariants ||
-        (await getProductFamilyMembers(
-          product.parentAsin,
-          countryCode,
-          true, // skipFullMapping
-        ));
-
-      // Only merge if not passed
-      if (!passedVariants) {
-        familyMembers = await mergeLivePrices(familyMembers, countryCode);
-      }
+      let familyMembers = passedVariants || [product];
 
       const curAttrs = product.variationAttributes?.toLowerCase().trim();
       const identicalSiblings = familyMembers.filter(
@@ -113,10 +91,6 @@ export async function IdealoProductOffers({
       const mergedProduct =
         familyMembers.find((f: Product) => f.id === product.id) || product;
       targets = [mergedProduct, ...identicalSiblings];
-    } else if (!passedVariants) {
-      // Single Product (No Parent) - MUST refreshed prices to match "Neu ab" if not passed
-      const [fresh] = await mergeLivePrices([product], countryCode);
-      targets = [fresh];
     } else {
       targets = [product];
     }

@@ -18,10 +18,6 @@ import {
   getFamilyIdentity,
   getFamilyRepresentative,
 } from "@/lib/product-families";
-import {
-  getProductVariants,
-  getSimilarProducts,
-} from "@/lib/server/cached-products";
 import { cn } from "@/lib/utils";
 import { formatDisplayTitle } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
@@ -29,7 +25,6 @@ import { isProductBestseller } from "@/lib/utils/products";
 import { getProductPath } from "@/lib/utils/url";
 import { Category } from "@/types";
 import { Package } from "lucide-react";
-import { cacheLife } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import React from "react";
@@ -53,22 +48,24 @@ interface IdealoProductPageProps {
   parentTitle?: string;
   parentFullModel?: string;
   canonicalId?: number;
+  similarSidebar?: Product[];
+  similarCarousel?: Product[];
 }
 
-export async function IdealoProductPage({
+export function IdealoProductPage({
   product,
   variants = [],
   category,
   countryCode,
   selectedCondition,
-  isParentView: initialIsParentView = false,
+  isParentView = false,
   parentSlug: passedParentSlug,
   parentTitle: passedParentTitle,
   parentFullModel: passedFullModel,
   canonicalId,
+  similarSidebar = [],
+  similarCarousel = [],
 }: IdealoProductPageProps) {
-  const isParentView = initialIsParentView;
-
   const mergedProduct = product;
   const rawVariants = variants;
 
@@ -173,9 +170,9 @@ export async function IdealoProductPage({
                 <div className="bg-card relative mx-auto flex aspect-square w-full max-w-[265px] items-center justify-center overflow-hidden rounded-lg">
                   {isParentView ? (
                     <ParentHeroImage
-                      product={mergedProduct}
+                      product={product}
                       countryCode={countryCode}
-                      variants={mergedVariants}
+                      variants={variants}
                     />
                   ) : mergedProduct.image ? (
                     <Image
@@ -328,8 +325,6 @@ export async function IdealoProductPage({
                       const v = String(value).toLowerCase().trim();
                       const isTrue = ["ja", "yes", "true", "1"].includes(v);
 
-                      // If it's a boolean true, show the property name (translated if possible)
-                      // Otherwise show the value itself (e.g. Brand names, Colors, etc.)
                       const lowerKey = key.toLowerCase();
                       let displayValue = String(value);
                       if (isTrue) {
@@ -426,8 +421,8 @@ export async function IdealoProductPage({
               className="text-idealo-text-primary order-1 mb-[45px] hidden min-w-0 text-[14px] leading-[16px] xl:block xl:w-1/4 xl:pr-[15px]"
             >
               <ComponentErrorBoundary name="SidebarSimilarProducts">
-                <CachedSidebarSimilarProducts
-                  product={mergedProduct}
+                <SidebarSimilarProducts
+                  similarProducts={similarSidebar}
                   countryCode={countryCode}
                 />
               </ComponentErrorBoundary>
@@ -447,8 +442,8 @@ export async function IdealoProductPage({
 
           <div id="datasheet" className="scroll-mt-[10vh]">
             <ComponentErrorBoundary name="Specifications">
-              <CachedSpecifications
-                product={mergedProduct}
+              <SpecificationsTable
+                product={product}
                 selectedCondition={effectiveCondition}
                 isHubMode={isParentView}
               />
@@ -456,8 +451,8 @@ export async function IdealoProductPage({
           </div>
 
           <ComponentErrorBoundary name="SimilarCarousel">
-            <CachedSimilarCarousel
-              product={mergedProduct}
+            <SimilarCarousel
+              similarProducts={similarCarousel}
               countryCode={countryCode}
             />
           </ComponentErrorBoundary>
@@ -467,25 +462,14 @@ export async function IdealoProductPage({
   );
 }
 
-/**
- * --- CACHED COMPONENTS (Next.js 16 Granular Caching) ---
- * Each of these is rendered once and stored as static Rsc in the Data Cache.
- */
-
-// Live Price Chart that prefers fresh data from Keepa
-
-async function CachedSidebarSimilarProducts({
-  product,
+function SidebarSimilarProducts({
+  similarProducts,
   countryCode,
 }: {
-  product: Product;
+  similarProducts: Product[];
   countryCode: CountryCode;
 }) {
-  "use cache";
-  cacheLife("product_v5");
-
-  // Fetch similar products internally for streaming
-  const similarProducts = await getSimilarProducts(product, 5, countryCode);
+  if (!similarProducts?.length) return null;
   return (
     <section
       id="recommendedProducts"
@@ -532,38 +516,14 @@ async function CachedSidebarSimilarProducts({
   );
 }
 
-async function CachedSpecifications({
-  product,
-  selectedCondition,
-  isHubMode,
-}: {
-  product: Product;
-  selectedCondition?: "new" | "used" | "renewed";
-  isHubMode?: boolean;
-}) {
-  "use cache";
-  cacheLife("product_v5");
-  return (
-    <SpecificationsTable
-      product={product}
-      selectedCondition={selectedCondition}
-      isHubMode={isHubMode}
-    />
-  );
-}
-
-async function CachedSimilarCarousel({
-  product,
+function SimilarCarousel({
+  similarProducts,
   countryCode,
 }: {
-  product: Product;
+  similarProducts: Product[];
   countryCode: CountryCode;
 }) {
-  "use cache";
-  cacheLife("product_v5");
-
-  // Fetch similar products internally for streaming
-  const similarProducts = await getSimilarProducts(product, 12, countryCode);
+  if (!similarProducts?.length) return null;
   return (
     <div className="bg-secondary -mx-4 mt-12 px-4 py-8">
       <div className="mx-auto max-w-[1280px]">
@@ -590,19 +550,17 @@ async function CachedSimilarCarousel({
   );
 }
 
-async function ParentHeroImage({
+function ParentHeroImage({
   product,
   countryCode,
-  variants: passedVariants,
+  variants = [],
 }: {
   product: Product;
   countryCode: string;
   variants?: Product[];
 }) {
-  const variants =
-    passedVariants || (await getProductVariants(product, countryCode));
-
   const uniqueImages: string[] = [];
+
   if (product.image) {
     uniqueImages.push(product.image);
   }

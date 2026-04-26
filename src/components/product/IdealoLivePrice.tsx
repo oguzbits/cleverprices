@@ -1,6 +1,5 @@
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import type { CountryCode } from "@/lib/countries";
-import { getLivePriceForProduct } from "@/lib/server/live-data";
 import { cn } from "@/lib/utils";
 
 interface IdealoLivePriceProps {
@@ -15,7 +14,7 @@ interface IdealoLivePriceProps {
  * Component for streaming live prices across the entire application.
  * Ensures that the price seen in a category grid matches the one on the product page.
  */
-export async function IdealoLivePrice({
+export function IdealoLivePrice({
   productId,
   countryCode,
   initialPrice,
@@ -31,8 +30,7 @@ export async function IdealoLivePrice({
     warehousePrice: number | null;
   };
 }) {
-  const live =
-    livePriceData || (await getLivePriceForProduct(productId, countryCode));
+  const live = livePriceData;
 
   const p = live?.price || 0;
   const up = live?.usedPrice || 0;

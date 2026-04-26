@@ -1,6 +1,5 @@
 import { type CountryCode } from "@/lib/countries";
 import { Product } from "@/lib/product-definitions";
-import { mergeLivePrices } from "@/lib/server/live-data";
 import { IdealoLivePrice } from "./IdealoLivePrice";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
 
@@ -14,7 +13,7 @@ interface LivePriceBoundaryProps {
 /**
  * Specialized sub-component for the big header price
  */
-export async function LivePriceHeader({
+export function LivePriceHeader({
   productId,
   countryCode,
   initialPrice,
@@ -43,7 +42,7 @@ export async function LivePriceHeader({
 /**
  * Specialized sub-component for the savings badge
  */
-export async function LiveSavingsBadge({
+export function LiveSavingsBadge({
   product,
   countryCode,
   liveSavings,
@@ -52,11 +51,7 @@ export async function LiveSavingsBadge({
   countryCode: CountryCode;
   liveSavings?: number;
 }) {
-  // Use passed-down savings or fetch if missing (for backward compatibility or other uses)
-  const savings =
-    liveSavings !== undefined
-      ? liveSavings
-      : (await mergeLivePrices([product], countryCode))[0].savings;
+  const savings = liveSavings !== undefined ? liveSavings : product.savings;
 
   if ((savings || 0) <= 0) return null;
   return <PriceAnalysisBadge savings={savings || 0} />;

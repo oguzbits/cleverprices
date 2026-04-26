@@ -361,6 +361,8 @@ async function ProductPageContent({
           selectedCondition={condition as "new" | "used" | "renewed"}
           isParentView={parentViewMode}
           canonicalId={data?.canonicalId}
+          similarSidebar={data?.similarSidebar}
+          similarCarousel={data?.similarCarousel}
         />
       </>
     );

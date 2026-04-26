@@ -1,8 +1,6 @@
 import { type CountryCode } from "@/lib/countries";
 import { type Product } from "@/lib/product-definitions";
 import { getFamilyIdentity } from "@/lib/product-families";
-import { getProductFamilyMembers } from "@/lib/product-registry";
-import { mergeLivePrices } from "@/lib/server/live-data";
 import { cn } from "@/lib/utils";
 import { normalizeVariantAttributes } from "@/lib/utils/variants";
 import { Check } from "lucide-react";
@@ -18,7 +16,7 @@ interface ConditionButtonsProps {
   variants?: Product[];
 }
 
-export async function ConditionButtons({
+export function ConditionButtons({
   product,
   countryCode,
   effectiveCondition,
@@ -93,18 +91,8 @@ export async function ConditionButtons({
 
   // 1. Scan the family
   if (product.parentAsin) {
-    let familyMembers =
-      passedVariants ||
-      (await getProductFamilyMembers(
-        product.parentAsin,
-        countryCode,
-        true, // skipFullMapping
-      ));
+    let familyMembers = passedVariants || [product];
 
-    // [CRITICAL] Overlay fresh prices from the fast-cache prices table (1-min)
-    if (!passedVariants) {
-      familyMembers = await mergeLivePrices(familyMembers, countryCode);
-    }
     const normalizedCurAttrs = normalizeVariantAttributes(product);
 
     familyMembers.forEach((m: Product) => {

@@ -1,6 +1,4 @@
 import { Product } from "@/lib/product-definitions";
-import { getProductVariants } from "@/lib/server/cached-products";
-import { mergeLivePrices } from "@/lib/server/live-data";
 import { ProductVariantSelector } from "./ProductVariantSelector";
 
 interface ProductVariantSelectorProps {
@@ -12,28 +10,14 @@ interface ProductVariantSelectorProps {
   parentSlug?: string;
 }
 
-export async function CachedVariantSelector({
+export function CachedVariantSelector({
   product,
-  variants: passedVariants,
+  variants: allVariants = [],
   countryCode,
   isParentView,
   selectedCondition,
   parentSlug,
 }: ProductVariantSelectorProps) {
-  let allVariants = passedVariants || [];
-
-  if (!passedVariants) {
-    allVariants = await getProductVariants(product, countryCode);
-
-    // Fallback: If getProductVariants returns empty (no siblings), we ensure the current product is in the list
-    if (allVariants.length === 0) {
-      allVariants = [product];
-    }
-
-    // [CRITICAL] Overlay fresh prices (1-min) for consistency across components
-    allVariants = await mergeLivePrices(allVariants, countryCode);
-  }
-
   // Find the merged version of the current product to ensure consistency
   // Robust match: Try ID first, then ASIN (especially if ID is synthetic/Hub)
   const currentMergedProduct =

@@ -1,4 +1,5 @@
 import { cacheLife } from "next/cache";
+
 import { getCategoryBySlug } from "../categories";
 import { type Product } from "../product-definitions";
 import {
@@ -20,7 +21,7 @@ import {
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
-import { CACHE_VERSION } from "../site-config";
+
 import { getProductIdentity } from "../utils/product-identity";
 import { getProductPath } from "../utils/url";
 import {
@@ -256,6 +257,30 @@ export async function getPDPRenderData(
   const countryCode = countryInput.toLowerCase();
   cacheLife("product_v5");
 
+  // 1. Helper for residual data (similar products)
+  const fetchResiduals = async (p: Product) => {
+    const [sidebar, carousel] = await Promise.all([
+      getCachedSimilarProducts(
+        p.category,
+        p.slug,
+        p.prices[countryCode] || 0,
+        5,
+        countryCode,
+      ),
+      getCachedSimilarProducts(
+        p.category,
+        p.slug,
+        p.prices[countryCode] || 0,
+        12,
+        countryCode,
+      ),
+    ]);
+    return {
+      similarSidebar: await mergeLivePrices(sidebar, countryCode),
+      similarCarousel: await mergeLivePrices(carousel, countryCode),
+    };
+  };
+
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
   let isParentView = false;
@@ -345,9 +370,13 @@ export async function getPDPRenderData(
           };
         }
 
+        const residuals = await fetchResiduals(effectiveProduct);
+
         return {
           product: effectiveProduct,
           variants: mergedAll.slice(1),
+          similarSidebar: residuals.similarSidebar,
+          similarCarousel: residuals.similarCarousel,
           isParentView: true,
           canonicalId,
           canonicalSlug,
@@ -451,9 +480,14 @@ export async function getPDPRenderData(
           isParentView = false;
         }
 
+        const residuals = await fetchResiduals(renderProduct);
+
         return {
           product: renderProduct,
-          variants: merged.filter((p) => p.id !== realId),
+          variants: merged.filter((p: Product) => p.id !== realId),
+
+          similarSidebar: residuals.similarSidebar,
+          similarCarousel: residuals.similarCarousel,
           isParentView: false, // Explicitly false for matched Variant IDs
           canonicalId,
           canonicalSlug,
@@ -567,10 +601,14 @@ export async function getPDPRenderData(
     [product, ...variants],
   );
 
+  const residuals = await fetchResiduals(product);
+
   return {
     product: product || (null as any),
     variants,
     category,
+    similarSidebar: residuals.similarSidebar,
+    similarCarousel: residuals.similarCarousel,
     isParentView, // Use the strictly calculated local variable
     canonicalId,
     canonicalSlug,

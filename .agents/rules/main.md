@@ -28,7 +28,9 @@ These rules apply to EVERY prompt. They represent the architectural and design "
 
 ## 4. Automatic Formatting & Sync
 
-- **Post-Edit Formatting:** After any file modification, run `bunx prettier --write <TargetFile>`.
+- **Post-Edit Cleanup:** After any file modification, you MUST run:
+  1. `bunx eslint --fix <TargetFile>` (to remove unused imports/vars)
+  2. `bunx prettier --write <TargetFile>` (to format)
 - **Automated Verification:** You MUST run `bun x tsc --noEmit` and `bun run lint` at the end of every turn involving code changes to ensure zero regressions.
 - **Graphify Sync:** Rebuild the graph after modifying core logic (`product-families.ts`, `product-identity.ts`, etc.) using: `$(cat graphify-out/.graphify_python) -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"`
 - **Bun First:** Always use `bun` or `bunx` instead of `npm`, `npx`, or `yarn` for script execution and dependency management.

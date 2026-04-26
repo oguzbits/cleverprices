@@ -19,7 +19,7 @@ interface AsyncFilterPanelProps {
   lockedFilters?: string[];
 }
 
-export async function AsyncFilterPanel({
+export function AsyncFilterPanel({
   category,
   filteredData,
   lockedFilters,
@@ -89,7 +89,7 @@ interface AsyncProductListProps {
   filteredData: any;
 }
 
-export async function AsyncProductList({
+export function AsyncProductList({
   category,
   countryCode,
   searchParams,
