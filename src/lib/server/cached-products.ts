@@ -21,8 +21,9 @@ import {
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
-
+import { CACHE_VERSION } from "../site-config";
 import { getProductIdentity } from "../utils/product-identity";
+
 import { getProductPath } from "../utils/url";
 import {
   getLivePriceForProduct,
@@ -43,7 +44,7 @@ async function getCachedBestDeals(
 ) {
   "use cache";
   cacheLife("category");
-  // _v = CACHE_VERSION; // Hidden Cache Buster
+  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getBestDealsSync(
     limit,
     countryCode,
@@ -58,7 +59,7 @@ async function getCachedNewArrivals(
 ) {
   "use cache";
   cacheLife("category");
-  // _v = CACHE_VERSION; // Hidden Cache Buster
+  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getNewArrivalsSync(
     limit,
     countryCode,
@@ -72,21 +73,21 @@ async function getCachedDiverseMostPopular(
 ) {
   "use cache";
   cacheLife("category");
-  // _v = CACHE_VERSION; // Hidden Cache Buster
+  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
 
 async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
   "use cache";
   cacheLife("product_v5");
-  // _v = CACHE_VERSION; // Hidden Cache Buster
+  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductBySlugSync(slug, includeHistory);
 }
 
 async function getCachedProductById(id: number) {
   "use cache";
   cacheLife("product_v5");
-  // _v = CACHE_VERSION; // Hidden Cache Buster
+  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductByIdSync(id);
 }
 
@@ -97,7 +98,7 @@ async function getCachedProductVariantsInternal(
 ) {
   "use cache";
   cacheLife("product_v5");
-  // _v = CACHE_VERSION; // Hidden Cache Buster
+  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -253,7 +254,7 @@ export async function getPDPRenderData(
   countryInput: string = "de",
 ) {
   "use cache";
-  // _v = CACHE_VERSION; // Global Schema Flush
+  const _v = CACHE_VERSION; // Global Schema Flush
   const countryCode = countryInput.toLowerCase();
   cacheLife("product_v5");
 
