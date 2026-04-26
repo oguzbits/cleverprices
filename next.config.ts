@@ -1,6 +1,7 @@
 import bundleAnalyzer from "@next/bundle-analyzer";
 import createMDX from "@next/mdx";
 import type { NextConfig } from "next";
+import { execSync } from "node:child_process";
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === "true",
@@ -12,9 +13,8 @@ const nextConfig: NextConfig = {
   generateBuildId: async () => {
     try {
       // Use Git hash as the unique build ID for production tracking
-      const { execSync } = require("child_process");
       return execSync("git rev-parse --short HEAD").toString().trim();
-    } catch (e) {
+    } catch {
       return `build-${Date.now()}`;
     }
   },
@@ -24,10 +24,10 @@ const nextConfig: NextConfig = {
       process.env.NEXT_PUBLIC_BUILD_ID ||
       (function () {
         try {
-          const { execSync } = require("child_process");
           return execSync("git rev-parse --short HEAD").toString().trim();
         } catch {
-          return "dev-hash";
+          // Fallback to a timestamp-based ID for professional tracking in Docker/CI
+          return `v${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 12)}`;
         }
       })(),
   },
@@ -601,7 +601,7 @@ const configWithSentry = withSentryConfig(
     // Sentry Webpack Plugin Options (Fallback for legacy builds)
     // Note: Some of these are not yet supported by Sentry for Turbopack
     // but using the new structure resolves deprecation warnings in v8/v10.
-    // @ts-ignore
+    // @ts-expect-error - Some of these are not yet supported by Sentry for Turbopack
     webpack: (config: unknown) => {
       return config;
     },
@@ -630,6 +630,8 @@ if (isBuild && isCI) {
 }
 
 // Only wrap with Sentry in CI/Production to avoid 70s+ local build overhead
-const exportedConfig = isCI ? configWithSentry : withBundleAnalyzer(withMDX(nextConfig));
+const exportedConfig = isCI
+  ? configWithSentry
+  : withBundleAnalyzer(withMDX(nextConfig));
 
 export default exportedConfig;

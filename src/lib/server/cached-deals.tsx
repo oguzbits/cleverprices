@@ -8,7 +8,9 @@ import { cacheLife } from "next/cache";
  * Cached version of the Deals Page content.
  * Complies with the rule: "Only use use cache in the lib/server layer."
  */
-export async function getCachedDealsPage(resolvedSearchParams: any) {
+export async function getCachedDealsPage(
+  resolvedSearchParams: Record<string, string | string[] | undefined>,
+) {
   "use cache";
   cacheLife("category");
   const _v = CACHE_VERSION; // Global Build ID Cache Buster

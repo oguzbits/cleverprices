@@ -1,5 +1,4 @@
 import { getAlternateLanguages } from "@/lib/metadata";
-import { type FilterParams } from "@/lib/product-definitions";
 import { getCachedDealsPage } from "@/lib/server/cached-deals";
 import { SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
@@ -39,7 +38,7 @@ export default async function DealsPage({ searchParams }: Props) {
 async function DealsPageContent({
   searchParams,
 }: {
-  searchParams: Promise<FilterParams>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await connection();
   const resolvedSearchParams = await searchParams;
