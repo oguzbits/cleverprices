@@ -18,8 +18,6 @@ import { isProductHighQuality } from "@/lib/utils/quality";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
 import { Metadata } from "next";
 import { notFound, permanentRedirect, redirect } from "next/navigation";
-import { connection } from "next/server";
-import { Suspense } from "react";
 
 export interface Props {
   params: Promise<{
@@ -56,7 +54,7 @@ export async function generateStaticParams() {
 // Helper to generate rich descriptions from official specs
 function generateEnrichedDescription(
   product: Product,
-  category: unknown,
+  category: any,
 ): string | null {
   if (!product.officialSpecifications) return null;
 
@@ -74,7 +72,7 @@ function generateEnrichedDescription(
 function getEnrichedDescriptionFromSpecs(
   product: Product,
   specs: Record<string, any>,
-  category: unknown,
+  category: any,
 ): string | null {
   if (!specs || typeof specs !== "object") return null;
 
@@ -106,8 +104,6 @@ function getEnrichedDescriptionFromSpecs(
       specs["Display-Größe"];
     const chip = specs["Chip"] || specs["Prozessor"] || specs["Chipset"];
     const camera = specs["Kamera"] || specs["Camera"] || specs["Hauptkamera"];
-    const capacity =
-      specs["Kapazität"] || specs["Speicherkapazität"] || specs["Storage"];
 
     const parts = [];
     if (display) parts.push(display.replace(/Display/g, "").trim());
@@ -254,10 +250,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         "Deutschland",
       ].filter(Boolean) as string[],
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const err = error as { digest?: string };
     if (
-      error?.digest?.startsWith("NEXT_") ||
-      error?.digest === "HANGING_PROMISE_REJECTION"
+      err?.digest?.startsWith("NEXT_") ||
+      err?.digest === "HANGING_PROMISE_REJECTION"
     ) {
       throw error;
     }
@@ -272,45 +269,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
 
-  // Only wrap in Suspense for the build-time placeholder to satisfy Next.js 15 build requirements.
-  // At runtime (slug is real), we use pure async SSR to prevent the "blank screen" flash.
-  if (slug === "build-time-placeholder") {
-    return (
-      <Suspense fallback={null}>
-        <ProductPageContent params={params} searchParams={searchParams} />
-      </Suspense>
-    );
-  }
-
-  // [Blocking Navigation Fix]
-  // We trigger the cache fetch at the top level of the segment.
-  // Since ProductPage is an async component and NOT wrapped in Suspense,
-  // the Next.js router transition will wait for this await to resolve before
-  // unmounting the old page, preventing the "blank screen" flash.
-  await getPDPRenderData(slug);
-
-  return <ProductPageContent params={params} searchParams={searchParams} />;
-}
-
-async function ProductPageContent({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ slug: string }>;
-  searchParams: Promise<{ condition?: string }>;
-}) {
-  const { slug } = await params;
-
   // Handle static collection for the dynamic template route
   if (
     slug === "[slug]" ||
     slug === "%5Bslug%5D" ||
     slug === "build-time-placeholder"
   ) {
-    return <div className="hidden" />;
+    return <div className="hidden" aria-hidden="true" />;
   }
-
-  await connection();
 
   const { condition } = await searchParams;
   const countryCode = DEFAULT_COUNTRY;
@@ -318,7 +284,10 @@ async function ProductPageContent({
   try {
     const startTime = performance.now();
 
-    // 1. Fetch data (Blocked by the parent call, so this is instant/memory-read)
+    // [Blocking Navigation Fix]
+    // We await the data fetch directly in the Page segment.
+    // This forces the server to complete the render before sending the first byte,
+    // ensuring the browser stays on the current page until the new one is ready.
     const data = await getPDPRenderData(slug, countryCode);
 
     if (data?.redirect) {
