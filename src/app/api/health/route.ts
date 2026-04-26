@@ -1,4 +1,5 @@
-import { client } from "@/db";
+import { db, dbReady } from "@/db";
+import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 /**
@@ -10,8 +11,11 @@ export async function GET() {
   const start = Date.now();
 
   try {
-    // Quick DB connectivity check
-    await client.execute("SELECT 1");
+    // Ensure database and migrations are fully ready
+    await dbReady;
+    
+    // Quick DB connectivity check via Drizzle
+    await db.run(sql`SELECT 1`);
 
     return NextResponse.json(
       {
