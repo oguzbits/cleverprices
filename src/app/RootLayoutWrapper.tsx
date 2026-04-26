@@ -29,7 +29,10 @@ export default function RootLayoutWrapper({
   hideFooter = false,
 }: RootLayoutProps) {
   return (
-    <html lang={lang} suppressHydrationWarning>
+    <html
+      lang={lang}
+      suppressHydrationWarning
+    >
       <head>
         <Script
           id="search-trigger-capture"

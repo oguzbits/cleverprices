@@ -17,6 +17,7 @@ export async function GET() {
       {
         status: "healthy",
         db: "connected",
+        buildId: process.env.NEXT_PUBLIC_BUILD_ID || "unknown",
         latency: Date.now() - start,
         timestamp: new Date().toISOString(),
       },

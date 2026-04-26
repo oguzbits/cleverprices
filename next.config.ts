@@ -544,6 +544,10 @@ const nextConfig: NextConfig = {
             key: "Link",
             value: "<https://m.media-amazon.com>; rel=preconnect; crossorigin",
           },
+          {
+            key: "X-Build-ID",
+            value: process.env.NEXT_PUBLIC_BUILD_ID || "unknown",
+          },
         ],
       },
     ];

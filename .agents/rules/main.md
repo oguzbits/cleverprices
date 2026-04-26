@@ -6,10 +6,13 @@ trigger: always_on
 
 These rules apply to EVERY prompt. They represent the architectural and design "North Star" of the project.
 
-## 1. Technical Stack & SSR
+## 1. Technical Stack & SSR (The "Pure SSR" Commandments)
 
 - **Next.js 16 + React Compiler:** Always use the latest patterns. Avoid legacy `defaultProps`.
-- **Pure SSR (Non-Negotiable):** We do not use `loading.tsx` for core routes. Googlebot must receive full HTML in the first hop to prevent indexing errors. Resolve "blocking route" errors via build-time Suspense boundaries while preserving runtime SSR.
+- **Pure SSR (Non-Negotiable):** We do not use `loading.tsx` for core routes. Googlebot must receive full HTML in the first hop.
+- **FORBIDDEN: Parallel Experiments:** DO NOT alternate between adding/removing `Suspense` or `connection()` once a decision is logged in the `Architectural Decisions` Knowledge Item.
+- **FORBIDDEN: `next/server` connection()**: Do not use `connection()` in PDP routes as it can trigger early streaming and UI flashes.
+- **FORBIDDEN: Component-level `use cache`**: Only use `use cache` in the `lib/server` layer. Component-level caching is inconsistent and causes hydration mismatches.
 - **Local-First Data:** The persistent store is SQLite; the memory-first read layer is Redis. Always use `dbReady()` wrappers and honor `CACHE_VERSION` for invalidation.
 
 ## 2. Product Identity & SEO
@@ -34,6 +37,11 @@ These rules apply to EVERY prompt. They represent the architectural and design "
 - **Automated Verification:** You MUST run `bun x tsc --noEmit` and `bun run lint` at the end of every turn involving code changes to ensure zero regressions.
 - **Graphify Sync:** Rebuild the graph after modifying core logic (`product-families.ts`, `product-identity.ts`, etc.) using: `$(cat graphify-out/.graphify_python) -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"`
 - **Bun First:** Always use `bun` or `bunx` instead of `npm`, `npx`, or `yarn` for script execution and dependency management.
+
+## 6. Verification of Deployment ("Deployment Truth")
+
+- **Build ID Check:** Every production build injects `NEXT_PUBLIC_BUILD_ID`. Verify by inspecting `<html data-build-id="...">` in the browser or checking the console log `[Build Info]`.
+- **Match HEAD:** Deployed commit MUST match local `HEAD` commit. If not, use `/deploy` to re-sync.
 
 ## 5. Pre-Deployment Guard
 
