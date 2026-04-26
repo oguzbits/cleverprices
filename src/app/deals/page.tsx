@@ -1,18 +1,14 @@
-import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
-import { CATEGORY_MAP } from "@/lib/category-definitions";
-import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAlternateLanguages } from "@/lib/metadata";
-import { CACHE_VERSION, SITE_URL } from "@/lib/site-config";
+import { type FilterParams } from "@/lib/product-definitions";
+import { getCachedDealsPage } from "@/lib/server/cached-deals";
+import { SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
-import { cacheLife } from "next/cache";
 import { connection } from "next/server";
 import { Suspense } from "react";
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
-
-// export const dynamic = "force-dynamic"; // Incompatible with cacheComponents
 
 export const metadata: Metadata = {
   title: `Hardware Deals & Angebote | cleverprices`,
@@ -43,31 +39,10 @@ export default async function DealsPage({ searchParams }: Props) {
 async function DealsPageContent({
   searchParams,
 }: {
-  searchParams: Promise<any>;
+  searchParams: Promise<FilterParams>;
 }) {
   await connection();
   const resolvedSearchParams = await searchParams;
-  return <DealsPageCache resolvedSearchParams={resolvedSearchParams} />;
+  return getCachedDealsPage(resolvedSearchParams);
 }
 
-async function DealsPageCache({
-  resolvedSearchParams,
-}: {
-  resolvedSearchParams: any;
-}) {
-  "use cache";
-  cacheLife("category");
-  const _v = CACHE_VERSION; // Global Build ID Cache Buster
-  const category = CATEGORY_MAP["deals"];
-
-  return (
-    <IdealoCategoryPage
-      category={{
-        ...category,
-        slug: "deals",
-      }}
-      countryCode={DEFAULT_COUNTRY}
-      searchParams={resolvedSearchParams}
-    />
-  );
-}

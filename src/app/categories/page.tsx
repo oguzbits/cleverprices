@@ -1,12 +1,9 @@
-"use cache";
-
 import { AllCategoriesView } from "@/components/category/AllCategoriesView";
-import { getCategoryHierarchy } from "@/lib/categories";
+import { getCategoryHierarchyCached } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { getSiteUrl } from "@/lib/site-config";
 import { Metadata } from "next";
-import { cacheLife } from "next/cache";
 
 export async function generateMetadata(): Promise<Metadata> {
   const canonicalUrl = getSiteUrl("/categories");
@@ -31,8 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CategoriesPage() {
-  cacheLife("static");
-  const hierarchy = getCategoryHierarchy();
+  const hierarchy = await getCategoryHierarchyCached();
 
   return (
     <div className="min-h-screen bg-white">
