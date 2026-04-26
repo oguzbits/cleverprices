@@ -546,7 +546,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "X-Build-ID",
-            value: process.env.NEXT_PUBLIC_BUILD_ID || "unknown",
+            value: process.env.NEXT_PUBLIC_BUILD_ID || "dev-hash",
           },
         ],
       },

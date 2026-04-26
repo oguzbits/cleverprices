@@ -735,9 +735,10 @@ async function fetchNonEmptyInternal() {
       .groupBy(products.category);
 
     if (results.length === 0 && process.env.NODE_ENV === "production") {
-      throw new Error(
-        "No non-empty categories found. Database might be empty or syncing.",
+      console.warn(
+        "[Product Registry] No non-empty categories found. Database might be empty or syncing.",
       );
+      return [];
     }
 
     const categories = results.map((r) => r.category);

@@ -20,14 +20,15 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "healthy",
-        db: "connected",
-        buildId: process.env.NEXT_PUBLIC_BUILD_ID || "unknown",
+        database: "connected",
+        buildId: process.env.NEXT_PUBLIC_BUILD_ID || "dev-hash",
         latency: Date.now() - start,
         timestamp: new Date().toISOString(),
       },
       {
         headers: {
           "Cache-Control": "no-store, max-age=0",
+          "X-Build-ID": process.env.NEXT_PUBLIC_BUILD_ID || "dev-hash",
         },
       },
     );

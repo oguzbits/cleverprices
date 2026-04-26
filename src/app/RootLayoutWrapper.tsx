@@ -32,6 +32,7 @@ export default function RootLayoutWrapper({
     <html
       lang={lang}
       suppressHydrationWarning
+      data-build-id={process.env.NEXT_PUBLIC_BUILD_ID || "dev-hash"}
     >
       <head>
         <Script
