@@ -13,6 +13,7 @@ These rules represent the architectural and design "North Star" of the project. 
   - **FORBIDDEN:** `next/server` `connection()` in PDP routes (triggers early streaming).
 - **Technical Stack:** Next.js 16 + React Compiler. Avoid legacy `defaultProps`.
 - **Local-First Data:** SQLite is the persistent store; Redis is the memory-first read layer. Always use `dbReady()` wrappers and honor `CACHE_VERSION`.
+- **Cache Isolation (CRITICAL):** Only use `"use cache"` and `cacheLife` in dedicated `src/lib/server/cached-*.ts` files or at the top-level Page segment. NEVER in core utility libs returning `Map`, `Set`, or complex objects (serialization failure risk).
 - **Batching & TTFB:** Use `mergeLivePricesSelective` for all product IDs in a single call. Never sequential `await` for multiple price pools.
 
 ## 2. Coding & Implementation Standard (The "Writing" Phase)
@@ -55,6 +56,5 @@ After any file modification, you MUST run this sequence:
 
 ## 6. Pre-Deployment Guard (The "Final Gate")
 
-- **Looping Prevention:** Do NOT alternate between adding/removing `Suspense` or `connection()` more than once in 24 hours.
-- **Build Check:** For complex changes, run `bun run build` or `tsc` before ending the turn.
+- **Mandatory Build Check:** For ANY change involving `"use cache"`, `cacheLife`, or core SSR logic, you MUST run `bun run build` locally and achieve Exit Code 0 before committing or deploying.
 - **Bun First:** Use `bun` or `bunx` exclusively (no `npm`, `yarn`, or `npx`).
