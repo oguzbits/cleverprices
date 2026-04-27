@@ -87,6 +87,7 @@
     "eslint-config-next": "^16.0.10",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-compiler": "^19.1.0-rc.2",
+    "eslint-plugin-simple-import-sort": "^13.0.0",
     "fast-levenshtein": "^3.0.0",
     "papaparse": "^5.5.3",
     "prettier": "^3.7.4",

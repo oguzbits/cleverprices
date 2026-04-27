@@ -1,14 +1,21 @@
+import { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
+import { connection } from "next/server";
+import { Suspense } from "react";
+
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
 import { ParentCategoryView } from "@/components/category/ParentCategoryView";
+import { ServerBusy } from "@/components/ui/ServerBusy";
+import { DatabaseBusyError } from "@/db/utils";
 import {
   allCategories,
+  type Category,
+  type CategorySlug,
   getBreadcrumbs,
   getCategoryBySlug,
   getChildCategories,
   isCategoryNotEmptyRecursive,
   stripCategoryIcon,
-  type Category,
-  type CategorySlug,
 } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getParentCategoryData } from "@/lib/data/parentCategoryData";
@@ -21,10 +28,6 @@ import {
 import { type FilterParams } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
-import { Metadata } from "next";
-import { notFound, permanentRedirect } from "next/navigation";
-import { connection } from "next/server";
-import { Suspense } from "react";
 
 interface Props {
   params: Promise<{
@@ -255,68 +258,75 @@ async function ParentCategoryViewLoader({
   childCategories: Category[];
   nonEmptySlugs: string[];
 }) {
-  const { bestsellers, newProducts, deals } = await getParentCategoryData(
-    categorySlug,
-    DEFAULT_COUNTRY,
-  ).catch(() => ({ bestsellers: [], newProducts: [], deals: [] }));
+  try {
+    const { bestsellers, newProducts, deals } = await getParentCategoryData(
+      categorySlug,
+      DEFAULT_COUNTRY,
+    );
 
-  const transformProduct = (p: any) => ({
-    id: p.id,
-    slug: p.slug,
-    title: p.title,
-    subtitle: p.subtitle,
-    image: p.image,
-    price: p.prices[DEFAULT_COUNTRY] || 0,
-    pricePerUnit: p.pricePerUnit,
-    capacity: p.capacity,
-    capacityUnit: p.capacityUnit,
-    formFactor: p.formFactor,
-    brand: p.brand,
-    rating: p.rating,
-    reviewCount: p.reviewCount,
-    salesRank: p.salesRank,
-    monthlySold: p.monthlySold,
-    variationAttributes: p.variationAttributes,
-    category: p.category,
-    listPrice: p.listPrice?.[DEFAULT_COUNTRY],
-    savings: p.savings,
-  });
+    const transformProduct = (p: any) => ({
+      id: p.id,
+      slug: p.slug,
+      title: p.title,
+      subtitle: p.subtitle,
+      image: p.image,
+      price: p.prices[DEFAULT_COUNTRY] || 0,
+      pricePerUnit: p.pricePerUnit,
+      capacity: p.capacity,
+      capacityUnit: p.capacityUnit,
+      formFactor: p.formFactor,
+      brand: p.brand,
+      rating: p.rating,
+      reviewCount: p.reviewCount,
+      salesRank: p.salesRank,
+      monthlySold: p.monthlySold,
+      variationAttributes: p.variationAttributes,
+      category: p.category,
+      listPrice: p.listPrice?.[DEFAULT_COUNTRY],
+      savings: p.savings,
+    });
 
-  const breadcrumbItems = [
-    { name: "Home", href: "/" },
-    ...getBreadcrumbs(categorySlug).map((crumb) => ({
-      name: crumb.name,
-      href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
-    })),
-  ];
+    const breadcrumbItems = [
+      { name: "Home", href: "/" },
+      ...getBreadcrumbs(categorySlug).map((crumb) => ({
+        name: crumb.name,
+        href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
+      })),
+    ];
 
-  // Filter popular filters in children to only show non-empty categories
-  const filteredChildren = childCategories.map((child) => {
-    const stripped = stripCategoryIcon(child);
-    if (stripped.popularFilters) {
-      stripped.popularFilters = stripped.popularFilters.filter((filter) => {
-        // If it's a direct category link, check if it's empty
-        if (filter.href && filter.href.startsWith("/")) {
-          const targetSlug = filter.href.substring(1);
-          return isCategoryNotEmptyRecursive(
-            targetSlug as CategorySlug,
-            nonEmptySlugs,
-          );
-        }
-        return true;
-      });
+    // Filter popular filters in children to only show non-empty categories
+    const filteredChildren = childCategories.map((child) => {
+      const stripped = stripCategoryIcon(child);
+      if (stripped.popularFilters) {
+        stripped.popularFilters = stripped.popularFilters.filter((filter) => {
+          // If it's a direct category link, check if it's empty
+          if (filter.href && filter.href.startsWith("/")) {
+            const targetSlug = filter.href.substring(1);
+            return isCategoryNotEmptyRecursive(
+              targetSlug as CategorySlug,
+              nonEmptySlugs,
+            );
+          }
+          return true;
+        });
+      }
+      return stripped;
+    });
+
+    return (
+      <ParentCategoryView
+        parentCategory={stripCategoryIcon(category)}
+        childCategories={filteredChildren}
+        bestsellers={bestsellers.map(transformProduct)}
+        newProducts={newProducts.map(transformProduct)}
+        deals={deals.map(transformProduct)}
+        breadcrumbItems={breadcrumbItems}
+      />
+    );
+  } catch (error: unknown) {
+    if (error instanceof DatabaseBusyError) {
+      return <ServerBusy />;
     }
-    return stripped;
-  });
-
-  return (
-    <ParentCategoryView
-      parentCategory={stripCategoryIcon(category)}
-      childCategories={filteredChildren}
-      bestsellers={bestsellers.map(transformProduct)}
-      newProducts={newProducts.map(transformProduct)}
-      deals={deals.map(transformProduct)}
-      breadcrumbItems={breadcrumbItems}
-    />
-  );
+    throw error;
+  }
 }

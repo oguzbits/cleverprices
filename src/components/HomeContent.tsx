@@ -1,31 +1,10 @@
 import { IdealoHomePage } from "@/components/landing/IdealoHomePage";
+import { ServerBusy } from "@/components/ui/ServerBusy";
 import { type CountryCode } from "@/lib/countries";
 import { curateProductList } from "@/lib/product-curation";
 import { getCountryByCode } from "@/lib/server/cached-countries";
-import {
-  getBestDeals,
-  getDiverseMostPopular,
-  getNewArrivals,
-} from "@/lib/server/cached-products";
+import { fetchHomeData } from "@/lib/server/home-data";
 import { getLivePricesForProducts as getPricesFromDb } from "@/lib/server/live-data";
-import { CACHE_VERSION } from "@/lib/site-config";
-import { cacheLife } from "next/cache";
-
-async function fetchHomeData(countryCode: string) {
-  "use cache";
-  cacheLife("category");
-  const _v = CACHE_VERSION;
-  try {
-    return await Promise.all([
-      getBestDeals(40, countryCode, "New").catch(() => []),
-      getDiverseMostPopular(8, countryCode).catch(() => []),
-      getNewArrivals(100, countryCode, "New").catch(() => []),
-    ]);
-  } catch (error) {
-    console.error("Critical error fetching home page data:", error);
-    return [[], [], []];
-  }
-}
 
 export default async function HomeContent({
   country,
@@ -47,7 +26,9 @@ export default async function HomeContent({
   const globalSeenGroups = new Set<string>();
 
   // Helper to update seen sets
-  const markSeen = (items: any[]) => {
+  const markSeen = (
+    items: { slug: string; parentAsin?: string; groupKey?: string }[],
+  ) => {
     items.forEach((p) => {
       globalSeen.add(p.slug);
       if (p.parentAsin) globalSeenParents.add(p.parentAsin);
@@ -110,12 +91,14 @@ export default async function HomeContent({
     bestsellers.length === 0 &&
     deals.length === 0 &&
     newArrivals.length === 0 &&
-    process.env.NODE_ENV === "production" &&
     !isBuild
   ) {
-    console.error("Home page curated 0 products. DB empty or query timeout.");
-    throw new Error(
-      "Home page curated 0 products. Database might be empty or still syncing. Please reload in a few seconds.",
+    console.warn("Home page curated 0 products. DB empty or query timeout.");
+    return (
+      <ServerBusy
+        title="Willkommen bei CleverPrices"
+        message="Wir aktualisieren gerade unsere Angebote. Bitte schauen Sie in Kürze wieder vorbei."
+      />
     );
   }
 

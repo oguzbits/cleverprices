@@ -18,7 +18,6 @@ import {
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
 import { CACHE_VERSION } from "../site-config";
-
 import { getProductPath } from "../utils/url";
 import { mergeLivePrices, mergeLivePricesSelective } from "./live-data";
 
@@ -328,7 +327,12 @@ export async function getPDPRenderData(
   );
 
   // Distribute back
-  const mergedProduct = mergedAll[0]!;
+  const mergedProduct = mergedAll[0];
+  if (!mergedProduct) {
+    console.error(`[Data Error] Main product missing after merge for ${slug}`);
+    return null;
+  }
+
   const mergedVariants = mergedAll.slice(1, 1 + variants.length);
   const mergedSidebar = mergedAll.slice(
     1 + variants.length,

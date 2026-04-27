@@ -15,7 +15,7 @@ export class DatabaseBusyError extends Error {
  */
 export async function withRetry<T>(
   operation: () => Promise<T>,
-  maxRetries = 5, // Reverted to 5 to prevent aggressive dropping
+  maxRetries = 10, // Increased to handle high-concurrency bursts
   baseDelayMs = 200,
 ): Promise<T> {
   let lastError: unknown;

@@ -1,7 +1,9 @@
-import { db } from "@/db";
-import { prices } from "@/db/schema";
 import { and, eq, inArray } from "drizzle-orm";
 import { cacheLife } from "next/cache";
+
+import { db } from "@/db";
+import { prices } from "@/db/schema";
+
 import { withRetry } from "../../db/utils";
 import { litePriceColumns, type Product } from "../product-definitions";
 import { getBestPrice } from "../utils/price-selection";
@@ -157,7 +159,7 @@ export async function mergeLivePrices(
         condition = "Renewed";
       }
 
-      const smartPrice = getBestPrice({
+      getBestPrice({
         price: live.price,
         usedPrice: live.usedPrice,
         warehousePrice: live.warehousePrice,
@@ -190,7 +192,10 @@ export async function mergeLivePrices(
         },
         pricesLastUpdated: {
           ...p.pricesLastUpdated,
-          [countryCode]: new Date(live.lastUpdated).toISOString(),
+          [countryCode]:
+            live.lastUpdated && !isNaN(new Date(live.lastUpdated).getTime())
+              ? new Date(live.lastUpdated).toISOString()
+              : new Date().toISOString(),
         },
         priceAvg90: { ...p.priceAvg90, [countryCode]: refPrice },
         listPrice: { ...p.listPrice, [countryCode]: live.listPrice },

@@ -1,4 +1,9 @@
+import { Metadata } from "next";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
+
 import { IdealoProductPage } from "@/components/product/IdealoProductPage";
+import { ServerBusy } from "@/components/ui/ServerBusy";
+import { DatabaseBusyError } from "@/db/utils";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import {
@@ -16,8 +21,6 @@ import { BRAND_DOMAIN, BRAND_NAME, CACHE_VERSION } from "@/lib/site-config";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductHighQuality } from "@/lib/utils/quality";
 import { getProductCanonicalUrl, getProductPath } from "@/lib/utils/url";
-import { Metadata } from "next";
-import { notFound, permanentRedirect, redirect } from "next/navigation";
 
 export interface Props {
   params: Promise<{
@@ -336,6 +339,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
       </>
     );
   } catch (error: unknown) {
+    if (error instanceof DatabaseBusyError) {
+      return <ServerBusy />;
+    }
     const err = error as { digest?: string };
     if (
       err?.digest?.startsWith("NEXT_") ||
