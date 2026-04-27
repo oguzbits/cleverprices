@@ -91,7 +91,8 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
       const newLimit = window.innerWidth < 640 ? 6 : 10;
       setLimit((prev) => (prev !== newLimit ? newLimit : prev));
     };
-    handleResize();
+    // Use requestAnimationFrame to avoid synchronous setState within Effect
+    requestAnimationFrame(handleResize);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -105,13 +106,13 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
   // Live search using native fetch (Server Action) - Replaces TanStack Query to save 23KB
   React.useEffect(() => {
     if (debouncedSearch.length < 2) {
-      setData(null);
+      requestAnimationFrame(() => setData(null));
       return;
     }
 
     let active = true;
     const fetchResults = async () => {
-      setIsFetching(true);
+      requestAnimationFrame(() => setIsFetching(true));
       let results = null;
       try {
         results = await performSearch(debouncedSearch, limit);
@@ -138,7 +139,9 @@ export function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
   // Reset search when modal closes
   React.useEffect(() => {
-    if (!open) setSearch("");
+    if (!open) {
+      requestAnimationFrame(() => setSearch(""));
+    }
   }, [open]);
 
   const handleSelect = (url: string) => {

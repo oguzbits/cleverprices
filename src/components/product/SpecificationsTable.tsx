@@ -45,6 +45,63 @@ function safeStringify(value: unknown): string {
 }
 
 // Replaced by translateSpecKey function
+interface DebugSourceBadgeProps {
+  source: string;
+  specs: Record<string, unknown>;
+}
+
+function DebugSourceBadge({ source, specs }: DebugSourceBadgeProps) {
+  // Priority 0: Untrusted / Blocked
+  if (source === "Untrusted") {
+    return (
+      <div className="flex items-center gap-1.5 rounded-full border border-red-600 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+        <AlertCircle className="h-3.5 w-3.5" />
+        Untrusted Source (Blocked)
+      </div>
+    );
+  }
+  if (source === "Intel" && specs.Method === "Scraped") {
+    return (
+      <div className="flex items-center gap-1.5 rounded-full border border-blue-600 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+        <CheckCircle className="h-3.5 w-3.5" />
+        Intel Verified (Debug)
+      </div>
+    );
+  }
+  // Priority 2: AMD Source
+  if (source.includes("AMD")) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-full border border-red-600 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
+        <CheckCircle className="h-3.5 w-3.5" />
+        AMD Verified (Debug)
+      </div>
+    );
+  }
+  // Priority 3: Apple Source
+  if (source.toLowerCase().includes("apple")) {
+    return (
+      <div className="flex items-center gap-1.5 rounded-full border border-gray-400 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
+        <CheckCircle className="h-3.5 w-3.5" />
+        Apple Verified (Debug)
+      </div>
+    );
+  }
+  // Priority 4: eBay Source
+  if (source.toLowerCase().includes("ebay") || source === "eBay") {
+    return (
+      <div className="flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700">
+        <CheckCircle className="h-3.5 w-3.5" />
+        eBay Verified (Debug)
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
+      <CheckCircle className="h-3.5 w-3.5" />
+      {source} / Other (Debug)
+    </div>
+  );
+}
 
 export function SpecificationsTable({
   product,
@@ -349,59 +406,7 @@ export function SpecificationsTable({
         <h3 className="text-lg font-bold text-[#2d2d2d]">Technische Daten</h3>
         {isDebug &&
           (isOfficial ? (
-            // DEBUG MODE: Show granular source info
-            (() => {
-              // Priority 0: Untrusted / Blocked
-              if (source === "Untrusted") {
-                return (
-                  <div className="flex items-center gap-1.5 rounded-full border border-red-600 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
-                    <AlertCircle className="h-3.5 w-3.5" />
-                    Untrusted Source (Blocked)
-                  </div>
-                );
-              }
-              if (source === "Intel" && specs.Method === "Scraped") {
-                return (
-                  <div className="flex items-center gap-1.5 rounded-full border border-blue-600 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Intel Verified (Debug)
-                  </div>
-                );
-              }
-              // Priority 2: AMD Source
-              if (source.includes("AMD")) {
-                return (
-                  <div className="flex items-center gap-1.5 rounded-full border border-red-600 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    AMD Verified (Debug)
-                  </div>
-                );
-              }
-              // Priority 3: Apple Source
-              if (source.toLowerCase().includes("apple")) {
-                return (
-                  <div className="flex items-center gap-1.5 rounded-full border border-gray-400 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-700">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Apple Verified (Debug)
-                  </div>
-                );
-              }
-              // Priority 4: eBay Source (New!)
-              if (source.toLowerCase().includes("ebay") || source === "eBay") {
-                return (
-                  <div className="flex items-center gap-1.5 rounded-full border border-purple-200 bg-purple-50 px-2.5 py-1 text-xs font-semibold text-purple-700">
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    eBay Verified (Debug)
-                  </div>
-                );
-              }
-              return (
-                <div className="flex items-center gap-1.5 rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700">
-                  <CheckCircle className="h-3.5 w-3.5" />
-                  {source} / Other (Debug)
-                </div>
-              );
-            })()
+            <DebugSourceBadge source={source} specs={specs} />
           ) : isEnriched ? (
             <div className="flex items-center gap-1.5 rounded-full border border-green-100 bg-green-50 px-2 py-1 text-xs font-medium text-green-700">
               <CheckCircle className="h-3.5 w-3.5" />

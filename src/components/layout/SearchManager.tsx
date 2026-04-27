@@ -24,16 +24,18 @@ export function SearchManager() {
   // This prevents the Radix UI focus trap / portal from initializing during
   // hydration, which was swallowing the first click event site-wide.
   React.useEffect(() => {
-    setMounted(true);
-
     const toggle = () => setOpen((prev) => !prev);
-    window.triggerSearch = toggle;
 
-    // If a search was triggered before hydration, open it now
-    if (window.__searchPending) {
-      setOpen(true);
-      window.__searchPending = false;
-    }
+    requestAnimationFrame(() => {
+      setMounted(true);
+      window.triggerSearch = toggle;
+
+      // If a search was triggered before hydration, open it now
+      if (window.__searchPending) {
+        setOpen(true);
+        window.__searchPending = false;
+      }
+    });
 
     // Global shortcut (Cmd+K / Ctrl+K)
     const onKeyDown = (e: KeyboardEvent) => {

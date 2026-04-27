@@ -34,6 +34,7 @@ import { IdealoPriceChart } from "./IdealoPriceChart";
 import { IdealoProductOffers } from "./IdealoProductOffers";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { SpecificationsTable } from "./SpecificationsTable";
+const EMPTY_ARRAY: any[] = [];
 
 import { LivePriceHeader, LiveSavingsBadge } from "./LivePriceBoundary";
 
@@ -50,11 +51,12 @@ interface IdealoProductPageProps {
   canonicalId?: number;
   similarSidebar?: Product[];
   similarCarousel?: Product[];
+  renderTimestamp?: number;
 }
 
 export function IdealoProductPage({
   product,
-  variants = [],
+  variants = EMPTY_ARRAY,
   category,
   countryCode,
   selectedCondition,
@@ -63,8 +65,9 @@ export function IdealoProductPage({
   parentTitle: passedParentTitle,
   parentFullModel: passedFullModel,
   canonicalId,
-  similarSidebar = [],
-  similarCarousel = [],
+  similarSidebar = EMPTY_ARRAY,
+  similarCarousel = EMPTY_ARRAY,
+  renderTimestamp,
 }: IdealoProductPageProps) {
   const mergedProduct = product;
   const rawVariants = variants;
@@ -130,6 +133,92 @@ export function IdealoProductPage({
           { name: variantName },
         ]),
   ];
+
+  // Pre-calculate specifications for the summary section
+  // This avoids JSON.parse and complex logic inside the JSX return,
+  // making the component pure and compatible with the React Compiler.
+  const displaySpecs = (() => {
+    let rawSpecs: Record<string, any> = {};
+    try {
+      rawSpecs =
+        (mergedProduct.officialSpecifications
+          ? typeof mergedProduct.officialSpecifications === "string"
+            ? JSON.parse(mergedProduct.officialSpecifications)
+            : mergedProduct.officialSpecifications
+          : mergedProduct.specifications) || {};
+    } catch (e) {
+      rawSpecs = mergedProduct.specifications || {};
+    }
+
+    return Object.entries(rawSpecs)
+      .filter(([key, value]) => {
+        if (!isParentView) return true;
+        const k = key.toLowerCase();
+        const unwanted = [
+          "color",
+          "farbe",
+          "mpn",
+          "ean",
+          "herstellernummer",
+          "teilenummer",
+          "part number",
+          "part-number",
+          "artikelnummer",
+          "sku",
+          "kapazität",
+          "storage",
+          "speicher",
+          "ram",
+          "memory",
+          "arbeitsspeicher",
+          "konnektivität",
+          "connectivity",
+          "mobilfunk",
+          "größe",
+          "size",
+        ];
+        if (unwanted.some((u) => k.includes(u))) return false;
+        const v = String(value).toLowerCase().trim();
+        if (
+          /description|beschreibung|summary|marketing|ean|upc|gtin|asin/i.test(
+            key,
+          )
+        )
+          return false;
+        if (
+          [
+            "nein",
+            "no",
+            "false",
+            "0",
+            "n/a",
+            "nicht unterstützt",
+            "not supported",
+            "null",
+            "undefined",
+            "nicht verfügbar",
+          ].includes(v)
+        )
+          return false;
+        if (v.length === 0 || v.length >= 40) return false;
+        return /[a-z%"]/i.test(v) || /\d\s*x\s*\d/.test(v);
+      })
+      .slice(0, 5)
+      .map(([key, value]) => {
+        const v = String(value).toLowerCase().trim();
+        const isTrue = ["ja", "yes", "true", "1"].includes(v);
+
+        const lowerKey = key.toLowerCase();
+        let displayValue = String(value);
+        if (isTrue) {
+          displayValue = translateSpecKey(key);
+        } else if (lowerKey === "modell" || lowerKey === "model") {
+          displayValue = identity.fullModel;
+        }
+
+        return { key, displayValue };
+      });
+  })();
 
   return (
     <div className="bg-background min-h-screen">
@@ -232,11 +321,11 @@ export function IdealoProductPage({
               <div className="oopStage-metaInfo mb-4 flex flex-wrap items-center gap-4 sm:justify-center lg:justify-start">
                 <div className="flex items-center gap-1.5">
                   <div className="flex items-center gap-0.5">
-                    {[1, 2, 3, 4, 5].map((i) => (
+                    {[1, 2, 3, 4, 5].map((star) => (
                       <svg
-                        key={i}
+                        key={star}
                         viewBox="0 0 24 24"
-                        fill={i <= 4 ? "black" : "#dcdcdc"}
+                        fill={star <= 4 ? "black" : "#dcdcdc"}
                         className="h-3.5 w-3.5"
                       >
                         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -261,97 +350,19 @@ export function IdealoProductPage({
                   <b className="text-[13px] font-bold text-[#2d2d2d]">
                     Produktübersicht:
                   </b>
-                  {Object.entries(
-                    (mergedProduct.officialSpecifications
-                      ? typeof mergedProduct.officialSpecifications === "string"
-                        ? JSON.parse(mergedProduct.officialSpecifications)
-                        : mergedProduct.officialSpecifications
-                      : mergedProduct.specifications) || {},
-                  )
-                    .filter(([key, value]) => {
-                      if (!isParentView) return true;
-                      const k = key.toLowerCase();
-                      const unwanted = [
-                        "color",
-                        "farbe",
-                        "mpn",
-                        "ean",
-                        "herstellernummer",
-                        "teilenummer",
-                        "part number",
-                        "part-number",
-                        "artikelnummer",
-                        "sku",
-                        "kapazität",
-                        "storage",
-                        "speicher",
-                        "ram",
-                        "memory",
-                        "arbeitsspeicher",
-                        "konnektivität",
-                        "connectivity",
-                        "mobilfunk",
-                        "größe",
-                        "size",
-                      ];
-                      if (unwanted.some((u) => k.includes(u))) return false;
-                      const v = String(value).toLowerCase().trim();
-                      if (
-                        /description|beschreibung|summary|marketing|ean|upc|gtin|asin/i.test(
-                          key,
-                        )
-                      )
-                        return false;
-                      if (
-                        [
-                          "nein",
-                          "no",
-                          "false",
-                          "0",
-                          "n/a",
-                          "nicht unterstützt",
-                          "not supported",
-                          "null",
-                          "undefined",
-                          "nicht verfügbar",
-                        ].includes(v)
-                      )
-                        return false;
-                      if (v.length === 0 || v.length >= 40) return false;
-                      return /[a-z%"]/i.test(v) || /\d\s*x\s*\d/.test(v);
-                    })
-                    .slice(0, 5)
-                    .map(([key, value], i, array) => {
-                      const v = String(value).toLowerCase().trim();
-                      const isTrue = ["ja", "yes", "true", "1"].includes(v);
-
-                      const lowerKey = key.toLowerCase();
-                      let displayValue = String(value);
-                      if (isTrue) {
-                        displayValue = translateSpecKey(key);
-                      } else if (
-                        lowerKey === "modell" ||
-                        lowerKey === "model"
-                      ) {
-                        displayValue = identity.fullModel;
-                      }
-
-                      return (
-                        <React.Fragment key={key}>
-                          <span
-                            className="inline-block max-w-[200px] truncate align-bottom text-[13px] text-[#2d2d2d]"
-                            title={displayValue}
-                          >
-                            {displayValue}
-                          </span>
-                          {i < array.length - 1 && (
-                            <span className="text-[13px] text-[#767676]">
-                              ·
-                            </span>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
+                  {displaySpecs.map((spec, i) => (
+                    <React.Fragment key={spec.key}>
+                      <span
+                        className="inline-block max-w-[200px] truncate align-bottom text-[13px] text-[#2d2d2d]"
+                        title={spec.displayValue}
+                      >
+                        {spec.displayValue}
+                      </span>
+                      {i < displaySpecs.length - 1 && (
+                        <span className="text-[13px] text-[#767676]">·</span>
+                      )}
+                    </React.Fragment>
+                  ))}
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-1 sm:justify-center lg:justify-start">
@@ -410,6 +421,7 @@ export function IdealoProductPage({
                   history={mergedProduct.priceHistory || []}
                   title={mergedProduct.title}
                   currentPrice={mergedProduct.prices[countryCode]}
+                  renderTimestamp={renderTimestamp}
                 />
               </ComponentErrorBoundary>
             </div>

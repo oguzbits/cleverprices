@@ -258,75 +258,88 @@ async function ParentCategoryViewLoader({
   childCategories: Category[];
   nonEmptySlugs: string[];
 }) {
-  try {
-    const { bestsellers, newProducts, deals } = await getParentCategoryData(
-      categorySlug,
-      DEFAULT_COUNTRY,
-    );
+  const result = await (async () => {
+    try {
+      const { bestsellers, newProducts, deals } = await getParentCategoryData(
+        categorySlug,
+        DEFAULT_COUNTRY,
+      );
 
-    const transformProduct = (p: any) => ({
-      id: p.id,
-      slug: p.slug,
-      title: p.title,
-      subtitle: p.subtitle,
-      image: p.image,
-      price: p.prices[DEFAULT_COUNTRY] || 0,
-      pricePerUnit: p.pricePerUnit,
-      capacity: p.capacity,
-      capacityUnit: p.capacityUnit,
-      formFactor: p.formFactor,
-      brand: p.brand,
-      rating: p.rating,
-      reviewCount: p.reviewCount,
-      salesRank: p.salesRank,
-      monthlySold: p.monthlySold,
-      variationAttributes: p.variationAttributes,
-      category: p.category,
-      listPrice: p.listPrice?.[DEFAULT_COUNTRY],
-      savings: p.savings,
-    });
+      const transformProduct = (p: any) => ({
+        id: p.id,
+        slug: p.slug,
+        title: p.title,
+        subtitle: p.subtitle,
+        image: p.image,
+        price: p.prices[DEFAULT_COUNTRY] || 0,
+        pricePerUnit: p.pricePerUnit,
+        capacity: p.capacity,
+        capacityUnit: p.capacityUnit,
+        formFactor: p.formFactor,
+        brand: p.brand,
+        rating: p.rating,
+        reviewCount: p.reviewCount,
+        salesRank: p.salesRank,
+        monthlySold: p.monthlySold,
+        variationAttributes: p.variationAttributes,
+        category: p.category,
+        listPrice: p.listPrice?.[DEFAULT_COUNTRY],
+        savings: p.savings,
+      });
 
-    const breadcrumbItems = [
-      { name: "Home", href: "/" },
-      ...getBreadcrumbs(categorySlug).map((crumb) => ({
-        name: crumb.name,
-        href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
-      })),
-    ];
+      const breadcrumbItems = [
+        { name: "Home", href: "/" },
+        ...getBreadcrumbs(categorySlug).map((crumb) => ({
+          name: crumb.name,
+          href: crumb.slug === categorySlug ? undefined : `/${crumb.slug}`,
+        })),
+      ];
 
-    // Filter popular filters in children to only show non-empty categories
-    const filteredChildren = childCategories.map((child) => {
-      const stripped = stripCategoryIcon(child);
-      if (stripped.popularFilters) {
-        stripped.popularFilters = stripped.popularFilters.filter((filter) => {
-          // If it's a direct category link, check if it's empty
-          if (filter.href && filter.href.startsWith("/")) {
-            const targetSlug = filter.href.substring(1);
-            return isCategoryNotEmptyRecursive(
-              targetSlug as CategorySlug,
-              nonEmptySlugs,
-            );
-          }
-          return true;
-        });
+      // Filter popular filters in children to only show non-empty categories
+      const filteredChildren = childCategories.map((child) => {
+        const stripped = stripCategoryIcon(child);
+        if (stripped.popularFilters) {
+          stripped.popularFilters = stripped.popularFilters.filter((filter) => {
+            // If it's a direct category link, check if it's empty
+            if (filter.href && filter.href.startsWith("/")) {
+              const targetSlug = filter.href.substring(1);
+              return isCategoryNotEmptyRecursive(
+                targetSlug as CategorySlug,
+                nonEmptySlugs,
+              );
+            }
+            return true;
+          });
+        }
+        return stripped;
+      });
+
+      return {
+        bestsellers: bestsellers.map(transformProduct),
+        newProducts: newProducts.map(transformProduct),
+        deals: deals.map(transformProduct),
+        breadcrumbItems,
+        filteredChildren,
+        isBusy: false,
+      };
+    } catch (error: unknown) {
+      if (error instanceof DatabaseBusyError) {
+        return { isBusy: true };
       }
-      return stripped;
-    });
-
-    return (
-      <ParentCategoryView
-        parentCategory={stripCategoryIcon(category)}
-        childCategories={filteredChildren}
-        bestsellers={bestsellers.map(transformProduct)}
-        newProducts={newProducts.map(transformProduct)}
-        deals={deals.map(transformProduct)}
-        breadcrumbItems={breadcrumbItems}
-      />
-    );
-  } catch (error: unknown) {
-    if (error instanceof DatabaseBusyError) {
-      return <ServerBusy />;
+      throw error;
     }
-    throw error;
-  }
+  })();
+
+  if (result.isBusy) return <ServerBusy />;
+
+  return (
+    <ParentCategoryView
+      parentCategory={stripCategoryIcon(category)}
+      childCategories={result.filteredChildren!}
+      bestsellers={result.bestsellers!}
+      newProducts={result.newProducts!}
+      deals={result.deals!}
+      breadcrumbItems={result.breadcrumbItems!}
+    />
+  );
 }

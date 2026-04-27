@@ -31,7 +31,11 @@ export function IdealoPriceChart({
   history = EMPTY_HISTORY,
   title,
   currentPrice,
-}: IdealoPriceChartProps & { currentPrice?: number }) {
+  renderTimestamp,
+}: IdealoPriceChartProps & {
+  currentPrice?: number;
+  renderTimestamp?: number;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeFrame>("3M");
 
@@ -50,6 +54,7 @@ export function IdealoPriceChart({
             livePrice={currentPrice}
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
+            renderTimestamp={renderTimestamp}
           />
         </div>
       </DialogTrigger>
@@ -77,6 +82,7 @@ export function IdealoPriceChart({
             livePrice={currentPrice}
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
+            renderTimestamp={renderTimestamp}
           />
         </div>
       </DialogContent>
@@ -92,6 +98,7 @@ function ChartRenderer({
   livePrice,
   timeframe,
   onTimeframeChange,
+  renderTimestamp,
 }: {
   history: { date: string; price: number }[];
   interactive: boolean;
@@ -100,6 +107,7 @@ function ChartRenderer({
   livePrice?: number;
   timeframe: TimeFrame;
   onTimeframeChange: (tf: TimeFrame) => void;
+  renderTimestamp?: number;
 }) {
   const [hoveredData, setHoveredData] = useState<{
     date: number;
@@ -110,7 +118,7 @@ function ChartRenderer({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [nowTimestamp] = useState(() => Date.now());
+  const [nowTimestamp] = useState(() => renderTimestamp || Date.now());
 
   const { data, minPrice, maxPrice, minDate, maxDate, stats, yTicks, yDomain } =
     React.useMemo(() => {
@@ -441,7 +449,7 @@ function ChartRenderer({
                     {formatDateFull(hoveredData.date)}
                   </div>
                 </div>
-                <div className="h-0 w-0 self-center border-t-4 border-r-4 border-l-4 border-t-[#ff6600] border-r-transparent border-l-transparent"></div>
+                <div className="h-0 w-0 self-center border-t-4 border-r-[4px] border-l-4 border-t-[#ff6600] border-r-transparent border-l-transparent"></div>
               </div>
 
               {/* Round Hover Point (HTML) - Fixes aspect ratio distortion */}
