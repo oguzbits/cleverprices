@@ -4,45 +4,57 @@ trigger: always_on
 
 # CleverPrices Global Agent Rules (Audited & Finalized)
 
-These rules apply to EVERY prompt. They represent the architectural and design "North Star" of the project.
+These rules represent the architectural and design "North Star" of the project. They apply to EVERY prompt.
 
-## 1. Technical Stack & SSR (The "Pure SSR" Commandments)
+## 1. Core Architectural Strategy (The "Pure SSR" Commandments)
 
-- **Next.js 16 + React Compiler:** Always use the latest patterns. Avoid legacy `defaultProps`.
-- **Pure SSR (Non-Negotiable):** We do not use `loading.tsx` for core routes. Googlebot must receive full HTML in the first hop.
-- **FORBIDDEN: Parallel Experiments:** DO NOT alternate between adding/removing `Suspense` or `connection()` once a decision is logged in the `Architectural Decisions` Knowledge Item.
-- **FORBIDDEN: `next/server` connection()**: Do not use `connection()` in PDP routes as it can trigger early streaming and UI flashes.
-- **FORBIDDEN: Component-level `use cache`**: Only use `use cache` in the `lib/server` layer. Component-level caching is inconsistent and causes hydration mismatches.
-- **Local-First Data:** The persistent store is SQLite; the memory-first read layer is Redis. Always use `dbReady()` wrappers and honor `CACHE_VERSION` for invalidation.
+- **Pure SSR (Non-Negotiable):** All data fetching for core routes (PDP, Search, Home) MUST be performed using blocking `await` in the top-level Page segment.
+  - **FORBIDDEN:** `loading.tsx` and `Suspense` in dynamic segments (causes white flashes).
+  - **FORBIDDEN:** `next/server` `connection()` in PDP routes (triggers early streaming).
+- **Technical Stack:** Next.js 16 + React Compiler. Avoid legacy `defaultProps`.
+- **Local-First Data:** SQLite is the persistent store; Redis is the memory-first read layer. Always use `dbReady()` wrappers and honor `CACHE_VERSION`.
+- **Batching & TTFB:** Use `mergeLivePricesSelective` for all product IDs in a single call. Never sequential `await` for multiple price pools.
 
-## 2. Product Identity & SEO
+## 2. Coding & Implementation Standard (The "Writing" Phase)
 
-- **Clean Slugs, Rich Titles:** Follow the "Idealo-style" naming strategy (specifically for RAM and CPUs).
-- **Canonical Stability:** Products must use single-hop canonical resolution for ASIN-suffix URLs.
-- **Indexing Gating:** Only index high-quality pages (specCount > 3).
+- **Strict Integrity:**
+  - **Verified Imports:** Check file paths and `src/db/schema.ts` before writing.
+  - **Strict Typing:** NEVER use `as any`. Propose interface extensions instead.
+  - **Incremental Cleanup:** Every edit MUST remove unused variables, constants, and hardcoded TRACE logs.
+  - **Documentation:** Update or remove JSDoc/comments when changing signatures. No stale docs.
+- **Product Identity:** Follow the "Idealo-style" naming strategy (Clean Slugs, Rich Titles).
+- **Indexing Gating:** Only index high-quality pages (`specCount > 3`).
 
-## 3. Strict Code Integrity (Zero-Error Delivery)
+## 3. Software Craftsmanship & Reusability (The "Clean Code" Standard)
 
-- **Verified Imports:** You MUST verify file paths and schema fields (`src/db/schema.ts`) before writing code.
-- **Strict Typing:** NEVER use `as any` if the property exists in the domain interface or database schema. Propose interface extensions if data is truly dynamic.
-- **Incremental Cleanup:** Every edit MUST remove unused variables, constants, and hardcoded TRACE logs.
-- **Documentation Integrity:** You MUST update or remove JSDoc/comments when changing function signatures or logic. No stale documentation.
-- **MANDATORY DRY-RUN:** Mentally lint all code for syntax errors and unused imports before presenting.
+- **Component Atomicity:** Prioritize small, focused components. Distinguish between **Primitives** (reusable, logic-less UI) and **Features** (domain-specific orchestration).
+- **Utility-First Architecture:** Extract non-UI logic (formatting, calculations, transformations) into pure, testable functions. Keep components focused on rendering.
+- **DRY (Don't Repeat Yourself):** Centralize shared domain logic. If a pattern (price calculation, brand mapping, etc.) is used in more than one place, it MUST have a single source of truth.
+- **Clean Code Standards:**
+  - **Readability First:** Prioritize descriptive naming and explicit logic over "clever" or abbreviated code.
+  - **Logical Focus:** Keep functions and components focused on a single responsibility. Decompose complex logic into smaller, manageable units.
+- **Semantic Accessibility:** Use appropriate HTML5 semantic tags (`<article>`, `<section>`, `<nav>`, `<aside>`). Semantic HTML is the foundation of our SEO strategy.
 
-## 4. Automatic Formatting & Sync
+## 4. Post-Edit Cleanup & Sync (MANDATORY AFTER EVERY MODIFICATION)
 
-- **Post-Edit Cleanup:** After any file modification, you MUST run:
-  1. `bunx eslint --fix <TargetFile>` (to remove unused imports/vars)
-  2. `bunx prettier --write <TargetFile>` (to format)
-- **Automated Verification:** You MUST run `bun x tsc --noEmit` and `bun run lint` at the end of every turn involving code changes to ensure zero regressions.
-- **Graphify Sync:** Rebuild the graph after modifying core logic (`product-families.ts`, `product-identity.ts`, etc.) using: `$(cat graphify-out/.graphify_python) -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"`
-- **Bun First:** Always use `bun` or `bunx` instead of `npm`, `npx`, or `yarn` for script execution and dependency management.
+After any file modification, you MUST run this sequence:
 
-## 6. Verification of Deployment ("Deployment Truth")
+1. **Formatting:** `bunx eslint --fix <TargetFile>` followed by `bunx prettier --write <TargetFile>`.
+2. **Graphify Sync:** Rebuild the graph after modifying core logic:
+   `$(cat graphify-out/.graphify_python) -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"`
+3. **Automated Verification:** Run `bun x tsc --noEmit` and `bun run lint` to ensure zero regressions.
 
-- **Build ID Check:** Every production build injects `NEXT_PUBLIC_BUILD_ID`. Verify by inspecting `<html data-build-id="...">` in the browser or checking the console log `[Build Info]`.
-- **Match HEAD:** Deployed commit MUST match local `HEAD` commit. If not, use `/deploy` to re-sync.
+## 5. Verification of Deployment ("Deployment Truth")
 
-## 5. Pre-Deployment Guard
+- **Build ID Check:** Every production build injects `NEXT_PUBLIC_BUILD_ID`.
+  - **Verify:** Inspect `<html data-build-id="...">` or check the `X-Build-ID` response header.
+  - **Match HEAD:** Deployed commit MUST match local `HEAD`. If it does not match, use `/deploy`.
+- **Deployment Ghosting Resolution:** If a deployment "stalls" (old version still serving):
+  1. `application-cleanQueues`
+  2. `application-stop` -> `application-start` (Force Docker Swarm to kill orphaned containers).
 
-- **Build Check:** For complex changes, run `bun run build` or `tsc` to ensure the project still compiles before ending the turn.
+## 6. Pre-Deployment Guard (The "Final Gate")
+
+- **Looping Prevention:** Do NOT alternate between adding/removing `Suspense` or `connection()` more than once in 24 hours.
+- **Build Check:** For complex changes, run `bun run build` or `tsc` before ending the turn.
+- **Bun First:** Use `bun` or `bunx` exclusively (no `npm`, `yarn`, or `npx`).
