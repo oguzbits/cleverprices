@@ -118,7 +118,7 @@ export async function BlogPostViewMDX({ slug, country }: BlogPostViewMDXProps) {
             {post.title}
           </h1>
 
-          <p className="text-muted-foreground border-primary border-l-4 pl-6 text-xl leading-relaxed font-medium italic md:text-2xl">
+          <p className="text-muted-foreground border-primary border-l-[3px] pl-6 text-xl leading-relaxed font-medium italic md:text-2xl">
             {post.description}
           </p>
         </div>

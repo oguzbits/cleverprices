@@ -32,11 +32,11 @@ import { CachedVariantSelector } from "./CachedVariantSelector";
 import { ConditionButtons } from "./ConditionButtons";
 import { IdealoPriceChart } from "./IdealoPriceChart";
 import { IdealoProductOffers } from "./IdealoProductOffers";
+import { LivePriceHeader, LiveSavingsBadge } from "./LivePriceBoundary";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { SpecificationsTable } from "./SpecificationsTable";
-const EMPTY_ARRAY: any[] = [];
 
-import { LivePriceHeader, LiveSavingsBadge } from "./LivePriceBoundary";
+const EMPTY_ARRAY: any[] = [];
 
 interface IdealoProductPageProps {
   product: Product;
@@ -600,8 +600,8 @@ function ParentHeroImage({
 
   return (
     <div className="grid h-full w-full grid-cols-2 gap-0.5 bg-white p-0">
-      {allImages.map((img, i) => (
-        <div key={i} className="relative aspect-square">
+      {allImages.map((img) => (
+        <div key={img} className="relative aspect-square">
           <Image
             src={img!}
             alt=""

@@ -211,9 +211,9 @@ export function IdealoProductOffers({
         </div>
 
         <ul className="productOffers-list">
-          {offers.map((offer, index) => (
+          {offers.map((offer) => (
             <li
-              key={`${offer.source}-${offer.product?.id || index}`}
+              key={`${offer.source}-${offer.product?.id || offer.price}`}
               className="productOffers-listItem group flex flex-col border-b border-[#dcdcdc] bg-white p-3.5 text-xs leading-[1.4] text-[#2d2d2d] hover:bg-[#fafafa] min-[600px]:flex-row min-[600px]:flex-wrap min-[600px]:gap-0 min-[600px]:px-0 min-[600px]:py-[15px]"
             >
               {/* Mobile Title */}

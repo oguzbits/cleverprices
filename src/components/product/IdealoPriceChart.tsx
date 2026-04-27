@@ -449,7 +449,7 @@ function ChartRenderer({
                     {formatDateFull(hoveredData.date)}
                   </div>
                 </div>
-                <div className="h-0 w-0 self-center border-t-4 border-r-[4px] border-l-4 border-t-[#ff6600] border-r-transparent border-l-transparent"></div>
+                <div className="h-0 w-0 self-center border-t-4 border-r-[4px] border-l-[4px] border-t-[#ff6600] border-r-transparent border-l-transparent"></div>
               </div>
 
               {/* Round Hover Point (HTML) - Fixes aspect ratio distortion */}
