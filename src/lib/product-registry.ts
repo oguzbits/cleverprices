@@ -1,10 +1,3 @@
-import { client, db, dbReady, IS_BUILD } from "@/db";
-import {
-  prices,
-  products,
-  type Product as DbProduct,
-  type Price,
-} from "@/db/schema";
 import {
   and,
   asc,
@@ -19,20 +12,28 @@ import {
   lte,
   ne,
   or,
-  sql,
   SQL,
+  sql,
 } from "drizzle-orm";
-import { cacheLife } from "next/cache";
 import { cache as reactCache } from "react";
+
+import { client, db, dbReady, IS_BUILD } from "@/db";
+import {
+  type Product as DbProduct,
+  type Price,
+  prices,
+  products,
+} from "@/db/schema";
+
 import { withRetry } from "../db/utils";
 import {
   filteringProductColumns,
+  type LitePrice,
   litePriceColumns,
   liteProductColumns,
+  type Product,
   superLitePriceColumns,
   VIRTUAL_CATEGORY_MAP,
-  type LitePrice,
-  type Product,
 } from "./product-definitions";
 import { getFamilyIdentity, getFamilyRepresentative } from "./product-families";
 import {
@@ -122,8 +123,6 @@ async function fetchCanonicalIdInternal(
   modelTitle?: string,
   depth: number = 0,
 ) {
-  "use cache";
-  cacheLife("product_v5");
   if (depth > 5 || !parentAsin) return currentId!;
 
   await dbReady;
@@ -220,9 +219,6 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
 });
 
 async function fetchHistoryInternal(productId: number, countryCode: string) {
-  "use cache";
-  cacheLife("product_v5");
-  const _v = "v2"; // Version bump
   await dbReady;
   const [pr] = await db
     .select({ historyJson: prices.historyJson })
@@ -801,8 +797,6 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   }
 
   const cachedFetch = async () => {
-    "use cache";
-    cacheLife("category");
     const version = CACHE_VERSION; // Version bump
     return fetchNonEmptyInternal();
   };
@@ -1052,8 +1046,6 @@ export const getProductBySlug = cache(async function getProductBySlug(
   }
 
   const cachedFetch = async () => {
-    "use cache";
-    cacheLife("product_v5");
     const [_v, _s, _h] = ["v8", slug, includeHistory]; // Version bump
     return fetchProductBySlug(slug, includeHistory);
   };
@@ -1102,8 +1094,6 @@ export const getProductByAsin = cache(async function getProductByAsin(
   }
 
   const cachedFetch = async () => {
-    "use cache";
-    cacheLife("product_v5");
     const [_v, _a] = ["v2", asin]; // Version bump
     return fetchProductByAsin(asin);
   };
@@ -1430,8 +1420,6 @@ export const getSimilarProducts = cache(async function getSimilarProducts(
   }
 
   const cachedFetch = async () => {
-    "use cache";
-    cacheLife("product_v5");
     const [_v] = ["v21"]; // Version bump
     return fetchSimilarProducts(
       product.category,
@@ -1615,9 +1603,6 @@ const getCachedDeals = async (
   countryCode: string,
   condition?: string,
 ) => {
-  "use cache";
-  cacheLife("hours");
-
   await dbReady;
   try {
     // ...
@@ -1712,9 +1697,6 @@ const getCachedPopular = async (
   countryCode: string,
   condition?: string,
 ) => {
-  "use cache";
-  cacheLife("hours");
-
   await dbReady;
   try {
     const whereConditions: SQL[] = [];
@@ -1838,9 +1820,6 @@ const fetchDiversePopular = async (
   itemsPerCategory: number,
   countryCode: string,
 ) => {
-  "use cache";
-  cacheLife("hours");
-
   if (IS_BUILD) return [];
   await dbReady;
   try {
@@ -1928,9 +1907,6 @@ const getCachedNew = async (
   countryCode: string,
   condition?: string,
 ) => {
-  "use cache";
-  cacheLife("hours");
-
   await dbReady;
   try {
     const whereConditions: SQL[] = [];

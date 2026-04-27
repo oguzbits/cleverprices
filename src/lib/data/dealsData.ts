@@ -1,3 +1,5 @@
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
+
 import { db, IS_BUILD } from "@/db";
 import { prices, products, type Product as DbProduct } from "@/db/schema";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
@@ -7,8 +9,6 @@ import {
   Product,
 } from "@/lib/product-definitions";
 import { mapDbProduct } from "@/lib/utils/product-mapping";
-import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
-import { cacheLife } from "next/cache";
 
 /**
  * Get all deal products across all categories using a highly optimized two-step query.
@@ -20,9 +20,6 @@ export async function getAllDeals(
   limit: number = 24,
   countryCode: string = DEFAULT_COUNTRY,
 ): Promise<Product[]> {
-  "use cache";
-  cacheLife("category");
-
   if (IS_BUILD) return [];
 
   // 1. Fetch top deal IDs directly in SQL (Much faster than fetching 50k+ rows)

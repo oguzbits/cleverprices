@@ -1,5 +1,4 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { cacheLife } from "next/cache";
 
 import { db } from "@/db";
 import { prices } from "@/db/schema";
@@ -24,12 +23,7 @@ export async function getLivePricesForProducts(
   countryCode: string,
   includeHistory: boolean = false,
 ) {
-  "use cache";
-  /* 
-     PRICE CONSISTENCY: Revalidation must be <= Page TTL (20m). 
-     See Single Source Of Truth: docs/architecture/CACHE_POLICY.md 
-  */
-  cacheLife("prices");
+
 
   if (productIds.length === 0) return new Map();
 
@@ -122,8 +116,6 @@ export async function mergeLivePrices(
   countryCode: string,
   includeHistory: boolean = false,
 ): Promise<Product[]> {
-  "use cache";
-  cacheLife("prices");
   const ids = products
     .map((p) => p.id)
     .filter((id): id is number => id !== undefined);
@@ -250,8 +242,6 @@ export async function mergeLivePricesSelective(
   countryCode: string,
   includeHistoryForMain: boolean = false,
 ): Promise<Product[]> {
-  "use cache";
-  cacheLife("prices");
   if (products.length === 0) return [];
   if (products.length === 1) {
     return mergeLivePrices(products, countryCode, includeHistoryForMain);

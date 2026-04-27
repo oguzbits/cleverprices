@@ -1,5 +1,3 @@
-import { cacheLife } from "next/cache";
-
 import { getCategoryBySlug } from "../categories";
 import { type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
@@ -17,7 +15,6 @@ import {
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
-import { CACHE_VERSION } from "../site-config";
 import { getProductPath } from "../utils/url";
 import { mergeLivePrices, mergeLivePricesSelective } from "./live-data";
 
@@ -32,9 +29,6 @@ async function getCachedBestDeals(
   countryCode: string,
   condition?: string | string[],
 ) {
-  "use cache";
-  cacheLife("category");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getBestDealsSync(
     limit,
     countryCode,
@@ -47,9 +41,6 @@ async function getCachedNewArrivals(
   countryCode: string,
   condition?: string | string[],
 ) {
-  "use cache";
-  cacheLife("category");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getNewArrivalsSync(
     limit,
     countryCode,
@@ -61,23 +52,14 @@ async function getCachedDiverseMostPopular(
   itemsPerCategory: number,
   countryCode: string,
 ) {
-  "use cache";
-  cacheLife("category");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
 }
 
 async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
-  "use cache";
-  cacheLife("product_v5");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductBySlugSync(slug, includeHistory);
 }
 
 async function getCachedProductById(id: number) {
-  "use cache";
-  cacheLife("product_v5");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductByIdSync(id);
 }
 
@@ -86,9 +68,6 @@ async function getCachedProductVariantsInternal(
   countryCode: string,
   skipFullMapping: boolean = false,
 ) {
-  "use cache";
-  cacheLife("product_v5");
-  const _v = CACHE_VERSION; // Hidden Cache Buster
   return await getProductVariantsSync(
     { parentAsin } as Product,
     countryCode,
@@ -103,8 +82,6 @@ async function getCachedSimilarProducts(
   limit: number,
   countryCode: string,
 ) {
-  "use cache";
-  cacheLife("product_v5");
   return await getSimilarProductsSync(
     {
       category,
@@ -117,15 +94,10 @@ async function getCachedSimilarProducts(
 }
 
 async function getCachedProductSlugByAsinSuffix(oldSlug: string) {
-  "use cache";
-  cacheLife("category");
-  const _v = CACHE_VERSION;
   return await findProductSlugByAsinSuffixSync(oldSlug);
 }
 
 async function getCachedProductBySyntheticId(id: number, depth: number = 0) {
-  "use cache";
-  cacheLife("product_v5");
   // Safety: Prevent infinite recursion if canonical resolution loops
   if (depth > 5) {
     console.error(`[SEO CRITICAL] Infinite recursion detected for ID ${id}`);
@@ -135,9 +107,6 @@ async function getCachedProductBySyntheticId(id: number, depth: number = 0) {
 }
 
 async function getCachedNonEmptyCategorySlugs() {
-  "use cache";
-  cacheLife("category");
-  const _v = CACHE_VERSION;
   return getNonEmptyCategorySlugsSync();
 }
 
@@ -156,8 +125,6 @@ export async function getAllProductSlugs(
   includeVariants: boolean = true,
   fastMode: boolean = false,
 ): Promise<any[]> {
-  "use cache";
-  cacheLife("static");
   return getAllProductSlugsSync(undefined, includeVariants, fastMode);
 }
 
@@ -236,9 +203,7 @@ export async function getPDPRenderData(
   slug: string,
   countryInput: string = "de",
 ) {
-  "use cache";
   const countryCode = countryInput.toLowerCase();
-  cacheLife("product_v5");
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;

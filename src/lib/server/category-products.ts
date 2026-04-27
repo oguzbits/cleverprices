@@ -12,7 +12,7 @@ import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getLocalizedProductData } from "@/lib/utils/products";
 import { parseVariationAttributes } from "@/lib/utils/variants";
-import { cacheLife } from "next/cache";
+
 import { getBestPrice } from "../utils/price-selection";
 import { calculateProductSavings } from "../utils/products";
 import { getLivePricesForProducts } from "./live-data";
@@ -403,9 +403,6 @@ export async function getCachedLocalizedCategoryProducts(
   categorySlug: string,
   countryCode: string,
 ): Promise<LocalizedProduct[]> {
-  "use cache";
-  cacheLife("category");
-
   let rawProducts;
   if (categorySlug === "deals") {
     rawProducts = await getAllDeals(250, countryCode);
@@ -427,9 +424,6 @@ export async function getLeanCategoryProducts(
   categorySlug: string,
   countryCode: string,
 ) {
-  "use cache";
-  cacheLife("category");
-
   const virtual = VIRTUAL_CATEGORY_MAP[categorySlug];
   const queryCategory = virtual ? virtual.dbCategory : categorySlug;
 

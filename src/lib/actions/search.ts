@@ -3,7 +3,6 @@
 import { client } from "@/db";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { searchProducts } from "@/lib/product-registry";
-import { cacheLife } from "next/cache";
 
 export interface SearchCategory {
   name: string;
@@ -275,9 +274,6 @@ export const performSearch = async (
   if (!query || query.length < 2) return { categories: [], products: [] };
 
   const cachedFetch = async () => {
-    "use cache";
-    cacheLife("category");
-    const _v = "v6"; // Version bump
     return getInternalSearchResults(query, limit);
   };
 

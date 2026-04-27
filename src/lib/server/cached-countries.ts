@@ -1,9 +1,7 @@
-"use cache";
-
 import {
+  type Country,
   getAllCountries as getAllCountriesSync,
   getCountryByCode as getCountryByCodeSync,
-  type Country,
 } from "../countries";
 
 /**

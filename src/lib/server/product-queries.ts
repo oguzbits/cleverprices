@@ -1,17 +1,17 @@
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { cache } from "react";
+
 import { db, dbReady, IS_BUILD } from "@/db";
 import { prices, products } from "@/db/schema";
-import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
-import { cacheLife } from "next/cache";
-import { cache } from "react";
+
 import { withRetry } from "../../db/utils";
 import {
   filteringProductColumns,
   litePriceColumns,
   liteProductColumns,
-  superLitePriceColumns,
   type Product,
+  superLitePriceColumns,
 } from "../product-definitions";
-import { CACHE_VERSION } from "../site-config";
 import { mapDbProduct } from "../utils/product-mapping";
 
 /**
@@ -188,10 +188,6 @@ export async function getProductsByCategory(
   }
 
   const cachedFetch = async () => {
-    "use cache";
-    cacheLife("category");
-    const _v = CACHE_VERSION;
-
     await dbReady;
     const { prods, prs } = await withRetry(async () => {
       let query = db
@@ -291,10 +287,6 @@ export async function getRawProductsByCategory(
   }
 
   const cachedFetch = async () => {
-    "use cache";
-    cacheLife("category");
-    const _v = CACHE_VERSION;
-
     await dbReady;
     const { prods, prs } = await withRetry(async () => {
       const prods = await db
@@ -403,9 +395,6 @@ export const getProductsByIds = cache(async function getProductsByIds(
     code: string,
     strip: boolean,
   ) => {
-    "use cache";
-    cacheLife("product_v5");
-    const _v = "v207";
     return fetchProductsByIdsInternal(targetIds, code, strip);
   };
 

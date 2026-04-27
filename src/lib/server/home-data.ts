@@ -1,20 +1,16 @@
-import { cacheLife } from "next/dist/server/use-cache/cache-life";
-
 import {
   getBestDeals,
   getDiverseMostPopular,
   getNewArrivals,
 } from "@/lib/product-registry";
 
-const CACHE_VERSION = "v212";
+import { CACHE_VERSION } from "../site-config";
 
 /**
  * Server-side data fetching for the homepage.
  * Complies with strict project rules by isolating "use cache" in the server layer.
  */
 export async function fetchHomeData(countryCode: string) {
-  "use cache";
-  cacheLife("category");
   const _v = CACHE_VERSION;
 
   try {

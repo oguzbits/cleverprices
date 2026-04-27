@@ -1,6 +1,6 @@
 import { LucideIcon } from "lucide-react";
-import { cacheLife } from "next/cache";
 import { cache } from "react";
+
 import { CATEGORY_MAP } from "./category-definitions";
 import {
   CategoryData as BaseCategoryData,
@@ -53,9 +53,9 @@ export function getCategoryHierarchy(): CategoryHierarchy[] {
 }
 
 // Cached version for use in pages (complying with "Only use use cache in the lib/server layer" rule)
-export async function getCategoryHierarchyCached(): Promise<CategoryHierarchy[]> {
-  "use cache";
-  cacheLife("static");
+export async function getCategoryHierarchyCached(): Promise<
+  CategoryHierarchy[]
+> {
   return getCategoryHierarchy();
 }
 
