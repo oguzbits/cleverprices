@@ -1,9 +1,12 @@
+import { Metadata } from "next";
+
 import { AllCategoriesView } from "@/components/category/AllCategoriesView";
+import { ServerBusy } from "@/components/ui/ServerBusy";
+import { DatabaseBusyError } from "@/db/utils";
 import { getCategoryHierarchyCached } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { getSiteUrl } from "@/lib/site-config";
-import { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {
   const canonicalUrl = getSiteUrl("/categories");
@@ -28,7 +31,18 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function CategoriesPage() {
-  const hierarchy = await getCategoryHierarchyCached();
+  let hierarchy;
+  try {
+    hierarchy = await getCategoryHierarchyCached();
+  } catch (error: unknown) {
+    if (
+      error instanceof DatabaseBusyError ||
+      (error as { name?: string })?.name === "DatabaseBusyError"
+    ) {
+      return <ServerBusy />;
+    }
+    throw error;
+  }
 
   return (
     <div className="min-h-screen bg-white">

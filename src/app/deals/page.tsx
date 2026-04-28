@@ -1,9 +1,12 @@
-import { getAlternateLanguages } from "@/lib/metadata";
-import { getCachedDealsPage } from "@/lib/server/cached-deals";
-import { SITE_URL } from "@/lib/site-config";
 import { Metadata } from "next";
 import { connection } from "next/server";
 import { Suspense } from "react";
+
+import { ServerBusy } from "@/components/ui/ServerBusy";
+import { DatabaseBusyError } from "@/db/utils";
+import { getAlternateLanguages } from "@/lib/metadata";
+import { getCachedDealsPage } from "@/lib/server/cached-deals";
+import { SITE_URL } from "@/lib/site-config";
 
 interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -42,6 +45,20 @@ async function DealsPageContent({
 }) {
   await connection();
   const resolvedSearchParams = await searchParams;
-  return getCachedDealsPage(resolvedSearchParams);
+
+  let content;
+  try {
+    content = await getCachedDealsPage(resolvedSearchParams);
+  } catch (error: unknown) {
+    if (
+      error instanceof DatabaseBusyError ||
+      (error as { name?: string })?.name === "DatabaseBusyError"
+    ) {
+      return <ServerBusy />;
+    }
+    throw error;
+  }
+
+  return content;
 }
 

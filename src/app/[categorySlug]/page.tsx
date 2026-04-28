@@ -87,8 +87,12 @@ export async function generateMetadata({
   const nonEmptySlugs = await (async () => {
     try {
       return await getNonEmptyCategorySlugs();
-    } catch (error) {
-      if (error instanceof DatabaseBusyError) return [];
+    } catch (error: any) {
+      if (
+        error instanceof DatabaseBusyError ||
+        error?.name === "DatabaseBusyError"
+      )
+        return [];
       throw error;
     }
   })();
@@ -277,8 +281,11 @@ async function CategoryPageContent({
         resolvedSearchParams,
       );
       return { data, isBusy: false };
-    } catch (error: unknown) {
-      if (error instanceof DatabaseBusyError) {
+    } catch (error: any) {
+      if (
+        error instanceof DatabaseBusyError ||
+        error?.name === "DatabaseBusyError"
+      ) {
         return { isBusy: true };
       }
       throw error;
@@ -372,8 +379,11 @@ async function ParentCategoryViewLoader({
         filteredChildren,
         isBusy: false,
       };
-    } catch (error: unknown) {
-      if (error instanceof DatabaseBusyError) {
+    } catch (error: any) {
+      if (
+        error instanceof DatabaseBusyError ||
+        error?.name === "DatabaseBusyError"
+      ) {
         return { isBusy: true };
       }
       throw error;

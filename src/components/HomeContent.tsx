@@ -16,8 +16,26 @@ export default async function HomeContent({
   const countryConfig = await getCountryByCode(country);
   const countryCode = countryConfig?.code || country;
 
-  // Fetch enough data for curation with margin for filtering
-  const [rawDeals, rawPopular, rawNew] = await fetchHomeData(countryCode);
+  const homeData = await (async () => {
+    try {
+      // Fetch enough data for curation with margin for filtering
+      const [rawDeals, rawPopular, rawNew] = await fetchHomeData(countryCode);
+      return { rawDeals, rawPopular, rawNew, isBusy: false };
+    } catch (error: any) {
+      if (
+        error instanceof DatabaseBusyError ||
+        error?.name === "DatabaseBusyError"
+      ) {
+        return { isBusy: true, rawDeals: [], rawPopular: [], rawNew: [] };
+      }
+      throw error;
+    }
+  })();
+
+  if (homeData.isBusy) return <ServerBusy />;
+
+  const { rawDeals, rawPopular, rawNew } = homeData;
+
   console.log(
     `🏠 Home Data: Deals=${rawDeals.length}, Popular=${rawPopular.length}, New=${rawNew.length}`,
   );
@@ -117,8 +135,11 @@ export default async function HomeContent({
   let livePriceMap = new Map<number, LivePriceData>();
   try {
     livePriceMap = await getPricesFromDb(allHomeProductIds, countryCode);
-  } catch (error) {
-    if (error instanceof DatabaseBusyError) {
+  } catch (error: any) {
+    if (
+      error instanceof DatabaseBusyError ||
+      error?.name === "DatabaseBusyError"
+    ) {
       return (
         <ServerBusy
           title="Willkommen bei CleverPrices"

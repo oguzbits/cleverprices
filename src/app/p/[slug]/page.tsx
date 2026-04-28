@@ -138,6 +138,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     renderData = await getPDPRenderData(slug);
   } catch (error: unknown) {
+    if (
+      error instanceof DatabaseBusyError ||
+      (error as { name?: string })?.name === "DatabaseBusyError"
+    ) {
+      return { title: `Service Busy | ${BRAND_DOMAIN}` };
+    }
     const err = error as { digest?: string };
     if (
       err?.digest?.startsWith("NEXT_") ||
@@ -280,7 +286,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
   const { condition } = await searchParams;
   const countryCode = DEFAULT_COUNTRY;
-  let isDatabaseBusy = false;
+  const isDatabaseBusy = false;
 
   const result = await (async () => {
     try {
@@ -318,7 +324,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
         isBusy: false,
       };
     } catch (error: unknown) {
-      if (error instanceof DatabaseBusyError) {
+      if (
+        error instanceof DatabaseBusyError ||
+        (error as { name?: string })?.name === "DatabaseBusyError"
+      ) {
         return { isBusy: true };
       }
       const err = error as { digest?: string };

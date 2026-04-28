@@ -10,6 +10,7 @@ import { CACHE_VERSION } from "@/lib/site-config";
 export async function getCachedDealsPage(
   resolvedSearchParams: Record<string, string | string[] | undefined>,
 ) {
+  "use cache";
   const _v = CACHE_VERSION;
   const category = CATEGORY_MAP["deals"];
 
