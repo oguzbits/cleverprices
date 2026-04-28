@@ -203,6 +203,7 @@ export async function getPDPRenderData(
   slug: string,
   countryInput: string = "de",
 ) {
+  "use cache";
   const countryCode = countryInput.toLowerCase();
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)

@@ -747,60 +747,71 @@ export async function getCategoryProducts(
   // --- GENERATE HUB CARDS ---
   const { getFamilyIdentity, getFamilyRepresentative } =
     await import("../product-families");
-  const { getCanonicalFamilyId } = await import("../product-registry");
+  const { getCanonicalFamilyIdsBatch } = await import("../product-registry");
   const collapsedLeanProducts = new Map<string, LocalizedProduct>();
 
   const familyEntries = Array.from(familyVariants.entries());
 
-  await Promise.all(
-    familyEntries.map(async ([familyKey, variants]) => {
-      // Collect all variants that match filters for this hub
-      const matchingVariants = variants.filter((v: LocalizedProduct) => {
-        const matchesPrice =
-          (!((filters.minPrice as number | null) || 0) ||
-            v.price >= (filters.minPrice as number)) &&
-          (!((filters.maxPrice as number | null) || 0) ||
-            (v.price > 0 && v.price <= (filters.maxPrice as number))) &&
-          v.price > 0;
-        return matchesPrice;
-      });
+  // 1. Prepare batch requests for canonical IDs for all identified families
+  const familiesToResolve = familyEntries
+    .map(([familyKey, variants]) => {
+      const representative = getFamilyRepresentative(variants);
+      if (!representative) return null;
+      return {
+        familyKey,
+        parentAsin: representative.parentAsin || "",
+        currentId: representative.id || 0,
+        modelTitle: representative.modelTitle,
+        representative,
+        variants,
+      };
+    })
+    .filter((f): f is NonNullable<typeof f> => !!f && !!f.parentAsin);
 
-      if (matchingVariants.length === 0) return;
+  // 2. Fetch all canonical IDs in ONE round-trip
+  const canonicalIdMap = await getCanonicalFamilyIdsBatch(familiesToResolve);
 
-      const representative = getFamilyRepresentative(matchingVariants);
-      if (!representative) return;
+  // 3. Process families using the pre-resolved IDs
+  familiesToResolve.forEach((family) => {
+    const { familyKey, variants, representative } = family;
 
-      // RESOLVE STABLE CANONICAL ID: This ensures the Hub ID doesn't change
-      // when the cheapest representative changes.
-      const canonicalId = await getCanonicalFamilyId(
-        representative.parentAsin,
-        representative.id || 0,
-        representative.modelTitle,
-      );
+    // Collect all variants that match filters for this hub
+    const matchingVariants = variants.filter((v: LocalizedProduct) => {
+      const matchesPrice =
+        (!((filters.minPrice as number | null) || 0) ||
+          v.price >= (filters.minPrice as number)) &&
+        (!((filters.maxPrice as number | null) || 0) ||
+          (v.price > 0 && v.price <= (filters.maxPrice as number))) &&
+        v.price > 0;
+      return matchesPrice;
+    });
 
-      const familyIdentity = getFamilyIdentity(
-        {
-          ...representative,
-          isParentView: true,
-          syntheticId: canonicalId,
-        } as Product,
-        variants as Product[],
-      );
+    if (matchingVariants.length === 0) return;
 
-      // Hub adopts the consensus identity
-      collapsedLeanProducts.set(familyKey, {
+    const canonicalId = canonicalIdMap.get(family) || representative.id || 0;
+
+    const familyIdentity = getFamilyIdentity(
+      {
         ...representative,
         isParentView: true,
-        variantCount: variants.length,
-        displayId: representative.id,
-        canonicalId: canonicalId,
-        title: familyIdentity.modelTitle || familyIdentity.fullModel,
-        modelTitle: familyIdentity.modelTitle,
-        variantSuffix: familyIdentity.variantSuffix,
-        slug: familyIdentity.slug,
-      });
-    }),
-  );
+        syntheticId: canonicalId,
+      } as Product,
+      variants as Product[],
+    );
+
+    // Hub adopts the consensus identity
+    collapsedLeanProducts.set(familyKey, {
+      ...representative,
+      isParentView: true,
+      variantCount: variants.length,
+      displayId: representative.id,
+      canonicalId: canonicalId,
+      title: familyIdentity.modelTitle || familyIdentity.fullModel,
+      modelTitle: familyIdentity.modelTitle,
+      variantSuffix: familyIdentity.variantSuffix,
+      slug: familyIdentity.slug,
+    });
+  });
 
   // Keep ALL original products, PLUS the Hub Cards
   const finalFilteredLeanProducts = [

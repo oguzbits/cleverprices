@@ -126,22 +126,24 @@ async function fetchCanonicalIdInternal(
   if (depth > 5 || !parentAsin) return currentId!;
 
   await dbReady;
-  const allVariants = await db
-    .select({
-      id: products.id,
-      title: products.title,
-      brand: products.brand,
-      category: products.category,
-      officialTitle: products.officialTitle,
-      officialSpecifications: products.officialSpecifications,
-      variationAttributes: products.variationAttributes,
-      specificationsSource: products.specificationsSource,
-    })
-    .from(products)
-    .where(
-      or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)),
-    )
-    .orderBy(asc(products.id));
+  const allVariants = await withRetry(() =>
+    db
+      .select({
+        id: products.id,
+        title: products.title,
+        brand: products.brand,
+        category: products.category,
+        officialTitle: products.officialTitle,
+        officialSpecifications: products.officialSpecifications,
+        variationAttributes: products.variationAttributes,
+        specificationsSource: products.specificationsSource,
+      })
+      .from(products)
+      .where(
+        or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)),
+      )
+      .orderBy(asc(products.id)),
+  );
 
   if (allVariants.length === 0) return currentId!;
 
@@ -169,23 +171,44 @@ async function fetchCanonicalIdInternal(
  * This ensures all variants point to the same Hub ID regardless of price/condition.
  */
 export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
-  parentAsin: string | undefined,
-  currentId: number,
+  parentAsin?: string | null,
+  currentId?: number,
   modelTitle?: string,
-  depth: number = 0,
 ): Promise<number> {
-  const isScript =
-    typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
+  return fetchCanonicalIdInternal(parentAsin, currentId, modelTitle);
+});
 
-  if (isScript) {
-    if (!parentAsin) return currentId;
-    await dbReady;
-    const allVariants = await db
+/**
+ * BATCH VERSION: Resolves canonical family IDs for multiple products in one DB round-trip.
+ * Essential for category listing pages where we group products into hubs.
+ */
+export async function getCanonicalFamilyIdsBatch<
+  T extends { parentAsin: string; modelTitle?: string; currentId: number },
+>(requests: T[]): Promise<Map<T, number>> {
+  if (requests.length === 0) return new Map();
+
+  const resultMap = new Map<T, number>();
+
+  // Filter out invalid requests
+  const validRequests = requests.filter((r) => r.parentAsin);
+  if (validRequests.length === 0) {
+    requests.forEach((r) => resultMap.set(r, r.currentId));
+    return resultMap;
+  }
+
+  const parentAsins = [...new Set(validRequests.map((r) => r.parentAsin))];
+
+  await dbReady;
+
+  // 1. Fetch all variants for all requested parentAsins in ONE query
+  const allRawVariants = await withRetry(() =>
+    db
       .select({
         id: products.id,
         title: products.title,
         brand: products.brand,
         category: products.category,
+        parentAsin: products.parentAsin,
         officialTitle: products.officialTitle,
         officialSpecifications: products.officialSpecifications,
         variationAttributes: products.variationAttributes,
@@ -193,40 +216,60 @@ export const getCanonicalFamilyId = cache(async function getCanonicalFamilyId(
       })
       .from(products)
       .where(
-        or(eq(products.parentAsin, parentAsin), eq(products.asin, parentAsin)),
+        or(
+          inArray(products.parentAsin, parentAsins),
+          inArray(products.asin, parentAsins),
+        ),
       )
-      .orderBy(asc(products.id));
+      .orderBy(asc(products.id)),
+  );
 
-    if (allVariants.length === 0) return currentId;
-    if (!modelTitle) return allVariants[0].id;
-    const targetKey = modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "");
-    for (const v of allVariants) {
-      const iden = getProductIdentity(v as any);
-      const key = (iden.modelTitle || "")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "");
-      if (key === targetKey) return v.id;
+  // 2. Group variants by parentAsin
+  const variantsByParent = new Map<string, any[]>();
+  allRawVariants.forEach((v) => {
+    const asin = v.parentAsin || ""; // In case of standalone asin match
+    if (!variantsByParent.has(asin)) variantsByParent.set(asin, []);
+    variantsByParent.get(asin)!.push(v);
+  });
+
+  // 3. Resolve for each request using the same logic as fetchCanonicalIdInternal but in-memory
+  const { getProductIdentity } = await import("./utils/product-identity");
+
+  requests.forEach((req) => {
+    const variants = variantsByParent.get(req.parentAsin) || [];
+    if (variants.length === 0) {
+      resultMap.set(req, req.currentId);
+      return;
     }
-    return allVariants[0].id;
-  }
 
-  return (await fetchCanonicalIdInternal(
-    parentAsin,
-    currentId,
-    modelTitle,
-    depth,
-  )) as number;
-});
+    if (!req.modelTitle) {
+      resultMap.set(req, variants[0].id);
+      return;
+    }
+
+    const targetModel = req.modelTitle.toLowerCase();
+    const bestMatch = variants.find((v) => {
+      const vIdentity = getProductIdentity(v as any);
+      return vIdentity.modelTitle?.toLowerCase() === targetModel;
+    });
+
+    resultMap.set(req, bestMatch ? bestMatch.id : variants[0].id);
+  });
+
+  return resultMap;
+}
 
 async function fetchHistoryInternal(productId: number, countryCode: string) {
   await dbReady;
-  const [pr] = await db
-    .select({ historyJson: prices.historyJson })
-    .from(prices)
-    .where(
-      and(eq(prices.productId, productId), eq(prices.country, countryCode)),
-    )
-    .limit(1);
+  const [pr] = await withRetry(() =>
+    db
+      .select({ historyJson: prices.historyJson })
+      .from(prices)
+      .where(
+        and(eq(prices.productId, productId), eq(prices.country, countryCode)),
+      )
+      .limit(1),
+  );
 
   if (!pr?.historyJson) return [];
   const { parseHistoryJson } = await import("./utils/product-mapping");
@@ -246,13 +289,15 @@ async function getProductPriceHistory(
 
   if (isScript) {
     await dbReady;
-    const [pr] = await db
-      .select({ historyJson: prices.historyJson })
-      .from(prices)
-      .where(
-        and(eq(prices.productId, productId), eq(prices.country, countryCode)),
-      )
-      .limit(1);
+    const [pr] = await withRetry(() =>
+      db
+        .select({ historyJson: prices.historyJson })
+        .from(prices)
+        .where(
+          and(eq(prices.productId, productId), eq(prices.country, countryCode)),
+        )
+        .limit(1),
+    );
 
     if (!pr?.historyJson) return [];
     const { parseHistoryJson } = await import("./utils/product-mapping");
@@ -364,44 +409,46 @@ export async function getAllProductSlugs(
     if (fastMode) {
       // 🚀 [ULTRA-FAST MODE] Optimized selection for sitemap-scale exports.
       // Bypasses JavaScript filtering, overhead of thousands of objects, and redundant joins.
-      const rawResults = await db
-        .select({
-          id: products.id,
-          slug: products.slug,
-          title: products.title,
-          category: products.category,
-          enrichmentStatus: products.enrichmentStatus,
-          updatedAt: products.updatedAt,
-          parentAsin: products.parentAsin,
-          asin: products.asin,
-          brand: products.brand,
-          specifications: products.specifications,
-          officialSpecifications: products.officialSpecifications,
-          salesRank: products.salesRank,
-          imageUrl: products.imageUrl,
-        })
-        .from(products)
-        .where(
-          and(
-            inArray(products.enrichmentStatus, [
-              "optimized",
-              "processed",
-              "pending",
-            ]),
-            // GSC Fix: Only include items that don't look like ASIN-titles or junk names
-            sql`length(title) > 5 AND title != asin`,
-            // SEO Guard: Items MUST have an image
-            isNotNull(products.imageUrl),
-            // Specs Guard: Reduce noise by skipping completely empty spec buckets at SQL level
-            or(
-              isNotNull(products.specifications),
-              isNotNull(products.officialSpecifications),
+      const rawResults = await withRetry(() =>
+        db
+          .select({
+            id: products.id,
+            slug: products.slug,
+            title: products.title,
+            category: products.category,
+            enrichmentStatus: products.enrichmentStatus,
+            updatedAt: products.updatedAt,
+            parentAsin: products.parentAsin,
+            asin: products.asin,
+            brand: products.brand,
+            specifications: products.specifications,
+            officialSpecifications: products.officialSpecifications,
+            salesRank: products.salesRank,
+            imageUrl: products.imageUrl,
+          })
+          .from(products)
+          .where(
+            and(
+              inArray(products.enrichmentStatus, [
+                "optimized",
+                "processed",
+                "pending",
+              ]),
+              // GSC Fix: Only include items that don't look like ASIN-titles or junk names
+              sql`length(title) > 5 AND title != asin`,
+              // SEO Guard: Items MUST have an image
+              isNotNull(products.imageUrl),
+              // Specs Guard: Reduce noise by skipping completely empty spec buckets at SQL level
+              or(
+                isNotNull(products.specifications),
+                isNotNull(products.officialSpecifications),
+              ),
             ),
-          ),
-        )
-        // Order by ID (asc) to ensure the first one encountered per parentAsin is the 'oldest' ID,
-        // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
-        .orderBy(asc(products.id));
+          )
+          // Order by ID (asc) to ensure the first one encountered per parentAsin is the 'oldest' ID,
+          // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
+          .orderBy(asc(products.id)),
+      );
 
       const processedResults: any[] = [];
       const parentMap = new Map<string, any>();
@@ -505,71 +552,74 @@ export async function getAllProductSlugs(
     }
 
     // 1. Fetch products with basic metadata (Standard Slow Path)
-    let query = db
-      .select({
-        id: products.id,
-        asin: products.asin,
-        slug: products.slug,
-        title: products.title,
-        brand: products.brand,
-        category: products.category,
-        parentAsin: products.parentAsin,
-        variationAttributes: products.variationAttributes,
-        officialTitle: products.officialTitle,
-        enrichmentStatus: products.enrichmentStatus,
-        updatedAt: products.updatedAt,
-        specifications: products.specifications,
-        officialSpecifications: products.officialSpecifications,
-        salesRank: products.salesRank,
-        capacity: products.capacity,
-        capacityUnit: products.capacityUnit,
-        normalizedCapacity: products.normalizedCapacity,
-        technology: products.technology,
-        condition: products.condition,
-        rating: products.rating,
-        reviewCount: products.reviewCount,
-        imageUrl: products.imageUrl,
-        mpn: products.mpn,
-      })
-      .from(products)
-      .where(
-        and(
-          inArray(products.enrichmentStatus, [
-            "optimized",
-            "processed",
-            "pending",
-          ]),
-          // Same filter for consistency even in slow path (Require Image)
-          isNotNull(products.imageUrl),
-          or(
-            isNotNull(products.specifications),
-            isNotNull(products.officialSpecifications),
-            sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
+    let queryFn = () =>
+      db
+        .select({
+          id: products.id,
+          asin: products.asin,
+          slug: products.slug,
+          title: products.title,
+          brand: products.brand,
+          category: products.category,
+          parentAsin: products.parentAsin,
+          variationAttributes: products.variationAttributes,
+          officialTitle: products.officialTitle,
+          enrichmentStatus: products.enrichmentStatus,
+          updatedAt: products.updatedAt,
+          specifications: products.specifications,
+          officialSpecifications: products.officialSpecifications,
+          salesRank: products.salesRank,
+          capacity: products.capacity,
+          capacityUnit: products.capacityUnit,
+          normalizedCapacity: products.normalizedCapacity,
+          technology: products.technology,
+          condition: products.condition,
+          rating: products.rating,
+          reviewCount: products.reviewCount,
+          imageUrl: products.imageUrl,
+          mpn: products.mpn,
+        })
+        .from(products)
+        .where(
+          and(
+            inArray(products.enrichmentStatus, [
+              "optimized",
+              "processed",
+              "pending",
+            ]),
+            // Same filter for consistency even in slow path (Require Image)
+            isNotNull(products.imageUrl),
+            or(
+              isNotNull(products.specifications),
+              isNotNull(products.officialSpecifications),
+              sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
+            ),
           ),
-        ),
-      )
-      .orderBy(
-        sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
-        // Order by ID (asc) to ensure the first one encountered per parentAsin is the 'oldest' ID,
-        // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
-        asc(products.id),
-      );
+        )
+        .orderBy(
+          sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
+          // Order by ID (asc) to ensure the first one encountered per parentAsin is the 'oldest' ID,
+          // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
+          asc(products.id),
+        );
 
     if (limit) {
       // @ts-ignore
-      query = query.limit(limit);
+      queryFn = () => queryFn().limit(limit);
     }
 
-    const rawAllProducts = (await query) as any[];
+    const rawAllProducts = (await withRetry(queryFn)) as any[];
 
     // 2. Fetch prices (optimized map)
-    const priceRecords = await db
-      .select({
-        productId: prices.productId,
-        price: prices.price,
-        usedPrice: prices.usedPrice,
-      })
-      .from(prices);
+    const priceRecords = await withRetry(() =>
+      db
+        .select({
+          productId: prices.productId,
+          price: prices.price,
+          usedPrice: prices.usedPrice,
+        })
+        .from(prices),
+    );
 
     const priceMap = new Map();
     for (const p of priceRecords) {
@@ -707,28 +757,30 @@ const MEMORY_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
 async function fetchNonEmptyInternal() {
   await dbReady;
   try {
-    const results = await db
-      .select({ category: products.category })
-      .from(products)
-      .where(
-        and(
-          inArray(products.enrichmentStatus, [
-            "optimized",
-            "processed",
-            "scavenged",
-            "pending",
-          ]),
-          // GSC Fix: Only include items that don't look like junk names
-          sql`length(title) > 2 AND title != asin`,
-          // SEO Guard: Category must have at least one product with specs or a known price
-          or(
-            isNotNull(products.specifications),
-            isNotNull(products.officialSpecifications),
-            sql`EXISTS (SELECT 1 FROM prices WHERE prices.product_id = products.id AND price > 0 AND country = 'de')`,
+    const results = await withRetry(() =>
+      db
+        .select({ category: products.category })
+        .from(products)
+        .where(
+          and(
+            inArray(products.enrichmentStatus, [
+              "optimized",
+              "processed",
+              "scavenged",
+              "pending",
+            ]),
+            // GSC Fix: Only include items that don't look like junk names
+            sql`length(title) > 2 AND title != asin`,
+            // SEO Guard: Category must have at least one product with specs or a known price
+            or(
+              isNotNull(products.specifications),
+              isNotNull(products.officialSpecifications),
+              sql`EXISTS (SELECT 1 FROM prices WHERE prices.product_id = products.id AND price > 0 AND country = 'de')`,
+            ),
           ),
-        ),
-      )
-      .groupBy(products.category);
+        )
+        .groupBy(products.category),
+    );
 
     if (results.length === 0 && process.env.NODE_ENV === "production") {
       console.warn(

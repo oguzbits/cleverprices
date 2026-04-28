@@ -46,10 +46,12 @@ export async function enrichWithFullSiblings(
 
   let allSiblings: any[] = [];
   if (parentAsins.length > 0) {
-    allSiblings = await db
-      .select(liteProductColumns)
-      .from(products)
-      .where(inArray(products.parentAsin, parentAsins as string[]));
+    allSiblings = await withRetry(() =>
+      db
+        .select(liteProductColumns)
+        .from(products)
+        .where(inArray(products.parentAsin, parentAsins as string[])),
+    );
   }
 
   const siblingsByParent = new Map<string, any[]>();
