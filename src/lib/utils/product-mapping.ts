@@ -1,9 +1,10 @@
 import { type Price as DbPrice, type Product as DbProduct } from "@/db/schema";
+
 import { parseHistoryBlob } from "../history-compression";
 import { type LitePrice, type Product } from "../product-definitions";
 import { getFamilyIdentity } from "../product-families";
 import { type LeanProduct } from "../types";
-import { type SiblingConsensus, IDENTITY_CONFIG } from "./product-identity";
+import { IDENTITY_CONFIG, type SiblingConsensus } from "./product-identity";
 import { calculateProductMetrics } from "./products";
 import { parseCapacityToGB, parseVariationAttributes } from "./variants";
 
@@ -302,6 +303,7 @@ export function mapDbProduct(
     usedPrices: usedPricesObj,
     warehousePrices: warehousePricesObj,
     createdAt: p.createdAt ? new Date(p.createdAt).toISOString() : undefined,
+    updatedAt: p.updatedAt ? new Date(p.updatedAt).toISOString() : undefined,
     releaseDate: releaseDate as string | undefined,
     specificationsSource: p.specificationsSource,
     enrichmentStatus: p.enrichmentStatus as

@@ -283,7 +283,14 @@ export async function getRawProductsByCategory(
         warehousePrices: { [code]: live?.warehousePrice || 0 },
         priceAvg90: { [code]: live?.priceAvg90 || 0 },
         pricePerUnit: { [code]: live?.pricePerUnit || 0 },
-        pricesLastUpdated: { [code]: live?.lastUpdated },
+        pricesLastUpdated: {
+          [code]: live?.lastUpdated
+            ? new Date(live.lastUpdated).toISOString()
+            : undefined,
+        },
+        updatedAt: p.updatedAt
+          ? new Date(p.updatedAt).toISOString()
+          : undefined,
       };
     });
   }
@@ -327,11 +334,18 @@ export async function getRawProductsByCategory(
       return {
         ...p,
         prices: { [code]: live?.price || 0 },
-        usedPrices: { [code]: live?.usedPrice || 0 },
-        warehousePrices: { [code]: live?.warehousePrice || 0 },
+        usedPrices: { [code]: live?.usedPrices || 0 },
+        warehousePrices: { [code]: live?.warehousePrices || 0 },
         priceAvg90: { [code]: live?.priceAvg90 || 0 },
         pricePerUnit: { [code]: live?.pricePerUnit || 0 },
-        pricesLastUpdated: { [code]: live?.lastUpdated },
+        pricesLastUpdated: {
+          [code]: live?.lastUpdated
+            ? new Date(live.lastUpdated).toISOString()
+            : undefined,
+        },
+        updatedAt: p.updatedAt
+          ? new Date(p.updatedAt).toISOString()
+          : undefined,
       };
     });
   };

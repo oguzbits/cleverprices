@@ -1,4 +1,4 @@
-import { prices, products, type Price } from "@/db/schema";
+import { type Price, prices, products } from "@/db/schema";
 
 // Virtual Category Mapping
 // Many categories in our manifest are actually specific views of a larger DB category.
@@ -58,6 +58,7 @@ export interface LocalizedProduct {
   officialSpecifications?: Record<string, unknown>; // Structured official specs
   specificationsSource?: string;
   officialTitle?: string;
+  updatedAt?: string;
   mpn?: string;
   canonicalId?: number | null;
   [key: string]: unknown;
@@ -252,7 +253,7 @@ export interface Product {
   category_id?: string | number;
   completenessScore?: number | null;
   missingSpecs?: string | null;
-  lastEnrichedAt?: Date | null;
+  lastEnrichedAt?: string | null;
   canonicalId?: number | null;
   [key: string]: unknown;
 }

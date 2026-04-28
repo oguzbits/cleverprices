@@ -401,7 +401,7 @@ export async function getAllProductSlugs(
     slug: string;
     category: string;
     enrichmentStatus?: string | null;
-    updatedAt: Date;
+    updatedAt: string;
   }[]
 > {
   try {
@@ -510,7 +510,7 @@ export async function getAllProductSlugs(
               slug: hubSlug,
               category: r.category,
               enrichmentStatus: r.enrichmentStatus,
-              updatedAt: r.updatedAt || new Date(),
+              updatedAt: (r.updatedAt || new Date()).toISOString(),
               hasQualityVariant: isQualityVariant,
             });
           } else {
@@ -533,7 +533,7 @@ export async function getAllProductSlugs(
             slug: r.slug,
             category: r.category,
             enrichmentStatus: r.enrichmentStatus,
-            updatedAt: r.updatedAt || new Date(),
+            updatedAt: (r.updatedAt || new Date()).toISOString(),
           });
         }
       }
@@ -644,7 +644,7 @@ export async function getAllProductSlugs(
       slug: string;
       category: string;
       enrichmentStatus?: string | null;
-      updatedAt: Date;
+      updatedAt: string;
     }[] = [];
 
     const processedFamilies = new Set<string>();
@@ -664,7 +664,7 @@ export async function getAllProductSlugs(
           slug: hubSlug,
           category: p.category,
           enrichmentStatus: p.enrichmentStatus,
-          updatedAt: p.updatedAt || new Date(),
+          updatedAt: (p.updatedAt || new Date()).toISOString(),
         });
       } else {
         if (processedFamilies.has(p.parentAsin)) continue;
@@ -688,7 +688,7 @@ export async function getAllProductSlugs(
               slug: m.slug,
               category: v.category,
               enrichmentStatus: v.enrichmentStatus,
-              updatedAt: v.updatedAt || new Date(),
+              updatedAt: (v.updatedAt || new Date()).toISOString(),
             });
           });
         }

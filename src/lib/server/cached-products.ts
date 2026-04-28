@@ -1,5 +1,7 @@
-import { type Category } from "@/types";
 import { cacheLife } from "next/cache";
+
+import { type Category } from "@/types";
+
 import { getCategoryBySlug } from "../categories";
 import { type FilterParams, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
@@ -149,7 +151,7 @@ export async function getAllProductSlugs(
     slug: string;
     category: string;
     enrichmentStatus?: string | null;
-    updatedAt: Date;
+    updatedAt: string;
   }[]
 > {
   return getAllProductSlugsSync(undefined, includeVariants, fastMode);
