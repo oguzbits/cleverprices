@@ -346,7 +346,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       <IdealoProductPage
         product={result.product!}
         variants={result.variants!}
-        category={result.category}
+        category={result.category ?? undefined}
         countryCode={countryCode}
         selectedCondition={condition as "new" | "used" | "renewed"}
         isParentView={result.parentViewMode!}

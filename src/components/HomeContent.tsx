@@ -1,5 +1,7 @@
 import { IdealoHomePage } from "@/components/landing/IdealoHomePage";
+import type { LivePriceData } from "@/components/landing/IdealoProductCard";
 import { ServerBusy } from "@/components/ui/ServerBusy";
+import { DatabaseBusyError } from "@/db/utils";
 import { type CountryCode } from "@/lib/countries";
 import { curateProductList } from "@/lib/product-curation";
 import { getCountryByCode } from "@/lib/server/cached-countries";
@@ -112,7 +114,20 @@ export default async function HomeContent({
     .filter(Boolean)
     .filter((id) => typeof id === "number") as number[];
 
-  const livePriceMap = await getPricesFromDb(allHomeProductIds, countryCode);
+  let livePriceMap = new Map<number, LivePriceData>();
+  try {
+    livePriceMap = await getPricesFromDb(allHomeProductIds, countryCode);
+  } catch (error) {
+    if (error instanceof DatabaseBusyError) {
+      return (
+        <ServerBusy
+          title="Willkommen bei CleverPrices"
+          message="Wir aktualisieren gerade unsere Angebote. Bitte schauen Sie in Kürze wieder vorbei."
+        />
+      );
+    }
+    throw error;
+  }
 
   // 6. Return curated data
   return (

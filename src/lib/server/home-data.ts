@@ -4,6 +4,7 @@ import {
   getNewArrivals,
 } from "@/lib/product-registry";
 
+import { cacheLife } from "next/cache";
 import { CACHE_VERSION } from "../site-config";
 
 /**
@@ -11,6 +12,8 @@ import { CACHE_VERSION } from "../site-config";
  * Complies with strict project rules by isolating "use cache" in the server layer.
  */
 export async function fetchHomeData(countryCode: string) {
+  "use cache";
+  cacheLife("minutes");
   const _v = CACHE_VERSION;
 
   try {

@@ -18,6 +18,10 @@
  */
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
+// FAQ components for SEO
+import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
+// Sub-components
+import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
 import { Category, getBreadcrumbs, stripCategoryIcon } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { type CountryCode } from "@/lib/countries";
@@ -26,21 +30,16 @@ import { getCategoryProducts } from "@/lib/server/category-products";
 import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
 
-// Sub-components
-import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
 import { AsyncFilterPanel, AsyncProductList } from "./AsyncComponents";
 import { IdealoTopBar } from "./IdealoTopBar";
 import { NicheLinks } from "./NicheLinks";
-
-// FAQ components for SEO
-
-import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 
 interface Props {
   category: Omit<Category, "icon">;
   countryCode: CountryCode;
   searchParams: FilterParams | Promise<FilterParams>;
   lockedFilters?: string[];
+  initialData?: Awaited<ReturnType<typeof getCategoryProducts>>;
 }
 
 // Main Category Page - Server Component
@@ -53,16 +52,19 @@ export async function IdealoCategoryPage({
   countryCode,
   searchParams,
   lockedFilters,
+  initialData,
 }: Props) {
   const [resolvedSearchParams] = await Promise.all([searchParams]);
 
   const categorySlug = category.slug;
 
-  const filteredData = await getCategoryProducts(
-    categorySlug,
-    countryCode,
-    resolvedSearchParams,
-  );
+  const filteredData =
+    initialData ||
+    (await getCategoryProducts(
+      categorySlug,
+      countryCode,
+      resolvedSearchParams,
+    ));
 
   const breadcrumbs = getBreadcrumbs(categorySlug).map((crumb) => ({
     ...stripCategoryIcon(crumb),
@@ -94,8 +96,8 @@ export async function IdealoCategoryPage({
             <IdealoTopBar
               categoryName={formatTechText(category.name)}
               productCount={filteredData.filteredCount}
-              currentView={(resolvedSearchParams.view as any) || "grid"}
-              currentSort={(resolvedSearchParams.sort as any) || "popular"}
+              currentView={(resolvedSearchParams.view as string) || "grid"}
+              currentSort={(resolvedSearchParams.sort as string) || "popular"}
             />
           </ComponentErrorBoundary>
         </div>

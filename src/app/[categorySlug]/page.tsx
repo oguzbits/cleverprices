@@ -25,7 +25,7 @@ import {
   getOpenGraph,
   truncateTitle,
 } from "@/lib/metadata";
-import { type FilterParams } from "@/lib/product-definitions";
+import { type FilterParams, type Product } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
 
@@ -84,14 +84,22 @@ export async function generateMetadata({
   }
 
   // 2. Check if category is empty to set noindex (prevent Soft 404s)
-  const nonEmptySlugs = await getNonEmptyCategorySlugs();
+  const nonEmptySlugs = await (async () => {
+    try {
+      return await getNonEmptyCategorySlugs();
+    } catch (error) {
+      if (error instanceof DatabaseBusyError) return [];
+      throw error;
+    }
+  })();
+
   const isEmpty = !isCategoryNotEmptyRecursive(
     categorySlug as CategorySlug,
     nonEmptySlugs,
   );
 
   // If empty, set noindex to prevent Soft 404s
-  if (isEmpty) {
+  if (isEmpty && nonEmptySlugs.length > 0) {
     return {
       title: `${category.name} - Keine Ergebnisse | ${BRAND_DOMAIN}`,
       robots: { index: false, follow: true },
@@ -211,17 +219,37 @@ async function CategoryPageContent({
   // Instead, we rely on the function-level caching in getNonEmptyCategorySlugs,
   // getCategoryBySlug, and getParentCategoryData.
 
-  // 1. Initial checks (Fast, usually cached)
-  const nonEmptySlugs = await getNonEmptyCategorySlugs();
-  const isEmpty = !isCategoryNotEmptyRecursive(categorySlug, nonEmptySlugs);
+  const result = await (async () => {
+    try {
+      // 1. Initial checks (Fast, usually cached)
+      const nonEmptySlugs = await getNonEmptyCategorySlugs();
+      const isEmpty = !isCategoryNotEmptyRecursive(categorySlug, nonEmptySlugs);
 
-  if (isEmpty) notFound();
+      if (isEmpty) return { isNotFound: true };
 
-  // 2. Identify view type
-  const activeChildren = getChildCategories(categorySlug).filter((child) =>
-    isCategoryNotEmptyRecursive(child.slug, nonEmptySlugs),
-  );
-  const isParent = activeChildren.length > 0;
+      // 2. Identify view type
+      const activeChildren = getChildCategories(categorySlug).filter((child) =>
+        isCategoryNotEmptyRecursive(child.slug, nonEmptySlugs),
+      );
+      const isParent = activeChildren.length > 0;
+
+      return { nonEmptySlugs, activeChildren, isParent, isNotFound: false };
+    } catch (error) {
+      if (error instanceof DatabaseBusyError) {
+        return { isBusy: true };
+      }
+      throw error;
+    }
+  })();
+
+  if (result.isBusy) return <ServerBusy />;
+  if (result.isNotFound) notFound();
+
+  const { nonEmptySlugs, activeChildren, isParent } = result as {
+    nonEmptySlugs: string[];
+    activeChildren: Category[];
+    isParent: boolean;
+  };
 
   if (isParent) {
     // Parent View Hub
@@ -238,11 +266,33 @@ async function CategoryPageContent({
   // 3. Child Category View (Idealo style)
   const resolvedSearchParams = await searchParams;
 
+  const { getCategoryRenderData } =
+    await import("@/lib/server/cached-products");
+
+  const dataResult = await (async () => {
+    try {
+      const data = await getCategoryRenderData(
+        categorySlug,
+        DEFAULT_COUNTRY,
+        resolvedSearchParams,
+      );
+      return { data, isBusy: false };
+    } catch (error: unknown) {
+      if (error instanceof DatabaseBusyError) {
+        return { isBusy: true };
+      }
+      throw error;
+    }
+  })();
+
+  if (dataResult.isBusy) return <ServerBusy />;
+
   return (
     <IdealoCategoryPage
       category={stripCategoryIcon(category)}
       countryCode={DEFAULT_COUNTRY}
       searchParams={resolvedSearchParams}
+      initialData={dataResult.data}
     />
   );
 }
@@ -265,7 +315,7 @@ async function ParentCategoryViewLoader({
         DEFAULT_COUNTRY,
       );
 
-      const transformProduct = (p: any) => ({
+      const transformProduct = (p: Product) => ({
         id: p.id,
         slug: p.slug,
         title: p.title,

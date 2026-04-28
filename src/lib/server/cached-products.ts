@@ -1,5 +1,7 @@
+import { type Category } from "@/types";
+import { cacheLife } from "next/cache";
 import { getCategoryBySlug } from "../categories";
-import { type Product } from "../product-definitions";
+import { type FilterParams, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
   findProductBySyntheticId as findProductBySyntheticIdSync,
@@ -16,6 +18,7 @@ import {
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
 import { getProductPath } from "../utils/url";
+import { getCategoryProducts } from "./category-products";
 import { mergeLivePrices, mergeLivePricesSelective } from "./live-data";
 
 /**
@@ -23,6 +26,20 @@ import { mergeLivePrices, mergeLivePricesSelective } from "./live-data";
  * These handle the "static" or long-term data like specs, images, and basic info.
  * Caching is TTL-only via cacheLife profiles — no tags, no manual salts.
  */
+
+/**
+ * getCategoryRenderData
+ * Cached wrapper for category product retrieval.
+ * Optimizes the most hit routes in the application.
+ */
+export async function getCategoryRenderData(
+  categorySlug: string,
+  countryCode: string,
+  filterParams: FilterParams,
+) {
+  "use cache";
+  return await getCategoryProducts(categorySlug, countryCode, filterParams);
+}
 
 async function getCachedBestDeals(
   limit: number,
@@ -107,6 +124,8 @@ async function getCachedProductBySyntheticId(id: number, depth: number = 0) {
 }
 
 async function getCachedNonEmptyCategorySlugs() {
+  "use cache";
+  cacheLife("hours");
   return getNonEmptyCategorySlugsSync();
 }
 
@@ -124,7 +143,15 @@ export async function getProductById(
 export async function getAllProductSlugs(
   includeVariants: boolean = true,
   fastMode: boolean = false,
-): Promise<any[]> {
+): Promise<
+  {
+    id: number;
+    slug: string;
+    category: string;
+    enrichmentStatus?: string | null;
+    updatedAt: Date;
+  }[]
+> {
   return getAllProductSlugsSync(undefined, includeVariants, fastMode);
 }
 
@@ -210,7 +237,7 @@ export async function getPDPRenderData(
   let product: Product | undefined;
   let isParentView = false;
   let variants: Product[] = [];
-  let category: any = null;
+  let category: Category | null = null;
 
   // ID-Based Routing (e.g. 200000XXX_-apple-iphone)
   const idMatch = slug.match(/^(\d+)_-(.*)$/);
@@ -274,7 +301,7 @@ export async function getPDPRenderData(
       ),
     ]);
 
-  category = catResult;
+  category = (catResult || null) as Category | null;
   variants = variantsResult;
 
   // 3. Batch Price Merging (CRITICAL FOR PERFORMANCE)
