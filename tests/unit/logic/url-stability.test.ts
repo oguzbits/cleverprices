@@ -32,7 +32,7 @@ test.skip(
       // Resolve via PDP logic
       const pdpResult = await getPDPRenderData(slugFromSitemap, "de");
 
-      if (pdpResult && pdpResult.redirect) {
+      if (pdpResult && "redirect" in pdpResult && pdpResult.redirect) {
         console.error(`❌ DIVERGENCE DETECTED [ID: ${entry.id}]`);
         console.error(`   Sitemap URL: /p/${slugFromSitemap}`);
         console.error(`   PDP Redirects to: ${pdpResult.redirect}`);

@@ -158,10 +158,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const isParentViewMode = renderData?.isParentView || false;
+  const data = renderData && !("redirect" in renderData) ? renderData : null;
+  const isParentViewMode = data?.isParentView || false;
 
   // Handle Metadata redirects (Critical for SEO: redirects in metadata set the real 3xx status code)
-  if (renderData?.redirect) {
+  if (renderData && "redirect" in renderData) {
     if (renderData.isPermanent) {
       permanentRedirect(renderData.redirect);
     } else {
@@ -169,7 +170,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     }
   }
 
-  if (!renderData || !renderData.product) {
+  if (!renderData || !("product" in renderData)) {
     notFound();
   }
 
@@ -195,7 +196,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     notFound();
   }
   const isParentView = isParentViewMode;
-  const siblings = isParentView ? renderData?.variants || [] : [];
+  const siblings = isParentView ? renderData.variants || [] : [];
   const identity = getProductIdentity(product);
 
   const displayTitle = isParentView
@@ -292,12 +293,16 @@ export default async function ProductPage({ params, searchParams }: Props) {
     try {
       const data = await getPDPRenderData(slug, countryCode);
 
-      if (data?.redirect) {
+      if (data && "redirect" in data) {
         return { redirect: data.redirect, isPermanent: data.isPermanent };
       }
 
-      const product = data?.product;
-      const parentViewMode = data?.isParentView || false;
+      if (!data || !("product" in data)) {
+        return { notFound: true };
+      }
+
+      const product = data.product;
+      const parentViewMode = data.isParentView || false;
 
       if (!product) {
         return { notFound: true };
@@ -315,12 +320,12 @@ export default async function ProductPage({ params, searchParams }: Props) {
 
       return {
         product,
-        variants: (data?.variants || []) as Product[],
-        category: data?.category,
+        variants: (data.variants || []) as Product[],
+        category: data.category,
         parentViewMode,
-        canonicalId: data?.canonicalId,
-        similarSidebar: data?.similarSidebar,
-        similarCarousel: data?.similarCarousel,
+        canonicalId: data.canonicalId,
+        similarSidebar: data.similarSidebar,
+        similarCarousel: data.similarCarousel,
         isBusy: false,
       };
     } catch (error: unknown) {

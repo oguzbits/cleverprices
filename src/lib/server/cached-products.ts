@@ -4,6 +4,7 @@ import { type Category } from "../categories";
 
 import { getCategoryBySlug, stripCategoryIcon } from "../categories";
 import { type FilterParams, type Product } from "../product-definitions";
+import { assertSerializable } from "../utils/serialization";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
   findProductBySyntheticId as findProductBySyntheticIdSync,
@@ -228,10 +229,23 @@ export async function getProductVariants(
  * This function handles the entire data assembly for a PDP page in one cached block.
  * When a crawler hits multiple times, or metadata + page both need data, this returns instantly.
  */
+type PDPRenderData =
+  | { redirect: string; isPermanent: boolean }
+  | {
+      product: Product;
+      variants: Product[];
+      category: any;
+      similarSidebar: Product[];
+      similarCarousel: Product[];
+      isParentView: boolean;
+      canonicalId: number;
+      canonicalSlug: string;
+    };
+
 export async function getPDPRenderData(
   slug: string,
   countryInput: string = "de",
-) {
+): Promise<PDPRenderData | null> {
   "use cache";
   const countryCode = countryInput.toLowerCase();
 
@@ -362,16 +376,17 @@ export async function getPDPRenderData(
     return { redirect: canonicalPath, isPermanent: true };
   }
 
-  return {
-    product: mergedProduct,
-    variants: mergedVariants,
-    category: category ? (stripCategoryIcon(category) as any) : null,
-    similarSidebar: mergedSidebar,
-    similarCarousel: mergedCarousel,
-    isParentView: isParentView || isSynthetic,
-    canonicalId,
-    canonicalSlug,
-    redirect: null,
-    isPermanent: false,
-  };
+  return assertSerializable(
+    {
+      product: mergedProduct,
+      variants: mergedVariants,
+      category: category ? (stripCategoryIcon(category) as any) : null,
+      similarSidebar: mergedSidebar,
+      similarCarousel: mergedCarousel,
+      isParentView: isParentView || isSynthetic,
+      canonicalId,
+      canonicalSlug,
+    } as PDPRenderData,
+    "getPDPRenderData",
+  );
 }
