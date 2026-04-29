@@ -6,6 +6,7 @@ import {
 
 import { cacheLife } from "next/cache";
 import { CACHE_VERSION } from "../site-config";
+import { assertSerializable } from "../utils/serialization";
 
 /**
  * Server-side data fetching for the homepage.
@@ -32,7 +33,10 @@ export async function fetchHomeData(countryCode: string) {
       }),
     ]);
 
-    return [deals, popular, newArrivals];
+    return assertSerializable(
+      [deals, popular, newArrivals],
+      "fetchHomeData",
+    );
   } catch (error) {
     console.error(
       "[Home Server] Critical error fetching home page data:",
@@ -41,3 +45,4 @@ export async function fetchHomeData(countryCode: string) {
     return [[], [], []];
   }
 }
+

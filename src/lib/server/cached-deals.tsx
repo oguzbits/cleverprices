@@ -1,5 +1,5 @@
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
-import { CATEGORY_MAP } from "@/lib/category-definitions";
+import { allCategories, stripCategoryIcon } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { CACHE_VERSION } from "@/lib/site-config";
 
@@ -12,7 +12,7 @@ export async function getCachedDealsPage(
 ) {
   "use cache";
   const _v = CACHE_VERSION;
-  const category = CATEGORY_MAP["deals"];
+  const category = stripCategoryIcon(allCategories["deals"]);
 
   return (
     <IdealoCategoryPage
@@ -25,3 +25,4 @@ export async function getCachedDealsPage(
     />
   );
 }
+
