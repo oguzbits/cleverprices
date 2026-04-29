@@ -1,8 +1,8 @@
 import { cacheLife } from "next/cache";
 
-import { type Category } from "@/types";
+import { type Category } from "../categories";
 
-import { getCategoryBySlug } from "../categories";
+import { getCategoryBySlug, stripCategoryIcon } from "../categories";
 import { type FilterParams, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
@@ -365,7 +365,7 @@ export async function getPDPRenderData(
   return {
     product: mergedProduct,
     variants: mergedVariants,
-    category,
+    category: category ? (stripCategoryIcon(category) as any) : null,
     similarSidebar: mergedSidebar,
     similarCarousel: mergedCarousel,
     isParentView: isParentView || isSynthetic,

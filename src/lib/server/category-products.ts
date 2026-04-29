@@ -547,7 +547,7 @@ export async function getCategoryProducts(
     ? mapSortParam(filterParams.sort)
     : { sortBy: filterParams.sortBy, sortOrder: filterParams.sortOrder };
 
-  const filters: any = {
+  const filters: Record<string, any> = {
     search: filterParams.search || "",
     sortBy: mappedSort.sortBy || "popularityScore",
     sortOrder: mappedSort.sortOrder || "desc",
@@ -607,12 +607,27 @@ export async function getCategoryProducts(
   // [PERFORMANCE] Pre-compute filter values once to avoid redundant work in the 2000-item loop
   const searchLower = filters.search?.toLowerCase() || "";
   const filterSummary = {
-    socket: new Set((filters.socket || []).map((s: string) => s.toLowerCase())),
-    cores: new Set((filters.cores || []).map((c: string) => c.toLowerCase())),
-    condition: new Set(
-      (filters.condition || []).map((c: string) => c.toLowerCase()),
+    socket: new Set(
+      (Array.isArray(filters.socket) ? filters.socket : [filters.socket]).map(
+        (s: string) => s.toLowerCase(),
+      ),
     ),
-    brand: new Set((filters.brand || []).map((b: string) => b.toLowerCase())),
+    cores: new Set(
+      (Array.isArray(filters.cores) ? filters.cores : [filters.cores]).map(
+        (c: string) => c.toLowerCase(),
+      ),
+    ),
+    condition: new Set(
+      (Array.isArray(filters.condition)
+        ? filters.condition
+        : [filters.condition]
+      ).map((c: string) => c.toLowerCase()),
+    ),
+    brand: new Set(
+      (Array.isArray(filters.brand) ? filters.brand : [filters.brand]).map(
+        (b: string) => b.toLowerCase(),
+      ),
+    ),
   };
 
   // 3. Optimized Single-Pass Processing (Filtering, Facet Counting, Price Ranges)
@@ -899,7 +914,12 @@ export async function getCategoryProducts(
     filteredCount: totalFilteredCount,
     unitLabel,
     hasProducts: finalFilteredLeanProducts.length > 0,
-    filters: filterSummary,
+    filters: {
+      socket: Array.from(filterSummary.socket),
+      cores: Array.from(filterSummary.cores),
+      condition: Array.from(filterSummary.condition),
+      brand: Array.from(filterSummary.brand),
+    },
     filterCounts: dynamicFilterCounts,
     minPriceInCategory: contextMinPriceFinal,
     maxPriceInCategory: contextMaxPriceFinal,
