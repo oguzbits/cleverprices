@@ -6,7 +6,7 @@ import {
 
 import { cacheLife } from "next/cache";
 import { CACHE_VERSION } from "../site-config";
-import { assertSerializable } from "../utils/serialization";
+import { assertSerializable, serializeSafe } from "../utils/serialization";
 
 /**
  * Server-side data fetching for the homepage.
@@ -33,9 +33,8 @@ export async function fetchHomeData(countryCode: string) {
       }),
     ]);
 
-    return assertSerializable(
-      [deals, popular, newArrivals],
-      "fetchHomeData",
+    return serializeSafe(
+      assertSerializable([deals, popular, newArrivals], "fetchHomeData"),
     );
   } catch (error) {
     console.error(

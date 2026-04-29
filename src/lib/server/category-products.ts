@@ -7,7 +7,7 @@ import {
   type Product,
   VIRTUAL_CATEGORY_MAP,
 } from "@/lib/product-definitions";
-import { assertSerializable } from "../utils/serialization";
+import { assertSerializable, serializeSafe } from "../utils/serialization";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getProductIdentity } from "@/lib/utils/product-identity";
@@ -909,36 +909,38 @@ export async function getCategoryProducts(
     totalItems: totalFilteredCount,
   };
 
-  return assertSerializable(
-    {
-      products: finalPaginatedProducts,
-      totalCount: leanProducts.length,
-      filteredCount: totalFilteredCount,
-      unitLabel,
-      hasProducts: finalFilteredLeanProducts.length > 0,
-      filters: {
-        socket: Array.from(filterSummary.socket),
-        cores: Array.from(filterSummary.cores),
-        condition: Array.from(filterSummary.condition),
-        brand: Array.from(filterSummary.brand),
+  return serializeSafe(
+    assertSerializable(
+      {
+        products: finalPaginatedProducts,
+        totalCount: leanProducts.length,
+        filteredCount: totalFilteredCount,
+        unitLabel,
+        hasProducts: finalFilteredLeanProducts.length > 0,
+        filters: {
+          socket: Array.from(filterSummary.socket),
+          cores: Array.from(filterSummary.cores),
+          condition: Array.from(filterSummary.condition),
+          brand: Array.from(filterSummary.brand),
+        },
+        filterCounts: dynamicFilterCounts,
+        minPriceInCategory: contextMinPriceFinal,
+        maxPriceInCategory: contextMaxPriceFinal,
+        priceRanges: calculatePriceRangeBuckets(leanMatchingNonPrice),
+        lastUpdated:
+          rawPaginatedProducts.length > 0
+            ? rawPaginatedProducts.reduce(
+                (latest, p) =>
+                  p.lastUpdated && (!latest || p.lastUpdated > latest)
+                    ? p.lastUpdated
+                    : latest,
+                null as string | null,
+              )
+            : null,
+        pagination,
       },
-      filterCounts: dynamicFilterCounts,
-      minPriceInCategory: contextMinPriceFinal,
-      maxPriceInCategory: contextMaxPriceFinal,
-      priceRanges: calculatePriceRangeBuckets(leanMatchingNonPrice),
-      lastUpdated:
-        rawPaginatedProducts.length > 0
-          ? rawPaginatedProducts.reduce(
-              (latest, p) =>
-                p.lastUpdated && (!latest || p.lastUpdated > latest)
-                  ? p.lastUpdated
-                  : latest,
-              null as string | null,
-            )
-          : null,
-      pagination,
-    },
-    "getCategoryProducts",
+      "getCategoryProducts",
+    ),
   );
 }
 

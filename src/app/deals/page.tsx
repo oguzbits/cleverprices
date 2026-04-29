@@ -1,11 +1,11 @@
 import { Metadata } from "next";
-import { connection } from "next/server";
 import { Suspense } from "react";
 
-import { ServerBusy } from "@/components/ui/ServerBusy";
-import { DatabaseBusyError } from "@/db/utils";
+import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
+import { getCategoryBySlug, stripCategoryIcon } from "@/lib/categories";
+import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAlternateLanguages } from "@/lib/metadata";
-import { getCachedDealsPage } from "@/lib/server/cached-deals";
+import { getCategoryRenderData } from "@/lib/server/cached-products";
 import { SITE_URL } from "@/lib/site-config";
 
 interface Props {
@@ -23,42 +23,35 @@ export const metadata: Metadata = {
 };
 
 export default async function DealsPage({ searchParams }: Props) {
-  // During build phase, we wrap in Suspense to satisfy Next.js 15 "blocking route" checks.
-  // At runtime, we allow pure SSR to prevent the "blank screen" flash.
-  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
-
-  if (isBuild) {
-    return (
-      <Suspense fallback={null}>
-        <DealsPageContent searchParams={searchParams} />
-      </Suspense>
-    );
-  }
-
-  return <DealsPageContent searchParams={searchParams} />;
+  return (
+    <Suspense fallback={null}>
+      <DealsPageContent searchParams={searchParams} />
+    </Suspense>
+  );
 }
 
-async function DealsPageContent({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  await connection();
+async function DealsPageContent({ searchParams }: Props) {
   const resolvedSearchParams = await searchParams;
+  const category = await getCategoryBySlug("deals");
 
-  let content;
-  try {
-    content = await getCachedDealsPage(resolvedSearchParams);
-  } catch (error: unknown) {
-    if (
-      error instanceof DatabaseBusyError ||
-      (error as { name?: string })?.name === "DatabaseBusyError"
-    ) {
-      return <ServerBusy />;
-    }
-    throw error;
+  if (!category) {
+    return <div>Category not found</div>;
   }
 
-  return content;
-}
+  // Use the standardized category rendering data logic
+  // This already handles "deals" internally in getCategoryProducts
+  const dataResult = await getCategoryRenderData(
+    "deals",
+    DEFAULT_COUNTRY,
+    resolvedSearchParams,
+  );
 
+  return (
+    <IdealoCategoryPage
+      category={stripCategoryIcon(category)}
+      countryCode={DEFAULT_COUNTRY}
+      searchParams={resolvedSearchParams}
+      initialData={dataResult}
+    />
+  );
+}

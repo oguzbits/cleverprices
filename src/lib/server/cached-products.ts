@@ -4,7 +4,7 @@ import { type Category } from "../categories";
 
 import { getCategoryBySlug, stripCategoryIcon } from "../categories";
 import { type FilterParams, type Product } from "../product-definitions";
-import { assertSerializable } from "../utils/serialization";
+import { assertSerializable, serializeSafe } from "../utils/serialization";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
   findProductBySyntheticId as findProductBySyntheticIdSync,
@@ -41,7 +41,10 @@ export async function getCategoryRenderData(
   filterParams: FilterParams,
 ) {
   "use cache";
-  return await getCategoryProducts(categorySlug, countryCode, filterParams);
+  // getCategoryProducts already calls serializeSafe, but we wrap it here too for double safety
+  return serializeSafe(
+    await getCategoryProducts(categorySlug, countryCode, filterParams),
+  );
 }
 
 async function getCachedBestDeals(
@@ -376,17 +379,19 @@ export async function getPDPRenderData(
     return { redirect: canonicalPath, isPermanent: true };
   }
 
-  return assertSerializable(
-    {
-      product: mergedProduct,
-      variants: mergedVariants,
-      category: category ? (stripCategoryIcon(category) as any) : null,
-      similarSidebar: mergedSidebar,
-      similarCarousel: mergedCarousel,
-      isParentView: isParentView || isSynthetic,
-      canonicalId,
-      canonicalSlug,
-    } as PDPRenderData,
-    "getPDPRenderData",
+  return serializeSafe(
+    assertSerializable(
+      {
+        product: mergedProduct,
+        variants: mergedVariants,
+        category: category ? (stripCategoryIcon(category) as any) : null,
+        similarSidebar: mergedSidebar,
+        similarCarousel: mergedCarousel,
+        isParentView: isParentView || isSynthetic,
+        canonicalId,
+        canonicalSlug,
+      } as PDPRenderData,
+      "getPDPRenderData",
+    ),
   );
 }

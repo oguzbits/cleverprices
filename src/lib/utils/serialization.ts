@@ -55,3 +55,13 @@ export function assertSerializable<T>(data: T, context: string): T {
   }
   return data;
 }
+
+/**
+ * Force an object to be JSON-serializable by performing a round-trip.
+ * This is a physical boundary that ensures no non-serializable objects (like Lucide icons)
+ * reach the cache layer.
+ */
+export function serializeSafe<T>(obj: T): T {
+  if (obj === undefined || obj === null) return obj;
+  return JSON.parse(JSON.stringify(obj));
+}
