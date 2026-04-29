@@ -28,6 +28,7 @@ import {
 import { type FilterParams, type Product } from "@/lib/product-definitions";
 import { getNonEmptyCategorySlugs } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
+import { serializeSafe } from "@/lib/utils/serialization";
 
 interface Props {
   params: Promise<{
@@ -203,7 +204,7 @@ async function DedicatedCategoryContent({
   return (
     <CategoryPageContent
       categorySlug={categorySlug as CategorySlug}
-      category={category}
+      category={stripCategoryIcon(category) as Category}
       searchParams={searchParams}
     />
   );
@@ -371,14 +372,14 @@ async function ParentCategoryViewLoader({
         return stripped;
       });
 
-      return {
+      return serializeSafe({
         bestsellers: bestsellers.map(transformProduct),
         newProducts: newProducts.map(transformProduct),
         deals: deals.map(transformProduct),
         breadcrumbItems,
         filteredChildren,
         isBusy: false,
-      };
+      });
     } catch (error: any) {
       if (
         error instanceof DatabaseBusyError ||
@@ -390,16 +391,18 @@ async function ParentCategoryViewLoader({
     }
   })();
 
-  if (result.isBusy) return <ServerBusy />;
+  if (result.isBusy || !("filteredChildren" in result)) {
+    return <ServerBusy />;
+  }
 
   return (
     <ParentCategoryView
       parentCategory={stripCategoryIcon(category)}
-      childCategories={result.filteredChildren!}
-      bestsellers={result.bestsellers!}
-      newProducts={result.newProducts!}
-      deals={result.deals!}
-      breadcrumbItems={result.breadcrumbItems!}
+      childCategories={result.filteredChildren}
+      bestsellers={result.bestsellers}
+      newProducts={result.newProducts}
+      deals={result.deals}
+      breadcrumbItems={result.breadcrumbItems}
     />
   );
 }

@@ -136,7 +136,7 @@ export function AsyncProductList({
 
   // No need to fetch live prices in batch again - getCategoryProducts already merged them
   // into the product objects themselves. We just re-map them for IdealoResultList.
-  const livePrices = new Map<number, any>(
+  const livePrices = Object.fromEntries(
     products.map((p: any) => [
       p.id as number,
       {
