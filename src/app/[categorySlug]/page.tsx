@@ -23,7 +23,6 @@ import {
   generateKeywords,
   getAlternateLanguages,
   getOpenGraph,
-  truncateTitle,
 } from "@/lib/metadata";
 import { type FilterParams, type Product } from "@/lib/product-definitions";
 import {
@@ -57,7 +56,6 @@ export async function generateStaticParams() {
     return [];
   }
 }
-
 /**
  * Metadata generation
  */
@@ -68,7 +66,6 @@ export async function generateMetadata({
   const isBuild = process.env.NEXT_PHASE === "phase-production-build";
   const { categorySlug } = await params;
   const category = await getCategoryBySlug(categorySlug);
-
 
   if (!category) {
     return {
@@ -163,16 +160,16 @@ const CategoryError = ({ error, slug }: { error: any; slug: string }) => {
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
           Hoppla! Etwas ist schief gelaufen.
         </h1>
-        <p className="mx-auto max-w-md text-muted-foreground">
+        <p className="text-muted-foreground mx-auto max-w-md">
           Wir konnten die Seite für <strong>{slug}</strong> gerade nicht laden.
           Unser Team wurde benachrichtigt.
         </p>
       </div>
       <div className="w-full max-w-lg overflow-hidden rounded-xl border border-red-100 bg-red-50/50 p-4 text-left">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-red-500">
+        <p className="mb-2 text-xs font-semibold tracking-wider text-red-500 uppercase">
           Fehlerdetails für Support
         </p>
-        <pre className="overflow-x-auto whitespace-pre-wrap text-sm text-red-800">
+        <pre className="overflow-x-auto text-sm whitespace-pre-wrap text-red-800">
           {error instanceof Error ? error.message : String(error)}
           {"\n"}
           {error?.stack?.split("\n").slice(0, 3).join("\n")}
@@ -194,13 +191,14 @@ const CategoryError = ({ error, slug }: { error: any; slug: string }) => {
 async function ChildCategoryView({
   category,
   categorySlug,
-  searchParams,
+  searchParamsPromise,
 }: {
   category: Category;
   categorySlug: CategorySlug;
-  searchParams: FilterParams;
+  searchParamsPromise: Promise<FilterParams>;
 }) {
   try {
+    const searchParams = await searchParamsPromise;
     const data = await getCategoryRenderData(
       categorySlug,
       DEFAULT_COUNTRY,
@@ -362,18 +360,22 @@ export default async function DedicatedCategoryPage({
     }
 
     // 4. Listing View
-    const sp = await searchParams;
     return (
-      <ChildCategoryView
-        category={category}
-        categorySlug={categorySlug as CategorySlug}
-        searchParams={sp}
-      />
+      <Suspense fallback={null}>
+        <ChildCategoryView
+          category={category}
+          categorySlug={categorySlug as CategorySlug}
+          searchParamsPromise={searchParams}
+        />
+      </Suspense>
     );
   } catch (error) {
     if (
       error instanceof DatabaseBusyError ||
-      (typeof error === "object" && error !== null && "name" in error && (error as Error).name === "DatabaseBusyError")
+      (typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        (error as Error).name === "DatabaseBusyError")
     ) {
       return <ServerBusy />;
     }

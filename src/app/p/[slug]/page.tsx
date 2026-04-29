@@ -29,6 +29,7 @@ export interface Props {
     condition?: string;
   }>;
 }
+
 // Generate static params for all products (Germany only)
 // NOTE: During the build phase (Next.js build), the database is excluded to keep Docker images thin.
 // This function will return a placeholder during build, and relies on on-demand generation at runtime.
@@ -52,7 +53,6 @@ export async function generateStaticParams() {
     slug: product.slug,
   }));
 }
-
 // Helper to generate rich descriptions from official specs
 function generateEnrichedDescription(
   product: Product,
@@ -285,9 +285,8 @@ export default async function ProductPage({ params, searchParams }: Props) {
     return <div className="hidden" aria-hidden="true" />;
   }
 
-  const { condition } = await searchParams;
+  const searchParamsPromise = searchParams;
   const countryCode = DEFAULT_COUNTRY;
-  const isDatabaseBusy = false;
 
   const result = await (async () => {
     try {
@@ -362,7 +361,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         variants={result.variants!}
         category={result.category ?? undefined}
         countryCode={countryCode}
-        selectedCondition={condition as "new" | "used" | "renewed"}
+        searchParamsPromise={searchParamsPromise}
         isParentView={result.parentViewMode!}
         canonicalId={result.canonicalId}
         similarSidebar={result.similarSidebar}

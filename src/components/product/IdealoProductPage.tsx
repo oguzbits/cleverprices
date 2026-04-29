@@ -1,3 +1,8 @@
+import { Package } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import React from "react";
+
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
 import {
@@ -8,8 +13,8 @@ import { ComponentErrorBoundary } from "@/components/ui/ComponentErrorBoundary";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import {
   allCategories,
-  getCategoryPath,
   type CategorySlug,
+  getCategoryPath,
 } from "@/lib/categories";
 import { translateSpecKey } from "@/lib/constants/spec-translations";
 import { type CountryCode } from "@/lib/countries";
@@ -24,10 +29,7 @@ import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductBestseller } from "@/lib/utils/products";
 import { getProductPath } from "@/lib/utils/url";
 import { Category } from "@/types";
-import { Package } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import React from "react";
+
 import { CachedVariantSelector } from "./CachedVariantSelector";
 import { ConditionButtons } from "./ConditionButtons";
 import { IdealoPriceChart } from "./IdealoPriceChart";
@@ -52,6 +54,7 @@ interface IdealoProductPageProps {
   similarSidebar?: Product[];
   similarCarousel?: Product[];
   renderTimestamp?: number;
+  searchParamsPromise?: Promise<{ condition?: string }>;
 }
 
 export function IdealoProductPage({
@@ -59,7 +62,6 @@ export function IdealoProductPage({
   variants = EMPTY_ARRAY,
   category,
   countryCode,
-  selectedCondition,
   isParentView = false,
   parentSlug: passedParentSlug,
   parentTitle: passedParentTitle,
@@ -68,6 +70,7 @@ export function IdealoProductPage({
   similarSidebar = EMPTY_ARRAY,
   similarCarousel = EMPTY_ARRAY,
   renderTimestamp,
+  searchParamsPromise,
 }: IdealoProductPageProps) {
   const mergedProduct = product;
   const rawVariants = variants;
@@ -94,10 +97,6 @@ export function IdealoProductPage({
     representative.id === mergedProduct.id
       ? identity
       : getProductIdentity(representative);
-
-  const effectiveCondition =
-    selectedCondition ||
-    (mergedProduct.condition === "Renewed" ? "renewed" : "new");
 
   const realId = (canonicalId || representative.id || 0) % 100000000;
   const syntheticId = 900000000 + realId;
@@ -396,22 +395,25 @@ export function IdealoProductPage({
                       }
                       countryCode={countryCode}
                       isParentView={isParentView}
-                      selectedCondition={effectiveCondition}
                       parentSlug={parentSlug}
                     />
                   </ComponentErrorBoundary>
                 </div>
 
-                <div className="mt-6 flex flex-wrap gap-2.5">
-                  <ConditionButtons
+                <React.Suspense
+                  fallback={
+                    <div className="h-[44px] animate-pulse rounded bg-gray-100" />
+                  }
+                >
+                  <DynamicConditionButtons
+                    searchParamsPromise={searchParamsPromise}
                     product={mergedProduct}
                     countryCode={countryCode}
-                    effectiveCondition={effectiveCondition}
                     isParentView={isParentView}
                     parentSlug={parentSlug}
                     variants={mergedVariants}
                   />
-                </div>
+                </React.Suspense>
               </div>
             </div>
 
@@ -440,25 +442,24 @@ export function IdealoProductPage({
               </ComponentErrorBoundary>
             </aside>
 
-            <ComponentErrorBoundary name="ProductOffers">
-              <IdealoProductOffers
+            <React.Suspense
+              fallback={
+                <div className="mt-8 h-[200px] animate-pulse rounded bg-gray-50" />
+              }
+            >
+              <DynamicOfferSection
+                searchParamsPromise={searchParamsPromise}
                 product={mergedProduct}
-                productId={mergedProduct.id!}
                 countryCode={countryCode}
-                selectedCondition={effectiveCondition}
                 isParentView={isParentView}
                 variants={mergedVariants}
               />
-            </ComponentErrorBoundary>
+            </React.Suspense>
           </div>
 
           <div id="datasheet" className="scroll-mt-[10vh]">
             <ComponentErrorBoundary name="Specifications">
-              <SpecificationsTable
-                product={product}
-                selectedCondition={effectiveCondition}
-                isHubMode={isParentView}
-              />
+              <SpecificationsTable product={product} isHubMode={isParentView} />
             </ComponentErrorBoundary>
           </div>
 
@@ -616,5 +617,79 @@ function ParentHeroImage({
         <div key={`empty-${i}`} className="aspect-square bg-gray-50" />
       ))}
     </div>
+  );
+}
+
+/**
+ * Dynamic helper for condition buttons that satisfies Next.js 15 DynamicIO
+ */
+async function DynamicConditionButtons({
+  searchParamsPromise,
+  product,
+  countryCode,
+  isParentView,
+  parentSlug,
+  variants,
+}: {
+  searchParamsPromise?: Promise<{ condition?: string }>;
+  product: Product;
+  countryCode: CountryCode;
+  isParentView: boolean;
+  parentSlug: string;
+  variants: Product[];
+}) {
+  const sp = searchParamsPromise ? await searchParamsPromise : {};
+  const selectedCondition = sp.condition as "new" | "used" | "renewed";
+
+  const effectiveCondition =
+    selectedCondition || (product.condition === "Renewed" ? "renewed" : "new");
+
+  return (
+    <div className="mt-6 flex flex-wrap gap-2.5">
+      <ConditionButtons
+        product={product}
+        countryCode={countryCode}
+        effectiveCondition={effectiveCondition}
+        isParentView={isParentView}
+        parentSlug={parentSlug}
+        variants={variants}
+      />
+    </div>
+  );
+}
+
+/**
+ * Dynamic helper for offers that satisfies Next.js 15 DynamicIO
+ */
+async function DynamicOfferSection({
+  searchParamsPromise,
+  product,
+  countryCode,
+  isParentView,
+  variants,
+}: {
+  searchParamsPromise?: Promise<{ condition?: string }>;
+  product: Product;
+  countryCode: CountryCode;
+  isParentView: boolean;
+  variants: Product[];
+}) {
+  const sp = searchParamsPromise ? await searchParamsPromise : {};
+  const selectedCondition = sp.condition as "new" | "used" | "renewed";
+
+  const effectiveCondition =
+    selectedCondition || (product.condition === "Renewed" ? "renewed" : "new");
+
+  return (
+    <ComponentErrorBoundary name="ProductOffers">
+      <IdealoProductOffers
+        product={product}
+        productId={product.id!}
+        countryCode={countryCode}
+        selectedCondition={effectiveCondition}
+        isParentView={isParentView}
+        variants={variants}
+      />
+    </ComponentErrorBoundary>
   );
 }
