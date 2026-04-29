@@ -7,7 +7,6 @@ import {
   type Product,
   VIRTUAL_CATEGORY_MAP,
 } from "@/lib/product-definitions";
-import { assertSerializable, serializeSafe } from "../utils/serialization";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { normalizeBrand, sortProducts } from "@/lib/utils/category-utils";
 import { getProductIdentity } from "@/lib/utils/product-identity";
@@ -16,6 +15,7 @@ import { parseVariationAttributes } from "@/lib/utils/variants";
 
 import { getBestPrice } from "../utils/price-selection";
 import { calculateProductSavings } from "../utils/products";
+import { assertSerializable, serializeSafe } from "../utils/serialization";
 import { getLivePricesForProducts } from "./live-data";
 import {
   getProductsByCategory,
@@ -548,6 +548,7 @@ export async function getCategoryProducts(
     ? mapSortParam(filterParams.sort)
     : { sortBy: filterParams.sortBy, sortOrder: filterParams.sortOrder };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const filters: Record<string, any> = {
     search: filterParams.search || "",
     sortBy: mappedSort.sortBy || "popularityScore",
@@ -640,7 +641,7 @@ export async function getCategoryProducts(
   const filteredLeanProducts: LocalizedProduct[] = [];
   const leanMatchingNonPrice: LocalizedProduct[] = [];
   const orphanedProducts: LocalizedProduct[] = [];
-  const familyVariants = new Map<string, LocalizedProduct[]>();
+  const familyVariants: Record<string, LocalizedProduct[]> = {};
 
   let contextMinPrice = Infinity;
   let contextMaxPrice = -Infinity;
@@ -730,8 +731,8 @@ export async function getCategoryProducts(
         const pIdentity = getProductIdentity(p);
         const familyKey = `${p.parentAsin}_${(pIdentity.modelTitle || "").toLowerCase().replace(/[^a-z0-9]+/g, "")}`;
         if (familyKey) {
-          if (!familyVariants.has(familyKey)) familyVariants.set(familyKey, []);
-          familyVariants.get(familyKey)!.push(p);
+          if (!familyVariants[familyKey]) familyVariants[familyKey] = [];
+          familyVariants[familyKey].push(p);
         } else {
           orphanedProducts.push(p);
         }
@@ -764,9 +765,9 @@ export async function getCategoryProducts(
   const { getFamilyIdentity, getFamilyRepresentative } =
     await import("../product-families");
   const { getCanonicalFamilyIdsBatch } = await import("../product-registry");
-  const collapsedLeanProducts = new Map<string, LocalizedProduct>();
+  const collapsedLeanProducts: Record<string, LocalizedProduct> = {};
 
-  const familyEntries = Array.from(familyVariants.entries());
+  const familyEntries = Object.entries(familyVariants);
 
   // 1. Prepare batch requests for canonical IDs for all identified families
   const familiesToResolve = familyEntries
@@ -816,7 +817,7 @@ export async function getCategoryProducts(
     );
 
     // Hub adopts the consensus identity
-    collapsedLeanProducts.set(familyKey, {
+    collapsedLeanProducts[familyKey] = {
       ...representative,
       isParentView: true,
       variantCount: variants.length,
@@ -826,13 +827,13 @@ export async function getCategoryProducts(
       modelTitle: familyIdentity.modelTitle,
       variantSuffix: familyIdentity.variantSuffix,
       slug: familyIdentity.slug,
-    });
+    };
   });
 
   // Keep ALL original products, PLUS the Hub Cards
   const finalFilteredLeanProducts = [
     ...filteredLeanProducts,
-    ...Array.from(collapsedLeanProducts.values()).filter(
+    ...Object.values(collapsedLeanProducts).filter(
       (h) => (h.variantCount ?? 0) > 1,
     ),
   ];

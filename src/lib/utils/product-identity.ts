@@ -11,8 +11,6 @@ import {
   parseVariationAttributes,
 } from "./variants";
 
-const IDENTITY_CACHE = new Map<string, ProductIdentity>();
-
 const STRATEGY_MAP: CategoryStrategyMap = {
   motherboards: MotherboardStrategy,
   mainboards: MotherboardStrategy,
@@ -780,10 +778,6 @@ function extractRamFacts(
 export function getProductIdentity(
   product: Product | LocalizedProduct | LeanProduct,
 ): ProductIdentity {
-  const cacheKey = `${product.id || ""}-${product.asin || ""}-${product.title || ""}-${product.isParentView ? "P" : "V"}-${JSON.stringify(product.officialSpecifications || {})}`;
-  const cached = IDENTITY_CACHE.get(cacheKey);
-  if (cached) return cached;
-
   const title = (product.title || "").trim();
   const rawCategory = String(product.category || "").toLowerCase();
   const rawBrand = (product.brand || "Generic").trim();
@@ -2645,7 +2639,6 @@ export function getProductIdentity(
       categoryUsed: category,
     };
 
-    IDENTITY_CACHE.set(cacheKey, res);
     return res;
   }
 
@@ -2667,6 +2660,5 @@ export function getProductIdentity(
     categoryUsed: category,
   };
 
-  IDENTITY_CACHE.set(cacheKey, result);
   return result;
 }
