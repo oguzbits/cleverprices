@@ -12,6 +12,22 @@ interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
+// Local helpers to detect Next.js internal errors safely
+function isNextNotFoundError(error: any): boolean {
+  return (
+    error?.digest?.includes("NEXT_NOT_FOUND") ||
+    error?.message?.includes("NEXT_NOT_FOUND") ||
+    error?.$$typeof === "next.not-found"
+  );
+}
+
+function isNextRedirectError(error: any): boolean {
+  return (
+    error?.digest?.includes("NEXT_REDIRECT") ||
+    error?.message?.includes("NEXT_REDIRECT")
+  );
+}
+
 /**
  * Static params generation - Required for build-time validation when using Cache Components
  */
@@ -29,6 +45,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     if (!renderData || "redirect" in renderData) return { title: BRAND_NAME };
 
     const { product, isParentView } = renderData;
+    if (!product) return { title: BRAND_NAME };
+
     const displayTitle = isParentView
       ? product.modelTitle || product.title
       : product.title;
@@ -39,6 +57,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       description: `${displayTitle} im Preisvergleich. Aktueller Bestpreis: ${price ? price.toFixed(2) + "€" : "Jetzt ansehen"}. Top-Hardware Angebote bei ${BRAND_NAME}.`,
     };
   } catch (e) {
+    if (isNextNotFoundError(e) || isNextRedirectError(e)) throw e;
     console.error("[PDP Metadata Error]:", e);
     return { title: BRAND_NAME };
   }
@@ -46,17 +65,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  try {
-    if (!slug || slug === "build-time-placeholder") {
-      return <div className="hidden" aria-hidden="true" />;
-    }
 
-    // 2. Resolve searchParams only if we are in a real request
+  if (!slug || slug === "build-time-placeholder") {
+    return <div className="hidden" aria-hidden="true" />;
+  }
+
+  try {
+    // 1. Resolve searchParams only if we are in a real request
     const searchParamsResolved = await searchParams;
     const countryCode = DEFAULT_COUNTRY;
     const condition = (searchParamsResolved.condition as string) || "new";
 
-    // 3. Fetch Data
+    // 2. Fetch Data
     const data = await getPDPRenderData(slug, countryCode);
 
     if (!data) {
@@ -67,13 +87,13 @@ export default async function ProductPage({ params, searchParams }: Props) {
       redirect(data.redirect);
     }
 
-    // 4. Quality Guard
+    // 3. Quality Guard
     if (!isProductHighQuality(data.product)) {
       console.warn(`[PDP Quality Reject] ${slug}`);
       notFound();
     }
 
-    // 5. Render
+    // 4. Render
     return (
       <div className="min-h-screen bg-slate-50">
         <IdealoProductPage
@@ -91,7 +111,14 @@ export default async function ProductPage({ params, searchParams }: Props) {
       </div>
     );
   } catch (error) {
-    console.error(`[PDP Render Crash] ${slug}:`, error);
+    // CRITICAL: Re-throw Next.js internal errors so they can be caught by the framework
+    if (isNextNotFoundError(error) || isNextRedirectError(error)) {
+      throw error;
+    }
+
+    console.error(`[PDP Page Crash] ${slug}:`, error);
+
+    // Fallback UI for truly unexpected server errors
     return (
       <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
         <h1 className="text-2xl font-bold text-slate-900">
@@ -101,12 +128,22 @@ export default async function ProductPage({ params, searchParams }: Props) {
           Wir konnten dieses Produkt gerade nicht laden. Bitte versuchen Sie es
           später erneut.
         </p>
-        <a
-          href="/"
-          className="mt-6 rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700"
-        >
-          Zur Startseite
-        </a>
+        <div className="mt-8 flex gap-4">
+          <a
+            href="/"
+            className="rounded-lg bg-blue-600 px-6 py-2 text-white transition-colors hover:bg-blue-700"
+          >
+            Zur Startseite
+          </a>
+          <button
+            onClick={() =>
+              typeof window !== "undefined" && window.location.reload()
+            }
+            className="rounded-lg border border-slate-300 px-6 py-2 text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            Seite neu laden
+          </button>
+        </div>
       </div>
     );
   }

@@ -1,7 +1,8 @@
 import { type Client, createClient } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 
 import * as schema from "./schema";
 
@@ -87,130 +88,60 @@ export const dbReady: Promise<void> = (async () => {
       return;
     }
 
-    const dbUrl = getDatabaseUrl();
-    console.log(`[DB DIAGNOSTIC] Resolved DB URL: ${dbUrl}`);
-    console.log(`[DB DIAGNOSTIC] Current working directory: ${process.cwd()}`);
-
-    // Check if migrations folder exists
-    const migrationsDir = path.resolve(process.cwd(), "drizzle");
-    const exists = (await import("fs")).existsSync(migrationsDir);
-    console.log(
-      `[DB DIAGNOSTIC] Migrations dir exists at ${migrationsDir}: ${exists}`,
-    );
-    if (exists) {
-      console.log(
-        `[DB DIAGNOSTIC] Migration files: ${JSON.stringify((await import("fs")).readdirSync(migrationsDir))}`,
-      );
-    }
-
     // Run migrations AUTOMATICALLY in production
     if (isProductionEnvironment) {
       console.log("[DB] 🏁 Migration sequence started...");
 
-      // Smart Migration Skip Logic:
-      // We compare the number of migration files on disk vs the number of recorded migrations in the DB.
-      // If DB count >= File count, we assume we are up to date and SKIP migrate() to avoid hash conflicts.
-      // If File count > DB count, we proceed with migrate().
       try {
-        const fs = await import("fs");
-        // Count .sql files in the migrations directory
-        const migrationFiles = fs
-          .readdirSync(migrationsDir)
-          .filter((f) => f.endsWith(".sql"));
-        const fileCount = migrationFiles.length;
+        const migrationsDir = path.resolve(process.cwd(), "drizzle");
 
-        const migCountResult = await client.execute(
-          "SELECT count(*) as c FROM __drizzle_migrations",
-        );
-        const dbCount = Number(migCountResult.rows[0]?.c || 0);
-
-        console.log(
-          `[DB] Migration check: Disk Files=${fileCount}, DB Records=${dbCount}`,
-        );
-
-        if (dbCount >= fileCount) {
-          console.log(
-            `[DB] Database is up-to-date (DB: ${dbCount} >= Disk: ${fileCount}). Skipping migrate() to prevent conflicts.`,
+        if (!fs.existsSync(migrationsDir)) {
+          console.warn(
+            `[DB] Migrations directory NOT FOUND at ${migrationsDir}`,
           );
-          return;
         } else {
-          console.log(
-            `[DB] New migrations detected (Disk: ${fileCount} > DB: ${dbCount}). Proceeding with migration...`,
-          );
-        }
-      } catch (e) {
-        // Table likely missing, proceed with migration to create it
-        console.log(
-          "[DB] No existing migration table found (or error checking), proceeding with migration...",
-        );
-      }
+          // Count .sql files in the migrations directory
+          const migrationFiles = fs
+            .readdirSync(migrationsDir)
+            .filter((f) => f.endsWith(".sql"));
+          const fileCount = migrationFiles.length;
 
-      try {
-        await migrate(db, {
-          migrationsFolder: migrationsDir,
-        });
-        console.log("[DB] ✅ Migration sequence completed successfully.");
+          const migCountResult = await client
+            .execute("SELECT count(*) as c FROM __drizzle_migrations")
+            .catch(() => ({ rows: [{ c: 0 }] }));
+
+          const dbCount = Number((migCountResult.rows[0] as any)?.c || 0);
+
+          if (dbCount >= fileCount) {
+            console.log(
+              `[DB] Database is up-to-date (DB: ${dbCount} >= Disk: ${fileCount}). Skipping migrate().`,
+            );
+          } else {
+            console.log(
+              `[DB] New migrations detected (Disk: ${fileCount} > DB: ${dbCount}). Applying...`,
+            );
+            await migrate(db, { migrationsFolder: migrationsDir });
+            console.log("[DB] ✅ Migration sequence completed successfully.");
+          }
+        }
       } catch (migrateError) {
-        console.warn(
-          "[DB] Standard migration failed. Fallback DISABLED to protect data.",
+        console.error(
+          "[DB WARNING] Migration sequence failed. Queries may still work if schema is compatible.",
           migrateError instanceof Error
             ? migrateError.message
             : String(migrateError),
         );
-        // THROW to prevent robustMigrate from running and wiping data
-        throw migrateError;
-
-        /*
-        try {
-          await robustMigrate(client, migrationsDir);
-          console.log("[DB] ✅ Robust migration sequence completed.");
-        } catch (robustError) {
-          console.error(
-            "[DB ERROR] Robust migration also failed:",
-            robustError,
-          );
-          throw robustError;
-        }
-        */
+        // We do NOT throw here anymore. We want dbReady to resolve so that
+        // the server can at least attempt to serve requests.
       }
-    } else {
-      console.log(
-        "[DB DIAGNOSTIC] Not in production, skipping automatic migrations.",
-      );
-    }
-
-    // Final check: table count
-    try {
-      const prodCount = await client.execute(
-        "SELECT count(*) as count FROM products",
-      );
-      const priceCount = await client.execute(
-        "SELECT count(*) as count FROM prices",
-      );
-      console.log(
-        `[DB DIAGNOSTIC] Row counts: products=${prodCount.rows[0]?.count}, prices=${priceCount.rows[0]?.count}`,
-      );
-
-      // Check a sample price
-      const priceSample = await client.execute("SELECT * FROM prices LIMIT 1");
-      if (priceSample.rows.length > 0) {
-        console.log(
-          `[DB DIAGNOSTIC] Sample price record: ${JSON.stringify(priceSample.rows[0])}`,
-        );
-      } else {
-        console.warn("[DB DIAGNOSTIC] Prices table is EMPTY!");
-      }
-    } catch (e) {
-      console.warn(
-        `[DB DIAGNOSTIC] Failed to count rows (schema might not be ready): ${e}`,
-      );
     }
   } catch (e) {
     console.error(
-      "[DB ERROR] Client initialization failure:",
+      "[DB CRITICAL] Initialization logic failed:",
       e instanceof Error ? e.message : String(e),
     );
-    throw e; // Re-throw to ensure dbReady rejects
+    // Even in critical failure, we resolve to avoid poisoning the promise forever
+    return;
   }
 })();
 

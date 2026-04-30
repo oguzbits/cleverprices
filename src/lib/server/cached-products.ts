@@ -1,434 +1,307 @@
 import { cacheLife } from "next/cache";
-import { cache } from "react";
 
 import { dbReady } from "@/db";
 
-import { type Category, getCategoryBySlug } from "../categories";
-import { type FilterParams, type Product } from "../product-definitions";
+import { getCategoryBySlug } from "../categories";
+import { type PDPRenderData, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
   findProductBySyntheticId as findProductBySyntheticIdSync,
   findProductSlugByAsinSuffix as findProductSlugByAsinSuffixSync,
-  getAllProductSlugs as getAllProductSlugsSync,
-  getBestDeals as getBestDealsSync,
   getCanonicalFamilyId,
-  getDiverseMostPopular as getDiverseMostPopularSync,
-  getNewArrivals as getNewArrivalsSync,
-  getNonEmptyCategorySlugs as getNonEmptyCategorySlugsSync,
   getProductById as getProductByIdSync,
   getProductBySlug as getProductBySlugSync,
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
 import { getProductPath } from "../utils/url";
-import { getCategoryProducts } from "./category-products";
 import { mergeLivePrices } from "./live-data";
 
 /**
- * --- PRIVATE CACHED DATA FETCHERS ---
- * These handle the "static" or long-term data like specs, images, and basic info.
- * Caching is TTL-only via cacheLife profiles — no tags, no manual salts.
+ * --- PDP DATA ORCHESTRATION ---
+ *
+ * This file handles the data fetching for the Product Detail Page (PDP).
+ * It uses a layered caching strategy to ensure fast TTFB while maintaining data freshness.
  */
 
-/**
- * getCategoryRenderData
- * Cached wrapper for category product retrieval.
- * Optimizes the most hit routes in the application.
- */
-export async function getCategoryRenderData(
-  categorySlug: string,
-  countryCode: string,
-  filterParams: FilterParams,
-) {
-  "use cache";
-  return await getCategoryProducts(categorySlug, countryCode, filterParams);
-}
-
-async function getCachedBestDeals(
-  limit: number,
-  countryCode: string,
-  condition?: string | string[],
-) {
-  return await getBestDealsSync(
-    limit,
-    countryCode,
-    condition as "New" | "Used" | "Renewed" | undefined,
+// Local helpers to detect Next.js internal errors safely
+function isNextNotFoundError(error: any): boolean {
+  return (
+    error?.digest?.includes("NEXT_NOT_FOUND") ||
+    error?.message?.includes("NEXT_NOT_FOUND") ||
+    error?.$$typeof === "next.not-found"
   );
 }
 
-async function getCachedNewArrivals(
-  limit: number,
-  countryCode: string,
-  condition?: string | string[],
-) {
-  return await getNewArrivalsSync(
-    limit,
-    countryCode,
-    condition as "New" | "Used" | "Renewed" | undefined,
+function isNextRedirectError(error: any): boolean {
+  return (
+    error?.digest?.includes("NEXT_REDIRECT") ||
+    error?.message?.includes("NEXT_REDIRECT")
   );
-}
-
-async function getCachedDiverseMostPopular(
-  itemsPerCategory: number,
-  countryCode: string,
-) {
-  return await getDiverseMostPopularSync(itemsPerCategory, countryCode);
-}
-
-async function getCachedProductBySlug(slug: string, includeHistory: boolean) {
-  return await getProductBySlugSync(slug, includeHistory);
-}
-
-async function getCachedProductById(id: number) {
-  return await getProductByIdSync(id);
-}
-
-async function getCachedProductVariantsInternal(
-  parentAsin: string,
-  countryCode: string,
-  skipFullMapping: boolean = false,
-) {
-  return await getProductVariantsSync(
-    { parentAsin } as Product,
-    countryCode,
-    skipFullMapping,
-  );
-}
-
-async function getCachedSimilarProducts(
-  category: string,
-  excludedSlug: string,
-  targetPrice: number,
-  limit: number,
-  countryCode: string,
-) {
-  return await getSimilarProductsSync(
-    {
-      category,
-      slug: excludedSlug,
-      prices: { [countryCode]: targetPrice },
-    } as Product,
-    limit,
-    countryCode,
-  );
-}
-
-async function getCachedProductSlugByAsinSuffix(oldSlug: string) {
-  return await findProductSlugByAsinSuffixSync(oldSlug);
-}
-
-async function getCachedProductBySyntheticId(id: number, depth: number = 0) {
-  // Safety: Prevent infinite recursion if canonical resolution loops
-  if (depth > 5) {
-    console.error(`[SEO CRITICAL] Infinite recursion detected for ID ${id}`);
-    return undefined;
-  }
-  return await findProductBySyntheticIdSync(id, depth);
-}
-
-async function getCachedNonEmptyCategorySlugs() {
-  "use cache";
-  cacheLife("hours");
-  return getNonEmptyCategorySlugsSync();
-}
-
-export async function getProductById(
-  id: number,
-  skipLiveMerge: boolean = false,
-): Promise<Product | undefined> {
-  const product = await getCachedProductById(id);
-  if (!product || skipLiveMerge) return product;
-
-  const merged = await mergeLivePrices([product], "de");
-  return merged[0];
-}
-
-export async function getAllProductSlugs(
-  includeVariants: boolean = true,
-  fastMode: boolean = false,
-): Promise<
-  {
-    id: number;
-    slug: string;
-    category: string;
-    enrichmentStatus?: string | null;
-    updatedAt: string;
-  }[]
-> {
-  return getAllProductSlugsSync(undefined, includeVariants, fastMode);
-}
-
-export async function getNonEmptyCategorySlugs(): Promise<string[]> {
-  return getCachedNonEmptyCategorySlugs();
-}
-
-export async function getBestDeals(
-  limit: number = 8,
-  countryCode: string = "de",
-  condition?: "New" | "Used" | "Renewed" | ("New" | "Used" | "Renewed")[],
-): Promise<Product[]> {
-  const products = await getCachedBestDeals(limit, countryCode, condition);
-  return mergeLivePrices(products, countryCode);
-}
-
-export async function getNewArrivals(
-  limit: number = 8,
-  countryCode: string = "de",
-  condition?: "New" | "Used" | "Renewed" | ("New" | "Used" | "Renewed")[],
-): Promise<Product[]> {
-  const products = await getCachedNewArrivals(limit, countryCode, condition);
-  return mergeLivePrices(products, countryCode);
-}
-
-export async function getDiverseMostPopular(
-  itemsPerCategory: number = 10,
-  countryCode: string = "de",
-): Promise<Product[]> {
-  const products = await getCachedDiverseMostPopular(
-    itemsPerCategory,
-    countryCode,
-  );
-  return mergeLivePrices(products, countryCode);
-}
-
-export async function getSimilarProducts(
-  product: Product,
-  limit: number = 4,
-  countryCode: string = "de",
-): Promise<Product[]> {
-  const currentPrice = product.prices[countryCode] || 0;
-  const products = await getCachedSimilarProducts(
-    product.category,
-    product.slug,
-    currentPrice,
-    limit,
-    countryCode,
-  );
-  return mergeLivePrices(products, countryCode);
-}
-
-export async function getProductVariants(
-  product: Product,
-  countryCode: string = "de",
-  skipLiveMerge: boolean = false,
-  skipFullMapping: boolean = false,
-): Promise<Product[]> {
-  if (!product.parentAsin) return [product];
-
-  const variants = await getCachedProductVariantsInternal(
-    product.parentAsin,
-    countryCode,
-    skipFullMapping,
-  );
-  if (skipLiveMerge) return variants;
-  return mergeLivePrices(variants, countryCode);
 }
 
 /**
- * ATOMIC PAGE DATA - The "Millisecond" Optimization
- * This function handles the entire data assembly for a PDP page in one cached block.
- * When a crawler hits multiple times, or metadata + page both need data, this returns instantly.
+ * getPDPRenderData
+ * The main orchestrator for PDP data.
+ *
+ * STRATEGY:
+ * 1. This function is NOT wrapped in "use cache" at the top level to avoid monolithic failures.
+ * 2. It calls individual "use cache" functions for different parts of the data.
+ * 3. It handles redirects and 404s gracefully.
  */
-export type PDPRenderData =
-  | { redirect: string; isPermanent: boolean }
-  | {
+export async function getPDPRenderData(
+  slug: string,
+  countryCode: string = "de",
+): Promise<PDPRenderData | null> {
+  try {
+    // 1. Initial Gate - Ensure DB is alive
+    try {
+      await dbReady;
+    } catch (dbError) {
+      console.error(`[PDP DB ERROR] ${slug}:`, dbError);
+    }
+
+    // 2. Resolve the main product
+    const productData = await getCachedMainProduct(slug, countryCode);
+    if (!productData) return null;
+
+    // Handle redirects (checking if it's NOT null and HAS redirect)
+    if ("redirect" in productData) {
+      return productData as any;
+    }
+
+    const { product, isParentView } = productData as {
       product: Product;
-      variants: Product[];
-      category: Category | null;
-      similarSidebar: Product[];
-      similarCarousel: Product[];
       isParentView: boolean;
-      canonicalId: number;
-      canonicalSlug: string;
-      parentSlug?: string;
-      parentTitle?: string;
-      parentFullModel?: string;
-      renderTimestamp: number;
     };
 
-const isBuild =
-  process.env.NEXT_PHASE === "phase-production-build" ||
-  process.env.BUILD_PHASE === "1";
+    // 3. Parallel fetch of secondary data
+    const [variantsRes, categoryRes, sidebarRes, carouselRes] =
+      await Promise.allSettled([
+        product.parentAsin
+          ? getCachedVariants(product.parentAsin, countryCode)
+          : Promise.resolve([]),
+        getCategoryBySlug(product.category),
+        getCachedSimilar(
+          product.category,
+          product.slug,
+          product.prices[countryCode] || 0,
+          10,
+          countryCode,
+        ),
+        getCachedSimilar(
+          product.category,
+          product.slug,
+          product.prices[countryCode] || 0,
+          12,
+          countryCode,
+        ),
+      ]);
 
-// Cache only the pure data fetching logic, not the wrapper with its own logic
-const getCachedPDPRenderData = async (
-  slug: string,
-  countryCode: string,
-): Promise<PDPRenderData | null> => {
+    const variants =
+      variantsRes.status === "fulfilled" ? variantsRes.value : [];
+    const category =
+      categoryRes.status === "fulfilled" ? categoryRes.value : null;
+    const sidebar = sidebarRes.status === "fulfilled" ? sidebarRes.value : [];
+    const carousel =
+      carouselRes.status === "fulfilled" ? carouselRes.value : [];
+
+    // 4. Live Price Merging (Freshness)
+    let mergedProduct = product;
+    try {
+      const [fresh] = await mergeLivePrices([product], countryCode, true);
+      if (fresh) mergedProduct = fresh;
+    } catch (e) {
+      console.warn(`[PDP Live Price Fallback] ${slug}:`, e);
+    }
+
+    // 5. Canonical & Identity Resolution
+    let canonicalId = product.id || 0;
+    let canonicalSlug = product.slug;
+
+    try {
+      const hubIdVal = await getCanonicalFamilyId(
+        mergedProduct.parentAsin || mergedProduct.asin,
+        mergedProduct.id || 0,
+        mergedProduct.modelTitle,
+      );
+      const safeHubId =
+        typeof hubIdVal === "number" ? hubIdVal : product.id || 0;
+      canonicalId = 900000000 + (safeHubId % 100000000);
+
+      const idenResult = getFamilyIdentitySync(
+        { ...mergedProduct, id: canonicalId, isParentView: true } as Product,
+        [mergedProduct, ...variants],
+      );
+      canonicalSlug = idenResult?.slug || product.slug;
+    } catch (e) {
+      console.warn(`[PDP Identity Error] ${slug}:`, e);
+    }
+
+    // 6. Final POJO Serialization (Bulletproof for RSC)
+    return toSafePOJO({
+      product: mergedProduct,
+      variants: variants.filter((v) => v.id !== mergedProduct.id),
+      category,
+      similarSidebar: sidebar,
+      similarCarousel: carousel,
+      isParentView: isParentView || (mergedProduct.id || 0) >= 900000000,
+      canonicalId,
+      canonicalSlug,
+      renderTimestamp: Date.now(),
+    });
+  } catch (error) {
+    // Re-throw Next.js internal errors
+    if (isNextNotFoundError(error) || isNextRedirectError(error)) throw error;
+
+    console.error(`[PDP ORCHESTRATION FAILURE] ${slug}:`, error);
+    return null;
+  }
+}
+
+/**
+ * --- INTERNAL CACHED FETCHERS ---
+ * Using "use cache" for granular parts of the data.
+ */
+
+async function getCachedMainProduct(slug: string, countryCode: string) {
   "use cache";
   cacheLife("minutes");
 
   try {
-    // 1. Initial Gate - Ensure DB is alive
-    if (!isBuild) {
-      await Promise.race([
-        dbReady,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("DB Timeout")), 10000),
-        ),
-      ]);
+    let product: Product | undefined;
+    let isParentView = false;
+    const idMatch = slug.match(/^(\d+)_-(.*)$/);
+
+    if (idMatch) {
+      const id = parseInt(idMatch[1]);
+      if (id >= 900000000) {
+        product = await findProductBySyntheticIdSync(id, 0);
+        if (product) isParentView = true;
+      } else {
+        const realId = id >= 200000000 ? id - 200000000 : id;
+        product = await getProductByIdSync(realId);
+      }
     }
 
-    try {
-      // 1. Resolve Product (ID-based, Slug-based, or Legacy)
-      let product: Product | undefined;
-      let isParentView = false;
-      const idMatch = slug.match(/^(\d+)_-(.*)$/);
-
-      if (idMatch) {
-        const id = parseInt(idMatch[1]);
-        if (id >= 900000000) {
-          product = await getCachedProductBySyntheticId(id, 0);
-          if (product) isParentView = true;
-        } else {
-          const realId = id >= 200000000 ? id - 200000000 : id;
-          product = await getCachedProductById(realId);
-        }
+    if (!product) {
+      product = await getProductBySlugSync(slug, false);
+      if (product) {
+        const { slug: newSlug } = getFamilyIdentitySync(product, []);
+        return {
+          redirect: getProductPath(product.id, newSlug),
+          isPermanent: true,
+        };
       }
-
-      if (!product) {
-        product = await getCachedProductBySlug(slug, false);
-        if (product) {
-          const { slug: newSlug } = getFamilyIdentitySync(product, []);
-          return {
-            redirect: getProductPath(product.id, newSlug),
-            isPermanent: true,
-          } as any;
-        }
-        const asinResult = await getCachedProductSlugByAsinSuffix(slug);
-        if (asinResult) {
-          return {
-            redirect: getProductPath(asinResult.id, asinResult.slug),
-            isPermanent: true,
-          } as any;
-        }
-        return null;
+      const asinResult = await findProductSlugByAsinSuffixSync(slug);
+      if (asinResult) {
+        return {
+          redirect: getProductPath(asinResult.id, asinResult.slug),
+          isPermanent: true,
+        };
       }
-
-      // 2. Data Enrichment (Non-Critical Parallel Fetches)
-      let category = null;
-      let variants: Product[] = [];
-      let sidebar: Product[] = [];
-      let carousel: Product[] = [];
-
-      try {
-        const [catRes, varRes, sideRes, carRes] = await Promise.allSettled([
-          getCategoryBySlug(product.category),
-          product.parentAsin
-            ? getCachedProductVariantsInternal(
-                product.parentAsin,
-                countryCode,
-                true,
-              )
-            : Promise.resolve([]),
-          getCachedSimilarProducts(
-            product.category,
-            product.slug,
-            product.prices[countryCode] || 0,
-            5,
-            countryCode,
-          ),
-          getCachedSimilarProducts(
-            product.category,
-            product.slug,
-            product.prices[countryCode] || 0,
-            12,
-            countryCode,
-          ),
-        ]);
-
-        category = catRes.status === "fulfilled" ? catRes.value : null;
-        variants = varRes.status === "fulfilled" ? varRes.value : [];
-        sidebar = sideRes.status === "fulfilled" ? sideRes.value : [];
-        carousel = carRes.status === "fulfilled" ? carRes.value : [];
-      } catch (e) {
-        console.warn(`[PDP Enrichment Error] ${slug}:`, e);
-      }
-
-      // 3. Live Price Merging
-      let mergedProduct = product;
-      try {
-        const [fresh] = await mergeLivePrices([product], countryCode, true);
-        if (fresh) mergedProduct = fresh;
-      } catch (e) {
-        console.warn(`[PDP Live Price Fallback] ${slug}:`, e);
-      }
-
-      // 4. Identity & Canonical Resolution
-      let canonicalId: number = product.id || 0;
-      let canonicalSlug = product.slug;
-      try {
-        const hubIdVal = await getCanonicalFamilyId(
-          mergedProduct.parentAsin || mergedProduct.asin,
-          mergedProduct.id || 0,
-          mergedProduct.modelTitle,
-        );
-        const safeHubId =
-          typeof hubIdVal === "number" ? hubIdVal : product.id || 0;
-        canonicalId = 900000000 + (safeHubId % 100000000);
-
-        const idenResult = getFamilyIdentitySync(
-          { ...mergedProduct, id: canonicalId, isParentView: true } as Product,
-          [mergedProduct, ...variants],
-        );
-        canonicalSlug = idenResult?.slug || product.slug;
-      } catch (e) {
-        console.warn(`[PDP Identity Error] ${slug}:`, e);
-      }
-
-      // 5. Canonical Path Check
-      const isSynthetic = (mergedProduct.id || 0) >= 900000000;
-      const canonicalPath = isSynthetic
-        ? getProductPath(mergedProduct.id || 0, canonicalSlug)
-        : getProductPath(mergedProduct.id || 0, mergedProduct.slug);
-
-      const urlSlug = canonicalPath.replace("/p/", "");
-      if (slug !== urlSlug && !idMatch) {
-        return { redirect: canonicalPath, isPermanent: true } as any;
-      }
-
-      // SERIALIZATION HELPER (POJO enforcement)
-      const serialize = (p: any) => {
-        if (!p) return null;
-        const { historyJson, icon, ...clean } = p;
-        return JSON.parse(JSON.stringify(clean));
-      };
-
-      const result = {
-        product: serialize(mergedProduct),
-        variants: variants
-          .filter((v) => v.id !== mergedProduct.id)
-          .map(serialize),
-        category: serialize(category),
-        similarSidebar: sidebar.slice(0, 10).map(serialize),
-        similarCarousel: carousel.slice(0, 12).map(serialize),
-        isParentView: isParentView || isSynthetic,
-        canonicalId,
-        canonicalSlug,
-        renderTimestamp: Date.now(),
-      };
-
-      return JSON.parse(JSON.stringify(result));
-    } catch (criticalError) {
-      console.error(`[PDP CRITICAL FAILURE] ${slug}:`, criticalError);
       return null;
     }
-  } catch (error) {
-    console.error(`[PDP OUTER FAILURE] ${slug}:`, error);
+
+    // Canonical Path Check
+    const idenResult = getFamilyIdentitySync(product, []);
+    const canonicalSlug = idenResult?.slug || product.slug;
+    const canonicalPath = getProductPath(product.id || 0, canonicalSlug);
+    const urlSlug = canonicalPath.replace("/p/", "");
+
+    if (slug !== urlSlug && !idMatch) {
+      return { redirect: canonicalPath, isPermanent: true };
+    }
+
+    return { product: toSafePOJO(product), isParentView };
+  } catch (e) {
+    console.error(`[getCachedMainProduct Error] ${slug}:`, e);
     return null;
   }
-};
+}
+
+async function getCachedVariants(parentAsin: string, countryCode: string) {
+  "use cache";
+  cacheLife("minutes");
+  try {
+    const vars = await getProductVariantsSync(
+      { parentAsin } as Product,
+      countryCode,
+      true,
+    );
+    return vars.map((v) => toSafePOJO(v));
+  } catch (e) {
+    return [];
+  }
+}
+
+async function getCachedSimilar(
+  category: string,
+  slug: string,
+  price: number,
+  limit: number,
+  countryCode: string,
+) {
+  "use cache";
+  cacheLife("minutes");
+  try {
+    const items = await getSimilarProductsSync(
+      category,
+      slug,
+      price,
+      limit,
+      countryCode,
+    );
+    return items.map((v) => toSafePOJO(v));
+  } catch (e) {
+    return [];
+  }
+}
 
 /**
- * Main PDP Data Orchestrator.
- * Wrapped in React.cache for per-request deduplication (Metadata + Page).
+ * toSafePOJO
+ *
+ * Ensures an object is a pure, serializable POJO for RSC.
+ * It recursively strips non-serializable fields and handles circular references.
  */
-export const getPDPRenderData = cache(
-  async (
-    slug: string,
-    countryInput: string = "de",
-  ): Promise<PDPRenderData | null> => {
-    const countryCode = countryInput.toLowerCase();
-    return getCachedPDPRenderData(slug, countryCode);
-  },
-);
+function toSafePOJO<T>(obj: T): T {
+  if (!obj || typeof obj !== "object") return obj;
+
+  const seen = new WeakSet();
+
+  const strip = (o: any): any => {
+    if (!o || typeof o !== "object") return o;
+    if (o instanceof Date) return o.toISOString();
+    if (o instanceof Buffer) return null;
+    if (typeof o === "function") return null;
+
+    if (seen.has(o)) return null; // Prevent circular references
+    seen.add(o);
+
+    if (Array.isArray(o)) {
+      return o.map(strip);
+    }
+
+    const result: any = {};
+    for (const [key, value] of Object.entries(o)) {
+      // Strip problematic DB fields and private/internal keys
+      if (key === "historyJson" || key === "icon" || key.startsWith("_")) {
+        continue;
+      }
+      result[key] = strip(value);
+    }
+    return result;
+  };
+
+  try {
+    return strip(obj);
+  } catch (e) {
+    console.error("[Serialization Deep Error]:", e);
+    // Absolute fallback: JSON cycle
+    try {
+      return JSON.parse(JSON.stringify(obj));
+    } catch {
+      return null as any;
+    }
+  }
+}

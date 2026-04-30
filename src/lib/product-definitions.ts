@@ -272,3 +272,15 @@ export type LitePrice = Pick<
   | "currency"
   | "lastUpdated"
 > & { historyJson?: Price["historyJson"] };
+export interface PDPRenderData {
+  product: Product;
+  variants: Product[];
+  category: any;
+  similarSidebar: Product[];
+  similarCarousel: Product[];
+  isParentView: boolean;
+  canonicalId: number;
+  canonicalSlug: string;
+  renderTimestamp: number;
+  redirect?: string;
+}
