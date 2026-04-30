@@ -142,7 +142,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
             Zur Startseite
           </Link>
           <button
-            onClick={() => typeof window !== "undefined" && window.location.reload()}
+            onClick={() =>
+              typeof window !== "undefined" && window.location.reload()
+            }
             className="rounded-xl border border-slate-200 bg-white px-8 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95"
           >
             Erneut versuchen
@@ -179,7 +181,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
         canonicalId={data.canonicalId}
         similarSidebar={data.similarSidebar}
         similarCarousel={data.similarCarousel}
-        renderTimestamp={data.renderTimestamp}
       />
     </div>
   );

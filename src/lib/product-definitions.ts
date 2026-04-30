@@ -281,6 +281,5 @@ export interface PDPRenderData {
   isParentView: boolean;
   canonicalId: number;
   canonicalSlug: string;
-  renderTimestamp: number;
   redirect?: string;
 }

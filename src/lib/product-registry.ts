@@ -805,7 +805,7 @@ async function fetchNonEmptyInternal() {
     // Update memory cache
     MEMORY_NON_EMPTY_CATEGORIES = {
       data: categories,
-      timestamp: Date.now(),
+      timestamp: IS_BUILD ? 1735689600000 : Date.now(),
       version: CACHE_VERSION,
     };
 
@@ -831,7 +831,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   }
 
   // Check Memory Cache first (Instant, process-level)
-  const now = Date.now();
+  const now = IS_BUILD ? 1735689600000 : Date.now();
   if (
     MEMORY_NON_EMPTY_CATEGORIES &&
     MEMORY_NON_EMPTY_CATEGORIES.version === CACHE_VERSION &&

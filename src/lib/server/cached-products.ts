@@ -35,8 +35,8 @@ function isNextNotFoundError(error: unknown): boolean {
   const e = error as { digest?: string; message?: string; $$typeof?: string };
   return Boolean(
     e?.digest?.includes?.("NEXT_NOT_FOUND") ||
-      e?.message?.includes?.("NEXT_NOT_FOUND") ||
-      e?.$$typeof === "next.not-found",
+    e?.message?.includes?.("NEXT_NOT_FOUND") ||
+    e?.$$typeof === "next.not-found",
   );
 }
 
@@ -45,7 +45,7 @@ function isNextRedirectError(error: unknown): boolean {
   const e = error as { digest?: string; message?: string };
   return Boolean(
     e?.digest?.includes?.("NEXT_REDIRECT") ||
-      e?.message?.includes?.("NEXT_REDIRECT"),
+    e?.message?.includes?.("NEXT_REDIRECT"),
   );
 }
 
@@ -164,7 +164,6 @@ export async function getPDPRenderData(
       isParentView: isParentView || (mergedProduct.id || 0) >= 900000000,
       canonicalId,
       canonicalSlug,
-      renderTimestamp: Date.now(),
     });
   } catch (error) {
     // Re-throw Next.js internal errors

@@ -53,7 +53,6 @@ interface IdealoProductPageProps {
   canonicalId?: number;
   similarSidebar?: Product[];
   similarCarousel?: Product[];
-  renderTimestamp?: number;
   searchParamsPromise?: Promise<{ condition?: string }>;
 }
 
@@ -69,7 +68,6 @@ export function IdealoProductPage({
   canonicalId,
   similarSidebar = EMPTY_ARRAY,
   similarCarousel = EMPTY_ARRAY,
-  renderTimestamp,
   searchParamsPromise,
 }: IdealoProductPageProps) {
   const mergedProduct = product;
@@ -419,12 +417,15 @@ export function IdealoProductPage({
 
             <div className="hidden px-0 lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:-row-end-1 lg:block">
               <ComponentErrorBoundary name="PriceChart">
-                <React.Suspense fallback={<div className="h-[200px] w-full animate-pulse rounded bg-gray-50" />}>
+                <React.Suspense
+                  fallback={
+                    <div className="h-[200px] w-full animate-pulse rounded bg-gray-50" />
+                  }
+                >
                   <IdealoPriceChart
                     history={mergedProduct.priceHistory || []}
                     title={mergedProduct.title}
                     currentPrice={mergedProduct.prices[countryCode]}
-                    renderTimestamp={renderTimestamp}
                   />
                 </React.Suspense>
               </ComponentErrorBoundary>

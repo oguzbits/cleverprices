@@ -1,3 +1,4 @@
+import { IS_BUILD } from "@/db";
 import type { PriceAnalysis } from "@/lib/data-sources/types";
 import { parseHistoryBlob } from "./history-compression";
 
@@ -80,7 +81,9 @@ export function computePriceAnalysis(
     daysAnalyzed:
       history.length > 0
         ? Math.ceil(
-            (Date.now() - history[0].date.getTime()) / (1000 * 60 * 60 * 24),
+            ((IS_BUILD ? 1735689600000 : Date.now()) -
+              history[0].date.getTime()) /
+              (1000 * 60 * 60 * 24),
           )
         : 0,
   };

@@ -13,6 +13,7 @@
  * - eBay (used/refurbished alternatives)
  */
 
+import { IS_BUILD } from "@/db";
 import type { CategorySlug } from "@/lib/categories";
 import type { CountryCode } from "@/lib/countries";
 
@@ -145,7 +146,7 @@ class DataAggregator {
       products: [],
       sources: [],
       failedSources: [],
-      timestamp: new Date(),
+      timestamp: IS_BUILD ? new Date("2026-05-01T00:00:00Z") : new Date(),
       hasStaleData: false,
     };
 
@@ -162,8 +163,9 @@ class DataAggregator {
 
           // Check for stale data
           for (const product of products) {
+            const now = IS_BUILD ? 1735689600000 : Date.now();
             const hoursSinceUpdate =
-              (Date.now() - product.lastUpdated.getTime()) / (1000 * 60 * 60);
+              (now - product.lastUpdated.getTime()) / (1000 * 60 * 60);
             if (hoursSinceUpdate > 24) {
               result.hasStaleData = true;
               break;

@@ -1,3 +1,5 @@
+import { IS_BUILD } from "@/db";
+
 /**
  * Build-time configuration
  * These values are set at build time and embedded into the static output
@@ -7,12 +9,14 @@
  * Copyright year - automatically set to current year at build time
  * This is a build-time constant, not a runtime value
  */
-export const COPYRIGHT_YEAR = new Date().getFullYear();
+export const COPYRIGHT_YEAR = IS_BUILD ? 2026 : new Date().getFullYear();
 
 /**
  * Build timestamp - when the site was last built
  */
-export const BUILD_TIME = new Date().toISOString();
+export const BUILD_TIME = IS_BUILD
+  ? "2026-04-30T00:00:00Z"
+  : new Date().toISOString();
 
 /**
  * Price data last updated timestamp
@@ -26,7 +30,9 @@ const PRICES_UPDATED_AT = "2026-01-02T22:00:00Z";
  */
 function getPricesAge(): string {
   const updateTime = new Date(PRICES_UPDATED_AT).getTime();
-  const now = Date.now();
+  const now = IS_BUILD
+    ? new Date("2026-05-01T00:00:00Z").getTime()
+    : Date.now();
   const hours = Math.floor((now - updateTime) / (1000 * 60 * 60));
   const days = Math.floor(hours / 24);
 

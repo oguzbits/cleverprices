@@ -14,6 +14,7 @@ import React, { useRef, useState } from "react";
 interface IdealoPriceChartProps {
   history?: { date: string; price: number }[];
   title?: string;
+  currentPrice?: number;
 }
 
 type TimeFrame = "1M" | "3M" | "6M" | "1J";
@@ -31,11 +32,7 @@ export function IdealoPriceChart({
   history = EMPTY_HISTORY,
   title,
   currentPrice,
-  renderTimestamp,
-}: IdealoPriceChartProps & {
-  currentPrice?: number;
-  renderTimestamp?: number;
-}) {
+}: IdealoPriceChartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeFrame>("3M");
 
@@ -54,7 +51,6 @@ export function IdealoPriceChart({
             livePrice={currentPrice}
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
-            renderTimestamp={renderTimestamp}
           />
         </div>
       </DialogTrigger>
@@ -82,7 +78,6 @@ export function IdealoPriceChart({
             livePrice={currentPrice}
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
-            renderTimestamp={renderTimestamp}
           />
         </div>
       </DialogContent>
@@ -98,7 +93,6 @@ function ChartRenderer({
   livePrice,
   timeframe,
   onTimeframeChange,
-  renderTimestamp,
 }: {
   history: { date: string; price: number }[];
   interactive: boolean;
@@ -107,7 +101,6 @@ function ChartRenderer({
   livePrice?: number;
   timeframe: TimeFrame;
   onTimeframeChange: (tf: TimeFrame) => void;
-  renderTimestamp?: number;
 }) {
   const [hoveredData, setHoveredData] = useState<{
     date: number;
@@ -118,7 +111,7 @@ function ChartRenderer({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [nowTimestamp] = useState(() => renderTimestamp || Date.now());
+  const [nowTimestamp] = useState(() => Date.now());
 
   const { data, minPrice, maxPrice, minDate, maxDate, stats, yTicks, yDomain } =
     React.useMemo(() => {
