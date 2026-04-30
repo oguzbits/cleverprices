@@ -2,9 +2,9 @@ import { cacheLife } from "next/cache";
 import { cache } from "react";
 
 import {
+  type Category,
   getCategoryBySlug,
   stripCategoryIcon,
-  type Category,
 } from "../categories";
 import { type FilterParams, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
@@ -231,7 +231,7 @@ export async function getProductVariants(
  * This function handles the entire data assembly for a PDP page in one cached block.
  * When a crawler hits multiple times, or metadata + page both need data, this returns instantly.
  */
-type PDPRenderData =
+export type PDPRenderData =
   | { redirect: string; isPermanent: boolean }
   | {
       product: Product;
@@ -249,6 +249,9 @@ export const getPDPRenderData = cache(
     slug: string,
     countryInput: string = "de",
   ): Promise<PDPRenderData | null> => {
+    "use cache";
+    cacheLife("minutes");
+
     const countryCode = countryInput.toLowerCase();
 
     try {
@@ -346,12 +349,17 @@ export const getPDPRenderData = cache(
           mergedProduct.id || 0,
           mergedProduct.modelTitle,
         );
-        canonicalId = 900000000 + (hubIdVal % 100000000);
-        const { slug: cSlug } = getFamilyIdentitySync(
+
+        // [STABILITY] Ensure hubIdVal is a number and prevent NaN
+        const safeHubId =
+          typeof hubIdVal === "number" ? hubIdVal : product.id || 0;
+        canonicalId = 900000000 + (safeHubId % 100000000);
+
+        const idenResult = getFamilyIdentitySync(
           { ...mergedProduct, id: canonicalId, isParentView: true } as Product,
           [mergedProduct, ...variants],
         );
-        canonicalSlug = cSlug;
+        canonicalSlug = idenResult?.slug || product.slug;
       } catch (e) {
         console.warn(`[PDP Identity Error] ${slug}:`, e);
       }
@@ -367,13 +375,23 @@ export const getPDPRenderData = cache(
         return { redirect: canonicalPath, isPermanent: true };
       }
 
-      // Clean, Serializable POJO
+      /**
+       * SERIALIZATION BOUNDARY
+       * Next.js 15+ is strict about what can be returned from "use cache" / react.cache.
+       * We explicitly map the product to a clean POJO, removing Buffers (historyJson)
+       * and ensuring Dates are converted to ISO strings.
+       */
+      const serializeSafe = (p: Product) => {
+        const { historyJson: _historyJson, ...clean } = p;
+        return JSON.parse(JSON.stringify(clean)) as Product;
+      };
+
       return {
-        product: JSON.parse(JSON.stringify(mergedProduct)),
-        variants: JSON.parse(JSON.stringify(variants)),
+        product: serializeSafe(mergedProduct),
+        variants: variants.map(serializeSafe),
         category: category ? stripCategoryIcon(category) : null,
-        similarSidebar: JSON.parse(JSON.stringify(sidebar)),
-        similarCarousel: JSON.parse(JSON.stringify(carousel)),
+        similarSidebar: sidebar.map(serializeSafe),
+        similarCarousel: carousel.map(serializeSafe),
         isParentView: isParentView || isSynthetic,
         canonicalId,
         canonicalSlug,

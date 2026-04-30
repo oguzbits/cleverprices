@@ -1,8 +1,8 @@
-import { createClient, type Client } from "@libsql/client";
+import { type Client, createClient } from "@libsql/client";
 import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
 import { migrate } from "drizzle-orm/libsql/migrator";
-
 import path from "path";
+
 import * as schema from "./schema";
 
 // Environment detection
@@ -106,18 +106,6 @@ export const dbReady: Promise<void> = (async () => {
     // Run migrations AUTOMATICALLY in production
     if (isProductionEnvironment) {
       console.log("[DB] 🏁 Migration sequence started...");
-
-      // DEFENSIVE: Fix Pixel 10 Pro XL (Product 3860 & 3852) corrupted officialTitle
-      try {
-        await client.execute(
-          'UPDATE products SET "official_title" = NULL WHERE id IN (3852, 3860);',
-        );
-        console.log(
-          "[DB] ✅ Defensive repair: Cleared corrupted official_title for Pixel 10 variants (3852, 3860).",
-        );
-      } catch (err) {
-        // Silently handle
-      }
 
       // Smart Migration Skip Logic:
       // We compare the number of migration files on disk vs the number of recorded migrations in the DB.
