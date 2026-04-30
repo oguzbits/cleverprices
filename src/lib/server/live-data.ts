@@ -187,7 +187,7 @@ export async function mergeLivePrices(
           [countryCode]:
             live.lastUpdated && !isNaN(new Date(live.lastUpdated).getTime())
               ? new Date(live.lastUpdated).toISOString()
-              : new Date().toISOString(),
+              : new Date(1735689600000).toISOString(), // Deterministic fallback: 2025-01-01
         },
         priceAvg90: { ...p.priceAvg90, [countryCode]: refPrice },
         listPrice: { ...p.listPrice, [countryCode]: live.listPrice },
@@ -207,7 +207,8 @@ export async function mergeLivePrices(
         const lastPoint = updated.priceHistory[updated.priceHistory.length - 1];
         const currentPrice = updated.prices[countryCode];
         const currentDate =
-          updated.pricesLastUpdated?.[countryCode] || new Date().toISOString();
+          updated.pricesLastUpdated?.[countryCode] ||
+          new Date(1735689600000).toISOString();
 
         // Only append if it's newer than the last history point (by at least an hour to avoid clutter)
         const lastDate = new Date(lastPoint.date).getTime();

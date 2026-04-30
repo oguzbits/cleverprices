@@ -323,36 +323,26 @@ export async function getPDPRenderData(
   category = (catResult || null) as Category | null;
   variants = variantsResult;
 
-  // 3. Batch Price Merging (CRITICAL FOR PERFORMANCE)
-  // Combine ALL products into one list to avoid multiple Redis round trips
-  const allProductsToMerge = [
-    product,
-    ...variants,
-    ...sidebarResult,
-    ...carouselResult,
-  ];
-
-  const mergedAll = await mergeLivePricesSelective(
-    allProductsToMerge,
+  // 3. Selective Price Merging (CRITICAL FOR PDP STABILITY)
+  // We ONLY merge live prices for the main product in the blocking shell.
+  // Variants, Sidebar, and Carousel products will use their cached prices
+  // from the 'products' table. This drastically reduces DB locks and TTFB.
+  // IdealoLivePrice will still hydrate the latest prices on the client.
+  const [mergedProduct] = await mergeLivePrices(
+    [product],
     countryCode,
-    true,
+    true, // Include history for the main product chart
   );
 
-  // Distribute back
-  const mergedProduct = mergedAll[0];
   if (!mergedProduct) {
     console.error(`[Data Error] Main product missing after merge for ${slug}`);
     return null;
   }
 
-  const mergedVariants = mergedAll.slice(1, 1 + variants.length);
-  const mergedSidebar = mergedAll.slice(
-    1 + variants.length,
-    1 + variants.length + sidebarResult.length,
-  );
-  const mergedCarousel = mergedAll.slice(
-    1 + variants.length + sidebarResult.length,
-  );
+  // Use cached versions for the rest of the shell
+  const mergedVariants = variants;
+  const mergedSidebar = sidebarResult;
+  const mergedCarousel = carouselResult;
 
   // 4. Identity & Canonical Resolution
   const hubIdVal = await getCanonicalFamilyId(

@@ -366,6 +366,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         canonicalId={result.canonicalId}
         similarSidebar={result.similarSidebar}
         similarCarousel={result.similarCarousel}
+        renderTimestamp={Date.now()}
       />
     </>
   );
