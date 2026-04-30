@@ -1,11 +1,9 @@
 import { cacheLife } from "next/cache";
 import { cache } from "react";
 
-import {
-  type Category,
-  getCategoryBySlug,
-  stripCategoryIcon,
-} from "../categories";
+import { dbReady } from "@/db";
+
+import { type Category, getCategoryBySlug } from "../categories";
 import { type FilterParams, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
@@ -242,17 +240,34 @@ export type PDPRenderData =
       isParentView: boolean;
       canonicalId: number;
       canonicalSlug: string;
+      parentSlug?: string;
+      parentTitle?: string;
+      parentFullModel?: string;
+      renderTimestamp: number;
     };
 
-export const getPDPRenderData = cache(
-  async (
-    slug: string,
-    countryInput: string = "de",
-  ): Promise<PDPRenderData | null> => {
-    "use cache";
-    cacheLife("minutes");
+const isBuild =
+  process.env.NEXT_PHASE === "phase-production-build" ||
+  process.env.BUILD_PHASE === "1";
 
-    const countryCode = countryInput.toLowerCase();
+// Cache only the pure data fetching logic, not the wrapper with its own logic
+const getCachedPDPRenderData = async (
+  slug: string,
+  countryCode: string,
+): Promise<PDPRenderData | null> => {
+  "use cache";
+  cacheLife("minutes");
+
+  try {
+    // 1. Initial Gate - Ensure DB is alive
+    if (!isBuild) {
+      await Promise.race([
+        dbReady,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("DB Timeout")), 10000),
+        ),
+      ]);
+    }
 
     try {
       // 1. Resolve Product (ID-based, Slug-based, or Legacy)
@@ -278,20 +293,19 @@ export const getPDPRenderData = cache(
           return {
             redirect: getProductPath(product.id, newSlug),
             isPermanent: true,
-          };
+          } as any;
         }
         const asinResult = await getCachedProductSlugByAsinSuffix(slug);
         if (asinResult) {
           return {
             redirect: getProductPath(asinResult.id, asinResult.slug),
             isPermanent: true,
-          };
+          } as any;
         }
         return null;
       }
 
       // 2. Data Enrichment (Non-Critical Parallel Fetches)
-      // Wrap in independent try-catch to ensure one failure doesn't crash the page
       let category = null;
       let variants: Product[] = [];
       let sidebar: Product[] = [];
@@ -331,7 +345,7 @@ export const getPDPRenderData = cache(
         console.warn(`[PDP Enrichment Error] ${slug}:`, e);
       }
 
-      // 3. Live Price Merging (Independent Fallback)
+      // 3. Live Price Merging
       let mergedProduct = product;
       try {
         const [fresh] = await mergeLivePrices([product], countryCode, true);
@@ -349,8 +363,6 @@ export const getPDPRenderData = cache(
           mergedProduct.id || 0,
           mergedProduct.modelTitle,
         );
-
-        // [STABILITY] Ensure hubIdVal is a number and prevent NaN
         const safeHubId =
           typeof hubIdVal === "number" ? hubIdVal : product.id || 0;
         canonicalId = 900000000 + (safeHubId % 100000000);
@@ -372,33 +384,51 @@ export const getPDPRenderData = cache(
 
       const urlSlug = canonicalPath.replace("/p/", "");
       if (slug !== urlSlug && !idMatch) {
-        return { redirect: canonicalPath, isPermanent: true };
+        return { redirect: canonicalPath, isPermanent: true } as any;
       }
 
-      /**
-       * SERIALIZATION BOUNDARY
-       * Next.js 15+ is strict about what can be returned from "use cache" / react.cache.
-       * We explicitly map the product to a clean POJO, removing Buffers (historyJson)
-       * and ensuring Dates are converted to ISO strings.
-       */
-      const serializeSafe = (p: Product) => {
-        const { historyJson: _historyJson, ...clean } = p;
-        return JSON.parse(JSON.stringify(clean)) as Product;
+      // SERIALIZATION HELPER (POJO enforcement)
+      const serialize = (p: any) => {
+        if (!p) return null;
+        const { historyJson, icon, ...clean } = p;
+        return JSON.parse(JSON.stringify(clean));
       };
 
-      return {
-        product: serializeSafe(mergedProduct),
-        variants: variants.map(serializeSafe),
-        category: category ? stripCategoryIcon(category) : null,
-        similarSidebar: sidebar.map(serializeSafe),
-        similarCarousel: carousel.map(serializeSafe),
+      const result = {
+        product: serialize(mergedProduct),
+        variants: variants
+          .filter((v) => v.id !== mergedProduct.id)
+          .map(serialize),
+        category: serialize(category),
+        similarSidebar: sidebar.slice(0, 10).map(serialize),
+        similarCarousel: carousel.slice(0, 12).map(serialize),
         isParentView: isParentView || isSynthetic,
         canonicalId,
         canonicalSlug,
+        renderTimestamp: Date.now(),
       };
+
+      return JSON.parse(JSON.stringify(result));
     } catch (criticalError) {
       console.error(`[PDP CRITICAL FAILURE] ${slug}:`, criticalError);
       return null;
     }
+  } catch (error) {
+    console.error(`[PDP OUTER FAILURE] ${slug}:`, error);
+    return null;
+  }
+};
+
+/**
+ * Main PDP Data Orchestrator.
+ * Wrapped in React.cache for per-request deduplication (Metadata + Page).
+ */
+export const getPDPRenderData = cache(
+  async (
+    slug: string,
+    countryInput: string = "de",
+  ): Promise<PDPRenderData | null> => {
+    const countryCode = countryInput.toLowerCase();
+    return getCachedPDPRenderData(slug, countryCode);
   },
 );
