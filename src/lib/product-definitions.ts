@@ -82,7 +82,7 @@ export interface FilterParams {
   sort?: string;
   view?: string;
   page?: string;
-  fetchAll?: boolean;
+  [key: string]: string | string[] | undefined;
 }
 
 export type FilterCounts = Record<string, Record<string, number>>;

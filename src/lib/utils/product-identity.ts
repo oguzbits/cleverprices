@@ -31,11 +31,12 @@ const STRATEGY_MAP: CategoryStrategyMap = {
  * E.g. PlayStation -> Sony, Xbox -> Microsoft
  */
 export function normalizeBrand(
-  brand: string,
+  brand: string | null | undefined,
   title?: string,
   category?: string,
 ): string {
-  const b = brand.toLowerCase();
+  if (!brand) return "";
+  const b = String(brand).toLowerCase();
   const t = (title || "").toLowerCase();
 
   if (
@@ -524,11 +525,16 @@ export function calculateSiblingConsensus(
     });
 
     // 2. Process Specifications (if available) - Helps find common traits
-    const specs = s.officialSpecifications
-      ? typeof s.officialSpecifications === "string"
-        ? JSON.parse(s.officialSpecifications)
-        : s.officialSpecifications
-      : s.specifications || {};
+    let specs: Record<string, unknown> = {};
+    try {
+      specs = (s.officialSpecifications
+        ? typeof s.officialSpecifications === "string"
+          ? JSON.parse(s.officialSpecifications)
+          : s.officialSpecifications
+        : s.specifications || {}) as Record<string, unknown>;
+    } catch (e) {
+      specs = {};
+    }
 
     const specValues = Object.values(specs)
       .filter((v) => typeof v === "string" && v.length < 50)
@@ -913,13 +919,18 @@ export function getProductIdentity(
     product.officialSpecifications || product.official_specifications;
   const rawCatchAll = product.specifications || product.specifications; // Catch-all might also be snake_case in some results
 
-  const specs = rawOfficial
-    ? typeof rawOfficial === "string"
-      ? JSON.parse(rawOfficial)
-      : rawOfficial
-    : (typeof rawCatchAll === "string"
-        ? JSON.parse(rawCatchAll)
-        : rawCatchAll) || {};
+  let specs: Record<string, unknown> = {};
+  try {
+    specs = (rawOfficial
+      ? typeof rawOfficial === "string"
+        ? JSON.parse(rawOfficial)
+        : rawOfficial
+      : (typeof rawCatchAll === "string"
+          ? JSON.parse(rawCatchAll)
+          : rawCatchAll) || {}) as Record<string, unknown>;
+  } catch (e) {
+    specs = {};
+  }
 
   const resolvedBrand = normalizeBrand(rawBrand, title, category);
   const resolvedBrandLower = resolvedBrand.toLowerCase();

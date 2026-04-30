@@ -98,10 +98,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           },
         };
       })
-      .filter((route): route is any => !!route);
+      .filter((route) => route !== null) as MetadataRoute.Sitemap;
 
     // Product routes (Hub-Only Indexing)
-    const allHubs = await getAllProductSlugs(false, true);
+    const allHubs = await getAllProductSlugs(undefined, false, true);
 
     const productRoutes: MetadataRoute.Sitemap = allHubs.map((product) => {
       const path = getProductPath(product.id, product.slug);

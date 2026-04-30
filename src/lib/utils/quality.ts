@@ -35,15 +35,25 @@ export function isProductHighQuality(
 
   // 3. Specification Guard
   // Pattern: specCount > 3 (sum of standard and official specifications)
-  const specs =
-    typeof product.specifications === "string"
-      ? JSON.parse(product.specifications)
-      : product.specifications || {};
+  let specs = {};
+  try {
+    specs =
+      typeof product.specifications === "string"
+        ? JSON.parse(product.specifications)
+        : product.specifications || {};
+  } catch (e) {
+    specs = {};
+  }
 
-  const officialSpecs =
-    typeof product.officialSpecifications === "string"
-      ? JSON.parse(product.officialSpecifications)
-      : product.officialSpecifications || {};
+  let officialSpecs = {};
+  try {
+    officialSpecs =
+      typeof product.officialSpecifications === "string"
+        ? JSON.parse(product.officialSpecifications)
+        : product.officialSpecifications || {};
+  } catch (e) {
+    officialSpecs = {};
+  }
 
   const specCount =
     Object.keys(specs).length + Object.keys(officialSpecs).length;

@@ -1,20 +1,25 @@
 import { cacheLife } from "next/cache";
+import { cache } from "react";
 
 import { dbReady } from "@/db";
 
 import { getCategoryBySlug } from "../categories";
+import { type UnitType } from "../category-types";
 import { type PDPRenderData, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
   findProductBySyntheticId as findProductBySyntheticIdSync,
   findProductSlugByAsinSuffix as findProductSlugByAsinSuffixSync,
+  getAllProductSlugs,
   getCanonicalFamilyId,
+  getNonEmptyCategorySlugs,
   getProductById as getProductByIdSync,
   getProductBySlug as getProductBySlugSync,
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
 import { getProductPath } from "../utils/url";
+import { getCategoryProducts } from "./category-products";
 import { mergeLivePrices } from "./live-data";
 
 /**
@@ -25,18 +30,22 @@ import { mergeLivePrices } from "./live-data";
  */
 
 // Local helpers to detect Next.js internal errors safely
-function isNextNotFoundError(error: any): boolean {
-  return (
-    error?.digest?.includes("NEXT_NOT_FOUND") ||
-    error?.message?.includes("NEXT_NOT_FOUND") ||
-    error?.$$typeof === "next.not-found"
+function isNextNotFoundError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const e = error as { digest?: string; message?: string; $$typeof?: string };
+  return Boolean(
+    e?.digest?.includes?.("NEXT_NOT_FOUND") ||
+      e?.message?.includes?.("NEXT_NOT_FOUND") ||
+      e?.$$typeof === "next.not-found",
   );
 }
 
-function isNextRedirectError(error: any): boolean {
-  return (
-    error?.digest?.includes("NEXT_REDIRECT") ||
-    error?.message?.includes("NEXT_REDIRECT")
+function isNextRedirectError(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const e = error as { digest?: string; message?: string };
+  return Boolean(
+    e?.digest?.includes?.("NEXT_REDIRECT") ||
+      e?.message?.includes?.("NEXT_REDIRECT"),
   );
 }
 
@@ -54,11 +63,16 @@ export async function getPDPRenderData(
   countryCode: string = "de",
 ): Promise<PDPRenderData | null> {
   try {
-    // 1. Initial Gate - Ensure DB is alive
+    // 1. Database Safety Guard (with timeout to prevent 500 timeouts)
     try {
-      await dbReady;
+      await Promise.race([
+        dbReady,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("DB_TIMEOUT")), 5000),
+        ),
+      ]);
     } catch (dbError) {
-      console.error(`[PDP DB ERROR] ${slug}:`, dbError);
+      console.warn(`[PDP DB WARNING] ${slug} (Proceeding anyway):`, dbError);
     }
 
     // 2. Resolve the main product
@@ -67,7 +81,7 @@ export async function getPDPRenderData(
 
     // Handle redirects (checking if it's NOT null and HAS redirect)
     if ("redirect" in productData) {
-      return productData as any;
+      return productData as unknown as PDPRenderData;
     }
 
     const { product, isParentView } = productData as {
@@ -141,7 +155,9 @@ export async function getPDPRenderData(
     // 6. Final POJO Serialization (Bulletproof for RSC)
     return toSafePOJO({
       product: mergedProduct,
-      variants: variants.filter((v) => v.id !== mergedProduct.id),
+      variants: variants.filter(
+        (v: Product) => v.id !== (mergedProduct as Product).id,
+      ),
       category,
       similarSidebar: sidebar,
       similarCarousel: carousel,
@@ -164,7 +180,7 @@ export async function getPDPRenderData(
  * Using "use cache" for granular parts of the data.
  */
 
-async function getCachedMainProduct(slug: string, countryCode: string) {
+async function getCachedMainProduct(slug: string, _countryCode: string) {
   "use cache";
   cacheLife("minutes");
 
@@ -229,8 +245,8 @@ async function getCachedVariants(parentAsin: string, countryCode: string) {
       countryCode,
       true,
     );
-    return vars.map((v) => toSafePOJO(v));
-  } catch (e) {
+    return vars.map((v: Product) => toSafePOJO(v));
+  } catch (_e) {
     return [];
   }
 }
@@ -252,8 +268,8 @@ async function getCachedSimilar(
       limit,
       countryCode,
     );
-    return items.map((v) => toSafePOJO(v));
-  } catch (e) {
+    return items.map((v: Product) => toSafePOJO(v));
+  } catch (_e) {
     return [];
   }
 }
@@ -269,23 +285,28 @@ function toSafePOJO<T>(obj: T): T {
 
   const seen = new WeakSet();
 
-  const strip = (o: any): any => {
+  const strip = (o: unknown): unknown => {
     if (!o || typeof o !== "object") return o;
     if (o instanceof Date) return o.toISOString();
     if (o instanceof Buffer) return null;
     if (typeof o === "function") return null;
 
-    if (seen.has(o)) return null; // Prevent circular references
-    seen.add(o);
+    if (seen.has(o as object)) return null; // Prevent circular references
+    seen.add(o as object);
 
     if (Array.isArray(o)) {
       return o.map(strip);
     }
 
-    const result: any = {};
-    for (const [key, value] of Object.entries(o)) {
-      // Strip problematic DB fields and private/internal keys
-      if (key === "historyJson" || key === "icon" || key.startsWith("_")) {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(o as object)) {
+      // Skip private keys, icons, large blobs, and Next.js internal props
+      if (
+        key === "historyJson" ||
+        key === "icon" ||
+        key.startsWith("_") ||
+        key.startsWith("$$")
+      ) {
         continue;
       }
       result[key] = strip(value);
@@ -294,14 +315,65 @@ function toSafePOJO<T>(obj: T): T {
   };
 
   try {
-    return strip(obj);
-  } catch (e) {
-    console.error("[Serialization Deep Error]:", e);
+    return strip(obj) as T;
+  } catch (_e) {
+    console.error("[Serialization Deep Error]:", _e);
     // Absolute fallback: JSON cycle
     try {
       return JSON.parse(JSON.stringify(obj));
     } catch {
-      return null as any;
+      return null as unknown as T;
     }
   }
 }
+
+// --- SITEMAP & DISCOVERY EXPORTS ---
+export { getAllProductSlugs, getNonEmptyCategorySlugs };
+
+/**
+ * Orchestrator for Category and Deals pages.
+ * Fetches, filters, sorts and localizes products for a given category.
+ * Uses toSafePOJO to ensure Next.js RSC serialization safety.
+ */
+export const getCategoryRenderData = cache(async function getCategoryRenderData(
+  categorySlug: string,
+  countryCode: string,
+  filterParams: Record<string, string | string[] | undefined>,
+) {
+  try {
+    const data = await getCategoryProducts(
+      categorySlug,
+      countryCode,
+      filterParams,
+    );
+
+    // Ensure the entire tree is serializable for RSC
+    return toSafePOJO(data);
+  } catch (e) {
+    console.error(`[Render Error] getCategoryRenderData failed:`, e);
+    return toSafePOJO({
+      products: [],
+      totalCount: 0,
+      filteredCount: 0,
+      unitLabel: "TB" as UnitType,
+      hasProducts: false,
+      filters: {
+        socket: [],
+        cores: [],
+        condition: [],
+        brand: [],
+      },
+      filterCounts: {},
+      minPriceInCategory: 0,
+      maxPriceInCategory: 1000,
+      priceRanges: [],
+      lastUpdated: null,
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        pageSize: 24,
+        totalItems: 0,
+      },
+    });
+  }
+});
