@@ -1,4 +1,6 @@
 import { cacheLife } from "next/cache";
+import { cache } from "react";
+
 
 import { type Category } from "../categories";
 
@@ -245,12 +247,13 @@ type PDPRenderData =
       canonicalSlug: string;
     };
 
-export async function getPDPRenderData(
-  slug: string,
-  countryInput: string = "de",
-): Promise<PDPRenderData | null> {
-  "use cache";
-  const countryCode = countryInput.toLowerCase();
+export const getPDPRenderData = cache(
+  async (
+    slug: string,
+    countryInput: string = "de",
+  ): Promise<PDPRenderData | null> => {
+    const countryCode = countryInput.toLowerCase();
+
 
   // 1. Resolve Product (ID-based, Slug-based, or Legacy)
   let product: Product | undefined;
@@ -385,3 +388,6 @@ export async function getPDPRenderData(
     ),
   );
 }
+);
+
+

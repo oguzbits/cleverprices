@@ -134,9 +134,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: `Produkt Details | ${BRAND_DOMAIN}` };
   }
 
-  let renderData;
   try {
-    renderData = await getPDPRenderData(slug);
+    let renderData;
+    try {
+      renderData = await getPDPRenderData(slug, DEFAULT_COUNTRY);
+
   } catch (error: unknown) {
     if (
       error instanceof DatabaseBusyError ||
@@ -158,8 +160,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  const data = renderData && !("redirect" in renderData) ? renderData : null;
-  const isParentViewMode = data?.isParentView || false;
+  const category = renderData && !("redirect" in renderData) ? renderData.category : null;
+  const isParentViewMode = renderData && !("redirect" in renderData) ? renderData.isParentView : false;
 
   // Handle Metadata redirects (Critical for SEO: redirects in metadata set the real 3xx status code)
   if (renderData && "redirect" in renderData) {
@@ -178,12 +180,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!product.id) {
     notFound();
   }
-  const productId = product.id;
 
   const countryCode = DEFAULT_COUNTRY;
   const countryConfig = getCountryByCode(countryCode);
-  const category = allCategories[product.category as CategorySlug];
-  const price = product.prices[countryCode] || Object.values(product.prices)[0];
+
+  // DEFENSIVE: Ensure product.prices exists before access
+  const productPrices = product.prices || {};
+  const price = productPrices[countryCode] || Object.values(productPrices)[0];
 
   // Quality check: Unified with sitemap and content guards
   const isQualityEnough = isProductHighQuality(product, {
@@ -196,20 +199,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     notFound();
   }
   const isParentView = isParentViewMode;
-  const siblings = isParentView ? renderData.variants || [] : [];
   const identity = getProductIdentity(product);
 
   const displayTitle = isParentView
     ? identity.modelTitle
     : identity.displayTitle;
 
-  // SEO Title: Focused on "Comparison" and "Affordability"
-  // Pattern: [Product Name] Günstig Kaufen | Preisvergleich | CleverPrices
   const BRAND_SUFFIX = ` | ${BRAND_NAME}`;
   const ACTION_SUFFIX = " Günstig Kaufen | Preisvergleich";
   const MAX_LENGTH = 65;
 
-  // We truncate the title to ensure the Action + Brand are visible
   const availableForTitle =
     MAX_LENGTH - (ACTION_SUFFIX.length + BRAND_SUFFIX.length);
   const title =
@@ -217,22 +216,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ACTION_SUFFIX +
     BRAND_SUFFIX;
 
-  // German description with Action Verb + value proposition (Max ~160 chars)
-  // Try enriched description first
   const enrichedDesc = generateEnrichedDescription(product, category);
 
   const description =
     enrichedDesc ||
     `${displayTitle} im Preisvergleich. Aktueller Bestpreis: ${price?.toFixed(2)}€ (${countryConfig?.currency || "EUR"}). Jetzt Top-Hardware Angebote vergleichen und sparen bei ${BRAND_NAME}.`;
 
-  // [SEO Triad Enforced - v220] Use ONLY the canonical ID and Slug resolved by getPDPRenderData
-  // We removed the fallback to product.id (Real Variant ID 200M) to prevent GSC mismatches.
   const effectiveId = renderData?.canonicalId || product.id;
   const effectiveSlug = renderData?.canonicalSlug || product.slug;
-  const canonicalPath = getProductPath(
-    effectiveId || product.id,
-    effectiveSlug || product.slug,
-  );
+  const canonicalPath = getProductPath(effectiveId, effectiveSlug);
 
   return {
     title,
@@ -266,12 +258,25 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       product.title,
       "Preisvergleich",
       "günstig kaufen",
-      `${category?.name} Preis`,
+      `${category?.name || ""} Preis`,
       "beste Angebot",
-      "Deutschland",
     ].filter(Boolean) as string[],
   };
+
+
+  } catch (error: unknown) {
+    // Preserve Next.js internal errors (redirect/notFound)
+    const err = error as { digest?: string };
+    if (err?.digest?.startsWith("NEXT_")) {
+      throw error;
+    }
+    console.error(`[Metadata Critical Error] ${slug}:`, error);
+    return { title: `${BRAND_NAME} | Hardware Preisvergleich` };
+  }
 }
+
+
+
 
 export default async function ProductPage({ params, searchParams }: Props) {
   const { slug } = await params;
@@ -301,7 +306,9 @@ export default async function ProductPage({ params, searchParams }: Props) {
       }
 
       const product = data.product;
-      const parentViewMode = data.isParentView || false;
+      const category = data.category;
+      const isParentViewMode = data.isParentView || false;
+
 
       if (!product) {
         return { notFound: true };
@@ -310,7 +317,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       const isQualityEnough = isProductHighQuality(product, {
         checkPrice: true,
         countryCode: countryCode,
-        isParentView: parentViewMode,
+        isParentView: isParentViewMode,
       });
 
       if (!isQualityEnough) {
@@ -321,7 +328,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         product,
         variants: (data.variants || []) as Product[],
         category: data.category,
-        parentViewMode,
+        parentViewMode: isParentViewMode,
         canonicalId: data.canonicalId,
         similarSidebar: data.similarSidebar,
         similarCarousel: data.similarCarousel,
