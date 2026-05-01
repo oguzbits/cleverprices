@@ -1,5 +1,3 @@
-import { cacheLife } from "next/cache";
-
 import { type CategorySlug, getCategoryBySlug } from "../categories";
 import { type UnitType } from "../category-types";
 import { type PDPRenderData, type Product } from "../product-definitions";
@@ -167,8 +165,8 @@ export async function getPDPRenderData(
  */
 
 async function getCachedMainProduct(slug: string, _countryCode: string) {
-  "use cache";
-  cacheLife("minutes");
+  // "use cache";
+  // cacheLife("minutes");
 
   try {
     let product: Product | undefined;
@@ -223,8 +221,8 @@ async function getCachedMainProduct(slug: string, _countryCode: string) {
 }
 
 async function getCachedVariants(parentAsin: string, countryCode: string) {
-  "use cache";
-  cacheLife("minutes");
+  // "use cache";
+  // cacheLife("minutes");
   try {
     const vars = await getProductVariantsSync(
       { parentAsin } as Product,
@@ -244,8 +242,8 @@ async function getCachedSimilar(
   limit: number,
   countryCode: string,
 ) {
-  "use cache";
-  cacheLife("minutes");
+  // "use cache";
+  // cacheLife("minutes");
   try {
     const items = await getSimilarProductsSync(
       category,
@@ -335,8 +333,8 @@ function toSafePOJO<T>(obj: T): T {
 
 // --- SITEMAP & DISCOVERY EXPORTS ---
 export async function getCachedNonEmptyCategorySlugs(): Promise<string[]> {
-  "use cache";
-  cacheLife("minutes");
+  // "use cache";
+  // cacheLife("minutes");
   return getNonEmptyCategorySlugs();
 }
 
@@ -426,8 +424,8 @@ export async function getCachedParentCategoryData(
   categorySlug: string,
   countryCode: string = "de",
 ) {
-  "use cache";
-  cacheLife("minutes");
+  // "use cache";
+  // cacheLife("minutes");
 
   try {
     const { getParentCategoryData } =
@@ -452,8 +450,8 @@ export async function getCachedLivePrices(
   productIds: number[],
   countryCode: string,
 ) {
-  "use cache";
-  cacheLife("minutes");
+  // "use cache";
+  // cacheLife("minutes");
   const _v = CACHE_VERSION;
 
   const priceMap = await getLivePricesForProducts(productIds, countryCode);

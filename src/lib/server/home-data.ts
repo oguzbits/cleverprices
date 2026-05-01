@@ -4,7 +4,6 @@ import {
   getNewArrivals,
 } from "@/lib/product-registry";
 
-import { cacheLife } from "next/cache";
 import { CACHE_VERSION } from "../site-config";
 import { assertSerializable, serializeSafe } from "../utils/serialization";
 
@@ -13,8 +12,8 @@ import { assertSerializable, serializeSafe } from "../utils/serialization";
  * Complies with strict project rules by isolating "use cache" in the server layer.
  */
 export async function fetchHomeData(countryCode: string) {
-  "use cache";
-  cacheLife("minutes");
+  // "use cache";
+  // cacheLife("minutes");
   const _v = CACHE_VERSION;
 
   try {
@@ -44,4 +43,3 @@ export async function fetchHomeData(countryCode: string) {
     return [[], [], []];
   }
 }
-

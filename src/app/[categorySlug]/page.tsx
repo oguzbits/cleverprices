@@ -7,7 +7,6 @@ import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
 import { ParentCategoryView } from "@/components/category/ParentCategoryView";
 import { ServerBusy } from "@/components/ui/ServerBusy";
 import {
-  allCategories,
   type Category,
   type CategorySlug,
   getBreadcrumbs,
@@ -23,7 +22,6 @@ import {
 } from "@/lib/metadata";
 import { type FilterParams, type Product } from "@/lib/product-definitions";
 import {
-  getCachedNonEmptyCategorySlugs,
   getCachedParentCategoryData,
   getCategoryOrchestrationData,
   getCategoryRenderData,

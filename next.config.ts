@@ -32,7 +32,7 @@ const nextConfig: NextConfig = {
       })(),
   },
   reactCompiler: true,
-  cacheComponents: true,
+  cacheComponents: false,
   cacheLife: {
     category: {
       stale: 300, // 5 minutes (Safe buffer for price updates)
