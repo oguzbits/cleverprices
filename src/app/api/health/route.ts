@@ -1,4 +1,5 @@
 import { db, dbReady } from "@/db";
+import { getSafeDate, getSafeNow } from "@/lib/server/deterministic-time";
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
@@ -8,12 +9,12 @@ import { NextResponse } from "next/server";
  * Returns database connectivity status and basic latency.
  */
 export async function GET() {
-  const start = Date.now();
+  const start = getSafeNow();
 
   try {
     // Ensure database and migrations are fully ready
     await dbReady;
-    
+
     // Quick DB connectivity check via Drizzle
     await db.run(sql`SELECT 1`);
 
@@ -22,8 +23,8 @@ export async function GET() {
         status: "healthy",
         database: "connected",
         buildId: process.env.NEXT_PUBLIC_BUILD_ID || "dev-hash",
-        latency: Date.now() - start,
-        timestamp: new Date().toISOString(),
+        latency: getSafeNow() - start,
+        timestamp: getSafeDate().toISOString(),
       },
       {
         headers: {
@@ -39,7 +40,7 @@ export async function GET() {
         status: "unhealthy",
         db: "disconnected",
         error: message,
-        timestamp: new Date().toISOString(),
+        timestamp: getSafeDate().toISOString(),
       },
       {
         status: 503,

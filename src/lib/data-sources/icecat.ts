@@ -27,6 +27,8 @@ const ICECAT_PASSWORD = process.env.ICECAT_PASSWORD;
 const INDEX_URL =
   "https://data.icecat.biz/export/freexml/EN/files.index.xml.gz";
 
+import { getSafeDate } from "@/lib/server/deterministic-time";
+
 export class IcecatDataSource implements DataSourceProvider {
   id = "icecat" as const;
   name = "Open Icecat";
@@ -214,7 +216,7 @@ export class IcecatDataSource implements DataSourceProvider {
         },
         offers: [],
         bestOffer: undefined,
-        lastUpdated: new Date(),
+        lastUpdated: getSafeDate(),
         primarySource: "icecat",
         sources: ["icecat"],
       };

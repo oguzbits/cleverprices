@@ -1,8 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import { computePriceAnalysis } from "./price-analysis-utils";
-import { getSafeNow } from "./server/deterministic-time";
-
+import { getSafeDate } from "./server/deterministic-time";
 
 describe("computePriceAnalysis", () => {
   // Setup consistent chart data
@@ -18,7 +17,7 @@ describe("computePriceAnalysis", () => {
   it("should return null if history has less than 2 points", () => {
     expect(computePriceAnalysis(100, [])).toBeNull();
     expect(
-      computePriceAnalysis(100, [{ date: new Date(), price: 100 }]),
+      computePriceAnalysis(100, [{ date: getSafeDate(), price: 100 }]),
     ).toBeNull();
   });
 
@@ -50,9 +49,9 @@ describe("computePriceAnalysis", () => {
 
     // Let's adjust history so lowest is far away
     const historyHighLowest = [
-      { date: new Date(), price: 100 },
-      { date: new Date(), price: 100 },
-      { date: new Date(), price: 80 }, // Lowest 80
+      { date: baseDate, price: 100 },
+      { date: baseDate, price: 100 },
+      { date: baseDate, price: 80 }, // Lowest 80
     ]; // Avg 93.33.
     // We want price ~7% below avg but > 5% above lowest.
     // Price 87. Avg 93.3. Lowest 80.
@@ -71,7 +70,7 @@ describe("computePriceAnalysis", () => {
   });
 
   it("should calculate correct dates analyzed", () => {
-    const d1 = new Date(getSafeNow());
+    const d1 = getSafeDate();
 
     const d2 = new Date(d1);
     d2.setDate(d2.getDate() - 10);
@@ -82,8 +81,7 @@ describe("computePriceAnalysis", () => {
     ];
 
     const result = computePriceAnalysis(100, hist, d1.getTime());
-    // Should be approx 10 days
-    expect(result?.daysAnalyzed).toBeGreaterThanOrEqual(10);
-    expect(result?.daysAnalyzed).toBeLessThanOrEqual(11);
+    // Should be exactly 10 days (Math.ceil(10) = 10)
+    expect(result?.daysAnalyzed).toBe(10);
   });
 });

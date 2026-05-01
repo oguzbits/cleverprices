@@ -30,6 +30,8 @@ const COUNTRY_CURRENCIES: Record<CountryCode, Currency> = {
   it: "EUR",
 };
 
+import { getSafeDate } from "@/lib/server/deterministic-time";
+
 /**
  * Static Data Source Provider
  *
@@ -128,7 +130,7 @@ class StaticDataSource implements DataSourceProvider {
       merchantRating: 4.5,
       merchantReviewCount: 1000,
       paymentMethods: ["Visa", "PayPal", "Bankeinzug"],
-      lastUpdated: new Date(),
+      lastUpdated: getSafeDate(),
       country,
     };
 
@@ -153,7 +155,7 @@ class StaticDataSource implements DataSourceProvider {
       bestOffer: offer,
       rating: product.rating,
       reviewCount: product.reviewCount,
-      lastUpdated: new Date(),
+      lastUpdated: getSafeDate(),
       primarySource: "static",
       sources: ["static"],
     };

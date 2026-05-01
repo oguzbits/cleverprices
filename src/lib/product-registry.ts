@@ -36,7 +36,7 @@ import {
   VIRTUAL_CATEGORY_MAP,
 } from "./product-definitions";
 import { getFamilyIdentity, getFamilyRepresentative } from "./product-families";
-import { getSafeNow } from "./server/deterministic-time";
+import { getSafeDate, getSafeNow } from "./server/deterministic-time";
 import {
   enrichWithFullSiblings,
   getProductsByCategory,
@@ -511,7 +511,7 @@ export async function getAllProductSlugs(
               slug: hubSlug,
               category: r.category,
               enrichmentStatus: r.enrichmentStatus,
-              updatedAt: (r.updatedAt || new Date()).toISOString(),
+              updatedAt: (r.updatedAt || getSafeDate()).toISOString(),
               hasQualityVariant: isQualityVariant,
             });
           } else {
@@ -534,7 +534,7 @@ export async function getAllProductSlugs(
             slug: r.slug,
             category: r.category,
             enrichmentStatus: r.enrichmentStatus,
-            updatedAt: (r.updatedAt || new Date()).toISOString(),
+            updatedAt: (r.updatedAt || getSafeDate()).toISOString(),
           });
         }
       }
@@ -665,7 +665,7 @@ export async function getAllProductSlugs(
           slug: hubSlug,
           category: p.category,
           enrichmentStatus: p.enrichmentStatus,
-          updatedAt: (p.updatedAt || new Date()).toISOString(),
+          updatedAt: (p.updatedAt || getSafeDate()).toISOString(),
         });
       } else {
         if (processedFamilies.has(p.parentAsin)) continue;
@@ -689,7 +689,7 @@ export async function getAllProductSlugs(
               slug: m.slug,
               category: v.category,
               enrichmentStatus: v.enrichmentStatus,
-              updatedAt: (v.updatedAt || new Date()).toISOString(),
+              updatedAt: (v.updatedAt || getSafeDate()).toISOString(),
             });
           });
         }
@@ -724,7 +724,7 @@ export async function getAllProductSlugs(
               : "pending",
             updatedAt:
               (repIndex !== -1 ? variants[repIndex].updatedAt : null) ||
-              new Date(),
+              getSafeDate(),
           });
         }
       }

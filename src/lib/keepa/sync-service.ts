@@ -18,6 +18,7 @@ import {
   pruneHistory,
 } from "@/lib/history-compression";
 import { getFamilyIdentity } from "@/lib/product-families";
+import { getSafeDate, getSafeNow } from "@/lib/server/deterministic-time";
 import { and, asc, eq, lt, sql } from "drizzle-orm";
 
 import {
@@ -82,7 +83,7 @@ export async function getProductsNeedingRefresh(
 ): Promise<{ asin: string; category: string }[]> {
   const count = await getProductCount();
   const interval = getDynamicRefreshInterval(count);
-  const cutoff = new Date(Date.now() - interval);
+  const cutoff = new Date(getSafeNow() - interval);
   const maxProducts = limit || getMaxProductsToday();
 
   if (maxProducts <= 0) {
@@ -374,7 +375,7 @@ export async function upsertProductFromKeepa(
   keepaProduct: KeepaProductRaw,
   category?: CategorySlug,
 ): Promise<void> {
-  const now = new Date();
+  const now = getSafeDate();
 
   // Extract price data from Keepa stats
   const currentStats = keepaProduct.stats?.current || [];

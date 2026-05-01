@@ -21,6 +21,7 @@
 
 import type { CategorySlug } from "@/lib/categories";
 import { countries, type CountryCode } from "@/lib/countries";
+import { getSafeDate } from "@/lib/server/deterministic-time";
 import type { Currency } from "@/types";
 
 import type {
@@ -407,7 +408,7 @@ class KeepaDataSource implements DataSourceProvider {
         merchantRating: 4.8,
         merchantReviewCount: 150000,
         paymentMethods: ["Visa", "PayPal", "Bankeinzug"],
-        lastUpdated: new Date(),
+        lastUpdated: getSafeDate(),
         country,
       });
     }
@@ -422,7 +423,7 @@ class KeepaDataSource implements DataSourceProvider {
         condition: "used" as ProductCondition,
         availability: "unknown" as const,
         deliveryTime: "3-5 Tage",
-        lastUpdated: new Date(),
+        lastUpdated: getSafeDate(),
         country,
       });
     }
@@ -443,7 +444,7 @@ class KeepaDataSource implements DataSourceProvider {
         merchantRating: 4.6,
         merchantReviewCount: 50000,
         paymentMethods: ["Visa", "PayPal", "Bankeinzug"],
-        lastUpdated: new Date(),
+        lastUpdated: getSafeDate(),
         country,
       });
     }
@@ -498,7 +499,7 @@ class KeepaDataSource implements DataSourceProvider {
       priceHistory: this.extractPriceHistory(product, country),
       lastUpdated: product.lastUpdate
         ? keepaTimeToDate(product.lastUpdate)
-        : new Date(),
+        : getSafeDate(),
       primarySource: "keepa",
       sources: ["keepa"],
     };

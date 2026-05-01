@@ -19,6 +19,7 @@
 
 import type { CategorySlug } from "@/lib/categories";
 import type { CountryCode } from "@/lib/countries";
+import { getSafeDate } from "@/lib/server/deterministic-time";
 import type { Currency } from "@/types";
 
 import type {
@@ -327,7 +328,7 @@ class EbayDataSource implements DataSourceProvider {
       condition,
       availability: "in_stock",
       freeShipping,
-      lastUpdated: new Date(),
+      lastUpdated: getSafeDate(),
       country,
     };
 
@@ -339,7 +340,7 @@ class EbayDataSource implements DataSourceProvider {
       specifications: {},
       offers: [offer],
       bestOffer: offer,
-      lastUpdated: new Date(),
+      lastUpdated: getSafeDate(),
       primarySource: "ebay",
       sources: ["ebay"],
     };

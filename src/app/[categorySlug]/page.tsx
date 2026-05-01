@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { cacheLife } from "next/cache";
 import { notFound, permanentRedirect } from "next/navigation";
 /* eslint-disable react-hooks/error-boundaries */
 import { Suspense } from "react";
@@ -12,7 +13,6 @@ import {
   type Category,
   type CategorySlug,
   getBreadcrumbs,
-  getCategoryBySlug,
   getChildCategories,
   isCategoryNotEmptyRecursive,
   stripCategoryIcon,
@@ -26,8 +26,9 @@ import {
 } from "@/lib/metadata";
 import { type FilterParams, type Product } from "@/lib/product-definitions";
 import {
+  getCachedNonEmptyCategorySlugs,
+  getCategoryOrchestrationData,
   getCategoryRenderData,
-  getNonEmptyCategorySlugs,
 } from "@/lib/server/cached-products";
 import { BRAND_DOMAIN, SITE_URL } from "@/lib/site-config";
 import { serializeSafe } from "@/lib/utils/serialization";
@@ -47,7 +48,7 @@ export async function generateStaticParams() {
   if (isBuild) return [{ categorySlug: "build-time-placeholder" }];
 
   try {
-    const nonEmptySlugs = await getNonEmptyCategorySlugs();
+    const nonEmptySlugs = await getCachedNonEmptyCategorySlugs();
     const categories = Object.values(allCategories).filter((c) => !c.hidden);
     return categories
       .filter((c) => isCategoryNotEmptyRecursive(c.slug, nonEmptySlugs))
@@ -65,7 +66,10 @@ export async function generateMetadata({
 }: Props): Promise<Metadata> {
   const isBuild = process.env.NEXT_PHASE === "phase-production-build";
   const { categorySlug } = await params;
-  const category = await getCategoryBySlug(categorySlug);
+
+  // 1. Resolve Category & Non-Empty State (Cached)
+  const { category, nonEmptySlugs } =
+    await getCategoryOrchestrationData(categorySlug);
 
   if (!category) {
     return {
@@ -82,16 +86,10 @@ export async function generateMetadata({
   const canonicalUrl = `${SITE_URL}/${category.slug}`;
 
   // Check if empty/hidden
-  let isEmpty = false;
-  try {
-    const nonEmptySlugs = await getNonEmptyCategorySlugs();
-    isEmpty = !isCategoryNotEmptyRecursive(
-      categorySlug as CategorySlug,
-      nonEmptySlugs,
-    );
-  } catch (e) {
-    // If DB is busy, we assume not empty to avoid noindexing valid pages
-  }
+  const isEmpty = !isCategoryNotEmptyRecursive(
+    categorySlug as CategorySlug,
+    nonEmptySlugs,
+  );
 
   const isParent = getChildCategories(category.slug).length > 0;
   if (category.hidden || (isEmpty && !isParent)) {
@@ -311,6 +309,9 @@ export default async function DedicatedCategoryPage({
   params,
   searchParams,
 }: Props) {
+  "use cache";
+  cacheLife("minutes");
+
   const { categorySlug } = await params;
 
   // Build-time safety
@@ -322,8 +323,10 @@ export default async function DedicatedCategoryPage({
     );
   }
 
-  // 1. Resolve Category
-  const category = await getCategoryBySlug(categorySlug);
+  // 1. Resolve Category & Metadata (Cached Orchestrator)
+  const { category, nonEmptySlugs } =
+    await getCategoryOrchestrationData(categorySlug);
+
   if (!category) notFound();
 
   // 2. Handle Aliases
@@ -333,7 +336,6 @@ export default async function DedicatedCategoryPage({
 
   try {
     // 3. Determine View Type (Parent vs Child)
-    const nonEmptySlugs = await getNonEmptyCategorySlugs();
     const isEmpty = !isCategoryNotEmptyRecursive(
       categorySlug as CategorySlug,
       nonEmptySlugs,

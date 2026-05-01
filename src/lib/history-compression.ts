@@ -11,6 +11,7 @@
  */
 
 import { gunzipSync, gzipSync } from "node:zlib";
+import { getSafeDate } from "./server/deterministic-time";
 
 /**
  * Compress a JSON string to a gzipped Buffer.
@@ -96,7 +97,7 @@ export function pruneHistory(
   history: Record<string, number>,
   maxDays: number = 365,
 ): Record<string, number> {
-  const cutoff = new Date();
+  const cutoff = getSafeDate();
   cutoff.setDate(cutoff.getDate() - maxDays);
   const cutoffStr = cutoff.toISOString().split("T")[0];
 

@@ -1,4 +1,4 @@
-import { IS_BUILD } from "@/db";
+import { getSafeDate, getSafeNow } from "./server/deterministic-time";
 
 /**
  * Build-time configuration
@@ -9,14 +9,12 @@ import { IS_BUILD } from "@/db";
  * Copyright year - automatically set to current year at build time
  * This is a build-time constant, not a runtime value
  */
-export const COPYRIGHT_YEAR = IS_BUILD ? 2026 : new Date().getFullYear();
+export const COPYRIGHT_YEAR = getSafeDate().getFullYear();
 
 /**
  * Build timestamp - when the site was last built
  */
-export const BUILD_TIME = IS_BUILD
-  ? "2026-04-30T00:00:00Z"
-  : new Date().toISOString();
+export const BUILD_TIME = getSafeDate().toISOString();
 
 /**
  * Price data last updated timestamp
@@ -30,9 +28,7 @@ const PRICES_UPDATED_AT = "2026-01-02T22:00:00Z";
  */
 function getPricesAge(): string {
   const updateTime = new Date(PRICES_UPDATED_AT).getTime();
-  const now = IS_BUILD
-    ? new Date("2026-05-01T00:00:00Z").getTime()
-    : Date.now();
+  const now = getSafeNow();
   const hours = Math.floor((now - updateTime) / (1000 * 60 * 60));
   const days = Math.floor(hours / 24);
 

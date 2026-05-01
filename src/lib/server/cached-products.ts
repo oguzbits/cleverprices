@@ -1,5 +1,4 @@
 import { cacheLife } from "next/cache";
-import { cache } from "react";
 
 import { dbReady } from "@/db";
 
@@ -52,34 +51,23 @@ function isNextRedirectError(error: unknown): boolean {
 /**
  * getPDPRenderData
  * The main orchestrator for PDP data.
- *
- * STRATEGY:
- * 1. This function is NOT wrapped in "use cache" at the top level to avoid monolithic failures.
- * 2. It calls individual "use cache" functions for different parts of the data.
- * 3. It handles redirects and 404s gracefully.
  */
 export async function getPDPRenderData(
   slug: string,
   countryCode: string = "de",
 ): Promise<PDPRenderData | null> {
+  "use cache";
+  cacheLife("minutes");
+
   try {
-    // 1. Database Safety Guard (with timeout to prevent 500 timeouts)
-    try {
-      await Promise.race([
-        dbReady,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("DB_TIMEOUT")), 5000),
-        ),
-      ]);
-    } catch (dbError) {
-      console.warn(`[PDP DB WARNING] ${slug} (Proceeding anyway):`, dbError);
-    }
+    // 1. Database Safety Guard
+    await dbReady;
 
     // 2. Resolve the main product
     const productData = await getCachedMainProduct(slug, countryCode);
     if (!productData) return null;
 
-    // Handle redirects (checking if it's NOT null and HAS redirect)
+    // Handle redirects
     if ("redirect" in productData) {
       return productData as unknown as PDPRenderData;
     }
@@ -120,7 +108,7 @@ export async function getPDPRenderData(
     const carousel =
       carouselRes.status === "fulfilled" ? carouselRes.value : [];
 
-    // 4. Live Price Merging (Freshness)
+    // 4. Live Price Merging (Freshness) - Wrapped in try/catch to ensure availability
     let mergedProduct = product;
     try {
       const [fresh] = await mergeLivePrices([product], countryCode, true);
@@ -152,7 +140,7 @@ export async function getPDPRenderData(
       console.warn(`[PDP Identity Error] ${slug}:`, e);
     }
 
-    // 6. Final POJO Serialization (Bulletproof for RSC)
+    // 6. Final POJO Serialization
     return toSafePOJO({
       product: mergedProduct,
       variants: variants.filter(
@@ -166,9 +154,7 @@ export async function getPDPRenderData(
       canonicalSlug,
     });
   } catch (error) {
-    // Re-throw Next.js internal errors
     if (isNextNotFoundError(error) || isNextRedirectError(error)) throw error;
-
     console.error(`[PDP ORCHESTRATION FAILURE] ${slug}:`, error);
     return null;
   }
@@ -327,26 +313,31 @@ function toSafePOJO<T>(obj: T): T {
 }
 
 // --- SITEMAP & DISCOVERY EXPORTS ---
-export { getAllProductSlugs, getNonEmptyCategorySlugs };
+export async function getCachedNonEmptyCategorySlugs(): Promise<string[]> {
+  "use cache";
+  cacheLife("minutes");
+  return getNonEmptyCategorySlugs();
+}
+
+export { getAllProductSlugs };
 
 /**
  * Orchestrator for Category and Deals pages.
- * Fetches, filters, sorts and localizes products for a given category.
- * Uses toSafePOJO to ensure Next.js RSC serialization safety.
  */
-export const getCategoryRenderData = cache(async function getCategoryRenderData(
+export async function getCategoryRenderData(
   categorySlug: string,
   countryCode: string,
   filterParams: Record<string, string | string[] | undefined>,
 ) {
+  "use cache";
+  cacheLife("minutes");
+
   try {
     const data = await getCategoryProducts(
       categorySlug,
       countryCode,
       filterParams,
     );
-
-    // Ensure the entire tree is serializable for RSC
     return toSafePOJO(data);
   } catch (e) {
     console.error(`[Render Error] getCategoryRenderData failed:`, e);
@@ -375,4 +366,22 @@ export const getCategoryRenderData = cache(async function getCategoryRenderData(
       },
     });
   }
-});
+}
+
+/**
+ * High-level orchestrator for category routes to prevent bailouts.
+ */
+export async function getCategoryOrchestrationData(categorySlug: string) {
+  "use cache";
+  cacheLife("minutes");
+
+  const [category, nonEmptySlugs] = await Promise.all([
+    getCategoryBySlug(categorySlug),
+    getNonEmptyCategorySlugs(),
+  ]);
+
+  return toSafePOJO({
+    category,
+    nonEmptySlugs,
+  });
+}

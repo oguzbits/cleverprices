@@ -16,6 +16,7 @@
  *    PAAPI_PARTNER_TAG=yoursite-20
  */
 
+import { getSafeDate } from "@/lib/server/deterministic-time";
 import crypto from "crypto";
 
 import type { CategorySlug } from "@/lib/categories";
@@ -173,8 +174,8 @@ function signRequest(
   target: string,
 ): Record<string, string> {
   const service = "ProductAdvertisingAPI";
-  const date = new Date();
-  const amzDate = date.toISOString().replace(/[:-]|\.\\d{3}/g, "");
+  const date = getSafeDate();
+  const amzDate = date.toISOString().replace(/[:-]|\.\d{3}/g, "");
   const dateStamp = amzDate.slice(0, 8);
 
   const canonicalHeaders =
@@ -514,7 +515,7 @@ class AmazonPaApiSource implements DataSourceProvider {
         merchantRating: 4.8,
         merchantReviewCount: 150000,
         paymentMethods: ["Visa", "PayPal", "Amex", "Bankeinzug"],
-        lastUpdated: new Date(),
+        lastUpdated: getSafeDate(),
         country,
       });
     }
@@ -532,7 +533,7 @@ class AmazonPaApiSource implements DataSourceProvider {
       rating: item.CustomerReviews?.StarRating?.Value,
       reviewCount: item.CustomerReviews?.Count,
       features: item.ItemInfo?.Features?.DisplayValues,
-      lastUpdated: new Date(),
+      lastUpdated: getSafeDate(),
       primarySource: "amazon-paapi",
       sources: ["amazon-paapi"],
     };
