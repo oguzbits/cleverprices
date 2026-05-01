@@ -5,12 +5,15 @@
  * Works with historyJson blob (lean schema) instead of priceHistory table.
  */
 
+import { and, eq } from "drizzle-orm";
+
 import { db } from "@/db";
 import { prices } from "@/db/schema";
 import type { CountryCode } from "@/lib/countries";
 import type { PriceAnalysis } from "@/lib/data-sources/types";
-import { and, eq } from "drizzle-orm";
+
 import { computePriceAnalysis, parseHistoryJson } from "./price-analysis-utils";
+import { getSafeDate, getSafeNow } from "./server/deterministic-time";
 
 /**
  * Calculate price analysis for a product
@@ -20,10 +23,6 @@ export async function analyzePriceHistory(
   country: CountryCode,
   daysBack: number = 90,
 ): Promise<PriceAnalysis | null> {
-  // Get the cutoff date
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-
   // Fetch current price record with historyJson
   const [priceRecord] = await db
     .select()
@@ -35,6 +34,11 @@ export async function analyzePriceHistory(
     return null;
   }
 
+  // Get the cutoff date using safe deterministic time
+  const now = getSafeNow();
+  const cutoffDate = new Date(now);
+  cutoffDate.setDate(cutoffDate.getDate() - daysBack);
+
   // Parse history from historyJson
   const allHistory = parseHistoryJson(priceRecord.historyJson);
 
@@ -44,7 +48,7 @@ export async function analyzePriceHistory(
   // Get current price (the consolidated "clever" price)
   const currentPrice = priceRecord.price || 0;
 
-  return computePriceAnalysis(currentPrice, history);
+  return computePriceAnalysis(currentPrice, history, now);
 }
 
 /**
@@ -55,9 +59,6 @@ export async function getPriceHistoryForChart(
   country: CountryCode,
   daysBack: number = 90,
 ): Promise<{ date: Date; price: number; priceType: string }[]> {
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - daysBack);
-
   // Fetch price record with historyJson
   const [priceRecord] = await db
     .select()
@@ -68,6 +69,10 @@ export async function getPriceHistoryForChart(
   if (!priceRecord?.historyJson) {
     return [];
   }
+
+  // Get the cutoff date using safe deterministic time
+  const cutoffDate = getSafeDate();
+  cutoffDate.setDate(cutoffDate.getDate() - daysBack);
 
   const allHistory = parseHistoryJson(priceRecord.historyJson);
 

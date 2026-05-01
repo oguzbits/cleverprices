@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test";
+
 import { computePriceAnalysis } from "./price-analysis-utils";
+import { getSafeNow } from "./server/deterministic-time";
+
 
 describe("computePriceAnalysis", () => {
   // Setup consistent chart data
@@ -68,7 +71,8 @@ describe("computePriceAnalysis", () => {
   });
 
   it("should calculate correct dates analyzed", () => {
-    const d1 = new Date();
+    const d1 = new Date(getSafeNow());
+
     const d2 = new Date(d1);
     d2.setDate(d2.getDate() - 10);
 
@@ -77,7 +81,7 @@ describe("computePriceAnalysis", () => {
       { date: d1, price: 100 },
     ];
 
-    const result = computePriceAnalysis(100, hist);
+    const result = computePriceAnalysis(100, hist, d1.getTime());
     // Should be approx 10 days
     expect(result?.daysAnalyzed).toBeGreaterThanOrEqual(10);
     expect(result?.daysAnalyzed).toBeLessThanOrEqual(11);

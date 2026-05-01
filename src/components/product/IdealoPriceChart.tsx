@@ -1,5 +1,8 @@
 "use client";
 
+import { TrendingDown, TrendingUp } from "lucide-react";
+import React, { useRef, useState } from "react";
+
 import {
   Dialog,
   DialogContent,
@@ -8,8 +11,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { TrendingDown, TrendingUp } from "lucide-react";
-import React, { useRef, useState } from "react";
 
 interface IdealoPriceChartProps {
   history?: { date: string; price: number }[];
@@ -111,7 +112,12 @@ function ChartRenderer({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [nowTimestamp] = useState(() => Date.now());
+  const [nowTimestamp] = useState(() => {
+    // If we're on the server (SSR/Prerender), use a fixed reference point to avoid bailouts
+    if (typeof window === "undefined") return 1735689600000;
+    return Date.now();
+  });
+
 
   const { data, minPrice, maxPrice, minDate, maxDate, stats, yTicks, yDomain } =
     React.useMemo(() => {

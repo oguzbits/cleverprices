@@ -1,12 +1,15 @@
+import { Star } from "lucide-react";
+
 import { ClientDate } from "@/components/ui/ClientDate";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PaymentMethodIcon } from "@/components/ui/PaymentMethodIcon";
-import { getCountryByCode, type CountryCode } from "@/lib/countries";
+import { type CountryCode,getCountryByCode } from "@/lib/countries";
 import { type ProductOffer } from "@/lib/data-sources";
 import { type ProductCondition } from "@/lib/data-sources/types";
 import { type Product } from "@/lib/product-definitions";
+import { getSafeDate } from "@/lib/server/deterministic-time";
 import { formatCurrency } from "@/lib/utils/formatting";
-import { Star } from "lucide-react";
+
 
 interface OffersListProps {
   product: Product;
@@ -38,7 +41,7 @@ export function IdealoProductOffers({
     selectedCondition === "used" || selectedCondition === "renewed";
 
   if (isParentView && product.parentAsin) {
-    let familyMembers = passedVariants
+    const familyMembers = passedVariants
       ? [product, ...passedVariants]
       : [product];
 
@@ -80,7 +83,7 @@ export function IdealoProductOffers({
     let targets = [product];
 
     if (product.parentAsin) {
-      let familyMembers = passedVariants || [product];
+      const familyMembers = passedVariants || [product];
 
       const curAttrs = product.variationAttributes?.toLowerCase().trim();
       const identicalSiblings = familyMembers.filter(
@@ -328,8 +331,10 @@ export function IdealoProductOffers({
           <span className="mt-1 block">
             Zuletzt aktualisiert:{" "}
             <ClientDate
-              date={product.pricesLastUpdated?.[countryCode] || new Date()}
+
+              date={product.pricesLastUpdated?.[countryCode] || getSafeDate()}
             />
+
           </span>
         )}
       </div>

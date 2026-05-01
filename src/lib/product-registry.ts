@@ -19,9 +19,9 @@ import { cache as reactCache } from "react";
 
 import { client, db, dbReady, IS_BUILD } from "@/db";
 import {
-  type Product as DbProduct,
   type Price,
   prices,
+  type Product as DbProduct,
   products,
 } from "@/db/schema";
 
@@ -36,6 +36,7 @@ import {
   VIRTUAL_CATEGORY_MAP,
 } from "./product-definitions";
 import { getFamilyIdentity, getFamilyRepresentative } from "./product-families";
+import { getSafeNow } from "./server/deterministic-time";
 import {
   enrichWithFullSiblings,
   getProductsByCategory,
@@ -60,12 +61,12 @@ export {
   getProductsByIds,
   getRawProductsByCategory,
   indexPricesById,
+  type LitePrice,
   litePriceColumns,
   liteProductColumns,
   mapDbProduct,
-  superLitePriceColumns,
-  type LitePrice,
   type Product,
+  superLitePriceColumns,
 };
 
 /**
@@ -805,7 +806,7 @@ async function fetchNonEmptyInternal() {
     // Update memory cache
     MEMORY_NON_EMPTY_CATEGORIES = {
       data: categories,
-      timestamp: IS_BUILD ? 1735689600000 : Date.now(),
+      timestamp: getSafeNow(),
       version: CACHE_VERSION,
     };
 
@@ -831,7 +832,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
   }
 
   // Check Memory Cache first (Instant, process-level)
-  const now = IS_BUILD ? 1735689600000 : Date.now();
+  const now = getSafeNow();
   if (
     MEMORY_NON_EMPTY_CATEGORIES &&
     MEMORY_NON_EMPTY_CATEGORIES.version === CACHE_VERSION &&

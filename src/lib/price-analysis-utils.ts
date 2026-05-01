@@ -1,6 +1,9 @@
 import { IS_BUILD } from "@/db";
 import type { PriceAnalysis } from "@/lib/data-sources/types";
+
 import { parseHistoryBlob } from "./history-compression";
+import { getSafeNow } from "./server/deterministic-time";
+
 
 /**
  * Parse historyJson blob into price history array
@@ -26,7 +29,10 @@ export function parseHistoryJson(
 export function computePriceAnalysis(
   currentPrice: number,
   history: { date: Date; price: number }[],
+  now: number = getSafeNow(),
 ): PriceAnalysis | null {
+
+
   // Need at least 2 data points for meaningful analysis
   if (history.length < 2) {
     return null;
@@ -81,9 +87,7 @@ export function computePriceAnalysis(
     daysAnalyzed:
       history.length > 0
         ? Math.ceil(
-            ((IS_BUILD ? 1735689600000 : Date.now()) -
-              history[0].date.getTime()) /
-              (1000 * 60 * 60 * 24),
+            (now - history[0].date.getTime()) / (1000 * 60 * 60 * 24),
           )
         : 0,
   };

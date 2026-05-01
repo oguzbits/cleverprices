@@ -104,7 +104,11 @@ function getProductGroupKey(p: Product): string {
     .substring(0, 30); // Use first 30 chars of cleaned title as group ID
 }
 
-const CURRENT_YEAR = new Date().getFullYear();
+import { getSafeNow } from "./server/deterministic-time";
+
+const CURRENT_YEAR = new Date(getSafeNow()).getFullYear();
+
+
 
 export function curateProductList(
   list: Product[],

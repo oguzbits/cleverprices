@@ -1,6 +1,10 @@
-import type { Product } from "@/lib/product-definitions";
 import { describe, expect, test } from "bun:test";
+
+import type { Product } from "@/lib/product-definitions";
+
+import { getSafeNow } from "../server/deterministic-time";
 import { calculateDesirabilityScore } from "./scoring";
+
 
 // Minimal product factory for testing — only fields used by scoring
 function makeProduct(overrides: Record<string, any> = {}): Product {
@@ -114,7 +118,8 @@ describe("calculateDesirabilityScore", () => {
   });
 
   test("current year in title gets freshness boost", () => {
-    const currentYear = new Date().getFullYear();
+    const currentYear = new Date(getSafeNow()).getFullYear();
+
     const fresh = calculateDesirabilityScore(
       makeProduct(),
       100,

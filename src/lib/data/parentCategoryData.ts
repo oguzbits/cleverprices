@@ -6,7 +6,7 @@
  * - Deals (best discounts)
  */
 
-import { getChildCategories, type CategorySlug } from "@/lib/categories";
+import { type CategorySlug,getChildCategories } from "@/lib/categories";
 import { type Product } from "@/lib/product-definitions";
 import { getProductsByCategory } from "@/lib/product-registry";
 import { mergeLivePrices } from "@/lib/server/live-data";
@@ -59,7 +59,10 @@ function getProductGroupKey(p: Product): string {
     .substring(0, 30); // Use first 30 chars of cleaned title as group ID
 }
 
-const CURRENT_YEAR = new Date().getFullYear();
+import { getSafeNow } from "../server/deterministic-time";
+
+const CURRENT_YEAR = new Date(getSafeNow()).getFullYear();
+
 
 async function getCategoryBestsellers(
   parentSlug: CategorySlug,

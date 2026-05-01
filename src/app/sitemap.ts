@@ -13,8 +13,11 @@ import {
   getAllProductSlugs,
   getNonEmptyCategorySlugs,
 } from "@/lib/server/cached-products";
+import { getSafeDate,getSafeNow } from "@/lib/server/deterministic-time";
 import { CACHE_VERSION, SITE_URL } from "@/lib/site-config";
 import { getProductPath } from "@/lib/utils/url";
+
+
 
 /**
  * ARCHITECTURE NOTE:
@@ -42,7 +45,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ].map((route) => {
     return {
       url: `${baseUrl}${route.path}`,
-      lastModified: new Date(),
+      lastModified: getSafeDate(),
       changeFrequency: "monthly" as const,
       priority: route.priority,
       alternates: {
@@ -52,7 +55,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   });
 
   try {
-    const totalStart = Date.now();
+    const totalStart = getSafeNow();
     console.log("🗺️  Sitemap: Starting generation...");
 
     // Blog routes
@@ -90,7 +93,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         return {
           url: `${baseUrl}${categoryPath}`,
-          lastModified: new Date(),
+          lastModified: getSafeDate(),
           changeFrequency: "weekly" as const,
           priority: 0.8,
           alternates: {
@@ -119,7 +122,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       };
     });
 
-    const totalDuration = Date.now() - totalStart;
+    const totalDuration = getSafeNow() - totalStart;
     const totalItems =
       staticRoutes.length +
       blogRoutes.length +

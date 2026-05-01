@@ -1,4 +1,5 @@
 import { LocalizedProduct, Product } from "@/lib/product-definitions";
+
 import { LeanProduct } from "../types";
 
 interface ProductScore {
@@ -204,7 +205,10 @@ const BUDGET_BRANDS = [
   "back market",
 ];
 
-const CURRENT_YEAR = new Date().getFullYear();
+import { getSafeNow } from "../server/deterministic-time";
+
+const CURRENT_YEAR = new Date(getSafeNow()).getFullYear();
+
 
 const PRESTIGE_BRANDS_SET = new Set(PRESTIGE_BRANDS);
 const ESTABLISHED_BRANDS_SET = new Set(ESTABLISHED_BRANDS);
