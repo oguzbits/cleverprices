@@ -70,18 +70,16 @@ describe("computePriceAnalysis", () => {
   });
 
   it("should calculate correct dates analyzed", () => {
-    const d1 = getSafeDate();
-
-    const d2 = new Date(d1);
-    d2.setDate(d2.getDate() - 10);
+    // Use fixed timestamps to avoid timezone/DST issues in tests
+    const nowTs = 1735689600000; // 2025-01-01T00:00:00Z
+    const tenDaysAgoTs = nowTs - 10 * 24 * 60 * 60 * 1000;
 
     const hist = [
-      { date: d2, price: 100 },
-      { date: d1, price: 100 },
+      { date: new Date(tenDaysAgoTs), price: 100 },
+      { date: new Date(nowTs), price: 100 },
     ];
 
-    const result = computePriceAnalysis(100, hist, d1.getTime());
-    // Should be exactly 10 days (Math.ceil(10) = 10)
+    const result = computePriceAnalysis(100, hist, nowTs);
     expect(result?.daysAnalyzed).toBe(10);
   });
 });

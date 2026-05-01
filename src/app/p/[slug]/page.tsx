@@ -1,5 +1,4 @@
 import { Metadata } from "next";
-import { cacheLife } from "next/cache";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -76,14 +75,8 @@ export async function generateMetadata({
 }
 
 export default async function ProductPage({ params, searchParams }: Props) {
-  "use cache";
-  cacheLife("minutes");
-
-  // 1. Await ALL props immediately for stable SSR trackability (Next.js 16/15)
-  const [{ slug }, searchParamsResolved] = await Promise.all([
-    params,
-    searchParams.catch(() => ({})),
-  ]);
+  // 1. Await params early (Static context)
+  const { slug } = await params;
 
   // 2. Early Guard for Build-Time Placeholder
   if (!slug || slug === "build-time-placeholder") {
@@ -91,23 +84,14 @@ export default async function ProductPage({ params, searchParams }: Props) {
   }
 
   const countryCode = DEFAULT_COUNTRY;
-  const rawCondition = (searchParamsResolved as Record<string, any>).condition;
-  const condition = (typeof rawCondition === "string" ? rawCondition : "new")
-    .toLowerCase()
-    .trim();
 
+  // 3. Fetch Orchestrated Data (Static context)
   let data: Awaited<ReturnType<typeof getPDPRenderData>> | null = null;
-
   try {
-    // 3. Fetch Orchestrated Data
     data = await getPDPRenderData(slug, countryCode);
   } catch (error) {
-    // CRITICAL: Re-throw Next.js internal errors so they can be caught by the framework
-    if (isNextNotFoundError(error) || isNextRedirectError(error)) {
-      throw error;
-    }
-
-    console.error(`[PDP Page Crash]`, error);
+    if (isNextNotFoundError(error) || isNextRedirectError(error)) throw error;
+    console.error("[PDP Page Crash]", error);
 
     // [PREMIUM FALLBACK UI]
     return (
@@ -141,18 +125,23 @@ export default async function ProductPage({ params, searchParams }: Props) {
           >
             Zur Startseite
           </Link>
-          <button
-            onClick={() =>
-              typeof window !== "undefined" && window.location.reload()
-            }
+          <Link
+            href="."
             className="rounded-xl border border-slate-200 bg-white px-8 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95"
           >
             Erneut versuchen
-          </button>
+          </Link>
         </div>
       </div>
     );
   }
+
+  // 4. Now await searchParams (Dynamic context)
+  const searchParamsResolved = await searchParams;
+  const rawCondition = (searchParamsResolved as Record<string, any>).condition;
+  const condition = (typeof rawCondition === "string" ? rawCondition : "new")
+    .toLowerCase()
+    .trim();
 
   if (!data) {
     notFound();

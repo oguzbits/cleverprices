@@ -1,7 +1,5 @@
 import { cacheLife } from "next/cache";
 
-import { dbReady } from "@/db";
-
 import { getCategoryBySlug } from "../categories";
 import { type UnitType } from "../category-types";
 import { type PDPRenderData, type Product } from "../product-definitions";
@@ -61,7 +59,8 @@ export async function getPDPRenderData(
 
   try {
     // 1. Database Safety Guard
-    await dbReady;
+    // Note: Removed dbReady await here as it can trigger Next.js 'uncached data' bailouts
+    // The DB client handles connection pooling and initialization internally.
 
     // 2. Resolve the main product
     const productData = await getCachedMainProduct(slug, countryCode);

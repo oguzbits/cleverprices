@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import { cacheLife } from "next/cache";
+import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 /* eslint-disable react-hooks/error-boundaries */
 import { Suspense } from "react";
@@ -173,12 +173,12 @@ const CategoryError = ({ error, slug }: { error: any; slug: string }) => {
           {error?.stack?.split("\n").slice(0, 3).join("\n")}
         </pre>
       </div>
-      <button
-        onClick={() => window.location.reload()}
+      <Link
+        href="."
         className="rounded-lg bg-red-600 px-6 py-2.5 font-semibold text-white shadow-md transition hover:bg-red-700 active:scale-95"
       >
-        Seite neu laden
-      </button>
+        Erneut versuchen
+      </Link>
     </div>
   );
 };
@@ -309,9 +309,6 @@ export default async function DedicatedCategoryPage({
   params,
   searchParams,
 }: Props) {
-  "use cache";
-  cacheLife("minutes");
-
   const { categorySlug } = await params;
 
   // Build-time safety
