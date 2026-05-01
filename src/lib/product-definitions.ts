@@ -1,4 +1,4 @@
-import { type Price, prices, products } from "@/db/schema";
+import { type Price, prices, products } from "../db/schema";
 
 // Virtual Category Mapping
 // Many categories in our manifest are actually specific views of a larger DB category.

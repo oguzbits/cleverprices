@@ -1,8 +1,8 @@
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { cache } from "react";
 
-import { db, dbReady, IS_BUILD } from "@/db";
-import { prices, products } from "@/db/schema";
+import { db, dbReady, IS_BUILD } from "../../db";
+import { prices, products } from "../../db/schema";
 
 import { withRetry } from "../../db/utils";
 import {

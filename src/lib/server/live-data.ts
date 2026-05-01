@@ -1,7 +1,7 @@
 import { and, eq, inArray } from "drizzle-orm";
 
-import { db } from "@/db";
-import { prices } from "@/db/schema";
+import { db } from "../../db";
+import { prices } from "../../db/schema";
 
 import { withRetry } from "../../db/utils";
 import { litePriceColumns, type Product } from "../product-definitions";
@@ -23,8 +23,6 @@ export async function getLivePricesForProducts(
   countryCode: string,
   includeHistory: boolean = false,
 ) {
-
-
   if (productIds.length === 0) return new Map();
 
   // Handle synthetic IDs (Hub/Parent Mode offsets)

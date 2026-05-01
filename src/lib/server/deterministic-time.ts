@@ -1,4 +1,4 @@
-import { IS_BUILD } from "@/db";
+import { IS_BUILD } from "../../db";
 
 /**
  * DETERMINISTIC REFERENCE DATE
@@ -9,9 +9,9 @@ export const REFERENCE_DATE_MS = 1735689600000;
 
 /**
  * getSafeNow
- * 
+ *
  * Returns the current timestamp in a way that is safe for Next.js static generation.
- * If we are in the build phase or Next.js static generation phase, it returns 
+ * If we are in the build phase or Next.js static generation phase, it returns
  * a fixed reference point. Otherwise, it returns Date.now().
  */
 export function getSafeNow(): number {
@@ -21,7 +21,7 @@ export function getSafeNow(): number {
   // 2. Check for Next.js environment indicators that might imply static generation
   // In some environments, Date.now() triggers bailout. We can avoid it by checking
   // for the presence of certain environment variables used during build.
-  if (process.env.NEXT_PHASE === 'phase-production-build') {
+  if (process.env.NEXT_PHASE === "phase-production-build") {
     return REFERENCE_DATE_MS;
   }
 
@@ -30,7 +30,7 @@ export function getSafeNow(): number {
 
 /**
  * getSafeDate
- * 
+ *
  * Returns a Date object initialized with getSafeNow().
  */
 export function getSafeDate(): Date {

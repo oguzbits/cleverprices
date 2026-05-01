@@ -17,13 +17,13 @@ import {
 } from "drizzle-orm";
 import { cache as reactCache } from "react";
 
-import { client, db, dbReady, IS_BUILD } from "@/db";
+import { client, db, dbReady, IS_BUILD } from "../db";
 import {
   type Product as DbProduct,
   type Price,
   prices,
   products,
-} from "@/db/schema";
+} from "../db/schema";
 
 import { withRetry } from "../db/utils";
 import {

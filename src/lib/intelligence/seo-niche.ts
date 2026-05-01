@@ -1,6 +1,6 @@
-import { db } from "@/db";
-import { prices, products, type Product as DbProduct } from "@/db/schema";
 import { and, desc, eq, inArray, lte, SQL } from "drizzle-orm";
+import { db } from "../../db";
+import { prices, products, type Product as DbProduct } from "../../db/schema";
 import type { Product } from "../product-definitions";
 import { litePriceColumns, liteProductColumns } from "../product-definitions";
 import { mapDbProduct } from "../utils/product-mapping";

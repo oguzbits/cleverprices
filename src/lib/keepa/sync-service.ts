@@ -9,8 +9,6 @@
  * - ~25,000 products possible with 1x daily update
  */
 
-import { db } from "@/db";
-import { prices, products } from "@/db/schema";
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import {
   compressHistory,
@@ -20,6 +18,8 @@ import {
 import { getFamilyIdentity } from "@/lib/product-families";
 import { getSafeDate, getSafeNow } from "@/lib/server/deterministic-time";
 import { and, asc, eq, lt, sql } from "drizzle-orm";
+import { db } from "../../db";
+import { prices, products } from "../../db/schema";
 
 import {
   getBestsellers,

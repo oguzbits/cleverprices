@@ -1,4 +1,7 @@
-import { type Price as DbPrice, type Product as DbProduct } from "@/db/schema";
+import {
+  type Price as DbPrice,
+  type Product as DbProduct,
+} from "../../db/schema";
 
 import { parseHistoryBlob } from "../history-compression";
 import { type LitePrice, type Product } from "../product-definitions";
