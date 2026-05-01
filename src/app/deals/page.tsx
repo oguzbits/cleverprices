@@ -24,17 +24,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function DealsPage({ searchParams }: Props) {
-  // Build-time safety: Prevent prerendering from hitting dynamic searchParams
-  if (process.env.NEXT_PHASE === "phase-production-build") {
-    return <div className="h-screen w-full bg-gray-50" />;
-  }
+export const dynamic = "force-dynamic";
 
+export default async function DealsPage({ searchParams }: Props) {
   const resolvedSearchParams = await searchParams;
 
   // Use the cached orchestrator for metadata/category lookup
-  const { category, nonEmptySlugs } =
-    await getCategoryOrchestrationData("deals");
+  const { category } = await getCategoryOrchestrationData("deals");
 
   if (!category) {
     return <div>Category not found</div>;
