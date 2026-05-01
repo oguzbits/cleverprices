@@ -7,7 +7,8 @@ import {
   Product,
 } from "@/lib/product-definitions";
 import { mapDbProduct } from "@/lib/utils/product-mapping";
-import { db, IS_BUILD } from "../../db";
+
+import { db } from "../../db";
 import { prices, products, type Product as DbProduct } from "../../db/schema";
 
 /**
@@ -20,8 +21,6 @@ export async function getAllDeals(
   limit: number = 24,
   countryCode: string = DEFAULT_COUNTRY,
 ): Promise<Product[]> {
-  if (IS_BUILD) return [];
-
   // 1. Fetch top deal IDs directly in SQL (Much faster than fetching 50k+ rows)
   const priceRows = await db
     .select({

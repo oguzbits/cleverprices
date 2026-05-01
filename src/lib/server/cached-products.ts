@@ -3,6 +3,7 @@ import { type UnitType } from "../category-types";
 import { type PDPRenderData, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
 import {
+  fetchSimilarProducts,
   findProductBySyntheticId as findProductBySyntheticIdSync,
   findProductSlugByAsinSuffix as findProductSlugByAsinSuffixSync,
   getAllProductSlugs,
@@ -11,7 +12,6 @@ import {
   getProductById as getProductByIdSync,
   getProductBySlug as getProductBySlugSync,
   getProductVariants as getProductVariantsSync,
-  getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
 import { CACHE_VERSION } from "../site-config";
 import { getProductPath } from "../utils/url";
@@ -245,7 +245,7 @@ async function getCachedSimilar(
   // "use cache";
   // cacheLife("minutes");
   try {
-    const items = await getSimilarProductsSync(
+    const items = await fetchSimilarProducts(
       category,
       slug,
       price,

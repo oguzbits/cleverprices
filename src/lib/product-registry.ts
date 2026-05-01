@@ -24,7 +24,6 @@ import {
   prices,
   products,
 } from "../db/schema";
-
 import { withRetry } from "../db/utils";
 import {
   filteringProductColumns,
@@ -873,7 +872,6 @@ export const getProductVariants = cache(async function getProductVariants(
   skipLiveMerge: boolean = false, // Added back to match usage
   skipFullMapping: boolean = false, // If true, skips expensive consensus/identity logic
 ): Promise<Product[]> {
-  if (IS_BUILD) return [];
   await dbReady;
   // 1. PRIMARY: Fetch by parentAsin (Ideal Path)
   const fetchByAsin = async (parentAsin: string) => {
@@ -1000,7 +998,6 @@ export const getProductFamilyMembers = cache(
 );
 
 export async function getAllProducts(): Promise<Product[]> {
-  if (IS_BUILD) return [];
   await dbReady;
   const allProducts = await withRetry(() =>
     db.select(liteProductColumns).from(products),
@@ -1379,7 +1376,7 @@ export const findProductByParentAsinSuffix = cache(
   },
 );
 
-const fetchSimilarProducts = async (
+export const fetchSimilarProducts = async (
   category: string,
   excludedSlug: string,
   targetPrice: number,
@@ -1387,7 +1384,6 @@ const fetchSimilarProducts = async (
   countryCode: string,
   parentAsin?: string,
 ) => {
-  if (IS_BUILD) return [];
   await dbReady;
 
   // 1. Calculate a price range (+/- 50% for high diversity, or tighter)
@@ -1459,7 +1455,8 @@ export const getSimilarProducts = cache(async function getSimilarProducts(
   const isScript =
     typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
 
-  const currentPrice = product.prices[countryCode] || 0;
+  const currentPrice = product?.prices?.[countryCode] || 0;
+  if (!currentPrice && !product?.category) return [];
 
   if (isScript) {
     return fetchSimilarProducts(
@@ -1491,7 +1488,6 @@ export async function searchProducts(
   query: string,
   limit: number = 20,
 ): Promise<Product[]> {
-  if (IS_BUILD) return [];
   const sanitized = query.trim().replace(/[^\w\s]/g, "");
   if (!sanitized) return [];
 
@@ -1651,7 +1647,7 @@ const getProductsByBrand = cache(async function getProductsByBrand(
   return enrichWithFullSiblings(prods, pricesByProduct, "de", false);
 });
 
-const getCachedDeals = async (
+export const fetchDeals = async (
   limit: number,
   countryCode: string,
   condition?: string,
@@ -1712,7 +1708,6 @@ export const getBestDeals = cache(async function getBestDeals(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
-  if (IS_BUILD) return [];
   await dbReady;
   try {
     const isScript =
@@ -1736,7 +1731,7 @@ export const getBestDeals = cache(async function getBestDeals(
       const pricesByProduct = indexPricesById(results.map((r) => r.price));
       return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     }
-    return getCachedDeals(limit, countryCode, condition);
+    return fetchDeals(limit, countryCode, condition);
   } catch (e) {
     console.warn(
       `[DB Warning] Failed to fetch best deals: ${e instanceof Error ? e.message : String(e)}`,
@@ -1820,7 +1815,6 @@ export const getMostPopular = cache(async function getMostPopular(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
-  if (IS_BUILD) return [];
   try {
     const isScript =
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
@@ -1869,11 +1863,10 @@ export const getMostPopular = cache(async function getMostPopular(
  * This uses a SQL Window Function to ensure we get candidates from all categories
  * instead of just 200 items from the most popular category.
  */
-const fetchDiversePopular = async (
+export const fetchDiversePopular = async (
   itemsPerCategory: number,
   countryCode: string,
 ) => {
-  if (IS_BUILD) return [];
   await dbReady;
   try {
     const result = await client.execute({
@@ -1944,18 +1937,17 @@ export const getDiverseMostPopular = cache(async function getDiverseMostPopular(
   const isScript =
     typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
 
+  /* 
   if (isScript) {
-    // Scripts (non-Next.js) can't use unstable_cache
-    // We would need to duplicate the logic or export the inner manual fetcher if needed.
-    // For now returning empty or we could refactor further.
-    // But scripts usually don't call this function.
     return [];
   }
+  */
+  await dbReady;
 
   return fetchDiversePopular(itemsPerCategory, countryCode);
 });
 
-const getCachedNew = async (
+export const fetchNewArrivals = async (
   limit: number,
   countryCode: string,
   condition?: string,
@@ -2010,7 +2002,6 @@ export async function getNewArrivals(
   countryCode: string = "de",
   condition?: "New" | "Used" | "Renewed",
 ): Promise<Product[]> {
-  if (IS_BUILD) return [];
   try {
     const isScript =
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
@@ -2056,7 +2047,7 @@ export async function getNewArrivals(
         );
       });
     }
-    return getCachedNew(limit, countryCode, condition);
+    return fetchNewArrivals(limit, countryCode, condition);
   } catch (e) {
     console.warn(
       "[Build Warning] Database missing in getNewArrivals. Returning empty.",
@@ -2090,7 +2081,6 @@ async function getFilteredProducts(
     offset?: number;
   },
 ): Promise<Product[]> {
-  if (IS_BUILD) return [];
   await dbReady;
   try {
     const where: SQL[] = [
