@@ -1,6 +1,6 @@
 import { Metadata } from "next";
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 
 import { IdealoProductPage } from "@/components/product/IdealoProductPage";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
@@ -75,17 +75,23 @@ export async function generateMetadata({
 }
 
 export default async function ProductPage({ params, searchParams }: Props) {
-  // 1. Await params early (Static context)
+  // 1. Resolve Params first (Static-compatible)
   const { slug } = await params;
 
   // 2. Early Guard for Build-Time Placeholder
+  // We MUST check this BEFORE awaiting searchParams to allow static generation to pass.
   if (!slug || slug === "build-time-placeholder") {
     return <div className="hidden" aria-hidden="true" />;
   }
 
+  // 3. Resolve Dynamic Context
+  const searchParamsResolved = await searchParams;
+
   const countryCode = DEFAULT_COUNTRY;
 
-  // 3. Fetch Orchestrated Data (Static context)
+  // 3. Fetch Orchestrated Data
+  // This call is now correctly positioned after the dynamic signals (searchParams await),
+  // which prevents "Uncached data accessed outside of Suspense" errors in Next.js 16.
   let data: Awaited<ReturnType<typeof getPDPRenderData>> | null = null;
   try {
     data = await getPDPRenderData(slug, countryCode);
@@ -136,20 +142,18 @@ export default async function ProductPage({ params, searchParams }: Props) {
     );
   }
 
-  // 4. Now await searchParams (Dynamic context)
-  const searchParamsResolved = await searchParams;
-  const rawCondition = (searchParamsResolved as Record<string, any>).condition;
-  const condition = (typeof rawCondition === "string" ? rawCondition : "new")
-    .toLowerCase()
-    .trim();
-
   if (!data) {
     notFound();
   }
 
   if ("redirect" in data) {
-    redirect(data.redirect!);
+    permanentRedirect(data.redirect!);
   }
+
+  const rawCondition = (searchParamsResolved as Record<string, any>).condition;
+  const condition = (typeof rawCondition === "string" ? rawCondition : "new")
+    .toLowerCase()
+    .trim();
 
   // 3. Quality Guard
   if (!isProductHighQuality(data.product)) {

@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 /* eslint-disable react-hooks/error-boundaries */
-import { Suspense } from "react";
 
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
 import { ParentCategoryView } from "@/components/category/ParentCategoryView";
@@ -65,9 +64,19 @@ export async function generateMetadata({
   searchParams,
 }: Props): Promise<Metadata> {
   const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+
+  // 1. Resolve Params first
   const { categorySlug } = await params;
 
-  // 1. Resolve Category & Non-Empty State (Cached)
+  // 2. Early Guard (BEFORE searchParams)
+  if (!categorySlug || categorySlug === "build-time-placeholder") {
+    return { title: BRAND_DOMAIN };
+  }
+
+  // 3. Resolve Dynamic Context
+  const filters = await searchParams;
+
+  // 4. Resolve Category & Non-Empty State (Cached)
   const { category, nonEmptySlugs } =
     await getCategoryOrchestrationData(categorySlug);
 
@@ -82,7 +91,6 @@ export async function generateMetadata({
     return { title: `${category.name} | ${BRAND_DOMAIN}` };
   }
 
-  const filters = await searchParams;
   const canonicalUrl = `${SITE_URL}/${category.slug}`;
 
   // Check if empty/hidden
@@ -189,14 +197,13 @@ const CategoryError = ({ error, slug }: { error: any; slug: string }) => {
 async function ChildCategoryView({
   category,
   categorySlug,
-  searchParamsPromise,
+  searchParams,
 }: {
   category: Category;
   categorySlug: CategorySlug;
-  searchParamsPromise: Promise<FilterParams>;
+  searchParams: FilterParams;
 }) {
   try {
-    const searchParams = await searchParamsPromise;
     const data = await getCategoryRenderData(
       categorySlug,
       DEFAULT_COUNTRY,
@@ -309,18 +316,18 @@ export default async function DedicatedCategoryPage({
   params,
   searchParams,
 }: Props) {
+  // 1. Resolve Params first
   const { categorySlug } = await params;
 
-  // Build-time safety
-  if (categorySlug === "build-time-placeholder") {
-    return (
-      <Suspense fallback={null}>
-        <div className="h-screen w-full animate-pulse bg-gray-50" />
-      </Suspense>
-    );
+  // 2. Build-time safety (BEFORE searchParams)
+  if (!categorySlug || categorySlug === "build-time-placeholder") {
+    return <div className="h-screen w-full animate-pulse bg-gray-50" />;
   }
 
-  // 1. Resolve Category & Metadata (Cached Orchestrator)
+  // 3. Resolve Dynamic Context
+  const searchParamsResolved = await searchParams;
+
+  // 4. Resolve Category & Metadata (Cached Orchestrator)
   const { category, nonEmptySlugs } =
     await getCategoryOrchestrationData(categorySlug);
 
@@ -360,13 +367,11 @@ export default async function DedicatedCategoryPage({
 
     // 4. Listing View
     return (
-      <Suspense fallback={null}>
-        <ChildCategoryView
-          category={category}
-          categorySlug={categorySlug as CategorySlug}
-          searchParamsPromise={searchParams}
-        />
-      </Suspense>
+      <ChildCategoryView
+        category={category}
+        categorySlug={categorySlug as CategorySlug}
+        searchParams={searchParamsResolved}
+      />
     );
   } catch (error) {
     if (
