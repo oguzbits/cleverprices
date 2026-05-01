@@ -78,10 +78,13 @@ export default async function ProductPage({ params, searchParams }: Props) {
   // 1. Resolve Params first (Static-compatible)
   const { slug } = await params;
 
-  // 2. Early Guard for Build-Time Placeholder
-  // We MUST check this BEFORE awaiting searchParams to allow static generation to pass.
-  if (!slug || slug === "build-time-placeholder") {
-    return <div className="hidden" aria-hidden="true" />;
+  // 2. Build-time safety: Prevent prerendering from bailing or hitting uncached data
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    !slug ||
+    slug === "build-time-placeholder"
+  ) {
+    return <div className="h-screen w-full bg-gray-50" />;
   }
 
   // 3. Resolve Dynamic Context

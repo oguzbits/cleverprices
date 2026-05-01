@@ -44,7 +44,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function BestNichePage({ params }: Props) {
   const { slug } = await params;
 
-  if (slug === "build-time-placeholder") return null;
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    slug === "build-time-placeholder"
+  ) {
+    return <div className="h-screen w-full bg-gray-50" />;
+  }
 
   const niche = await getNicheBySlug(slug);
 

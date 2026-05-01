@@ -1,11 +1,13 @@
 import { Metadata } from "next";
-import { Suspense } from "react";
 
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
-import { getCategoryBySlug, stripCategoryIcon } from "@/lib/categories";
+import { stripCategoryIcon } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getAlternateLanguages } from "@/lib/metadata";
-import { getCategoryRenderData } from "@/lib/server/cached-products";
+import {
+  getCategoryOrchestrationData,
+  getCategoryRenderData,
+} from "@/lib/server/cached-products";
 import { SITE_URL } from "@/lib/site-config";
 
 interface Props {
@@ -23,27 +25,25 @@ export const metadata: Metadata = {
 };
 
 export default async function DealsPage({ searchParams }: Props) {
-  return (
-    <Suspense fallback={null}>
-      <DealsPageContent searchParams={searchParams} />
-    </Suspense>
-  );
-}
+  // Build-time safety: Prevent prerendering from hitting dynamic searchParams
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return <div className="h-screen w-full bg-gray-50" />;
+  }
 
-async function DealsPageContent({ searchParams }: Props) {
   const resolvedSearchParams = await searchParams;
-  const category = await getCategoryBySlug("deals");
+
+  // Use the cached orchestrator for metadata/category lookup
+  const { category, nonEmptySlugs } =
+    await getCategoryOrchestrationData("deals");
 
   if (!category) {
     return <div>Category not found</div>;
   }
 
-  // Use the standardized category rendering data logic
-  // This already handles "deals" internally in getCategoryProducts
   const dataResult = await getCategoryRenderData(
     "deals",
     DEFAULT_COUNTRY,
-    resolvedSearchParams,
+    JSON.parse(JSON.stringify(resolvedSearchParams)),
   );
 
   return (

@@ -5,8 +5,8 @@ import { DatabaseBusyError } from "@/db/utils";
 import { type CountryCode } from "@/lib/countries";
 import { curateProductList } from "@/lib/product-curation";
 import { getCountryByCode } from "@/lib/server/cached-countries";
+import { getCachedLivePrices } from "@/lib/server/cached-products";
 import { fetchHomeData } from "@/lib/server/home-data";
-import { getLivePricesForProducts as getPricesFromDb } from "@/lib/server/live-data";
 
 export default async function HomeContent({
   country,
@@ -134,7 +134,13 @@ export default async function HomeContent({
 
   let livePriceMap = new Map<number, LivePriceData>();
   try {
-    livePriceMap = await getPricesFromDb(allHomeProductIds, countryCode);
+    const priceRecord = await getCachedLivePrices(
+      allHomeProductIds,
+      countryCode,
+    );
+    livePriceMap = new Map(
+      Object.entries(priceRecord).map(([id, data]) => [Number(id), data]),
+    ) as any;
   } catch (error: any) {
     if (
       error instanceof DatabaseBusyError ||

@@ -15,9 +15,10 @@ import {
   getProductVariants as getProductVariantsSync,
   getSimilarProducts as getSimilarProductsSync,
 } from "../product-registry";
+import { CACHE_VERSION } from "../site-config";
 import { getProductPath } from "../utils/url";
 import { getCategoryProducts } from "./category-products";
-import { mergeLivePrices } from "./live-data";
+import { getLivePricesForProducts, mergeLivePrices } from "./live-data";
 
 /**
  * --- PDP DATA ORCHESTRATION ---
@@ -383,4 +384,36 @@ export async function getCategoryOrchestrationData(categorySlug: string) {
     category,
     nonEmptySlugs,
   });
+}
+
+/**
+ * Orchestrator for Parent Category Hub pages.
+ */
+export async function getCachedParentCategoryData(
+  categorySlug: string,
+  countryCode: string = "de",
+) {
+  "use cache";
+  cacheLife("minutes");
+
+  const { getParentCategoryData } = await import("../data/parentCategoryData");
+  const data = await getParentCategoryData(categorySlug as any, countryCode);
+
+  return toSafePOJO(data);
+}
+
+/**
+ * Cached version of live price fetching for batch operations (e.g., Home Page).
+ * Uses Record instead of Map for cache serialization compatibility.
+ */
+export async function getCachedLivePrices(
+  productIds: number[],
+  countryCode: string,
+) {
+  "use cache";
+  cacheLife("minutes");
+  const _v = CACHE_VERSION;
+
+  const priceMap = await getLivePricesForProducts(productIds, countryCode);
+  return Object.fromEntries(priceMap.entries());
 }

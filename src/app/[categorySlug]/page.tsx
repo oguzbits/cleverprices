@@ -17,7 +17,6 @@ import {
   stripCategoryIcon,
 } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
-import { getParentCategoryData } from "@/lib/data/parentCategoryData";
 import {
   generateKeywords,
   getAlternateLanguages,
@@ -26,6 +25,7 @@ import {
 import { type FilterParams, type Product } from "@/lib/product-definitions";
 import {
   getCachedNonEmptyCategorySlugs,
+  getCachedParentCategoryData,
   getCategoryOrchestrationData,
   getCategoryRenderData,
 } from "@/lib/server/cached-products";
@@ -56,6 +56,7 @@ export async function generateStaticParams() {
     return [];
   }
 }
+
 /**
  * Metadata generation
  */
@@ -207,7 +208,7 @@ async function ChildCategoryView({
     const data = await getCategoryRenderData(
       categorySlug,
       DEFAULT_COUNTRY,
-      searchParams,
+      JSON.parse(JSON.stringify(searchParams)),
     );
 
     if (data && "isBusy" in data && data.isBusy) {
@@ -242,10 +243,8 @@ async function ParentCategoryLoader({
   nonEmptySlugs: string[];
 }) {
   try {
-    const { bestsellers, newProducts, deals } = await getParentCategoryData(
-      categorySlug,
-      DEFAULT_COUNTRY,
-    );
+    const { bestsellers, newProducts, deals } =
+      await getCachedParentCategoryData(categorySlug, DEFAULT_COUNTRY);
 
     const transformProduct = (p: Product) => ({
       id: p.id,
@@ -319,9 +318,13 @@ export default async function DedicatedCategoryPage({
   // 1. Resolve Params first
   const { categorySlug } = await params;
 
-  // 2. Build-time safety (BEFORE searchParams)
-  if (!categorySlug || categorySlug === "build-time-placeholder") {
-    return <div className="h-screen w-full animate-pulse bg-gray-50" />;
+  // 2. Build-time safety: Prevent prerendering from hitting dynamic request data
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    !categorySlug ||
+    categorySlug === "build-time-placeholder"
+  ) {
+    return <div className="h-screen w-full bg-gray-50" />;
   }
 
   // 3. Resolve Dynamic Context
