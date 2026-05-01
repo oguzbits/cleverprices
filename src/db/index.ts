@@ -162,11 +162,11 @@ export const dbReady: Promise<void> = (async () => {
         }
       })();
 
-      // Wait at most 8 seconds for migration check during cold start.
+      // Wait at most 3 seconds for migration check during cold start.
       // If it takes longer, we assume the DB is "mostly" ready and proceed to avoid timing out the whole request.
       await Promise.race([
         migrationCheck,
-        new Promise((resolve) => setTimeout(resolve, 8000)),
+        new Promise((resolve) => setTimeout(resolve, 3000)),
       ]);
     }
 

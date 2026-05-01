@@ -55,13 +55,14 @@ export async function getPDPRenderData(
   slug: string,
   countryCode: string = "de",
 ): Promise<PDPRenderData | null> {
-  "use cache";
-  cacheLife("minutes");
+  // Temporarily disabled "use cache" to stabilize 500 errors on cold starts
+  // "use cache";
+  // cacheLife("minutes");
 
   try {
     // 1. Database Safety Guard
-    // Note: Removed dbReady await here as it can trigger Next.js 'uncached data' bailouts
-    // The DB client handles connection pooling and initialization internally.
+    const { dbReady } = await import("../../db");
+    await dbReady;
 
     // 2. Resolve the main product
     const productData = await getCachedMainProduct(slug, countryCode);
@@ -349,10 +350,13 @@ export async function getCategoryRenderData(
   countryCode: string,
   filterParams: Record<string, string | string[] | undefined>,
 ) {
-  "use cache";
-  cacheLife("minutes");
+  const start = Date.now();
+  console.log(`[Category Render Start] ${categorySlug} (${countryCode})`);
 
   try {
+    const { dbReady } = await import("../../db");
+    await dbReady;
+
     const data = await getCategoryProducts(
       categorySlug,
       countryCode,
@@ -392,10 +396,11 @@ export async function getCategoryRenderData(
  * High-level orchestrator for category routes to prevent bailouts.
  */
 export async function getCategoryOrchestrationData(categorySlug: string) {
-  "use cache";
-  cacheLife("minutes");
-
+  console.log(`[Category Orchestration Start] ${categorySlug}`);
   try {
+    const { dbReady } = await import("../../db");
+    await dbReady;
+
     const [category, nonEmptySlugs] = await Promise.all([
       getCategoryBySlug(categorySlug),
       getNonEmptyCategorySlugs(),

@@ -518,7 +518,10 @@ export async function mergeLivePricesIntoLocalized(
       popularityScore,
       savings,
       listPrice,
-      lastUpdated: new Date(live.lastUpdated).toISOString(),
+      lastUpdated:
+        live.lastUpdated && !isNaN(new Date(live.lastUpdated).getTime())
+          ? new Date(live.lastUpdated).toISOString()
+          : new Date(1735689600000).toISOString(),
     };
   });
 }

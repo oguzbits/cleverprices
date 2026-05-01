@@ -38,6 +38,8 @@ interface Props {
   searchParams: Promise<FilterParams>;
 }
 
+export const dynamic = "force-dynamic";
+
 // Local helpers to detect Next.js internal errors safely
 function isNextNotFoundError(error: unknown): boolean {
   const e = error as { digest?: string; message?: string; $$typeof?: string };
@@ -56,23 +58,7 @@ function isNextRedirectError(error: unknown): boolean {
   );
 }
 
-/**
- * Static params generation for ISR
- */
-export async function generateStaticParams() {
-  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
-  if (isBuild) return [{ categorySlug: "build-time-placeholder" }];
-
-  try {
-    const nonEmptySlugs = await getCachedNonEmptyCategorySlugs();
-    const categories = Object.values(allCategories).filter((c) => !c.hidden);
-    return categories
-      .filter((c) => isCategoryNotEmptyRecursive(c.slug, nonEmptySlugs))
-      .map((c) => ({ categorySlug: c.slug }));
-  } catch {
-    return [];
-  }
-}
+// Removed generateStaticParams to ensure pure dynamic SSR as per stabilizing strategy.
 
 /**
  * Metadata generation
@@ -82,15 +68,7 @@ export async function generateMetadata({
   searchParams,
 }: Props): Promise<Metadata> {
   try {
-    const isBuild = process.env.NEXT_PHASE === "phase-production-build";
-
-    // 1. Resolve Params first
     const { categorySlug } = await params;
-
-    // 2. Early Guard (BEFORE searchParams)
-    if (!categorySlug || categorySlug === "build-time-placeholder") {
-      return { title: BRAND_DOMAIN };
-    }
 
     // 3. Resolve Dynamic Context
     const filters = await searchParams;
@@ -104,10 +82,6 @@ export async function generateMetadata({
         title: "Kategorie nicht gefunden",
         robots: { index: false, follow: false },
       };
-    }
-
-    if (isBuild) {
-      return { title: `${category.name} | ${BRAND_DOMAIN}` };
     }
 
     const canonicalUrl = `${SITE_URL}/${category.slug}`;
@@ -351,17 +325,8 @@ export default async function DedicatedCategoryPage({
   params,
   searchParams,
 }: Props) {
-  // 1. Resolve Params first
+  // 1. Resolve Params
   const { categorySlug } = await params;
-
-  // 2. Build-time safety: Prevent prerendering from hitting dynamic request data
-  if (
-    process.env.NEXT_PHASE === "phase-production-build" ||
-    !categorySlug ||
-    categorySlug === "build-time-placeholder"
-  ) {
-    return <div className="h-screen w-full bg-gray-50" />;
-  }
 
   // 3. Resolve Dynamic Context
   const searchParamsResolved = await searchParams;
