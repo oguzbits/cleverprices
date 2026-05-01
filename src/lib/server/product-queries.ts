@@ -334,8 +334,8 @@ export async function getRawProductsByCategory(
       return {
         ...p,
         prices: { [code]: live?.price || 0 },
-        usedPrices: { [code]: live?.usedPrices || 0 },
-        warehousePrices: { [code]: live?.warehousePrices || 0 },
+        usedPrices: { [code]: live?.usedPrice || 0 },
+        warehousePrices: { [code]: live?.warehousePrice || 0 },
         priceAvg90: { [code]: live?.priceAvg90 || 0 },
         pricePerUnit: { [code]: live?.pricePerUnit || 0 },
         pricesLastUpdated: {

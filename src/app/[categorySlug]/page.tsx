@@ -43,6 +43,7 @@ function isNextNotFoundError(error: unknown): boolean {
   const e = error as { digest?: string; message?: string; $$typeof?: string };
   return !!(
     e?.digest?.includes("NEXT_NOT_FOUND") ||
+    e?.digest?.includes("NEXT_HTTP_ERROR_FALLBACK;404") ||
     e?.message?.includes("NEXT_NOT_FOUND") ||
     e?.message?.includes("notFound()")
   );

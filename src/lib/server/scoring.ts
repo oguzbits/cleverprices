@@ -209,7 +209,6 @@ import { getSafeNow } from "../server/deterministic-time";
 
 const CURRENT_YEAR = new Date(getSafeNow()).getFullYear();
 
-
 const PRESTIGE_BRANDS_SET = new Set(PRESTIGE_BRANDS);
 const ESTABLISHED_BRANDS_SET = new Set(ESTABLISHED_BRANDS);
 const BUDGET_BRANDS_SET = new Set(BUDGET_BRANDS);
@@ -298,12 +297,12 @@ export function calculateDesirabilityScore(
     titleLower.includes("renewed");
   if (isSecondHand) penaltyScore -= 5000;
 
-  // Brand Penalty (Aggressive on hub pages to ensure premium feel)
-  if (isBudget) penaltyScore -= context === "landing" ? 30000 : 5000;
+  // Brand Penalty (Aggressive on hub pages to ensure premium feel, but not so aggressive that we empty the page)
+  if (isBudget) penaltyScore -= context === "landing" ? 5000 : 2000;
   if (isNoName && price < 200)
-    penaltyScore -= context === "landing" ? 20000 : 10000;
+    penaltyScore -= context === "landing" ? 3000 : 1000;
   if (isNoName && price >= 200)
-    penaltyScore -= context === "landing" ? 10000 : 0;
+    penaltyScore -= context === "landing" ? 1000 : 0;
 
   // --- COMPOSITE CALCULATION ---
   const totalScore =

@@ -20,6 +20,7 @@ function isNextNotFoundError(error: unknown): boolean {
   const e = error as { digest?: string; message?: string; $$typeof?: string };
   return !!(
     e?.digest?.includes("NEXT_NOT_FOUND") ||
+    e?.digest?.includes("NEXT_HTTP_ERROR_FALLBACK;404") ||
     e?.message?.includes("NEXT_NOT_FOUND") ||
     e?.$$typeof === "next.not-found"
   );
@@ -35,10 +36,7 @@ function isNextRedirectError(error: unknown): boolean {
 
 // Removed generateStaticParams to ensure pure dynamic SSR as per stabilizing strategy.
 
-export async function generateMetadata({
-  params,
-  searchParams,
-}: Props): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     // 1. Await params early for Next.js 16 trackability
     const { slug } = await params;
@@ -141,7 +139,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
     permanentRedirect(data.redirect!);
   }
 
-  const rawCondition = (searchParamsResolved as Record<string, any>).condition;
+  const rawCondition = searchParamsResolved?.condition;
   const condition = (typeof rawCondition === "string" ? rawCondition : "new")
     .toLowerCase()
     .trim();

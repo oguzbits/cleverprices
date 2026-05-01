@@ -86,14 +86,14 @@ export async function getPDPRenderData(
         getCachedSimilar(
           product.category,
           product.slug,
-          product.prices[countryCode] || 0,
+          product.prices?.[countryCode] || 0,
           10,
           countryCode,
         ),
         getCachedSimilar(
           product.category,
           product.slug,
-          product.prices[countryCode] || 0,
+          product.prices?.[countryCode] || 0,
           12,
           countryCode,
         ),

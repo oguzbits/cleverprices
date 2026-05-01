@@ -174,22 +174,25 @@ export async function mergeLivePrices(
       const updated = {
         ...p,
         condition,
-        prices: { ...p.prices, [countryCode]: rawNewPrice }, // Store RAW New Price
-        usedPrices: { ...p.usedPrices, [countryCode]: newUsedPrice },
+        prices: { ...(p.prices || {}), [countryCode]: rawNewPrice }, // Store RAW New Price
+        usedPrices: { ...(p.usedPrices || {}), [countryCode]: newUsedPrice },
         warehousePrices: {
-          ...p.warehousePrices,
+          ...(p.warehousePrices || {}),
           [countryCode]: newWarehousePrice,
         },
         pricesLastUpdated: {
-          ...p.pricesLastUpdated,
+          ...(p.pricesLastUpdated || {}),
           [countryCode]:
             live.lastUpdated && !isNaN(new Date(live.lastUpdated).getTime())
               ? new Date(live.lastUpdated).toISOString()
               : new Date(1735689600000).toISOString(), // Deterministic fallback: 2025-01-01
         },
-        priceAvg90: { ...p.priceAvg90, [countryCode]: refPrice },
-        listPrice: { ...p.listPrice, [countryCode]: live.listPrice },
-        pricesPerUnit: { ...p.pricesPerUnit, [countryCode]: live.pricePerUnit },
+        priceAvg90: { ...(p.priceAvg90 || {}), [countryCode]: refPrice },
+        listPrice: { ...(p.listPrice || {}), [countryCode]: live.listPrice },
+        pricesPerUnit: {
+          ...(p.pricesPerUnit || {}),
+          [countryCode]: live.pricePerUnit,
+        },
         savings,
         // ATTACH LIVE HISTORY: Use the parsed history from live data if available
         priceHistory: live.history || p.priceHistory,

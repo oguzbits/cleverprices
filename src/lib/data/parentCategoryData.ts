@@ -6,7 +6,7 @@
  * - Deals (best discounts)
  */
 
-import { type CategorySlug,getChildCategories } from "@/lib/categories";
+import { type CategorySlug, getChildCategories } from "@/lib/categories";
 import { type Product } from "@/lib/product-definitions";
 import { getProductsByCategory } from "@/lib/product-registry";
 import { mergeLivePrices } from "@/lib/server/live-data";
@@ -63,7 +63,6 @@ import { getSafeNow } from "../server/deterministic-time";
 
 const CURRENT_YEAR = new Date(getSafeNow()).getFullYear();
 
-
 async function getCategoryBestsellers(
   parentSlug: CategorySlug,
   limit: number = 12,
@@ -87,22 +86,24 @@ async function getCategoryBestsellers(
   // Filter products with valid prices and sort by "popularity"
   const validProducts = allProducts.filter(
     (p) =>
-      p.prices[countryCode] !== undefined &&
-      p.prices[countryCode] > 0 &&
+      p.prices?.[countryCode] !== undefined &&
+      p.prices?.[countryCode] > 0 &&
       !excludeIds.includes(p.id!),
   );
 
   // Sort by advanced desirability score
   const sorted = validProducts.sort((a, b) => {
+    const priceA = a.prices?.[countryCode] || 0;
+    const priceB = b.prices?.[countryCode] || 0;
     const scoreA = calculateDesirabilityScore(
       a,
-      a.prices[countryCode] || 0,
+      priceA,
       a.title,
       "landing",
     ).popularityScore;
     const scoreB = calculateDesirabilityScore(
       b,
-      b.prices[countryCode] || 0,
+      priceB,
       b.title,
       "landing",
     ).popularityScore;
@@ -166,8 +167,8 @@ async function getCategoryNewProducts(
   // Filter for quality products
   const MIN_PRICE = 30; // Filter out €5-€20 accessories
   const validProducts = allProducts.filter((p) => {
-    const hasPrice =
-      p.prices[countryCode] !== undefined && p.prices[countryCode] >= MIN_PRICE;
+    const price = p.prices?.[countryCode] || 0;
+    const hasPrice = price >= MIN_PRICE;
     const notExcluded = !excludeIds.includes(p.id!);
 
     // Extract year from title or createdAt
@@ -194,13 +195,13 @@ async function getCategoryNewProducts(
 
     const scoreA = calculateDesirabilityScore(
       a,
-      a.prices[countryCode] || 0,
+      a.prices?.[countryCode] || 0,
       a.title,
       "landing",
     ).popularityScore;
     const scoreB = calculateDesirabilityScore(
       b,
-      b.prices[countryCode] || 0,
+      b.prices?.[countryCode] || 0,
       b.title,
       "landing",
     ).popularityScore;
@@ -264,7 +265,7 @@ async function getCategoryDeals(
   // Filter for genuine deal products
   const MIN_PRICE = 30;
   const validProducts = allProducts.filter((p) => {
-    const price = p.prices[countryCode];
+    const price = p.prices?.[countryCode];
     if (price === undefined || price < MIN_PRICE) return false;
     if (excludeIds.includes(p.id!)) return false;
 
@@ -279,13 +280,13 @@ async function getCategoryDeals(
 
     const scoreA = calculateDesirabilityScore(
       a,
-      a.prices[countryCode] || 0,
+      a.prices?.[countryCode] || 0,
       a.title,
       "landing",
     ).popularityScore;
     const scoreB = calculateDesirabilityScore(
       b,
-      b.prices[countryCode] || 0,
+      b.prices?.[countryCode] || 0,
       b.title,
       "landing",
     ).popularityScore;
@@ -352,7 +353,7 @@ export async function getParentCategoryData(
 
   // 2. Filter for valid products based on cached database prices
   const validProducts = allProductsRaw.filter(
-    (p) => p.prices[countryCode] !== undefined && p.prices[countryCode] > 0,
+    (p) => p.prices?.[countryCode] !== undefined && p.prices?.[countryCode] > 0,
   );
 
   // Helper for diversity
@@ -394,13 +395,13 @@ export async function getParentCategoryData(
   const bestsellersSorted = [...validProducts].sort((a, b) => {
     const scoreA = calculateDesirabilityScore(
       a,
-      a.prices[countryCode] || 0,
+      a.prices?.[countryCode] || 0,
       a.title,
       "landing",
     ).popularityScore;
     const scoreB = calculateDesirabilityScore(
       b,
-      b.prices[countryCode] || 0,
+      b.prices?.[countryCode] || 0,
       b.title,
       "landing",
     ).popularityScore;
@@ -418,9 +419,9 @@ export async function getParentCategoryData(
         ? new Date(p.createdAt).getFullYear()
         : 0;
       const productYear = Math.max(yearFromTitle, yearFromDate);
+      const price = p.prices?.[countryCode] || 0;
       return (
-        p.prices[countryCode] >= 30 &&
-        !(productYear > 0 && productYear < CURRENT_YEAR - 1)
+        price >= 30 && !(productYear > 0 && productYear < CURRENT_YEAR - 1)
       );
     })
     .sort((a, b) => {
@@ -430,13 +431,13 @@ export async function getParentCategoryData(
         return dateB - dateA;
       const scoreA = calculateDesirabilityScore(
         a,
-        a.prices[countryCode] || 0,
+        a.prices?.[countryCode] || 0,
         a.title,
         "landing",
       ).popularityScore;
       const scoreB = calculateDesirabilityScore(
         b,
-        b.prices[countryCode] || 0,
+        b.prices?.[countryCode] || 0,
         b.title,
         "landing",
       ).popularityScore;
@@ -448,7 +449,7 @@ export async function getParentCategoryData(
   // 6. Calculate Deals
   const dealsSorted = [...validProducts]
     .filter((p) => {
-      const price = p.prices[countryCode];
+      const price = p.prices?.[countryCode];
       return price >= 30 && calculateProductDiscount(p, countryCode) >= 5;
     })
     .sort((a, b) => {
@@ -457,7 +458,7 @@ export async function getParentCategoryData(
       const scoreA =
         calculateDesirabilityScore(
           a,
-          a.prices[countryCode] || 0,
+          a.prices?.[countryCode] || 0,
           a.title,
           "landing",
         ).popularityScore *
@@ -465,7 +466,7 @@ export async function getParentCategoryData(
       const scoreB =
         calculateDesirabilityScore(
           b,
-          b.prices[countryCode] || 0,
+          b.prices?.[countryCode] || 0,
           b.title,
           "landing",
         ).popularityScore *
@@ -525,6 +526,6 @@ async function getCategoryProductCount(
 
   // Count only products with valid prices
   return allProducts.filter(
-    (p) => p.prices[countryCode] !== undefined && p.prices[countryCode] > 0,
+    (p) => p.prices?.[countryCode] !== undefined && p.prices?.[countryCode] > 0,
   ).length;
 }
