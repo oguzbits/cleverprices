@@ -37,8 +37,7 @@ export function getFamilyRepresentative<
   if (!variants || variants.length === 0) return undefined;
 
   const newItems = variants.filter(
-    (p) =>
-      !p.condition || String(p.condition).toLowerCase() === "new",
+    (p) => !p.condition || String(p.condition).toLowerCase() === "new",
   );
 
   const candidates = newItems.length > 0 ? newItems : variants;

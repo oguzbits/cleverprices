@@ -19,9 +19,9 @@ import { cache as reactCache } from "react";
 
 import { client, db, dbReady, IS_BUILD } from "@/db";
 import {
+  type Product as DbProduct,
   type Price,
   prices,
-  type Product as DbProduct,
   products,
 } from "@/db/schema";
 
@@ -61,12 +61,12 @@ export {
   getProductsByIds,
   getRawProductsByCategory,
   indexPricesById,
-  type LitePrice,
   litePriceColumns,
   liteProductColumns,
   mapDbProduct,
-  type Product,
   superLitePriceColumns,
+  type LitePrice,
+  type Product,
 };
 
 /**

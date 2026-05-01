@@ -118,7 +118,6 @@ function ChartRenderer({
     return Date.now();
   });
 
-
   const { data, minPrice, maxPrice, minDate, maxDate, stats, yTicks, yDomain } =
     React.useMemo(() => {
       // 1. Sort & Map

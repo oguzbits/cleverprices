@@ -13,11 +13,9 @@ import {
   getAllProductSlugs,
   getNonEmptyCategorySlugs,
 } from "@/lib/server/cached-products";
-import { getSafeDate,getSafeNow } from "@/lib/server/deterministic-time";
+import { getSafeDate, getSafeNow } from "@/lib/server/deterministic-time";
 import { CACHE_VERSION, SITE_URL } from "@/lib/site-config";
 import { getProductPath } from "@/lib/utils/url";
-
-
 
 /**
  * ARCHITECTURE NOTE:

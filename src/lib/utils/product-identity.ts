@@ -527,11 +527,13 @@ export function calculateSiblingConsensus(
     // 2. Process Specifications (if available) - Helps find common traits
     let specs: Record<string, unknown> = {};
     try {
-      specs = (s.officialSpecifications
-        ? typeof s.officialSpecifications === "string"
-          ? JSON.parse(s.officialSpecifications)
-          : s.officialSpecifications
-        : s.specifications || {}) as Record<string, unknown>;
+      specs = (
+        s.officialSpecifications
+          ? typeof s.officialSpecifications === "string"
+            ? JSON.parse(s.officialSpecifications)
+            : s.officialSpecifications
+          : s.specifications || {}
+      ) as Record<string, unknown>;
     } catch (e) {
       specs = {};
     }
@@ -921,13 +923,15 @@ export function getProductIdentity(
 
   let specs: Record<string, unknown> = {};
   try {
-    specs = (rawOfficial
-      ? typeof rawOfficial === "string"
-        ? JSON.parse(rawOfficial)
-        : rawOfficial
-      : (typeof rawCatchAll === "string"
-          ? JSON.parse(rawCatchAll)
-          : rawCatchAll) || {}) as Record<string, unknown>;
+    specs = (
+      rawOfficial
+        ? typeof rawOfficial === "string"
+          ? JSON.parse(rawOfficial)
+          : rawOfficial
+        : (typeof rawCatchAll === "string"
+            ? JSON.parse(rawCatchAll)
+            : rawCatchAll) || {}
+    ) as Record<string, unknown>;
   } catch (e) {
     specs = {};
   }
