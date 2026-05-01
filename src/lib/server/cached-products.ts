@@ -1,6 +1,6 @@
 import { cacheLife } from "next/cache";
 
-import { getCategoryBySlug } from "../categories";
+import { type CategorySlug, getCategoryBySlug } from "../categories";
 import { type UnitType } from "../category-types";
 import { type PDPRenderData, type Product } from "../product-definitions";
 import { getFamilyIdentity as getFamilyIdentitySync } from "../product-families";
@@ -254,7 +254,8 @@ async function getCachedSimilar(
       countryCode,
     );
     return items.map((v: Product) => toSafePOJO(v));
-  } catch (_e) {
+  } catch (e) {
+    console.warn(`[getCachedSimilar Error] ${category}:`, e);
     return [];
   }
 }
@@ -266,21 +267,37 @@ async function getCachedSimilar(
  * It recursively strips non-serializable fields and handles circular references.
  */
 function toSafePOJO<T>(obj: T): T {
-  if (!obj || typeof obj !== "object") return obj;
+  if (obj === null || obj === undefined || typeof obj !== "object") return obj;
 
   const seen = new WeakSet();
 
-  const strip = (o: unknown): unknown => {
-    if (!o || typeof o !== "object") return o;
+  const strip = (o: unknown, depth = 0): unknown => {
+    if (depth > 10) return null; // Safety cap for deep trees
+    if (o === null || o === undefined || typeof o !== "object") {
+      if (typeof o === "bigint") return Number(o); // Handle BigInt
+      return o;
+    }
     if (o instanceof Date) return o.toISOString();
     if (o instanceof Buffer) return null;
     if (typeof o === "function") return null;
+
+    // Handle Map and Set for serialization safety
+    if (o instanceof Map) {
+      const res: Record<string, unknown> = {};
+      for (const [key, val] of o.entries()) {
+        res[String(key)] = strip(val, depth + 1);
+      }
+      return res;
+    }
+    if (o instanceof Set) {
+      return Array.from(o).map((v) => strip(v, depth + 1));
+    }
 
     if (seen.has(o as object)) return null; // Prevent circular references
     seen.add(o as object);
 
     if (Array.isArray(o)) {
-      return o.map(strip);
+      return o.map((v) => strip(v, depth + 1));
     }
 
     const result: Record<string, unknown> = {};
@@ -290,11 +307,12 @@ function toSafePOJO<T>(obj: T): T {
         key === "historyJson" ||
         key === "icon" ||
         key.startsWith("_") ||
-        key.startsWith("$$")
+        key.startsWith("$$") ||
+        key === "query" // SQLite query objects
       ) {
         continue;
       }
-      result[key] = strip(value);
+      result[key] = strip(value, depth + 1);
     }
     return result;
   };
@@ -303,11 +321,13 @@ function toSafePOJO<T>(obj: T): T {
     return strip(obj) as T;
   } catch (_e) {
     console.error("[Serialization Deep Error]:", _e);
-    // Absolute fallback: JSON cycle
+    // Absolute fallback: shallow clone if deep fails
     try {
-      return JSON.parse(JSON.stringify(obj));
+      return JSON.parse(
+        JSON.stringify(obj, (_, v) => (typeof v === "bigint" ? Number(v) : v)),
+      );
     } catch {
-      return null as unknown as T;
+      return (Array.isArray(obj) ? [] : {}) as unknown as T;
     }
   }
 }
@@ -375,15 +395,23 @@ export async function getCategoryOrchestrationData(categorySlug: string) {
   "use cache";
   cacheLife("minutes");
 
-  const [category, nonEmptySlugs] = await Promise.all([
-    getCategoryBySlug(categorySlug),
-    getNonEmptyCategorySlugs(),
-  ]);
+  try {
+    const [category, nonEmptySlugs] = await Promise.all([
+      getCategoryBySlug(categorySlug),
+      getNonEmptyCategorySlugs(),
+    ]);
 
-  return toSafePOJO({
-    category,
-    nonEmptySlugs,
-  });
+    return toSafePOJO({
+      category,
+      nonEmptySlugs,
+    });
+  } catch (e) {
+    console.error(`[Orchestration Error] category ${categorySlug}:`, e);
+    return toSafePOJO({
+      category: null,
+      nonEmptySlugs: [],
+    });
+  }
 }
 
 /**
@@ -396,10 +424,19 @@ export async function getCachedParentCategoryData(
   "use cache";
   cacheLife("minutes");
 
-  const { getParentCategoryData } = await import("../data/parentCategoryData");
-  const data = await getParentCategoryData(categorySlug as any, countryCode);
+  try {
+    const { getParentCategoryData } =
+      await import("../data/parentCategoryData");
+    const data = await getParentCategoryData(
+      categorySlug as CategorySlug,
+      countryCode,
+    );
 
-  return toSafePOJO(data);
+    return toSafePOJO(data);
+  } catch (e) {
+    console.error(`[Parent Category Error] ${categorySlug}:`, e);
+    return null;
+  }
 }
 
 /**

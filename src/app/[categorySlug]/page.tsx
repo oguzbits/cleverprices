@@ -1,12 +1,11 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
-/* eslint-disable react-hooks/error-boundaries */
 
+/* eslint-disable react-hooks/error-boundaries */
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
 import { ParentCategoryView } from "@/components/category/ParentCategoryView";
 import { ServerBusy } from "@/components/ui/ServerBusy";
-import { DatabaseBusyError } from "@/db/utils";
 import {
   allCategories,
   type Category,
@@ -39,6 +38,24 @@ interface Props {
   searchParams: Promise<FilterParams>;
 }
 
+// Local helpers to detect Next.js internal errors safely
+function isNextNotFoundError(error: unknown): boolean {
+  const e = error as { digest?: string; message?: string; $$typeof?: string };
+  return !!(
+    e?.digest?.includes("NEXT_NOT_FOUND") ||
+    e?.message?.includes("NEXT_NOT_FOUND") ||
+    e?.message?.includes("notFound()")
+  );
+}
+
+function isNextRedirectError(error: unknown): boolean {
+  const e = error as { digest?: string; message?: string; $$typeof?: string };
+  return !!(
+    e?.digest?.includes("NEXT_REDIRECT") ||
+    e?.message?.includes("NEXT_REDIRECT")
+  );
+}
+
 /**
  * Static params generation for ISR
  */
@@ -64,87 +81,98 @@ export async function generateMetadata({
   params,
   searchParams,
 }: Props): Promise<Metadata> {
-  const isBuild = process.env.NEXT_PHASE === "phase-production-build";
+  try {
+    const isBuild = process.env.NEXT_PHASE === "phase-production-build";
 
-  // 1. Resolve Params first
-  const { categorySlug } = await params;
+    // 1. Resolve Params first
+    const { categorySlug } = await params;
 
-  // 2. Early Guard (BEFORE searchParams)
-  if (!categorySlug || categorySlug === "build-time-placeholder") {
-    return { title: BRAND_DOMAIN };
-  }
+    // 2. Early Guard (BEFORE searchParams)
+    if (!categorySlug || categorySlug === "build-time-placeholder") {
+      return { title: BRAND_DOMAIN };
+    }
 
-  // 3. Resolve Dynamic Context
-  const filters = await searchParams;
+    // 3. Resolve Dynamic Context
+    const filters = await searchParams;
 
-  // 4. Resolve Category & Non-Empty State (Cached)
-  const { category, nonEmptySlugs } =
-    await getCategoryOrchestrationData(categorySlug);
+    // 4. Resolve Category & Non-Empty State (Cached)
+    const { category, nonEmptySlugs } =
+      await getCategoryOrchestrationData(categorySlug);
 
-  if (!category) {
+    if (!category) {
+      return {
+        title: "Kategorie nicht gefunden",
+        robots: { index: false, follow: false },
+      };
+    }
+
+    if (isBuild) {
+      return { title: `${category.name} | ${BRAND_DOMAIN}` };
+    }
+
+    const canonicalUrl = `${SITE_URL}/${category.slug}`;
+
+    // Check if empty/hidden
+    const isEmpty = !isCategoryNotEmptyRecursive(
+      categorySlug as CategorySlug,
+      nonEmptySlugs,
+    );
+
+    const isParent = getChildCategories(category.slug).length > 0;
+    if (category.hidden || (isEmpty && !isParent)) {
+      return {
+        title: `${category.name} - Keine Ergebnisse | ${BRAND_DOMAIN}`,
+        robots: { index: false, follow: true },
+      };
+    }
+
+    // Handle filtered pages (Noindex crawl waste)
+    const hasFilters =
+      filters &&
+      (filters.brand ||
+        filters.technology ||
+        filters.condition ||
+        filters.sort);
+    if (hasFilters) {
+      return {
+        title: `${category.name} Angebote | ${BRAND_DOMAIN}`,
+        alternates: { canonical: canonicalUrl },
+        robots: { index: false, follow: true },
+      };
+    }
+
+    const description = category.unitType
+      ? `${category.name} Preisvergleich. Beste Angebote nach Preis pro ${category.unitType} filtern & in Deutschland sparen bei ${BRAND_DOMAIN}.`
+      : `Günstige ${category.name} von Top-Marken im Preisvergleich. Jetzt Hardware-Angebote finden & sparen bei ${BRAND_DOMAIN}.`;
+
     return {
-      title: "Kategorie nicht gefunden",
-      robots: { index: false, follow: false },
-    };
-  }
-
-  if (isBuild) {
-    return { title: `${category.name} | ${BRAND_DOMAIN}` };
-  }
-
-  const canonicalUrl = `${SITE_URL}/${category.slug}`;
-
-  // Check if empty/hidden
-  const isEmpty = !isCategoryNotEmptyRecursive(
-    categorySlug as CategorySlug,
-    nonEmptySlugs,
-  );
-
-  const isParent = getChildCategories(category.slug).length > 0;
-  if (category.hidden || (isEmpty && !isParent)) {
-    return {
-      title: `${category.name} - Keine Ergebnisse | ${BRAND_DOMAIN}`,
-      robots: { index: false, follow: true },
-    };
-  }
-
-  // Handle filtered pages (Noindex crawl waste)
-  const hasFilters =
-    filters &&
-    (filters.brand || filters.technology || filters.condition || filters.sort);
-  if (hasFilters) {
-    return {
-      title: `${category.name} Angebote | ${BRAND_DOMAIN}`,
-      alternates: { canonical: canonicalUrl },
-      robots: { index: false, follow: true },
-    };
-  }
-
-  const description = category.unitType
-    ? `${category.name} Preisvergleich. Beste Angebote nach Preis pro ${category.unitType} filtern & in Deutschland sparen bei ${BRAND_DOMAIN}.`
-    : `Günstige ${category.name} von Top-Marken im Preisvergleich. Jetzt Hardware-Angebote finden & sparen bei ${BRAND_DOMAIN}.`;
-
-  return {
-    title: `${category.name} | Preisvergleich | ${BRAND_DOMAIN}`,
-    description,
-    alternates: {
-      canonical: canonicalUrl,
-      languages: getAlternateLanguages(`/${category.slug}`),
-    },
-    openGraph: getOpenGraph({
-      title: `${category.name} Preisvergleich | ${BRAND_DOMAIN}`,
+      title: `${category.name} | Preisvergleich | ${BRAND_DOMAIN}`,
       description,
-      url: canonicalUrl,
-      locale: "de_DE",
-    }),
-    keywords: generateKeywords(category),
-  };
+      alternates: {
+        canonical: canonicalUrl,
+        languages: getAlternateLanguages(`/${category.slug}`),
+      },
+      openGraph: getOpenGraph({
+        title: `${category.name} Preisvergleich | ${BRAND_DOMAIN}`,
+        description,
+        url: canonicalUrl,
+        locale: "de_DE",
+      }),
+      keywords: generateKeywords(category),
+    };
+  } catch (error) {
+    console.error("[Category Metadata Failure]", error);
+    return {
+      title: BRAND_DOMAIN,
+      robots: { index: false, follow: true },
+    };
+  }
 }
 
 /**
  * Error Boundary Component
  */
-const CategoryError = ({ error, slug }: { error: any; slug: string }) => {
+const CategoryError = ({ error, slug }: { error: unknown; slug: string }) => {
   console.error(`[Category Error] Critical failure for ${slug}:`, error);
   return (
     <div className="mx-auto flex min-h-[600px] max-w-4xl flex-col items-center justify-center space-y-6 px-4 py-20 text-center">
@@ -179,7 +207,9 @@ const CategoryError = ({ error, slug }: { error: any; slug: string }) => {
         <pre className="overflow-x-auto text-sm whitespace-pre-wrap text-red-800">
           {error instanceof Error ? error.message : String(error)}
           {"\n"}
-          {error?.stack?.split("\n").slice(0, 3).join("\n")}
+          {error instanceof Error
+            ? error.stack?.split("\n").slice(0, 3).join("\n")
+            : String(error)}
         </pre>
       </div>
       <Link
@@ -243,8 +273,14 @@ async function ParentCategoryLoader({
   nonEmptySlugs: string[];
 }) {
   try {
-    const { bestsellers, newProducts, deals } =
-      await getCachedParentCategoryData(categorySlug, DEFAULT_COUNTRY);
+    const data = await getCachedParentCategoryData(
+      categorySlug,
+      DEFAULT_COUNTRY,
+    );
+
+    if (!data) throw new Error("Could not load parent category data");
+
+    const { bestsellers, newProducts, deals } = data;
 
     const transformProduct = (p: Product) => ({
       id: p.id,
@@ -330,18 +366,18 @@ export default async function DedicatedCategoryPage({
   // 3. Resolve Dynamic Context
   const searchParamsResolved = await searchParams;
 
-  // 4. Resolve Category & Metadata (Cached Orchestrator)
-  const { category, nonEmptySlugs } =
-    await getCategoryOrchestrationData(categorySlug);
-
-  if (!category) notFound();
-
-  // 2. Handle Aliases
-  if (category.slug !== categorySlug) {
-    permanentRedirect(`/${category.slug}`);
-  }
-
   try {
+    // 4. Resolve Category & Metadata (Cached Orchestrator)
+    const { category, nonEmptySlugs } =
+      await getCategoryOrchestrationData(categorySlug);
+
+    if (!category) notFound();
+
+    // 2. Handle Aliases
+    if (category.slug !== categorySlug) {
+      permanentRedirect(`/${category.slug}`);
+    }
+
     // 3. Determine View Type (Parent vs Child)
     const isEmpty = !isCategoryNotEmptyRecursive(
       categorySlug as CategorySlug,
@@ -377,15 +413,49 @@ export default async function DedicatedCategoryPage({
       />
     );
   } catch (error) {
-    if (
-      error instanceof DatabaseBusyError ||
-      (typeof error === "object" &&
-        error !== null &&
-        "name" in error &&
-        (error as Error).name === "DatabaseBusyError")
-    ) {
-      return <ServerBusy />;
-    }
-    return <CategoryError error={error} slug={categorySlug} />;
+    if (isNextNotFoundError(error) || isNextRedirectError(error)) throw error;
+    console.error("[Category Page Crash]", error);
+
+    // [PREMIUM FALLBACK UI]
+    return (
+      <div className="flex min-h-[70vh] flex-col items-center justify-center bg-slate-50 p-6 text-center">
+        <div className="mb-6 rounded-full bg-blue-100 p-4 text-blue-600">
+          <svg
+            className="h-10 w-10"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        </div>
+        <h1 className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-3xl font-extrabold text-transparent">
+          Kategorie vorübergehend nicht erreichbar
+        </h1>
+        <p className="mt-4 max-w-md text-lg text-slate-600">
+          Wir konnten diese Kategorie gerade nicht laden. Unser System wurde
+          benachrichtigt und arbeitet an einer Lösung.
+        </p>
+        <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <Link
+            href="/"
+            className="group flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-lg active:scale-95"
+          >
+            Zur Startseite
+          </Link>
+          <Link
+            href="."
+            className="rounded-xl border border-slate-200 bg-white px-8 py-3 font-semibold text-slate-700 transition-all hover:bg-slate-50 active:scale-95"
+          >
+            Erneut versuchen
+          </Link>
+        </div>
+      </div>
+    );
   }
 }

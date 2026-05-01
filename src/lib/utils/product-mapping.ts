@@ -17,10 +17,19 @@ export function parseHistoryJson(
 ): { date: string; price: number }[] {
   const parsed = parseHistoryBlob(historyJson);
   return Object.entries(parsed)
-    .map(([date, priceCents]) => ({
-      date: new Date(date).toISOString(),
-      price: priceCents / 100, // Convert cents to decimal
-    }))
+    .map(([date, priceCents]) => {
+      try {
+        const d = new Date(date);
+        if (isNaN(d.getTime())) return null;
+        return {
+          date: d.toISOString(),
+          price: priceCents / 100, // Convert cents to decimal
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((entry): entry is { date: string; price: number } => entry !== null)
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 

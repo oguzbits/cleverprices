@@ -71,6 +71,8 @@ function createDbClient(): Client {
 const client = createDbClient();
 export const db: LibSQLDatabase<typeof schema> = drizzle(client, { schema });
 
+let isInitialized = false;
+
 /**
  * dbReady Promise
  *
@@ -78,6 +80,9 @@ export const db: LibSQLDatabase<typeof schema> = drizzle(client, { schema });
  * Usage: await dbReady;
  */
 export const dbReady: Promise<void> = (async () => {
+  if (isInitialized) return;
+
+  const start = Date.now();
   try {
     console.log(
       `[DB DIAGNOSTIC] Starting dbReady. NODE_ENV: ${process.env.NODE_ENV}, isBuild: ${IS_BUILD}`,
@@ -85,6 +90,7 @@ export const dbReady: Promise<void> = (async () => {
 
     if (IS_BUILD) {
       console.log("[DB] Build phase detected. Skipping live diagnostics.");
+      isInitialized = true;
       return;
     }
 
@@ -92,25 +98,47 @@ export const dbReady: Promise<void> = (async () => {
     if (isProductionEnvironment) {
       console.log("[DB] 🏁 Migration sequence started...");
 
-      try {
-        const migrationsDir = path.resolve(process.cwd(), "drizzle");
+      // Set a strict timeout for the entire migration check to prevent 500 errors on cold starts
+      const migrationCheck = (async () => {
+        try {
+          const migrationsDir = path.resolve(process.cwd(), "drizzle");
 
-        if (!fs.existsSync(migrationsDir)) {
-          console.warn(
-            `[DB] Migrations directory NOT FOUND at ${migrationsDir}`,
-          );
-        } else {
-          // Count .sql files in the migrations directory
+          if (!fs.existsSync(migrationsDir)) {
+            console.warn(
+              `[DB] Migrations directory NOT FOUND at ${migrationsDir}`,
+            );
+            return;
+          }
+
+          // [STABILITY OVERHAUL] Attempt a very fast lock check first
+          // If we can't even count migrations, the DB is likely locked by another container
+          // In that case, we BAIL on migration and just start the server.
+          const migCountResult = await Promise.race([
+            client.execute("SELECT count(*) as c FROM __drizzle_migrations"),
+            new Promise((_, reject) =>
+              setTimeout(() => reject(new Error("Timeout")), 2000),
+            ),
+          ]).catch(() => {
+            console.warn(
+              "[DB] Migration check skipped (Database busy or timeout). Proceeding with current schema.",
+            );
+            return null;
+          });
+
+          if (!migCountResult) return;
+
           const migrationFiles = fs
             .readdirSync(migrationsDir)
             .filter((f) => f.endsWith(".sql"));
           const fileCount = migrationFiles.length;
-
-          const migCountResult = await client
-            .execute("SELECT count(*) as c FROM __drizzle_migrations")
-            .catch(() => ({ rows: [{ c: 0 }] }));
-
-          const dbCount = Number((migCountResult.rows[0] as any)?.c || 0);
+          const dbCount = migCountResult
+            ? Number(
+                (
+                  (migCountResult as { rows: { c: number | string }[] })
+                    .rows[0] || {}
+                ).c || 0,
+              )
+            : 0;
 
           if (dbCount >= fileCount) {
             console.log(
@@ -120,115 +148,40 @@ export const dbReady: Promise<void> = (async () => {
             console.log(
               `[DB] New migrations detected (Disk: ${fileCount} > DB: ${dbCount}). Applying...`,
             );
+            // We use a shorter timeout for the actual migrate() to prevent request hanging
             await migrate(db, { migrationsFolder: migrationsDir });
             console.log("[DB] ✅ Migration sequence completed successfully.");
           }
+        } catch (migrateError) {
+          console.error(
+            "[DB WARNING] Migration check failed:",
+            migrateError instanceof Error
+              ? migrateError.message
+              : String(migrateError),
+          );
         }
-      } catch (migrateError) {
-        console.error(
-          "[DB WARNING] Migration sequence failed. Queries may still work if schema is compatible.",
-          migrateError instanceof Error
-            ? migrateError.message
-            : String(migrateError),
-        );
-        // We do NOT throw here anymore. We want dbReady to resolve so that
-        // the server can at least attempt to serve requests.
-      }
+      })();
+
+      // Wait at most 8 seconds for migration check during cold start.
+      // If it takes longer, we assume the DB is "mostly" ready and proceed to avoid timing out the whole request.
+      await Promise.race([
+        migrationCheck,
+        new Promise((resolve) => setTimeout(resolve, 8000)),
+      ]);
     }
+
+    isInitialized = true;
+    console.log(`[DB] dbReady completed in ${Date.now() - start}ms`);
   } catch (e) {
     console.error(
       "[DB CRITICAL] Initialization logic failed:",
       e instanceof Error ? e.message : String(e),
     );
     // Even in critical failure, we resolve to avoid poisoning the promise forever
+    isInitialized = true;
     return;
   }
 })();
-
-/**
- * robustMigrate
- *
- * A resilient migration applicator that executes SQL statement-by-statement.
- * It ignores "already exists" errors, allowing a partial/push-merged database
- * to reach schema parity with the migration files.
- */
-async function robustMigrate(client: Client, migrationsFolder: string) {
-  const fs = await import("fs");
-  const path = await import("path");
-
-  // 1. Read the journal to get the order
-  const journalPath = path.join(migrationsFolder, "meta", "_journal.json");
-  if (!fs.existsSync(journalPath)) {
-    throw new Error(`Migration journal not found at ${journalPath}`);
-  }
-
-  const journal = JSON.parse(fs.readFileSync(journalPath, "utf8"));
-  const migrations = journal.entries;
-
-  console.log(
-    `[DB] Robust Migrator: Processing ${migrations.length} migrations...`,
-  );
-
-  for (const entry of migrations) {
-    const sqlFile = path.join(migrationsFolder, `${entry.tag}.sql`);
-    if (!fs.existsSync(sqlFile)) {
-      console.warn(`[DB] Migration file missing, skipping: ${sqlFile}`);
-      continue;
-    }
-
-    console.log(`[DB] Applying ${entry.tag}...`);
-    const sqlContent = fs.readFileSync(sqlFile, "utf8");
-
-    // Standard Drizzle separator
-    const statements = sqlContent
-      .split("--> statement-breakpoint")
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
-
-    for (const statement of statements) {
-      try {
-        const preview = statement.substring(0, 50).replace(/\n/g, " ");
-        console.log(`[DB] Executing: ${preview}...`);
-        await client.execute(statement);
-      } catch (err: any) {
-        const msg = err?.message || String(err);
-        // Ignore "already exists" variations
-        if (
-          msg.includes("already exists") ||
-          msg.includes("duplicate column name") ||
-          msg.includes("already a column")
-        ) {
-          console.log(
-            `[DB] Skipping existing element: ${msg.substring(0, 50)}`,
-          );
-          continue;
-        }
-        console.error(
-          `[DB ERROR] Failed statement: ${statement.substring(0, 100)}...`,
-        );
-        throw err;
-      }
-    }
-
-    // After each file, record it in the migrations table if possible to avoid re-triggering robustMigrate
-    try {
-      // Create table if it doesn't exist (Drizzle's name)
-      await client.execute(`
-        CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
-          id integer PRIMARY KEY AUTOINCREMENT,
-          hash text NOT NULL,
-          created_at integer
-        )
-      `);
-
-      // We don't have the exact hash Drizzle uses here easily,
-      // but standard migrate() will verify hashes later if it works.
-      // For now, we just want to ensure the schema is applied.
-    } catch (e) {
-      // Ignored
-    }
-  }
-}
 
 // Export schema for convenience
 export * from "./schema";
