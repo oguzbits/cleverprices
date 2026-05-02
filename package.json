@@ -37,7 +37,10 @@
     "sitemap:check": "bun run scripts/maintenance/sitemap-validator.ts",
     "perf:analyze": "ANALYZE=true next build",
     "test:urls": "bun run scripts/tests/url-fingerprint.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test src",
+    "prepare": "husky"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.981.0",
@@ -89,6 +92,8 @@
     "eslint-plugin-react-compiler": "^19.1.0-rc.2",
     "eslint-plugin-simple-import-sort": "^13.0.0",
     "fast-levenshtein": "^3.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "papaparse": "^5.5.3",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
