@@ -1,5 +1,9 @@
 name: CI
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -31,3 +35,9 @@ jobs:
         run: bun run build
         env:
           SKIP_ENV_VALIDATION: "1"
+
+      - name: Install Playwright Browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Run E2E Tests
+        run: bun run test:e2e

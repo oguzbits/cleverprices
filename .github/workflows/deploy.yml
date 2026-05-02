@@ -1,5 +1,9 @@
 name: Deploy
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 on:
   workflow_run:
     workflows: ["CI"]
@@ -12,6 +16,14 @@ jobs:
     # Only deploy if CI succeeded
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
       - name: Deploy to Dokploy (Production & Worker)
         if: github.event.workflow_run.head_branch == 'main'
         env:
@@ -20,6 +32,12 @@ jobs:
         run: |
           curl -X POST "$WEBHOOK_URL"
           curl -X POST "$WORKER_WEBHOOK_URL"
+
+      - name: Verify Deployment (Production)
+        if: github.event.workflow_run.head_branch == 'main'
+        env:
+          PRODUCTION_URL: https://cleverprices.de
+        run: bun run verify:deploy
 
       - name: Deploy to Dokploy (Staging)
         if: github.event.workflow_run.head_branch == 'staging'

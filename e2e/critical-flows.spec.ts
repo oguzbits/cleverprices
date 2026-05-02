@@ -1,11 +1,25 @@
 import { expect, test } from "@playwright/test";
 
 test.describe("Critical User Flows", () => {
-  test("homepage loads and shows categories", async ({ page }) => {
-    await page.goto("/");
-    await expect(page).toHaveTitle(/CleverPrices/i);
-    // Check that at least one category link is visible
-    await expect(page.locator("a[href*='/']").first()).toBeVisible();
+  test("homepage loads with correct build ID and SSR content", async ({
+    page,
+  }) => {
+    const response = await page.goto("/");
+    expect(response?.status()).toBe(200);
+
+    // Verify Build ID Header
+    const buildId = response?.headers()["x-build-id"];
+    expect(buildId).toBeDefined();
+    console.log(`Verified Build ID: ${buildId}`);
+
+    // Verify SSR: Check if critical content exists in the initial HTML response
+    const html = await response?.text();
+    expect(html).toContain("Hardware Preisvergleich");
+    expect(html).toContain("<main");
+
+    // Verify UI
+    await expect(page).toHaveTitle(/Hardware Preisvergleich Deutschland/i);
+    await expect(page.locator("header")).toBeVisible();
   });
 
   test("health endpoint returns healthy status", async ({ request }) => {
@@ -17,32 +31,40 @@ test.describe("Critical User Flows", () => {
 
   test("search returns results for Samsung", async ({ page }) => {
     await page.goto("/");
-    // Open search modal (Cmd+K or click search button)
-    await page.keyboard.press("Meta+k");
+
+    // Wait for the search manager to be mounted/active
+    await page.waitForTimeout(1000);
+
+    // Try to click the search button first (more resilient than keyboard shortcut)
+    const searchButton = page.getByRole("button", { name: /Suche/i }).first();
+    await expect(searchButton).toBeVisible();
+    await searchButton.click();
+
     await page.waitForSelector('[role="dialog"]', { timeout: 5000 });
 
     // Type search query
     await page.keyboard.type("Samsung");
-    await page.waitForTimeout(500); // Debounce
 
-    // Expect results to appear
-    await expect(
-      page
-        .locator('[role="dialog"]')
-        .getByText(/Samsung/i)
-        .first(),
-    ).toBeVisible();
+    // Expect results to appear in the dialog
+    const dialog = page.locator('[role="dialog"]');
+    await expect(dialog.getByText(/Samsung/i).first()).toBeVisible({
+      timeout: 5000,
+    });
   });
 
-  test("product page loads with price", async ({ page }) => {
-    // Navigate to a known product (using slug pattern)
+  test("product page loads from category list", async ({ page }) => {
+    // Navigate to a known category
     await page.goto("/smartphones");
+    await expect(page.locator("h1")).toBeVisible();
 
     // Click first product link
     const productLink = page.locator('a[href^="/p/"]').first();
+    await expect(productLink).toBeVisible();
     await productLink.click();
 
     // Verify product page elements
     await expect(page.locator("h1")).toBeVisible();
+    // Check for price or related keywords (Euro symbol is a good indicator)
+    await expect(page.locator("body")).toContainText(/€|Preis|Angebot/i);
   });
 });

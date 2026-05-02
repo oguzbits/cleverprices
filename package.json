@@ -38,6 +38,8 @@
     "perf:analyze": "ANALYZE=true next build",
     "test:urls": "bun run scripts/tests/url-fingerprint.ts",
     "test:e2e": "playwright test",
+    "verify:deploy": "bun run scripts/verify-deployment.ts",
+    "deploy": "bun run scripts/deploy.ts",
     "typecheck": "tsc --noEmit",
     "test": "bun test src",
     "prepare": "husky"
