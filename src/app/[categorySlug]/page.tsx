@@ -398,7 +398,7 @@ export default async function DedicatedCategoryPage({
             />
           </svg>
         </div>
-        <h1 className="bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-3xl font-extrabold text-transparent">
+        <h1 className="bg-linear-to-r from-slate-900 to-slate-700 bg-clip-text text-3xl font-extrabold text-transparent">
           Kategorie vorübergehend nicht erreichbar
         </h1>
         <p className="mt-4 max-w-md text-lg text-slate-600">
