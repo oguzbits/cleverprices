@@ -1,10 +1,37 @@
 # CleverPrices
 
-Price comparison platform for the German hardware market. Optimized for extreme performance and SEO efficiency with native support for specialized unit-price metrics.
+Price comparison platform for the German hardware market. Optimized for extreme performance, SEO efficiency, and real-time data accuracy.
 
-## Quick Start
+## 🚀 Technology Stack
 
-### Installation
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router, Pure SSR Strategy)
+- **Core**: React 19 (React Compiler enabled)
+- **Data Architecture**: Local-first LibSQL (SQLite) persistent store with a **Redis memory layer** for near-instant (sub-40ms) delivery.
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/) with semantic tokens (**No hex colors**, **no var()**).
+- **Automation**: Bun-powered worker engine for price tracking, data enrichment, and cache warming.
+- **Deployment**: Self-hosted on Hetzner Cloud via Dokploy (Docker Swarm).
+
+## 🏎️ Performance Strategy (The "Pure SSR" Commandments)
+
+CleverPrices is architected for sub-100ms response times and zero navigation flashes:
+
+- **Pure SSR**: All data fetching for core routes (PDP, Search, Home) is performed using blocking `await` in the top-level Page segment. `Suspense` and `loading.tsx` are forbidden in dynamic segments to prevent white flashes.
+- **Cache Isolation**: Utilizes Next.js 16 `"use cache"` and `cacheLife` directives, strictly isolated in `src/lib/server/cached-*.ts` files.
+- **Memory-First Delivery**: Redis serves as the high-speed read layer, ensuring near-instant delivery of cached product and category data.
+- **Batching & TTFB**: Uses `mergeLivePricesSelective` to resolve multiple product IDs in a single wave, minimizing DB roundtrips.
+- **Local-First Data**: SQLite is the persistent store. In production, the database is mounted directly from the server's NVMe SSD into the container, eliminating network latency.
+- **O(1) Lookups**: Core detail pages and metadata use pure indexed lookups. custom SQL indexes on `sales_rank`, `created_at`, and `productId` ensure instantaneous sorting.
+
+## 🛠️ Maintenance & Automation
+
+CleverPrices is powered by an automated Maintenance Engine that ensures data freshness:
+
+- **Update Frequency**: Automated price tracking every 20 minutes.
+- **Phase 1**: Price updates using Keepa (Smart diffing).
+- **Phase 2**: Multi-source enrichment (eBay, Icecat, SIF firewall).
+- **Phase 3**: Proactive **Cache Warming** of the Next.js layer.
+
+### Core Commands
 
 ```bash
 # Install dependencies
@@ -12,143 +39,48 @@ bun install
 
 # Run development server
 bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) to view the site.
-
-### Maintenance & Automation
-
-CleverPrices is powered by an automated **Maintenance Engine** (GitHub Actions) that ensures data is always fresh:
-
-- **Update Frequency**: Every **20 minutes**.
-- **Phase 1**: Price updates using Keepa (Smart diffing).
-- **Phase 2**: Multi-source enrichment (Icecat, eBay, SIF firewall).
-- **Phase 3**: Proactive **Cache Warming** of the Redis layer.
-- **Persistent Local DB**: All maintenance scripts connect directly to the local SQLite database mounted as a Docker volume.
-
-To run maintenance tasks manually:
-
-```bash
 # Update prices (Hourly batch)
 bun run update-prices
-
-# Push local data to production (Safe Hot-Swap)
-bun run db:push-prod
-
-# Hybrid Push (Preserves Prod Prices, Syncs Local Specs)
-bun run db:push-hybrid
-
-# Sync production data to local for debugging
-bun run db:pull-prod
 
 # Warm the Next.js cache manually
 bun run warm-cache
 
-# Local Worker (Optional/Debug)
-bun run worker:run
+# Sync production data to local for debugging
+bun run db:pull-prod
 ```
 
----
+## 🕸️ Graphify Knowledge Graph
 
-## 🏎️ Database & Algorithm Performance
+This project utilizes [Graphify](https://github.com/oguzbits/graphify) for architecture navigation and codebase intelligence.
 
-CleverPrices uses a highly optimized data layer to ensure sub-100ms response times on dedicated self-hosted infrastructure:
+- The graph report is available at `graphify-out/GRAPH_REPORT.md`.
+- After modifying code, rebuild the graph:
+  ```bash
+  $(cat graphify-out/.graphify_python) -c "from graphify.watch import _rebuild_code; from pathlib import Path; _rebuild_code(Path('.'))"
+  ```
 
-- **O(1) Data Lookups** - Core detail pages and metadata now use pure indexed lookups. Identity repair is deferred to high-complexity UI states (Variant Picker/Hub), ensuring <50ms DB time for the main render.
-- **Request-Level Deduplication** - Uses `react.cache` to deduplicate product resolution between metadata generation and page rendering, cutting effective database load by 50% for every SEO crawler hit.
-- **Efficient Indexing** - Custom SQL indexes on `sales_rank`, `created_at`, `country`, and `productId` ensure instantaneous sorting and filtering.
-- **Map-Based Joins (O(N))** - Replaced O(N²) nested loops in identity systems with hash-map based consensus logic, reducing algorithmic complexity from quadratic to linear.
-- **Parallel Flat Bulk** - Collapses thousands of individual history updates into parallelized waves. This maximizes bandwidth while staying under LibSQL's 32k parameter limit, reducing sync time from minutes to seconds.
-- **SQLite Resilience** - Implements a `withRetry` logic with exponential backoff and `PRAGMA busy_timeout = 5000` to handle concurrent write locks gracefully.
-- **FTS5 Full-Text Search** - Uses SQLite's native virtual tables for ultra-fast product prefix matching.
-- **Atomic Migrations** - Dedicated `db:migrate` scripts ensure schema consistency.
-- **Enterprise DQA Suite** - Implements "Golden Schemas" and automated health scoring (0-100) per category.
-- **Probabilistic Enrichment (PEF)** - Multi-stage logic (Token Entropy & Sibling Consensus) prevents variant leakage without hard-coded rules.
-
----
-
-## ⚡ Built for Speed (Self-Hosted)
-
-CleverPrices is architected for maximum performance and efficiency, running on **Hetzner Cloud (Dokploy)**:
-
-- **Zero Cold Starts** - Unlike Serverless (Vercel/Netlify), the application runs in a persistent Docker container. The database connection stays warm, and response times are consistently fast (50-100ms).
-- **Embedded Database (NVMe)** - The SQLite database (`lite.db`) is mounted directly from the server's NVMe SSD into the container. This eliminates network latency entirely for read operations.
-- **Server Components & Caching** - Category grids and cards are 100% Server Components. This reduced client-side JavaScript by ~80% and allows for aggressive caching.
-- **Tiered ISR (Revalidation)** - Distinct revalidation cycles for different data (e.g., 6h for Products, 11h for Categories, 24h for Static pages) balance data freshness with compute efficiency.
-- **Native CSS Carousels** - No heavy JS libraries for sliders. Uses native browser `scroll-snap` for smooth 60fps scrolling with zero initial delay.
-- **Amazon CDN Offloading** - Uses a custom Image Loader to request exact-sized images and custom quality levels directly from Amazon. Zero server-side resizing costs or latency.
-
----
-
-## Key Features
-
-- **German Market Focus** - Optimized for DE hardware pricing with support for specialized unit price metrics (e.g., € per TB) in relevant categories.
-- **SEO & Redirects** - Automatic redirects for legacy country URLs (US, UK, CA, FR, ES, IT).
-- **High Performance Caching** - Utilizes Next.js 16 "use cache" directive and Cache Components for extreme speed.
-- **Image Optimization** - Custom URL-based transformation (Size & Quality).
-- **React Compiler** - Fully optimized with React 19 Compiler for minimal re-renders.
-- **URL-Based Filter State** - Shareable, bookmarkable filtered views using native Next.js `useSearchParams` and `useRouter`.
-- **Modern MDX Blog** - Content-driven blog system using MDX with frontmatter support.
-
----
-
-## Project Structure
+## 📂 Project Structure
 
 ```
 src/
-├── app/                    # Next.js App Router pages
-│   ├── (landing)/         # Homepage (Root)
-│   ├── [categorySlug]/    # Dynamic Category routes
-│   ├── p/[slug]/          # Dynamic Product routes
-│   ├── blog/              # MDX Blog system
-│   ├── api/               # API routes
-│   └── layout.tsx         # Global root layout
-│
-├── components/            # React components
-│   ├── category/         # Idealo-style grids, cards, filters
-│   ├── landing/          # Homepage specific sections
-│   ├── layout/           # Navbar, Footer
-│   └── ui/               # Primary UI components
-│
-├── lib/                   # Utilities and configuration
-│   ├── categories.ts     # Category definitions and unit logic
-│   ├── server/           # Server-only logic (caching, scoring)
-│   └── countries.ts      # Legacy country config & redirects
-│
-└── db/                    # Database schema and client (Local SQLite)
+├── app/                    # Next.js App Router (Pure SSR)
+├── components/            # Focused components (Primitives vs Features)
+├── db/                    # Drizzle ORM + SQLite Schema
+├── lib/
+│   ├── actions/          # Server Actions
+│   ├── data-sources/     # eBay, Keepa, etc.
+│   ├── server/           # Cached data orchestrators (Cached-*.ts)
+│   └── utils/            # Domain logic (Product Identity, Formatting)
+└── scripts/               # Automation & Maintenance scripts
 ```
 
----
-
-## URL Structure
-
-```
-/                # Homepage
-/hard-drives     # Category views
-/p/[slug]        # Product details
-/blog/[slug]     # Blog posts
-```
-
----
-
-## Documentation
+## 📝 Documentation
 
 - **[PROJECT_CONTEXT.md](docs/PROJECT_CONTEXT.md)** - Key features, architecture, and edge cases.
-- **[AI_GUIDELINES.md](docs/AI_GUIDELINES.md)** - **For AI Agents:** Protocols and Documentation Map.
-- **[AI_WORKFLOWS.md](docs/guides/AI_WORKFLOWS.md)** - **Strategies:** Feature Slices, Data Cleaning, and SEO.
-- **[DATA_INTEGRITY.md](docs/architecture/DATA_INTEGRITY.md)** - **New.** SIF Firewall, DQA Golden Schemas, and Health Scoring.
-- **[WORKER.md](docs/ops/WORKER.md)** - Maintainance, price updates, and cloud sync.
-- **[image-optimization.md](docs/guides/image-optimization.md)** - Custom Amazon CDN optimization strategy.
-
----
-
-## Technology Stack
-
-- **Framework**: [Next.js 16](https://nextjs.org/) (App Router, Cache Components)
-- **Core**: Next.js 16 (App Router) + React 19 (Compiler enabled).
-- **Data Architecture**: Local-first LibSQL (SQLite) persistent store with a **Redis memory layer** for near-instant (sub-40ms) delivery.
-- **Styling**: Tailwind CSS 4 with semantic tokens (**No hex colors**, **no var()**).
-- **Automation**: Bun-powered worker engine for price tracking and data enrichment.
+- **[DOKPLOY_SETUP.md](docs/ops/DOKPLOY_SETUP.md)** - Infrastructure and deployment guide.
+- **[DATA_INTEGRITY.md](docs/architecture/DATA_INTEGRITY.md)** - SIF Firewall and Health Scoring.
+- **[WORKER.md](docs/ops/WORKER.md)** - Maintenance and background job details.
 
 ---
 
