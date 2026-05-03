@@ -81,6 +81,16 @@ describe("product-mapping utility", () => {
       expect(result.prices["de"]).toBe(99.99);
     });
 
+    it("should populate the singular price property for the default country", () => {
+      const dbProd = createMockDbProduct({ id: 456 });
+      const price = createMockPrice({ productId: 456, price: 49.99 });
+
+      const result = mapDbProduct(dbProd, [price]);
+
+      expect(result.price).toBe(49.99);
+      expect(result.prices["de"]).toBe(49.99);
+    });
+
     it("should correctly populate priceHistory from historyJson", () => {
       const historyJson = JSON.stringify({ "2024-01-01": 5000 });
       const price = createMockPrice({ historyJson });

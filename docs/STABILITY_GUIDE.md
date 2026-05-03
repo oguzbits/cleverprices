@@ -247,5 +247,31 @@ Significant regressions have occurred when attempting to "simplify" this logic. 
 In Next.js 16, accessing dynamic server data (like `connection()`, `cookies()`, or `searchParams`) outside of a `<Suspense>` boundary will crash the build.
 
 - **Rule**: Every `async` component or component using dynamic functions **MUST** have a `Suspense` ancestor.
-- **Root Safety**: A mandatory `Suspense fallback={null}` exists in `src/app/layout.tsx`. Do NOT remove it. It acts as the final safety net for the build process.
 - **Dynamic Signals**: Use `await connection()` at the top of pages to safely opt into dynamic rendering while maintaining the "Hold" behavior.
+- **Root Safety**: A mandatory `Suspense fallback={null}` exists in `src/app/layout.tsx`. Do NOT remove it. It acts as the final safety net for the build process.
+
+---
+
+## 13. Data Integrity & Price Normalization
+
+To ensure consistent price display across the site (Search, Carousel, PDP), we enforce strict normalization patterns.
+
+### 13.1 The "Singular Price" Rule
+
+Every `Product` object must have both a `prices` map (per country) and a singular `price` property (normalized display price).
+
+- **Why**: Many UI components (Cards, Carousels, SEO Schemas) expect a predictable `product.price` without needing to know the current `countryCode` context.
+- **Enforcement**:
+  - `mapDbProduct` (`src/lib/utils/product-mapping.ts`) initializes `price` from the `"de"` record.
+  - `mergeLivePrices` (`src/lib/server/live-data.ts`) updates `price` whenever a new live price is merged.
+- **Regression Testing**:
+  - `src/lib/utils/product-mapping.test.ts`
+  - `src/lib/server/live-data.test.ts`
+
+### 13.2 PDP Orchestration (Time Stability)
+
+The `now` timestamp used for price history charts and relative dates must be generated at the server-side orchestrator and passed down as a prop.
+
+- **Why**: Prevents hydration mismatches and ensures the React Compiler treats components as "pure".
+- **Enforcement**: `getPDPRenderData` (`src/lib/server/cached-products.ts`) injects `now: Date.now()`.
+- **Regression Testing**: `src/lib/server/pdp-data.test.ts`
