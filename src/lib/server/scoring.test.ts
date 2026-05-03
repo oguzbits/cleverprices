@@ -5,9 +5,8 @@ import type { Product } from "@/lib/product-definitions";
 import { getSafeNow } from "../server/deterministic-time";
 import { calculateDesirabilityScore } from "./scoring";
 
-
 // Minimal product factory for testing — only fields used by scoring
-function makeProduct(overrides: Record<string, any> = {}): Product {
+function makeProduct(overrides: Record<string, unknown> = {}): Product {
   return {
     id: 1,
     slug: "test-product",

@@ -16,11 +16,11 @@
  *    PAAPI_PARTNER_TAG=yoursite-20
  */
 
-import { getSafeDate } from "@/lib/server/deterministic-time";
 import crypto from "crypto";
 
 import type { CategorySlug } from "@/lib/categories";
 import type { CountryCode } from "@/lib/countries";
+import { getSafeDate } from "@/lib/server/deterministic-time";
 import type { Currency } from "@/types";
 
 import type {

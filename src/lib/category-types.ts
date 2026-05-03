@@ -119,3 +119,17 @@ export interface CategoryData {
   aliases?: string[];
   filterGroups?: FilterGroup[];
 }
+export interface Category extends CategoryData {
+  slug: CategorySlug;
+}
+
+export interface CategoryHierarchy<T = Category> {
+  parent: T;
+  children: T[];
+}
+
+export interface CategoryLink {
+  name: string;
+  slug: CategorySlug;
+  icon?: any; // Generic icon type to avoid direct dependency on lucide-react in core types
+}

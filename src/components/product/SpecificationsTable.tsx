@@ -6,13 +6,14 @@
 
 "use client";
 
+import { AlertCircle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
+
 import { useDebugMode } from "@/hooks/use-debug-mode";
 import { translateSpecKey } from "@/lib/constants/spec-translations";
 import { Product } from "@/lib/product-definitions";
 import { cn } from "@/lib/utils";
 import { getProductIdentity } from "@/lib/utils/product-identity";
-import { AlertCircle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
 
 interface SpecificationsTableProps {
   product: Product;

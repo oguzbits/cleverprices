@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+
 import {
   calculateProductDiscount,
   calculateProductMetrics,
@@ -72,7 +73,7 @@ describe("products utility", () => {
         capacity: 16,
         capacityUnit: "GB",
         prices: { de: 80 },
-      } as any;
+      };
       const result = calculateProductMetrics(product);
       expect(result.pricePerUnit).toBe(5); // 80 / 16
     });

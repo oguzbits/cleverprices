@@ -1,6 +1,7 @@
 import { Database } from "bun:sqlite";
 import { eq, isNull } from "drizzle-orm";
 import levenshtein from "fast-levenshtein";
+
 import { db, products } from "../../src/db";
 
 // Connect to Icecat Local Index

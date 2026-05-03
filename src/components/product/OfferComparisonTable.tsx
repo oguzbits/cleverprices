@@ -4,11 +4,12 @@
  * Displays all price offers from different sources (Amazon, eBay, Newegg, etc.)
  */
 
+import { Check, ExternalLink, Star, Truck } from "lucide-react";
+import Image from "next/image";
+
 import { Card } from "@/components/ui/card";
 import type { DataSourceId, ProductOffer } from "@/lib/data-sources";
 import { cn } from "@/lib/utils";
-import { Check, ExternalLink, Star, Truck } from "lucide-react";
-import Image from "next/image";
 
 interface OfferComparisonTableProps {
   offers: ProductOffer[];

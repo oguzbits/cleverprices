@@ -1,9 +1,10 @@
-import { SITE_URL } from "@/lib/site-config";
-import { cn } from "@/lib/utils";
-import type { BreadcrumbItem } from "@/types";
 import { Home } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+
+import { SITE_URL } from "@/lib/site-config";
+import { cn } from "@/lib/utils";
+import type { BreadcrumbItem } from "@/types";
 
 interface BreadcrumbsProps {
   items: BreadcrumbItem[];

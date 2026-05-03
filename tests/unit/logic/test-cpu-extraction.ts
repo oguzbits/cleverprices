@@ -21,7 +21,7 @@ const testSamples = [
 
 // Mock extraction logic similar to import-from-csv.ts
 function extractSpecs(title: string, category: string) {
-  const specs: Record<string, any> = {};
+  const specs: Record<string, string | number | boolean | null> = {};
 
   // CPU Regexes (Simplified for test)
   const coreMatch = title.match(/(\d+)\s*(Cores|Kerne|cores)/i);

@@ -12,10 +12,10 @@
 import { execSync } from "child_process";
 import { sql } from "drizzle-orm";
 import os from "os";
+
 import { db, products } from "../../src/db";
 import type { CountryCode } from "../../src/lib/countries";
 import { getTokenStatus } from "../../src/lib/keepa/product-discovery";
-
 import { loadWorkerState, saveWorkerState } from "../../src/lib/worker-state";
 
 async function main() {

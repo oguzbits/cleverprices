@@ -1,5 +1,6 @@
-import { BRAND_NAME, SITE_URL } from "@/lib/site-config";
 import "server-only";
+
+import { BRAND_NAME, SITE_URL } from "@/lib/site-config";
 
 /**
  * Global Schema.org definitions for the entire site.

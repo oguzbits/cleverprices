@@ -1,5 +1,6 @@
 import { Database } from "bun:sqlite";
 import { existsSync } from "fs";
+
 import { IcecatDataSource } from "./icecat";
 
 const DB_PATH = "data/icecat-index.db";

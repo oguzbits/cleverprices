@@ -1,10 +1,10 @@
+import * as React from "react";
+
+import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryCard } from "@/components/ui/category-card";
 import { Category } from "@/lib/categories";
 import { getCategoryIcon } from "@/lib/category-icons";
 import { type CountryCode } from "@/lib/countries";
-import * as React from "react";
-
-import { Breadcrumbs } from "@/components/breadcrumbs";
 
 interface AllCategoriesViewProps {
   categoryHierarchy: {

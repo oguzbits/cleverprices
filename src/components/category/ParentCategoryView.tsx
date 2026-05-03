@@ -1,12 +1,11 @@
-import { allCategories, Category, type CategorySlug } from "@/lib/categories";
-import { getCategoryIcon } from "@/lib/category-icons";
-
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { CategoryHubCard } from "@/components/category/CategoryHubCard";
 import { ProductBestsellerGrid } from "@/components/category/ProductBestsellerGrid";
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
 import { BreadcrumbSchema } from "@/components/seo/ProductSchema";
 import { LazySection } from "@/components/ui/LazySection";
+import { allCategories, Category, type CategorySlug } from "@/lib/categories";
+import { getCategoryIcon } from "@/lib/category-icons";
 import { type LeanProduct } from "@/lib/types";
 import { formatTechText } from "@/lib/utils/formatting";
 import { isProductBestseller } from "@/lib/utils/products";

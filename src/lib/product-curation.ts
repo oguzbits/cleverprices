@@ -13,19 +13,19 @@ interface DashboardProduct {
   title: string;
   price: number;
   slug: string;
-  image: string;
-  rating: number;
-  ratingCount: number;
+  image: string | null;
+  rating: number | null;
+  ratingCount: number | null;
   testRating?: number;
   testCount?: number;
   categoryName?: string;
   discountRate?: number;
   isBestseller: boolean;
-  variationAttributes?: any;
+  variationAttributes?: string | null;
   badgeText?: string;
-  parentAsin?: string;
+  parentAsin?: string | null;
   groupKey?: string;
-  brand: string;
+  brand: string | null;
   pricesLastUpdated?: Record<string, string>;
 }
 
@@ -108,8 +108,6 @@ import { getSafeNow } from "./server/deterministic-time";
 
 const CURRENT_YEAR = new Date(getSafeNow()).getFullYear();
 
-
-
 export function curateProductList(
   list: Product[],
   countryCode: string,
@@ -128,8 +126,7 @@ export function curateProductList(
   // If the intent was to define `excludeIds`, `excludeParentIds`, and `excludeGroupKeys` differently, please provide a syntactically valid JavaScript/TypeScript implementation.
   const excludeIds = options.excludeIds || new Set<string>();
   const excludeParentIds = options.excludeParentIds || new Set<string>();
-  const excludeGroupKeys =
-    (options as any).excludeGroupKeys || new Set<string>();
+  const excludeGroupKeys = options.excludeGroupKeys || new Set<string>();
 
   const validCandidates: CandidateItem[] = list
     .map((p): CandidateItem | null => {
@@ -299,7 +296,7 @@ export function curateProductList(
     if (result.length >= maxItems) break;
 
     const p = item.original;
-    const groupKey = (item.display as any).groupKey;
+    const groupKey = item.display.groupKey!;
 
     if (seenAsins.has(p.asin)) continue;
     if (p.parentAsin && seenParents.has(p.parentAsin)) continue;
@@ -316,7 +313,7 @@ export function curateProductList(
     seenGroups.add(groupKey);
     categoryCounts[cat] = currentCatCount + 1;
 
-    result.push(item.display as any);
+    result.push(item.display as DashboardProduct & { groupKey: string });
   }
 
   return result;

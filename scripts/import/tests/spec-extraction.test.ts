@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+
 import { guardIntegrity } from "../data-validator";
 // We will import the new extractor once refactored.
 // For now, we test the validator logic which is half the battle.

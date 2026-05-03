@@ -1,7 +1,13 @@
 import { and, eq, isNotNull } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 import { getCategorySchema } from "../../src/lib/data-quality/schemas";
+import {
+  type FlexibleProduct,
+  type Product,
+} from "../../src/lib/product-definitions";
 import { calculateProductHealth } from "../../src/lib/utils/data-quality";
+import { type DataQualityMetrics } from "../../src/lib/utils/data-quality";
 import {
   calculateSiblingConsensus,
   getProductIdentity,
@@ -29,29 +35,36 @@ async function runAudit(category: string) {
   console.log(`📋 Auditing ${allProducts.length} enriched products...`);
 
   // Build sibling index for consensus
-  const families = new Map<string, any[]>();
+  const families = new Map<string, FlexibleProduct[]>();
   for (const p of allProducts) {
-    const identity = getProductIdentity(p as any);
+    const identity = getProductIdentity(p as FlexibleProduct);
     const key = `${p.brand}-${identity.model}`.toLowerCase();
     if (!families.has(key)) families.set(key, []);
     families.get(key)!.push(p);
   }
 
   let totalHealth = 0;
-  const anomalies: any[] = [];
+  const anomalies: {
+    id: string;
+    title: string;
+    score: number;
+    metrics: DataQualityMetrics;
+  }[] = [];
   let passing = 0;
 
   for (const p of allProducts) {
-    const identity = getProductIdentity(p as any);
+    const identity = getProductIdentity(p as FlexibleProduct);
     const key = `${p.brand}-${identity.model}`.toLowerCase();
-    const consensus = calculateSiblingConsensus(families.get(key) || []);
+    const consensus = calculateSiblingConsensus(
+      (families.get(key) || []) as any,
+    );
 
-    const health = calculateProductHealth(p as any, consensus);
+    const health = calculateProductHealth(p as FlexibleProduct, consensus);
     totalHealth += health.healthScore;
 
     if (health.healthScore < schema.minRequiredScore) {
       anomalies.push({
-        id: p.id,
+        id: p.id.toString(),
         title: p.title,
         score: health.healthScore,
         metrics: health,

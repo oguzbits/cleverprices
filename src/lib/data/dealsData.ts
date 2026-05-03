@@ -9,7 +9,7 @@ import {
 import { mapDbProduct } from "@/lib/utils/product-mapping";
 
 import { db } from "../../db";
-import { prices, products, type Product as DbProduct } from "../../db/schema";
+import { prices, type Product as DbProduct, products } from "../../db/schema";
 
 /**
  * Get all deal products across all categories using a highly optimized two-step query.

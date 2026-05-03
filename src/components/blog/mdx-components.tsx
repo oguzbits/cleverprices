@@ -1,4 +1,7 @@
-import { getCategoryPath, type CategorySlug } from "@/lib/categories";
+import { TrendingDown, Zap } from "lucide-react";
+import Link from "next/link";
+
+import { type CategorySlug, getCategoryPath } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
 import { getProductByAsin, type Product } from "@/lib/product-registry";
 import { type LeanProduct } from "@/lib/types";
@@ -6,8 +9,7 @@ import {
   calculateProductMetrics,
   getLocalizedProductData,
 } from "@/lib/utils/products";
-import { TrendingDown, Zap } from "lucide-react";
-import Link from "next/link";
+
 import { IdealoListCard } from "../category/IdealoListCard";
 
 interface QuickPicksProps {

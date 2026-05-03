@@ -5,6 +5,7 @@
  */
 
 import { join } from "node:path";
+
 import { getProductPath } from "../../src/lib/utils/url";
 
 const COLORS = {

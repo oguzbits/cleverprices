@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { and, eq, isNull, like, or, sql } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 import { EbayEnricher, RateLimitError } from "./ebay-enricher";
 import { EBAY_FIELD_MAP, normalizeEbayValue } from "./ebay-mapper";
@@ -142,9 +143,12 @@ class StructuredEnricher {
               )
             : await this.ebay.searchByKeywords(product.title);
 
-          if (ebayData && ebayData.localizedAspects) {
+          if (ebayData && Array.isArray(ebayData.localizedAspects)) {
             const rawSpecs: Record<string, string> = {};
-            for (const aspect of ebayData.localizedAspects) {
+            for (const aspect of ebayData.localizedAspects as Record<
+              string,
+              string
+            >[]) {
               const cpField = EBAY_FIELD_MAP[aspect.name] || aspect.name;
               rawSpecs[cpField] = normalizeEbayValue(aspect.name, aspect.value);
             }
@@ -209,7 +213,7 @@ class StructuredEnricher {
             })
             .where(eq(products.id, product.id));
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (e instanceof RateLimitError) {
           rateLimitCount++;
           console.warn(
@@ -218,7 +222,9 @@ class StructuredEnricher {
           await new Promise((r) => setTimeout(r, 60000));
           continue;
         }
-        console.error(`   ❌ Error: ${e.message}`);
+        console.error(
+          `   ❌ Error: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
 
       // Add a slight delay to avoid bursting (2-4s)
@@ -245,17 +251,32 @@ class StructuredEnricher {
 
       if (data.data && data.data.Specs && data.data.Specs.length > 0) {
         const specs: Record<string, string> = {};
-        data.data.Specs.forEach((s: any) => {
-          if (s.Group && s.Group.Name && s.Value && s.Value.RawValue) {
-            const key = `${s.Group.Name}: ${s.Name?.Value || ""}`.trim();
-            specs[key] = String(s.Value.RawValue);
-          } else if (s.Name?.Value && s.Value?.RawValue) {
-            specs[s.Name.Value] = String(s.Value.RawValue);
+        (data.data.Specs as Record<string, unknown>[]).forEach((s) => {
+          if (
+            s.Group &&
+            typeof s.Group === "object" &&
+            s.Value &&
+            typeof s.Value === "object"
+          ) {
+            const group = s.Group as Record<string, unknown>;
+            const name = s.Name as Record<string, unknown>;
+            const val = s.Value as Record<string, unknown>;
+            const key = `${group.Name || ""}: ${name?.Value || ""}`.trim();
+            specs[key] = String(val.RawValue || "");
+          } else if (
+            s.Name &&
+            typeof s.Name === "object" &&
+            s.Value &&
+            typeof s.Value === "object"
+          ) {
+            const name = s.Name as Record<string, unknown>;
+            const val = s.Value as Record<string, unknown>;
+            specs[String(name.Value || "")] = String(val.RawValue || "");
           }
         });
         return this.cleanSpecs(specs);
       }
-    } catch (e) {}
+    } catch (_e: unknown) {}
     return null;
   }
 
@@ -263,7 +284,7 @@ class StructuredEnricher {
    * RECOVER FROM KEEPA (Structured)
    */
   private async recoverFromKeepa(
-    product: any,
+    product: Record<string, unknown>,
   ): Promise<Record<string, string> | null> {
     if (product.keepaFeatures) {
       try {
@@ -286,7 +307,7 @@ class StructuredEnricher {
             return specs;
           }
         }
-      } catch {}
+      } catch (_e: unknown) {}
     }
     return null;
   }
@@ -306,7 +327,7 @@ class StructuredEnricher {
       try {
         const text = $(el).html();
         if (text) this.parseJsonLd(JSON.parse(text), specs);
-      } catch (e) {}
+      } catch (_e: unknown) {}
     });
 
     // 2. Brand-Specific Structured Tables (Trusted Only)
@@ -406,12 +427,14 @@ class StructuredEnricher {
     return final;
   }
 
-  private parseJsonLd(obj: any, specs: Record<string, string>) {
+  private parseJsonLd(obj: unknown, specs: any) {
     if (!obj || typeof obj !== "object") return;
     if (Array.isArray(obj)) {
-      obj.forEach((o) => this.parseJsonLd(o, specs));
+      obj.forEach((o: unknown) => this.parseJsonLd(o, specs));
       return;
     }
+
+    const o = obj as Record<string, unknown>;
 
     // Core Schema.org Product extraction
     const extractKeys = [
@@ -426,23 +449,24 @@ class StructuredEnricher {
       "manufacturer",
     ];
     extractKeys.forEach((k) => {
-      if (obj[k]) {
+      if (o[k]) {
         const val =
-          typeof obj[k] === "object"
-            ? obj[k].name || obj[k].value
-            : String(obj[k]);
+          typeof o[k] === "object" && o[k] !== null
+            ? (o[k] as Record<string, unknown>).name ||
+              (o[k] as Record<string, unknown>).value
+            : String(o[k]);
         if (val && val !== "undefined") specs[k] = val;
       }
     });
 
-    if (obj.additionalProperty && Array.isArray(obj.additionalProperty)) {
-      obj.additionalProperty.forEach((p: any) => {
-        if (p.name && p.value) specs[p.name] = String(p.value);
+    if (o.additionalProperty && Array.isArray(o.additionalProperty)) {
+      (o.additionalProperty as Record<string, unknown>[]).forEach((p) => {
+        if (p.name && p.value) specs[String(p.name)] = String(p.value);
       });
     }
 
     // Traverse deeper
-    Object.values(obj).forEach((v) => {
+    Object.values(o).forEach((v) => {
       if (v && typeof v === "object") this.parseJsonLd(v, specs);
     });
   }

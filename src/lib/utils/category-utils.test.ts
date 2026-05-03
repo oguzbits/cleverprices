@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+
+import { type LocalizedProduct } from "../product-definitions";
 import { sortProducts } from "./category-utils";
 
 describe("category utils > sortProducts", () => {
@@ -28,7 +30,11 @@ describe("category utils > sortProducts", () => {
       },
     ];
 
-    const sortedAsc = sortProducts(products, "price", "asc");
+    const sortedAsc = sortProducts(
+      products as unknown as LocalizedProduct[],
+      "price",
+      "asc",
+    );
 
     // Expected order (Price ascending):
     // 1. A Hub (inherits 80, wins tiebreaker over A Variant Cheap)
@@ -38,7 +44,11 @@ describe("category utils > sortProducts", () => {
     // 5. A Variant Expensive (100)
     expect(sortedAsc.map((p) => p.id)).toEqual([900, 2, 901, 3, 1]);
 
-    const sortedDesc = sortProducts(products, "price", "desc");
+    const sortedDesc = sortProducts(
+      products as unknown as LocalizedProduct[],
+      "price",
+      "desc",
+    );
 
     // Expected order (Price descending):
     // If descending, familyBest inherits the HIGHEST value for the Hub!

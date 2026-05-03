@@ -860,7 +860,11 @@ export async function getCategoryProducts(
   // This is surgical: we only hydrate what we actually display.
   // Deduplicate IDs because a Hub card and its cheapest variant might share the same display ID
   const hydrationIds = Array.from(
-    new Set(pageLeanProducts.map((p) => (p.isParentView ? p.displayId : p.id))),
+    new Set(
+      pageLeanProducts
+        .map((p) => (p.isParentView ? p.displayId : p.id))
+        .filter((id): id is number => typeof id === "number"),
+    ),
   );
 
   const rawPaginatedProducts = await getLocalizedProductsByIds(

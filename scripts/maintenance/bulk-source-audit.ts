@@ -1,4 +1,5 @@
 import { Database } from "bun:sqlite";
+
 import { auditSourceIntegrity } from "./source-auditor";
 
 const db = new Database("./data/cleverprices.db");

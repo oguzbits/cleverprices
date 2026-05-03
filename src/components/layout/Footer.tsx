@@ -1,9 +1,10 @@
-import { Logo } from "@/components/layout/Logo";
-import { ClientDate } from "@/components/ui/ClientDate";
-import { COPYRIGHT_YEAR, BUILD_TIME } from "@/lib/build-config";
-import { CACHE_VERSION, BRAND_DOMAIN } from "@/lib/site-config";
 import { Mail } from "lucide-react";
 import Link from "next/link";
+
+import { Logo } from "@/components/layout/Logo";
+import { ClientDate } from "@/components/ui/ClientDate";
+import { BUILD_TIME, COPYRIGHT_YEAR } from "@/lib/build-config";
+import { BRAND_DOMAIN, CACHE_VERSION } from "@/lib/site-config";
 
 export function Footer() {
   return (
@@ -146,7 +147,7 @@ export function Footer() {
               <p>
                 © {COPYRIGHT_YEAR} {BRAND_DOMAIN}. Alle Rechte vorbehalten.
               </p>
-              <div className="text-[10px] opacity-30 select-none flex flex-col items-end">
+              <div className="flex flex-col items-end text-[10px] opacity-30 select-none">
                 <span>Version: {CACHE_VERSION}</span>
                 <ClientDate date={BUILD_TIME} className="mt-0.5" />
               </div>

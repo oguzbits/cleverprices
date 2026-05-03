@@ -1,3 +1,4 @@
+import { type Product as DbProduct } from "../../db/schema";
 import type { LocalizedProduct, Product } from "../product-definitions";
 import type { LeanProduct } from "../types";
 import { CpuStrategy } from "./identity/cpus";
@@ -24,6 +25,18 @@ const STRATEGY_MAP: CategoryStrategyMap = {
   fernseher: MonitorStrategy,
   fernsehgeraete: MonitorStrategy,
   tvs: MonitorStrategy,
+};
+
+type FlexibleProduct = (
+  | Product
+  | LocalizedProduct
+  | LeanProduct
+  | Partial<DbProduct>
+) & {
+  category_id?: string | number;
+  official_title?: string | null;
+  official_specifications?: string | null;
+  specifications_source?: string | null;
 };
 
 /**
@@ -534,7 +547,7 @@ export function calculateSiblingConsensus(
             : s.officialSpecifications
           : s.specifications || {}
       ) as Record<string, unknown>;
-    } catch (e) {
+    } catch (_e) {
       specs = {};
     }
 
@@ -783,9 +796,7 @@ function extractRamFacts(
   return { series, capacity, ddr, cl, kit };
 }
 
-export function getProductIdentity(
-  product: Product | LocalizedProduct | LeanProduct,
-): ProductIdentity {
+export function getProductIdentity(product: FlexibleProduct): ProductIdentity {
   const title = (product.title || "").trim();
   const rawCategory = String(product.category || "").toLowerCase();
   const rawBrand = (product.brand || "Generic").trim();
@@ -896,7 +907,7 @@ export function getProductIdentity(
   const isHeadphones =
     category === "headphones" ||
     category === "kopfhoerer" ||
-    String(product.category_id) === "819" ||
+    product.category_id === "819" ||
     category.includes("headphone") ||
     category.includes("kopfhörer");
   const isLaptop =
@@ -919,7 +930,7 @@ export function getProductIdentity(
 
   const rawOfficial =
     product.officialSpecifications || product.official_specifications;
-  const rawCatchAll = product.specifications || product.specifications; // Catch-all might also be snake_case in some results
+  const rawCatchAll = product.specifications;
 
   let specs: Record<string, unknown> = {};
   try {
@@ -932,7 +943,7 @@ export function getProductIdentity(
             ? JSON.parse(rawCatchAll)
             : rawCatchAll) || {}
     ) as Record<string, unknown>;
-  } catch (e) {
+  } catch (_e) {
     specs = {};
   }
 

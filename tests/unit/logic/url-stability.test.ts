@@ -5,14 +5,15 @@ mock.module("next/cache", () => ({
   cacheLife: () => {},
   cacheTag: () => {},
   revalidateTag: () => {},
-  unstable_cache: (fn: any) => fn,
+  unstable_cache: <T extends (...args: unknown[]) => Promise<unknown>>(fn: T) =>
+    fn,
 }));
 
 import { dbReady } from "../../../src/db";
 import { getAllProductSlugs } from "../../../src/lib/product-registry";
 import { getPDPRenderData } from "../../../src/lib/server/cached-products";
 
-test.skip(
+test(
   "URL Stability: Sitemap URLs should not redirect on PDP",
   async () => {
     await dbReady;

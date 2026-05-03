@@ -47,7 +47,7 @@ export default async function HomeContent({
 
   // Helper to update seen sets
   const markSeen = (
-    items: { slug: string; parentAsin?: string; groupKey?: string }[],
+    items: { slug: string; parentAsin?: string | null; groupKey?: string }[],
   ) => {
     items.forEach((p) => {
       globalSeen.add(p.slug);

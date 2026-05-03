@@ -1,4 +1,5 @@
 import { and, eq, isNotNull, not, or, sql } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 import { getCategorySchema } from "../../src/lib/data-quality/schemas";
 import { LocalIcecatDataSource } from "../../src/lib/data-sources/icecat-local";

@@ -1,4 +1,5 @@
 import { and, eq, isNotNull, not } from "drizzle-orm";
+
 import { db, products } from "../../src/db/index";
 
 async function sanitizeSpecs() {

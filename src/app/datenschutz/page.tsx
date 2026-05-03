@@ -1,7 +1,8 @@
+import type { Metadata } from "next";
+
 import { BUILD_TIME } from "@/lib/build-config";
 import { getOpenGraph } from "@/lib/metadata";
 import { BRAND_DOMAIN, CONTACT_EMAIL, getSiteUrl } from "@/lib/site-config";
-import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: `Datenschutzerklärung | ${BRAND_DOMAIN}`,

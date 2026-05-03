@@ -1,5 +1,6 @@
 import { type CountryCode } from "@/lib/countries";
 import { Product } from "@/lib/product-definitions";
+
 import { IdealoLivePrice } from "./IdealoLivePrice";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
 

@@ -1,4 +1,5 @@
 import { and, eq, sql } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 import { LocalIcecatDataSource } from "../../src/lib/data-sources/icecat-local";
 import {

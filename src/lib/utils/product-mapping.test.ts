@@ -2,7 +2,7 @@ import { describe, expect, it, mock } from "bun:test";
 
 // 1. Setup Mocks for dependencies
 mock.module("../product-families", () => ({
-  getFamilyIdentity: (p: any) => ({
+  getFamilyIdentity: (p: { id: number; title: string; brand: string }) => ({
     slug: `canonical-${p.id || 0}`,
     title: p.title,
     brand: p.brand,
@@ -10,11 +10,11 @@ mock.module("../product-families", () => ({
 }));
 
 mock.module("./products", () => ({
-  calculateProductMetrics: (p: any) => p, // Passthrough for testing mapping
+  calculateProductMetrics: (p: unknown) => p, // Passthrough for testing mapping
 }));
 
 mock.module("../history-compression", () => ({
-  parseHistoryBlob: (data: any) => {
+  parseHistoryBlob: (data: string | Buffer) => {
     try {
       const str = typeof data === "string" ? data : data.toString();
       return JSON.parse(str);
@@ -24,29 +24,39 @@ mock.module("../history-compression", () => ({
   },
 }));
 
+import { type Product as DbProduct } from "../../db/schema";
+import { type LitePrice } from "../product-definitions";
 import { mapDbProduct, parseHistoryJson } from "./product-mapping";
 
-const createMockDbProduct = (overrides: Partial<any> = {}): any => ({
-  id: 1,
-  asin: "B00TEST",
-  slug: "old-long-slug",
-  title: "Test Product",
-  category: "ssd",
-  brand: "Samsung",
-  imageUrl: "http://example.com/img.jpg",
-  specifications: JSON.stringify({ Capacity: "1000GB" }),
-  createdAt: new Date(),
-  ...overrides,
-});
+const createMockDbProduct = (
+  overrides: Record<string, unknown> = {},
+): DbProduct =>
+  ({
+    id: 1,
+    asin: "B00TEST",
+    slug: "old-long-slug",
+    title: "Test Product",
+    category: "ssd",
+    brand: "Samsung",
+    imageUrl: "http://example.com/img.jpg",
+    specifications: JSON.stringify({ Capacity: "1000GB" }),
+    createdAt: new Date(),
+    ...overrides,
+  }) as DbProduct;
 
-const createMockPrice = (overrides: Partial<any> = {}): any => ({
-  productId: 1,
-  country: "de",
-  price: 99.99,
-  currency: "EUR",
-  lastUpdated: new Date().getTime(),
-  ...overrides,
-});
+const createMockPrice = (overrides: Record<string, unknown> = {}): LitePrice =>
+  ({
+    id: 1,
+    productId: 1,
+    country: "de",
+    price: 99.99,
+    currency: "EUR",
+    listPrice: 109.99,
+    priceAvg90: 89.99,
+    pricePerUnit: 1.0,
+    lastUpdated: new Date(),
+    ...overrides,
+  }) as LitePrice;
 
 describe("product-mapping utility", () => {
   describe("parseHistoryJson", () => {

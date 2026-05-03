@@ -1,6 +1,7 @@
 import { and, like } from "drizzle-orm";
 import fs from "fs";
 import path from "path";
+
 import { db, products } from "../src/db/index";
 
 async function main() {

@@ -1,7 +1,8 @@
+import type { Product } from "../../product-definitions";
 import { IdentityStrategy, ProductIdentity } from "./types";
 
 export class GpuStrategy implements IdentityStrategy {
-  extract(product: any): Partial<ProductIdentity> | null {
+  extract(product: Product): Partial<ProductIdentity> | null {
     const rawSpecs =
       product.officialSpecifications || product.official_specifications;
     const specs =
@@ -15,8 +16,6 @@ export class GpuStrategy implements IdentityStrategy {
       specs["Grafikspeichergröße"] ||
       specs["Interne Speicherkapazität"] ||
       specs["Speicherkapazität"];
-    const brand = product.brand || "";
-    const title = product.title || "";
 
     if (!gpu) return null;
 

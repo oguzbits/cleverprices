@@ -1,7 +1,8 @@
+import * as React from "react";
+
 import { Logo } from "@/components/layout/Logo";
 import { SearchButton } from "@/components/layout/SearchButton";
 import { SearchManager } from "@/components/layout/SearchManager";
-import * as React from "react";
 
 export function Navbar() {
   return (

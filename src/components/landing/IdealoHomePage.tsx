@@ -1,12 +1,13 @@
 import {
-  IdealoProductCarousel,
   type CarouselProduct,
+  IdealoProductCarousel,
 } from "@/components/IdealoProductCarousel";
 import type { LivePriceData } from "@/components/landing/IdealoProductCard";
 import { CategoryNav } from "@/components/layout/CategoryNav";
 import { LazySection } from "@/components/ui/LazySection";
 import type { CountryCode } from "@/lib/countries";
 import type { Category } from "@/types";
+
 import { IdealoHero } from "./IdealoHero";
 import { IdealoSection } from "./IdealoSection";
 

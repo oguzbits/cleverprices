@@ -1,5 +1,6 @@
 import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
 import { type Page } from "playwright";
+
 import { db, products } from "../../src/db";
 import { getProductIdentity } from "../../src/lib/utils/product-identity";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
@@ -79,7 +80,7 @@ class SophisticatedEnricher {
             Object.keys(JSON.parse(p.officialSpecifications as string)).length <
             20
           );
-        } catch (e) {
+        } catch (_e) {
           return true;
         }
       })
@@ -129,14 +130,14 @@ class SophisticatedEnricher {
     });
     await page.addInitScript(() => {
       Object.defineProperty(navigator, "webdriver", { get: () => undefined });
-      // @ts-ignore
+      // @ts-expect-error - chrome is not in Window
       window.chrome = { runtime: {} };
-      // @ts-ignore
       const originalQuery = window.navigator.permissions.query;
-      // @ts-ignore
       window.navigator.permissions.query = (parameters) =>
         parameters.name === "notifications"
-          ? Promise.resolve({ state: Notification.permission } as any)
+          ? Promise.resolve({
+              state: Notification.permission,
+            } as unknown as PermissionStatus)
           : originalQuery(parameters);
       Object.defineProperty(navigator, "plugins", {
         get: () => [1, 2, 3, 4, 5],
@@ -146,21 +147,29 @@ class SophisticatedEnricher {
 
   private async enrichProduct(
     page: Page,
-    product: any,
+    product: {
+      id: number;
+      title: string;
+      gtin: string | null;
+      brand: string | null;
+      category: string;
+    },
     skipAlternate: boolean,
   ) {
     console.log(
       `\n🔍 [ID: ${product.id}] ${product.title.substring(0, 50)}...`,
     );
-    let specs: Record<string, any> | null = null;
+    let specs: Record<string, unknown> | null = null;
     let source = "";
 
     // 1. Try Galaxus First (BEST Source: Unblocked + High Density)
     try {
       specs = await this.scrapeGalaxus(page, product);
       if (specs) source = "galaxus";
-    } catch (e: any) {
-      console.error(`   ⚠️ Galaxus Error: ${e.message}`);
+    } catch (e: unknown) {
+      console.error(
+        `   ⚠️ Galaxus Error: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
 
     // 2. Try Cyberport Second
@@ -168,7 +177,7 @@ class SophisticatedEnricher {
       try {
         specs = await this.scrapeCyberport(page, product);
         if (specs) source = "cyberport";
-      } catch (e: any) {
+      } catch (_e: unknown) {
         // console.error(`   ⚠️ Cyberport Error: ${e.message}`);
       }
     }
@@ -178,7 +187,7 @@ class SophisticatedEnricher {
       try {
         specs = await this.scrapeAlternate(page, product);
         if (specs) source = "alternate";
-      } catch (e: any) {
+      } catch (_e: unknown) {
         // console.error(`   ⚠️ Alternate Error: ${e.message}`);
       }
     }
@@ -229,8 +238,8 @@ class SophisticatedEnricher {
 
   private async scrapeAlternate(
     page: Page,
-    product: any,
-  ): Promise<Record<string, any> | null> {
+    product: { gtin: string | null; brand: string | null; category: string },
+  ): Promise<Record<string, unknown> | null> {
     const identity = getProductIdentity(product);
     const gtinListRaw = (product.gtin || "")
       .split(",")
@@ -408,13 +417,13 @@ class SophisticatedEnricher {
                 }
                 await page.goBack();
               }
-            } catch (e) {
+            } catch (_e) {
               await page.goBack().catch(() => {});
               continue;
             }
           }
         }
-      } catch (e) {
+      } catch (_e) {
         continue;
       }
     }
@@ -423,8 +432,8 @@ class SophisticatedEnricher {
 
   private async scrapeGalaxus(
     page: Page,
-    product: any,
-  ): Promise<Record<string, any> | null> {
+    product: { gtin: string | null; brand: string | null; category: string },
+  ): Promise<Record<string, unknown> | null> {
     const rawGtin = (product.gtin || "").split(",")[0].trim();
     const gtin = rawGtin.length === 12 ? "0" + rawGtin : rawGtin;
 
@@ -494,8 +503,10 @@ class SophisticatedEnricher {
 
         // 3. Extract specs
         return await this.extractGalaxusDOM(page);
-      } catch (e: any) {
-        console.error(`   ⚠️ Galaxus Error: ${e.message}`);
+      } catch (e: unknown) {
+        console.error(
+          `   ⚠️ Galaxus Error: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     }
     return null;
@@ -526,7 +537,8 @@ class SophisticatedEnricher {
           const label = td[0].textContent?.trim().replace(/i$/, "") || "";
           const value = td[1].textContent?.trim();
           if (label && value) {
-            const internalKey = (fieldMap as any)[label] || label;
+            const internalKey =
+              (fieldMap as Record<string, string>)[label] || label;
             // Prevent taking long descriptions
             if (value.length > 200) return;
             specs[internalKey] = value;
@@ -539,8 +551,8 @@ class SophisticatedEnricher {
 
   private async scrapeCyberport(
     page: Page,
-    product: any,
-  ): Promise<Record<string, any> | null> {
+    product: { gtin: string | null; brand: string | null; category: string },
+  ): Promise<Record<string, unknown> | null> {
     const rawGtin = (product.gtin || "").split(",")[0].trim();
     // Padding 12 to 13 digits for search accuracy
     const gtin = rawGtin.length === 12 ? "0" + rawGtin : rawGtin;
@@ -597,7 +609,7 @@ class SophisticatedEnricher {
           await this.handleCookies(page);
           return await this.extractCyberportDOM(page);
         }
-      } catch (e: any) {
+      } catch (_e: unknown) {
         // console.error(`   ⚠️ Cyberport Error: ${e.message}`);
       }
     }
@@ -616,7 +628,8 @@ class SophisticatedEnricher {
         const value = row.querySelector("td.value")?.textContent?.trim();
 
         if (label && value) {
-          const internalKey = (fieldMap as any)[label] || label;
+          const internalKey =
+            (fieldMap as Record<string, string>)[label] || label;
           specs[internalKey] = value;
         }
       });
@@ -630,7 +643,7 @@ class SophisticatedEnricher {
   ): Promise<Record<string, string> | null> {
     // Small delay to let tables render if client-side
     await page.waitForTimeout(500);
-    return await page.evaluate((fieldMap: any) => {
+    return await page.evaluate((fieldMap: Record<string, string>) => {
       const data: Record<string, string> = {};
       const tables = document.querySelectorAll(
         "#product-details-tab table, #details table, table.techSpec, table.product-spec-table",

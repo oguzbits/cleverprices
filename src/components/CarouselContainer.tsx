@@ -1,9 +1,10 @@
 "use client";
 
-import { Carousel, CarouselRef } from "@/components/Carousel";
-import { cn } from "@/lib/utils";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRef, useState } from "react";
+
+import { Carousel, CarouselRef } from "@/components/Carousel";
+import { cn } from "@/lib/utils";
 
 interface CarouselContainerProps {
   title?: string;

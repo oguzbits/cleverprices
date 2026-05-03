@@ -1,12 +1,13 @@
 import "@/app/globals.css";
 
+import { Inter } from "next/font/google";
+import Script from "next/script";
+import * as React from "react";
+
 import { BfcacheRecovery } from "@/components/layout/BfcacheRecovery";
 import { Footer } from "@/components/layout/Footer";
 import { Navbar } from "@/components/layout/Navbar";
 import { cn } from "@/lib/utils";
-import { Inter } from "next/font/google";
-import Script from "next/script";
-import * as React from "react";
 
 const inter = Inter({
   subsets: ["latin"],

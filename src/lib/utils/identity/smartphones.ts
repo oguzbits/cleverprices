@@ -1,3 +1,4 @@
+import type { Product } from "../../product-definitions";
 import { getCleanTokens, verifySpecModel } from "../product-identity";
 import {
   extractRealStorageFromTitle,
@@ -7,7 +8,7 @@ import {
 import { IdentityStrategy, ProductIdentity } from "./types";
 
 export class SmartphoneStrategy implements IdentityStrategy {
-  extract(product: any): Partial<ProductIdentity> | null {
+  extract(product: Product): Partial<ProductIdentity> | null {
     const rawSpecs =
       product.officialSpecifications || product["official_specifications"];
     const specs =

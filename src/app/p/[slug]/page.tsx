@@ -156,7 +156,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
       <IdealoProductPage
         product={data.product}
         variants={data.variants}
-        category={data.category}
+        category={data.category ?? undefined}
         countryCode={countryCode}
         selectedCondition={condition as "new" | "used" | "renewed"}
         isParentView={data.isParentView}

@@ -11,8 +11,9 @@
 
 "use client";
 
-import { cn } from "@/lib/utils";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+
+import { cn } from "@/lib/utils";
 
 interface IdealoTopBarProps {
   categoryName: string;

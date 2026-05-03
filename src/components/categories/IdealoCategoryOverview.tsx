@@ -13,6 +13,7 @@
  */
 
 import { cn } from "@/lib/utils";
+
 import { IdealoCategoryCard } from "./IdealoCategoryCard";
 
 export interface CategoryData {

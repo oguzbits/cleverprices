@@ -1,7 +1,9 @@
-import { type CategorySlug } from "@/lib/categories";
-import { type CountryCode } from "@/lib/countries";
 import https from "https";
 import zlib from "zlib";
+
+import { type CategorySlug } from "@/lib/categories";
+import { type CountryCode } from "@/lib/countries";
+
 import type { DataSourceProvider, UnifiedProduct } from "./types";
 
 /**

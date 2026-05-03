@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 import { eq } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 import { normalizeVariantAttributes } from "../../src/lib/utils/variants";
 

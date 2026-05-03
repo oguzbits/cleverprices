@@ -1,9 +1,5 @@
 "use client";
 
-import { PrefetchLink } from "@/components/ui/PrefetchLink";
-import { type CategorySlug } from "@/lib/category-types";
-import { getCategoryPath } from "@/lib/category-utils";
-import { cn } from "@/lib/utils";
 import {
   ChevronLeft,
   ChevronRight,
@@ -20,6 +16,11 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+
+import { PrefetchLink } from "@/components/ui/PrefetchLink";
+import { type CategorySlug } from "@/lib/category-types";
+import { getCategoryPath } from "@/lib/category-utils";
+import { cn } from "@/lib/utils";
 
 // Core PC component categories - prioritized for focus
 const categories: {

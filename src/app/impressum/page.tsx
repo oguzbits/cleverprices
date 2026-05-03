@@ -1,6 +1,7 @@
+import type { Metadata } from "next";
+
 import { getOpenGraph } from "@/lib/metadata";
 import { BRAND_DOMAIN, CONTACT_EMAIL, getSiteUrl } from "@/lib/site-config";
-import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: `Impressum | ${BRAND_DOMAIN}`,

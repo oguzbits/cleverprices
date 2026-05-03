@@ -1,6 +1,7 @@
 import { createClient } from "@libsql/client";
 import { eq, like } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/libsql";
+
 import * as schema from "../../src/db/schema";
 
 const DB_PATH = "file:./data/cleverprices-official.db";

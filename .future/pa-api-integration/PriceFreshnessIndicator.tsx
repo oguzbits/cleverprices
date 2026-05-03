@@ -1,5 +1,6 @@
-import { getPricesAge, PRICES_UPDATED_AT } from "@/lib/build-config";
 import { Clock } from "lucide-react";
+
+import { getPricesAge, PRICES_UPDATED_AT } from "@/lib/build-config";
 
 /**
  * Displays when prices were last updated globally

@@ -2,6 +2,7 @@
 
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import { searchProducts } from "@/lib/product-registry";
+
 import { client } from "../../db";
 
 export interface SearchCategory {

@@ -10,9 +10,10 @@
  *   bun run scripts/sync-prices.ts
  */
 
-import { getItems, isPaApiConfigured, PaApiProduct } from "@/lib/amazon-paapi";
 import { readFileSync, writeFileSync } from "fs";
 import { join } from "path";
+
+import { getItems, isPaApiConfigured, PaApiProduct } from "@/lib/amazon-paapi";
 
 // Path to products.json
 const PRODUCTS_PATH = join(process.cwd(), "src/data/products.json");

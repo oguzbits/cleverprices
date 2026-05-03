@@ -19,14 +19,16 @@ import { cache as reactCache } from "react";
 
 import { client, db, dbReady, IS_BUILD } from "../db";
 import {
-  type Product as DbProduct,
   type Price,
   prices,
+  type Product as DbProduct,
   products,
 } from "../db/schema";
 import { withRetry } from "../db/utils";
 import {
   filteringProductColumns,
+  type FlexiblePrice,
+  type FlexibleProduct,
   type LitePrice,
   litePriceColumns,
   liteProductColumns,
@@ -51,7 +53,9 @@ import {
 import { mapDbProduct } from "./utils/product-mapping";
 import { isProductHighQuality } from "./utils/quality";
 
-const cache = typeof reactCache === "function" ? reactCache : (fn: any) => fn;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const cache =
+  typeof reactCache === "function" ? (reactCache as any) : <T>(fn: T): T => fn;
 
 export {
   enrichWithFullSiblings,
@@ -60,12 +64,12 @@ export {
   getProductsByIds,
   getRawProductsByCategory,
   indexPricesById,
+  type LitePrice,
   litePriceColumns,
   liteProductColumns,
   mapDbProduct,
-  superLitePriceColumns,
-  type LitePrice,
   type Product,
+  superLitePriceColumns,
 };
 
 /**
@@ -106,7 +110,7 @@ export const getProductById = cache(async function getProductById(
   const product = mapDbProduct(
     p as DbProduct,
     prs as Price[],
-    siblings as any[],
+    siblings as Product[],
     false,
   );
 
@@ -154,7 +158,7 @@ async function fetchCanonicalIdInternal(
   const targetKey = modelTitle.toLowerCase().replace(/[^a-z0-9]+/g, "");
 
   for (const v of allVariants) {
-    const iden = getProductIdentity(v as any);
+    const iden = getProductIdentity(v);
     const key = (iden.modelTitle || "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "");
@@ -225,7 +229,7 @@ export async function getCanonicalFamilyIdsBatch<
   );
 
   // 2. Group variants by parentAsin
-  const variantsByParent = new Map<string, any[]>();
+  const variantsByParent = new Map<string, (typeof allRawVariants)[0][]>();
   allRawVariants.forEach((v) => {
     const asin = v.parentAsin || ""; // In case of standalone asin match
     if (!variantsByParent.has(asin)) variantsByParent.set(asin, []);
@@ -249,7 +253,7 @@ export async function getCanonicalFamilyIdsBatch<
 
     const targetModel = req.modelTitle.toLowerCase();
     const bestMatch = variants.find((v) => {
-      const vIdentity = getProductIdentity(v as any);
+      const vIdentity = getProductIdentity(v);
       return vIdentity.modelTitle?.toLowerCase() === targetModel;
     });
 
@@ -365,7 +369,7 @@ export async function findProductBySyntheticId(
         return vModelKey === targetModelKey;
       });
 
-      const bestVariant = getFamilyRepresentative(variants as any);
+      const bestVariant = getFamilyRepresentative(variants as Product[]);
       if (bestVariant) {
         representative = bestVariant;
       }
@@ -388,7 +392,7 @@ export async function findProductBySyntheticId(
     isParentView: true,
     modelTitle: familyIdentity.modelTitle,
     variantSuffix: familyIdentity.variantSuffix,
-  } as any;
+  } as Product;
 }
 
 export async function getAllProductSlugs(
@@ -450,8 +454,24 @@ export async function getAllProductSlugs(
           .orderBy(asc(products.id)),
       );
 
-      const processedResults: any[] = [];
-      const parentMap = new Map<string, any>();
+      const processedResults: {
+        id: number;
+        slug: string;
+        category: string;
+        enrichmentStatus?: string | null;
+        updatedAt: string;
+      }[] = [];
+      const parentMap = new Map<
+        string,
+        {
+          id: number;
+          slug: string;
+          category: string;
+          enrichmentStatus?: string | null;
+          updatedAt: string;
+          hasQualityVariant: boolean;
+        }
+      >();
 
       // Identify unique families and their representatives first
       const familyRepresentativeMap = new Map<string, (typeof rawResults)[0]>();
@@ -471,7 +491,7 @@ export async function getAllProductSlugs(
         familyKeys.map(async (key) => {
           const r = familyRepresentativeMap.get(key)!;
           const actingParentAsin = r.parentAsin || r.asin;
-          const identity = getProductIdentity(r as any);
+          const identity = getProductIdentity(r as FlexibleProduct);
           const hubIdVal = await getCanonicalFamilyId(
             actingParentAsin,
             r.id!,
@@ -501,7 +521,7 @@ export async function getAllProductSlugs(
                 ...r,
                 id: hubId,
                 isParentView: true,
-              } as any,
+              } as unknown as FlexibleProduct,
               [],
             );
 
@@ -542,7 +562,7 @@ export async function getAllProductSlugs(
         // Only include families that have at least one high-quality representative
         for (const family of parentMap.values()) {
           if (family.hasQualityVariant) {
-            const { hasQualityVariant, ...data } = family;
+            const { hasQualityVariant: _hqv, ...data } = family;
             processedResults.push(data);
           }
         }
@@ -552,63 +572,61 @@ export async function getAllProductSlugs(
     }
 
     // 1. Fetch products with basic metadata (Standard Slow Path)
-    let queryFn = () =>
-      db
-        .select({
-          id: products.id,
-          asin: products.asin,
-          slug: products.slug,
-          title: products.title,
-          brand: products.brand,
-          category: products.category,
-          parentAsin: products.parentAsin,
-          variationAttributes: products.variationAttributes,
-          officialTitle: products.officialTitle,
-          enrichmentStatus: products.enrichmentStatus,
-          updatedAt: products.updatedAt,
-          specifications: products.specifications,
-          officialSpecifications: products.officialSpecifications,
-          salesRank: products.salesRank,
-          capacity: products.capacity,
-          capacityUnit: products.capacityUnit,
-          normalizedCapacity: products.normalizedCapacity,
-          technology: products.technology,
-          condition: products.condition,
-          rating: products.rating,
-          reviewCount: products.reviewCount,
-          imageUrl: products.imageUrl,
-          mpn: products.mpn,
-        })
-        .from(products)
-        .where(
-          and(
-            inArray(products.enrichmentStatus, [
-              "optimized",
-              "processed",
-              "pending",
-            ]),
-            // Same filter for consistency even in slow path (Require Image)
-            isNotNull(products.imageUrl),
-            or(
-              isNotNull(products.specifications),
-              isNotNull(products.officialSpecifications),
-              sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
-            ),
+    const query = db
+      .select({
+        id: products.id,
+        asin: products.asin,
+        slug: products.slug,
+        title: products.title,
+        brand: products.brand,
+        category: products.category,
+        parentAsin: products.parentAsin,
+        variationAttributes: products.variationAttributes,
+        officialTitle: products.officialTitle,
+        enrichmentStatus: products.enrichmentStatus,
+        updatedAt: products.updatedAt,
+        specifications: products.specifications,
+        officialSpecifications: products.officialSpecifications,
+        salesRank: products.salesRank,
+        capacity: products.capacity,
+        capacityUnit: products.capacityUnit,
+        normalizedCapacity: products.normalizedCapacity,
+        technology: products.technology,
+        condition: products.condition,
+        rating: products.rating,
+        reviewCount: products.reviewCount,
+        imageUrl: products.imageUrl,
+        mpn: products.mpn,
+      })
+      .from(products)
+      .where(
+        and(
+          inArray(products.enrichmentStatus, [
+            "optimized",
+            "processed",
+            "pending",
+          ]),
+          // Same filter for consistency even in slow path (Require Image)
+          isNotNull(products.imageUrl),
+          or(
+            isNotNull(products.specifications),
+            isNotNull(products.officialSpecifications),
+            sql`id IN (SELECT product_id FROM prices WHERE price > 0 AND country = 'de')`,
           ),
-        )
-        .orderBy(
-          sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
-          // Order by ID (asc) to ensure the first one encountered per parentAsin is the 'oldest' ID,
-          // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
-          asc(products.id),
-        );
+        ),
+      )
+      .orderBy(
+        sql`CASE WHEN enrichment_status = 'optimized' THEN 0 ELSE 1 END`,
+        // Order by ID (asc) to ensure the first one encountered per parentAsin is the 'oldest' ID,
+        // matching the getCanonicalFamilyId logic used in PDPs for stable Hub IDs.
+        asc(products.id),
+      );
 
-    if (limit) {
-      // @ts-ignore
-      queryFn = () => queryFn().limit(limit);
-    }
-
-    const rawAllProducts = (await withRetry(queryFn)) as any[];
+    const finalQuery = limit ? query.limit(limit) : query;
+    const queryFn = () => finalQuery;
+    const rawAllProducts = (await withRetry(
+      queryFn,
+    )) as unknown as FlexibleProduct[];
 
     // 2. Fetch prices (optimized map)
     const priceRecords = await withRetry(() =>
@@ -621,17 +639,17 @@ export async function getAllProductSlugs(
         .from(prices),
     );
 
-    const priceMap = new Map();
+    const priceMap = new Map<number, { price: number; usedPrice: number }>();
     for (const p of priceRecords) {
       if (!priceMap.has(p.productId))
         priceMap.set(p.productId, { price: 0, usedPrice: 0 });
-      const current = priceMap.get(p.productId);
+      const current = priceMap.get(p.productId)!;
       current.price = Math.max(current.price, p.price || 0);
-      current.used_price = Math.max(current.used_price, p.usedPrice || 0);
+      current.usedPrice = Math.max(current.usedPrice, p.usedPrice || 0);
     }
 
     // 3. Group ALL products by family first
-    const fullFamilies = new Map<string, any[]>();
+    const fullFamilies = new Map<string, FlexibleProduct[]>();
     for (const p of rawAllProducts) {
       if (p.parentAsin) {
         if (!fullFamilies.has(p.parentAsin)) fullFamilies.set(p.parentAsin, []);
@@ -653,9 +671,13 @@ export async function getAllProductSlugs(
       if (!p.parentAsin) {
         // Singleton - Convert to Hub for Parity
         const hubId = 900000000 + (p.id! % 100000000);
-        const mapped = mapDbProduct(p as any, [], [], true);
+        const mapped = mapDbProduct(p as FlexibleProduct, [], [], true);
         const { slug: hubSlug } = getFamilyIdentity(
-          { ...mapped, id: hubId, isParentView: true } as any,
+          {
+            ...mapped,
+            id: hubId,
+            isParentView: true,
+          } as unknown as FlexibleProduct,
           [],
         );
 
@@ -675,9 +697,14 @@ export async function getAllProductSlugs(
         const allMapped = variants.map((v) => {
           const vPr = priceMap.get(v.id!);
           const priceArray = vPr
-            ? [{ price: vPr.price, usedPrice: vPr.used_price, country: "de" }]
+            ? [{ price: vPr.price, usedPrice: vPr.usedPrice, country: "de" }]
             : [];
-          return mapDbProduct(v as any, priceArray as any, variants, true);
+          return mapDbProduct(
+            v as FlexibleProduct,
+            priceArray as FlexiblePrice[],
+            variants as unknown as Product[],
+            true,
+          );
         });
 
         if (includeVariants) {
@@ -703,27 +730,35 @@ export async function getAllProductSlugs(
 
         if (goodVariantsIndices.length >= 1) {
           const goodMapped = goodVariantsIndices.map((i) => allMapped[i]);
-          const rep = getFamilyRepresentative(goodMapped as any);
-          const repId = (rep as any).id || 0;
+          const rep = getFamilyRepresentative(
+            goodMapped as unknown as Product[],
+          );
+          if (!rep) continue;
+          const repId = rep.id || 0;
           const syntheticId = 900000000 + (repId % 100000000);
           const repIndex = variants.findIndex((v) => v.id === repId);
           const { slug: hubSlug } = getFamilyIdentity(
-            { ...rep, id: syntheticId, isParentView: true } as any,
-            allMapped,
+            {
+              ...rep,
+              id: syntheticId,
+              isParentView: true,
+            } as unknown as Product,
+            allMapped as unknown as Product[],
           );
 
           results.push({
             id: syntheticId,
             slug: hubSlug,
-            category: (rep as any).category || "unknown",
+            category: rep.category || "unknown",
             enrichmentStatus: variants.some(
               (v) => v.enrichmentStatus === "processed",
             )
               ? "processed"
               : "pending",
-            updatedAt:
+            updatedAt: (
               (repIndex !== -1 ? variants[repIndex].updatedAt : null) ||
-              getSafeDate(),
+              getSafeDate()
+            ).toISOString(),
           });
         }
       }
@@ -810,12 +845,12 @@ async function fetchNonEmptyInternal() {
     };
 
     return categories;
-  } catch (e) {
+  } catch (_e) {
     if (!IS_BUILD) {
       console.error(
-        `[DB Error] getNonEmptyCategorySlugs failed: ${e instanceof Error ? e.message : String(e)}`,
+        `[DB Error] getNonEmptyCategorySlugs failed: ${_e instanceof Error ? _e.message : String(_e)}`,
       );
-      throw e;
+      throw _e;
     }
     return [];
   }
@@ -842,14 +877,16 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
 
   const isScript =
     typeof globalThis === "undefined" ||
-    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
+    (!(globalThis as unknown as { __incrementalCache: unknown })
+      .__incrementalCache &&
+      !process.env.NEXT_RUNTIME);
 
   if (isScript) {
     return fetchNonEmptyInternal();
   }
 
   const cachedFetch = async () => {
-    const version = CACHE_VERSION; // Version bump
+    const _version = CACHE_VERSION; // Version bump
     return fetchNonEmptyInternal();
   };
 
@@ -869,7 +906,7 @@ export async function getNonEmptyCategorySlugs(): Promise<string[]> {
 export const getProductVariants = cache(async function getProductVariants(
   product: Product,
   countryCode: string = "de",
-  skipLiveMerge: boolean = false, // Added back to match usage
+  _skipLiveMerge: boolean = false, // Added back to match usage
   skipFullMapping: boolean = false, // If true, skips expensive consensus/identity logic
 ): Promise<Product[]> {
   await dbReady;
@@ -925,7 +962,7 @@ export const getProductVariants = cache(async function getProductVariants(
         const priceArray = price ? [price] : [];
         return mapDbProduct(
           p as DbProduct,
-          priceArray as any[],
+          priceArray as FlexiblePrice[],
           siblings,
           skipFullMapping, // Also strip heavy data if lean
           consensus,
@@ -999,12 +1036,12 @@ export const getProductFamilyMembers = cache(
 
 export async function getAllProducts(): Promise<Product[]> {
   await dbReady;
-  const allProducts = await withRetry(() =>
+  const allProducts = (await withRetry(() =>
     db.select(liteProductColumns).from(products),
-  );
-  const allPrices = await withRetry(() =>
+  )) as unknown as FlexibleProduct[];
+  const allPrices = (await withRetry(() =>
     db.select(litePriceColumns).from(prices),
-  );
+  )) as unknown as FlexiblePrice[];
   const pricesByProduct = indexPricesById(allPrices);
   return enrichWithFullSiblings(allProducts, pricesByProduct, "de");
 }
@@ -1032,7 +1069,7 @@ const fetchProductBySlug = cache(
         db.select().from(prices).where(eq(prices.productId, p.id)),
       );
 
-      return mapDbProduct(p as any, prs as any, []);
+      return mapDbProduct(p as FlexibleProduct, prs as FlexiblePrice[], []);
     };
 
     // 1. Try ID-based match first (Robust path)
@@ -1053,7 +1090,7 @@ const fetchProductBySlug = cache(
         if (decoded !== slug) {
           result = await getProductAndPrices(decoded);
         }
-      } catch (e) {
+      } catch (_e) {
         // Ignore decoding errors
       }
     }
@@ -1073,7 +1110,7 @@ const fetchProductBySlug = cache(
         const prs = await withRetry(() =>
           db.select().from(prices).where(eq(prices.productId, p.id)),
         );
-        result = mapDbProduct(p as any, prs as any, []);
+        result = mapDbProduct(p as FlexibleProduct, prs as FlexiblePrice[], []);
       }
     }
 
@@ -1130,7 +1167,11 @@ const fetchProductByAsin = async (
     ]),
   );
 
-  return mapDbProduct(p as any, prs as any, siblings as any[]);
+  return mapDbProduct(
+    p as FlexibleProduct,
+    prs as FlexiblePrice[],
+    siblings as Product[],
+  );
 };
 
 export const getProductByAsin = cache(async function getProductByAsin(
@@ -1181,7 +1222,7 @@ export async function findProductSlugByAsinSuffix(
         .limit(1),
     );
     if (p) {
-      const iden = getProductIdentity(p as any);
+      const iden = getProductIdentity(p as FlexibleProduct);
       const canonicalRealId = await getCanonicalFamilyId(
         p.parentAsin || undefined,
         p.id,
@@ -1194,7 +1235,7 @@ export async function findProductSlugByAsinSuffix(
           ...(canonicalProduct || p),
           id: finalId,
           isParentView: true,
-        },
+        } as unknown as FlexibleProduct,
         [],
       );
       return { id: finalId, slug: canonical };
@@ -1227,7 +1268,7 @@ export async function findProductSlugByAsinSuffix(
     if (p) {
       // If it's a specific variant, we might want to redirect to the Hub or the Variant.
       // For migration recovery, redirecting to the variant's new canonical slug is safest.
-      const iden = getProductIdentity(p as any);
+      const iden = getProductIdentity(p as FlexibleProduct);
       const canonicalRealId = await getCanonicalFamilyId(
         p.parentAsin || undefined,
         p.id,
@@ -1242,7 +1283,7 @@ export async function findProductSlugByAsinSuffix(
           id: finalId,
           isParentView: true,
           parentAsin: p.parentAsin ?? undefined,
-        },
+        } as unknown as FlexibleProduct,
         [],
       );
       return { id: finalId, slug: canonical };
@@ -1378,12 +1419,12 @@ export const findProductByParentAsinSuffix = cache(
 
 export const fetchSimilarProducts = async (
   category: string,
-  excludedSlug: string,
+  excludeSlug: string,
   targetPrice: number,
-  limit: number,
-  countryCode: string,
-  parentAsin?: string,
-) => {
+  limit: number = 4,
+  countryCode: string = "de",
+  parentAsin?: string | null,
+): Promise<Product[]> => {
   await dbReady;
 
   // 1. Calculate a price range (+/- 50% for high diversity, or tighter)
@@ -1405,7 +1446,7 @@ export const fetchSimilarProducts = async (
           eq(prices.country, countryCode),
           gt(prices.price, minPrice),
           lt(prices.price, maxPrice),
-          ne(products.slug, excludedSlug),
+          ne(products.slug, excludeSlug),
           parentAsin ? ne(products.parentAsin, parentAsin) : sql`1=1`,
         ),
       )
@@ -1425,7 +1466,7 @@ export const fetchSimilarProducts = async (
         and(
           eq(products.category, category),
           eq(prices.country, countryCode),
-          ne(products.slug, excludedSlug),
+          ne(products.slug, excludeSlug),
           parentAsin ? ne(products.parentAsin, parentAsin) : sql`1=1`,
         ),
       )
@@ -1509,8 +1550,8 @@ export async function searchProducts(
       sql: "SELECT id FROM products_search WHERE products_search MATCH ? ORDER BY rank LIMIT ?",
       args: [matchQuery, limit],
     });
-    ids = result.rows.map((r: any) => Number(r.id));
-  } catch (error) {
+    ids = result.rows.map((r: unknown) => Number((r as { id: number }).id));
+  } catch (_error) {
     console.warn(`[Search] FTS MATCH failed for "${query}", falling back...`);
   }
 
@@ -1533,15 +1574,15 @@ export async function searchProducts(
 
   try {
     // 3. Fetch full product data and prices for those specific IDs
-    const prods = await db
+    const prods = (await db
       .select(liteProductColumns)
       .from(products)
-      .where(inArray(products.id, ids));
+      .where(inArray(products.id, ids))) as FlexibleProduct[];
 
-    const prs = await db
+    const prs = (await db
       .select(litePriceColumns)
       .from(prices)
-      .where(inArray(prices.productId, ids));
+      .where(inArray(prices.productId, ids))) as FlexiblePrice[];
 
     const pricesByProduct = indexPricesById(prs);
 
@@ -1554,7 +1595,7 @@ export async function searchProducts(
     );
 
     // Group by parentAsin for correct sibling consensus
-    const families = new Map<string, any[]>();
+    const families = new Map<string, FlexibleProduct[]>();
     for (const p of sortedProds) {
       if (p.parentAsin) {
         if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
@@ -1572,23 +1613,23 @@ export async function searchProducts(
     console.error("FTS Search Error:", error);
     // Fallback to basic search if FTS fails for some reason
     const terms = query.trim().split(/\s+/);
-    const fallbackProds = await db
+    const fallbackProds = (await db
       .select(liteProductColumns)
       .from(products)
       .where(or(...terms.map((t) => like(products.title, `%${t}%`))))
-      .limit(limit);
+      .limit(limit)) as FlexibleProduct[];
 
     if (fallbackProds.length === 0) return [];
     const fallbackIds = fallbackProds.map((p) => p.id);
-    const fallbackPrs = await db
+    const fallbackPrs = (await db
       .select(litePriceColumns)
       .from(prices)
-      .where(inArray(prices.productId, fallbackIds));
+      .where(inArray(prices.productId, fallbackIds))) as FlexiblePrice[];
 
     const fallbackPricesByProduct = indexPricesById(fallbackPrs);
 
     // Group fallback results
-    const families = new Map<string, any[]>();
+    const families = new Map<string, FlexibleProduct[]>();
     for (const p of fallbackProds) {
       if (p.parentAsin) {
         if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
@@ -1605,7 +1646,7 @@ export async function searchProducts(
   }
 }
 
-const getProductsByBrand = cache(async function getProductsByBrand(
+const _getProductsByBrand = cache(async function getProductsByBrand(
   brand: string,
   excludeSlug?: string,
 ): Promise<Product[]> {
@@ -1636,7 +1677,7 @@ const getProductsByBrand = cache(async function getProductsByBrand(
   const pricesByProduct = indexPricesById(prs);
 
   // Group by parentAsin for correct sibling consensus
-  const families = new Map<string, any[]>();
+  const families = new Map<string, FlexibleProduct[]>();
   for (const p of prods) {
     if (p.parentAsin) {
       if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
@@ -1664,7 +1705,9 @@ export const fetchDeals = async (
     ];
 
     if (condition) {
-      whereConditions.push(eq(products.condition, condition as any));
+      whereConditions.push(
+        eq(products.condition, condition as "New" | "Used" | "Renewed"),
+      );
       if (condition === "New") {
         whereConditions.push(
           sql`${products.title} NOT LIKE '%Generalüberholt%'`,
@@ -1692,12 +1735,14 @@ export const fetchDeals = async (
         .limit(limit),
     );
 
-    const prods = results.map((r) => r.product);
-    const pricesByProduct = indexPricesById(results.map((r) => r.price));
+    const prods = results.map((r) => r.product) as FlexibleProduct[];
+    const pricesByProduct = indexPricesById(
+      results.map((r) => r.price) as FlexiblePrice[],
+    );
     return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
-  } catch (e) {
+  } catch (_e) {
     console.warn(
-      `[DB Warning] Failed to fetch deals: ${e instanceof Error ? e.message : String(e)}`,
+      `[DB Warning] Failed to fetch deals: ${_e instanceof Error ? _e.message : String(_e)}`,
     );
     return [];
   }
@@ -1727,14 +1772,16 @@ export const getBestDeals = cache(async function getBestDeals(
           )
           .limit(limit),
       );
-      const prods = results.map((r) => r.product);
-      const pricesByProduct = indexPricesById(results.map((r) => r.price));
+      const prods = results.map((r) => r.product) as FlexibleProduct[];
+      const pricesByProduct = indexPricesById(
+        results.map((r) => r.price) as FlexiblePrice[],
+      );
       return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     }
     return fetchDeals(limit, countryCode, condition);
-  } catch (e) {
+  } catch (_e) {
     console.warn(
-      `[DB Warning] Failed to fetch best deals: ${e instanceof Error ? e.message : String(e)}`,
+      `[DB Warning] Failed to fetch best deals: ${_e instanceof Error ? _e.message : String(_e)}`,
     );
     return [];
   }
@@ -1749,7 +1796,9 @@ const getCachedPopular = async (
   try {
     const whereConditions: SQL[] = [];
     if (condition) {
-      whereConditions.push(eq(products.condition, condition as any));
+      whereConditions.push(
+        eq(products.condition, condition as "New" | "Used" | "Renewed"),
+      );
       if (condition === "New") {
         whereConditions.push(
           sql`${products.title} NOT LIKE '%Generalüberholt%'`,
@@ -1759,7 +1808,7 @@ const getCachedPopular = async (
       }
     }
 
-    const prods = await withRetry(() =>
+    const prods = (await withRetry(() =>
       db
         .select(liteProductColumns)
         .from(products)
@@ -1770,7 +1819,7 @@ const getCachedPopular = async (
           desc(products.rating),
         )
         .limit(limit),
-    );
+    )) as FlexibleProduct[];
 
     console.log(
       `[DB DEBUG] getCachedPopular found ${prods.length} products with limit ${limit}`,
@@ -1778,14 +1827,14 @@ const getCachedPopular = async (
     if (prods.length === 0) return [];
 
     const ids = prods.map((p) => p.id);
-    const prs = await withRetry(() =>
+    const prs = (await withRetry(() =>
       db
         .select(litePriceColumns)
         .from(prices)
         .where(
           and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
         ),
-    );
+    )) as FlexiblePrice[];
 
     const pricesByProduct = indexPricesById(prs);
     console.log(
@@ -1793,7 +1842,7 @@ const getCachedPopular = async (
     );
 
     // Group by parentAsin
-    const families = new Map<string, any[]>();
+    const families = new Map<string, FlexibleProduct[]>();
     for (const p of prods) {
       if (p.parentAsin) {
         if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
@@ -1802,9 +1851,9 @@ const getCachedPopular = async (
     }
 
     return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
-  } catch (e) {
+  } catch (_e) {
     console.warn(
-      `[DB Warning] Failed to fetch popular: ${e instanceof Error ? e.message : String(e)}`,
+      `[DB Warning] Failed to fetch popular: ${_e instanceof Error ? _e.message : String(_e)}`,
     );
     return [];
   }
@@ -1820,26 +1869,26 @@ export const getMostPopular = cache(async function getMostPopular(
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
     if (isScript) {
       await dbReady;
-      const prods = await db
+      const prods = (await db
         .select(liteProductColumns)
         .from(products)
         .where(condition ? eq(products.condition, condition) : undefined)
         .orderBy(asc(sql`COALESCE(${products.salesRank}, 10000000)`))
-        .limit(limit);
+        .limit(limit)) as FlexibleProduct[];
       if (prods.length === 0) return [];
 
       const ids = prods.map((p) => p.id);
-      const prs = await db
+      const prs = (await db
         .select(litePriceColumns)
         .from(prices)
         .where(
           and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-        );
+        )) as FlexiblePrice[];
 
       const pricesByProduct = indexPricesById(prs);
 
       // Group by parentAsin
-      const families = new Map<string, any[]>();
+      const families = new Map<string, FlexibleProduct[]>();
       for (const p of prods) {
         if (p.parentAsin) {
           if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
@@ -1850,7 +1899,7 @@ export const getMostPopular = cache(async function getMostPopular(
       return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
     }
     return getCachedPopular(limit, countryCode, condition);
-  } catch (e) {
+  } catch (_e) {
     console.warn(
       "[Build Warning] Database missing in getMostPopular. Returning empty.",
     );
@@ -1886,34 +1935,36 @@ export const fetchDiversePopular = async (
   `,
       args: [itemsPerCategory],
     });
-    const ids = result.rows.map((r: any) => Number(r.id));
+    const ids = result.rows.map((r: unknown) =>
+      Number((r as { id: number }).id),
+    );
 
     if (ids.length === 0) return [];
 
-    const prods = await withRetry(() =>
+    const prods = (await withRetry(() =>
       db
         .select(liteProductColumns)
         .from(products)
         .where(inArray(products.id, ids)),
-    );
+    )) as FlexibleProduct[];
 
     console.log(
       `[DB DEBUG] fetchDiversePopular found ${prods.length} products`,
     );
 
-    const prs = await withRetry(() =>
+    const prs = (await withRetry(() =>
       db
         .select(litePriceColumns)
         .from(prices)
         .where(
           and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
         ),
-    );
+    )) as FlexiblePrice[];
 
     const pricesByProduct = indexPricesById(prs);
 
     // Group by parentAsin
-    const families = new Map<string, any[]>();
+    const families = new Map<string, FlexibleProduct[]>();
     for (const p of prods) {
       if (p.parentAsin) {
         if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
@@ -1922,9 +1973,9 @@ export const fetchDiversePopular = async (
     }
 
     return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
-  } catch (e) {
+  } catch (_e) {
     console.warn(
-      `[DB Warning] Failed to fetch diverse popular: ${e instanceof Error ? e.message : String(e)}`,
+      `[DB Warning] Failed to fetch diverse popular: ${_e instanceof Error ? _e.message : String(_e)}`,
     );
     return [];
   }
@@ -1934,7 +1985,7 @@ export const getDiverseMostPopular = cache(async function getDiverseMostPopular(
   itemsPerCategory: number = 10,
   countryCode: string = "de",
 ): Promise<Product[]> {
-  const isScript =
+  const _isScript =
     typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
 
   /* 
@@ -1956,7 +2007,9 @@ export const fetchNewArrivals = async (
   try {
     const whereConditions: SQL[] = [];
     if (condition) {
-      whereConditions.push(eq(products.condition, condition as any));
+      whereConditions.push(
+        eq(products.condition, condition as "New" | "Used" | "Renewed"),
+      );
       if (condition === "New") {
         whereConditions.push(
           sql`${products.title} NOT LIKE '%Generalüberholt%'`,
@@ -1966,32 +2019,32 @@ export const fetchNewArrivals = async (
       }
     }
 
-    const prods = await withRetry(() =>
+    const prods = (await withRetry(() =>
       db
         .select(liteProductColumns)
         .from(products)
         .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
         .orderBy(desc(products.createdAt))
         .limit(limit),
-    );
+    )) as FlexibleProduct[];
 
     if (prods.length === 0) return [];
 
     const ids = prods.map((p) => p.id);
-    const prs = await withRetry(() =>
+    const prs = (await withRetry(() =>
       db
         .select(litePriceColumns)
         .from(prices)
         .where(
           and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
         ),
-    );
+    )) as FlexiblePrice[];
 
     const pricesByProduct = indexPricesById(prs);
     return enrichWithFullSiblings(prods, pricesByProduct, countryCode, true);
-  } catch (e) {
+  } catch (_e) {
     console.warn(
-      `[DB Warning] Failed to fetch new products: ${e instanceof Error ? e.message : String(e)}`,
+      `[DB Warning] Failed to fetch new products: ${_e instanceof Error ? _e.message : String(_e)}`,
     );
     return [];
   }
@@ -2007,21 +2060,21 @@ export async function getNewArrivals(
       typeof globalThis === "undefined" || !process.env.NEXT_RUNTIME;
     if (isScript) {
       await dbReady;
-      const prods = await db
+      const prods = (await db
         .select(liteProductColumns)
         .from(products)
         .where(condition ? eq(products.condition, condition) : undefined)
         .orderBy(desc(products.createdAt))
-        .limit(limit);
+        .limit(limit)) as FlexibleProduct[];
       if (prods.length === 0) return [];
 
       const ids = prods.map((p) => p.id);
-      const prs = await db
+      const prs = (await db
         .select(litePriceColumns)
         .from(prices)
         .where(
           and(inArray(prices.productId, ids), eq(prices.country, countryCode)),
-        );
+        )) as FlexiblePrice[];
 
       const pricesByProduct = indexPricesById(prs);
       console.log(
@@ -2029,7 +2082,7 @@ export async function getNewArrivals(
       );
 
       // Group by parentAsin
-      const families = new Map<string, any[]>();
+      const families = new Map<string, FlexibleProduct[]>();
       for (const p of prods) {
         if (p.parentAsin) {
           if (!families.has(p.parentAsin)) families.set(p.parentAsin, []);
@@ -2040,15 +2093,15 @@ export async function getNewArrivals(
       return prods.map((p) => {
         const siblings = p.parentAsin ? families.get(p.parentAsin) || [p] : [p];
         return mapDbProduct(
-          p as DbProduct,
+          p as FlexibleProduct,
           pricesByProduct.get(p.id!) || [],
-          siblings,
+          siblings as unknown as Product[],
           true,
         );
       });
     }
     return fetchNewArrivals(limit, countryCode, condition);
-  } catch (e) {
+  } catch (_e) {
     console.warn(
       "[Build Warning] Database missing in getNewArrivals. Returning empty.",
     );
@@ -2060,7 +2113,7 @@ export async function getNewArrivals(
  * SERVER-SIDE FILTERING & PAGINATION (Module 2)
  * Moves logic from JS to SQL for performance and scalability.
  */
-async function getFilteredProducts(
+async function _getFilteredProducts(
   category: string,
   countryCode: string,
   filters: {
@@ -2093,7 +2146,12 @@ async function getFilteredProducts(
       where.push(inArray(products.brand, filters.brand));
     }
     if (filters.condition?.length) {
-      where.push(inArray(products.condition, filters.condition as any));
+      where.push(
+        inArray(
+          products.condition,
+          filters.condition as ("New" | "Used" | "Renewed")[],
+        ),
+      );
     }
     if (filters.technology?.length) {
       where.push(inArray(products.technology, filters.technology));
@@ -2177,9 +2235,11 @@ async function getFilteredProducts(
       .limit((filters.limit || 24) * 3) // Fetch more candidates to account for family deduplication
       .offset(filters.offset || 0);
 
-    const prods = results.map((r) => r.product);
+    const prods = results.map((r) => r.product) as unknown as FlexibleProduct[];
 
-    const pricesByProduct = indexPricesById(results.map((r) => r.price));
+    const pricesByProduct = indexPricesById(
+      results.map((r) => r.price) as unknown as FlexiblePrice[],
+    );
     const families = await enrichWithFullSiblings(
       prods,
       pricesByProduct,
@@ -2187,9 +2247,9 @@ async function getFilteredProducts(
       true,
     );
     return families.slice(0, filters.limit || 24);
-  } catch (e) {
+  } catch (_e) {
     console.warn(
-      `[DB Warning] Failed to fetch filtered products: ${e instanceof Error ? e.message : String(e)}`,
+      `[DB Warning] Failed to fetch filtered products: ${_e instanceof Error ? _e.message : String(_e)}`,
     );
     return [];
   }
@@ -2198,10 +2258,22 @@ async function getFilteredProducts(
 /**
  * Get total count for pagination without fetching records.
  */
-async function getFilteredProductsCount(
+async function _getFilteredProductsCount(
   category: string,
   countryCode: string,
-  filters: any,
+  filters: {
+    brand?: string[];
+    technology?: string[];
+    formFactor?: string[];
+    condition?: string[];
+    socket?: string[];
+    cores?: string[];
+    capacity?: string[];
+    minCapacity?: number;
+    maxCapacity?: number;
+    minPrice?: number;
+    maxPrice?: number;
+  },
 ): Promise<number> {
   if (IS_BUILD) return 0;
   await dbReady;
@@ -2213,7 +2285,12 @@ async function getFilteredProductsCount(
 
   if (filters.brand?.length) where.push(inArray(products.brand, filters.brand));
   if (filters.condition?.length)
-    where.push(inArray(products.condition, filters.condition as any));
+    where.push(
+      inArray(
+        products.condition,
+        filters.condition as ("New" | "Used" | "Renewed")[],
+      ),
+    );
   if (filters.technology?.length)
     where.push(inArray(products.technology, filters.technology));
   if (filters.formFactor?.length)

@@ -1,7 +1,8 @@
-import { db, dbReady } from "@/db";
-import { getSafeDate, getSafeNow } from "@/lib/server/deterministic-time";
 import { sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
+
+import { db, dbReady } from "@/db";
+import { getSafeDate, getSafeNow } from "@/lib/server/deterministic-time";
 
 /**
  * Health Check Endpoint

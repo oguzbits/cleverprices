@@ -1,8 +1,9 @@
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+
 import type { Category, CategorySlug } from "@/lib/categories";
 import { getCategoryPath } from "@/lib/categories";
 import { type CountryCode } from "@/lib/countries";
-import { ArrowRight } from "lucide-react";
-import Link from "next/link";
 
 interface CategoryCardProps {
   category: Omit<Category, "icon">;

@@ -3,9 +3,10 @@
  * Centralized types to avoid duplication across the codebase
  */
 
-import type { CategorySlug, UnitType } from "@/lib/categories";
-import type { CountryCode } from "@/lib/countries";
 import type { LucideIcon } from "lucide-react";
+
+import type { CategorySlug } from "@/lib/categories";
+import type { CountryCode } from "@/lib/countries";
 
 /**
  * Common types
@@ -35,60 +36,20 @@ export interface Product {
   isPrime?: boolean;
 }
 
-/**
- * Filter state types
- */
-interface FilterState {
-  search: string;
-  condition: string[] | null;
-  technology: string[] | null;
-  formFactor: string[] | null;
-  minCapacity: number | null;
-  maxCapacity: number | null;
-  sortBy: SortBy;
-  sortOrder: SortOrder;
-}
-
 type SortOrder = "asc" | "desc";
 
 type SortBy = "relevance" | "price" | "pricePerUnit" | "rating" | "capacity";
 
-/**
- * Product condition types
- */
-type Condition = "New" | "Used" | "Renewed";
-
-/**
- * Category types
- */
-export interface Category {
-  name: string;
-  slug: CategorySlug;
-  description: string;
-  icon: LucideIcon;
-  parent?: CategorySlug;
-  metaTitle?: string;
-  metaDescription?: string;
-  singularName?: string;
-  unitType?: UnitType;
-  hidden?: boolean;
-}
-
-interface CategoryHierarchy {
-  parent: Category;
-  children: Category[];
-}
-
-interface CategoryLink {
-  name: string;
-  slug: CategorySlug;
-  icon: LucideIcon;
-}
+export type {
+  Category,
+  CategoryHierarchy,
+  CategoryLink,
+} from "@/lib/categories";
 
 /**
  * Country types
  */
-interface Country {
+export interface Country {
   code: CountryCode;
   name: string;
   currency: Currency;
@@ -110,7 +71,7 @@ export interface BreadcrumbItem {
 /**
  * Analytics event types
  */
-interface AffiliateClickParams {
+export interface AffiliateClickParams {
   productName: string;
   category: CategorySlug;
   country: CountryCode;
@@ -119,13 +80,13 @@ interface AffiliateClickParams {
   position?: number;
 }
 
-interface FilterAppliedParams {
+export interface FilterAppliedParams {
   filter: string;
   value: string | string[];
   category: CategorySlug;
 }
 
-interface SortChangedParams {
+export interface SortChangedParams {
   sortBy: SortBy;
   order: SortOrder;
   category: CategorySlug;

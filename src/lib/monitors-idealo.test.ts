@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+
 import { getProductIdentity } from "./utils/product-identity";
 
 describe("Monitor Identity - Idealo Reference Tests", () => {
@@ -252,7 +253,7 @@ describe("Monitor Identity - Idealo Reference Tests", () => {
       const identity = getProductIdentity({
         brand: c.brand,
         title: c.input,
-        mpn: (c as any).mpn,
+        mpn: c.mpn,
         category: "monitors",
       });
 

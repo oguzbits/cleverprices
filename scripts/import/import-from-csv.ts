@@ -2,6 +2,7 @@
 import { and, eq } from "drizzle-orm";
 import { existsSync, readFileSync } from "fs";
 import Papa from "papaparse";
+
 import { db, NewPrice, NewProduct, prices, products } from "../../src/db";
 import type { CategorySlug } from "../../src/lib/categories";
 import { generateProductSlug } from "../../src/lib/utils/slug";

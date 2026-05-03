@@ -1,5 +1,3 @@
-import { type Product } from "../product-definitions";
-
 /**
  * Unified Quality Logic for CleverPrices
  * This function determines if a product is of high enough quality to be:
@@ -8,7 +6,20 @@ import { type Product } from "../product-definitions";
  * 3. Rendered on the live site (Page Content notFound() logic)
  */
 export function isProductHighQuality(
-  product: Partial<Product> | any,
+  product:
+    | {
+        title?: string | null;
+        officialTitle?: string | null;
+        asin?: string | null;
+        imageUrl?: string | null;
+        image?: string | null;
+        specifications?: string | Record<string, unknown> | null;
+        officialSpecifications?: string | Record<string, unknown> | null;
+        prices?: Record<string, unknown> | null;
+        usedPrices?: Record<string, unknown> | null;
+      }
+    | null
+    | undefined,
   options: {
     checkPrice?: boolean;
     countryCode?: string;
@@ -41,7 +52,7 @@ export function isProductHighQuality(
       typeof product.specifications === "string"
         ? JSON.parse(product.specifications)
         : product.specifications || {};
-  } catch (e) {
+  } catch (_e) {
     specs = {};
   }
 
@@ -51,7 +62,7 @@ export function isProductHighQuality(
       typeof product.officialSpecifications === "string"
         ? JSON.parse(product.officialSpecifications)
         : product.officialSpecifications || {};
-  } catch (e) {
+  } catch (_e) {
     officialSpecs = {};
   }
 
@@ -72,10 +83,8 @@ export function isProductHighQuality(
     hasPrice =
       !!prices[country] ||
       !!usedPrices[country] ||
-      Object.values(prices).some((p: any) => typeof p === "number" && p > 0) ||
-      Object.values(usedPrices).some(
-        (p: any) => typeof p === "number" && p > 0,
-      );
+      Object.values(prices).some((p) => typeof p === "number" && p > 0) ||
+      Object.values(usedPrices).some((p) => typeof p === "number" && p > 0);
   }
 
   // Final Decision:

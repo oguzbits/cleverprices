@@ -1,9 +1,11 @@
-import { getCountryByCode, type CountryCode } from "@/lib/countries";
+import Image from "next/image";
+import Link from "next/link";
+
+import { type CountryCode, getCountryByCode } from "@/lib/countries";
 import { type LocalizedProduct } from "@/lib/product-definitions";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
-import Image from "next/image";
-import Link from "next/link";
+
 import { IdealoStarRating } from "./IdealoStarRating";
 
 interface ProductGridProps {

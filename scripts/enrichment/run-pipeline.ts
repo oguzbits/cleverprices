@@ -3,6 +3,7 @@ import fs from "fs";
 import https from "https";
 import path from "path";
 import zlib from "zlib";
+
 import { db } from "../../src/db";
 import { products } from "../../src/db/schema";
 

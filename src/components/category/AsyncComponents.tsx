@@ -1,3 +1,6 @@
+import { X } from "lucide-react";
+import Link from "next/link";
+
 import { FAQSchema } from "@/components/category/FAQSchema";
 import { FAQSection } from "@/components/category/FAQSection";
 import { ClientDate } from "@/components/ui/ClientDate";
@@ -5,17 +8,44 @@ import { Pagination } from "@/components/ui/pagination";
 import { Category, CategorySlug, getChildCategories } from "@/lib/categories";
 import { getCategoryFAQs } from "@/lib/category-faqs";
 import { getCategoryIcon } from "@/lib/category-icons";
-import { type FilterParams } from "@/lib/product-definitions";
+import { type CountryCode } from "@/lib/countries";
+import {
+  type FilterCounts,
+  type FilterParams,
+  type LocalizedProduct,
+} from "@/lib/product-definitions";
 import { formatTechText } from "@/lib/utils/formatting";
-import { X } from "lucide-react";
-import Link from "next/link";
+
 import { IdealoFilterPanel } from "./IdealoFilterPanel";
 import { IdealoResultList } from "./IdealoResultList";
 import { MobileFilterDrawer } from "./MobileFilterDrawer";
 
+interface CategoryFilteredData {
+  products: (LocalizedProduct & {
+    isParentView?: boolean;
+    variantCount?: number;
+  })[];
+  totalCount: number;
+  filteredCount: number;
+  unitLabel: string;
+  hasProducts: boolean;
+  filters: Record<string, any>;
+  filterCounts: FilterCounts;
+  minPriceInCategory: number;
+  maxPriceInCategory: number;
+  priceRanges: { label: string; count: number; min: number; max: number }[];
+  lastUpdated: string | null;
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    pageSize: number;
+    totalItems: number;
+  };
+}
+
 interface AsyncFilterPanelProps {
   category: Omit<Category, "icon">;
-  filteredData: any;
+  filteredData: CategoryFilteredData;
   lockedFilters?: string[];
 }
 
@@ -25,7 +55,7 @@ export function AsyncFilterPanel({
   lockedFilters,
 }: AsyncFilterPanelProps) {
   const {
-    filteredCount,
+    filteredCount: _filteredCount,
     unitLabel,
     hasProducts,
     filterCounts,
@@ -86,7 +116,7 @@ interface AsyncProductListProps {
   category: Omit<Category, "icon">;
   countryCode: string;
   searchParams: FilterParams;
-  filteredData: any;
+  filteredData: CategoryFilteredData;
 }
 
 export function AsyncProductList({
@@ -98,7 +128,7 @@ export function AsyncProductList({
   const {
     products,
     filteredCount,
-    totalCount,
+    totalCount: _totalCount,
     filters,
     filterCounts,
     minPriceInCategory,
@@ -137,7 +167,7 @@ export function AsyncProductList({
   // No need to fetch live prices in batch again - getCategoryProducts already merged them
   // into the product objects themselves. We just re-map them for IdealoResultList.
   const livePrices = Object.fromEntries(
-    products.map((p: any) => [
+    products.map((p) => [
       p.id as number,
       {
         price: p.price,
@@ -169,8 +199,8 @@ export function AsyncProductList({
               </p>
               <button
                 onClick={() => {
-                  // @ts-ignore
-                  if (typeof window !== "undefined") window.triggerSearch?.();
+                  if (typeof window !== "undefined")
+                    (window as any).triggerSearch?.();
                 }}
                 className="bg-idealo-blue hover:bg-idealo-blue-hover focus-visible:ring-idealo-blue flex items-center gap-2 rounded-[4px] px-6 py-2.5 text-[15px] font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               >
@@ -266,7 +296,7 @@ export function AsyncProductList({
 
       <IdealoResultList
         products={products}
-        countryCode={countryCode as any}
+        countryCode={countryCode as CountryCode}
         viewMode={viewMode as "grid" | "list"}
         livePrices={livePrices}
       />

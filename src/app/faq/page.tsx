@@ -1,3 +1,6 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+
 import {
   Accordion,
   AccordionContent,
@@ -6,8 +9,6 @@ import {
 } from "@/components/ui/accordion";
 import { getOpenGraph } from "@/lib/metadata";
 import { BRAND_DOMAIN, getSiteUrl } from "@/lib/site-config";
-import type { Metadata } from "next";
-import Link from "next/link";
 
 export const metadata: Metadata = {
   title: `Häufige Fragen (FAQ) | ${BRAND_DOMAIN}`,

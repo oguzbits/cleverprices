@@ -1,6 +1,7 @@
 import { describe, it, mock } from "bun:test";
 import { writeFileSync } from "fs";
 import { join } from "path";
+
 import { getFamilyIdentity } from "../src/lib/product-families";
 
 // Mocks

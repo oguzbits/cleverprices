@@ -1,5 +1,10 @@
 "use client";
 
+import { Check } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+
+import { type Product } from "@/lib/product-definitions";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { cn } from "@/lib/utils";
 import { getBestPrice } from "@/lib/utils/price-selection";
@@ -11,12 +16,8 @@ import {
   parseCapacityToGB,
   parseVariationAttributes,
 } from "@/lib/utils/variants";
-import { Check } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-import { LegalPrice } from "../ui/LegalPrice";
 
-import { type Product } from "@/lib/product-definitions";
+import { LegalPrice } from "../ui/LegalPrice";
 
 interface NormalizedProduct extends Product {
   normalizedStr: string;

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 import { getProductIdentity } from "../../src/lib/utils/product-identity";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";

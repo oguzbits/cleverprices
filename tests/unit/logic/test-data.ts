@@ -3,7 +3,7 @@ export interface ExtractionTestCase {
   text?: string;
   category: string;
   fields: string[];
-  expected: Record<string, any>;
+  expected: Record<string, string | number | boolean | null>;
   description: string;
 }
 

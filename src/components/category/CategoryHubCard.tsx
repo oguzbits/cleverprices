@@ -1,7 +1,8 @@
-import { getCategoryPath, type CategorySlug } from "@/lib/categories";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import * as React from "react";
+
+import { type CategorySlug, getCategoryPath } from "@/lib/categories";
 
 interface CategoryHubCardProps {
   category: {

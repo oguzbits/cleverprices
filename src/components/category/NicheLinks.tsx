@@ -1,5 +1,6 @@
-import { NichePage } from "@/lib/intelligence/seo-niche";
 import Link from "next/link";
+
+import { NichePage } from "@/lib/intelligence/seo-niche";
 
 interface Props {
   categorySlug: string;

@@ -8,7 +8,6 @@ import { NextResponse } from "next/server";
  * direct Amazon affiliate URLs. All product CTAs link to /out/{slug}
  * which redirects to the affiliate URL stored in the Product Registry.
  */
-
 import { getProductById, getProductBySlug } from "@/lib/product-registry";
 
 export async function GET(

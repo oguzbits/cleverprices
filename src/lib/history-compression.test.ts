@@ -1,5 +1,7 @@
-import { describe, expect, it } from "bun:test";
 import { gzipSync } from "node:zlib";
+
+import { describe, expect, it } from "bun:test";
+
 import { decompressHistory, parseHistoryBlob } from "./history-compression";
 
 describe("history-compression", () => {

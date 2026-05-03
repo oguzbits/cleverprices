@@ -1,7 +1,8 @@
+import type { Product } from "../../product-definitions";
 import { IdentityStrategy, ProductIdentity } from "./types";
 
 export class CpuStrategy implements IdentityStrategy {
-  extract(product: any): Partial<ProductIdentity> | null {
+  extract(product: Product): Partial<ProductIdentity> | null {
     const rawSpecs =
       product.officialSpecifications || product.official_specifications;
     const specs =
@@ -17,7 +18,6 @@ export class CpuStrategy implements IdentityStrategy {
     const cores =
       specs["Anzahl der Prozessorkerne"] || specs["Kerne"] || specs["Cores"];
     const brand = product.brand || "";
-    const title = product.title || "";
 
     if (!modelName) return null;
 

@@ -1,9 +1,10 @@
 // Example: Value-Based Diffing
 // Source: scripts/update-prices.ts
 
+import { eq } from "drizzle-orm";
+
 import { db } from "@/db";
 import { prices, products } from "@/db/schema";
-import { eq } from "drizzle-orm";
 
 // ❌ BAD: Always write, even if nothing changed
 async function badUpdate(productId: number, newPrice: number) {

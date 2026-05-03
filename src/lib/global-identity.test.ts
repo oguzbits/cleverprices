@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+
 import { getFamilyIdentity } from "./product-families";
 
 // Helper to create mock products

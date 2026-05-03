@@ -1,7 +1,8 @@
-import { cn } from "@/lib/utils";
-import { BlogPost } from "@/types/blog";
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 import Link from "next/link";
+
+import { cn } from "@/lib/utils";
+import { BlogPost } from "@/types/blog";
 
 interface BlogCardProps {
   post: BlogPost;

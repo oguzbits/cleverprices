@@ -1,4 +1,5 @@
 import { and, eq, isNotNull, like, not, or } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
 import { EBAY_FIELD_MAP, normalizeEbayValue } from "./ebay-mapper";
@@ -48,7 +49,12 @@ export class EbayEnricher {
       },
     );
 
-    const data: any = await response.json();
+    const data = (await response.json()) as {
+      access_token: string;
+      expires_in: number;
+      error?: string;
+      error_description?: string;
+    };
     if (data.error) {
       throw new Error(
         `eBay Auth Failed: ${data.error_description || data.error}`,
@@ -64,7 +70,7 @@ export class EbayEnricher {
     gtin: string,
     title: string,
     mpn?: string | null,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown> | null> {
     const market = "EBAY_DE";
     const token = await this.getAccessToken();
 
@@ -104,7 +110,7 @@ export class EbayEnricher {
           market,
         );
         if (best) {
-          if (best.title.toLowerCase().includes(mpn.toLowerCase())) {
+          if ((best as any).title.toLowerCase().includes(mpn.toLowerCase())) {
             return { ...best, matchType: "mpn" };
           }
         }
@@ -146,10 +152,13 @@ export class EbayEnricher {
     return null;
   }
 
-  async getBestItemFromSummaries(summaries: any[], mkt: string) {
+  async getBestItemFromSummaries(
+    summaries: Record<string, unknown>[],
+    mkt: string,
+  ) {
     if (!summaries || !Array.isArray(summaries)) return null;
 
-    let bestItem: any = null;
+    let bestItem: Record<string, unknown> | null = null;
     let maxAspects = -1;
 
     // Pick top 5
@@ -158,16 +167,23 @@ export class EbayEnricher {
     for (const summary of candidates) {
       // OPTIMIZATION: Check if the summary ALREADY contains aspects (via fieldgroups=ASPECTS)
       // If it has enough aspects (> 5), use it directly to save an API call.
-      if (summary.localizedAspects && summary.localizedAspects.length > 5) {
+      if (
+        summary.localizedAspects &&
+        (summary.localizedAspects as unknown[]).length > 5
+      ) {
         return summary;
       }
 
       // Fallback: If no aspects in summary, only THEN get details
       // Limit to scanning only top 3 items if no aspects found to conserve rate limit quota
       if (summary.itemId && candidates.indexOf(summary) < 3) {
-        const details = await this.getItemDetails(summary.itemId, mkt);
+        const details = await this.getItemDetails(
+          summary.itemId as string,
+          mkt,
+        );
         if (!details) continue;
-        const aspectCount = details.localizedAspects?.length || 0;
+        const aspectCount =
+          (details.localizedAspects as unknown[])?.length || 0;
 
         if (aspectCount > maxAspects) {
           maxAspects = aspectCount;
@@ -313,7 +329,7 @@ export class EbayEnricher {
           `🔍 Checking eBay for: ${product.title} (${[product.gtin, product.asin, product.mpn].filter(Boolean).join(", ")})`,
         );
 
-        let ebayData: any = null;
+        let ebayData: Record<string, unknown> | null = null;
 
         // 2. GTIN Handling (Normalize UPC to EAN if needed)
         let gtin = product.gtin;
@@ -398,8 +414,13 @@ export class EbayEnricher {
             console.log(`      🧪 Trying query: "${q}"`);
             const potentialMatch = await this.searchByKeywords(q);
             if (potentialMatch && potentialMatch.localizedAspects) {
-              if (validateMatch(product.title, potentialMatch.title)) {
-                ebayData = potentialMatch;
+              if (
+                validateMatch(
+                  product.title,
+                  (potentialMatch as unknown as { title: string }).title,
+                )
+              ) {
+                ebayData = potentialMatch as Record<string, unknown>;
                 ebayData.isSearchMatch = true;
                 break;
               } else {
@@ -426,7 +447,10 @@ export class EbayEnricher {
         }
 
         const rawSpecs: Record<string, string> = {};
-        for (const aspect of ebayData.localizedAspects) {
+        for (const aspect of ebayData.localizedAspects as {
+          name: string;
+          value: string;
+        }[]) {
           const cpField = EBAY_FIELD_MAP[aspect.name];
           if (cpField) {
             rawSpecs[cpField] = normalizeEbayValue(aspect.name, aspect.value);
@@ -448,7 +472,7 @@ export class EbayEnricher {
 
           // SMART SINKING: Update ALL products with the same GTIN
           const updateData = {
-            officialTitle: ebayData.title || product.officialTitle,
+            officialTitle: (ebayData.title as string) || product.officialTitle,
             officialSpecifications: JSON.stringify(sanitized),
             ebayRawData: JSON.stringify(ebayData.localizedAspects), // Preserve original eBay data for future mapping
             enrichmentStatus: "processed",
@@ -457,7 +481,7 @@ export class EbayEnricher {
           };
 
           if (product.gtin) {
-            const syncResult = await db
+            await db
               .update(products)
               .set(updateData)
               .where(eq(products.gtin, product.gtin));
@@ -472,10 +496,10 @@ export class EbayEnricher {
           }
         } else {
           console.log(
-            `⚠️ No mapped specs found. Raw eBay labels: ${ebayData.localizedAspects.map((a: any) => a.name).join(", ")}`,
+            `⚠️ No mapped specs found. Raw eBay labels: ${(ebayData.localizedAspects as { name: string }[]).map((a) => a.name).join(", ")}`,
           );
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (e instanceof RateLimitError) {
           console.warn(
             `⛔ Rate Limit Hit for ID ${product.id}. Sleeping 30s...`,
@@ -488,7 +512,10 @@ export class EbayEnricher {
           await sleep(30000);
           continue; // Skip DB update, keep as pending
         }
-        console.error(`❌ Failed ID ${product.id}:`, e.message);
+        console.error(
+          `❌ Failed ID ${product.id}:`,
+          e instanceof Error ? e.message : String(e),
+        );
       }
     }
   }
@@ -521,13 +548,17 @@ export class EbayEnricher {
 
       if (response.status === 429) throw new RateLimitError();
 
-      const data: any = await response.json();
+      const data = (await response.json()) as {
+        itemSummaries?: Record<string, unknown>[];
+      };
       if (data.itemSummaries && data.itemSummaries.length > 0) {
         // Filter out items that contain forbidden terms in title
-        const validSummaries = data.itemSummaries.filter((item: any) => {
-          const title = item.title.toLowerCase();
-          return !forbiddenTerms.some((term) => title.includes(term));
-        });
+        const validSummaries = data.itemSummaries.filter(
+          (item: Record<string, unknown>) => {
+            const title = (item.title as string).toLowerCase();
+            return !forbiddenTerms.some((term) => title.includes(term));
+          },
+        );
 
         if (validSummaries.length > 0) {
           const best = await this.getBestItemFromSummaries(
@@ -537,9 +568,9 @@ export class EbayEnricher {
           if (
             best &&
             best.localizedAspects &&
-            best.localizedAspects.length > 2
+            (best.localizedAspects as unknown[]).length > 2
           ) {
-            return { ...best, isSearchMatch: true };
+            return { ...best, isSearchMatch: true } as Record<string, unknown>;
           }
         }
       }

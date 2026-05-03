@@ -5,8 +5,8 @@
 
 import {
   allCategories,
-  getParentCategory,
   type CategorySlug,
+  getParentCategory,
 } from "@/lib/categories";
 import type { CountryCode } from "@/lib/countries";
 import type { BreadcrumbItem } from "@/types";

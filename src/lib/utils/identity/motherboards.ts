@@ -1,8 +1,9 @@
+import type { Product } from "../../product-definitions";
 import { verifySpecModel } from "../product-identity";
 import { IdentityStrategy, ProductIdentity } from "./types";
 
 export class MotherboardStrategy implements IdentityStrategy {
-  extract(product: any): Partial<ProductIdentity> | null {
+  extract(product: Product): Partial<ProductIdentity> | null {
     const rawSpecs =
       product.officialSpecifications || product.official_specifications;
     const specs =

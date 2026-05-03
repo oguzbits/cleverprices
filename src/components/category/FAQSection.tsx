@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+
 import type { FAQItem } from "./FAQSchema";
 
 interface FAQSectionProps {

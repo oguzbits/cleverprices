@@ -1,4 +1,5 @@
 import type { LocalizedProduct, Product } from "@/lib/product-definitions";
+
 import type { LeanProduct } from "./types";
 import {
   getProductIdentity,
@@ -25,13 +26,13 @@ import {
  */
 export function getFamilyRepresentative<
   T extends {
-    condition?: string;
-    image?: string;
-    imageUrl?: string;
-    salesRank?: number;
-    id?: number;
-    price?: number;
-    prices?: Record<string, unknown>;
+    condition?: string | null;
+    image?: string | null;
+    imageUrl?: string | null;
+    salesRank?: number | null;
+    id?: number | null;
+    price?: number | null;
+    prices?: Record<string, unknown> | null;
   },
 >(variants: T[]): T | undefined {
   if (!variants || variants.length === 0) return undefined;

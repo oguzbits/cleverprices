@@ -17,17 +17,18 @@
  * │   └── sr-resultItemTile__badges_eYrH1 (Bestseller)
  */
 
-import { PrefetchLink } from "@/components/ui/PrefetchLink";
-import { getCountryByCode, type CountryCode } from "@/lib/countries";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 
+import { PrefetchLink } from "@/components/ui/PrefetchLink";
+import { type CountryCode, getCountryByCode } from "@/lib/countries";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { type LeanProduct } from "@/lib/types";
+import { cn } from "@/lib/utils";
 import { formatCurrency, formatTechText } from "@/lib/utils/formatting";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { isProductBestseller } from "@/lib/utils/products";
 import { getProductPath } from "@/lib/utils/url";
+
 import { IdealoLivePrice } from "../product/IdealoLivePrice";
 import { IdealoStarRating } from "./IdealoStarRating";
 

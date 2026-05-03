@@ -2,7 +2,6 @@ import {
   type Price as DbPrice,
   type Product as DbProduct,
 } from "../../db/schema";
-
 import { parseHistoryBlob } from "../history-compression";
 import { type LitePrice, type Product } from "../product-definitions";
 import { getFamilyIdentity } from "../product-families";
@@ -44,7 +43,7 @@ export function parseHistoryJson(
  * Standardizes slugs and populates history.
  */
 export function mapDbProduct(
-  p: DbProduct,
+  p: DbProduct | Partial<DbProduct>,
   pricesList: LitePrice[] | DbPrice[],
   siblings: (Product | DbProduct | LeanProduct)[] = [],
   stripHeavyData: boolean = false,
@@ -114,8 +113,8 @@ export function mapDbProduct(
   if (stripHeavyData) {
     // Lite mode: skip full parsing, only extract identity keys from raw strings
     identitySpecs = {
-      ...IDENTITY_CONFIG.getIdentitySpecs(p.specifications),
-      ...IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications),
+      ...IDENTITY_CONFIG.getIdentitySpecs(p.specifications ?? null),
+      ...IDENTITY_CONFIG.getIdentitySpecs(p.officialSpecifications ?? null),
     };
   } else {
     // Full mode: parse everything
@@ -264,11 +263,11 @@ export function mapDbProduct(
 
   const item: Product = {
     id: p.id,
-    slug: p.slug,
-    asin: p.asin,
-    title: p.title,
-    rawTitle: p.title,
-    category: p.category,
+    slug: p.slug || "",
+    asin: p.asin || "",
+    title: p.title || "",
+    rawTitle: p.title || "",
+    category: p.category || "unknown",
     image: p.imageUrl || "",
     imageUrl: p.imageUrl || "",
     affiliateUrl: stripHeavyData
@@ -285,9 +284,9 @@ export function mapDbProduct(
     socket: socket as string | undefined,
     cores: cores as string | undefined,
     condition:
-      p.title.includes("(Generalüberholt)") ||
-      p.title.includes("erneuert") ||
-      p.title.includes("Renewed")
+      (p.title || "").includes("(Generalüberholt)") ||
+      (p.title || "").includes("erneuert") ||
+      (p.title || "").includes("Renewed")
         ? "Renewed"
         : (p.condition as string) === "Used"
           ? "Used"

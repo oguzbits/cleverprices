@@ -1,7 +1,8 @@
+import { Metadata } from "next";
+
 import { BlogIndexView } from "@/components/blog/blog-index-view";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { BRAND_DOMAIN, getSiteUrl } from "@/lib/site-config";
-import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: `Blog: Hardware-Preistrends & Marktanalysen | ${BRAND_DOMAIN}`,

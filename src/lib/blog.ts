@@ -1,7 +1,8 @@
-import { BlogFrontmatter, BlogPost } from "@/types/blog";
 import fs from "fs";
 import matter from "gray-matter";
 import path from "path";
+
+import { BlogFrontmatter, BlogPost } from "@/types/blog";
 
 const BLOG_DIRECTORY = path.join(process.cwd(), "src/content/blog");
 

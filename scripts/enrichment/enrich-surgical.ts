@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 import { sanitizeSpecs } from "../../src/lib/utils/specs-sanitizer";
 import { EbayEnricher } from "./ebay-enricher";
@@ -27,7 +28,7 @@ async function enrichOne(id: number) {
     }
 
     const rawSpecs: Record<string, string> = {};
-    for (const aspect of ebayData.localizedAspects || []) {
+    for (const aspect of (ebayData as any).localizedAspects || []) {
       const cpField = EBAY_FIELD_MAP[aspect.name];
       if (cpField) {
         rawSpecs[cpField] = normalizeEbayValue(aspect.name, aspect.value);

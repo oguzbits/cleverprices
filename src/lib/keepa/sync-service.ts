@@ -9,6 +9,8 @@
  * - ~25,000 products possible with 1x daily update
  */
 
+import { and, asc, eq, lt, sql } from "drizzle-orm";
+
 import { allCategories, type CategorySlug } from "@/lib/categories";
 import {
   compressHistory,
@@ -17,10 +19,9 @@ import {
 } from "@/lib/history-compression";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { getSafeDate, getSafeNow } from "@/lib/server/deterministic-time";
-import { and, asc, eq, lt, sql } from "drizzle-orm";
+
 import { db } from "../../db";
 import { prices, products } from "../../db/schema";
-
 import {
   getBestsellers,
   getDeals,
@@ -382,14 +383,14 @@ export async function upsertProductFromKeepa(
   const amazonPrice = keepaPriceToDecimal(currentStats[0]); // Amazon price
   const newPrice = keepaPriceToDecimal(currentStats[1]); // Marketplace new
   const usedPrice = keepaPriceToDecimal(currentStats[2]); // Marketplace used
-  const listPrice = keepaPriceToDecimal(currentStats[4]); // MSRP/List price
+  const _listPrice = keepaPriceToDecimal(currentStats[4]); // MSRP/List price
 
   // Extract ratings, sales rank, and offer counts
   const salesRank =
     currentStats[3] && currentStats[3] > 0 ? currentStats[3] : null;
-  const offerCountNew =
+  const _offerCountNew =
     currentStats[11] && currentStats[11] > 0 ? currentStats[11] : null;
-  const offerCountUsed =
+  const _offerCountUsed =
     currentStats[12] && currentStats[12] > 0 ? currentStats[12] : null;
   const rating =
     currentStats[16] && currentStats[16] > 0
@@ -400,13 +401,7 @@ export async function upsertProductFromKeepa(
 
   const avg90Stats = keepaProduct.stats?.avg90 || [];
 
-  // Helper to get price from min/max array which might be [time, price]
-  const getMinMaxPrice = (arr: any[] | undefined, index: number) => {
-    if (!arr || !arr[index]) return null;
-    const val = arr[index];
-    if (Array.isArray(val)) return val[1]; // [time, price]
-    return val;
-  };
+  // Removed unused helper getMinMaxPrice
 
   const priceAvg90 = keepaPriceToDecimal(avg90Stats[0]); // 90-day average
 
@@ -429,7 +424,7 @@ export async function upsertProductFromKeepa(
 
   // Monthly sold and Prime eligibility
   const monthlySold = keepaProduct.monthlySold || null;
-  const primeEligible = keepaProduct.fbaFees !== undefined; // FBA = Prime eligible
+  const _primeEligible = keepaProduct.fbaFees !== undefined; // FBA = Prime eligible
 
   // Get GTIN (prefer EAN, fallback to UPC)
   const gtin = keepaProduct.eanList?.[0] || keepaProduct.upcList?.[0] || null;
@@ -468,7 +463,7 @@ export async function upsertProductFromKeepa(
 
   // Standardize keys for slug generator
   // Common Keys: "Color", "Size", "Style", "Pattern", "Configuration", "Edition"
-  const slugAttributes = {
+  const _slugAttributes = {
     storage:
       variationMap["Size"] ||
       variationMap["Capacity"] ||
@@ -629,7 +624,10 @@ async function reconcileFamilySlugs(parentAsin: string): Promise<void> {
         .limit(1);
 
       if (single[0]) {
-        const { slug: canonical } = getFamilyIdentity(single[0] as any, []);
+        const { slug: canonical } = getFamilyIdentity(
+          single[0] as unknown as Record<string, unknown>,
+          [],
+        );
         await db
           .update(products)
           .set({ slug: canonical })
@@ -648,7 +646,10 @@ async function reconcileFamilySlugs(parentAsin: string): Promise<void> {
         slug: canonical,
         title,
         variantSuffix,
-      } = getFamilyIdentity(member as any, family as any);
+      } = getFamilyIdentity(
+        member as unknown as Record<string, unknown>,
+        family as unknown as Record<string, unknown>[],
+      );
 
       // Construct Premium Title: "Brand Model Variant"
       const cleanTitle = variantSuffix ? `${title} ${variantSuffix}` : title;

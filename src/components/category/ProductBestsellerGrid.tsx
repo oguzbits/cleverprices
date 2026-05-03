@@ -8,10 +8,12 @@
  * for consistent styling across the application.
  */
 
+import Link from "next/link";
+
 import { type CountryCode } from "@/lib/countries";
 import { type LeanProduct } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
+
 import { IdealoGridCard } from "./IdealoGridCard";
 
 interface ProductBestsellerGridProps {

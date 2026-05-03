@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
+
 import { Category } from "./categories";
 import {
   BRAND_DOMAIN,
   BRAND_NAME,
   DEFAULT_TITLE,
+  getCountryUrl,
   LOGO,
   SITE_AUTHOR,
   SITE_DESCRIPTION,
   SITE_URL,
   TITLE_TEMPLATE,
   TWITTER_AT,
-  getCountryUrl,
 } from "./site-config";
 
 const coreKeywords = [

@@ -12,6 +12,7 @@ import {
   Home,
   Keyboard,
   Laptop,
+  type LucideIcon,
   MemoryStick,
   Mic,
   Monitor,
@@ -32,8 +33,8 @@ import {
   Video,
   Watch,
   Zap,
-  type LucideIcon,
 } from "lucide-react";
+
 import { CategorySlug } from "./category-types";
 
 const CATEGORY_ICONS: Record<CategorySlug, LucideIcon> = {

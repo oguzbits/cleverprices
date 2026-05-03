@@ -1,3 +1,5 @@
+import type { Category } from "@/types";
+
 import { type Price, prices, products } from "../db/schema";
 
 // Virtual Category Mapping
@@ -46,7 +48,7 @@ export interface LocalizedProduct {
   capacity: number;
   capacityUnit: string;
   normalizedCapacity: number;
-  formFactor: string;
+  formFactor: string | null;
   technology: string;
   socket?: string;
   cores?: string;
@@ -61,6 +63,7 @@ export interface LocalizedProduct {
   updatedAt?: string;
   mpn?: string;
   canonicalId?: number | null;
+  displayId?: number;
   [key: string]: unknown;
 }
 
@@ -99,6 +102,8 @@ export const litePriceColumns = {
   pricePerUnit: prices.pricePerUnit,
   currency: prices.currency,
   lastUpdated: prices.lastUpdated,
+  historyJson: prices.historyJson,
+  source: prices.source,
 };
 
 // ULTRA-lightweight price columns for variant lists
@@ -111,6 +116,8 @@ export const superLitePriceColumns = {
   warehousePrice: prices.warehousePrice,
   currency: prices.currency,
   lastUpdated: prices.lastUpdated,
+  historyJson: prices.historyJson,
+  source: prices.source,
 };
 
 // Define lightweight columns for list views
@@ -148,6 +155,9 @@ export const liteProductColumns = {
   completenessScore: products.completenessScore,
   lastEnrichedAt: products.lastEnrichedAt,
   canonicalId: products.canonicalId,
+  keepaFeatures: products.keepaFeatures,
+  ebayRawData: products.ebayRawData,
+  missingSpecs: products.missingSpecs,
   createdAt: products.createdAt,
   updatedAt: products.updatedAt,
 };
@@ -193,7 +203,7 @@ export interface Product {
   rawTitle?: string;
   subtitle?: string;
   category: string;
-  imageUrl?: string;
+  imageUrl?: string | null;
   image?: string; // Legacy field
   affiliateUrl?: string; // Optional for some views
   gtin?: string | null;
@@ -207,20 +217,20 @@ export interface Product {
   currency?: string;
   pricePerUnit?: number;
   pricesLastUpdated?: Record<string, string>;
-  parentAsin?: string;
-  variationAttributes?: string;
-  specifications?: Record<string, unknown>;
-  officialSpecifications?: Record<string, unknown>;
+  parentAsin?: string | null;
+  variationAttributes?: string | null;
+  specifications?: Record<string, unknown> | string | null;
+  officialSpecifications?: Record<string, unknown> | string | null;
   officialTitle?: string | null;
-  socket?: string;
-  cores?: string;
-  manufacturer?: string;
-  features?: string[];
-  capacity: number;
-  capacityUnit: string;
-  normalizedCapacity?: number;
-  formFactor: string;
-  technology?: string;
+  socket?: string | null;
+  cores?: string | null;
+  manufacturer?: string | null;
+  features?: string[] | null;
+  capacity: number | null;
+  capacityUnit: string | null;
+  normalizedCapacity?: number | null;
+  formFactor: string | null;
+  technology?: string | null;
   condition: "New" | "Used" | "Renewed";
   priceHistory?: { date: string; price: number }[];
   rating?: number;
@@ -258,6 +268,17 @@ export interface Product {
   [key: string]: unknown;
 }
 
+/**
+ * Internal structural type for raw database rows that might have extra columns
+ * or combined properties during hydration.
+ */
+export type FlexibleProduct = typeof products.$inferSelect & {
+  [key: string]: unknown;
+};
+export type FlexiblePrice = typeof prices.$inferSelect & {
+  [key: string]: unknown;
+};
+
 export type LitePrice = Pick<
   Price,
   | "id"
@@ -275,7 +296,7 @@ export type LitePrice = Pick<
 export interface PDPRenderData {
   product: Product;
   variants: Product[];
-  category: any;
+  category: (Category & { breadcrumbs: Category[] }) | null;
   similarSidebar: Product[];
   similarCarousel: Product[];
   isParentView: boolean;

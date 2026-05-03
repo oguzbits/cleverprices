@@ -3,7 +3,10 @@ import { cache } from "react";
 
 import { CATEGORY_MAP } from "./category-definitions";
 import {
+  Category as BaseCategory,
   CategoryData as BaseCategoryData,
+  CategoryHierarchy as BaseCategoryHierarchy,
+  CategoryLink as BaseCategoryLink,
   CategorySlug,
   UnitType,
 } from "./category-types";
@@ -12,14 +15,13 @@ import { getCategoryPath as _getCategoryPath } from "./category-utils";
 // Export types for consumers
 export type { CategorySlug, UnitType };
 
-export interface Category extends BaseCategoryData {
-  slug: CategorySlug;
+export interface Category extends BaseCategory {
   icon?: LucideIcon;
 }
 
-interface CategoryHierarchy {
-  parent: Category;
-  children: Category[];
+export interface CategoryHierarchy extends BaseCategoryHierarchy<Category> {}
+export interface CategoryLink extends BaseCategoryLink {
+  icon: LucideIcon;
 }
 
 // Re-export constants for backward compatibility

@@ -1,4 +1,5 @@
 import { Database } from "bun:sqlite";
+
 import { BRAND_NORMALIZATION_MAP } from "../../src/lib/utils/brand-mapping";
 
 const db = new Database("./data/cleverprices.db");

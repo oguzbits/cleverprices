@@ -6,7 +6,9 @@ mock.module("next/cache", () => {
   const m = {
     cacheLife: () => {},
     cacheTag: () => {},
-    unstable_cache: (fn: any) => fn,
+    unstable_cache: <T extends (...args: unknown[]) => Promise<unknown>>(
+      fn: T,
+    ) => fn,
     unstable_noStore: () => {},
   };
   return { ...m, default: m };

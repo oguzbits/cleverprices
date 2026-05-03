@@ -1,5 +1,6 @@
-import { cn } from "@/lib/utils";
 import { TrendingDown } from "lucide-react";
+
+import { cn } from "@/lib/utils";
 
 interface PriceAnalysisBadgeProps {
   savings: number; // 0.15 = 15% savings

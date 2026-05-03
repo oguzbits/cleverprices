@@ -17,7 +17,7 @@ export interface ProductIdentity {
 }
 
 export interface IdentityStrategy {
-  extract(product: any): Partial<ProductIdentity> | null;
+  extract(product: unknown): Partial<ProductIdentity> | null;
 }
 
 export type CategoryStrategyMap = Record<string, new () => IdentityStrategy>;

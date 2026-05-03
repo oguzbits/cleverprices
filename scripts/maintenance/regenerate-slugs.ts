@@ -1,7 +1,8 @@
+import { eq } from "drizzle-orm";
+
 import { db } from "@/db";
 import { products } from "@/db/schema";
 import { generateProductSlug } from "@/lib/utils/slug";
-import { eq } from "drizzle-orm";
 
 async function regenerateSlugs() {
   console.log("Fetching all products...");

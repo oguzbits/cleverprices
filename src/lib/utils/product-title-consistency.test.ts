@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+
 import { getFamilyIdentity } from "../product-families";
 import { getProductIdentity } from "./product-identity";
 
@@ -21,12 +22,11 @@ describe("Product Title Consistency Guard Rail", () => {
     };
 
     // 1. Get Identity (Used for internal lookups)
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product);
 
     // 2. Get Family Identity (Source of truth for DB/Grid)
-    const { title: familyFullTitle, displaySubtitle } = getFamilyIdentity(
-      product as any,
-    );
+    const { title: familyFullTitle, displaySubtitle } =
+      getFamilyIdentity(product);
 
     // CATEGORY PAGE RENDER LOGIC (from IdealoGridCard/mapDbProduct)
     const categoryModelPart =

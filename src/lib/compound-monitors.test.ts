@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+
 import { getProductIdentity } from "./utils/product-identity";
 
 describe("Compound Monitor Specs", () => {

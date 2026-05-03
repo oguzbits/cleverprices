@@ -9,7 +9,7 @@
  * Minimal variant info needed for attribute extraction
  */
 interface VariantLike {
-  variationAttributes?: string;
+  variationAttributes?: string | null;
   title?: string;
   category?: string;
   officialSpecs?: unknown; // Allow fallback to official/scavenged specs
@@ -175,11 +175,6 @@ export function extractRealStorageFromTitle(
     const isRam = ramRanges.some((r) => start >= r[0] && end <= r[1]); // Strict overlap
 
     // Also check immediate proximity (fallback for "16GB, RAM") if not caught by patterns
-    const contextCheck = lowerTitle.slice(
-      Math.max(0, start - 15),
-      Math.min(title.length, end + 15),
-    );
-    // If "RAM" is very close but separated by comma, it might be ambiguous, but usually RAM is tightly bound.
     // We trust the regex patterns above mostly.
 
     if (isRam) continue;
@@ -385,7 +380,7 @@ const SmartphoneStrategy: NormalizationStrategy = (key, value, ctx) => {
  */
 export function normalizeVariantAttributes(v: {
   title: string;
-  variationAttributes?: string;
+  variationAttributes?: string | null;
   category?: string;
   officialSpecs?: Record<string, unknown> | unknown;
 }): string {

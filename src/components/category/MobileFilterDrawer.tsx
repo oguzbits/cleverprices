@@ -1,5 +1,8 @@
 "use client";
 
+import { Filter, X } from "lucide-react";
+import * as React from "react";
+
 import {
   Sheet,
   SheetContent,
@@ -10,8 +13,7 @@ import {
 import { FilterGroup } from "@/lib/category-types";
 import { useFilters } from "@/lib/hooks/use-filters";
 import type { FilterCounts } from "@/lib/product-definitions";
-import { Filter, X } from "lucide-react";
-import * as React from "react";
+
 import { IdealoFilterPanel } from "./IdealoFilterPanel";
 
 interface MobileFilterDrawerProps {

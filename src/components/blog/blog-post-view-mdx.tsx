@@ -1,3 +1,6 @@
+import { Calendar, Clock, User } from "lucide-react";
+import { notFound } from "next/navigation";
+
 import { ArticleSchema } from "@/components/blog/article-schema";
 import {
   LocalizedLink,
@@ -13,8 +16,6 @@ import {
 } from "@/components/ui/accordion";
 import { getBlogPostBySlug } from "@/lib/blog";
 import { getProductsByCategory } from "@/lib/product-registry";
-import { Calendar, Clock, User } from "lucide-react";
-import { notFound } from "next/navigation";
 
 interface BlogPostViewMDXProps {
   slug: string;

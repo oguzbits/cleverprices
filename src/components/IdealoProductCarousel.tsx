@@ -12,9 +12,9 @@ export interface CarouselProduct {
   subtitle?: string;
   price: number;
   slug: string;
-  image?: string;
-  rating?: number;
-  ratingCount?: number;
+  image?: string | null;
+  rating?: number | null;
+  ratingCount?: number | null;
   testRating?: number;
   testCount?: number;
   badgeText?: string;

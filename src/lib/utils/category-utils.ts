@@ -82,7 +82,7 @@ export function filterProducts(
 
     // 3. Socket (Case-insensitive)
     if (filters.socket?.length > 0) {
-      const pSocketLower = ((p as any).socket || "").toLowerCase();
+      const pSocketLower = (p.socket || "").toLowerCase();
       if (!filters.socket.some((s) => s.toLowerCase() === pSocketLower)) {
         return false;
       }
@@ -90,7 +90,7 @@ export function filterProducts(
 
     // 4. Cores (Case-insensitive)
     if (filters.cores?.length > 0) {
-      const pCoresLower = String((p as any).cores || "").toLowerCase();
+      const pCoresLower = String(p.cores || "").toLowerCase();
       if (!filters.cores.some((c) => c.toLowerCase() === pCoresLower)) {
         return false;
       }
@@ -142,7 +142,7 @@ export function filterProducts(
 
         const selected = filters[group.field];
         if (Array.isArray(selected) && selected.length > 0) {
-          const pValLower = String((p as any)[group.field] || "").toLowerCase();
+          const pValLower = String(p[group.field] || "").toLowerCase();
           if (!selected.some((s) => s.toLowerCase() === pValLower))
             return false;
         }
@@ -157,10 +157,10 @@ export function filterProducts(
  * Utility to sort products based on the current filter state
  */
 export function sortProducts(
-  products: any[], // Use any to allow localized products with 'price' field
+  products: LocalizedProduct[],
   sortBy: string,
   sortOrder: string,
-): any[] {
+): LocalizedProduct[] {
   let key = sortBy as string;
 
   // Default to popularity if key is missing or 'popular'
@@ -181,7 +181,7 @@ export function sortProducts(
   const isAsc = sortOrder === "asc";
 
   // 1. Pre-pass: Find the best value for each family to pull the Hub card up
-  const familyBest = new Map<string, any>();
+  const familyBest = new Map<string, unknown>();
   for (const p of products) {
     if (!p.parentAsin) continue;
     const val = p[key];
@@ -204,9 +204,9 @@ export function sortProducts(
   }
 
   return [...products].sort((a, b) => {
-    let aValue =
+    let aValue: unknown =
       a[key] ?? (typeof a.price === "number" && key === "price" ? 0 : "");
-    let bValue =
+    let bValue: unknown =
       b[key] ?? (typeof b.price === "number" && key === "price" ? 0 : "");
 
     // Hubs adopt the best value of their family strictly for sorting purposes
@@ -257,7 +257,7 @@ function getUniqueFieldValues(
     if (field === "capacity") {
       val = p.normalizedCapacity;
     } else {
-      val = (p as any)[field];
+      val = p[field];
     }
 
     if (val === undefined || val === null || val === "" || val === 0) return;

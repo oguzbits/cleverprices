@@ -38,8 +38,6 @@ import { LivePriceHeader, LiveSavingsBadge } from "./LivePriceBoundary";
 import { MobileActionGrid } from "./MobileActionGrid";
 import { SpecificationsTable } from "./SpecificationsTable";
 
-const EMPTY_ARRAY: any[] = [];
-
 interface IdealoProductPageProps {
   product: Product;
   variants?: Product[];
@@ -58,7 +56,7 @@ interface IdealoProductPageProps {
 
 export function IdealoProductPage({
   product,
-  variants = EMPTY_ARRAY,
+  variants = [],
   category,
   countryCode,
   isParentView = false,
@@ -66,8 +64,8 @@ export function IdealoProductPage({
   parentTitle: passedParentTitle,
   parentFullModel: passedFullModel,
   canonicalId,
-  similarSidebar = EMPTY_ARRAY,
-  similarCarousel = EMPTY_ARRAY,
+  similarSidebar = [],
+  similarCarousel = [],
   searchParamsPromise,
 }: IdealoProductPageProps) {
   const mergedProduct = product;
@@ -136,16 +134,21 @@ export function IdealoProductPage({
   // making the component pure and compatible with the React Compiler.
   const displaySpecs = (() => {
     let rawSpecs: Record<string, any> = {};
-    try {
-      rawSpecs =
-        (mergedProduct.officialSpecifications
-          ? typeof mergedProduct.officialSpecifications === "string"
-            ? JSON.parse(mergedProduct.officialSpecifications)
-            : mergedProduct.officialSpecifications
-          : mergedProduct.specifications) || {};
-    } catch (e) {
-      rawSpecs = mergedProduct.specifications || {};
-    }
+    const parseSpecs = (val: any) => {
+      if (!val) return {};
+      if (typeof val === "string") {
+        try {
+          return JSON.parse(val);
+        } catch (e) {
+          return {};
+        }
+      }
+      return val;
+    };
+
+    rawSpecs = parseSpecs(
+      mergedProduct.officialSpecifications || mergedProduct.specifications,
+    );
 
     return Object.entries(rawSpecs)
       .filter(([key, value]) => {

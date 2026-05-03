@@ -1,10 +1,12 @@
+import { Check } from "lucide-react";
+import Link from "next/link";
+
 import { type CountryCode } from "@/lib/countries";
 import { type Product } from "@/lib/product-definitions";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { cn } from "@/lib/utils";
 import { normalizeVariantAttributes } from "@/lib/utils/variants";
-import { Check } from "lucide-react";
-import Link from "next/link";
+
 import { IdealoLivePrice } from "./IdealoLivePrice";
 
 interface ConditionButtonsProps {
@@ -91,7 +93,7 @@ export function ConditionButtons({
 
   // 1. Scan the family
   if (product.parentAsin) {
-    let familyMembers = passedVariants || [product];
+    const familyMembers = passedVariants || [product];
 
     const normalizedCurAttrs = normalizeVariantAttributes(product);
 

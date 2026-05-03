@@ -1,4 +1,5 @@
 import { Product } from "@/lib/product-definitions";
+
 import { ProductVariantSelector } from "./ProductVariantSelector";
 
 interface ProductVariantSelectorProps {

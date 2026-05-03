@@ -1,10 +1,12 @@
 import { and, eq, inArray } from "drizzle-orm";
-
 import { db } from "../../db";
 import { prices } from "../../db/schema";
-
 import { withRetry } from "../../db/utils";
-import { litePriceColumns, type Product } from "../product-definitions";
+import {
+  litePriceColumns,
+  type FlexibleProduct,
+  type Product,
+} from "../product-definitions";
 import { getBestPrice } from "../utils/price-selection";
 import { parseHistoryJson } from "../utils/product-mapping";
 import {
@@ -52,8 +54,8 @@ export async function getLivePricesForProducts(
       );
   });
 
-  const priceMap = new Map<number, any>();
-  latestPrices.forEach((p: any) => {
+  const priceMap = new Map<number, Record<string, unknown>>();
+  latestPrices.forEach((p) => {
     // Lean schema: price is already the consolidated "clever" price
     const price = p.price && p.price > 0 ? p.price : null;
     const usedPrice = p.usedPrice && p.usedPrice > 0 ? p.usedPrice : null;
@@ -72,7 +74,7 @@ export async function getLivePricesForProducts(
         // PARSE EARLY: Avoid passing raw Buffers through unstable_cache (serialization issues)
         history:
           includeHistory && p.historyJson
-            ? parseHistoryJson(p.historyJson as string)
+            ? parseHistoryJson(p.historyJson)
             : undefined,
       };
 
@@ -132,7 +134,7 @@ export async function mergeLivePrices(
     if (live) {
       // FIX: Do NOT overwrite the raw "New Price" with the "Smart Price".
       // Keep them separate so the UI knows the difference.
-      const rawNewPrice = live.price || 0;
+      const rawNewPrice = (live.price as number) || 0;
 
       // Force "Renewed" condition if title implies it (Amazon compliance & Consistency)
       // MOVE UP so we can use it in getBestPrice()
@@ -150,15 +152,15 @@ export async function mergeLivePrices(
       }
 
       getBestPrice({
-        price: live.price,
-        usedPrice: live.usedPrice,
-        warehousePrice: live.warehousePrice,
+        price: live.price as number | null,
+        usedPrice: live.usedPrice as number | null,
+        warehousePrice: live.warehousePrice as number | null,
         condition: condition, // Pass interpreted condition
       });
 
-      const newUsedPrice = live.usedPrice || 0;
-      const newWarehousePrice = live.warehousePrice || 0;
-      const refPrice = live.priceAvg90 || 0;
+      const newUsedPrice = (live.usedPrice as number) || 0;
+      const newWarehousePrice = (live.warehousePrice as number) || 0;
+      const refPrice = (live.priceAvg90 as number) || 0;
 
       // Unified savings calculation
       const savings = calculateProductSavings({
@@ -183,8 +185,9 @@ export async function mergeLivePrices(
         pricesLastUpdated: {
           ...(p.pricesLastUpdated || {}),
           [countryCode]:
-            live.lastUpdated && !isNaN(new Date(live.lastUpdated).getTime())
-              ? new Date(live.lastUpdated).toISOString()
+            live.lastUpdated &&
+            !isNaN(new Date(live.lastUpdated as string).getTime())
+              ? new Date(live.lastUpdated as string).toISOString()
               : new Date(1735689600000).toISOString(), // Deterministic fallback: 2025-01-01
         },
         priceAvg90: { ...(p.priceAvg90 || {}), [countryCode]: refPrice },
@@ -195,7 +198,8 @@ export async function mergeLivePrices(
         },
         savings,
         // ATTACH LIVE HISTORY: Use the parsed history from live data if available
-        priceHistory: live.history || p.priceHistory,
+        priceHistory:
+          (live.history as { date: string; price: number }[]) || p.priceHistory,
       };
 
       // INJECT CURRENT PRICE INTO HISTORY (Fix for Chart Discrepancy)
@@ -229,7 +233,9 @@ export async function mergeLivePrices(
       if (!p.specifications || Object.keys(p.specifications).length === 0) {
         return updated as Product;
       }
-      return calculateProductMetrics(updated as any) as Product;
+      return calculateProductMetrics(
+        updated as unknown as FlexibleProduct,
+      ) as Product;
     }
     return p;
   });

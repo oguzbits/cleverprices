@@ -145,7 +145,7 @@ export async function getPDPRenderData(
       variants: variants.filter(
         (v: Product) => v.id !== (mergedProduct as Product).id,
       ),
-      category,
+      category: category ?? null,
       similarSidebar: sidebar,
       similarCarousel: carousel,
       isParentView: isParentView || (mergedProduct.id || 0) >= 900000000,
@@ -348,7 +348,7 @@ export async function getCategoryRenderData(
   countryCode: string,
   filterParams: Record<string, string | string[] | undefined>,
 ) {
-  const start = Date.now();
+  const _start = Date.now();
   console.log(`[Category Render Start] ${categorySlug} (${countryCode})`);
 
   try {

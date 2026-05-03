@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+
 import { getProductIdentity } from "./product-identity";
 
 describe("getProductIdentity", () => {
@@ -335,7 +336,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
         Latenz: "CL30",
       }),
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).toBe(
       "Corsair Vengeance 32GB Kit (2x16GB) DDR5-6000 CL30",
     );
@@ -359,7 +360,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
         Latenz: "CL30",
       }),
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).toBe(
       "Patriot Viper Venom RGB 16GB DDR5-6000 CL30",
     );
@@ -380,7 +381,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
         Latenz: "CL16",
       }),
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     // Should compute 16GB from kit pattern OR embedded model name, taking max over the 8GB spec.
     expect(identity.modelTitle).toBe(
       "Corsair VENGEANCELPX 16GB Kit (2x8GB) DDR4-3200 CL16",
@@ -399,7 +400,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
         Taktfrequenz: "3200 MHz",
       }),
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     // Should NOT have "(2X" in the series/model title.
     expect(identity.modelTitle).not.toContain("(2X");
     expect(identity.modelTitle).toContain("32GB");
@@ -412,7 +413,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
       brand: "Crucial",
       mpn: "CP2K16G60C36U5B",
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).toBe(
       "Crucial Pro 32GB Kit (2x16GB) DDR5-6000 CL36",
     );
@@ -425,7 +426,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
       brand: "Kingston",
       mpn: "KF432C16BBK2/16",
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).toContain("16GB Kit (2x8GB)"); // 2x8 = 16
     expect(identity.modelTitle).not.toContain("Beast 2x8GB"); // Should be stripped from series part specifically
   });
@@ -437,7 +438,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
       brand: "Corsair",
       mpn: "CMK16GX4M1E3200C16",
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).toContain("CL16");
   });
 
@@ -448,7 +449,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
       brand: "TeamGroup",
       mpn: "FF3D532G6000HC30DC01",
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).toContain("DDR5-6000");
   });
 
@@ -463,7 +464,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
         Speed: "5600 MT/s",
       }),
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).toContain("DDR5-5600");
   });
 
@@ -474,7 +475,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
       brand: "Corsair",
       mpn: "CMK32GX4M2E3200C16",
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).not.toContain("CMK32GX");
     expect(identity.modelTitle).toBe("Corsair Vengeance LPX 32GB DDR4");
   });
@@ -486,7 +487,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
       brand: "Crucial",
       mpn: "CT16G4SFRA32A",
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product as Record<string, unknown>);
     expect(identity.modelTitle).not.toContain("SODIMM");
     expect(identity.modelTitle).toBe("Crucial 16GB DDR4-3200 CL22");
   });
@@ -498,7 +499,7 @@ describe("RAM Naming Strategy (Idealo-style)", () => {
       category: "smartphones",
       variationAttributes: "Farbe: Tiefblau; Storage: 1.024 TB",
     };
-    const identity = getProductIdentity(product as any);
+    const identity = getProductIdentity(product);
     expect(identity.variantMap.storage).toBe("1 TB");
     expect(identity.variantSuffix).toContain("1 TB");
   });

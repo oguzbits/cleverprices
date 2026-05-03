@@ -3,10 +3,11 @@ import { cache } from "react";
 
 import { db, dbReady, IS_BUILD } from "../../db";
 import { prices, products } from "../../db/schema";
-
 import { withRetry } from "../../db/utils";
 import {
   filteringProductColumns,
+  type FlexiblePrice,
+  type FlexibleProduct,
   litePriceColumns,
   liteProductColumns,
   type Product,
@@ -32,8 +33,8 @@ export function indexPricesById<T extends { productId: number }>(
  * [CONSISTENCY FIX] Ensures that listing views see the same siblings as the product page.
  */
 export async function enrichWithFullSiblings(
-  prods: any[],
-  pricesByProduct: Map<number, any[]>,
+  prods: FlexibleProduct[],
+  pricesByProduct: Map<number, FlexiblePrice[]>,
   countryCode: string,
   stripHeavyData: boolean = true,
   collapseFamilies: boolean = false,
@@ -44,22 +45,22 @@ export async function enrichWithFullSiblings(
     ...new Set(prods.map((p) => p.parentAsin).filter(Boolean)),
   ];
 
-  let allSiblings: any[] = [];
+  let allSiblings: FlexibleProduct[] = [];
   if (parentAsins.length > 0) {
-    allSiblings = await withRetry(() =>
+    allSiblings = (await withRetry(() =>
       db
         .select(liteProductColumns)
         .from(products)
         .where(inArray(products.parentAsin, parentAsins as string[])),
-    );
+    )) as unknown as FlexibleProduct[];
   }
 
-  const siblingsByParent = new Map<string, any[]>();
+  const siblingsByParent = new Map<string, FlexibleProduct[]>();
   const allSiblingIds = allSiblings.map((s) => s.id);
 
   const allSiblingPrices =
     allSiblingIds.length > 0
-      ? await withRetry(() =>
+      ? ((await withRetry(() =>
           db
             .select(superLitePriceColumns)
             .from(prices)
@@ -69,7 +70,7 @@ export async function enrichWithFullSiblings(
                 eq(prices.country, countryCode),
               ),
             ),
-        )
+        )) as unknown as FlexiblePrice[])
       : [];
 
   const pricesBySiblingId = indexPricesById(allSiblingPrices);
@@ -116,9 +117,11 @@ export async function enrichWithFullSiblings(
 
       results.push(
         mapDbProduct(
-          representative,
+          representative as unknown as FlexibleProduct,
           repPrices,
-          siblingsByParent.get(representative.parentAsin!) || [],
+          siblingsByParent.get(
+            (representative as unknown as FlexibleProduct).parentAsin!,
+          ) || [],
           stripHeavyData,
         ),
       );
@@ -146,7 +149,8 @@ export async function getProductsByCategory(
 ): Promise<Product[]> {
   const isScript =
     typeof globalThis === "undefined" ||
-    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
+    (!(globalThis as Record<string, unknown>).__incrementalCache &&
+      !process.env.NEXT_RUNTIME);
 
   if (isScript || IS_BUILD || !category) {
     if (IS_BUILD || !category) return [];
@@ -162,7 +166,7 @@ export async function getProductsByCategory(
         );
 
       if (limit) {
-        // @ts-ignore
+        // @ts-expect-error - orderBy limit is tricky with drizzle-orm base queries
         query = query.orderBy(asc(products.salesRank)).limit(limit);
       }
 
@@ -200,7 +204,7 @@ export async function getProductsByCategory(
         );
 
       if (limit) {
-        // @ts-ignore
+        // @ts-expect-error - orderBy limit is tricky with drizzle-orm base queries
         query = query.orderBy(asc(products.salesRank)).limit(limit);
       }
 
@@ -237,7 +241,8 @@ export async function getRawProductsByCategory(
 ) {
   const isScript =
     typeof globalThis === "undefined" ||
-    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
+    (!(globalThis as Record<string, unknown>).__incrementalCache &&
+      !process.env.NEXT_RUNTIME);
 
   if (isScript || IS_BUILD || !category) {
     if (IS_BUILD || !category) return [];
@@ -270,8 +275,8 @@ export async function getRawProductsByCategory(
 
     if (prods.length === 0) return [];
 
-    const pricesByProduct = new Map<number, any>();
-    prs.forEach((pr) => pricesByProduct.set(pr.productId, pr));
+    const pricesByProduct = new Map<number, FlexiblePrice>();
+    prs.forEach((pr) => pricesByProduct.set(pr.productId, pr as FlexiblePrice));
 
     return prods.map((p) => {
       const live = pricesByProduct.get(p.id);
@@ -325,8 +330,8 @@ export async function getRawProductsByCategory(
 
     if (prods.length === 0) return [];
 
-    const pricesByProduct = new Map<number, any>();
-    prs.forEach((pr) => pricesByProduct.set(pr.productId, pr));
+    const pricesByProduct = new Map<number, FlexiblePrice>();
+    prs.forEach((pr) => pricesByProduct.set(pr.productId, pr as FlexiblePrice));
 
     return prods.map((p) => {
       const live = pricesByProduct.get(p.id);
@@ -384,7 +389,7 @@ async function fetchProductsByIdsInternal(
   if (prods.length === 0) return [];
   const pricesByProduct = indexPricesById(prs);
   return enrichWithFullSiblings(
-    prods,
+    prods as FlexibleProduct[],
     pricesByProduct,
     countryCode,
     stripHeavyData,
@@ -400,7 +405,8 @@ export const getProductsByIds = cache(async function getProductsByIds(
 
   const isScript =
     typeof globalThis === "undefined" ||
-    (!(globalThis as any).__incrementalCache && !process.env.NEXT_RUNTIME);
+    (!(globalThis as Record<string, unknown>).__incrementalCache &&
+      !process.env.NEXT_RUNTIME);
 
   if (isScript) {
     return fetchProductsByIdsInternal(ids, countryCode, stripHeavyData);

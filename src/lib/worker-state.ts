@@ -51,6 +51,6 @@ export function updateLastRun() {
   saveWorkerState({ lastRun: Date.now() });
 }
 
-function updateLastCloudSync() {
+export function updateLastCloudSync() {
   saveWorkerState({ lastCloudSync: Date.now() });
 }

@@ -1,4 +1,5 @@
 import { and, desc, eq, inArray, lte, SQL } from "drizzle-orm";
+
 import { db } from "../../db";
 import { prices, products, type Product as DbProduct } from "../../db/schema";
 import type { Product } from "../product-definitions";
@@ -83,6 +84,6 @@ async function getNicheProducts(niche: NichePage): Promise<Product[]> {
   });
 
   return results.map((r) =>
-    mapDbProduct(r.product as unknown as DbProduct, [r.price as any]),
+    mapDbProduct(r.product as unknown as DbProduct, [r.price]),
   ) as Product[];
 }

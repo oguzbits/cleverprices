@@ -5,6 +5,9 @@
  * Shows products from the same category, sorted by price similarity.
  */
 
+import Image from "next/image";
+import Link from "next/link";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { CountryCode } from "@/lib/countries";
@@ -12,8 +15,6 @@ import { getCountryByCode } from "@/lib/countries";
 import type { Product } from "@/lib/product-definitions";
 import { getProductIdentity } from "@/lib/utils/product-identity";
 import { getProductPath } from "@/lib/utils/url";
-import Image from "next/image";
-import Link from "next/link";
 
 interface SimilarProductsProps {
   products: Product[];

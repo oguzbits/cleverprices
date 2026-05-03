@@ -1,5 +1,7 @@
-import { Product } from "@/lib/product-definitions";
 import { describe, expect, test } from "bun:test";
+
+import { Product } from "@/lib/product-definitions";
+
 import { mapRawToLocalizedProduct } from "./category-products";
 
 describe("mapRawToLocalizedProduct", () => {
@@ -55,13 +57,13 @@ describe("mapRawToLocalizedProduct", () => {
 
   test("Normal-path: falls back to full mapping for raw DB rows", () => {
     // A raw DB row doesn't have the 'prices' object in the same way a Product entity does
-    const rawRow: any = {
+    const rawRow = {
       id: 1,
       title: "Test Product",
       brand: "TestBrand",
       category: "smartphones",
       prices: { de: 100 },
-    };
+    } as unknown as Product;
     const result = mapRawToLocalizedProduct(rawRow, countryCode, categorySlug);
 
     expect(result).not.toBeNull();

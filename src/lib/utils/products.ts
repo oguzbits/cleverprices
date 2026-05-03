@@ -1,8 +1,6 @@
-import type { CategorySlug } from "@/lib/categories";
+import type { Category, CategorySlug } from "@/lib/categories";
 import { allCategories } from "@/lib/categories";
-import type { CountryCode } from "@/lib/countries";
 import type { Product } from "@/lib/product-definitions";
-import type { Currency, Product as UIProduct } from "@/types";
 
 /**
  * Parses numeric value from strings like "0.03€/GB" or "1.25$/TB"
@@ -16,31 +14,6 @@ export function parseUnitValue(pricePerUnit?: string): number {
 /**
  * Calculates badges for products based on their unit values.
  */
-function calculateProductBadges(
-  products: (UIProduct & { unitValue: number })[],
-) {
-  const minUnitValue = Math.min(
-    ...products.map((p) => p.unitValue).filter((v) => v !== Infinity),
-  );
-  const avgUnitValue =
-    products.reduce(
-      (acc, p) => (p.unitValue !== Infinity ? acc + p.unitValue : acc),
-      0,
-    ) / (products.filter((p) => p.unitValue !== Infinity).length || 1);
-
-  return products.map((product) => {
-    let badgeText = undefined;
-    if (product.unitValue === minUnitValue && minUnitValue !== Infinity) {
-      badgeText = "Best Price";
-    } else if (
-      product.unitValue < avgUnitValue * 0.85 &&
-      product.unitValue !== Infinity
-    ) {
-      badgeText = "Good Deal";
-    }
-    return { ...product, badgeText };
-  });
-}
 
 const UNIT_CONVERSION: Record<string, number> = {
   GB: 1,
@@ -69,12 +42,13 @@ export function calculateProductMetrics(
   // Normalize category (handle aliases if possible)
   // Safety: allCategories might be uninitialized during build-time module resolution
   const registry = allCategories || {};
-  let categoryConfig: any = registry[category as CategorySlug];
+  let categoryConfig: Category | undefined = registry[category as CategorySlug];
   if (!categoryConfig) {
     // Try to find by alias
-    categoryConfig = Object.values(registry).find((cat: any) =>
-      cat.aliases?.includes(category!),
-    );
+    categoryConfig = Object.values(registry).find((cat) => {
+      const aliases = cat.aliases || [];
+      return aliases.includes(category!);
+    });
   }
 
   // We explicitly skip "core" based metrics (CPUs) as per user request
@@ -233,38 +207,6 @@ export function getLocalizedProductData(
 /**
  * Adapts internal Product model to ProductUIModel
  */
-function adaptToUIModel(
-  p: Product,
-  countryCode: CountryCode = "us",
-  currency: Currency = "USD",
-  symbol: string = "$",
-): UIProduct {
-  const { price, title, asin } = getLocalizedProductData(p, countryCode);
-  const finalPrice = price ?? 0;
-  const enhancedProduct = calculateProductMetrics(p, finalPrice) as Product;
-
-  const categoryConfig = allCategories[p.category as CategorySlug];
-  const displayUnit = categoryConfig?.unitType || p.capacityUnit;
-
-  return {
-    id: p.id,
-    asin,
-    slug: p.slug, // Add slug for internal navigation
-    title,
-    price: {
-      amount: finalPrice,
-      currency,
-      displayAmount: `${finalPrice} ${symbol}`,
-    },
-    image: getOptimizedImageUrl(enhancedProduct.image),
-    url: `/out/${enhancedProduct.slug}`, // Standard redirect path
-    category: enhancedProduct.category,
-    capacity: `${enhancedProduct.capacity}${enhancedProduct.capacityUnit}`,
-    pricePerUnit: enhancedProduct.pricePerUnit
-      ? `${enhancedProduct.pricePerUnit} ${symbol}/${displayUnit}`
-      : undefined,
-  };
-}
 
 /**
  * Calculates discount percentage based on 90-day average price.
@@ -314,8 +256,8 @@ function calculateSavings(currentPrice: number, avg90: number): number {
  */
 export function calculateProductSavings({
   price,
-  usedPrice,
-  warehousePrice,
+  usedPrice: _usedPrice,
+  warehousePrice: _warehousePrice,
   avg90,
 }: {
   price?: number | null;
@@ -324,9 +266,6 @@ export function calculateProductSavings({
   avg90?: number | null;
 }): number {
   if (!price || !avg90 || price <= 0 || avg90 <= 0) return 0;
-
-  const up = usedPrice || 0;
-  const wp = warehousePrice || 0;
 
   // We only show a "Deal" if the standard new price is a deal.
   // If a used item is the cheapest, we still evaluate if the NEW price would be a deal.
@@ -341,9 +280,9 @@ export function calculateProductSavings({
  * Replaces loose < 10000 rank checks with a combination of rank, volume and rating.
  */
 export function isProductBestseller(p: {
-  salesRank?: number;
-  monthlySold?: number;
-  rating?: number;
+  salesRank?: number | null;
+  monthlySold?: number | null;
+  rating?: number | null;
 }): boolean {
   const rank = p.salesRank ?? 0;
   const sold = p.monthlySold ?? 0;

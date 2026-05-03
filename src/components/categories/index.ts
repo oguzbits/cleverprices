@@ -1,13 +1,13 @@
 // Re-export all category components
 export {
-  IdealoProductCarousel,
   type CarouselProduct,
+  IdealoProductCarousel,
 } from "../IdealoProductCarousel";
 export {
   IdealoCategoryCard,
   type IdealoCategoryCardProps,
 } from "./IdealoCategoryCard";
 export {
-  IdealoCategoryOverview,
   type CategoryData,
+  IdealoCategoryOverview,
 } from "./IdealoCategoryOverview";

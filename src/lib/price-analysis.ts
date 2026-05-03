@@ -9,9 +9,9 @@ import { and, eq } from "drizzle-orm";
 
 import type { CountryCode } from "@/lib/countries";
 import type { PriceAnalysis } from "@/lib/data-sources/types";
+
 import { db } from "../db";
 import { prices } from "../db/schema";
-
 import { computePriceAnalysis, parseHistoryJson } from "./price-analysis-utils";
 import { getSafeDate, getSafeNow } from "./server/deterministic-time";
 

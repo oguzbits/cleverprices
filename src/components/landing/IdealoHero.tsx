@@ -1,17 +1,17 @@
 import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 
-interface Product {
+export interface HeroProduct {
   id?: number;
   title: string;
   price: number;
   slug: string;
-  image?: string;
+  image?: string | null;
   badgeText?: string;
 }
 
 interface IdealoHeroProps {
-  products: Product[];
+  products: HeroProduct[];
   livePriceMap?: Map<number, any>;
 }
 

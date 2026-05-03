@@ -1,7 +1,8 @@
+import Image from "next/image";
+
 import { Badge } from "@/components/ui/badge";
 import { getFlag } from "@/lib/countries";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 
 interface CountryItemProps {
   code: string;

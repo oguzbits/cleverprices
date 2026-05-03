@@ -1,8 +1,9 @@
+import { Metadata } from "next";
+
 import { BlogPostViewMDX } from "@/components/blog/blog-post-view-mdx";
 import { getAllBlogPosts, getBlogPostBySlug } from "@/lib/blog";
 import { getAlternateLanguages, getOpenGraph } from "@/lib/metadata";
 import { SITE_URL } from "@/lib/site-config";
-import { Metadata } from "next";
 
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;

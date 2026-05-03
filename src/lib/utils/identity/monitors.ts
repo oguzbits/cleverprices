@@ -1,7 +1,8 @@
+import type { Product } from "../../product-definitions";
 import { IdentityStrategy, ProductIdentity } from "./types";
 
 export class MonitorStrategy implements IdentityStrategy {
-  extract(product: any): Partial<ProductIdentity> | null {
+  extract(product: Product): Partial<ProductIdentity> | null {
     const rawSpecs =
       product.officialSpecifications || product.official_specifications;
     const specs =

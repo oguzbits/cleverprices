@@ -1,4 +1,5 @@
 import type { FAQItem } from "@/components/category/FAQSchema";
+
 import type { CategorySlug } from "./categories";
 
 /**

@@ -1,11 +1,12 @@
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+
 import { IdealoCategoryPage } from "@/components/category/IdealoCategoryPage";
 import { getCategoryBySlug, stripCategoryIcon } from "@/lib/categories";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { getNicheBySlug } from "@/lib/intelligence/seo-niche";
 import { getOpenGraph } from "@/lib/metadata";
 import { BRAND_DOMAIN } from "@/lib/site-config";
-import { Metadata } from "next";
-import { notFound } from "next/navigation";
 
 // During build, return a placeholder to avoid DB access.
 // At runtime, pages are generated on-demand.

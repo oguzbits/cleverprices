@@ -1,4 +1,5 @@
 import { and, eq, isNotNull } from "drizzle-orm";
+
 import { db, products } from "../../src/db";
 
 async function auditLanguage() {

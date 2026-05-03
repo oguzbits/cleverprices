@@ -58,17 +58,22 @@ function parseFiltersFromParams(params: URLSearchParams): FilterState {
 
   for (const key of ARRAY_KEYS) {
     const values = params.getAll(key as string);
-    (state as any)[key] = values.length > 0 ? values : [];
+    (state as unknown as Record<string, unknown>)[key as string] =
+      values.length > 0 ? values : [];
   }
 
   for (const key of FLOAT_KEYS) {
     const val = params.get(key as string);
-    (state as any)[key] = val ? parseFloat(val) : null;
+    (state as unknown as Record<string, unknown>)[key as string] = val
+      ? parseFloat(val)
+      : null;
   }
 
   for (const key of INT_KEYS) {
     const val = params.get(key as string);
-    (state as any)[key] = val ? parseInt(val, 10) : null;
+    (state as unknown as Record<string, unknown>)[key as string] = val
+      ? parseInt(val, 10)
+      : null;
   }
 
   state.search = params.get("search") || "";
@@ -130,7 +135,7 @@ export const useFilters = (): [FilterState, SetFilters] => {
           // Don't write default values to keep URLs clean
           if (
             key in DEFAULTS &&
-            value === (DEFAULTS as any)[key] &&
+            value === (DEFAULTS as unknown as Record<string, unknown>)[key] &&
             key !== "sort" &&
             key !== "view"
           ) {

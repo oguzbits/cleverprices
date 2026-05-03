@@ -1,4 +1,5 @@
 import { describe, expect, it } from "bun:test";
+
 import { normalizeBrandName } from "./brand-mapping";
 import { enrichmentGuard, sanitizeSpecs } from "./specs-sanitizer";
 

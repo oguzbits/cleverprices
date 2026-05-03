@@ -1,7 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import * as Slider from "@radix-ui/react-slider";
+
+import { cn } from "@/lib/utils";
 
 interface PriceRangeSliderProps {
   min: number;

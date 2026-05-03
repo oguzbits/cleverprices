@@ -1,5 +1,9 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import * as React from "react";
+
 import {
   CommandDialog,
   CommandEmpty,
@@ -26,9 +30,6 @@ import { cn } from "@/lib/utils";
 import { formatTechText } from "@/lib/utils/formatting";
 import { getProductPath } from "@/lib/utils/url";
 import { Category } from "@/types";
-import { Loader2 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
-import * as React from "react";
 
 interface SearchModalProps {
   open: boolean;

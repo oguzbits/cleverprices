@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { allCategories } from "./lib/categories";
 import { isValidCountryCode } from "./lib/countries";
 

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+
 import { db, prices, products } from "../../src/db";
 import {
   compressHistory,

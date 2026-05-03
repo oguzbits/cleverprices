@@ -1,10 +1,12 @@
+import Image from "next/image";
+
 import { IdealoLivePrice } from "@/components/product/IdealoLivePrice";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 import { CountryCode } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import { getProductPath } from "@/lib/utils/url";
-import Image from "next/image";
+
 import { IdealoStarRating } from "../category/IdealoStarRating";
 
 export interface LivePriceData {
@@ -20,9 +22,9 @@ interface IdealoProductCardProps {
   price: number;
   currency?: string;
   slug: string;
-  image?: string;
-  rating?: number; // Community Rating (Stars)
-  ratingCount?: number; // Community Review Count
+  image?: string | null;
+  rating?: number | null; // Community Rating (Stars)
+  ratingCount?: number | null; // Community Review Count
   testRating?: number; // Professional "Note" (e.g. 1.0 - 6.0)
   testCount?: number; // Number of tests
   badgeText?: string;

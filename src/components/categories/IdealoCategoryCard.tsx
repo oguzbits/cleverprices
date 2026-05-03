@@ -7,10 +7,11 @@
  * Based on Idealo's _categoryGridItem class structure.
  */
 
-import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+
+import { cn } from "@/lib/utils";
 
 export interface IdealoCategoryCardProps {
   title: string;

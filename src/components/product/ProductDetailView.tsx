@@ -1,13 +1,4 @@
 import {
-  getCategoryBySlug,
-  getCategoryPath,
-  type CategorySlug,
-} from "@/lib/categories";
-import { getCountryByCode, type CountryCode } from "@/lib/countries";
-import type { ProductOffer, UnifiedProduct } from "@/lib/data-sources";
-import { Product } from "@/lib/product-definitions";
-import { cn } from "@/lib/utils";
-import {
   Check,
   ChevronRight,
   Info,
@@ -23,8 +14,17 @@ import {
   BreadcrumbSchema,
   ProductSchema,
 } from "@/components/seo/ProductSchema";
+import {
+  type CategorySlug,
+  getCategoryBySlug,
+  getCategoryPath,
+} from "@/lib/categories";
+import { type CountryCode, getCountryByCode } from "@/lib/countries";
+import type { ProductOffer, UnifiedProduct } from "@/lib/data-sources";
+import { Product } from "@/lib/product-definitions";
 import { getFamilyIdentity } from "@/lib/product-families";
 import { getSimilarProducts } from "@/lib/product-registry";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/utils/formatting";
 
 import { IdealoStarRating } from "../category/IdealoStarRating";
