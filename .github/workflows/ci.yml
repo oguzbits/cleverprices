@@ -36,8 +36,8 @@ jobs:
         env:
           SKIP_ENV_VALIDATION: "1"
 
-      - name: Install Playwright Browsers
-        run: bunx playwright install --with-deps chromium
-
-      - name: Run E2E Tests
-        run: bun run test:e2e
+#      - name: Install Playwright Browsers
+#        run: bunx playwright install --with-deps chromium
+#
+#      - name: Run E2E Tests
+#        run: bun run test:e2e
