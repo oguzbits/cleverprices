@@ -16,6 +16,7 @@ interface IdealoPriceChartProps {
   history?: { date: string; price: number }[];
   title?: string;
   currentPrice?: number;
+  now?: number;
 }
 
 type TimeFrame = "1M" | "3M" | "6M" | "1J";
@@ -33,6 +34,7 @@ export function IdealoPriceChart({
   history = EMPTY_HISTORY,
   title,
   currentPrice,
+  now,
 }: IdealoPriceChartProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [timeframe, setTimeframe] = useState<TimeFrame>("3M");
@@ -52,6 +54,7 @@ export function IdealoPriceChart({
             livePrice={currentPrice}
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
+            baseTimestamp={now}
           />
         </div>
       </DialogTrigger>
@@ -79,6 +82,7 @@ export function IdealoPriceChart({
             livePrice={currentPrice}
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
+            baseTimestamp={now}
           />
         </div>
       </DialogContent>
@@ -94,6 +98,7 @@ function ChartRenderer({
   livePrice,
   timeframe,
   onTimeframeChange,
+  baseTimestamp,
 }: {
   history: { date: string; price: number }[];
   interactive: boolean;
@@ -102,6 +107,7 @@ function ChartRenderer({
   livePrice?: number;
   timeframe: TimeFrame;
   onTimeframeChange: (tf: TimeFrame) => void;
+  baseTimestamp?: number;
 }) {
   const [hoveredData, setHoveredData] = useState<{
     date: number;
@@ -112,11 +118,23 @@ function ChartRenderer({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [nowTimestamp] = useState(() => {
-    // If we're on the server (SSR/Prerender), use a fixed reference point to avoid bailouts
-    if (typeof window === "undefined") return 1735689600000;
+  // Initialize with passed timestamp or a sensible fallback for SSR.
+  // We use a state to keep it stable during hydration, but we'll update it in an effect
+  // to ensure the client has the absolute latest 'now' if none was provided.
+  const [nowTimestamp, setNowTimestamp] = useState(() => {
+    if (baseTimestamp) return baseTimestamp;
+    // Fallback for SSR - if we don't have a baseTimestamp, use a value that is likely
+    // to be "today" in the context of our data (May 2026).
+    if (typeof window === "undefined") return new Date("2026-05-01").getTime();
     return Date.now();
   });
+
+  React.useEffect(() => {
+    // Only update if we didn't get a strict baseTimestamp from server
+    if (!baseTimestamp) {
+      setNowTimestamp(Date.now());
+    }
+  }, [baseTimestamp]);
 
   const {
     data,

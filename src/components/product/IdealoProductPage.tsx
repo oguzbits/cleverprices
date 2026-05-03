@@ -52,6 +52,7 @@ interface IdealoProductPageProps {
   similarSidebar?: Product[];
   similarCarousel?: Product[];
   searchParamsPromise?: Promise<{ condition?: string }>;
+  now: number;
 }
 
 export function IdealoProductPage({
@@ -67,6 +68,7 @@ export function IdealoProductPage({
   similarSidebar = [],
   similarCarousel = [],
   searchParamsPromise,
+  now,
 }: IdealoProductPageProps) {
   const mergedProduct = product;
   const rawVariants = variants;
@@ -429,6 +431,7 @@ export function IdealoProductPage({
                     history={mergedProduct.priceHistory || []}
                     title={mergedProduct.title}
                     currentPrice={mergedProduct.prices[countryCode]}
+                    now={now}
                   />
                 </React.Suspense>
               </ComponentErrorBoundary>

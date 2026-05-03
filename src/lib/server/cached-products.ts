@@ -16,7 +16,10 @@ import {
 import { CACHE_VERSION } from "../site-config";
 import { getProductPath } from "../utils/url";
 import { getCategoryProducts } from "./category-products";
-import { getLivePricesForProducts, mergeLivePrices } from "./live-data";
+import {
+  getLivePricesForProducts,
+  mergeLivePricesSelective,
+} from "./live-data";
 
 /**
  * --- PDP DATA ORCHESTRATION ---
@@ -109,9 +112,29 @@ export async function getPDPRenderData(
 
     // 4. Live Price Merging (Freshness) - Wrapped in try/catch to ensure availability
     let mergedProduct = product;
+    let mergedVariants = variants;
+    let mergedSidebar = sidebar;
+    let mergedCarousel = carousel;
+
     try {
-      const [fresh] = await mergeLivePrices([product], countryCode, true);
-      if (fresh) mergedProduct = fresh;
+      // BATCH ALL PRODUCTS for live price merging (Rule: main.md)
+      const allToMerge = [product, ...variants, ...sidebar, ...carousel];
+      const mergedAll = await mergeLivePricesSelective(
+        allToMerge,
+        countryCode,
+        true,
+      );
+
+      mergedProduct = mergedAll[0] || product;
+      let offset = 1;
+
+      mergedVariants = mergedAll.slice(offset, offset + variants.length);
+      offset += variants.length;
+
+      mergedSidebar = mergedAll.slice(offset, offset + sidebar.length);
+      offset += sidebar.length;
+
+      mergedCarousel = mergedAll.slice(offset, offset + carousel.length);
     } catch (e) {
       console.warn(`[PDP Live Price Fallback] ${slug}:`, e);
     }
@@ -142,15 +165,16 @@ export async function getPDPRenderData(
     // 6. Final POJO Serialization
     return toSafePOJO({
       product: mergedProduct,
-      variants: variants.filter(
+      variants: mergedVariants.filter(
         (v: Product) => v.id !== (mergedProduct as Product).id,
       ),
       category: category ?? null,
-      similarSidebar: sidebar,
-      similarCarousel: carousel,
+      similarSidebar: mergedSidebar,
+      similarCarousel: mergedCarousel,
       isParentView: isParentView || (mergedProduct.id || 0) >= 900000000,
       canonicalId,
       canonicalSlug,
+      now: Date.now(),
     });
   } catch (error) {
     if (isNextNotFoundError(error) || isNextRedirectError(error)) throw error;

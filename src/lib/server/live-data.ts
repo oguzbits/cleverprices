@@ -174,6 +174,7 @@ export async function mergeLivePrices(
         ...p,
         condition,
         prices: { ...(p.prices || {}), [countryCode]: rawNewPrice }, // Store RAW New Price
+        price: rawNewPrice,
         usedPrices: { ...(p.usedPrices || {}), [countryCode]: newUsedPrice },
         warehousePrices: {
           ...(p.warehousePrices || {}),

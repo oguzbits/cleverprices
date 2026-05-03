@@ -275,6 +275,7 @@ export function mapDbProduct(
       : `https://www.amazon.de/dp/${p.asin}?tag=cleverprices-21`,
 
     prices: pricesObj,
+    price: pricesObj["de"] || 0,
     pricesLastUpdated: stripHeavyData ? {} : pricesLastUpdatedObj,
     capacity: p.capacity || 0,
     capacityUnit: (p.capacityUnit as string) || "GB",

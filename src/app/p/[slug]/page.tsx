@@ -149,8 +149,6 @@ export default async function ProductPage({ params, searchParams }: Props) {
     console.warn(`[PDP Quality Reject] ${slug}`);
     notFound();
   }
-
-  // 4. Render
   return (
     <div className="min-h-screen bg-slate-50">
       <IdealoProductPage
@@ -163,6 +161,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
         canonicalId={data.canonicalId}
         similarSidebar={data.similarSidebar}
         similarCarousel={data.similarCarousel}
+        now={data.now}
       />
     </div>
   );

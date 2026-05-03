@@ -302,5 +302,6 @@ export interface PDPRenderData {
   isParentView: boolean;
   canonicalId: number;
   canonicalSlug: string;
+  now: number;
   redirect?: string;
 }
