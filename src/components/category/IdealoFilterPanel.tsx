@@ -29,7 +29,9 @@ interface IdealoFilterBarProps {
   lockedFilters?: string[];
 }
 
-const DEFAULT_OBJECT = {};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const DEFAULT_OBJECT: any = {};
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const DEFAULT_ARRAY: any[] = [];
 
 // ============================================
@@ -93,7 +95,7 @@ const PRIMARY_FILTERS = [
  * - Values stored as fractions of TB (e.g., 0.128, 0.256, 0.5) are shown as GB
  * - Values >= 1 are shown in TB
  */
-function formatCapacity(value: string, unitLabel: string): string {
+function formatCapacity(value: string, _unitLabel: string): string {
   const numValue = parseFloat(value);
   if (isNaN(numValue) || numValue <= 0) return "";
 
@@ -234,7 +236,7 @@ const PREMIUM_BRANDS = [
 ];
 
 export function IdealoFilterPanel({
-  categorySlug,
+  categorySlug: _categorySlug,
   unitLabel,
   isMobile = false,
   onFilterChange,

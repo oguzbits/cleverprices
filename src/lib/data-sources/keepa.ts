@@ -30,6 +30,7 @@ import type {
   PriceAnalysis,
   PriceHistoryPoint,
   ProductCondition,
+  ProductSpecifications,
   SearchOptions,
   UnifiedProduct,
 } from "./types";
@@ -177,9 +178,9 @@ class KeepaDataSource implements DataSourceProvider {
    * Fetch products by ASINs
    */
   async fetchProducts(
-    category: CategorySlug,
-    country: CountryCode,
-    options?: FetchOptions,
+    _category: CategorySlug,
+    _country: CountryCode,
+    _options?: FetchOptions,
   ): Promise<UnifiedProduct[]> {
     // Keepa doesn't support category-based fetching directly
     // You'd need to have ASINs already or use search
@@ -469,7 +470,7 @@ class KeepaDataSource implements DataSourceProvider {
     const mpn = product.model;
 
     // Map structured specs to generic JSON bucket
-    const specifications: Record<string, any> = {
+    const specifications: ProductSpecifications = {
       brand: product.brand,
     };
     if (product.color) specifications.Color = product.color;

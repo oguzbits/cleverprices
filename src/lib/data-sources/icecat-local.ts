@@ -7,8 +7,8 @@ const DB_PATH = "data/icecat-index.db";
 
 export class LocalIcecatDataSource extends IcecatDataSource {
   private db: Database | null = null;
-  private findByGtinStmt: any = null;
-  private findByMpnStmt: any = null;
+  private _findByGtinStmt: unknown = null;
+  private findByMpnStmt: unknown = null;
 
   constructor() {
     super();
@@ -18,7 +18,7 @@ export class LocalIcecatDataSource extends IcecatDataSource {
         this.db = new Database(DB_PATH, { readonly: true });
         // The index file maps EAN_UPC (comma separated) -> ID
         // Since we want to find if *our* GTIN is inside that string, we use LIKE
-        this.findByGtinStmt = this.db.prepare(
+        this._findByGtinStmt = this.db.prepare(
           "SELECT id, title FROM icecat_index WHERE gtins LIKE ? LIMIT 1",
         );
         this.findByMpnStmt = this.db.prepare(
@@ -30,7 +30,7 @@ export class LocalIcecatDataSource extends IcecatDataSource {
           e,
         );
         this.db = null;
-        this.findByGtinStmt = null;
+        this._findByGtinStmt = null;
         this.findByMpnStmt = null;
       }
     } else {
@@ -63,7 +63,9 @@ export class LocalIcecatDataSource extends IcecatDataSource {
       return super.findIdByMpn(mpn);
     }
 
-    const result = this.findByMpnStmt.get(mpn) as { id: string } | null;
+    const result = (
+      this.findByMpnStmt as { get: (arg: string) => unknown }
+    ).get(mpn) as { id: string } | null;
     return result ? result.id : null;
   }
 

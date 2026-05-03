@@ -51,7 +51,7 @@ export function IdealoListCard({
   priority = false,
   livePriceData,
 }: IdealoListCardProps) {
-  const countryConfig = getCountryByCode(countryCode);
+  const _countryConfig = getCountryByCode(countryCode);
 
   // Build description parts
   const fullTitle = (
@@ -128,7 +128,6 @@ export function IdealoListCard({
               fill
               priority={priority}
               loading={priority ? undefined : "lazy"}
-              // @ts-ignore - fetchPriority is supported in Next.js 16/React 19
               fetchPriority={priority ? "high" : "low"}
               className="object-contain p-2 mix-blend-multiply"
               sizes="168px"

@@ -11,7 +11,11 @@ interface CategoryCardProps {
   country: CountryCode;
 }
 
-export function CategoryCard({ category, Icon, country }: CategoryCardProps) {
+export function CategoryCard({
+  category,
+  Icon,
+  country: _country,
+}: CategoryCardProps) {
   return (
     <Link
       className="group no-underline"

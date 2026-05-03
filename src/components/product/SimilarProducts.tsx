@@ -25,7 +25,7 @@ interface SimilarProductsProps {
 export function SimilarProducts({
   products,
   countryCode,
-  title = "Similar Products",
+  title: _title = "Similar Products",
 }: SimilarProductsProps) {
   const countryConfig = getCountryByCode(countryCode);
   const currencySymbol = countryConfig?.symbol || "$";

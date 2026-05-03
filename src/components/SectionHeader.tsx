@@ -16,7 +16,7 @@ interface SectionHeaderProps {
 
 export function SectionHeader({
   title,
-  description,
+  description: _description,
   onScrollLeft,
   onScrollRight,
   canScrollLeft = false,

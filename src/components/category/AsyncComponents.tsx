@@ -29,7 +29,7 @@ interface CategoryFilteredData {
   filteredCount: number;
   unitLabel: string;
   hasProducts: boolean;
-  filters: Record<string, any>;
+  filters: Record<string, unknown>;
   filterCounts: FilterCounts;
   minPriceInCategory: number;
   maxPriceInCategory: number;
@@ -85,7 +85,6 @@ export function AsyncFilterPanel({
   // Use filter counts from filteredData to show how many items match current filters?
   // Or from allData to show global counts? Idealo usually shows counts for current context.
   // category-products.ts returns `filterCounts` calculated from `localizedProducts` (the result of getCached localizedCategoryProducts).
-
   // Actually, `getCategoryProducts` returns `filterCounts` based on the *result set* if it was just returning filtered prods?
   // No, `getCategoryProducts` calculates counts from `localizedProducts` (ALL products in category) then filters.
   // Wait, let's re-read `category-products.ts`.
@@ -193,14 +192,16 @@ export function AsyncProductList({
                 </span>{" "}
                 keine Ergebnisse für
                 <span className="mx-1 font-bold">
-                  &quot;{filters.search}&quot;
+                  &quot;{filters.search as string}&quot;
                 </span>{" "}
                 finden.
               </p>
               <button
                 onClick={() => {
                   if (typeof window !== "undefined")
-                    (window as any).triggerSearch?.();
+                    (
+                      window as unknown as { triggerSearch?: () => void }
+                    ).triggerSearch?.();
                 }}
                 className="bg-idealo-blue hover:bg-idealo-blue-hover focus-visible:ring-idealo-blue flex items-center gap-2 rounded-[4px] px-6 py-2.5 text-[15px] font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               >

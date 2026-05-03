@@ -68,7 +68,7 @@ export const TWITTER_AT = `@${TWITTER_HANDLE}`;
  * Default page title template
  * Usage: `${pageTitle} | ${TITLE_SUFFIX}`
  */
-const TITLE_SUFFIX = BRAND_DOMAIN;
+const _TITLE_SUFFIX = BRAND_DOMAIN;
 
 /**
  * Default meta title for homepage
@@ -109,10 +109,10 @@ export const LOGO = {
  * We use 23 hours (82800 seconds) to ensure we always stay within the limit
  * while accounting for build/caching delays.
  */
-const AMAZON_TOS_LIMIT_SECONDS = 86400; // 24 hours
+const _AMAZON_TOS_LIMIT_SECONDS = 86400; // 24 hours
 export const CATEGORY_REVALIDATE_SECONDS = 3600; // 1 hour (Global category lists)
 export const PRODUCT_REVALIDATE_SECONDS = 3600; // 1 hour (Deep product details)
-const STATIC_REVALIDATE_SECONDS = 86400; // 24 hours (Legal, Blog lists, Static pages)
+const _STATIC_REVALIDATE_SECONDS = 86400; // 24 hours (Legal, Blog lists, Static pages)
 export const CACHE_VERSION =
   process.env.NEXT_PUBLIC_BUILD_ID || "792ddf4-APR25-STABLE";
 

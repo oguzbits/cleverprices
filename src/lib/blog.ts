@@ -82,6 +82,6 @@ function calculateReadingTimeSync(content: string): string {
   return `${time} min read`;
 }
 
-async function calculateReadingTime(content: string): Promise<string> {
+async function _calculateReadingTime(content: string): Promise<string> {
   return calculateReadingTimeSync(content);
 }

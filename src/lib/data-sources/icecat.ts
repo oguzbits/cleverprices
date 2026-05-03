@@ -57,7 +57,7 @@ export class IcecatDataSource implements DataSourceProvider {
   ): Promise<string | null> {
     console.log(`[Icecat] Streaming index to find ${attribute}: ${value}...`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve, _reject) => {
       const request = https.get(
         INDEX_URL,
         {
@@ -124,13 +124,13 @@ export class IcecatDataSource implements DataSourceProvider {
             if (!resolved) resolve(null);
           });
 
-          gunzip.on("error", (err) => {
+          gunzip.on("error", (_err) => {
             if (!resolved) resolve(null);
           });
         },
       );
 
-      request.on("error", (err) => resolve(null));
+      request.on("error", (_err) => resolve(null));
     });
   }
 
@@ -233,7 +233,7 @@ export class IcecatDataSource implements DataSourceProvider {
    */
   async fetchProductByGtin(
     gtin: string,
-    country: CountryCode,
+    _country: CountryCode,
   ): Promise<UnifiedProduct | null> {
     if (!this.isAvailable()) return null;
 
@@ -251,22 +251,22 @@ export class IcecatDataSource implements DataSourceProvider {
 
   // Required by interface but not primary use case for Icecat
   async fetchProducts(
-    category: CategorySlug,
-    country: CountryCode,
+    _category: CategorySlug,
+    _country: CountryCode,
   ): Promise<UnifiedProduct[]> {
     return [];
   }
 
   async fetchProduct(
     id: string,
-    country: CountryCode,
+    _country: CountryCode,
   ): Promise<UnifiedProduct | null> {
     return this.fetchProductXml(id);
   }
 
   async searchProducts(
-    query: string,
-    country: CountryCode,
+    _query: string,
+    _country: CountryCode,
   ): Promise<UnifiedProduct[]> {
     return [];
   }

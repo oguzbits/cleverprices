@@ -29,8 +29,12 @@ export async function withRetry<T>(
       // Robust SQLITE_BUSY / Lockdown detection
       const isSqliteLocked =
         errorMsg.includes("SQLITE_BUSY") ||
-        (error as any).code === "SQLITE_BUSY" ||
-        (error as any).cause?.message?.includes("SQLITE_BUSY") ||
+        (error instanceof Error &&
+          (error as { code?: string }).code === "SQLITE_BUSY") ||
+        (error instanceof Error &&
+          (error as { cause?: { message?: string } }).cause?.message?.includes(
+            "SQLITE_BUSY",
+          )) ||
         errorMsg.includes("database is locked") ||
         errorMsg.includes("SQLITE_READONLY");
 

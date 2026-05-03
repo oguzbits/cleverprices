@@ -4,7 +4,7 @@ import { Product } from "@/lib/product-definitions";
 import { IdealoLivePrice } from "./IdealoLivePrice";
 import { PriceAnalysisBadge } from "./PriceAnalysisBadge";
 
-interface LivePriceBoundaryProps {
+interface _LivePriceBoundaryProps {
   product: Product;
   variants: Product[];
   countryCode?: string;
@@ -45,7 +45,7 @@ export function LivePriceHeader({
  */
 export function LiveSavingsBadge({
   product,
-  countryCode,
+  countryCode: _countryCode,
   liveSavings,
 }: {
   product: Product;

@@ -493,7 +493,7 @@ class AmazonPaApiSource implements DataSourceProvider {
     category: CategorySlug,
     country: CountryCode,
   ): UnifiedProduct {
-    const currency = COUNTRY_CURRENCIES[country];
+    const _currency = COUNTRY_CURRENCIES[country];
     const listing = item.Offers?.Listings?.[0];
 
     const offers: ProductOffer[] = [];

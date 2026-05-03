@@ -63,7 +63,7 @@ import { getSafeNow } from "../server/deterministic-time";
 
 const CURRENT_YEAR = new Date(getSafeNow()).getFullYear();
 
-async function getCategoryBestsellers(
+export async function getCategoryBestsellers(
   parentSlug: CategorySlug,
   limit: number = 12,
   countryCode: string = "de",
@@ -144,7 +144,7 @@ async function getCategoryBestsellers(
  * Get newest products in a parent category.
  * Prioritizes recently added items from reputable brands.
  */
-async function getCategoryNewProducts(
+export async function getCategoryNewProducts(
   parentSlug: CategorySlug,
   limit: number = 8,
   countryCode: string = "de",
@@ -242,7 +242,7 @@ async function getCategoryNewProducts(
  * Get best deal products in a parent category.
  * STRICTLY filters for products with actual savings (>5% vs 90d avg).
  */
-async function getCategoryDeals(
+export async function getCategoryDeals(
   parentSlug: CategorySlug,
   limit: number = 8,
   countryCode: string = "de",
@@ -511,7 +511,7 @@ export async function getParentCategoryData(
 /**
  * Get total product count for a parent category (sum of all child categories).
  */
-async function getCategoryProductCount(
+export async function getCategoryProductCount(
   parentSlug: CategorySlug,
   countryCode: string = "de",
 ): Promise<number> {

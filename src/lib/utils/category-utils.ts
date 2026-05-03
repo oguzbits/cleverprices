@@ -244,7 +244,7 @@ export function sortProducts(
 /**
  * Utility to discover all unique values for a field in a list of products
  */
-function getUniqueFieldValues(
+function _getUniqueFieldValues(
   products: LocalizedProduct[],
   field: string,
 ): string[] {

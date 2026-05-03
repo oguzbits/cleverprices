@@ -45,15 +45,15 @@ function VariantCard({
   isAllVariants,
   allImages,
   bestPrice,
-  currentSlug,
+  currentSlug: _currentSlug,
   isCheapest,
   isHubMode,
   selectedCondition,
 }: VariantCardProps) {
   // ... (VariantCard implementation remains strictly visual)
   // Enhanced Label Logic for Smartphones/Tech
-  const attrs = variant?.normalizedAttrs || {};
-  const isSmartphone =
+  const _attrs = variant?.normalizedAttrs || {};
+  const _isSmartphone =
     variant?.category === "smartphones" ||
     variant?.title.toLowerCase().includes("smartphone");
 
@@ -90,7 +90,7 @@ function VariantCard({
     return isRenewed ? 0 : p;
   })();
 
-  const slug = variant?.slug;
+  const _slug = variant?.slug;
 
   const content = (
     <div
@@ -234,7 +234,7 @@ function AttributeSelector({
             ? "Konnektivität"
             : label;
 
-  const isColor =
+  const _isColor =
     label.toLowerCase() === "color" || label.toLowerCase() === "farbe";
 
   return (
@@ -486,9 +486,9 @@ export function ProductVariantSelector({
 
   // Shared price selector logic for consistency across all component facets
   const getEffectivePrice = (p: Product) => {
-    const pricesVal = p.prices[countryCode] || 0;
+    const _pricesVal = p.prices[countryCode] || 0;
     const usedPricesVal = p.usedPrices?.[countryCode] || 0;
-    const isRenewed = (p.condition || "").toLowerCase() === "renewed";
+    const _isRenewed = (p.condition || "").toLowerCase() === "renewed";
 
     // Unified logic selection!
     const bestOverall = getBestPrice({
@@ -663,12 +663,12 @@ export function ProductVariantSelector({
     const isRamCategory = /ram|memory|arbeitsspeicher/i.test(
       currentProduct.category || "",
     );
-    const hasStorage = rawEntries.some(([k]) =>
+    const _hasStorage = rawEntries.some(([k]) =>
       /storage|kapazität|speicher/i.test(k),
     );
 
     return rawEntries
-      .filter(([key, values]) => {
+      .filter(([key, _values]) => {
         const k = key.toLowerCase();
         // Style is now mapped to Connectivity, but we still filter out generic Style just in case
         if (k === "style") return false;
@@ -845,24 +845,6 @@ export function ProductVariantSelector({
           condition={targetCondition}
         />
       ))}
-    </div>
-  );
-}
-
-function ProductVariantSelectorSkeleton() {
-  return (
-    <div className="mt-4 mb-6 animate-pulse">
-      {/* Title Skeleton */}
-      <div className="mb-2 h-4 w-32 rounded bg-gray-200" />
-
-      <div className="flex gap-2.5 overflow-hidden pt-1">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div
-            key={i}
-            className="h-[167px] min-w-[110px] rounded border border-gray-200 bg-gray-100"
-          />
-        ))}
-      </div>
     </div>
   );
 }

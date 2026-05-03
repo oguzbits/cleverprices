@@ -218,7 +218,7 @@ export interface Product {
   pricePerUnit?: number;
   pricesLastUpdated?: Record<string, string>;
   parentAsin?: string | null;
-  variationAttributes?: string | null;
+  variationAttributes?: string;
   specifications?: Record<string, unknown> | string | null;
   officialSpecifications?: Record<string, unknown> | string | null;
   officialTitle?: string | null;

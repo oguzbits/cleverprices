@@ -24,7 +24,7 @@ export const Carousel = React.forwardRef<CarouselRef, CarouselProps>(
   (props, ref) => {
     const { children, className, itemClassName, onScrollStateChange } = props;
     const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const [mounted, setMounted] = useState(false);
+    const [_mounted, setMounted] = useState(false);
     const [scrollState, setScrollState] = useState({
       canScrollLeft: false,
       canScrollRight: false,

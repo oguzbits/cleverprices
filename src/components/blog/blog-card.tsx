@@ -10,7 +10,11 @@ interface BlogCardProps {
   className?: string;
 }
 
-export function BlogCard({ post, country = "us", className }: BlogCardProps) {
+export function BlogCard({
+  post,
+  country: _country = "us",
+  className,
+}: BlogCardProps) {
   const blogUrl = `/blog/${post.slug}`;
 
   return (

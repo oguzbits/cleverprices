@@ -33,7 +33,7 @@ export function IdealoStarRating({
   const percentage = rating ? Math.min(100, Math.round((rating / 5) * 100)) : 0;
 
   // Format rating as German decimal (e.g., 1,5)
-  const formattedRating = rating ? formatRatingDE(rating) : null;
+  const _formattedRating = rating ? formatRatingDE(rating) : null;
 
   return (
     <div

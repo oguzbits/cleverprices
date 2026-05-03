@@ -151,7 +151,7 @@ function getSavedCountry(): CountryCode | null {
 }
 
 // Save country preference to Cookies matches Server Proxy expectation
-function saveCountryPreference(countryCode: string): void {
+function _saveCountryPreference(countryCode: string): void {
   if (typeof window === "undefined") return;
   try {
     // Set cookie for 1 year, Lax, Root path to ensure Proxy visibility
@@ -166,7 +166,7 @@ function saveCountryPreference(countryCode: string): void {
 }
 
 // Get user's country (saved preference > detected > default)
-function getUserCountry(): CountryCode {
+function _getUserCountry(): CountryCode {
   // 1. Check saved preference
   const saved = getSavedCountry();
   if (saved && countries[saved] && countries[saved].isLive) {

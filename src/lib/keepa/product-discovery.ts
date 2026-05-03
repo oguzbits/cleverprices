@@ -151,7 +151,7 @@ export interface KeepaProductRaw {
 }
 
 // Search results type
-interface KeepaSearchResult {
+interface _KeepaSearchResult {
   asinList?: string[];
   categoryCount?: number;
   totalResults?: number;
@@ -462,7 +462,7 @@ export async function getProducts(
  * Discover products for a category
  * Combines bestsellers + keyword search for comprehensive coverage
  */
-async function discoverProducts(
+async function _discoverProducts(
   categorySlug: string,
   country: CountryCode = "us",
   targetCount: number = 100,
@@ -521,7 +521,7 @@ async function discoverProducts(
 /**
  * Get search keywords for a category
  */
-function getCategoryKeywords(categorySlug: string): string[] {
+function _getCategoryKeywords(categorySlug: string): string[] {
   const keywordMap: Record<string, string[]> = {
     "hard-drives": ["4TB HDD", "NAS Festplatte", "WD Red", "Seagate IronWolf"],
     ssds: [

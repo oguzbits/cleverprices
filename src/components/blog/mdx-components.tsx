@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { type CategorySlug, getCategoryPath } from "@/lib/categories";
 import { DEFAULT_COUNTRY, getCountryByCode } from "@/lib/countries";
+import { type CountryCode } from "@/lib/countries";
 import { getProductByAsin, type Product } from "@/lib/product-registry";
 import { type LeanProduct } from "@/lib/types";
 import {
@@ -138,13 +139,13 @@ export function QuickPicks({
 export function LocalizedLink({
   href,
   children,
-  country,
+  country: _country,
 }: {
   href: string;
   children: React.ReactNode;
   country: string;
 }) {
-  const isInternal = href.startsWith("/");
+  const _isInternal = href.startsWith("/");
   const finalHref = href;
 
   return (
@@ -190,15 +191,17 @@ export async function ProductCard({
     category: product.category,
     // listPrice and savings are handled by localized logic in mapping if needed,
     // but here we just pass them if they exist in the product object for the country
-    listPrice: product.listPrice?.[country],
-    savings: product.savings,
+    listPrice: (product.listPrice?.[country] ?? undefined) as
+      | number
+      | undefined,
+    savings: product.savings ?? undefined,
   };
 
   return (
     <div className="not-prose my-8">
       <IdealoListCard
         product={leanProduct}
-        countryCode={country as any}
+        countryCode={country as CountryCode}
         className="max-w-3xl"
       />
     </div>

@@ -45,7 +45,7 @@ export function getAmazonImageUrl({
 
     url.pathname = newPathname;
     return url.toString();
-  } catch (e) {
+  } catch (_e) {
     return src;
   }
 }

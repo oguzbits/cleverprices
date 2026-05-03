@@ -1,4 +1,5 @@
 import { ChevronRight } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 
@@ -34,9 +35,11 @@ export function CategoryHubCard({ category, Icon }: CategoryHubCardProps) {
       <Link href={categoryPath} className="group mb-4 block no-underline">
         <div className="mb-6 flex h-[100px] w-full items-center justify-center overflow-hidden bg-transparent">
           {imagePath ? (
-            <img
+            <Image
               src={imagePath}
               alt={category.name}
+              width={200}
+              height={100}
               className="h-full w-auto object-contain transition-transform duration-300"
               loading="lazy"
             />

@@ -53,13 +53,19 @@ import {
 import { mapDbProduct } from "./utils/product-mapping";
 import { isProductHighQuality } from "./utils/quality";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const cache =
-  typeof reactCache === "function" ? (reactCache as any) : <T>(fn: T): T => fn;
+  typeof reactCache === "function"
+    ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (reactCache as <T extends (...args: any[]) => any>(fn: T) => T)
+    : <T>(fn: T): T => fn;
 
 export {
   enrichWithFullSiblings,
   filteringProductColumns,
+  findProductSlugByAsinSuffix,
+  getAllProductSlugs,
+  getNonEmptyCategorySlugs,
+  getProductBySlug,
   getProductsByCategory,
   getProductsByIds,
   getRawProductsByCategory,
@@ -395,7 +401,7 @@ export async function findProductBySyntheticId(
   } as Product;
 }
 
-export async function getAllProductSlugs(
+async function getAllProductSlugs(
   limit?: number,
   includeVariants: boolean = false,
   fastMode: boolean = false,
@@ -856,7 +862,7 @@ async function fetchNonEmptyInternal() {
   }
 }
 
-export async function getNonEmptyCategorySlugs(): Promise<string[]> {
+async function getNonEmptyCategorySlugs(): Promise<string[]> {
   if (IS_BUILD) {
     // During build, we return all non-hidden categories from the manifest
     const { allCategories } = await import("./categories");
@@ -1121,7 +1127,7 @@ const fetchProductBySlug = cache(
 // Note: getProductPriceHistory removed in lean schema.
 // Price history is now stored in prices.historyJson and parsed by mapDbProduct.
 
-export const getProductBySlug = cache(async function getProductBySlug(
+const getProductBySlug = cache(async function getProductBySlug(
   slug: string,
   includeHistory: boolean = false,
 ): Promise<Product | undefined> {
@@ -1199,7 +1205,7 @@ export const getProductByAsin = cache(async function getProductByAsin(
  * @param oldSlug - The old slug that might contain ASIN info
  * @returns Product slug if found, undefined otherwise
  */
-export async function findProductSlugByAsinSuffix(
+async function findProductSlugByAsinSuffix(
   oldSlug: string,
 ): Promise<{ id: number; slug: string } | undefined> {
   if (IS_BUILD) return undefined;

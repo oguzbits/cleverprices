@@ -1,5 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
+import type { Product } from "@/lib/product-definitions";
+
 import {
   getFamilyIdentity,
   getFamilyRepresentative,
@@ -7,7 +9,9 @@ import {
 } from "./product-families";
 
 // Mock Product Helper
-const createMockProduct = (overrides: Partial<any>): any => ({
+const createMockProduct = (
+  overrides: Partial<Record<string, unknown>>,
+): Record<string, unknown> => ({
   id: 1,
   slug: "test-slug",
   title: "Test Product",
@@ -199,7 +203,10 @@ describe("Product Families Logic", () => {
 
       const parentRep = { ...rep, syntheticId: 900000123 };
 
-      const { slug } = getFamilyIdentity(parentRep as any, [rep]);
+      const { slug } = getFamilyIdentity(
+        parentRep as unknown as Product,
+        [rep] as unknown as Product[],
+      );
       expect(slug).toBe("900000123_-iphone-15-apple");
     });
 

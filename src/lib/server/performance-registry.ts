@@ -5,7 +5,7 @@
  * Helps identify regressions in PDP load times.
  */
 
-interface PerformanceLog {
+interface _PerformanceLog {
   slug: string;
   durationMs: number;
   timestamp: number;

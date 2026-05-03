@@ -310,7 +310,7 @@ describe("dynamic spec vs version checking", () => {
       },
       specificationsSource: "icecat",
     };
-    const identity3 = getProductIdentity(product3);
+    const _identity3 = getProductIdentity(product3);
     // Actually wait, 'Max' is a tier contradiction against 'Pro' (no Max).
     // So verifySpecModel should reject it due to missing tier. Let's see.
     // TIER_CONTRADICTIONS = [["plus", "max", "pro", "ultra"]].

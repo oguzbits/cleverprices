@@ -76,12 +76,12 @@ export function checkBudget(cost: number): {
 /**
  * Helper: Just check if we can proceed (for boolean checks)
  */
-function hasTokenBudget(cost: number): boolean {
+function _hasTokenBudget(cost: number): boolean {
   return checkBudget(cost).allowed;
 }
 
 // Legacy exports for compatibility (will be removed later)
-function getTokenStatus() {
+function _getTokenStatus() {
   const remaining = estimateCurrentTokens();
   const capacity = TOKEN_BUDGET.BUCKET_CAPACITY;
   const percentUsed = Math.max(
@@ -97,7 +97,7 @@ function getTokenStatus() {
   };
 }
 
-export function recordTokenUsage(tokens: number) {
+export function recordTokenUsage(_tokens: number) {
   // No-op, we track via updateTokenStatus now
 }
 
@@ -105,6 +105,6 @@ export function getMaxProductsToday() {
   return 100000; // Unlimited, bound only by time
 }
 
-function getRecommendedBatchSize() {
+function _getRecommendedBatchSize() {
   return 50; // Standard batch
 }

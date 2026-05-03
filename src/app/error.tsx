@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle, RefreshCcw } from "lucide-react";
+import Link from "next/link";
 import { useEffect } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ export default function Error({
           Erneut versuchen
         </Button>
         <Button variant="outline" asChild>
-          <a href="/">Zur Startseite</a>
+          <Link href="/">Zur Startseite</Link>
         </Button>
       </div>
       {error.digest && (

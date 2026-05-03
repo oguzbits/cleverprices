@@ -323,12 +323,13 @@ export function mapRawToLocalizedProduct(
   }
 
   const capacityMB =
-    capacityUnit === "TB"
+    capacityUnit === "TB" && capacity
       ? capacity * 1024 * 1024
-      : capacityUnit === "GB"
+      : capacityUnit === "GB" && capacity
         ? capacity * 1024
         : capacity;
-  const pricePerUnit = capacityMB > 0 ? ((price || 0) / capacityMB) * 1024 : 0;
+  const pricePerUnit =
+    capacityMB && capacityMB > 0 ? ((price || 0) / capacityMB) * 1024 : 0;
 
   if (
     (actualCategory === "ssds" || actualCategory === "hard-drives") &&

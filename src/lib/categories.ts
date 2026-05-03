@@ -19,7 +19,7 @@ export interface Category extends BaseCategory {
   icon?: LucideIcon;
 }
 
-export interface CategoryHierarchy extends BaseCategoryHierarchy<Category> {}
+export type CategoryHierarchy = BaseCategoryHierarchy<Category>;
 export interface CategoryLink extends BaseCategoryLink {
   icon: LucideIcon;
 }
@@ -123,35 +123,35 @@ export function getCategoryPath(categorySlug: CategorySlug): string {
 
 // Return a copy of the category without the icon function (for serialization)
 export function stripCategoryIcon(category: Category): Omit<Category, "icon"> {
-  const { icon, ...rest } = category;
+  const { icon: _icon, ...rest } = category;
   return JSON.parse(JSON.stringify(rest));
 }
 
 /**
  * Check if a category is analytical (price-per-unit)
  */
-function isAnalyticalCategory(category: Category): boolean {
+function _isAnalyticalCategory(category: Category): boolean {
   return category.categoryType === "analytical";
 }
 
 /**
  * Get all analytical categories (price-per-unit categories) - O(1) via cache
  */
-function getAnalyticalCategories(): Category[] {
+function _getAnalyticalCategories(): Category[] {
   return _cachedAnalyticalCategories;
 }
 
 /**
  * Get all categories
  */
-function getAllCategories(): Category[] {
+function _getAllCategories(): Category[] {
   return _cachedAllCategories;
 }
 
 /**
  * Get all standard categories (regular price comparison) - O(1) via cache
  */
-function getStandardCategories(): Category[] {
+function _getStandardCategories(): Category[] {
   return _cachedStandardCategories;
 }
 

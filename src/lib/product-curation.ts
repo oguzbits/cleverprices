@@ -13,8 +13,8 @@ interface DashboardProduct {
   title: string;
   price: number;
   slug: string;
-  image: string | null;
-  rating: number | null;
+  image: string;
+  rating: number;
   ratingCount: number | null;
   testRating?: number;
   testCount?: number;

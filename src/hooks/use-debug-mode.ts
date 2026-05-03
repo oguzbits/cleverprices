@@ -15,10 +15,10 @@ export function useDebugMode() {
 
     if (adminParam === "true" || adminParam === "1") {
       localStorage.setItem("cp_debug_mode", "true");
-      setIsDebug(true);
+      Promise.resolve().then(() => setIsDebug(true));
     } else if (adminParam === "false" || adminParam === "0") {
       localStorage.removeItem("cp_debug_mode");
-      setIsDebug(false);
+      Promise.resolve().then(() => setIsDebug(false));
     }
   }, [searchParams]);
 

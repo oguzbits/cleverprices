@@ -148,8 +148,13 @@ const getInternalSearchResults = async (
         brandCategoriesResult = { rows: [] };
       }
 
-      brandMatchedCategories = brandCategoriesResult.rows
-        .map((row: any): SearchCategory | null => {
+      brandMatchedCategories = (
+        brandCategoriesResult.rows as unknown as {
+          category: string;
+          brand: string;
+        }[]
+      )
+        .map((row): SearchCategory | null => {
           const cat = allCategories[row.category as keyof typeof allCategories];
           if (!cat || cat.hidden) return null;
 
@@ -254,10 +259,10 @@ const getInternalSearchResults = async (
       categories: categorySuggestions,
       products: matchedProducts,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error(
       `Search Action Error [query="${query}", cwd=${process.cwd()}]:`,
-      error.message,
+      error instanceof Error ? error.message : String(error),
     );
     // Return empty results instead of throwing to maintain UI stability
     return { categories: [], products: [] };
@@ -280,8 +285,11 @@ export const performSearch = async (
 
   try {
     return await cachedFetch();
-  } catch (error: any) {
-    console.error(`Perform Search Crash [query="${query}"]:`, error.message);
+  } catch (error: unknown) {
+    console.error(
+      `Perform Search Crash [query="${query}"]:`,
+      error instanceof Error ? error.message : String(error),
+    );
     return await getInternalSearchResults(query, limit);
   }
 };

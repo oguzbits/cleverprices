@@ -44,7 +44,7 @@ export function CategoryNav({ country }: { country: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
-  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [_isOverflowing, setIsOverflowing] = useState(false);
 
   // Only show on landing pages (root path for each country)
   const isLandingPage =

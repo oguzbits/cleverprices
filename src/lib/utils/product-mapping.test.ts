@@ -124,8 +124,12 @@ describe("product-mapping utility", () => {
       const result = mapDbProduct(dbProd, [price], [], false); // Don't strip
 
       expect(result.specifications).toBeDefined();
-      expect(result.specifications!["Color"]).toBe("Red");
-      expect(result.specifications!["Storage"]).toBe("128 GB");
+      expect((result.specifications as Record<string, unknown>)["Color"]).toBe(
+        "Red",
+      );
+      expect(
+        (result.specifications as Record<string, unknown>)["Storage"],
+      ).toBe("128 GB");
     });
 
     it("should correctly fall back to brand prefix for brand name", () => {

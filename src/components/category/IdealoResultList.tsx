@@ -3,6 +3,7 @@
  *
  * Wrapper for product grid/list that matches Idealo's exact HTML structure.
  */
+import { type LivePriceData } from "@/components/landing/IdealoProductCard";
 import { type CountryCode } from "@/lib/countries";
 import { type LeanProduct } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,7 @@ interface IdealoResultListProps {
   countryCode: CountryCode;
   viewMode: "grid" | "list";
   className?: string;
-  livePrices?: Record<number, any>;
+  livePrices?: Record<number, Record<string, unknown>>;
 }
 
 export function IdealoResultList({
@@ -50,7 +51,9 @@ export function IdealoResultList({
             product={product}
             countryCode={countryCode}
             priority={index < 8}
-            livePriceData={livePrices?.[product.id || 0]}
+            livePriceData={
+              livePrices?.[product.id || 0] as LivePriceData | undefined
+            }
           />
         ))}
       </div>
@@ -76,7 +79,9 @@ export function IdealoResultList({
           product={product}
           countryCode={countryCode}
           priority={index < 8}
-          livePriceData={livePrices?.[product.id || 0]}
+          livePriceData={
+            livePrices?.[product.id || 0] as LivePriceData | undefined
+          }
         />
       ))}
     </div>

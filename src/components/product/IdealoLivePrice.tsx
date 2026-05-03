@@ -15,8 +15,8 @@ interface IdealoLivePriceProps {
  * Ensures that the price seen in a category grid matches the one on the product page.
  */
 export function IdealoLivePrice({
-  productId,
-  countryCode,
+  productId: _productId,
+  countryCode: _countryCode,
   initialPrice,
   priceType = "new",
   className = "text-idealo-text-primary text-[15px] font-extrabold",
@@ -32,9 +32,9 @@ export function IdealoLivePrice({
 }) {
   const live = livePriceData;
 
-  const p = live?.price || 0;
-  const up = live?.usedPrice || 0;
-  const wp = live?.warehousePrice || 0;
+  const _p = live?.price || 0;
+  const _up = live?.usedPrice || 0;
+  const _wp = live?.warehousePrice || 0;
 
   // STRICT LOGIC:
   // If priceType is "new", we ONLY show the new price.
@@ -71,7 +71,7 @@ export function IdealoLivePrice({
   );
 }
 
-function IdealoLivePriceSkeleton({
+function _IdealoLivePriceSkeleton({
   className = "h-7 w-24",
 }: {
   className?: string;

@@ -17,7 +17,7 @@ function formatClientDate(
   try {
     const d = typeof date === "string" ? new Date(date) : date;
     return d.toLocaleString(locale, options);
-  } catch (e) {
+  } catch (_e) {
     return "Invalid Date";
   }
 }

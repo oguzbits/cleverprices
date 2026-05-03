@@ -18,8 +18,8 @@ interface ViewControlsProps {
 }
 
 export function ViewControls({
-  productCount,
-  categoryName,
+  productCount: _productCount,
+  categoryName: _categoryName,
 }: ViewControlsProps) {
   const router = useRouter();
   const pathname = usePathname();

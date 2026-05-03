@@ -5,7 +5,7 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   baseUrl: string;
-  searchParams: any;
+  searchParams: Record<string, string | string[] | undefined>;
 }
 
 export function Pagination({
@@ -37,7 +37,7 @@ export function Pagination({
   // Generate page numbers
   const renderPageNumbers = () => {
     const pages = [];
-    const maxVisible = 5;
+    const _maxVisible = 5;
 
     // Always show first, last, and window around current
     // Pattern: 1 2 ... 112 (if on 1)

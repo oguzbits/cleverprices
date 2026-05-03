@@ -22,14 +22,14 @@ interface IdealoProductCardProps {
   price: number;
   currency?: string;
   slug: string;
-  image?: string | null;
+  image?: string;
   rating?: number | null; // Community Rating (Stars)
   ratingCount?: number | null; // Community Review Count
-  testRating?: number; // Professional "Note" (e.g. 1.0 - 6.0)
-  testCount?: number; // Number of tests
+  testRating?: number | null; // Professional "Note" (e.g. 1.0 - 6.0)
+  testCount?: number | null; // Number of tests
   badgeText?: string;
   categoryName?: string;
-  discountRate?: number;
+  discountRate?: number | null;
   isBestseller?: boolean;
   isVariantGroup?: boolean;
   countryCode?: string;
@@ -144,7 +144,7 @@ export function IdealoProductCard({
             {typeof rating === "number" && rating > 0 ? (
               <IdealoStarRating
                 rating={rating}
-                reviewCount={ratingCount}
+                reviewCount={ratingCount ?? undefined}
                 className="mb-1.5"
               />
             ) : null}

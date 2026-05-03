@@ -21,10 +21,10 @@ export default async function HomeContent({
       // Fetch enough data for curation with margin for filtering
       const [rawDeals, rawPopular, rawNew] = await fetchHomeData(countryCode);
       return { rawDeals, rawPopular, rawNew, isBusy: false };
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (
         error instanceof DatabaseBusyError ||
-        error?.name === "DatabaseBusyError"
+        (error instanceof Error && error.name === "DatabaseBusyError")
       ) {
         return { isBusy: true, rawDeals: [], rawPopular: [], rawNew: [] };
       }
@@ -139,12 +139,15 @@ export default async function HomeContent({
       countryCode,
     );
     livePriceMap = new Map(
-      Object.entries(priceRecord).map(([id, data]) => [Number(id), data]),
-    ) as any;
-  } catch (error: any) {
+      Object.entries(priceRecord).map(([id, data]) => [
+        Number(id),
+        data as LivePriceData,
+      ]),
+    );
+  } catch (error: unknown) {
     if (
       error instanceof DatabaseBusyError ||
-      error?.name === "DatabaseBusyError"
+      (error instanceof Error && error.name === "DatabaseBusyError")
     ) {
       return (
         <ServerBusy

@@ -162,7 +162,7 @@ export function formatTechText(text: string): string {
  * Clean up long product titles for display (e.g., in cards and breadcrumbs)
  * Preserves model identifiers while removing extra metadata.
  */
-export function formatDisplayTitle(title: string, model?: string): string {
+export function formatDisplayTitle(title: string, _model?: string): string {
   if (!title) return "";
 
   // User SSOT: We now trust the standardized title from mapDbProduct.

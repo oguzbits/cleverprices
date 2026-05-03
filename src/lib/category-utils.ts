@@ -27,14 +27,14 @@ export function getCategoryPath(categorySlug: string): string {
  * Check if a category is analytical (price-per-unit)
  * NOTE: This requires full CategoryData, so should be used with care in client.
  */
-function isAnalyticalCategory(category: CategoryData): boolean {
+function _isAnalyticalCategory(category: CategoryData): boolean {
   return category.categoryType === "analytical";
 }
 
 /**
  * Get breadcrumb trail for a category (slugs only)
  */
-function getBreadcrumbSlugs(categorySlug: CategorySlug): CategorySlug[] {
+function _getBreadcrumbSlugs(categorySlug: CategorySlug): CategorySlug[] {
   const breadcrumbs: CategorySlug[] = [];
   let current: CategorySlug | undefined = categorySlug;
 
@@ -50,7 +50,10 @@ function getBreadcrumbSlugs(categorySlug: CategorySlug): CategorySlug[] {
 /**
  * Get unique values for a field from a set of products
  */
-function getUniqueFieldValues(products: any[], field: string): string[] {
+function _getUniqueFieldValues(
+  products: Record<string, unknown>[],
+  field: string,
+): string[] {
   if (!products) return [];
   const values = new Set<string>();
   products.forEach((p) => {
@@ -59,7 +62,7 @@ function getUniqueFieldValues(products: any[], field: string): string[] {
       if (Array.isArray(val)) {
         val.forEach((v) => values.add(v));
       } else {
-        values.add(val);
+        values.add(String(val));
       }
     }
   });

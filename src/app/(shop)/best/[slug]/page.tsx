@@ -60,7 +60,7 @@ export default async function BestNichePage({ params }: Props) {
   if (!category) notFound();
 
   // Combine niche filters with defaults
-  const searchParams: any = {};
+  const searchParams: Record<string, string | string[] | undefined> = {};
   if (niche.filters.maxPrice) {
     searchParams.maxPrice = niche.filters.maxPrice.toString();
   }

@@ -1,18 +1,13 @@
-import { IdealoProductCarousel } from "@/components/IdealoProductCarousel";
+import {
+  type CarouselProduct,
+  IdealoProductCarousel,
+} from "@/components/IdealoProductCarousel";
+import { type LivePriceData } from "@/components/landing/IdealoProductCard";
 import { PrefetchLink } from "@/components/ui/PrefetchLink";
 
-export interface HeroProduct {
-  id?: number;
-  title: string;
-  price: number;
-  slug: string;
-  image?: string | null;
-  badgeText?: string;
-}
-
 interface IdealoHeroProps {
-  products: HeroProduct[];
-  livePriceMap?: Map<number, any>;
+  products: CarouselProduct[];
+  livePriceMap?: Map<number, LivePriceData>;
 }
 
 export function IdealoHero({ products, livePriceMap }: IdealoHeroProps) {
@@ -26,7 +21,7 @@ export function IdealoHero({ products, livePriceMap }: IdealoHeroProps) {
         <div className="min-w-0 flex-1 overflow-hidden rounded-[6px]">
           <IdealoProductCarousel
             title="Beliebte Produkte"
-            products={heroProducts as any}
+            products={heroProducts as CarouselProduct[]}
             priorityImages
             livePriceMap={livePriceMap}
           />

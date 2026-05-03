@@ -40,8 +40,11 @@ export function decompressHistory(blob: Buffer | Uint8Array | null): string {
     try {
       const decompressed = gunzipSync(input);
       return new TextDecoder().decode(decompressed);
-    } catch (error: any) {
-      console.error("[History Decompression Error]", error?.message || error);
+    } catch (error) {
+      console.error(
+        "[History Decompression Error]",
+        error instanceof Error ? error.message : error,
+      );
       // If decompression fails despite having the header, fall back to plain text
     }
   }

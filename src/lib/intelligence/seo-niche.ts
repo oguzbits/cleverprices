@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, lte, SQL } from "drizzle-orm";
 
 import { db } from "../../db";
-import { prices, products, type Product as DbProduct } from "../../db/schema";
+import { prices, type Product as DbProduct, products } from "../../db/schema";
 import type { Product } from "../product-definitions";
 import { litePriceColumns, liteProductColumns } from "../product-definitions";
 import { mapDbProduct } from "../utils/product-mapping";
@@ -36,7 +36,7 @@ export async function getNicheBySlug(slug: string): Promise<NichePage | null> {
 /**
  * Fetches products for a specific niche with its unique filtering logic.
  */
-async function getNicheProducts(niche: NichePage): Promise<Product[]> {
+async function _getNicheProducts(niche: NichePage): Promise<Product[]> {
   const whereClauses: SQL[] = [eq(products.category, niche.category)];
 
   if (niche.filters.maxPrice) {

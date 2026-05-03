@@ -112,7 +112,7 @@ export function OfferComparisonTable({
       {sortedOffers.map((offer, index) => {
         const sourceConfig =
           SOURCE_CONFIG[offer.source] || SOURCE_CONFIG.static;
-        const conditionConfig =
+        const _conditionConfig =
           CONDITION_CONFIG[offer.condition] || CONDITION_CONFIG.new;
         const isBestPrice = index === 0;
 

@@ -33,7 +33,7 @@ export function normalizeBrandName(brand: string): string {
  * Checks if the incoming brand name (from enrichment) is a known alias
  * or translation of the marketplace brand name.
  */
-function normalizeBrandDynamic(
+function _normalizeBrandDynamic(
   incomingBrand: string,
   marketplaceBrand: string,
 ): string {

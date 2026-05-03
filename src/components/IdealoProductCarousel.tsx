@@ -12,14 +12,14 @@ export interface CarouselProduct {
   subtitle?: string;
   price: number;
   slug: string;
-  image?: string | null;
+  image?: string;
   rating?: number | null;
   ratingCount?: number | null;
-  testRating?: number;
-  testCount?: number;
+  testRating?: number | null;
+  testCount?: number | null;
   badgeText?: string;
   categoryName?: string;
-  discountRate?: number;
+  discountRate?: number | null;
   isBestseller?: boolean;
   isVariantGroup?: boolean;
 }

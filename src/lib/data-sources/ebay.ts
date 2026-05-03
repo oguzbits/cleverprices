@@ -305,8 +305,6 @@ class EbayDataSource implements DataSourceProvider {
     const currency = EBAY_CURRENCIES[country];
     const price = parseFloat(item.sellingStatus[0].currentPrice[0].__value__);
     const condition = mapEbayCondition(item.condition?.[0]?.conditionId[0]);
-    const conditionName =
-      item.condition?.[0]?.conditionDisplayName[0] || "Used";
 
     // Build affiliate link with EPN tracking
     let affiliateLink = item.viewItemURL[0];
@@ -319,6 +317,7 @@ class EbayDataSource implements DataSourceProvider {
       item.shippingInfo?.[0]?.shippingServiceCost?.[0]?.__value__;
     const freeShipping = shippingCost === "0.0" || shippingCost === "0.00";
 
+    const lastUpdated = getSafeDate();
     const offer: ProductOffer = {
       source: "ebay",
       price,
@@ -328,7 +327,7 @@ class EbayDataSource implements DataSourceProvider {
       condition,
       availability: "in_stock",
       freeShipping,
-      lastUpdated: getSafeDate(),
+      lastUpdated,
       country,
     };
 
@@ -340,7 +339,7 @@ class EbayDataSource implements DataSourceProvider {
       specifications: {},
       offers: [offer],
       bestOffer: offer,
-      lastUpdated: getSafeDate(),
+      lastUpdated,
       primarySource: "ebay",
       sources: ["ebay"],
     };

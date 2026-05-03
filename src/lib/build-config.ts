@@ -26,7 +26,7 @@ const PRICES_UPDATED_AT = "2026-01-02T22:00:00Z";
 /**
  * Get human-readable time since prices were updated
  */
-function getPricesAge(): string {
+function _getPricesAge(): string {
   const updateTime = new Date(PRICES_UPDATED_AT).getTime();
   const now = getSafeNow();
   const hours = Math.floor((now - updateTime) / (1000 * 60 * 60));

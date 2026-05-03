@@ -14,7 +14,7 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ products, countryCode }: ProductGridProps) {
-  const countryConfig = getCountryByCode(countryCode);
+  const _countryConfig = getCountryByCode(countryCode);
 
   return (
     <div className="-mx-px grid auto-rows-fr grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">

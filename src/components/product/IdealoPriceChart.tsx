@@ -88,7 +88,7 @@ export function IdealoPriceChart({
 
 function ChartRenderer({
   history,
-  interactive,
+  interactive: _interactive,
   height,
   isModal = false,
   livePrice,
@@ -118,133 +118,141 @@ function ChartRenderer({
     return Date.now();
   });
 
-  const { data, minPrice, maxPrice, minDate, maxDate, stats, yTicks, yDomain } =
-    React.useMemo(() => {
-      // 1. Sort & Map
-      const rawSorted = [...history]
-        .map((h) => ({
-          date: new Date(h.date).getTime(),
-          price: h.price,
-        }))
-        .sort((a, b) => a.date - b.date);
+  const {
+    data,
+    minPrice: _minPrice,
+    maxPrice: _maxPrice,
+    minDate,
+    maxDate,
+    stats,
+    yTicks,
+    yDomain,
+  } = React.useMemo(() => {
+    // 1. Sort & Map
+    const rawSorted = [...history]
+      .map((h) => ({
+        date: new Date(h.date).getTime(),
+        price: h.price,
+      }))
+      .sort((a, b) => a.date - b.date);
 
-      // Inject livePrice if available
-      if (livePrice !== undefined && livePrice !== null) {
-        rawSorted.push({
-          date: nowTimestamp,
-          price: livePrice,
-        });
+    // Inject livePrice if available
+    if (livePrice !== undefined && livePrice !== null) {
+      rawSorted.push({
+        date: nowTimestamp,
+        price: livePrice,
+      });
+    }
+
+    // 2. Cutoff
+    const now = new Date(nowTimestamp);
+    now.setHours(23, 59, 59, 999);
+
+    let daysBack = 90;
+    if (timeframe === "1M") daysBack = 30;
+    if (timeframe === "6M") daysBack = 180;
+    if (timeframe === "1J") daysBack = 365;
+
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - daysBack);
+    startDate.setHours(0, 0, 0, 0);
+
+    const startTime = startDate.getTime();
+
+    // 3. Fill Gaps
+    const priceMap = new Map<string, number>();
+    rawSorted.forEach((d) => {
+      const dateObj = new Date(d.date);
+      const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
+      priceMap.set(dateStr, d.price);
+    });
+
+    const filledData: { date: number; price: number }[] = [];
+
+    let currentPrice = 0;
+    const preStartData = rawSorted.filter((d) => d.date < startTime);
+    if (preStartData.length > 0) {
+      currentPrice = preStartData[preStartData.length - 1].price;
+    } else if (rawSorted.length > 0) {
+      currentPrice = rawSorted[0].price;
+    }
+
+    const loopDate = new Date(startDate);
+    const endDate = new Date(now);
+
+    while (loopDate <= endDate) {
+      const dateStr = `${loopDate.getFullYear()}-${String(loopDate.getMonth() + 1).padStart(2, "0")}-${String(loopDate.getDate()).padStart(2, "0")}`;
+      if (priceMap.has(dateStr)) {
+        currentPrice = priceMap.get(dateStr)!;
       }
-
-      // 2. Cutoff
-      const now = new Date(nowTimestamp);
-      now.setHours(23, 59, 59, 999);
-
-      let daysBack = 90;
-      if (timeframe === "1M") daysBack = 30;
-      if (timeframe === "6M") daysBack = 180;
-      if (timeframe === "1J") daysBack = 365;
-
-      const startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - daysBack);
-      startDate.setHours(0, 0, 0, 0);
-
-      const startTime = startDate.getTime();
-
-      // 3. Fill Gaps
-      const priceMap = new Map<string, number>();
-      rawSorted.forEach((d) => {
-        const dateObj = new Date(d.date);
-        const dateStr = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, "0")}-${String(dateObj.getDate()).padStart(2, "0")}`;
-        priceMap.set(dateStr, d.price);
+      filledData.push({
+        date: loopDate.getTime(),
+        price: currentPrice,
       });
 
-      const filledData: { date: number; price: number }[] = [];
+      loopDate.setDate(loopDate.getDate() + 1);
+    }
 
-      let currentPrice = 0;
-      const preStartData = rawSorted.filter((d) => d.date < startTime);
-      if (preStartData.length > 0) {
-        currentPrice = preStartData[preStartData.length - 1].price;
-      } else if (rawSorted.length > 0) {
-        currentPrice = rawSorted[0].price;
-      }
+    const prices = filledData.map((d) => d.price);
+    const valid = filledData.length > 0;
 
-      const loopDate = new Date(startDate);
-      const endDate = new Date(now);
+    const latestPrice = prices[prices.length - 1] || 0;
+    const lowest = valid ? Math.min(...prices) : 0;
+    const highest = valid ? Math.max(...prices) : 0;
+    const avg = valid ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
 
-      while (loopDate <= endDate) {
-        const dateStr = `${loopDate.getFullYear()}-${String(loopDate.getMonth() + 1).padStart(2, "0")}-${String(loopDate.getDate()).padStart(2, "0")}`;
-        if (priceMap.has(dateStr)) {
-          currentPrice = priceMap.get(dateStr)!;
-        }
-        filledData.push({
-          date: loopDate.getTime(),
-          price: currentPrice,
-        });
+    const lowestPoint = filledData.find((d) => d.price === lowest);
+    const highestPoint = filledData.find((d) => d.price === highest);
 
-        loopDate.setDate(loopDate.getDate() + 1);
-      }
+    // Calculate Y Axis Intervals (Idealo Style)
+    // They typically use clean, even numbers.
+    // 1. Determine Nice Range
+    const range = highest - lowest;
+    // Add padding (approx 10% bottom, 10% top)
+    const paddedMin = lowest - range * 0.1;
+    const paddedMax = highest + range * 0.1;
 
-      const prices = filledData.map((d) => d.price);
-      const valid = filledData.length > 0;
+    // Find nice scale
+    const roughStep = (paddedMax - paddedMin) / 5; // Aim for ~5 ticks
+    // Round roughStep to nice number (0.5, 1, 2, 5, 10, etc.)
+    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+    const normalizedStep = roughStep / magnitude; // 1.23
+    let stepSize;
+    if (normalizedStep < 1.5) stepSize = 1 * magnitude;
+    else if (normalizedStep < 3) stepSize = 2 * magnitude;
+    else if (normalizedStep < 7.5) stepSize = 5 * magnitude;
+    else stepSize = 10 * magnitude;
 
-      const latestPrice = prices[prices.length - 1] || 0;
-      const lowest = valid ? Math.min(...prices) : 0;
-      const highest = valid ? Math.max(...prices) : 0;
-      const avg = valid ? prices.reduce((a, b) => a + b, 0) / prices.length : 0;
+    // Ensure min step of 0.01
+    stepSize = Math.max(stepSize, 0.01);
 
-      const lowestPoint = filledData.find((d) => d.price === lowest);
-      const highestPoint = filledData.find((d) => d.price === highest);
+    const yMin = Math.floor(paddedMin / stepSize) * stepSize;
+    const yMax = Math.ceil(paddedMax / stepSize) * stepSize;
 
-      // Calculate Y Axis Intervals (Idealo Style)
-      // They typically use clean, even numbers.
-      // 1. Determine Nice Range
-      const range = highest - lowest;
-      // Add padding (approx 10% bottom, 10% top)
-      const paddedMin = lowest - range * 0.1;
-      const paddedMax = highest + range * 0.1;
+    const ticks = [];
+    for (let v = yMin; v <= yMax + stepSize / 1000; v += stepSize) {
+      ticks.push(v);
+    }
 
-      // Find nice scale
-      const roughStep = (paddedMax - paddedMin) / 5; // Aim for ~5 ticks
-      // Round roughStep to nice number (0.5, 1, 2, 5, 10, etc.)
-      const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
-      const normalizedStep = roughStep / magnitude; // 1.23
-      let stepSize;
-      if (normalizedStep < 1.5) stepSize = 1 * magnitude;
-      else if (normalizedStep < 3) stepSize = 2 * magnitude;
-      else if (normalizedStep < 7.5) stepSize = 5 * magnitude;
-      else stepSize = 10 * magnitude;
-
-      // Ensure min step of 0.01
-      stepSize = Math.max(stepSize, 0.01);
-
-      const yMin = Math.floor(paddedMin / stepSize) * stepSize;
-      const yMax = Math.ceil(paddedMax / stepSize) * stepSize;
-
-      const ticks = [];
-      for (let v = yMin; v <= yMax + stepSize / 1000; v += stepSize) {
-        ticks.push(v);
-      }
-
-      return {
-        data: filledData,
-        minPrice: lowest,
-        maxPrice: highest,
-        yDomain: { min: yMin, max: yMax },
-        yTicks: ticks,
-        minDate: filledData[0]?.date || startTime,
-        maxDate: filledData[filledData.length - 1]?.date || now.getTime(),
-        stats: {
-          lowest,
-          highest,
-          avg,
-          latestPrice,
-          lowestDate: lowestPoint?.date,
-          highestDate: highestPoint?.date,
-          days: filledData.length,
-        },
-      };
-    }, [history, livePrice, timeframe, nowTimestamp]);
+    return {
+      data: filledData,
+      minPrice: lowest,
+      maxPrice: highest,
+      yDomain: { min: yMin, max: yMax },
+      yTicks: ticks,
+      minDate: filledData[0]?.date || startTime,
+      maxDate: filledData[filledData.length - 1]?.date || now.getTime(),
+      stats: {
+        lowest,
+        highest,
+        avg,
+        latestPrice,
+        lowestDate: lowestPoint?.date,
+        highestDate: highestPoint?.date,
+        days: filledData.length,
+      },
+    };
+  }, [history, livePrice, timeframe, nowTimestamp]);
 
   // Helpers
   const formatPrice = (price: number) =>

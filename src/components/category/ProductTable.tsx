@@ -20,7 +20,7 @@ interface ProductTableProps {
 export function ProductTable({
   products,
   unitLabel,
-  categorySlug,
+  categorySlug: _categorySlug,
   countryCode,
   sortBy,
   sortOrder,

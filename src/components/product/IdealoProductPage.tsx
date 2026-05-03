@@ -133,17 +133,17 @@ export function IdealoProductPage({
   // This avoids JSON.parse and complex logic inside the JSX return,
   // making the component pure and compatible with the React Compiler.
   const displaySpecs = (() => {
-    let rawSpecs: Record<string, any> = {};
-    const parseSpecs = (val: any) => {
+    let rawSpecs: Record<string, unknown> = {};
+    const parseSpecs = (val: unknown) => {
       if (!val) return {};
       if (typeof val === "string") {
         try {
           return JSON.parse(val);
-        } catch (e) {
+        } catch (_e) {
           return {};
         }
       }
-      return val;
+      return val as Record<string, unknown>;
     };
 
     rawSpecs = parseSpecs(
@@ -571,7 +571,7 @@ function SimilarCarousel({
 
 function ParentHeroImage({
   product,
-  countryCode,
+  countryCode: _countryCode,
   variants = [],
 }: {
   product: Product;

@@ -3,13 +3,12 @@ import { Star } from "lucide-react";
 import { ClientDate } from "@/components/ui/ClientDate";
 import { LegalPrice } from "@/components/ui/LegalPrice";
 import { PaymentMethodIcon } from "@/components/ui/PaymentMethodIcon";
-import { type CountryCode,getCountryByCode } from "@/lib/countries";
+import { type CountryCode, getCountryByCode } from "@/lib/countries";
 import { type ProductOffer } from "@/lib/data-sources";
 import { type ProductCondition } from "@/lib/data-sources/types";
 import { type Product } from "@/lib/product-definitions";
 import { getSafeDate } from "@/lib/server/deterministic-time";
 import { formatCurrency } from "@/lib/utils/formatting";
-
 
 interface OffersListProps {
   product: Product;
@@ -331,22 +330,11 @@ export function IdealoProductOffers({
           <span className="mt-1 block">
             Zuletzt aktualisiert:{" "}
             <ClientDate
-
               date={product.pricesLastUpdated?.[countryCode] || getSafeDate()}
             />
-
           </span>
         )}
       </div>
-    </div>
-  );
-}
-
-function IdealoProductOffersSkeleton() {
-  return (
-    <div className="order-2 mb-11 w-full min-w-0 animate-pulse xl:w-3/4 xl:pl-[15px]">
-      <div className="h-10 rounded-t-md border border-[#b4b4b4] bg-gray-100" />
-      <div className="h-32 rounded-b-md border border-t-0 border-[#b4b4b4] bg-white" />
     </div>
   );
 }

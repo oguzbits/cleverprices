@@ -9,7 +9,7 @@ import {
  * These are used in Server Components to benefit from Next.js caching
  */
 
-async function getAllCountries(): Promise<Country[]> {
+export async function getAllCountries(): Promise<Country[]> {
   return getAllCountriesSync();
 }
 

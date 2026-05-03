@@ -1,12 +1,9 @@
 import { and, eq, inArray } from "drizzle-orm";
+
 import { db } from "../../db";
 import { prices } from "../../db/schema";
 import { withRetry } from "../../db/utils";
-import {
-  litePriceColumns,
-  type FlexibleProduct,
-  type Product,
-} from "../product-definitions";
+import { litePriceColumns, type Product } from "../product-definitions";
 import { getBestPrice } from "../utils/price-selection";
 import { parseHistoryJson } from "../utils/product-mapping";
 import {
@@ -233,9 +230,7 @@ export async function mergeLivePrices(
       if (!p.specifications || Object.keys(p.specifications).length === 0) {
         return updated as Product;
       }
-      return calculateProductMetrics(
-        updated as unknown as FlexibleProduct,
-      ) as Product;
+      return calculateProductMetrics(updated as Partial<Product>) as Product;
     }
     return p;
   });

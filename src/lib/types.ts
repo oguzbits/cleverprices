@@ -9,7 +9,7 @@ export interface LeanProduct {
   variantSuffix?: string;
   specificationsSource?: string | null;
   subtitle?: string;
-  image?: string | null;
+  image?: string;
   pricePerUnit?: number;
   capacity?: number | null;
   capacityUnit?: string | null;

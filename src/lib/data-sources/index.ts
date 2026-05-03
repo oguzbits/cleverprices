@@ -55,7 +55,7 @@ function isPaApiConfiguredSync(): boolean {
 /**
  * Async version for consistent API
  */
-async function isPaApiConfigured(): Promise<boolean> {
+async function _isPaApiConfigured(): Promise<boolean> {
   return isPaApiConfiguredSync();
 }
 

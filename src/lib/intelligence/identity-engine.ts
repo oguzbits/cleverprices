@@ -7,7 +7,7 @@ import { getProductIdentity } from "@/lib/utils/product-identity";
  * Responsible for Entity Resolution / Clustering of identical products.
  */
 
-interface SemanticCluster {
+interface _SemanticCluster {
   hash: string;
   representativeId: number;
   productIds: number[];

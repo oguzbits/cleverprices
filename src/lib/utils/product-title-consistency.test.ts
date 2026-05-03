@@ -22,7 +22,7 @@ describe("Product Title Consistency Guard Rail", () => {
     };
 
     // 1. Get Identity (Used for internal lookups)
-    const identity = getProductIdentity(product);
+    const _identity = getProductIdentity(product);
 
     // 2. Get Family Identity (Source of truth for DB/Grid)
     const { title: familyFullTitle, displaySubtitle } =

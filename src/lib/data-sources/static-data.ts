@@ -7,7 +7,8 @@
 
 import type { CategorySlug } from "@/lib/categories";
 import type { CountryCode } from "@/lib/countries";
-import type { Currency, Product } from "@/types";
+import { getSafeDate } from "@/lib/server/deterministic-time";
+import type { Product } from "@/types";
 
 import type {
   AvailabilityStatus,
@@ -16,21 +17,6 @@ import type {
   ProductOffer,
   UnifiedProduct,
 } from "./types";
-
-/**
- * Map country codes to currencies
- */
-const COUNTRY_CURRENCIES: Record<CountryCode, Currency> = {
-  us: "USD",
-  uk: "GBP",
-  ca: "CAD",
-  de: "EUR",
-  fr: "EUR",
-  es: "EUR",
-  it: "EUR",
-};
-
-import { getSafeDate } from "@/lib/server/deterministic-time";
 
 /**
  * Static Data Source Provider
@@ -90,14 +76,14 @@ class StaticDataSource implements DataSourceProvider {
     try {
       // Try country-specific data first
       const countryPath = `@/lib/data/${country}/${category}.json`;
-      const module = await import(/* webpackIgnore: true */ countryPath);
-      return module.default || module;
+      const dataModule = await import(/* webpackIgnore: true */ countryPath);
+      return dataModule.default || dataModule;
     } catch {
       try {
         // Fall back to US data
         const fallbackPath = `@/lib/data/us/${category}.json`;
-        const module = await import(/* webpackIgnore: true */ fallbackPath);
-        return module.default || module;
+        const dataModule = await import(/* webpackIgnore: true */ fallbackPath);
+        return dataModule.default || dataModule;
       } catch {
         return [];
       }
@@ -112,8 +98,6 @@ class StaticDataSource implements DataSourceProvider {
     category: CategorySlug,
     country: CountryCode,
   ): UnifiedProduct {
-    const currency = COUNTRY_CURRENCIES[country];
-
     // Create offer from product data
     const offer: ProductOffer = {
       source: "static",

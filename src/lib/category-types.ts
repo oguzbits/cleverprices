@@ -131,5 +131,5 @@ export interface CategoryHierarchy<T = Category> {
 export interface CategoryLink {
   name: string;
   slug: CategorySlug;
-  icon?: any; // Generic icon type to avoid direct dependency on lucide-react in core types
+  icon?: unknown; // Generic icon type to avoid direct dependency on lucide-react in core types
 }

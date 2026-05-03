@@ -3,7 +3,7 @@ import { describe, expect, it } from "bun:test";
 import { getFamilyIdentity } from "./product-families";
 
 // Helper to create mock products
-const createProduct = (overrides: any) => ({
+const createProduct = (overrides: Record<string, unknown>) => ({
   id: 100, // Base ID
   slug: "test-slug",
   title: "Test Title",
