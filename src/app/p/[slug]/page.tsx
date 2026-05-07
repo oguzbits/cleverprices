@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       return { title: BRAND_NAME };
     }
 
-    const { product, isParentView } = renderData;
+    const { product, isParentView, canonicalId, canonicalSlug } = renderData;
     if (!product) return { title: BRAND_NAME };
 
     const displayTitle = isParentView
@@ -58,9 +58,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       : product.title;
     const price = product.prices?.[DEFAULT_COUNTRY];
 
+    const { getProductCanonicalUrl } = await import("@/lib/utils/url");
+    const canonical = getProductCanonicalUrl(canonicalId, canonicalSlug);
+
     return {
       title: `${displayTitle} Preisvergleich | ${BRAND_NAME}`,
       description: `${displayTitle} im Preisvergleich. Aktueller Bestpreis: ${price ? price.toFixed(2) + "€" : "Jetzt ansehen"}. Top-Hardware Angebote bei ${BRAND_NAME}.`,
+      alternates: {
+        canonical,
+      },
     };
   } catch (error) {
     // Silent failure for metadata to avoid 500ing the whole page

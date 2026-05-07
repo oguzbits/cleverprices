@@ -210,17 +210,20 @@ async function getCachedMainProduct(slug: string, _countryCode: string) {
 
     if (!product) {
       product = await getProductBySlugSync(slug, false);
-      if (product) {
+      if (product && product.id) {
         const { slug: newSlug } = getFamilyIdentitySync(product, []);
+        // Redirect to HUB (900M prefix) for slug-only URLs to centralize indexation
+        const hubId = 900000000 + (product.id % 100000000);
         return {
-          redirect: getProductPath(product.id, newSlug),
+          redirect: getProductPath(hubId, newSlug),
           isPermanent: true,
         };
       }
       const asinResult = await findProductSlugByAsinSuffixSync(slug);
-      if (asinResult) {
+      if (asinResult && asinResult.id) {
+        const hubId = 900000000 + (asinResult.id % 100000000);
         return {
-          redirect: getProductPath(asinResult.id, asinResult.slug),
+          redirect: getProductPath(hubId, asinResult.slug),
           isPermanent: true,
         };
       }
