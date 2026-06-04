@@ -91,6 +91,9 @@ const nextConfig: NextConfig = {
       "@radix-ui/react-slot",
     ],
   },
+  outputFileTracingIncludes: {
+    "/**/*": ["data/cleverprices.db", "drizzle/**/*"],
+  },
   // Configure MDX file extensions
   pageExtensions: ["js", "jsx", "md", "mdx", "ts", "tsx"],
   poweredByHeader: false,

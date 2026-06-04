@@ -46,6 +46,7 @@ next-env.d.ts
 
 # database (lite.db is now fetched from Vercel Blob during build)
 *.db
+!/data/cleverprices.db
 *.db-wal
 *.db-shm
 *.backup

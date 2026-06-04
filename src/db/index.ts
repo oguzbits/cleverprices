@@ -51,12 +51,19 @@ function createDbClient(): Client {
   // 🚀 PERFORMANCE BOOSTERS (In-Memory Speed)
   // We force SQLite to cache as much as possible in RAM via memory-mapped I/O.
   try {
+    const isVercel = process.env.VERCEL === "1";
     // Shared Boosters
     client.execute("PRAGMA busy_timeout = 5000").catch(() => {}); // [STABILITY SHIELD] Reverted to 5s to prevent returning empty arrays under load
     client.execute("PRAGMA cache_size = -200000").catch(() => {}); // ~200MB RAM cache
-    client.execute("PRAGMA journal_mode = WAL").catch(() => {});
-    client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
-    client.execute("PRAGMA mmap_size = 268435456").catch(() => {}); // 256MB memory-map
+
+    if (isVercel) {
+      // Force read-only mode to prevent write attempts/failures on Vercel
+      client.execute("PRAGMA query_only = ON").catch(() => {});
+    } else {
+      client.execute("PRAGMA journal_mode = WAL").catch(() => {});
+      client.execute("PRAGMA synchronous = NORMAL").catch(() => {});
+      client.execute("PRAGMA mmap_size = 268435456").catch(() => {}); // 256MB memory-map
+    }
   } catch (e) {
     console.warn(
       "[DB] Failed to set performance PRAGMAs:",
@@ -94,8 +101,8 @@ export const dbReady: Promise<void> = (async () => {
       return;
     }
 
-    // Run migrations AUTOMATICALLY in production
-    if (isProductionEnvironment) {
+    // Run migrations AUTOMATICALLY in production (unless running on Vercel)
+    if (isProductionEnvironment && process.env.VERCEL !== "1") {
       console.log("[DB] 🏁 Migration sequence started...");
 
       // Set a strict timeout for the entire migration check to prevent 500 errors on cold starts

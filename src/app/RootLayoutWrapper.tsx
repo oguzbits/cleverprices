@@ -57,6 +57,13 @@ export default function RootLayoutWrapper({
         className={cn(inter.variable, "bg-background min-h-screen antialiased")}
       >
         <div className="flex min-h-screen flex-col">
+          <div className="relative z-[100] border-b border-amber-500/20 bg-amber-500/10 px-4 py-2.5 text-center text-xs font-medium text-amber-800 dark:text-amber-300">
+            ⚠️ <strong>Demonstrationsmodus:</strong> Die Preise sind nicht
+            aktuell (historische Daten). Diese Webseite dient ausschließlich
+            Vorführungszwecken. / <strong>Demo Mode:</strong> Prices are
+            historical and not live. This website is for demonstration purposes
+            only.
+          </div>
           <BfcacheRecovery />
           {!hideNavbar && <Navbar />}
           <main className="flex-1">{children}</main>

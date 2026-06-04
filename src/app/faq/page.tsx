@@ -69,10 +69,11 @@ export default function FAQPage() {
             Woher stammen die Preisdaten?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
-            Wir nutzen offizielle APIs (wie die Amazon Product Advertising API),
-            um Preise und Verfügbarkeit direkt von großen Händlern abzurufen.
-            Dies stellt sicher, dass die angezeigten Daten aktuell und direkt
-            vom Händler bezogen sind.
+            Die Preisdaten wurden ursprünglich über offizielle APIs (wie die
+            Amazon Product Advertising API) direkt von großen Händlern
+            abgerufen. Bitte beachten Sie, dass das Projekt sich im
+            Demonstrationsmodus befindet und diese Daten nun statisch archiviert
+            sind.
           </AccordionContent>
         </AccordionItem>
 
@@ -81,10 +82,10 @@ export default function FAQPage() {
             Wie oft werden die Preise aktualisiert?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
-            Derzeit werden unsere Preise alle 24 Stunden aktualisiert. Da der
-            Hardware-Markt (insbesondere für Speicher) volatil sein kann,
-            empfehlen wir immer, vor dem Kauf auf die Händlerseite zu klicken,
-            um den endgültigen Preis zu überprüfen.
+            Im aktuellen Demonstrationsmodus werden die Preise nicht mehr
+            aktualisiert. Es handelt sich um historische Momentaufnahmen. Vor
+            dem Kauf sollten Sie den aktuellen Preis direkt auf der Händlerseite
+            prüfen.
           </AccordionContent>
         </AccordionItem>
 
@@ -163,11 +164,9 @@ export default function FAQPage() {
             Ist {BRAND_DOMAIN} kostenlos nutzbar?
           </AccordionTrigger>
           <AccordionContent className="text-muted-foreground leading-relaxed">
-            Ja, die Nutzung ist für Sie komplett kostenlos. Wir finanzieren uns
-            über Affiliate-Partnerschaften (z. B. das Amazon PartnerNet) und
-            erhalten eine kleine Provision bei qualifizierten Käufen über unsere
-            Links. Diese Einnahmen ermöglichen es uns, die Dateninfrastruktur zu
-            betreiben und unvoreingenommene Preisvergleiche anzubieten.
+            Ja, die Nutzung ist komplett kostenlos. Da diese Webseite
+            ausschließlich zu Demonstrationszwecken betrieben wird, gibt es
+            keinerlei Werbung, Sponsoring oder kommerzielle Absichten.
           </AccordionContent>
         </AccordionItem>
 

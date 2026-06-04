@@ -139,9 +139,10 @@ export function Footer() {
         <div className="mt-10 border-t border-white/10 pt-6">
           <div className="flex flex-col items-center justify-between gap-4 text-sm text-white/60 sm:flex-row">
             <p>
-              * Alle Preise inkl. MwSt., zzgl. Versandkosten. Die Angaben können
-              sich seit der letzten Aktualisierung geändert haben. Als
-              Amazon-Partner verdiene ich an qualifizierten Verkäufen.
+              * Alle Preise inkl. MwSt., zzgl. Versandkosten.{" "}
+              <strong>Hinweis:</strong> Die gezeigten Preise sind historische
+              Daten aus einem archivierten Demonstrationszeitraum und werden
+              nicht mehr aktualisiert.
             </p>
             <div className="flex flex-col items-end gap-1">
               <p>
