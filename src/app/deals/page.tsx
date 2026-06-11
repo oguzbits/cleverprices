@@ -24,9 +24,12 @@ export const metadata: Metadata = {
   },
 };
 
-export const dynamic = "force-dynamic";
-
 export default async function DealsPage({ searchParams }: Props) {
+  // Build-time safety: Prevent prerendering from hitting dynamic request data
+  if (process.env.NEXT_PHASE === "phase-production-build") {
+    return <div className="h-screen w-full bg-gray-50" />;
+  }
+
   const resolvedSearchParams = await searchParams;
 
   // Use the cached orchestrator for metadata/category lookup

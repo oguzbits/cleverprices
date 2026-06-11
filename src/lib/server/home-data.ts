@@ -1,3 +1,5 @@
+import { cacheLife } from "next/cache";
+
 import { dbReady } from "@/db";
 import {
   fetchDeals as getBestDeals,
@@ -13,8 +15,8 @@ import { assertSerializable, serializeSafe } from "../utils/serialization";
  * Complies with strict project rules by isolating "use cache" in the server layer.
  */
 export async function fetchHomeData(countryCode: string) {
-  // "use cache";
-  // cacheLife("minutes");
+  "use cache";
+  cacheLife("category");
   const _v = CACHE_VERSION;
 
   await dbReady;

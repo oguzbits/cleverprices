@@ -33,16 +33,16 @@ const nextConfig: NextConfig = {
       })(),
   },
   reactCompiler: true,
-  cacheComponents: false,
+  cacheComponents: true,
   cacheLife: {
     category: {
-      stale: 300, // 5 minutes (Safe buffer for price updates)
-      revalidate: 300,
+      stale: 1200, // 20 minutes (Keepa cycle)
+      revalidate: 1200,
       expire: 86400, // 24 hours
     },
     product_v5: {
-      stale: 300, // 5 minutes
-      revalidate: 300,
+      stale: 1200, // 20 minutes
+      revalidate: 1200,
       expire: 86400,
     },
     static: {

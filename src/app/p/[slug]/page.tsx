@@ -13,8 +13,6 @@ interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export const dynamic = "force-dynamic";
-
 // Local helpers to detect Next.js internal errors safely
 function isNextNotFoundError(error: unknown): boolean {
   const e = error as { digest?: string; message?: string; $$typeof?: string };
@@ -34,7 +32,12 @@ function isNextRedirectError(error: unknown): boolean {
   );
 }
 
-// Removed generateStaticParams to ensure pure dynamic SSR as per stabilizing strategy.
+/**
+ * Static params generation - Required for build-time validation when using Cache Components
+ */
+export async function generateStaticParams() {
+  return [{ slug: "build-time-placeholder" }];
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
@@ -79,7 +82,16 @@ export default async function ProductPage({ params, searchParams }: Props) {
   // 1. Resolve Params first (Static-compatible)
   const { slug } = await params;
 
-  // 2. Resolve Dynamic Context
+  // 2. Build-time safety: Prevent prerendering from bailing or hitting uncached data
+  if (
+    process.env.NEXT_PHASE === "phase-production-build" ||
+    !slug ||
+    slug === "build-time-placeholder"
+  ) {
+    return <div className="h-screen w-full bg-gray-50" />;
+  }
+
+  // 3. Resolve Dynamic Context
   const searchParamsResolved = await searchParams;
 
   const countryCode = DEFAULT_COUNTRY;

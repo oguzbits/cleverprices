@@ -1,3 +1,5 @@
+import { cacheLife } from "next/cache";
+
 import { type CategorySlug, getCategoryBySlug } from "../categories";
 import { type UnitType } from "../category-types";
 import { type PDPRenderData, type Product } from "../product-definitions";
@@ -56,9 +58,8 @@ export async function getPDPRenderData(
   slug: string,
   countryCode: string = "de",
 ): Promise<PDPRenderData | null> {
-  // Temporarily disabled "use cache" to stabilize 500 errors on cold starts
-  // "use cache";
-  // cacheLife("minutes");
+  "use cache";
+  cacheLife("product_v5");
 
   try {
     // 1. Database Safety Guard
@@ -189,8 +190,8 @@ export async function getPDPRenderData(
  */
 
 async function getCachedMainProduct(slug: string, _countryCode: string) {
-  // "use cache";
-  // cacheLife("minutes");
+  "use cache";
+  cacheLife("product_v5");
 
   try {
     let product: Product | undefined;
@@ -248,8 +249,8 @@ async function getCachedMainProduct(slug: string, _countryCode: string) {
 }
 
 async function getCachedVariants(parentAsin: string, countryCode: string) {
-  // "use cache";
-  // cacheLife("minutes");
+  "use cache";
+  cacheLife("product_v5");
   try {
     const vars = await getProductVariantsSync(
       { parentAsin } as Product,
@@ -269,8 +270,8 @@ async function getCachedSimilar(
   limit: number,
   countryCode: string,
 ) {
-  // "use cache";
-  // cacheLife("minutes");
+  "use cache";
+  cacheLife("product_v5");
   try {
     const items = await fetchSimilarProducts(
       category,
@@ -360,8 +361,8 @@ function toSafePOJO<T>(obj: T): T {
 
 // --- SITEMAP & DISCOVERY EXPORTS ---
 export async function getCachedNonEmptyCategorySlugs(): Promise<string[]> {
-  // "use cache";
-  // cacheLife("minutes");
+  "use cache";
+  cacheLife("category");
   return getNonEmptyCategorySlugs();
 }
 
@@ -375,6 +376,8 @@ export async function getCategoryRenderData(
   countryCode: string,
   filterParams: Record<string, string | string[] | undefined>,
 ) {
+  "use cache";
+  cacheLife("category");
   const _start = Date.now();
   console.log(`[Category Render Start] ${categorySlug} (${countryCode})`);
 
@@ -421,6 +424,8 @@ export async function getCategoryRenderData(
  * High-level orchestrator for category routes to prevent bailouts.
  */
 export async function getCategoryOrchestrationData(categorySlug: string) {
+  "use cache";
+  cacheLife("category");
   console.log(`[Category Orchestration Start] ${categorySlug}`);
   try {
     const { dbReady } = await import("../../db");
@@ -451,8 +456,8 @@ export async function getCachedParentCategoryData(
   categorySlug: string,
   countryCode: string = "de",
 ) {
-  // "use cache";
-  // cacheLife("minutes");
+  "use cache";
+  cacheLife("category");
 
   try {
     const { getParentCategoryData } =
@@ -477,8 +482,8 @@ export async function getCachedLivePrices(
   productIds: number[],
   countryCode: string,
 ) {
-  // "use cache";
-  // cacheLife("minutes");
+  "use cache";
+  cacheLife("dynamic");
   const _v = CACHE_VERSION;
 
   const priceMap = await getLivePricesForProducts(productIds, countryCode);
